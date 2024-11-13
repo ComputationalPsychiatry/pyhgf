@@ -7,7 +7,7 @@ fn main() {
 
     // create a network with two exponential family state nodes
     network.add_nodes(
-        "exponential-state",
+        "ef-state",
         None,
         None,
         None,

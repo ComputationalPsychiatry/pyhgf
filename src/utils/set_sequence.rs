@@ -1,5 +1,6 @@
 use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::posterior_update_continuous_state_node, prediction::continuous::prediction_continuous_state_node, prediction_error::{continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node}}};
 use crate::utils::function_pointer::FnType;
+use crate::maths::sufficient_statistics::get_sufficient_statistics_fn;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {
     let predictions = get_predictions_sequence(network);
