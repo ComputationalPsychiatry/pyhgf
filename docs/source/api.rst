@@ -46,6 +46,16 @@ Continuous nodes
     continuous_node_posterior_update
     continuous_node_posterior_update_ehgf
 
+Exponential family
+------------------
+
+.. currentmodule:: pyhgf.updates.posterior.exponential
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.exponential
+
+    posterior_update_exponential_family_dynamic
+
 Prediction steps
 ================
 
@@ -144,7 +154,8 @@ Exponential family
 .. autosummary::
    :toctree: generated/pyhgf.updates.prediction_error.exponential
 
-    prediction_error_update_exponential_family
+    prediction_error_update_exponential_family_fixed
+    prediction_error_update_exponential_family_dynamic
 
 Distribution
 ************
