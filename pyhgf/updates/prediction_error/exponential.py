@@ -106,9 +106,7 @@ def prediction_error_update_exponential_family_dynamic(
     # retrieve the expected sufficient statistics from new observations
     xis = sufficient_stats_fn(x=attributes[node_idx]["mean"])
 
-    for parent_idx, value in zip(
-        edges[node_idx].value_parents or [], xis or [], strict=True
-    ):
+    for parent_idx, value in zip(edges[node_idx].value_parents or [], xis, strict=True):
 
         # blank update in the case of unobserved value
         attributes[parent_idx]["observed"] = attributes[node_idx]["observed"]
