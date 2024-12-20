@@ -428,13 +428,12 @@ class Network:
                 node_parameters=node_parameters,
                 additional_parameters=additional_parameters,
             )
-        elif "ef-state" in kind:
+        elif kind == "ef-state":
             self = add_ef_state(
                 network=self,
                 n_nodes=n_nodes,
                 node_parameters=node_parameters,
                 additional_parameters=additional_parameters,
-                value_children=value_children,
             )
         elif kind == "categorical-state":
             self = add_categorical_state(
