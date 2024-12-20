@@ -452,7 +452,6 @@ class Network:
                 n_nodes=n_nodes,
                 node_parameters=node_parameters,
                 additional_parameters=additional_parameters,
-                value_children=value_children,
             )
         elif kind == "categorical-state":
             self = add_categorical_state(

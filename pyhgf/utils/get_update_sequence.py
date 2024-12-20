@@ -10,6 +10,9 @@ from pyhgf.updates.posterior.continuous import (
     continuous_node_posterior_update,
     continuous_node_posterior_update_ehgf,
 )
+from pyhgf.updates.posterior.exponential import (
+    posterior_update_exponential_family_dynamic,
+)
 from pyhgf.updates.prediction.binary import binary_state_node_prediction
 from pyhgf.updates.prediction.continuous import continuous_node_prediction
 from pyhgf.updates.prediction.dirichlet import dirichlet_node_prediction
@@ -20,7 +23,8 @@ from pyhgf.updates.prediction_error.categorical import (
 from pyhgf.updates.prediction_error.continuous import continuous_node_prediction_error
 from pyhgf.updates.prediction_error.dirichlet import dirichlet_node_prediction_error
 from pyhgf.updates.prediction_error.exponential import (
-    prediction_error_update_exponential_family,
+    prediction_error_update_exponential_family_dynamic,
+    prediction_error_update_exponential_family_fixed,
 )
 
 if TYPE_CHECKING:
@@ -74,6 +78,12 @@ def get_update_sequence(
             & (network.edges[i].volatility_children is None)
         )
     ]
+
+    # do not update continuous nodes that are parents of an ef state node
+    for i in nodes_without_posterior_update:
+        for child_idx in network.edges[i].value_children or []:
+            if network.edges[child_idx].node_type == 3:
+                nodes_without_posterior_update.remove(i)
 
     # prediction updates ---------------------------------------------------------------
     while True:
@@ -166,7 +176,7 @@ def get_update_sequence(
             ]
 
             # if this node has no parent, no need to compute prediction errors
-            # unless this is an exponential family state node
+            # unless this is an exponential family state node with fixed learning rate
             if len(all_parents) == 0:
                 if network.edges[idx].node_type == 3:
 
@@ -180,7 +190,7 @@ def get_update_sequence(
                     # create the sufficient statistic function
                     # for the exponential family node
                     ef_update = Partial(
-                        prediction_error_update_exponential_family,
+                        prediction_error_update_exponential_family_fixed,
                         sufficient_stats_fn=sufficient_stats_fn,
                     )
                     update_fn = ef_update
@@ -199,6 +209,29 @@ def get_update_sequence(
                         update_fn = binary_state_node_prediction_error
                     elif network.edges[idx].node_type == 2:
                         update_fn = continuous_node_prediction_error
+                    elif network.edges[idx].node_type == 3:
+                        # retrieve the desired sufficient statistics function
+                        # from the side parameter dictionary
+                        sufficient_stats_fn = network.additional_parameters[idx][
+                            "sufficient_stats_fn"
+                        ]
+                        network.additional_parameters[idx].pop("sufficient_stats_fn")
+                        # create the sufficient statistic function
+                        # for the exponential family node
+                        ef_update = Partial(
+                            prediction_error_update_exponential_family_dynamic,
+                            sufficient_stats_fn=sufficient_stats_fn,
+                        )
+                        update_fn = ef_update
+                        no_update = False
+                        update_sequence.append((idx, update_fn))
+
+                        # add the posterior update here
+                        # this will be moved at the end of the sequence later
+                        update_sequence.append(
+                            (idx, posterior_update_exponential_family_dynamic)
+                        )
+                        network.attributes[idx].pop("learning")
                     elif network.edges[idx].node_type == 4:
                         update_fn = dirichlet_node_prediction_error
                     elif network.edges[idx].node_type == 5:
@@ -232,7 +265,10 @@ def get_update_sequence(
     # move all categorical steps at the end of the sequence
     for step in update_sequence:
         if not isinstance(step[1], Partial):
-            if step[1].__name__ == "categorical_state_update":
+            if step[1].__name__ in [
+                "posterior_update_exponential_family_dynamic",
+                "categorical_state_update",
+            ]:
                 update_sequence.remove(step)
                 update_sequence.append(step)
 

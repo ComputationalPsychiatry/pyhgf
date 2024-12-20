@@ -128,7 +128,6 @@ def add_ef_state(
         "learning": "generalised-filtering",
         "nus": 3.0,
         "xis": jnp.array([0.0, 1.0]),
-        "mean": 0.0,
         "observed": 1,
     }
 
@@ -136,32 +135,56 @@ def add_ef_state(
         node_parameters, default_parameters, additional_parameters
     )
 
+    # the size of the sufficient statistics vector of a multivariate normal
+    # distribution is given by d + d(d+1) / 2, where d is the dimension
+    d = node_parameters["dimension"]
+    n_suff_stats = d + d * (d + 1) // 2
+    node_parameters["mean"] = jnp.zeros(d) if d > 1 else 0.0
+    node_parameters["xis"] = jnp.ones(n_suff_stats)
+    if "hgf" in node_parameters["learning"]:
+        node_parameters["nus"] = jnp.zeros(n_suff_stats)
+
     network = insert_nodes(
         network=network,
         n_nodes=n_nodes,
         node_type=node_type,
         node_parameters=node_parameters,
-        value_children=value_children,
+        value_children=(None, None),
     )
 
     # loop over the indexes of nodes created in the previous step
     for node_idx in range(network.n_nodes - 1, network.n_nodes - n_nodes - 1, -1):
 
-        if network.attributes[node_idx]["learning"] == "generalised-filtering":
+        # create the sufficient statistic function and store in the side parameters
+        if network.attributes[node_idx]["distribution"] == "normal":
+            sufficient_stats_fn = Normal().sufficient_statistics_from_observations
+        elif network.attributes[node_idx]["distribution"] == "multivariate-normal":
+            sufficient_stats_fn = (
+                MultivariateNormal().sufficient_statistics_from_observations
+            )
+        else:
+            raise ValueError(
+                "The distribution should be either 'normal' or 'multivariate-normal'."
+            )
 
-            # create the sufficient statistic function and store in the side parameters
-            if network.attributes[node_idx]["distribution"] == "normal":
-                sufficient_stats_fn = Normal().sufficient_statistics
-            elif network.attributes[node_idx]["distribution"] == "multivariate-normal":
-                sufficient_stats_fn = MultivariateNormal().sufficient_statistics
+        network.attributes[node_idx].pop("dimension")
+        network.attributes[node_idx].pop("distribution")
 
-            network.attributes[node_idx].pop("distribution")
-            network.attributes[node_idx].pop("learning")
 
-            # add the sufficient statistics function in the side parameters
-            network.additional_parameters.setdefault(node_idx, {})[
-                "sufficient_stats_fn"
-            ] = sufficient_stats_fn
+        if "hgf" in network.attributes[node_idx]["learning"]:
+
+            # create a collection of continuous state nodes
+            # to track the sufficient statistics of the implied distribution
+            for i in range(n_suff_stats):
+                network.add_nodes(value_children=node_idx)
+                network.add_nodes(value_children=network.n_nodes - 1)
+                if (
+                    "-2" in network.attributes[node_idx]["learning"]
+                    or "-3" in network.attributes[node_idx]["learning"]
+                ):
+                    network.add_nodes(volatility_children=network.n_nodes - 1)
+                if "-3" in network.attributes[node_idx]["learning"]:
+                    network.add_nodes(volatility_children=network.n_nodes - 1)
 
     return network
 
