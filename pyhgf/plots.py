@@ -632,7 +632,7 @@ def plot_network_x(network: "Network",
     scale : float, optional
         Scale factor for node positioning, by default 1
     arrow_size : int, optional
-        Size of the arrows for volatility edges, by default 40
+        Size of the arrows for volatility edges, by default 35
         
     Returns
     -------
