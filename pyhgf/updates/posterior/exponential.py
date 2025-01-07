@@ -55,6 +55,7 @@ def posterior_update_exponential_family_dynamic(
     # prediction error - expectation differential
     pe, ed = [], []
     for parent_idx in edges[node_idx].value_parents or []:
+
         pe.append(
             attributes[parent_idx]["mean"] - attributes[parent_idx]["expected_mean"]
         )
@@ -65,6 +66,17 @@ def posterior_update_exponential_family_dynamic(
             - attributes[parent_parent_idx]["expected_mean"]
         )
 
-    attributes[node_idx]["nus"] = jnp.array(pe) / jnp.array(ed)
+    # implied learning rate
+    attributes[node_idx]["nus"] = (jnp.array(pe) / jnp.array(ed)).mean()
+
+    # apply the Bayesian update using fixed learning rates nus
+    xis = attributes[node_idx]["xis"] + (1 / (1 + attributes[node_idx]["nus"])) * (
+        attributes[node_idx]["observation_ss"] - attributes[node_idx]["xis"]
+    )
+
+    # blank update in the case of unobserved value
+    attributes[node_idx]["xis"] = jnp.where(
+        attributes[node_idx]["observed"], xis, attributes[node_idx]["xis"]
+    )
 
     return attributes

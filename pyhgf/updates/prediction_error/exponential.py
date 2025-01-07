@@ -50,9 +50,13 @@ def prediction_error_update_exponential_family_fixed(
 
     """
     # retrieve the expected sufficient statistics from new observations
+    attributes[node_idx]["observation_ss"] = sufficient_stats_fn(
+        x=attributes[node_idx]["mean"]
+    )
+
+    # apply the Bayesian update using fixed learning rates nus
     xis = attributes[node_idx]["xis"] + (1 / (1 + attributes[node_idx]["nus"])) * (
-        sufficient_stats_fn(x=attributes[node_idx]["mean"])
-        - attributes[node_idx]["xis"]
+        attributes[node_idx]["observation_ss"] - attributes[node_idx]["xis"]
     )
 
     # blank update in the case of unobserved value
@@ -104,9 +108,16 @@ def prediction_error_update_exponential_family_dynamic(
 
     """
     # retrieve the expected sufficient statistics from new observations
-    xis = sufficient_stats_fn(x=attributes[node_idx]["mean"])
+    attributes[node_idx]["observation_ss"] = sufficient_stats_fn(
+        x=attributes[node_idx]["mean"]
+    )
 
-    for parent_idx, value in zip(edges[node_idx].value_parents or [], xis, strict=True):
+    # pass the expected sufficient statistics to the continuous parent nodes
+    for parent_idx, value in zip(
+        edges[node_idx].value_parents or [],
+        attributes[node_idx]["observation_ss"],
+        strict=True,
+    ):
 
         # blank update in the case of unobserved value
         attributes[parent_idx]["observed"] = attributes[node_idx]["observed"]

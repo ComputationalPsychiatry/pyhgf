@@ -140,9 +140,7 @@ def add_ef_state(
     d = node_parameters["dimension"]
     n_suff_stats = d + d * (d + 1) // 2
     node_parameters["mean"] = jnp.zeros(d) if d > 1 else 0.0
-    node_parameters["xis"] = jnp.ones(n_suff_stats)
-    if "hgf" in node_parameters["learning"]:
-        node_parameters["nus"] = jnp.zeros(n_suff_stats)
+    node_parameters["observation_ss"] = jnp.array([0.0, 1.0])
 
     network = insert_nodes(
         network=network,
@@ -167,7 +165,6 @@ def add_ef_state(
                 "The distribution should be either 'normal' or 'multivariate-normal'."
             )
 
-        network.attributes[node_idx].pop("dimension")
         network.attributes[node_idx].pop("distribution")
 
 

@@ -218,13 +218,10 @@ def get_update_sequence(
                         network.additional_parameters[idx].pop("sufficient_stats_fn")
                         # create the sufficient statistic function
                         # for the exponential family node
-                        ef_update = Partial(
+                        update_fn = Partial(
                             prediction_error_update_exponential_family_dynamic,
                             sufficient_stats_fn=sufficient_stats_fn,
                         )
-                        update_fn = ef_update
-                        no_update = False
-                        update_sequence.append((idx, update_fn))
 
                         # add the posterior update here
                         # this will be moved at the end of the sequence later
