@@ -115,9 +115,9 @@ def add_binary_state(
 def add_ef_state(
     network: Network,
     n_nodes: int,
-    node_parameters: Dict,
-    additional_parameters: Dict,
-    value_children: Tuple = (None, None),
+    node_parameters: dict,
+    additional_parameters: dict,
+    value_children: tuple = (None, None),
 ):
     """Add exponential family state node(s) to a network."""
     node_type = 3
@@ -155,7 +155,6 @@ def add_ef_state(
             elif network.attributes[node_idx]["distribution"] == "multivariate-normal":
                 sufficient_stats_fn = MultivariateNormal().sufficient_statistics
 
-            network.attributes[node_idx].pop("dimension")
             network.attributes[node_idx].pop("distribution")
             network.attributes[node_idx].pop("learning")
 
@@ -197,7 +196,7 @@ def add_categorical_state(
         "surprise": 0.0,
         "kl_divergence": 0.0,
         "alpha": jnp.ones(n_categories),
-        "observed": jnp.ones(n_categories, dtype=int),
+        "observed": 1,
         "mean": jnp.array([1.0 / n_categories] * n_categories),
         "binary_parameters": binary_parameters,
     }

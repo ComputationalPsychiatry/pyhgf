@@ -186,9 +186,9 @@ def get_update_sequence(
                     update_fn = ef_update
                     no_update = False
                     update_sequence.append((idx, update_fn))
-                    nodes_without_prediction_error.remove(idx)
-                else:
-                    nodes_without_prediction_error.remove(idx)
+
+                nodes_without_prediction_error.remove(idx)
+
             else:
                 # if this node has been updated
                 if idx not in nodes_without_posterior_update:

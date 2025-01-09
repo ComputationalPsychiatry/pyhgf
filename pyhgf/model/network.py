@@ -65,6 +65,7 @@ class Network:
         self.update_sequence: Optional[UpdateSequence] = None
         self.scan_fn: Optional[Callable] = None
         self.additional_parameters: Dict = {}
+        self.input_dim: list = []
 
     @property
     def input_idxs(self):
@@ -124,9 +125,9 @@ class Network:
 
     def input_data(
         self,
-        input_data: Union[np.ndarray, tuple],
+        input_data: np.ndarray,
         time_steps: Optional[np.ndarray] = None,
-        observed: Optional[Union[np.ndarray, tuple]] = None,
+        observed: Optional[np.ndarray] = None,
         input_idxs: Optional[Tuple[int]] = None,
     ):
         """Add new observations.
@@ -134,12 +135,14 @@ class Network:
         Parameters
         ----------
         input_data :
-            2d array of new observations (time x features).
+            A 2d array of new observations (time x observation). Input nodes can receive
+            floats or vectors according to their dimensions. This matrix is further
+            split into tuple of columns accordingly.
         time_steps :
             Time steps vector (optional). If `None`, this will default to
             `np.ones(len(input_data))`.
         observed :
-            A time * input node boolean array masking `input_data`. In case of missing
+            A 2d array of mask (time x number of input nodes). In case of missing
             inputs, (i.e. `observed` is `0`), the input node will have value and
             volatility set to `0.0`. If the parent(s) of this input receive prediction
             error from other children, they simply ignore this one. If they are not
@@ -154,45 +157,45 @@ class Network:
             Indexes on the state nodes receiving observations.
 
         """
+        if input_data.ndim == 1:
+            input_data = input_data[:, jnp.newaxis]
+
         # set the input nodes indexes
         if input_idxs is not None:
             self.input_idxs = input_idxs
 
-        # belief propagation function
+        # get the dimension of the input nodes
+        if not self.input_dim:
+            self.get_input_dimension()
+
+        # generate the belief propagation function
         if self.scan_fn is None:
             self = self.create_belief_propagation_fn()
 
-        # input_data should be a tuple of n by time_steps arrays
-        if not isinstance(input_data, tuple):
-            if observed is None:
-                observed = np.ones(input_data.shape, dtype=int)
-            if input_data.ndim == 1:
-
-                # Interleave observations and masks
-                input_data = (input_data, observed)
-            else:
-                observed = jnp.hsplit(observed, input_data.shape[1])
-                observations = jnp.hsplit(input_data, input_data.shape[1])
-
-                # Interleave observations and masks
-                input_data = tuple(
-                    [
-                        item.flatten()
-                        for pair in zip(observations, observed)
-                        for item in pair
-                    ]
-                )
-
         # time steps vector
         if time_steps is None:
-            time_steps = np.ones(input_data[0].shape[0])
+            time_steps = np.ones(input_data.shape[0])
+
+        # observation mask
+        if observed is None:
+            observed = tuple(
+                [
+                    np.ones(input_data.shape[0], dtype=int)
+                    for _ in range(len(self.input_idxs))
+                ]
+            )
+
+        # format input_data according to the input nodes dimension
+        split_indices = np.cumsum(self.input_dim[:-1])
+        values = tuple(np.split(input_data, split_indices, axis=1))
+
+        # wrap the inputs
+        inputs = values, observed, time_steps
 
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
         # using precision-weighted prediction errors
-        last_attributes, node_trajectories = scan(
-            self.scan_fn, self.attributes, (*input_data, time_steps)
-        )
+        last_attributes, node_trajectories = scan(self.scan_fn, self.attributes, inputs)
 
         # belief trajectories
         self.node_trajectories = node_trajectories
@@ -249,30 +252,40 @@ class Network:
             Indexes on the state nodes receiving observations.
 
         """
+        if input_data.ndim == 1:
+            input_data = input_data[:, jnp.newaxis]
+
         # set the input nodes indexes
         if input_idxs is not None:
             self.input_idxs = input_idxs
 
-        # input_data should be a tuple of n by time_steps arrays
-        if not isinstance(input_data, tuple):
-            if observed is None:
-                observed = np.ones(input_data.shape, dtype=int)
-            if input_data.ndim == 1:
+        # get the dimension of the input nodes
+        if not self.input_dim:
+            self.get_input_dimension()
 
-                # Interleave observations and masks
-                input_data = (input_data, observed)
-            else:
-                observed = jnp.hsplit(observed, input_data.shape[1])
-                observations = jnp.hsplit(input_data, input_data.shape[1])
-
-                # Interleave observations and masks
-                input_data = tuple(
-                    [item for pair in zip(observations, observed) for item in pair]
-                )
+        # generate the belief propagation function
+        if self.scan_fn is None:
+            self = self.create_belief_propagation_fn()
 
         # time steps vector
         if time_steps is None:
-            time_steps = np.ones(input_data[0].shape[0])
+            time_steps = np.ones(input_data.shape[0])
+
+        # observation mask
+        if observed is None:
+            observed = tuple(
+                [
+                    np.ones(input_data.shape[0], dtype=int)
+                    for _ in range(len(self.input_idxs))
+                ]
+            )
+
+        # format input_data according to the input nodes dimension
+        split_indices = np.cumsum(self.input_dim[:-1])
+        values = tuple(np.split(input_data, split_indices, axis=1))
+
+        # wrap the inputs
+        inputs = values, observed, time_steps
 
         # create the update functions that will be scanned
         branches_fn = [
@@ -287,11 +300,11 @@ class Network:
 
         # create the function that will be scanned
         def switching_propagation(attributes, scan_input):
-            (*data, idx) = scan_input
+            data, idx = scan_input
             return switch(idx, branches_fn, attributes, data)
 
         # wrap the inputs
-        scan_input = (*input_data, time_steps, branches_idx)
+        scan_input = (inputs, branches_idx)
 
         # scan over the input data and apply the switching belief propagation functions
         _, node_trajectories = scan(switching_propagation, self.attributes, scan_input)
@@ -428,7 +441,7 @@ class Network:
                 node_parameters=node_parameters,
                 additional_parameters=additional_parameters,
             )
-        elif "ef-state" in kind:
+        elif kind == "ef-state":
             self = add_ef_state(
                 network=self,
                 n_nodes=n_nodes,
@@ -566,4 +579,22 @@ class Network:
         self.attributes = attributes
         self.edges = edges
 
+        return self
+
+    def get_input_dimension(
+        self,
+    ) -> "Network":
+        """Get input node dimensions.
+
+        All nodes have dimension 1, except exponential family state nodes and
+        categorical state node.
+        """
+        for idx in self.input_idxs:
+            if self.edges[idx].node_type == 3:
+                dim = self.attributes[idx]["dimension"]
+            elif self.edges[idx].node_type == 5:
+                dim = self.attributes[idx]["n_categories"]
+            else:
+                dim = 1
+            self.input_dim.append(dim)
         return self

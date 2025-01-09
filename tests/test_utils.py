@@ -84,7 +84,7 @@ def test_set_update_sequence():
             kind="ef-state",
             n_nodes=2,
             value_children=0,
-            xis=jnp.array([0.0, 1 / 8]),
+            xis=jnp.array([0.0, 1.0]),
             nus=15.0,
         )
         .create_belief_propagation_fn()

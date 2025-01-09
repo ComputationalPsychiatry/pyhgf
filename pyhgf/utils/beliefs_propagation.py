@@ -55,13 +55,13 @@ def beliefs_propagation(
     """
     prediction_steps, update_steps = update_sequence
 
-    # unpack input data - input_values is a tuple of n x time steps arrays
-    (*input_data, time_step) = inputs
+    # unpack input data - ((ndarrays, ...), (1darrays, ...), float64)
+    values_tuple, observed_tuple, time_step = inputs
 
     attributes[-1]["time_step"] = time_step
 
-    # Prediction sequence
-    # -------------------
+    # 1 - Prediction sequence
+    # -----------------------
     for step in prediction_steps:
 
         node_idx, update_fn = step
@@ -72,21 +72,19 @@ def beliefs_propagation(
             edges=edges,
         )
 
-    # Observations
-    # ------------
-    for values, observed, node_idx in zip(
-        input_data[::2], input_data[1::2], input_idxs
-    ):
+    # 2 - Observations
+    # ----------------
+    for values, observed, node_idx in zip(values_tuple, observed_tuple, input_idxs):
 
         attributes = set_observation(
             attributes=attributes,
             node_idx=node_idx,
-            values=values,
+            values=values.squeeze(),
             observed=observed,
         )
 
-    # Update sequence
-    # ---------------
+    # 3 - Update sequence
+    # -------------------
     for step in update_steps:
 
         node_idx, update_fn = step
