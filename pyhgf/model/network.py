@@ -105,6 +105,10 @@ class Network:
             errors associated with impossible parameter space and improves sampling.
 
         """
+        # get the dimension of the input nodes
+        if not self.input_dim:
+            self.get_input_dimension()
+
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
@@ -164,10 +168,6 @@ class Network:
         if input_idxs is not None:
             self.input_idxs = input_idxs
 
-        # get the dimension of the input nodes
-        if not self.input_dim:
-            self.get_input_dimension()
-
         # generate the belief propagation function
         if self.scan_fn is None:
             self = self.create_belief_propagation_fn()
@@ -184,6 +184,11 @@ class Network:
                     for _ in range(len(self.input_idxs))
                 ]
             )
+        elif isinstance(observed, np.ndarray):
+            if observed.ndim == 1:
+                observed = (observed,)
+            else:
+                observed = tuple(observed[:, i] for i in range(observed.shape[1]))
 
         # format input_data according to the input nodes dimension
         split_indices = np.cumsum(self.input_dim[:-1])

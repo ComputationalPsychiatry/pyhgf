@@ -112,8 +112,9 @@ def logp(
         to compute the surprise. This can include values over which inference is
         performed in a PyMC model (e.g. the inverse temperature of a binary softmax).
     input_data :
-        An array of input time series where the first dimension is the number of models
-        to fit in parallel.
+        An array of input time series. The first dimension is the number of time steps
+        and the second dimension is the number of features. The number of features is
+        the number of input nodes time the input dimensions.
     time_steps :
         An array of input time steps where the first dimension is the number of models
         to fit in parallel.
