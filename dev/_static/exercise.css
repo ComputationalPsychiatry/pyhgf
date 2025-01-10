@@ -20,7 +20,7 @@ div.exercise p.admonition-title {
 }
 
 /* Remove content box */
-div.exercise p.admonition-title::before {
+div.exercise p.admonition-title::after {
   content: "\f303";
 }
 
@@ -38,6 +38,6 @@ div.solution p.admonition-title {
 }
 
 /* Remove content box */
-div.solution p.admonition-title::before {
+div.solution p.admonition-title::after {
   content: none;
 }

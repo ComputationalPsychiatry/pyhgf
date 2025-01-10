@@ -19,6 +19,7 @@
       ~HGFDistribution.add_tag_trace
       ~HGFDistribution.do_constant_folding
       ~HGFDistribution.grad
+      ~HGFDistribution.inplace_on_inputs
       ~HGFDistribution.make_node
       ~HGFDistribution.make_py_thunk
       ~HGFDistribution.make_thunk

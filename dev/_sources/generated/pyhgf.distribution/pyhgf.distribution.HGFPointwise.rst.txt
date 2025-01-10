@@ -19,6 +19,7 @@
       ~HGFPointwise.add_tag_trace
       ~HGFPointwise.do_constant_folding
       ~HGFPointwise.grad
+      ~HGFPointwise.inplace_on_inputs
       ~HGFPointwise.make_node
       ~HGFPointwise.make_py_thunk
       ~HGFPointwise.make_thunk

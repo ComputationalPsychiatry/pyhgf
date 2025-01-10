@@ -19,6 +19,7 @@
       ~HGFLogpGradOp.add_tag_trace
       ~HGFLogpGradOp.do_constant_folding
       ~HGFLogpGradOp.grad
+      ~HGFLogpGradOp.inplace_on_inputs
       ~HGFLogpGradOp.make_node
       ~HGFLogpGradOp.make_py_thunk
       ~HGFLogpGradOp.make_thunk
