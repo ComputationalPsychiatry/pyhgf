@@ -473,7 +473,9 @@
     <span class="k">if</span> <span class="n">value_parent_idxs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters</span><span class="p">(</span><span class="n">xis</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">])</span>
+                <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">(</span>
+                    <span class="n">xis</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
                 <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">value_parent_idxs</span>
             <span class="p">]</span>
         <span class="p">)</span>

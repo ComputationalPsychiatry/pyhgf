@@ -389,6 +389,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf</a></li>
 </ul>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.exponential/pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic.html">pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic</a></li>
+</ul>
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.binary/pyhgf.updates.prediction.binary.binary_state_node_prediction.html">pyhgf.updates.prediction.binary.binary_state_node_prediction</a></li>
 </ul>
 <ul class="nav bd-sidenav">
@@ -420,7 +423,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.clusters_likelihood.html">pyhgf.updates.prediction_error.dirichlet.clusters_likelihood</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_dynamic.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_dynamic</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.logp.html">pyhgf.distribution.logp</a></li>
@@ -562,14 +566,14 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_measure</span></code>()</p></td>
 <td><p>Compute the base measure of the univariate normal.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">expected_sufficient_statistics</span></code>(mu, sigma)</p></td>
-<td><p>Compute expected sufficient statistics from the mean and std.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters_from_sufficient_statistics</span></code>(xis)</p></td>
+<td><p>Compute the distribution parameters from the sufficient statistics.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code>(xis)</p></td>
-<td><p>Get parameters from the expected sufficient statistics.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sufficient_statistics_from_observations</span></code>(x)</p></td>
+<td><p>Compute the expected sufficient statistics from a single observation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sufficient_statistics</span></code>(x)</p></td>
-<td><p>Sufficient statistics for the univariate normal.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sufficient_statistics_from_parameters</span></code>(mean, ...)</p></td>
+<td><p>Compute the expected sufficient statistics from distribution parameter.</p></td>
 </tr>
 </tbody>
 </table>

@@ -640,8 +640,8 @@
         <span class="c1"># initialize the new cluster using candidate values</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
             <span class="n">cluster_idx</span> <span class="o">==</span> <span class="n">i</span><span class="p">,</span>
-            <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">expected_sufficient_statistics</span><span class="p">(</span>
-                <span class="n">mu</span><span class="o">=</span><span class="n">candidate_mean</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">candidate_sigma</span>
+            <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_parameters</span><span class="p">(</span>
+                <span class="n">mean</span><span class="o">=</span><span class="n">candidate_mean</span><span class="p">,</span> <span class="n">variance</span><span class="o">=</span><span class="n">candidate_sigma</span><span class="o">**</span><span class="mi">2</span>
             <span class="p">),</span>
             <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">],</span>
         <span class="p">)</span>

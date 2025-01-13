@@ -563,7 +563,6 @@
         <span class="s2">&quot;learning&quot;</span><span class="p">:</span> <span class="s2">&quot;generalised-filtering&quot;</span><span class="p">,</span>
         <span class="s2">&quot;nus&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
         <span class="s2">&quot;xis&quot;</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]),</span>
-        <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
         <span class="s2">&quot;observed&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -571,32 +570,65 @@
         <span class="n">node_parameters</span><span class="p">,</span> <span class="n">default_parameters</span><span class="p">,</span> <span class="n">additional_parameters</span>
     <span class="p">)</span>
 
+    <span class="c1"># the size of the sufficient statistics vector of a multivariate normal</span>
+    <span class="c1"># distribution is given by d + d(d+1) / 2, where d is the dimension</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;dimension&quot;</span><span class="p">]</span>
+    <span class="n">n_suff_stats</span> <span class="o">=</span> <span class="n">d</span> <span class="o">+</span> <span class="n">d</span> <span class="o">*</span> <span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;observation_ss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_suff_stats</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;distribution&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
+        <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;distribution&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;multivariate-normal&quot;</span><span class="p">:</span>
+        <span class="n">node_parameters</span><span class="p">[</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">MultivariateNormal</span><span class="o">.</span><span class="n">sufficient_statistics_from_parameters</span><span class="p">(</span>
+                <span class="n">mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">covariance</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
     <span class="n">network</span> <span class="o">=</span> <span class="n">insert_nodes</span><span class="p">(</span>
         <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">,</span>
         <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
         <span class="n">node_type</span><span class="o">=</span><span class="n">node_type</span><span class="p">,</span>
         <span class="n">node_parameters</span><span class="o">=</span><span class="n">node_parameters</span><span class="p">,</span>
-        <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="c1"># loop over the indexes of nodes created in the previous step</span>
     <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
 
-        <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;learning&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;generalised-filtering&quot;</span><span class="p">:</span>
+        <span class="c1"># create the sufficient statistic function and store in the side parameters</span>
+        <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;distribution&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
+            <span class="n">sufficient_stats_fn</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span>
+        <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;distribution&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;multivariate-normal&quot;</span><span class="p">:</span>
+            <span class="n">sufficient_stats_fn</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The distribution should be either &#39;normal&#39; or &#39;multivariate-normal&#39;.&quot;</span>
+            <span class="p">)</span>
 
-            <span class="c1"># create the sufficient statistic function and store in the side parameters</span>
-            <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;distribution&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
-                <span class="n">sufficient_stats_fn</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics</span>
-            <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;distribution&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;multivariate-normal&quot;</span><span class="p">:</span>
-                <span class="n">sufficient_stats_fn</span> <span class="o">=</span> <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics</span>
+        <span class="c1"># add the sufficient statistics function in the side parameters</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">additional_parameters</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">node_idx</span><span class="p">,</span> <span class="p">{})[</span>
+            <span class="s2">&quot;sufficient_stats_fn&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">sufficient_stats_fn</span>
 
-            <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;distribution&quot;</span><span class="p">)</span>
-            <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;learning&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;hgf&quot;</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;learning&quot;</span><span class="p">]:</span>
 
-            <span class="c1"># add the sufficient statistics function in the side parameters</span>
-            <span class="n">network</span><span class="o">.</span><span class="n">additional_parameters</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">node_idx</span><span class="p">,</span> <span class="p">{})[</span>
-                <span class="s2">&quot;sufficient_stats_fn&quot;</span>
-            <span class="p">]</span> <span class="o">=</span> <span class="n">sufficient_stats_fn</span>
+            <span class="c1"># create a collection of continuous state nodes</span>
+            <span class="c1"># to track the sufficient statistics of the implied distribution</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_suff_stats</span><span class="p">):</span>
+                <span class="n">network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="n">node_idx</span><span class="p">)</span>
+                <span class="n">network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="s2">&quot;-2&quot;</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;learning&quot;</span><span class="p">]</span>
+                    <span class="ow">or</span> <span class="s2">&quot;-3&quot;</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;learning&quot;</span><span class="p">]</span>
+                <span class="p">):</span>
+                    <span class="n">network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;-3&quot;</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;learning&quot;</span><span class="p">]:</span>
+                    <span class="n">network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;distribution&quot;</span><span class="p">)</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;learning&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">network</span></div>
 

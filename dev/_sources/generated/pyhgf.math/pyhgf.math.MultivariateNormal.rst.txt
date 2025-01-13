@@ -15,7 +15,9 @@
    
       ~MultivariateNormal.__init__
       ~MultivariateNormal.base_measure
-      ~MultivariateNormal.sufficient_statistics
+      ~MultivariateNormal.parameters_from_sufficient_statistics
+      ~MultivariateNormal.sufficient_statistics_from_observations
+      ~MultivariateNormal.sufficient_statistics_from_parameters
    
    
 

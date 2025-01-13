@@ -437,6 +437,9 @@
     <span class="n">continuous_node_posterior_update</span><span class="p">,</span>
     <span class="n">continuous_node_posterior_update_ehgf</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.posterior.exponential</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">posterior_update_exponential_family_dynamic</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.prediction.binary</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_state_node_prediction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.prediction.continuous</span><span class="w"> </span><span class="kn">import</span> <span class="n">continuous_node_prediction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.prediction.dirichlet</span><span class="w"> </span><span class="kn">import</span> <span class="n">dirichlet_node_prediction</span>
@@ -447,7 +450,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.prediction_error.continuous</span><span class="w"> </span><span class="kn">import</span> <span class="n">continuous_node_prediction_error</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.prediction_error.dirichlet</span><span class="w"> </span><span class="kn">import</span> <span class="n">dirichlet_node_prediction_error</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.prediction_error.exponential</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">prediction_error_update_exponential_family</span><span class="p">,</span>
+    <span class="n">prediction_error_update_exponential_family_dynamic</span><span class="p">,</span>
+    <span class="n">prediction_error_update_exponential_family_fixed</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -503,6 +507,12 @@
             <span class="o">&amp;</span> <span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
         <span class="p">)</span>
     <span class="p">]</span>
+
+    <span class="c1"># do not update continuous nodes that are parents of an ef state node</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">nodes_without_posterior_update</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">child_idx</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">nodes_without_posterior_update</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
 
     <span class="c1"># prediction updates ---------------------------------------------------------------</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -595,7 +605,7 @@
             <span class="p">]</span>
 
             <span class="c1"># if this node has no parent, no need to compute prediction errors</span>
-            <span class="c1"># unless this is an exponential family state node</span>
+            <span class="c1"># unless this is an exponential family state node with fixed learning rate</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_parents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
 
@@ -609,7 +619,7 @@
                     <span class="c1"># create the sufficient statistic function</span>
                     <span class="c1"># for the exponential family node</span>
                     <span class="n">ef_update</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
-                        <span class="n">prediction_error_update_exponential_family</span><span class="p">,</span>
+                        <span class="n">prediction_error_update_exponential_family_fixed</span><span class="p">,</span>
                         <span class="n">sufficient_stats_fn</span><span class="o">=</span><span class="n">sufficient_stats_fn</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="n">update_fn</span> <span class="o">=</span> <span class="n">ef_update</span>
@@ -628,6 +638,25 @@
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">binary_state_node_prediction_error</span>
                     <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_prediction_error</span>
+                    <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                        <span class="c1"># retrieve the desired sufficient statistics function</span>
+                        <span class="c1"># from the side parameter dictionary</span>
+                        <span class="n">sufficient_stats_fn</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">additional_parameters</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span>
+                            <span class="s2">&quot;sufficient_stats_fn&quot;</span>
+                        <span class="p">]</span>
+                        <span class="n">network</span><span class="o">.</span><span class="n">additional_parameters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;sufficient_stats_fn&quot;</span><span class="p">)</span>
+                        <span class="c1"># create the sufficient statistic function</span>
+                        <span class="c1"># for the exponential family node</span>
+                        <span class="n">update_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+                            <span class="n">prediction_error_update_exponential_family_dynamic</span><span class="p">,</span>
+                            <span class="n">sufficient_stats_fn</span><span class="o">=</span><span class="n">sufficient_stats_fn</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+                        <span class="c1"># add the posterior update here</span>
+                        <span class="c1"># this will be moved at the end of the sequence later</span>
+                        <span class="n">update_sequence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">posterior_update_exponential_family_dynamic</span><span class="p">)</span>
+                        <span class="p">)</span>
                     <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">dirichlet_node_prediction_error</span>
                     <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
@@ -661,7 +690,10 @@
     <span class="c1"># move all categorical steps at the end of the sequence</span>
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">update_sequence</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Partial</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;categorical_state_update&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s2">&quot;posterior_update_exponential_family_dynamic&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;categorical_state_update&quot;</span><span class="p">,</span>
+            <span class="p">]:</span>
                 <span class="n">update_sequence</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
                 <span class="n">update_sequence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
