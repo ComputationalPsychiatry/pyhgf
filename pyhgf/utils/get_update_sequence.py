@@ -228,7 +228,6 @@ def get_update_sequence(
                         update_sequence.append(
                             (idx, posterior_update_exponential_family_dynamic)
                         )
-                        network.attributes[idx].pop("learning")
                     elif network.edges[idx].node_type == 4:
                         update_fn = dirichlet_node_prediction_error
                     elif network.edges[idx].node_type == 5:

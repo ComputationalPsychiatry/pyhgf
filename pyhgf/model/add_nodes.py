@@ -140,8 +140,15 @@ def add_ef_state(
     d = node_parameters["dimension"]
     n_suff_stats = d + d * (d + 1) // 2
     node_parameters["mean"] = jnp.zeros(d) if d > 1 else 0.0
-    node_parameters["observation_ss"] = jnp.array([0.0, 1.0])
-
+    node_parameters["observation_ss"] = jnp.zeros(n_suff_stats)
+    if node_parameters["distribution"] == "normal":
+        node_parameters["xis"] = jnp.array([0.0, 1.0])
+    elif node_parameters["distribution"] == "multivariate-normal":
+        node_parameters["xis"] = (
+            MultivariateNormal.sufficient_statistics_from_parameters(
+                mean=jnp.zeros(d), covariance=jnp.identity(d)
+            )
+        )
     network = insert_nodes(
         network=network,
         n_nodes=n_nodes,
@@ -165,8 +172,10 @@ def add_ef_state(
                 "The distribution should be either 'normal' or 'multivariate-normal'."
             )
 
-        network.attributes[node_idx].pop("distribution")
-
+        # add the sufficient statistics function in the side parameters
+        network.additional_parameters.setdefault(node_idx, {})[
+            "sufficient_stats_fn"
+        ] = sufficient_stats_fn
 
         if "hgf" in network.attributes[node_idx]["learning"]:
 
@@ -182,6 +191,9 @@ def add_ef_state(
                     network.add_nodes(volatility_children=network.n_nodes - 1)
                 if "-3" in network.attributes[node_idx]["learning"]:
                     network.add_nodes(volatility_children=network.n_nodes - 1)
+
+        network.attributes[node_idx].pop("distribution")
+        network.attributes[node_idx].pop("learning")
 
     return network
 

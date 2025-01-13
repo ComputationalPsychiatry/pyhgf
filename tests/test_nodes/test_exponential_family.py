@@ -1,5 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+import jax.numpy as jnp
 import numpy as np
 from rshgf import Network as RsNetwork
 
@@ -7,7 +8,7 @@ from pyhgf import load_data
 from pyhgf.model import Network as PyNetwork
 
 
-def test_1d_gaussain():
+def test_gaussian():
 
     timeseries = load_data("continuous")
 
@@ -30,4 +31,36 @@ def test_1d_gaussain():
     ).all()
     assert np.isclose(
         py_network.node_trajectories[0]["nus"], rs_network.node_trajectories[0]["nus"]
+    ).all()
+
+
+def test_multivariate_gaussian():
+
+    # simulate an ordered spiral data set
+    np.random.seed(123)
+    N = 1000
+    theta = np.sort(np.sqrt(np.random.rand(N)) * 5 * np.pi)
+    r_a = -2 * theta - np.pi
+    spiral_data = (
+        np.array([np.cos(theta) * r_a, np.sin(theta) * r_a]).T
+        + np.random.randn(N, 2) * 2
+    )
+
+    # Python ---------------------------------------------------------------------------
+    bivariate_normal = (
+        PyNetwork()
+        .add_nodes(
+            kind="ef-state",
+            learning="generalised-filtering",
+            distribution="multivariate-normal",
+            dimension=2,
+        )
+        .input_data(input_data=spiral_data)
+    )
+    assert jnp.isclose(
+        bivariate_normal.node_trajectories[0]["xis"][-1],
+        jnp.array(
+            [3.4652710e01, -1.0609777e00, 1.2103647e03, -3.6398651e01, 3.3951855e00],
+            dtype="float32",
+        ),
     ).all()
