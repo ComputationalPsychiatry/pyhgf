@@ -23,9 +23,61 @@ class MultivariateNormal:
         return jnp.hstack([x, jnp.outer(x, x)[jnp.tril_indices(x.shape[0])]])
 
     @staticmethod
+    def sufficient_statistics_from_parameters(
+        mean: ArrayLike, covariance: ArrayLike
+    ) -> Array:
+        """Compute the expected sufficient statistics from distribution parameter.
+
+        Parameters
+        ----------
+        mean :
+            Mean of the Gaussian distribution.
+        covariance :
+            Variance of the Gaussian distribution.
+
+        Returns
+        -------
+        xis :
+            The sufficient statistics.
+
+        """
+        return jnp.append(
+            mean,
+            (covariance + jnp.outer(mean, mean))[jnp.tril_indices(covariance.shape[0])],
+        )
+
+    @staticmethod
     def base_measure(k: int) -> float:
         """Compute the base measures for the multivariate normal."""
         return (2 * jnp.pi) ** (-k / 2)
+
+    @staticmethod
+    def parameters_from_sufficient_statistics(
+        xis: ArrayLike, dimension: int
+    ) -> Tuple[Array, Array]:
+        """Compute the distribution parameters from the sufficient statistics.
+
+        Parameters
+        ----------
+        xis :
+            The sufficient statistics.
+        dimension :
+            The dimension of the multivariate normal distribution.
+
+        Returns
+        -------
+        means, covariance :
+            The parameters of the distribution (mean and covariance).
+
+        """
+        mean = xis[:dimension]
+        covariance = jnp.zeros((dimension, dimension))
+        covariance = covariance.at[jnp.tril_indices(dimension)].set(
+            xis[dimension:] - jnp.outer(mean, mean)[jnp.tril_indices(dimension)]
+        )
+        covariance += covariance.T - jnp.diag(covariance.diagonal())
+
+        return mean, covariance
 
 
 class Normal:
