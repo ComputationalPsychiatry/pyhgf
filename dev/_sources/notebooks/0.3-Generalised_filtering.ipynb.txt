@@ -94,9 +94,9 @@
     "tags": []
    },
    "source": [
-    "In this tutorial, we are interested in online Bayesian filtering when applied to [exponential family distributions](https://en.wikipedia.org/wiki/Exponential_family). Bayesian inference in high-dimensional space can rapidly become intractable, requiring the use of approximation or sampling methods that always remain computationally costly. However exponential family distributions have interesting properties that allow expressing Bayesian updates over as a simple closed-form solution over hyperparameters unique to all members of the family. This property is well known for stationary distributions and can extend to non-stationary distributions through the application of a fixed learning rate. But this solution can be further improved by dynamically learning the learning rate itself, which is something that Hierarchical Gaussian Filters are especially good at. \n",
+    "In this tutorial, we are interested in online Bayesian filtering when applied to [exponential family distributions](https://en.wikipedia.org/wiki/Exponential_family). Bayesian inference in high-dimensional space can rapidly become intractable, requiring approximation or sampling methods that always remain computationally costly. However exponential family distributions have interesting properties that allow expressing Bayesian updates through a simple closed-form solution over hyperparameters that is common to all family members. This property is well-described for stationary distributions and can extend to non-stationary distributions through the application of a fixed learning rate. But this solution can be further improved by dynamically learning the learning rate itself, which is something that Hierarchical Gaussian Filters are especially good at. \n",
     "\n",
-    "Here, we leverage the approach described in {cite:p}`mathys:2020` to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the [exponential family](https://en.wikipedia.org/wiki/Exponential_family). This principle underpins the {ref}`categorical_hgf`, in which case the implied distribution is a Dirichlet distribution. However, by abstracting the specificity of each member of the family away, we can implement a unique probabilistic node that can flexibly filter any distribution from the exponential family, as an input node or as a state node, which greatly enlarges the range of possible models.\n",
+    "Here, we leverage the approach described in {cite:p}`mathys:2020` to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the [exponential family](https://en.wikipedia.org/wiki/Exponential_family). In this tutorial we will describe how to filter stationary and non-stationary distributions using a fixed learning rate or by using a predictive coding network on top of sufficient statistics elicited by new observations. This approach has the advantage of being extremely modular and flexible while extending dynamic Bayesian filtering to a whole range of models. This already underpins the {ref}`categorical_hgf`, in which case the implied distribution is a Dirichlet distribution.\n",
     "\n",
     "## Theory\n",
     "\n",
@@ -417,7 +417,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f0235577080>"
+       "<graphviz.sources.Source at 0x7f69845ec530>"
       ]
      },
      "execution_count": 7,
@@ -665,7 +665,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f0234299a30>"
+       "<graphviz.sources.Source at 0x7f6984591040>"
       ]
      },
      "execution_count": 13,
@@ -745,6 +745,22 @@
   },
   {
    "cell_type": "markdown",
+   "id": "5e7cfb60-a0f2-4e58-a12f-75b048d2bc1e",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "source": [
+    "```{note}\n",
+    "In this model, each sufficient statistic is filtered separately, resulting in an implied learning rate for each of them. While this approach has the advantage of dynamically learning the various components of a distribution (see also how this can be done by value and volatility parents in the case of a continuous input {ref}`example_2`), this can result in invalid sufficient statistics (e.g. where the equality $\\xi_1^2 = \\xi_2$ does not hold anymore). Here, and in the rest of the examples, we simply average the learning rate to ensure consistent updating of the predictive distribution. \n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
    "id": "a74a4730-0811-4d77-a698-aeb73a80d185",
    "metadata": {
     "editable": true,
@@ -813,6 +829,25 @@
     "means, covariances = jnp.apply_along_axis(\n",
     "    MultivariateNormal().parameters_from_sufficient_statistics, 1, bivariate_normal.node_trajectories[0][\"xis\"], dimension=2\n",
     ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a6909d46-2fe0-4c5b-8914-2469c65ac701",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "source": [
+    "```{figure} ../images/multivariate_normal.gif\n",
+    "---\n",
+    "name: multivariate-normal\n",
+    "---\n",
+    "The animation above displays the mean and covariance tracking of a bivariate normal distribution. The ellipse represents the 95% confidence interval of the covariance matrix. We can see that uncertainty is increasing in noisier sections of the distribution trajectory.\n",
+    "```"
    ]
   },
   {
@@ -950,25 +985,6 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a6909d46-2fe0-4c5b-8914-2469c65ac701",
-   "metadata": {
-    "editable": true,
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
-   "source": [
-    "```{figure} ../images/multivariate_normal.gif\n",
-    "---\n",
-    "name: multivariate-normal\n",
-    "---\n",
-    "The animation above displays the mean tracking of a bivariate normal distribution. This is equivalent to tracking the mean of the x and y axis using two separate HGFs. However, the generalized filtering process does more than that under the hood by tracking the whole sufficient statistic vector, which incorporates information about the covariance of the implied multivariate distribution. The full visualization of this distribution requires derivating the posterior predictive distribution of the multivariate normal, as parametrized by the vectors $\\nu$ and $\\xi$.\n",
-    "```"
-   ]
-  },
-  {
-   "cell_type": "markdown",
    "id": "32b98e41-fba5-4a5e-a85e-2de6cb39fee5",
    "metadata": {},
    "source": [
@@ -986,21 +1002,7 @@
     "tags": []
    },
    "source": [
-    "Filtering the sufficient statistics of a two dimensional multivariate normal distribution requires tracking the values of 5 parameters in paralell. Our model therefore consist in 5 independent two-level continuous HGF."
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "b63f1702-7b2c-466a-a23e-ca2f5e64334b",
-   "metadata": {
-    "editable": true,
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
-   "source": [
-    "For us to compute the hyperparameter after each update, we need to *manually* call the belief propagation sequence."
+    "Filtering the sufficient statistics of a two-dimensional multivariate normal distribution requires tracking the values of 5 parameters in parallel. Our model therefore consists of 5 independent two-level continuous HGF."
    ]
   },
   {
@@ -1017,6 +1019,8 @@
     "    dimension=2\n",
     ")\n",
     "\n",
+    "# adapting prior parameter values to the sufficient statistics\n",
+    "# covariances statistics will have greater variability and amplitudes\n",
     "for node_idx in [2, 5, 8, 11, 14]:\n",
     "    bivariate_hgf.attributes[node_idx][\"tonic_volatility\"] = -2.0\n",
     "for node_idx in [1, 4, 7, 10, 13]:\n",
@@ -1235,7 +1239,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f02357544a0>"
+       "<graphviz.sources.Source at 0x7f69784b16a0>"
       ]
      },
      "execution_count": 21,
@@ -1298,13 +1302,13 @@
       "jax   : 0.4.31\n",
       "jaxlib: 0.4.31\n",
       "\n",
+      "numpy     : 1.26.0\n",
       "sys       : 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]\n",
+      "pyhgf     : 0.2.1.post4.dev0+d49aafe9\n",
       "jax       : 0.4.31\n",
       "IPython   : 8.31.0\n",
-      "matplotlib: 3.10.0\n",
-      "pyhgf     : 0.2.1.post4.dev0+d49aafe9\n",
       "seaborn   : 0.13.2\n",
-      "numpy     : 1.26.0\n",
+      "matplotlib: 3.10.0\n",
       "\n",
       "Watermark: 2.5.0\n",
       "\n"
@@ -1315,20 +1319,6 @@
     "%load_ext watermark\n",
     "%watermark -n -u -v -iv -w -p pyhgf,jax,jaxlib"
    ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "65bcd439-2583-4c2e-8db0-b845cc6ba201",
-   "metadata": {
-    "editable": true,
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
-   "outputs": [],
-   "source": []
   }
  ],
  "metadata": {

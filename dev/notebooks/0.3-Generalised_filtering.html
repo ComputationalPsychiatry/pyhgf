@@ -527,8 +527,8 @@
 </div>
 </div>
 </div>
-<p>In this tutorial, we are interested in online Bayesian filtering when applied to <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family distributions</a>. Bayesian inference in high-dimensional space can rapidly become intractable, requiring the use of approximation or sampling methods that always remain computationally costly. However exponential family distributions have interesting properties that allow expressing Bayesian updates over as a simple closed-form solution over hyperparameters unique to all members of the family. This property is well known for stationary distributions and can extend to non-stationary distributions through the application of a fixed learning rate. But this solution can be further improved by dynamically learning the learning rate itself, which is something that Hierarchical Gaussian Filters are especially good at.</p>
-<p>Here, we leverage the approach described in <span id="id1">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. This principle underpins the <a class="reference internal" href="1.2-Categorical_HGF.html#categorical-hgf"><span class="std std-ref">The categorical Hierarchical Gaussian Filter</span></a>, in which case the implied distribution is a Dirichlet distribution. However, by abstracting the specificity of each member of the family away, we can implement a unique probabilistic node that can flexibly filter any distribution from the exponential family, as an input node or as a state node, which greatly enlarges the range of possible models.</p>
+<p>In this tutorial, we are interested in online Bayesian filtering when applied to <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family distributions</a>. Bayesian inference in high-dimensional space can rapidly become intractable, requiring approximation or sampling methods that always remain computationally costly. However exponential family distributions have interesting properties that allow expressing Bayesian updates through a simple closed-form solution over hyperparameters that is common to all family members. This property is well-described for stationary distributions and can extend to non-stationary distributions through the application of a fixed learning rate. But this solution can be further improved by dynamically learning the learning rate itself, which is something that Hierarchical Gaussian Filters are especially good at.</p>
+<p>Here, we leverage the approach described in <span id="id1">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. In this tutorial we will describe how to filter stationary and non-stationary distributions using a fixed learning rate or by using a predictive coding network on top of sufficient statistics elicited by new observations. This approach has the advantage of being extremely modular and flexible while extending dynamic Bayesian filtering to a whole range of models. This already underpins the <a class="reference internal" href="1.2-Categorical_HGF.html#categorical-hgf"><span class="std std-ref">The categorical Hierarchical Gaussian Filter</span></a>, in which case the implied distribution is a Dirichlet distribution.</p>
 <section id="theory">
 <h2>Theory<a class="headerlink" href="#theory" title="Link to this heading">#</a></h2>
 <div class="admonition hint">
@@ -851,6 +851,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <img alt="../_images/4d72eedb3192ef75e6afb785845269645d1aa8a6bf56199e263ebc6d22be3472.png" src="../_images/4d72eedb3192ef75e6afb785845269645d1aa8a6bf56199e263ebc6d22be3472.png" />
 </div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this model, each sufficient statistic is filtered separately, resulting in an implied learning rate for each of them. While this approach has the advantage of dynamically learning the various components of a distribution (see also how this can be done by value and volatility parents in the case of a continuous input <a class="reference internal" href="Example_2_Input_node_volatility_coupling.html#example-2"><span class="std std-ref">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</span></a>), this can result in invalid sufficient statistics (e.g. where the equality <span class="math notranslate nohighlight">\(\xi_1^2 = \xi_2\)</span> does not hold anymore). Here, and in the rest of the examples, we simply average the learning rate to ensure consistent updating of the predictive distribution.</p>
+</div>
 </section>
 </section>
 <section id="multivariate-gaussian-distribution">
@@ -892,6 +896,12 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 </div>
+<figure class="align-default" id="multivariate-normal">
+<img alt="../_images/multivariate_normal.gif" src="../_images/multivariate_normal.gif" />
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">The animation above displays the mean and covariance tracking of a bivariate normal distribution. The ellipse represents the 95% confidence interval of the covariance matrix. We can see that uncertainty is increasing in noisier sections of the distribution trajectory.</span><a class="headerlink" href="#multivariate-normal" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
 <div class="dropdown admonition note">
 <p class="admonition-title">Note</p>
 <p>Code to create this animation 👈</p>
@@ -1010,17 +1020,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </pre></div>
 </div>
 </div>
-<figure class="align-default" id="multivariate-normal">
-<img alt="../_images/multivariate_normal.gif" src="../_images/multivariate_normal.gif" />
-<figcaption>
-<p><span class="caption-number">Fig. 3 </span><span class="caption-text">The animation above displays the mean tracking of a bivariate normal distribution. This is equivalent to tracking the mean of the x and y axis using two separate HGFs. However, the generalized filtering process does more than that under the hood by tracking the whole sufficient statistic vector, which incorporates information about the covariance of the implied multivariate distribution. The full visualization of this distribution requires derivating the posterior predictive distribution of the multivariate normal, as parametrized by the vectors <span class="math notranslate nohighlight">\(\nu\)</span> and <span class="math notranslate nohighlight">\(\xi\)</span>.</span><a class="headerlink" href="#multivariate-normal" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
 </section>
 <section id="id4">
 <h4>Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters<a class="headerlink" href="#id4" title="Link to this heading">#</a></h4>
-<p>Filtering the sufficient statistics of a two dimensional multivariate normal distribution requires tracking the values of 5 parameters in paralell. Our model therefore consist in 5 independent two-level continuous HGF.</p>
-<p>For us to compute the hyperparameter after each update, we need to <em>manually</em> call the belief propagation sequence.</p>
+<p>Filtering the sufficient statistics of a two-dimensional multivariate normal distribution requires tracking the values of 5 parameters in parallel. Our model therefore consists of 5 independent two-level continuous HGF.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
@@ -1030,6 +1033,8 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
     <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
 <span class="p">)</span>
 
+<span class="c1"># adapting prior parameter values to the sufficient statistics</span>
+<span class="c1"># covariances statistics will have greater variability and amplitudes</span>
 <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">14</span><span class="p">]:</span>
     <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
 <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">]:</span>
@@ -1087,17 +1092,17 @@ Python implementation: CPython
 Python version       : 3.12.8
 IPython version      : 8.31.0
 
-pyhgf : 0.0.0.post1.dev0+052e228
+pyhgf : 0.0.0.post1.dev0+ed1ab04
 jax   : 0.4.31
 jaxlib: 0.4.31
 
+sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
 IPython   : 8.31.0
+matplotlib: 3.10.0
+pyhgf     : 0.0.0.post1.dev0+ed1ab04
+numpy     : 1.26.0
 jax       : 0.4.31
 seaborn   : 0.13.2
-matplotlib: 3.10.0
-pyhgf     : 0.0.0.post1.dev0+052e228
-sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
-numpy     : 1.26.0
 
 Watermark: 2.5.0
 </pre></div>
