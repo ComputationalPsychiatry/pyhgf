@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>From Reinforcement Learning to Generalised Bayesian Filtering &#8212; pyhgf 0.2.1 documentation</title>
+    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.2.2 documentation</title>
   
   
   
@@ -16,31 +16,34 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-  
-  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
-
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=000c92bf"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -60,6 +63,7 @@
     <link rel="prev" title="Creating and manipulating networks of probabilistic nodes" href="0.2-Creating_networks.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
   </head>
   
   
@@ -75,19 +79,8 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="../search.html"
       method="get">
@@ -95,7 +88,6 @@
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -103,8 +95,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -138,7 +130,7 @@
     
     
     <img src="../_static/logo_small.svg" class="logo__image only-light" alt=""/>
-    <script>document.write(`<img src="../_static/logo_small.svg" class="logo__image only-dark" alt=""/>`);</script>
+    <img src="../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
   
   
     <p class="title logo__title">pyhgf</p>
@@ -193,29 +185,21 @@
         <div class="navbar-item navbar-persistent--container">
           
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
         </div>
       
       
         <div class="navbar-item">
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -264,15 +248,11 @@ document.write(`
   
     <div class="navbar-persistent--mobile">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
     </div>
   
 
@@ -291,7 +271,8 @@ document.write(`
       
       
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -345,15 +326,11 @@ document.write(`
         
           <div class="navbar-item">
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -410,7 +387,7 @@ document.write(`
 
 <li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
 
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">From Reinforcement Learning to Generalised Bayesian Filtering</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Generalised Bayesian Filtering of exponential family distributions</a></li>
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
@@ -456,9 +433,14 @@ document.write(`
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -476,8 +458,6 @@ document.write(`
       
         <div class="header-article-item">
 
-
-
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -489,7 +469,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">From...</li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Generalised Bayesian Filtering of exponential family distributions</span></li>
   </ul>
 </nav>
 </div>
@@ -506,8 +486,8 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="from-reinforcement-learning-to-generalised-bayesian-filtering">
-<span id="generalised-filtering"></span><h1>From Reinforcement Learning to Generalised Bayesian Filtering<a class="headerlink" href="#from-reinforcement-learning-to-generalised-bayesian-filtering" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="generalised-bayesian-filtering-of-exponential-family-distributions">
+<span id="generalised-filtering"></span><h1>Generalised Bayesian Filtering of exponential family distributions<a class="headerlink" href="#generalised-bayesian-filtering-of-exponential-family-distributions" title="Link to this heading">#</a></h1>
 <p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.3-Generalised_filtering.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell tag_hide-cell docutils container">
 <details class="hide above-input">
@@ -516,9 +496,9 @@ document.write(`
 <span class="expanded">Hide code cell content</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="kn">from</span> <span class="nn">IPython.utils</span> <span class="kn">import</span> <span class="n">io</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
 <span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
 
@@ -531,16 +511,15 @@ document.write(`
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
-<span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">MultipleLocator</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span><span class="p">,</span> <span class="n">t</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultipleLocator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span><span class="p">,</span> <span class="n">t</span>
 
-<span class="kn">from</span> <span class="nn">pyhgf.math</span> <span class="kn">import</span> <span class="n">MultivariateNormal</span><span class="p">,</span> <span class="n">Normal</span><span class="p">,</span> <span class="n">gaussian_predictive_distribution</span>
-<span class="kn">from</span> <span class="nn">pyhgf.model</span> <span class="kn">import</span> <span class="n">Network</span>
-<span class="kn">from</span> <span class="nn">pyhgf.utils</span> <span class="kn">import</span> <span class="n">beliefs_propagation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultivariateNormal</span><span class="p">,</span> <span class="n">Normal</span><span class="p">,</span> <span class="n">gaussian_predictive_distribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -548,13 +527,18 @@ document.write(`
 </div>
 </div>
 </div>
-<p>Hierarchical Gaussian filters can receive one-dimensional continuous and binary inputs by default, but they in practice be extended to a much broader class of distributions. Here, we use the approach described in <span id="id1">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. This is the sample principle that underpins the <a class="reference internal" href="1.2-Categorical_HGF.html#categorical-hgf"><span class="std std-ref">The categorical Hierarchical Gaussian Filter</span></a>, in which case the implied distribution is a Dirichlet distribution. However, by abstracting the specificity of each distribution away, we can implement probabilistic nodes that can flexibly filter any distribution from the exponential family, as an input node or as a state node, which greatly enlarges the range of possible models.</p>
-<p>Generalised Bayesian filtering in this context requires first expressing the Bayesian update of an exponential family distribution as a simple update over hyperparameters. Exponential families of probability distributions are those which can be written in the form:</p>
-<div class="math notranslate nohighlight">
-\[
+<p>In this tutorial, we are interested in online Bayesian filtering when applied to <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family distributions</a>. Bayesian inference in high-dimensional space can rapidly become intractable, requiring approximation or sampling methods that always remain computationally costly. However exponential family distributions have interesting properties that allow expressing Bayesian updates through a simple closed-form solution over hyperparameters that is common to all family members. This property is well-described for stationary distributions and can extend to non-stationary distributions through the application of a fixed learning rate. But this solution can be further improved by dynamically learning the learning rate itself, which is something that Hierarchical Gaussian Filters are especially good at.</p>
+<p>Here, we leverage the approach described in <span id="id1">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. In this tutorial we will describe how to filter stationary and non-stationary distributions using a fixed learning rate or by using a predictive coding network on top of sufficient statistics elicited by new observations. This approach has the advantage of being extremely modular and flexible while extending dynamic Bayesian filtering to a whole range of models. This already underpins the <a class="reference internal" href="1.2-Categorical_HGF.html#categorical-hgf"><span class="std std-ref">The categorical Hierarchical Gaussian Filter</span></a>, in which case the implied distribution is a Dirichlet distribution.</p>
+<section id="theory">
+<h2>Theory<a class="headerlink" href="#theory" title="Link to this heading">#</a></h2>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Exponential family distributions
+Exponential family distributions are probability distributions which can be written in the form:
+$<span class="math notranslate nohighlight">\(
 p(x|\vartheta) = f_x(\vartheta) := h(x) exp(\eta(\vartheta) · t(x) − b(\vartheta))
-\]</div>
-<p>where:</p>
+\)</span>$
+where:</p>
 <ul class="simple">
 <li><p><span class="math notranslate nohighlight">\(x\)</span> is a vector-valued observation</p></li>
 <li><p><span class="math notranslate nohighlight">\(\vartheta\)</span> is a parameter vector</p></li>
@@ -563,6 +547,7 @@ p(x|\vartheta) = f_x(\vartheta) := h(x) exp(\eta(\vartheta) · t(x) − b(\varth
 <li><p><span class="math notranslate nohighlight">\(t(x)\)</span> is the sufficient statistic vector</p></li>
 <li><p><span class="math notranslate nohighlight">\(b(\vartheta)\)</span> is a scalar function</p></li>
 </ul>
+</div>
 <p>It has been shown in <span id="id2">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> that, when chosing as prior:</p>
 <div class="math notranslate nohighlight">
 \[
@@ -581,6 +566,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 &amp; \xi \leftarrow \xi + \frac{1}{\nu + 1}(t(x)-\xi)
 \end{align*}
 \end{split}\]</div>
+</section>
 <section id="filtering-the-sufficient-statistics-of-a-stationary-distribution">
 <h2>Filtering the Sufficient Statistics of a Stationary Distribution<a class="headerlink" href="#filtering-the-sufficient-statistics-of-a-stationary-distribution" title="Link to this heading">#</a></h2>
 <p>We start applying this update steps to the estimation of the parameters from a stationary normal distribution.</p>
@@ -593,7 +579,12 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 </div>
-<div class="cell docutils container">
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
@@ -604,7 +595,9 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
     <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x_i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">xs</span><span class="p">):</span>
-    <span class="n">xi</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">nu</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_i</span><span class="p">)</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">nu</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_i</span><span class="p">)</span> <span class="o">-</span> <span class="n">xi</span>
+    <span class="p">)</span>
     <span class="n">nu</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">999</span><span class="p">]:</span>
@@ -624,8 +617,9 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </pre></div>
 </div>
 </div>
+</details>
 <div class="cell_output docutils container">
-<img alt="../_images/15044fdc9630a71171d4dac9edbdfd73025e4a8e3ca4aac76b58217035798b8a.png" src="../_images/15044fdc9630a71171d4dac9edbdfd73025e4a8e3ca4aac76b58217035798b8a.png" />
+<img alt="../_images/75033c4afee66d1d656b3a59b94c5ef4ffd562cf1f547a23c666218a41c98bdc.png" src="../_images/75033c4afee66d1d656b3a59b94c5ef4ffd562cf1f547a23c666218a41c98bdc.png" />
 </div>
 </div>
 <p>The vizualisation of the predictive distribution over new observations require integrating the joint probability of the prior <span class="math notranslate nohighlight">\(g_{\xi, \nu}(\vartheta)\)</span> and the posterior <span class="math notranslate nohighlight">\(f_x(\vartheta)\)</span>. In the case of a univariate normal, the <em>Gaussian-predictive</em> distribution is given by:</p>
@@ -661,23 +655,49 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/3260315760faa9350e38be2782ca7384d5df4224380c19f16562f799a02d718b.png" src="../_images/3260315760faa9350e38be2782ca7384d5df4224380c19f16562f799a02d718b.png" />
+<img alt="../_images/1d7cb76a1c9ecdd99f12a67b67b660cc14c92e6c869e7c7a4e7a40290c12ef69.png" src="../_images/1d7cb76a1c9ecdd99f12a67b67b660cc14c92e6c869e7c7a4e7a40290c12ef69.png" />
 </div>
 </div>
 </section>
 <section id="filtering-the-sufficient-statistics-of-a-non-stationary-distribution">
 <h2>Filtering the Sufficient Statistics of a Non-Stationary Distribution<a class="headerlink" href="#filtering-the-sufficient-statistics-of-a-non-stationary-distribution" title="Link to this heading">#</a></h2>
-<p>Real-world applications of Bayesian filtering imply non-stationary distributions, in which cases the agent cannot rely anymore on distant observation and has to weigh down their evidence proportional to their distance from the current time point. In the current framework, this suggests that <span class="math notranslate nohighlight">\(\nu\)</span>, the pseudo-count vector, cannot linearly increase with the number of new observations but has to be limited. The most straightforward way is then to fix it to some values.</p>
-<section id="using-a-fixed-nu">
-<h3>Using a fixed <span class="math notranslate nohighlight">\(\nu\)</span><a class="headerlink" href="#using-a-fixed-nu" title="Link to this heading">#</a></h3>
-<p>This operation can be achieved using a continuous state node that implements the exponential family updates on the values that are passed by the value child nodes. Such nodes are referred to as <code class="docutils literal notranslate"><span class="pre">exponential-state</span></code> nodes, with the type of distribution (here a simple one-dimensional Gaussian distribution). The input node is set to generic, which means that this input simply passes the observed value to the value parents without any additional computation. We can define such a model as follows:</p>
+<p>Real-world applications of Bayesian filtering imply non-stationary distributions, in which cases the agent can no longer rely on distant observation and has to weigh down their evidence proportional to their distance from the current time point. In the current framework, this suggests that <span class="math notranslate nohighlight">\(\nu\)</span>, the pseudo-count vector, cannot linearly increase with the number of new observations but has to be limited. The most straightforward way is then to fix it to some values. Here, we start by applying this naive approach to a set of popular distributions, and then for each of them we illustrate how a collection of Hierarchical Gaussian Filters over sufficient statistics can help dynamic inference over the variable <span class="math notranslate nohighlight">\(\nu\)</span> itself.</p>
+<section id="gaussian-distribution">
+<h3>Gaussian distribution<a class="headerlink" href="#gaussian-distribution" title="Link to this heading">#</a></h3>
+<section id="generalised-bayesian-filtering-using-a-fixed-nu">
+<h4>Generalised Bayesian Filtering: using a fixed <span class="math notranslate nohighlight">\(\nu\)</span><a class="headerlink" href="#generalised-bayesian-filtering-using-a-fixed-nu" title="Link to this heading">#</a></h4>
+<p>This operation can be achieved using an exponential family state node, using the following parameters:</p>
+<ul class="simple">
+<li><p>Setting <code class="docutils literal notranslate"><span class="pre">kind=&quot;ef-state&quot;</span></code>. We also set <code class="docutils literal notranslate"><span class="pre">learning=&quot;generalised-filtering&quot;</span></code> to explicitly inform the node it should use the general filtering approach (using a fixed <span class="math notranslate nohighlight">\(\nu\)</span>)</p></li>
+<li><p>using a 1-dimensional Gaussian distribution by setting <code class="docutils literal notranslate"><span class="pre">distribution=&quot;normal&quot;</span></code></p></li>
+<li><p>using <code class="docutils literal notranslate"><span class="pre">nus=3.0</span></code>, this parameter will behave as the inverse of a learning rate, informing how much in the past we are looking to update the current sufficient statistics.</p></li>
+<li><p>setting <code class="docutils literal notranslate"><span class="pre">xis=np.array([0,</span> <span class="pre">1</span> <span class="pre">/</span> <span class="pre">8])</span></code>, this is our starting point and first guess for the expected sufficient statistics.</p></li>
+</ul>
+<p>Some of these steps were unnecessary, as this is the toolbox’s default behaviour, but we added them here for clarity.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generalised_filter</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> <span class="n">xis</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">]))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generalised_filter</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="n">nus</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">xis</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">])</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
+<div class="dropdown admonition note">
+<p class="admonition-title">Note</p>
+<p>From sufficient statistics to distribution parameters and backwards</p>
+<p>When using a 1-dimensional Gaussian distribution, Setting <span class="math notranslate nohighlight">\(\xi = [0, \frac{1}{8}]\)</span> is equivalent to a mean <span class="math notranslate nohighlight">\(\mu = 0.0\)</span> and a variance <span class="math notranslate nohighlight">\(\sigma^2 = \frac{1}{8}\)</span>. You can convert between distribution parameters and expected sufficient statistics using the distribution classes from PyHGF (when implemented):</p>
+<blockquote>
+<div><p>Array([1.5 , 2.25], dtype=float32)</p>
+</div></blockquote>
+<blockquote>
+<div><p>Array([0., 4.], dtype=float32)</p>
+</div></blockquote>
+<blockquote>
+<div><p>(0.0, 4.0)</p>
+</div></blockquote>
+</div>
+<p>The resulting network consists in a single node that encapsulate all computation and do not depends on other nodes. Nodes supporting exponential family distribution can therefore support inputs of various shapes whithout requiring multiple input nodes.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generalised_filter</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
@@ -694,22 +714,37 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>  <span class="c1"># time points</span>
 
 <span class="c1"># create noisy input time series with switching means</span>
-<span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
-<span class="n">xs</span><span class="p">[</span><span class="mi">200</span><span class="p">:</span><span class="mi">400</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.5</span>
-<span class="n">xs</span><span class="p">[</span><span class="mi">600</span><span class="p">:</span><span class="mi">800</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">0.5</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="n">y</span><span class="p">[</span><span class="mi">200</span><span class="p">:</span><span class="mi">400</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.5</span>
+<span class="n">y</span><span class="p">[</span><span class="mi">600</span><span class="p">:</span><span class="mi">800</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">0.5</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">means</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generalised_filter</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">y</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">means</span><span class="p">,</span> <span class="n">variances</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 <span class="n">nus</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">35</span><span class="p">]</span>
 <span class="k">for</span> <span class="n">nu</span> <span class="ow">in</span> <span class="n">nus</span><span class="p">:</span>
-    <span class="c1"># set the learning rate</span>
+
+    <span class="c1"># set a new learning rate</span>
     <span class="n">generalised_filter</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;nus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nu</span>
 
-    <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">generalised_filter</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">xs</span><span class="p">)</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">x_0_xis_0</span><span class="p">)</span>
+    <span class="c1"># fit to new data and convert the sufficient statistics into distribution parameters</span>
+    <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">Normal</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">(</span>
+        <span class="n">xis</span><span class="o">=</span><span class="n">generalised_filter</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="p">)</span>
+
+    <span class="c1"># save distribution parameters    </span>
+    <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+    <span class="n">variances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -721,88 +756,63 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <span class="expanded">Hide code cell source</span>
 </summary>
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">mean</span><span class="p">,</span> <span class="n">nu</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">nus</span><span class="p">):</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;$\nu = </span><span class="si">{</span><span class="n">nu</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Filtering sufficient statistics using a fixed $\nu$&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observations&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;$\nu = </span><span class="si">{</span><span class="n">nu</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Filtering sufficient statistics using a fixed $\nu$&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Mean&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">variance</span><span class="p">,</span> <span class="n">nu</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">variances</span><span class="p">,</span> <span class="n">nus</span><span class="p">):</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;$\nu = </span><span class="si">{</span><span class="n">nu</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observations&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Standard deviation&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/3797e86aee4d3f8d0645cde2135e9a0f1897c9f40884379211b289c663381866.png" src="../_images/3797e86aee4d3f8d0645cde2135e9a0f1897c9f40884379211b289c663381866.png" />
+<img alt="../_images/921b267ba7c54dbe688bb9e197649ba9a583d4680c4a24e9a79f53753b501fa4.png" src="../_images/921b267ba7c54dbe688bb9e197649ba9a583d4680c4a24e9a79f53753b501fa4.png" />
 </div>
 </div>
 <p>We can see that larger values for <span class="math notranslate nohighlight">\(\nu\)</span> correspond to a lower learning rate, and therefore smoother transition between states.</p>
 </section>
 <section id="using-a-dynamically-adapted-nu-through-a-collection-of-hierarchical-gaussian-filters">
-<h3>Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters<a class="headerlink" href="#using-a-dynamically-adapted-nu-through-a-collection-of-hierarchical-gaussian-filters" title="Link to this heading">#</a></h3>
+<h4>Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters<a class="headerlink" href="#using-a-dynamically-adapted-nu-through-a-collection-of-hierarchical-gaussian-filters" title="Link to this heading">#</a></h4>
 <p>Limiting the number of past observations weighting in the predictive distribution comes with the difficult question of how to choose the correct value for such a parameter. Here, one solution to handle this is to let this parameter vary across time as a function of the volatility of the observations. Large unexpected variations should increase the learning rate, while limited, expected variations should increase the posterior precision. Interestingly, this is the kind of dynamic adaptation that reinforcement learning models are implementing, including the Hierarchical Gaussian Filter in this category. Here, we can derive the implied <span class="math notranslate nohighlight">\(\nu\)</span> from a ratio of prediction and observation differentials such as:</p>
 <div class="math notranslate nohighlight">
 \[
-\nu = \frac{\delta}{\Delta}
+\nu \leftarrow \frac{\delta}{\Delta}
 \]</div>
 <p>with <span class="math notranslate nohighlight">\(\delta\)</span> the prediction error at time <span class="math notranslate nohighlight">\(k\)</span> and <span class="math notranslate nohighlight">\(\Delta\)</span> the differential of expectations (before and after observing the new value).</p>
-<section id="univariate-normal-distribution">
-<h4>Univariate normal distribution<a class="headerlink" href="#univariate-normal-distribution" title="Link to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">univariate_hgf</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">node_parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">})</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">node_parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">6.0</span><span class="p">})</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;tonaic_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">}</span>
-    <span class="p">)</span>
-    <span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">xs</span><span class="p">)</span>
-<span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">univariate_hgf</span> <span class="o">=</span>  <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;hgf-1&quot;</span><span class="p">)</span>
+<span class="n">univariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">100.0</span>
+<span class="n">univariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">100.0</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">expected_mean</span> <span class="o">=</span> <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-<span class="n">mean</span> <span class="o">=</span> <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
-
-<span class="n">nus</span> <span class="o">=</span> <span class="p">(</span><span class="n">xs</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mean</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">nus</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;Implied $\nu$&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Implied $\nu$ parameter by the HGF learning rate&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\nu$&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observations&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">univariate_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/612efce8c9da901eb705a2b8a34e972d3e1c7fd0386b03121abe92ded91329aa.png" src="../_images/612efce8c9da901eb705a2b8a34e972d3e1c7fd0386b03121abe92ded91329aa.png" />
+<img alt="../_images/8ca51cd21b35854f5932342ef4fd35a94d04b041277f0cdd68c86954a443555f.svg" src="../_images/8ca51cd21b35854f5932342ef4fd35a94d04b041277f0cdd68c86954a443555f.svg" />
 </div>
 </div>
-</section>
-<section id="bivariate-normal-distribution">
-<h4>Bivariate normal distribution<a class="headerlink" href="#bivariate-normal-distribution" title="Link to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># simulate an ordered spiral data set</span>
-<span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
-<span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
-<span class="n">r_a</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
-<span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">univariate_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">y</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -810,165 +820,257 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the sufficient statistics from the first observation to parametrize the model</span>
-<span class="n">sufficient_statistics</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
-    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">input_data</span>
+<span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
+    <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
-<p>Filtering the sufficient statistics of a two dimensional multivariate normal distribution requires tracking the values of 5 parameters in paralell. Our model therefore consist in 5 independent two-level continuous HGF.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Filtering sufficient statistics using a HGF informed learning rate&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Mean&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">value_children</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-        <span class="n">node_parameters</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;tonic_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">6.0</span><span class="p">,</span>
-            <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">sufficient_statistics</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-        <span class="p">},</span>
-    <span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Standard deviation&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observations&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Standard deviation&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">5</span><span class="p">],</span>
-        <span class="n">node_parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;tonic_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">},</span>
-    <span class="p">)</span>
-<span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<img alt="../_images/e03be50eabfef7ec0922033444f965d4523871131b4be168d6e9409748cc5115.svg" src="../_images/e03be50eabfef7ec0922033444f965d4523871131b4be168d6e9409748cc5115.svg" />
-</div>
-</div>
-<p>For us to compute the hyperparameter after each update, we need to <em>manually</em> call the belief propagation sequence.</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">update_sequence</span> <span class="o">=</span> <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">get_network</span><span class="p">()</span>
-
-<span class="n">nus</span><span class="p">,</span> <span class="n">means</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">attributes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
-    <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
-
-    <span class="c1"># interleave observations and masks</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(</span>
-            <span class="p">(</span>
-                <span class="n">sufficient_statistics</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sufficient_statistics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
-            <span class="p">)</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
-    <span class="p">)</span>
-
-    <span class="n">attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">beliefs_propagation</span><span class="p">(</span>
-        <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
-        <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
-        <span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
-        <span class="n">update_sequence</span><span class="o">=</span><span class="n">update_sequence</span><span class="p">,</span>
-        <span class="n">input_idxs</span><span class="o">=</span><span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">new_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">attributes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
-    <span class="n">nus</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">sufficient_statistics</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">new_mean</span> <span class="o">-</span> <span class="n">mean</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">nus</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nus</span><span class="p">)</span>
-<span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
-<summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
-</summary>
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">nus</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;Implied $\nu$&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;Implied $\nu_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">$ parameter by the HGF learning rate&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;$\nu_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observations&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-</details>
 <div class="cell_output docutils container">
-<img alt="../_images/12cab9c99f63ff9c5d7b4bc7627dd3b1f9e629acb9fffa89bfa7ec00a22e9fcb.png" src="../_images/12cab9c99f63ff9c5d7b4bc7627dd3b1f9e629acb9fffa89bfa7ec00a22e9fcb.png" />
+<img alt="../_images/4d72eedb3192ef75e6afb785845269645d1aa8a6bf56199e263ebc6d22be3472.png" src="../_images/4d72eedb3192ef75e6afb785845269645d1aa8a6bf56199e263ebc6d22be3472.png" />
 </div>
 </div>
-<div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
-<summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
-</summary>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this model, each sufficient statistic is filtered separately, resulting in an implied learning rate for each of them. While this approach has the advantage of dynamically learning the various components of a distribution (see also how this can be done by value and volatility parents in the case of a continuous input <a class="reference internal" href="Example_2_Input_node_volatility_coupling.html#example-2"><span class="std std-ref">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</span></a>), this can result in invalid sufficient statistics (e.g. where the equality <span class="math notranslate nohighlight">\(\xi_1^2 = \xi_2\)</span> does not hold anymore). Here, and in the rest of the examples, we simply average the learning rate to ensure consistent updating of the predictive distribution.</p>
+</div>
+</section>
+</section>
+<section id="multivariate-gaussian-distribution">
+<h3>Multivariate Gaussian distribution<a class="headerlink" href="#multivariate-gaussian-distribution" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># run this code to create the animation</span>
-
-<span class="c1"># fig, ax = plt.subplots(figsize=(5, 5))</span>
-<span class="c1"># scat = ax.scatter(</span>
-<span class="c1">#     input_data[0, 0],</span>
-<span class="c1">#     input_data[0, 1],</span>
-<span class="c1">#     edgecolor=&quot;k&quot;,</span>
-<span class="c1">#     alpha=0.4,</span>
-<span class="c1">#     s=10</span>
-<span class="c1"># )</span>
-<span class="c1"># scat2 = ax.scatter(</span>
-<span class="c1">#     means[0, 1],</span>
-<span class="c1">#     means[0, 0],</span>
-<span class="c1">#     edgecolor=&quot;#c44e52&quot;,</span>
-<span class="c1">#     s=25</span>
-<span class="c1"># )</span>
-<span class="c1"># plot = ax.plot(</span>
-<span class="c1">#     means[0, 1],</span>
-<span class="c1">#     means[0, 0],</span>
-<span class="c1">#     color=&quot;#c44e52&quot;,</span>
-<span class="c1">#     linestyle=&quot;--&quot;,</span>
-<span class="c1">#     label=&quot;Belief trajectory&quot;</span>
-<span class="c1"># )[0]</span>
-<span class="c1"># ax.grid(linestyle=&quot;--&quot;)</span>
-<span class="c1"># ax.set(</span>
-<span class="c1">#     xlim=[-35, 35],</span>
-<span class="c1">#     ylim=[-35, 35],</span>
-<span class="c1">#     xlabel=r&quot;$x_1$&quot;,</span>
-<span class="c1">#     ylabel=r&quot;$x_2$&quot;,</span>
-<span class="c1">#     title=r&quot;Filtering a bivariate stochastic process&quot;,</span>
-<span class="c1"># )</span>
-<span class="c1"># plt.tight_layout()</span>
-<span class="c1">#</span>
-<span class="c1">#</span>
-<span class="c1"># def update(frame):</span>
-<span class="c1">#     # update the scatter plot</span>
-<span class="c1">#     data = np.stack([input_data[:frame, 0], input_data[:frame, 1]]).T</span>
-<span class="c1">#     scat.set_offsets(data)</span>
-<span class="c1">#</span>
-<span class="c1">#     data2 = np.stack([means[frame, 0], means[frame, 1]]).T</span>
-<span class="c1">#     scat2.set_offsets(data2)</span>
-<span class="c1">#</span>
-<span class="c1">#     # update the belief trajectory</span>
-<span class="c1">#     plot.set_ydata(means[:frame, 1])</span>
-<span class="c1">#     plot.set_xdata(means[:frame, 0])</span>
-<span class="c1">#     return scat, scat2, plot</span>
-<span class="c1">#</span>
-<span class="c1"># ani = animation.FuncAnimation(fig=fig, func=update, frames=1000, interval=30)</span>
-<span class="c1"># ani.save(&quot;anim.gif&quot;)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># simulate an ordered spiral data set</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">r_a</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">spiral_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">])</span><span class="o">.</span><span class="n">T</span> 
+<span class="n">spiral_data</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.75</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
 </pre></div>
 </div>
 </div>
-</details>
 </div>
-<p><img alt="multivariate_hgf" src="../_images/multivariate_hgf.gif" /></p>
-<div class="admonition note">
+<section id="id3">
+<h4>Generalised Bayesian Filtering: using a fixed <span class="math notranslate nohighlight">\(\nu\)</span><a class="headerlink" href="#id3" title="Link to this heading">#</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_normal</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> 
+    <span class="n">nus</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+    <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;generalised-filtering&quot;</span><span class="p">,</span> 
+    <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span> 
+    <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">spiral_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the sufficient statistics from the first observation to parametrize the model</span>
+<span class="n">means</span><span class="p">,</span> <span class="n">covariances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
+    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bivariate_normal</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">],</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<figure class="align-default" id="multivariate-normal">
+<img alt="../_images/multivariate_normal.gif" src="../_images/multivariate_normal.gif" />
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">The animation above displays the mean and covariance tracking of a bivariate normal distribution. The ellipse represents the 95% confidence interval of the covariance matrix. We can see that uncertainty is increasing in noisier sections of the distribution trajectory.</span><a class="headerlink" href="#multivariate-normal" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+<div class="dropdown admonition note">
 <p class="admonition-title">Note</p>
-<p>The animation above displays the mean tracking of a bivariate normal distribution. This is equivalent to tracking the mean of the x and y axis using two separate HGFs. However, the generalized filtering process does more than that under the hood by tracking the whole sufficient statistic vector, which incorporates information about the covariance of the implied multivariate distribution. The full visualization of this distribution requires derivating the posterior predictive distribution of the multivariate normal, as parametrized by the vectors <span class="math notranslate nohighlight">\(\nu\)</span> and <span class="math notranslate nohighlight">\(\xi\)</span>.</p>
+<p>Code to create this animation 👈</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.animation</span><span class="w"> </span><span class="kn">import</span> <span class="n">FuncAnimation</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">chi2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.patches</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ellipse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultivariateNormal</span>
+
+<span class="c1"># simulate an ordered spiral data set</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">r_a</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">spiral_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">])</span><span class="o">.</span><span class="n">T</span> 
+<span class="n">spiral_data</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.75</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+<span class="n">bivariate_normal</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> 
+    <span class="n">nus</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+    <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;generalised-filtering&quot;</span><span class="p">,</span> 
+    <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span> 
+    <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">spiral_data</span><span class="p">)</span>
+
+<span class="c1"># get the sufficient statistics from the first observation to parametrize the model</span>
+<span class="n">means</span><span class="p">,</span> <span class="n">covariances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
+    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bivariate_normal</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">],</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_confidence_intervals</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">confidence_level</span><span class="o">=</span><span class="mf">.95</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+       
+    <span class="c1"># Chi-squared value for the confidence level</span>
+    <span class="n">chi2_val</span> <span class="o">=</span> <span class="n">chi2</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">confidence_level</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">scaling_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">chi2_val</span><span class="p">)</span>
+    
+    <span class="c1"># Eigenvalues and eigenvectors of the covariance matrix</span>
+    <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate the ellipse parameters</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">scaling_factor</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># Semi-major axis</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">scaling_factor</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># Semi-minor axis</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">eigenvectors</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>  <span class="c1"># Use the largest eigenvalue&#39;s eigenvector</span>
+    
+    <span class="c1"># Return the ellipse</span>
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Ellipse</span><span class="p">(</span><span class="n">xy</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="n">angle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#c44e52&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">angle</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">scat</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">spiral_data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">spiral_data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+<span class="n">scat2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;#c44e52&quot;</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">25</span>
+<span class="p">)</span>
+<span class="n">plot</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#c44e52&quot;</span><span class="p">,</span>
+    <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Belief trajectory&quot;</span>
+<span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Confidence intervals</span>
+<span class="n">ellipse</span> <span class="o">=</span> <span class="n">plot_confidence_intervals</span><span class="p">(</span><span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">covariances</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">ellipse</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">xlim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="mi">35</span><span class="p">],</span>
+    <span class="n">ylim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="mi">35</span><span class="p">],</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$x_1$&quot;</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$x_2$&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Bayesian Filtering </span><span class="se">\n</span><span class="s2"> of a Bivariate Stochastic Process&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="n">frame</span> <span class="o">*=</span> <span class="mi">3</span>
+    <span class="c1"># update the scatter plot</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">spiral_data</span><span class="p">[:</span><span class="n">frame</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">spiral_data</span><span class="p">[:</span><span class="n">frame</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">scat</span><span class="o">.</span><span class="n">set_offsets</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">data2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">means</span><span class="p">[</span><span class="n">frame</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">means</span><span class="p">[</span><span class="n">frame</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">scat2</span><span class="o">.</span><span class="n">set_offsets</span><span class="p">(</span><span class="n">data2</span><span class="p">)</span>
+
+    <span class="c1"># update the belief trajectory</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="n">means</span><span class="p">[:</span><span class="n">frame</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">plot</span><span class="o">.</span><span class="n">set_xdata</span><span class="p">(</span><span class="n">means</span><span class="p">[:</span><span class="n">frame</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># update the confidence intervals</span>
+    <span class="n">mean</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">angle</span> <span class="o">=</span> <span class="n">plot_confidence_intervals</span><span class="p">(</span>
+        <span class="n">means</span><span class="p">[</span><span class="n">frame</span><span class="p">,</span> <span class="p">:],</span> <span class="n">covariances</span><span class="p">[</span><span class="n">frame</span><span class="p">,</span> <span class="p">:],</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span>
+    <span class="n">ellipse</span><span class="o">.</span><span class="n">set_center</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+    <span class="n">ellipse</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+    <span class="n">ellipse</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+    <span class="n">ellipse</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+
+    <span class="k">return</span> <span class="n">scat</span><span class="p">,</span> <span class="n">scat2</span><span class="p">,</span> <span class="n">plot</span><span class="p">,</span> <span class="n">ellipse</span>
+
+<span class="n">ani</span> <span class="o">=</span> <span class="n">FuncAnimation</span><span class="p">(</span><span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">frames</span><span class="o">=</span><span class="mi">333</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">ani</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;anim.gif&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="id4">
+<h4>Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters<a class="headerlink" href="#id4" title="Link to this heading">#</a></h4>
+<p>Filtering the sufficient statistics of a two-dimensional multivariate normal distribution requires tracking the values of 5 parameters in parallel. Our model therefore consists of 5 independent two-level continuous HGF.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> 
+    <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;hgf-2&quot;</span><span class="p">,</span> 
+    <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span> 
+    <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+
+<span class="c1"># adapting prior parameter values to the sufficient statistics</span>
+<span class="c1"># covariances statistics will have greater variability and amplitudes</span>
+<span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">14</span><span class="p">]:</span>
+    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
+<span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">]:</span>
+    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">.01</span>
+<span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">15</span><span class="p">]:</span>
+    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/8ab85f138a65e99d47a7ca027c3c3f106fbf7bbb6588d1b8e3d87076a13d5012.svg" src="../_images/8ab85f138a65e99d47a7ca027c3c3f106fbf7bbb6588d1b8e3d87076a13d5012.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">spiral_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the sufficient statistics</span>
+<span class="n">xis</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
+    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">spiral_data</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
 </div>
 </section>
 </section>
@@ -984,23 +1086,23 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed Dec 18 2024
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Jan 14 2025
 
 Python implementation: CPython
 Python version       : 3.12.8
-IPython version      : 8.29.0
+IPython version      : 8.31.0
 
-pyhgf : 0.2.1
+pyhgf : 0.2.2
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-matplotlib: 3.9.2
+IPython   : 8.31.0
 jax       : 0.4.31
-pyhgf     : 0.2.1
+matplotlib: 3.10.0
 numpy     : 1.26.0
-sys       : 3.12.8 (main, Dec  4 2024, 06:19:59) [GCC 11.4.0]
-IPython   : 8.29.0
+sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
 seaborn   : 0.13.2
+pyhgf     : 0.2.2
 
 Watermark: 2.5.0
 </pre></div>
@@ -1044,7 +1146,8 @@ Watermark: 2.5.0
             
             
               
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
   <div class="sidebar-secondary-item">
@@ -1055,13 +1158,18 @@ Watermark: 2.5.0
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">From Reinforcement Learning to Generalised Bayesian Filtering</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Generalised Bayesian Filtering of exponential family distributions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#theory">Theory</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-the-sufficient-statistics-of-a-stationary-distribution">Filtering the Sufficient Statistics of a Stationary Distribution</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-the-sufficient-statistics-of-a-non-stationary-distribution">Filtering the Sufficient Statistics of a Non-Stationary Distribution</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-a-fixed-nu">Using a fixed <span class="math notranslate nohighlight">\(\nu\)</span></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-a-dynamically-adapted-nu-through-a-collection-of-hierarchical-gaussian-filters">Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#univariate-normal-distribution">Univariate normal distribution</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#bivariate-normal-distribution">Bivariate normal distribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gaussian-distribution">Gaussian distribution</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#generalised-bayesian-filtering-using-a-fixed-nu">Generalised Bayesian Filtering: using a fixed <span class="math notranslate nohighlight">\(\nu\)</span></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#using-a-dynamically-adapted-nu-through-a-collection-of-hierarchical-gaussian-filters">Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#multivariate-gaussian-distribution">Multivariate Gaussian distribution</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Generalised Bayesian Filtering: using a fixed <span class="math notranslate nohighlight">\(\nu\)</span></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Using a dynamically adapted <span class="math notranslate nohighlight">\(\nu\)</span> through a collection of Hierarchical Gaussian Filters</a></li>
 </ul>
 </li>
 </ul>
@@ -1074,13 +1182,13 @@ Watermark: 2.5.0
   </nav></div>
 
   <div class="sidebar-secondary-item">
-
-  <div class="tocsection sourcelink">
-    <a href="../_sources/notebooks/0.3-Generalised_filtering.ipynb.txt">
-      <i class="fa-solid fa-file-lines"></i> Show Source
-    </a>
-  </div>
-</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/notebooks/0.3-Generalised_filtering.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
 
 </div></div>
               
@@ -1095,8 +1203,8 @@ Watermark: 2.5.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1107,7 +1215,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2024, Nicolas Legrand.
+      © Copyright 2022-2025, Nicolas Legrand.
       <br/>
     
   </p>
@@ -1129,7 +1237,8 @@ Watermark: 2.5.0
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
 </p></div>
       
     </div>

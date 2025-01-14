@@ -76,7 +76,7 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 :::{grid-item-card}  Generalised Bayesian filtering
 :link: generalised_filtering
 :link-type: ref
-:img-top: ./images/multivariate_hgf.gif
+:img-top: ./images/multivariate_normal.gif
 
 
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.
