@@ -154,7 +154,7 @@ def add_ef_state(
         n_nodes=n_nodes,
         node_type=node_type,
         node_parameters=node_parameters,
-        value_children=(None, None),
+        value_children=value_children,
     )
 
     # loop over the indexes of nodes created in the previous step
