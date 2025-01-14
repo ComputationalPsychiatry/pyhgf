@@ -57,10 +57,10 @@ jobs:
       # Step 8: Run Tests and Generate Coverage Report
       - name: Run tests and coverage
         run: |
-          poetry run pytest ./tests/ --cov=./src/pyhgf/ --cov-report=xml
+          poetry run pytest --cov-branch --cov-report=xml
 
       # Step 9: Upload Coverage Report to Codecov
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}  # Make sure to set this token in repository secrets
+          token: ${{ secrets.CODECOV_TOKEN }}
