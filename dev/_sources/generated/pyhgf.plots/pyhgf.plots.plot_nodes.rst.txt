@@ -1,0 +1,6 @@
+﻿pyhgf.plots.plot\_nodes
+=======================
+
+.. currentmodule:: pyhgf.plots
+
+.. autofunction:: plot_nodes
