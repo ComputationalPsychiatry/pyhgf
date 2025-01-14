@@ -57,7 +57,7 @@ jobs:
       # Step 8: Run Tests and Generate Coverage Report
       - name: Run tests and coverage
         run: |
-          poetry run pytest --cov-branch --cov-report=xml
+          poetry run pytest ./tests/ --cov=./pyhgf/ --cov-report=xml --cov-branch
 
       # Step 9: Upload Coverage Report to Codecov
       - name: Upload coverage reports to Codecov
