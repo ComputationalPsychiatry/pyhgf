@@ -135,7 +135,7 @@ def test_remove_node():
     )
 
     attributes, edges, _ = network.get_network()
-    new_attributes, new_edges = remove_node(attributes, edges, 1)
+    new_attributes, new_edges = remove_node(attributes, edges, 2)
 
     assert len(new_attributes) == 5
     assert len(new_edges) == 4
