@@ -687,12 +687,26 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <p class="admonition-title">Note</p>
 <p>From sufficient statistics to distribution parameters and backwards</p>
 <p>When using a 1-dimensional Gaussian distribution, Setting <span class="math notranslate nohighlight">\(\xi = [0, \frac{1}{8}]\)</span> is equivalent to a mean <span class="math notranslate nohighlight">\(\mu = 0.0\)</span> and a variance <span class="math notranslate nohighlight">\(\sigma^2 = \frac{1}{8}\)</span>. You can convert between distribution parameters and expected sufficient statistics using the distribution classes from PyHGF (when implemented):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">Normal</span>
+
+<span class="c1"># from an observation to sufficient statistics</span>
+<span class="n">Normal</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+</pre></div>
+</div>
 <blockquote>
 <div><p>Array([1.5 , 2.25], dtype=float32)</p>
 </div></blockquote>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># from distribution parameters to sufficient statistics</span>
+<span class="n">Normal</span><span class="o">.</span><span class="n">sufficient_statistics_from_parameters</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">variance</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+</pre></div>
+</div>
 <blockquote>
 <div><p>Array([0., 4.], dtype=float32)</p>
 </div></blockquote>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># from sufficient statistics to distribution parameters</span>
+<span class="n">Normal</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">(</span><span class="n">xis</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+</pre></div>
+</div>
 <blockquote>
 <div><p>(0.0, 4.0)</p>
 </div></blockquote>
@@ -1086,23 +1100,23 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Jan 14 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed Jan 15 2025
 
 Python implementation: CPython
 Python version       : 3.12.8
 IPython version      : 8.31.0
 
-pyhgf : 0.0.0.post1.dev0+2fd984b
+pyhgf : 0.0.0.post1.dev0+833aaa7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 8.31.0
-pyhgf     : 0.0.0.post1.dev0+2fd984b
 seaborn   : 0.13.2
-jax       : 0.4.31
-sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
 matplotlib: 3.10.0
 numpy     : 1.26.0
+IPython   : 8.31.0
+jax       : 0.4.31
+sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
+pyhgf     : 0.0.0.post1.dev0+833aaa7
 
 Watermark: 2.5.0
 </pre></div>
