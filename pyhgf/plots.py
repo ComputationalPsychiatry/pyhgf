@@ -264,13 +264,7 @@ def plot_network(network: "Network") -> "Source":
 
         style = "filled" if idx in network.input_idxs else ""
 
-        if network.edges[idx].node_type == 0:
-            # binary state node
-            graphviz_structure.node(
-                f"x_{idx}", label=str(idx), shape="ellipse", style=style
-            )
-
-        elif network.edges[idx].node_type == 1:
+        if network.edges[idx].node_type == 1:
             # binary state node
             graphviz_structure.node(
                 f"x_{idx}", label=str(idx), shape="square", style=style

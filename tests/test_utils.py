@@ -20,14 +20,24 @@ def test_imports():
 
 def test_add_edges():
     """Test the add_edges function."""
-    network = Network().add_nodes().add_nodes(n_nodes=3)
+
+    # add value coupling
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(parent_idxs=1, children_idxs=0, coupling_strengths=1.0)
+    network.add_edges(parent_idxs=1, children_idxs=2, coupling_strengths=1.0)
+
+    # add volatility coupling
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind="volatility", parent_idxs=1, children_idxs=0, coupling_strengths=1
+    )
+    network.add_edges(
+        kind="volatility", parent_idxs=1, children_idxs=2, coupling_strengths=1
+    )
+
+    # expected error for invalid type
     with raises(Exception):
         network.add_edges(kind="error")
-
-    network.add_edges(
-        kind="volatility", parent_idxs=2, children_idxs=0, coupling_strengths=1
-    )
-    network.add_edges(parent_idxs=1, children_idxs=0, coupling_strengths=1.0)
 
 
 def test_find_branch():
@@ -118,13 +128,14 @@ def test_remove_node():
     """Test the remove_node function."""
     network = (
         Network()
-        .add_nodes(n_nodes=4)
+        .add_nodes(n_nodes=2)
+        .add_nodes(value_children=0, volatility_children=1)
+        .add_nodes(volatility_children=2)
         .add_nodes(value_children=2)
-        .add_nodes(value_children=3)
     )
 
     attributes, edges, _ = network.get_network()
     new_attributes, new_edges = remove_node(attributes, edges, 1)
 
-    assert len(new_attributes) == 6
-    assert len(new_edges) == 5
+    assert len(new_attributes) == 5
+    assert len(new_edges) == 4

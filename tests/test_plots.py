@@ -27,7 +27,7 @@ def test_plotting_functions():
     ).input_data(input_data=timeserie)
 
     # plot trajectories
-    two_level_continuous.plot_trajectories()
+    two_level_continuous.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     two_level_continuous.plot_correlations()
@@ -53,7 +53,7 @@ def test_plotting_functions():
     ).input_data(input_data=timeserie)
 
     # plot trajectories
-    three_level_continuous.plot_trajectories()
+    three_level_continuous.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     three_level_continuous.plot_correlations()
@@ -88,7 +88,7 @@ def test_plotting_functions():
     ).input_data(u)
 
     # plot trajectories
-    two_level_binary_hgf.plot_trajectories()
+    two_level_binary_hgf.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     two_level_binary_hgf.plot_correlations()
@@ -116,7 +116,7 @@ def test_plotting_functions():
     ).input_data(u)
 
     # plot trajectories
-    three_level_binary_hgf.plot_trajectories()
+    three_level_binary_hgf.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     three_level_binary_hgf.plot_correlations()
