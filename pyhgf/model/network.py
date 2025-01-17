@@ -24,6 +24,7 @@ from pyhgf.utils import (
     beliefs_propagation,
     get_input_idxs,
     get_update_sequence,
+    inference_prediction,
     to_pandas,
 )
 
@@ -88,21 +89,24 @@ class Network:
     ) -> "Network":
         """Create the belief propagation function.
 
-        .. note:
-           This step is called by default when using py:meth:`input_data`.
-
         Parameters
         ----------
-        overwrite :
-            If `True` (default), create a new belief propagation function and ignore
+        overwrite : bool, optional
+            If ``True`` (default), create a new belief propagation function and ignore
             preexisting values. Otherwise, do not create a new function if the attribute
-            `scan_fn` is already defined.
-        update_type :
-            The type of update to perform for volatility coupling. Can be `"eHGF"`
-            (defaults) or `"standard"`. The eHGF update step was proposed as an
+            ``scan_fn`` is already defined.
+        update_type : str, optional
+            The type of update to perform for volatility coupling. Can be ``"eHGF"``
+            (default) or ``"standard"``. The eHGF update step was proposed as an
             alternative to the original definition in that it starts by updating the
-            mean and then the precision of the parent node, which generally reduces the
-            errors associated with impossible parameter space and improves sampling.
+            mean and then the precision of the parent node, which generally reduces
+            the errors associated with impossible parameter space and improves sampling.
+
+        Returns
+        -------
+        Network
+            Returns the current instance of the network with the (potentially new)
+            belief propagation function bound to the ``scan_fn`` attribute.
 
         """
         # get the dimension of the input nodes
@@ -124,6 +128,112 @@ class Network:
                 edges=self.edges,
                 input_idxs=self.input_idxs,
             )
+
+        return self
+
+    def create_inference_fn(
+        self, overwrite: bool = True, update_type: str = "eHGF"
+    ) -> "Network":
+        """Create the prediction function (``scan_fn``).
+
+        Parameters
+        ----------
+        overwrite : bool, optional
+            If ``True`` (default), create a new belief propagation function and ignore
+            any preexisting values. If ``False``, a new function is not created if
+            ``scan_fn`` is already defined.
+        update_type : str, optional
+            The type of update to perform for volatility coupling. Can be ``"eHGF"``
+            (default) or ``"standard"``. The eHGF update step starts by updating
+            the mean and then the precision of the parent node, which can reduce
+            parameter-space errors and improve sampling stability.
+
+        Returns
+        -------
+        Network
+            Returns the current instance of the network with the (potentially new)
+            ``scan_fn`` attribute defined, allowing for method chaining.
+
+        """
+        # Ensure that an update sequence exists; if not, create one.
+        if self.update_sequence is None:
+            self.update_sequence = get_update_sequence(
+                network=self, update_type=update_type
+            )
+
+        # Create or overwrite the belief propagation function (scan_fn).
+        # This function will be used by lax.scan (or a similar mechanism) to loop
+        # over observations.
+        if (self.scan_fn is None) or overwrite:
+            self.scan_fn = Partial(
+                inference_prediction,
+                update_sequence=self.update_sequence,
+                edges=self.edges,
+                input_idxs=self.input_idxs,
+                sophisticated=True,
+            )
+
+        return self
+
+    def input_data_prediction(
+        self,
+        time_steps: Optional[np.ndarray] = None,
+        input_idxs: Optional[Tuple[int]] = None,
+    ) -> "Network":
+        """Add new observations to the model and perform predictions over time.
+
+        This method sets up default or user-defined time steps, optionally updates
+        which nodes receive observations, and then applies the scanning mechanism
+        (via ``scan_fn``) to perform belief updates across these time steps.
+        If no scanning function is defined, it is created by calling
+        :meth:`create_inference_fn`.
+
+        Parameters
+        ----------
+        time_steps : np.ndarray, optional
+            An array specifying the time points at which observations occur.
+            If ``None`` (default), it defaults to ``np.ones(100)``.
+        input_idxs : tuple of int, optional
+            The indexes of the state nodes that receive observations. If not
+            provided, the existing values for ``self.input_idxs`` are used.
+
+        Returns
+        -------
+        Network
+            Returns the current instance of the network with updated
+            ``last_attributes`` and ``node_trajectories`` for method chaining.
+
+        Notes
+        -----
+        - The arrays ``dummy_values`` and ``dummy_observed`` are placeholders for
+          demonstration. In practice, you should replace them with real observed
+          data and indicators of whether each observation is valid or missing.
+        - The scanning process, driven by ``self.scan_fn``, traverses each time step
+          to update the network's node attributes based on the specified
+          inference algorithm, effectively performing precision-weighted
+          prediction-error corrections.
+
+        """
+        # If input node indexes are provided, set them
+        if input_idxs is not None:
+            self.input_idxs = input_idxs
+
+        # If a scan function hasn't been created, initialize it
+        if self.scan_fn is None:
+            self = self.create_inference_fn()
+
+        # Use default time steps if none are provided
+        if time_steps is None:
+            time_steps = np.ones(100)
+
+        # Perform the scanning operation over the time steps
+        last_attributes, node_trajectories = scan(
+            self.scan_fn, self.attributes, time_steps
+        )
+
+        # Store the final attributes and full trajectory of node updates
+        self.node_trajectories = node_trajectories
+        self.last_attributes = last_attributes
 
         return self
 
