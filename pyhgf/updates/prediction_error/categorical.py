@@ -43,12 +43,11 @@ def categorical_state_prediction_error(
 
     """
     # pass the mean to the binary state nodes
-    for mean, observed, value_parent_idx in zip(
+    for mean, value_parent_idx in zip(
         attributes[node_idx]["mean"],
-        attributes[node_idx]["observed"],
         edges[node_idx].value_parents,  # type: ignore
     ):
         attributes[value_parent_idx]["mean"] = mean
-        attributes[value_parent_idx]["observed"] = observed
+        attributes[value_parent_idx]["observed"] = attributes[node_idx]["observed"]
 
     return attributes

@@ -85,7 +85,7 @@ def test_nonlinear_coupling_fn():
     assert children_number == coupling_fn_length
 
     # pass data
-    test_HGF.input_data(input_data=jnp.array([0.2, 0.2]))
+    test_HGF.input_data(input_data=jnp.array([[0.2, 0.4], [0.2, 0.4]]))
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
@@ -94,7 +94,7 @@ def test_nonlinear_coupling_fn():
         assert jnp.isclose(test_HGF.node_trajectories[2][idx][1], val)
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [2.9125834, 1.9125834, 0.0, 0.0],
+        [2.9124038, 1.9125834, 0.2689424, 0.20181496],
     ):
         assert jnp.isclose(test_HGF.node_trajectories[3][idx][1], val)
 

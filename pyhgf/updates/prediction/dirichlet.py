@@ -44,7 +44,9 @@ def dirichlet_node_prediction(
     if value_parent_idxs is not None:
         parameters = jnp.array(
             [
-                Normal().parameters(xis=attributes[parent_idx]["xis"])
+                Normal().parameters_from_sufficient_statistics(
+                    xis=attributes[parent_idx]["xis"]
+                )
                 for parent_idx in value_parent_idxs
             ]
         )

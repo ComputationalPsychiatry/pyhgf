@@ -2,6 +2,7 @@
 
 import jax.numpy as jnp
 import numpy as np
+from pytest import raises
 
 from pyhgf import load_data
 from pyhgf.model import HGF, Network
@@ -33,7 +34,11 @@ def test_network():
     custom_hgf.create_belief_propagation_fn(overwrite=False)
     custom_hgf.create_belief_propagation_fn(overwrite=True)
 
-    custom_hgf.input_data(input_data=np.ones((10, 2)))
+    custom_hgf.input_data(input_data=np.ones((10, 2)), observed=np.ones((10, 2)))
+
+    # expected error for invalid type
+    with raises(Exception):
+        custom_hgf.add_nodes(kind="error")
 
 
 def test_continuous_hgf():
@@ -155,6 +160,8 @@ def test_custom_sequence():
     update_branches = (update_sequence1, update_sequence2)
     branches_idx = np.random.binomial(n=1, p=0.5, size=len(u))
 
+    three_level_binary_hgf.inpu_dim = []
+    three_level_binary_hgf.scan_fn = None
     three_level_binary_hgf.input_custom_sequence(
         update_branches=update_branches,
         branches_idx=branches_idx,

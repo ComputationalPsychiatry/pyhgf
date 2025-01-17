@@ -115,9 +115,9 @@ def add_binary_state(
 def add_ef_state(
     network: Network,
     n_nodes: int,
-    node_parameters: Dict,
-    additional_parameters: Dict,
-    value_children: Tuple = (None, None),
+    node_parameters: dict,
+    additional_parameters: dict,
+    value_children: tuple = (None, None),
 ):
     """Add exponential family state node(s) to a network."""
     node_type = 3
@@ -128,7 +128,6 @@ def add_ef_state(
         "learning": "generalised-filtering",
         "nus": 3.0,
         "xis": jnp.array([0.0, 1.0]),
-        "mean": 0.0,
         "observed": 1,
     }
 
@@ -136,6 +135,20 @@ def add_ef_state(
         node_parameters, default_parameters, additional_parameters
     )
 
+    # the size of the sufficient statistics vector of a multivariate normal
+    # distribution is given by d + d(d+1) / 2, where d is the dimension
+    d = node_parameters["dimension"]
+    n_suff_stats = d + d * (d + 1) // 2
+    node_parameters["mean"] = jnp.zeros(d) if d > 1 else 0.0
+    node_parameters["observation_ss"] = jnp.zeros(n_suff_stats)
+    if node_parameters["distribution"] == "normal":
+        node_parameters["xis"] = jnp.array([0.0, 1.0])
+    elif node_parameters["distribution"] == "multivariate-normal":
+        node_parameters["xis"] = (
+            MultivariateNormal.sufficient_statistics_from_parameters(
+                mean=jnp.zeros(d), covariance=jnp.identity(d)
+            )
+        )
     network = insert_nodes(
         network=network,
         n_nodes=n_nodes,
@@ -147,22 +160,40 @@ def add_ef_state(
     # loop over the indexes of nodes created in the previous step
     for node_idx in range(network.n_nodes - 1, network.n_nodes - n_nodes - 1, -1):
 
-        if network.attributes[node_idx]["learning"] == "generalised-filtering":
+        # create the sufficient statistic function and store in the side parameters
+        if network.attributes[node_idx]["distribution"] == "normal":
+            sufficient_stats_fn = Normal().sufficient_statistics_from_observations
+        elif network.attributes[node_idx]["distribution"] == "multivariate-normal":
+            sufficient_stats_fn = (
+                MultivariateNormal().sufficient_statistics_from_observations
+            )
+        else:
+            raise ValueError(
+                "The distribution should be either 'normal' or 'multivariate-normal'."
+            )
 
-            # create the sufficient statistic function and store in the side parameters
-            if network.attributes[node_idx]["distribution"] == "normal":
-                sufficient_stats_fn = Normal().sufficient_statistics
-            elif network.attributes[node_idx]["distribution"] == "multivariate-normal":
-                sufficient_stats_fn = MultivariateNormal().sufficient_statistics
+        # add the sufficient statistics function in the side parameters
+        network.additional_parameters.setdefault(node_idx, {})[
+            "sufficient_stats_fn"
+        ] = sufficient_stats_fn
 
-            network.attributes[node_idx].pop("dimension")
-            network.attributes[node_idx].pop("distribution")
-            network.attributes[node_idx].pop("learning")
+        if "hgf" in network.attributes[node_idx]["learning"]:
 
-            # add the sufficient statistics function in the side parameters
-            network.additional_parameters.setdefault(node_idx, {})[
-                "sufficient_stats_fn"
-            ] = sufficient_stats_fn
+            # create a collection of continuous state nodes
+            # to track the sufficient statistics of the implied distribution
+            for i in range(n_suff_stats):
+                network.add_nodes(value_children=node_idx)
+                network.add_nodes(value_children=network.n_nodes - 1)
+                if (
+                    "-2" in network.attributes[node_idx]["learning"]
+                    or "-3" in network.attributes[node_idx]["learning"]
+                ):
+                    network.add_nodes(volatility_children=network.n_nodes - 1)
+                if "-3" in network.attributes[node_idx]["learning"]:
+                    network.add_nodes(volatility_children=network.n_nodes - 1)
+
+        network.attributes[node_idx].pop("distribution")
+        network.attributes[node_idx].pop("learning")
 
     return network
 
@@ -197,7 +228,7 @@ def add_categorical_state(
         "surprise": 0.0,
         "kl_divergence": 0.0,
         "alpha": jnp.ones(n_categories),
-        "observed": jnp.ones(n_categories, dtype=int),
+        "observed": 1,
         "mean": jnp.array([1.0 / n_categories] * n_categories),
         "binary_parameters": binary_parameters,
     }

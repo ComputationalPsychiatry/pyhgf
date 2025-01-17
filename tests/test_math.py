@@ -22,25 +22,40 @@ def test_gaussian_surprise():
 
 def test_multivariate_normal():
 
-    ss = MultivariateNormal.sufficient_statistics(jnp.array([1.0, 2.0]))
+    ss = MultivariateNormal.sufficient_statistics_from_observations(
+        jnp.array([1.0, 2.0])
+    )
     assert jnp.isclose(ss, jnp.array([1.0, 2.0, 1.0, 2.0, 4.0], dtype="float32")).all()
 
     bm = MultivariateNormal.base_measure(2)
     assert bm == 0.15915494309189535
 
+    mean = jnp.array([0.0, 1.0])
+    covariance = jnp.array([[2.0, 3.0], [3.0, 4.0]])
+    ss = MultivariateNormal.sufficient_statistics_from_parameters(mean, covariance)
+    assert jnp.isclose(ss, jnp.array([0.0, 1.0, 2.0, 3.0, 5.0], dtype="float32")).all()
+
+    mean, covariance = MultivariateNormal.parameters_from_sufficient_statistics(
+        ss, dimension=2
+    )
+    assert jnp.isclose(mean, jnp.array([0.0, 1.0], dtype="float32")).all()
+    assert jnp.isclose(
+        covariance, jnp.array([[2.0, 3.0], [3.0, 4.0]], dtype="float32")
+    ).all()
+
 
 def test_normal():
 
-    ss = Normal.sufficient_statistics(jnp.array(1.0))
+    ss = Normal.sufficient_statistics_from_observations(jnp.array(1.0))
     assert jnp.isclose(ss, jnp.array([1.0, 1.0], dtype="float32")).all()
 
     bm = Normal.base_measure()
     assert bm == 0.3989423
 
-    ess = Normal.expected_sufficient_statistics(mu=0.0, sigma=1.0)
+    ess = Normal.sufficient_statistics_from_parameters(mean=0.0, variance=1.0)
     assert jnp.isclose(ess, jnp.array([0.0, 1.0], dtype="float32")).all()
 
-    par = Normal.parameters(xis=[5.0, 29.0])
+    par = Normal.parameters_from_sufficient_statistics(xis=[5.0, 29.0])
     assert jnp.isclose(jnp.array(par), jnp.array([5.0, 4.0], dtype="float32")).all()
 
 

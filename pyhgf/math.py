@@ -18,14 +18,66 @@ class MultivariateNormal:
     """
 
     @staticmethod
-    def sufficient_statistics(x: ArrayLike) -> Array:
-        """Compute the sufficient statistics for the multivariate normal."""
+    def sufficient_statistics_from_observations(x: ArrayLike) -> Array:
+        """Compute the expected sufficient statistics from a single observation."""
         return jnp.hstack([x, jnp.outer(x, x)[jnp.tril_indices(x.shape[0])]])
+
+    @staticmethod
+    def sufficient_statistics_from_parameters(
+        mean: ArrayLike, covariance: ArrayLike
+    ) -> Array:
+        """Compute the expected sufficient statistics from distribution parameter.
+
+        Parameters
+        ----------
+        mean :
+            Mean of the Gaussian distribution.
+        covariance :
+            Variance of the Gaussian distribution.
+
+        Returns
+        -------
+        xis :
+            The sufficient statistics.
+
+        """
+        return jnp.append(
+            mean,
+            (covariance + jnp.outer(mean, mean))[jnp.tril_indices(covariance.shape[0])],
+        )
 
     @staticmethod
     def base_measure(k: int) -> float:
         """Compute the base measures for the multivariate normal."""
         return (2 * jnp.pi) ** (-k / 2)
+
+    @staticmethod
+    def parameters_from_sufficient_statistics(
+        xis: ArrayLike, dimension: int
+    ) -> Tuple[Array, Array]:
+        """Compute the distribution parameters from the sufficient statistics.
+
+        Parameters
+        ----------
+        xis :
+            The sufficient statistics.
+        dimension :
+            The dimension of the multivariate normal distribution.
+
+        Returns
+        -------
+        means, covariance :
+            The parameters of the distribution (mean and covariance).
+
+        """
+        mean = xis[:dimension]
+        covariance = jnp.zeros((dimension, dimension))
+        covariance = covariance.at[jnp.tril_indices(dimension)].set(
+            xis[dimension:] - jnp.outer(mean, mean)[jnp.tril_indices(dimension)]
+        )
+        covariance += covariance.T - jnp.diag(covariance.diagonal())
+
+        return mean, covariance
 
 
 class Normal:
@@ -38,14 +90,28 @@ class Normal:
     """
 
     @staticmethod
-    def sufficient_statistics(x: float) -> Array:
-        """Sufficient statistics for the univariate normal."""
+    def sufficient_statistics_from_observations(x: float) -> Array:
+        """Compute the expected sufficient statistics from a single observation."""
         return jnp.array([x, x**2])
 
     @staticmethod
-    def expected_sufficient_statistics(mu: float, sigma) -> Array:
-        """Compute expected sufficient statistics from the mean and std."""
-        return jnp.array([mu, mu**2 + sigma**2])
+    def sufficient_statistics_from_parameters(mean: float, variance: float) -> Array:
+        """Compute the expected sufficient statistics from distribution parameter.
+
+        Parameters
+        ----------
+        mean :
+            Mean of the Gaussian distribution.
+        variance :
+            Variance of the Gaussian distribution.
+
+        Returns
+        -------
+        xis :
+            The sufficient statistics.
+
+        """
+        return jnp.array([mean, mean**2 + variance])
 
     @staticmethod
     def base_measure() -> float:
@@ -53,13 +119,13 @@ class Normal:
         return 1 / (jnp.sqrt(2 * jnp.pi))
 
     @staticmethod
-    def parameters(xis: ArrayLike) -> Tuple[float, float]:
-        """Get parameters from the expected sufficient statistics.
+    def parameters_from_sufficient_statistics(xis: ArrayLike) -> Tuple[float, float]:
+        """Compute the distribution parameters from the sufficient statistics.
 
         Parameters
         ----------
         xis :
-            The expected sufficient statistics.
+            The sufficient statistics.
 
         Returns
         -------
@@ -69,6 +135,7 @@ class Normal:
         """
         mean = xis[0]
         variance = xis[1] - (mean**2)
+
         return mean, variance
 
 

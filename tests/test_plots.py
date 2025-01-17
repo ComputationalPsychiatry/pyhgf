@@ -27,7 +27,7 @@ def test_plotting_functions():
     ).input_data(input_data=timeserie)
 
     # plot trajectories
-    two_level_continuous.plot_trajectories()
+    two_level_continuous.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     two_level_continuous.plot_correlations()
@@ -53,7 +53,7 @@ def test_plotting_functions():
     ).input_data(input_data=timeserie)
 
     # plot trajectories
-    three_level_continuous.plot_trajectories()
+    three_level_continuous.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     three_level_continuous.plot_correlations()
@@ -88,7 +88,7 @@ def test_plotting_functions():
     ).input_data(u)
 
     # plot trajectories
-    two_level_binary_hgf.plot_trajectories()
+    two_level_binary_hgf.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     two_level_binary_hgf.plot_correlations()
@@ -116,7 +116,7 @@ def test_plotting_functions():
     ).input_data(u)
 
     # plot trajectories
-    three_level_binary_hgf.plot_trajectories()
+    three_level_binary_hgf.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     three_level_binary_hgf.plot_correlations()
@@ -136,9 +136,9 @@ def test_plotting_functions():
 
     # generate some categorical inputs data
     input_data = np.array(
-        [np.random.multinomial(n=1, pvals=[0.1, 0.2, 0.7]) for _ in range(3)]
-    ).T
-    input_data = np.vstack([[0.0] * input_data.shape[1], input_data])
+        [np.random.multinomial(n=1, pvals=[0.1, 0.2, 0.7]) for _ in range(10)],
+        dtype=float,
+    )
 
     # create the categorical HGF
     categorical_hgf = Network().add_nodes(
@@ -150,9 +150,7 @@ def test_plotting_functions():
     )
 
     # fitting the model forwards
-    categorical_hgf.input_data(
-        input_data=(input_data, np.ones(input_data.shape, dtype=int))
-    )
+    categorical_hgf.input_data(input_data=input_data)
 
     # plot node structures
     categorical_hgf.plot_network()
