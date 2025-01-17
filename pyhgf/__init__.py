@@ -1,13 +1,14 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 import pkgutil
+from importlib.metadata import version
 from io import BytesIO
 from typing import Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-__version__ = "0.2.2"
+__version__ = version("pyhgf")
 
 
 def load_data(dataset: str) -> Union[Tuple[np.ndarray, ...], np.ndarray]:
