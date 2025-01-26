@@ -16,3 +16,4 @@ coverage.xm
 .pytest_cache
 dist/*
 target*
+.benchmarks/
