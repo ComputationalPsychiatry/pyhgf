@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 version = "0.2.2"
+requires-python = ">=3.9,<3.13"
 
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
