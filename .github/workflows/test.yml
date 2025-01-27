@@ -75,12 +75,12 @@ jobs:
       # Step 11: Run pytest-benchmark
       - name: Run pytest-benchmark
         run: |
-          pytest --benchmark-only --benchmark-save=new_benchmark.json
+          poetry run pytest --benchmark-only --benchmark-save=new_benchmark.json
 
       # # Step 12: Compare benchmarks with thresholds
       # - name: Compare benchmarks
       #   run: |
-      #     pytest-benchmark compare benchmarks/baseline_benchmark.json benchmarks/new_benchmark.json
+      #     poetry run pytest-benchmark compare benchmarks/baseline_benchmark.json benchmarks/new_benchmark.json
       #   continue-on-error: true
 
       # Step 13: Upload benchmark artifact
