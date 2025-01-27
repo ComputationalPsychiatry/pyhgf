@@ -18,7 +18,6 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 version = "0.2.2"
-requires-python = ">=3.9,<3.13"
 
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
@@ -65,3 +64,4 @@ build-backend = "maturin"
 [tool.maturin]
 # "extension-module" tells pyo3 we want to build an extension module (skips linking against libpython.so)
 features = ["pyo3/extension-module"]
+requires-python = ">=3.9,<3.13"
