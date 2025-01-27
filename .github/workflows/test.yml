@@ -17,7 +17,6 @@ jobs:
         python-version: ['3.12']  # Add more Python versions if needed, like '3.8', '3.9', '3.10', etc.
 
     steps:
-
       # Step 1: Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -68,10 +67,10 @@ jobs:
 
       # Step 10: Download baseline benchmark artifact
       - name: Download baseline benchmark
-      uses: actions/download-artifact@v3
-      with:
-        name: baseline-benchmark
-        path: benchmarks/
+        uses: actions/download-artifact@v3
+        with:
+          name: baseline-benchmark
+          path: benchmarks/
         
       # Step 11: Run pytest-benchmark
       - name: Run pytest-benchmark
