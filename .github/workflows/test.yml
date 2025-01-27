@@ -65,23 +65,23 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      # # Step 10: Download baseline benchmark artifact
-      # - name: Download baseline benchmark
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: baseline-benchmark
-      #     path: benchmarks/
+      # Step 10: Download baseline benchmark artifact
+      - name: Download baseline benchmark
+        uses: actions/download-artifact@v3
+        with:
+          name: baseline-benchmark
+          path: .benchmarks/
         
       # Step 11: Run pytest-benchmark
       - name: Run pytest-benchmark
         run: |
           poetry run pytest --benchmark-only --benchmark-json=.benchmarks/new_benchmark.json
 
-      # # Step 12: Compare benchmarks with thresholds
-      # - name: Compare benchmarks
-      #   run: |
-      #     poetry run pytest-benchmark compare benchmarks/baseline_benchmark.json benchmarks/new_benchmark.json
-      #   continue-on-error: true
+      # Step 12: Compare benchmarks with thresholds
+      - name: Compare benchmarks
+        run: |
+          poetry run pytest-benchmark compare .benchmarks/baseline_benchmark.json .benchmarks/new_benchmark.json
+        continue-on-error: true
 
       # Step 13: Upload benchmark artifact
       - name: Upload baseline benchmark
