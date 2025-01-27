@@ -88,4 +88,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: baseline-benchmark
-          path: benchmarks/new_benchmark.json
+          path: .benchmarks/new_benchmark.json
