@@ -9,25 +9,25 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 196.08)">
 <title>%3</title>
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-196.08 197.75,-196.08 197.75,4 -4,4"/>
-<!-- tonic_volatility_1 -->
-<g id="node1" class="node">
-<title>tonic_volatility_1</title>
-<ellipse fill="none" stroke="black" cx="96.87" cy="-154.61" rx="96.75" ry="37.45"/>
-<text text-anchor="middle" x="96.87" y="-165.91" font-family="Times,serif" font-size="14.00">tonic_volatility_1</text>
-<text text-anchor="middle" x="96.87" y="-150.91" font-family="Times,serif" font-size="14.00">~</text>
-<text text-anchor="middle" x="96.87" y="-135.91" font-family="Times,serif" font-size="14.00">Normal</text>
-</g>
 <!-- hgf_loglike -->
-<g id="node2" class="node">
+<g id="node1" class="node">
 <title>hgf_loglike</title>
 <polygon fill="lightgrey" stroke="black" points="168.76,-23.74 168.76,-57.39 126.65,-81.19 67.1,-81.19 24.98,-57.39 24.98,-23.74 67.1,0.06 126.65,0.06 168.76,-23.74"/>
 <text text-anchor="middle" x="96.87" y="-51.86" font-family="Times,serif" font-size="14.00">hgf_loglike</text>
 <text text-anchor="middle" x="96.87" y="-36.86" font-family="Times,serif" font-size="14.00">~</text>
 <text text-anchor="middle" x="96.87" y="-21.86" font-family="Times,serif" font-size="14.00">Potential</text>
 </g>
-<!-- tonic_volatility_1&#45;&gt;hgf_loglike -->
+<!-- tonic_volatility_2 -->
+<g id="node2" class="node">
+<title>tonic_volatility_2</title>
+<ellipse fill="none" stroke="black" cx="96.87" cy="-154.61" rx="96.75" ry="37.45"/>
+<text text-anchor="middle" x="96.87" y="-165.91" font-family="Times,serif" font-size="14.00">tonic_volatility_2</text>
+<text text-anchor="middle" x="96.87" y="-150.91" font-family="Times,serif" font-size="14.00">~</text>
+<text text-anchor="middle" x="96.87" y="-135.91" font-family="Times,serif" font-size="14.00">Uniform</text>
+</g>
+<!-- tonic_volatility_2&#45;&gt;hgf_loglike -->
 <g id="edge1" class="edge">
-<title>tonic_volatility_1&#45;&gt;hgf_loglike</title>
+<title>tonic_volatility_2&#45;&gt;hgf_loglike</title>
 <path fill="none" stroke="black" d="M96.87,-116.92C96.87,-108.84 96.87,-100.16 96.87,-91.65"/>
 <polygon fill="black" stroke="black" points="100.37,-91.43 96.87,-81.43 93.37,-91.43 100.37,-91.43"/>
 </g>
