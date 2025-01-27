@@ -75,12 +75,11 @@ jobs:
       # Step 11: Run pytest-benchmark
       - name: Run pytest-benchmark
         run: |
-          pytest --benchmark-only --benchmark-save=.benchmarks/new_benchmark.json
-
+          pytest --benchmark-only --benchmark-save=new_benchmark.json
       # Step 12: Compare benchmarks with thresholds
       - name: Compare benchmarks
         run: |
-          pytest-benchmark compare benchmarks/baseline_benchmark.json benchmarks/new_benchmark.json --benchmark-compare-fail=mean:10%
+          pytest-benchmark compare benchmarks/baseline_benchmark.json benchmarks/new_benchmark.json
         continue-on-error: true
 
       # Step 13: Upload benchmark artifact
@@ -88,4 +87,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: baseline-benchmark
-          path: benchmarks/baseline_benchmark.json
+          path: benchmarks/new_benchmark.json

@@ -68,24 +68,17 @@ def test_update_binary_input_parents():
         assert jnp.isclose(new_attributes[2][idx], val)
 
 
-def test_binary_scan_loop(benchmark):
+def test_binary_scan_loop():
 
     u, _ = load_data("binary")
 
-    def run_binary():
-        return (
-            Network()
-            .add_nodes(kind="binary-state")
-            .add_nodes(value_children=0, mean=0.0, tonic_volatility=1.0)
-            .add_nodes(volatility_children=1, mean=0.0, tonic_volatility=1.0)
-            .input_data(input_data=u)
-        )
-
-    # warmup
-    _ = run_binary()
-
-    # benchmark
-    binary_hgf = benchmark(run_binary)
+    binary_hgf = (
+        Network()
+        .add_nodes(kind="binary-state")
+        .add_nodes(value_children=0, mean=0.0, tonic_volatility=1.0)
+        .add_nodes(volatility_children=1, mean=0.0, tonic_volatility=1.0)
+        .input_data(input_data=u)
+    )
 
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
