@@ -203,17 +203,31 @@ Plots
 *****
 
 Plotting functionalities to visualize parameters trajectories and correlations after
-observing new data.
+observing new data. We are currently fully supporting Graphviz. NetworkX is also
+available for some functions.
 
-.. currentmodule:: pyhgf.plots
+Graphviz
+========
+
+.. currentmodule:: pyhgf.plots.graphviz
 
 .. autosummary::
-   :toctree: generated/pyhgf.plots
+   :toctree: generated/pyhgf.plots.graphviz
 
    plot_trajectories
    plot_correlations
    plot_network
    plot_nodes
+
+Networkx
+========
+
+.. currentmodule:: pyhgf.plots.networkx
+
+.. autosummary::
+   :toctree: generated/pyhgf.plots.networkx
+
+   plot_network
 
 Response
 ********
