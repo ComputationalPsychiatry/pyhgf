@@ -60,6 +60,7 @@ def test_plotting_functions():
 
     # plot node structures
     three_level_continuous.plot_network()
+    three_level_continuous.plot_network(backend="networkx")
 
     # plot nodes
     three_level_continuous.plot_nodes(

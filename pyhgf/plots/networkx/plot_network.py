@@ -4,7 +4,6 @@
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
-import networkx as nx
 
 if TYPE_CHECKING:
 
@@ -38,6 +37,15 @@ def plot_network(
         otherwise returns the NetworkX graph object
 
     """
+    try:
+        import networkx as nx
+    except ImportError:
+        print(
+            (
+                "NetworkX and pydot are required to plot networks. "
+                "See https://networkx.org/documentation/stable/install.html"
+            )
+        )
     # Create a directed graph
     G = nx.DiGraph()
 

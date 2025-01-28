@@ -56,6 +56,8 @@ pytest = "^8.3.3"
 pytest-cov = "^6.0.0"
 maturin = "^1.7.4"
 pytest-benchmark = "^5.1.0"
+networkx = "^3.4.2"
+pydot = "^3.0.4"
 
 [build-system]
 requires = ["poetry-core", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "maturin>=1.4,<2.0"]

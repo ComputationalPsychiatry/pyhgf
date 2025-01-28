@@ -492,7 +492,7 @@ class Network:
         else:
             raise ValueError(
                 (
-                    "Invalid backend.",
+                    "Invalid backend."
                     " Should be one of the following: 'graphviz' or 'networkx'",
                 )
             )
