@@ -17,7 +17,7 @@ from pyhgf.model import (
     add_ef_state,
     get_couplings,
 )
-from pyhgf.plots import plot_correlations, plot_network, plot_nodes, plot_trajectories
+from pyhgf.plots import graphviz, networkx
 from pyhgf.typing import Attributes, Edges, NetworkParameters, UpdateSequence
 from pyhgf.utils import (
     add_edges,
@@ -473,19 +473,29 @@ class Network:
 
     def plot_nodes(self, node_idxs: Union[int, List[int]], **kwargs):
         """Plot the node(s) beliefs trajectories."""
-        return plot_nodes(network=self, node_idxs=node_idxs, **kwargs)
+        return graphviz.plot_nodes(network=self, node_idxs=node_idxs, **kwargs)
 
     def plot_trajectories(self, **kwargs):
         """Plot the parameters trajectories."""
-        return plot_trajectories(network=self, **kwargs)
+        return graphviz.plot_trajectories(network=self, **kwargs)
 
     def plot_correlations(self):
         """Plot the heatmap of cross-trajectories correlation."""
-        return plot_correlations(network=self)
+        return graphviz.plot_correlations(network=self)
 
-    def plot_network(self):
+    def plot_network(self, backend: str = "graphviz"):
         """Visualization of node network using GraphViz."""
-        return plot_network(network=self)
+        if backend == "graphviz":
+            return graphviz.plot_network(network=self)
+        elif backend == "networkx":
+            return networkx.plot_network(network=self)
+        else:
+            raise ValueError(
+                (
+                    "Invalid backend.",
+                    " Should be one of the following: 'graphviz' or 'networkx'",
+                )
+            )
 
     def to_pandas(self) -> pd.DataFrame:
         """Export the nodes trajectories and surprise as a Pandas data frame.
