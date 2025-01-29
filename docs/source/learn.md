@@ -37,7 +37,7 @@ notebooks/5-Non_linear_value_coupling
 notebooks/Example_1_Heart_rate_variability.ipynb
 notebooks/Example_2_Input_node_volatility_coupling.ipynb
 notebooks/Example_3_Multi_armed_bandit.ipynb
-notebooks/Example_4_Causal.ipynb
+notebooks/Example_4_Causal_discovery.ipynb
 ```
 
 ```{toctree}
