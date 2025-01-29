@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.prediction_error.exponential &#8212; pyhgf 0.0.0.post1.dev0+c65e161 documentation</title>
+    <title>pyhgf.updates.prediction_error.exponential &#8212; pyhgf 0.0.0.post1.dev0+631ba79 documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../../_static/documentation_options.js?v=863419fc"></script>
+    <script src="../../../../_static/documentation_options.js?v=5c7b4c8e"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -440,7 +440,7 @@
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html#pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;sufficient_stats_fn&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">prediction_error_update_exponential_family_fixed</span><span class="p">(</span>
-    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sufficient_stats_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sufficient_stats_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the parameters of an exponential family distribution.</span>
 
@@ -454,11 +454,6 @@
 <span class="sd">    ----------</span>
 <span class="sd">    attributes :</span>
 <span class="sd">        The attributes of the probabilistic nodes.</span>
-<span class="sd">    edges :</span>
-<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
-<span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node</span>
-<span class="sd">        number. For each node, the index lists the value and volatility parents and</span>
-<span class="sd">        children.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the value parent node that will be updated.</span>
 <span class="sd">    sufficient_stats_fn :</span>
