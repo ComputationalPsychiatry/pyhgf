@@ -205,8 +205,8 @@ def create_cluster(operands: Tuple, edges: Edges, node_idx: int) -> Attributes:
         # initialize the new cluster using candidate values
         attributes[value_parent_idx]["xis"] = jnp.where(
             cluster_idx == i,
-            Normal().expected_sufficient_statistics(
-                mu=candidate_mean, sigma=candidate_sigma
+            Normal().sufficient_statistics_from_parameters(
+                mean=candidate_mean, variance=candidate_sigma**2
             ),
             attributes[value_parent_idx]["xis"],
         )

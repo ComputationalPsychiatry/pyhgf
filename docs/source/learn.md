@@ -51,7 +51,7 @@ notebooks/Exercise_2_Bayesian_reinforcement_learning.ipynb
 
 # Learn
 
-In this section, you can find tutorial notebooks that describe the internals of pyhgf, the theory behind the Hierarchical Gaussian filter, and step-by-step application and use cases of the model. At the beginning of every tutorial, you will find a badge [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ilabcode/pyhgf/blob/master/docs/source/notebooks/0.1-Creating_networks.ipynb) to run the notebook interactively in a Google Colab session.
+In this section, you can find tutorial notebooks that describe the internals of pyhgf, the theory behind the Hierarchical Gaussian filter, and step-by-step application and use cases of the model. At the beginning of every tutorial, you will find a badge [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Creating_networks.ipynb) to run the notebook interactively in a Google Colab session.
 
 ## Theory
 
@@ -77,7 +77,7 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 :::{grid-item-card}  Generalised Bayesian filtering
 :link: generalised_filtering
 :link-type: ref
-:img-top: ./images/multivariate_hgf.gif
+:img-top: ./images/multivariate_normal.gif
 
 
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.

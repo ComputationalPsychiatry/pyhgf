@@ -8,7 +8,7 @@ docs/source/generated/*
 docs/source/auto_examples/*
 htmlcov/
 .coverage
-.coverage.xml
+coverage.xml
 pyhgf.egg-info
 build
 coverage.xm
@@ -17,3 +17,4 @@ coverage.xm
 dist/*
 target*
 *DS_Store
+.benchmarks/

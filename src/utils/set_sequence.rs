@@ -136,7 +136,7 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
                         has_update = true;
                         break;
                     }
-                    (Some(AdjacencyLists {node_type, ..}), _) if node_type == "exponential-state" => {
+                    (Some(AdjacencyLists {node_type, ..}), _) if node_type == "ef-state" => {
                         updates.push((idx, prediction_error_exponential_state_node));
                         // remove the node from the to-be-updated list
                         pe_nodes_idxs.retain(|&x| x != idx);
@@ -259,7 +259,7 @@ mod tests {
         // initialize network
         let mut exp_network = Network::new();
         exp_network.add_nodes(
-            "exponential-state",
+            "ef-state",
             None,
             None,
             None,

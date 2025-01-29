@@ -17,7 +17,7 @@ import pyhgf
 # -- Project information -----------------------------------------------------
 
 project = "pyhgf"
-copyright = u"2022-{}, Nicolas Legrand".format(time.strftime("%Y"))
+copyright = "2022-{}, Nicolas Legrand".format(time.strftime("%Y"))
 author = "Nicolas Legrand"
 release = pyhgf.__version__
 
@@ -25,7 +25,7 @@ nb_execution_timeout = 300
 
 image_scrapers = ("matplotlib",)
 
-bibtex_bibfiles = ['refs.bib']
+bibtex_bibfiles = ["refs.bib"]
 bibtex_reference_style = "author_year"
 bibtex_default_style = "unsrt"
 
@@ -73,10 +73,10 @@ plot_html_show_formats = False
 plot_html_show_source_link = False
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'myst-nb',
-    '.ipynb': 'myst-nb',
-    '.myst': 'myst-nb',
+    ".rst": "restructuredtext",
+    ".md": "myst-nb",
+    ".ipynb": "myst-nb",
+    ".myst": "myst-nb",
 }
 
 # The master toctree document.
@@ -95,7 +95,7 @@ html_theme_options = {
     "icon_links": [
         dict(
             name="GitHub",
-            url="https://github.com/ilabcode/pyhgf",
+            url="https://github.com/ComputationalPsychiatry/pyhgf",
             icon="fa-brands fa-square-github",
         ),
         dict(
@@ -112,13 +112,13 @@ html_theme_options = {
     "logo": {
         "text": "pyhgf",
     },
-    "show_nav_level": 2
+    "show_nav_level": 2,
 }
 
 myst_enable_extensions = ["dollarmath", "colon_fence"]
 
 html_sidebars = {
-  "api": [],
-  "cite": [],
-  "references": [],
+    "api": [],
+    "cite": [],
+    "references": [],
 }

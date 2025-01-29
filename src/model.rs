@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use crate::{updates::observations::observation_update, utils::function_pointer::FnType};
+use crate::utils::function_pointer::FnType;
 use crate::utils::set_sequence::set_update_sequence;
+use crate::utils::beliefs_propagation::belief_propagation;
 use crate::utils::function_pointer::get_func_map;
 use pyo3::types::PyTuple;
 use pyo3::{prelude::*, types::{PyList, PyDict}};
@@ -75,7 +76,7 @@ impl Network {
     #[pyo3(signature = (kind="continuous-state", value_parents=None, value_children=None, volatility_parents=None, volatility_children=None,))]
     pub fn add_nodes(&mut self, kind: &str, value_parents: Option<Vec<usize>>, 
         value_children: Option<Vec<usize>>,
-        volatility_parents: Option<Vec<usize>>, volatility_children: Option<Vec<usize>>, ) {
+        volatility_parents: Option<Vec<usize>>, volatility_children: Option<Vec<usize>>, )  {
 
         // the node ID is equal to the number of nodes already in the network
         let node_id: usize = self.edges.len();
@@ -108,7 +109,7 @@ impl Network {
             self.attributes.floats.insert(node_id, attributes);
             self.edges.insert(node_id, edges);
 
-        } else if kind == "exponential-state" {
+        } else if kind == "ef-state" {
 
             let floats_attributes =  [
                 (String::from("mean"), 0.0), 
@@ -120,40 +121,11 @@ impl Network {
             self.attributes.vectors.insert(node_id, vector_attributes);
             self.edges.insert(node_id, edges);
 
-        } else {
-            println!("Invalid type of node provided ({}).", kind);
         }
     }
 
     pub fn set_update_sequence(&mut self) {
         self.update_sequence = set_update_sequence(self);
-    }
-
-    /// Single time slice belief propagation.
-    /// 
-    /// # Arguments
-    /// * `observations` - A vector of values, each value is one new observation associated
-    /// with one node.
-    pub fn belief_propagation(&mut self, observations_set: Vec<f64>) {
-
-        let predictions = self.update_sequence.predictions.clone();
-        let updates = self.update_sequence.updates.clone();
-
-        // 1. prediction steps
-        for (idx, step) in predictions.iter() {
-            step(self, *idx);
-        }
-        
-        // 2. observation steps
-        for (i, observations) in observations_set.iter().enumerate() {
-            let idx = self.inputs[i];
-            observation_update(self, idx, *observations);
-        } 
-
-        // 3. update steps
-        for (idx, step) in updates.iter() {
-            step(self, *idx);
-        }
     }
 
     /// Add a sequence of observations.
@@ -163,66 +135,66 @@ impl Network {
     /// associated with one node.
     pub fn input_data(&mut self, input_data: Vec<f64>) {
 
+        let n_time = input_data.len();
+        let predictions = self.update_sequence.predictions.clone();
+        let updates = self.update_sequence.updates.clone();
+
         // initialize the belief trajectories result struture
         let mut node_trajectories = NodeTrajectories {floats: HashMap::new(), vectors: HashMap::new()};
         
-        // add empty vectors in the floats hashmap
+        // preallocate empty vectors in the floats hashmap
         for (node_idx, node) in &self.attributes.floats {
             let new_map: HashMap<String, Vec<f64>> = HashMap::new();
             node_trajectories.floats.insert(*node_idx, new_map);
-            if let Some(attr) = node_trajectories.floats.get_mut(node_idx) {
-                for key in node.keys() {
-                    attr.insert(key.clone(), Vec::new());
-                }
+            let attr = node_trajectories.floats.get_mut(node_idx).expect("New map not found.");
+            for key in node.keys() {
+                attr.insert(key.clone(), Vec::with_capacity(n_time));
             }
-        }
-        // add empty vectors in the vectors hashmap
+            }
+
+        // preallocate empty vectors in the vectors hashmap
         for (node_idx, node) in &self.attributes.vectors {
             let new_map: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
             node_trajectories.vectors.insert(*node_idx, new_map);
-            if let Some(attr) = node_trajectories.vectors.get_mut(node_idx) {
-                for key in node.keys() {
-                    attr.insert(key.clone(), Vec::new());
-                }
+            let attr = node_trajectories.vectors.get_mut(node_idx).expect("New vector map not found.");
+            for key in node.keys() {
+                attr.insert(key.clone(), Vec::with_capacity(n_time));
             }
-        }
+            }
+
 
         // iterate over the observations
         for observation in input_data {
 
             // 1. belief propagation for one time slice
-            self.belief_propagation(vec![observation]);
+            belief_propagation(self, vec![observation], &predictions, &updates);
 
             // 2. append the new beliefs in the trajectories structure
             // iterate over the float hashmap
             for (new_node_idx, new_node) in &self.attributes.floats {
                 for (new_key, new_value) in new_node {
                     // If the key exists in map1, append the vector from map2
-                    if let Some(old_node) = node_trajectories.floats.get_mut(&new_node_idx) {
-                        if let Some(old_value) = old_node.get_mut(new_key) {
-                            old_value.push(*new_value);
-                        }
+                    let old_node = node_trajectories.floats.get_mut(&new_node_idx).expect("Old node not found.");
+                    let old_value = old_node.get_mut(new_key).expect("Old value not found");
+                    old_value.push(*new_value);
                     }
                 }
-            }
+
             // iterate over the vector hashmap
             for (new_node_idx, new_node) in &self.attributes.vectors {
                 for (new_key, new_value) in new_node {
                     // If the key exists in map1, append the vector from map2
-                    if let Some(old_node) = node_trajectories.vectors.get_mut(&new_node_idx) {
-                        if let Some(old_value) = old_node.get_mut(new_key) {
-                            old_value.push(new_value.clone());
-                        }
+                    let old_node = node_trajectories.vectors.get_mut(&new_node_idx).expect("Old vector node not found.");
+                    let old_value = old_node.get_mut(new_key).expect("Old vector value not found.");
+                    old_value.push(new_value.clone());
                     }
                 }
             }
-        }
-
         self.node_trajectories = node_trajectories;
     }
 
     #[getter]
-    pub fn get_node_trajectories<'py>(&self, py: Python<'py>) -> PyResult<&'py PyList> {
+    pub fn get_node_trajectories<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
         let py_list = PyList::empty(py);
         
         
@@ -238,27 +210,27 @@ impl Network {
             if let Some(vector_node) = self.node_trajectories.vectors.get(node_idx) {
                 for (vector_key, vector_value) in vector_node {
                     // Create a new Python dictionary
-                    py_dict.set_item(vector_key, PyArray::from_vec2_bound(py, &vector_value).unwrap()).expect("Failed to set item in PyDict");
+                    py_dict.set_item(vector_key, PyArray::from_vec2(py, &vector_value).unwrap()).expect("Failed to set item in PyDict");
                 }
             }
             py_list.append(py_dict)?;
         }
 
         // Create a PyList from Vec<usize>
-        Ok(py_list)
+        Ok(py_list.into())
     }
 
     #[getter]
-    pub fn get_inputs<'py>(&self, py: Python<'py>) -> PyResult<&'py PyList> {
-        let py_list = PyList::new(py, &self.inputs);  // Create a PyList from Vec<usize>
-        Ok(py_list)
+    pub fn get_inputs<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
+        let py_list = PyList::new(py, &self.inputs)?;  // Create a PyList from Vec<usize>
+        Ok(py_list.into())
     }
 
     #[getter]
-    pub fn get_edges<'py>(&self, py: Python<'py>) -> PyResult<&'py PyList> {
+    pub fn get_edges<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
         // Create a new Python list
         let py_list = PyList::empty(py);
-
+    
         // Convert each struct in the Vec to a Python object and add to PyList
         for i in 0..self.edges.len() {
             // Create a new Python dictionary for each MyStruct
@@ -267,40 +239,48 @@ impl Network {
             py_dict.set_item("value_children", &self.edges[&i].value_children)?;
             py_dict.set_item("volatility_parents", &self.edges[&i].volatility_parents)?;
             py_dict.set_item("volatility_children", &self.edges[&i].volatility_children)?;
-
+    
             // Add the dictionary to the list
             py_list.append(py_dict)?;
         }
-        Ok(py_list)
+    
+        // Return the PyList object directly
+        Ok(py_list.into())
     }
 
+
     #[getter]
-    pub fn get_update_sequence<'py>(&self, py: Python<'py>) -> PyResult<&'py PyList> {
+    pub fn get_update_sequence<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
     
-    let func_map = get_func_map();
-    let py_list = PyList::empty(py);
-    // Iterate over the Rust vector and convert each tuple
-    for &(num, func) in self.update_sequence.predictions.iter() {
-        // Retrieve the function name from the map
-        let func_name = func_map.get(&func).unwrap_or(&"unknown");
+        let func_map = get_func_map();
+        let py_list = PyList::empty(py);
 
-        // Convert the Rust tuple to a Python tuple with the function name as a string
-        let py_tuple = PyTuple::new(py, &[num.into_py(py), (*func_name).into_py(py)]);
+        // Iterate over the Rust vector and convert each tuple
+        for &(num, func) in self.update_sequence.predictions.iter() {
+            
+            // Resolve the Python objects from the Rust values
+            let py_func_name = func_map.get(&func).unwrap_or(&"unknown").into_pyobject(py)?.into_any().unbind();
+            let py_num = num.into_pyobject(py)?.into_any().unbind();         // Converts num to PyObject
 
-        // Append the Python tuple to the Python list
-        py_list.append(py_tuple)?;
-    }        
-    for &(num, func) in self.update_sequence.updates.iter() {
-        // Retrieve the function name from the map
-        let func_name = func_map.get(&func).unwrap_or(&"unknown");
+            // Create a Python tuple
+            let py_tuple = PyTuple::new(py, &[py_num, py_func_name])?;
+            
+            // Append the Python tuple to the Python list
+            py_list.append(py_tuple)?;
+        }        
+        for &(num, func) in self.update_sequence.updates.iter() {
 
-        // Convert the Rust tuple to a Python tuple with the function name as a string
-        let py_tuple = PyTuple::new(py, &[num.into_py(py), (*func_name).into_py(py)]);
+            // Resolve the Python objects from the Rust values
+            let py_func_name = func_map.get(&func).unwrap_or(&"unknown").into_pyobject(py)?.into_any().unbind();
+            let py_num = num.into_pyobject(py)?.into_any().unbind();         // Converts num to PyObject
 
-        // Append the Python tuple to the Python list
-        py_list.append(py_tuple)?;
-    }        
-    Ok(py_list)
+            // Create a Python tuple
+            let py_tuple = PyTuple::new(py, &[py_num, py_func_name])?;
+            
+            // Append the Python tuple to the Python list
+            py_list.append(py_tuple)?;
+        }        
+        Ok(py_list.into())
     }
 }
 
@@ -325,7 +305,7 @@ mod tests {
     
         // create a network with two exponential family state nodes
         network.add_nodes(
-            "exponential-state",
+            "ef-state",
             None,
             None,
             None,

@@ -26,12 +26,11 @@ def test_dirichlet_node_prediction_error():
 
     network = (
         Network()
-        .add_nodes(kind="generic-state")
-        .add_nodes(kind="DP-state", value_children=0, batch_size=2)
+        .add_nodes(kind="dp-state", batch_size=2)
         .add_nodes(
-            kind="exponential-state",
+            kind="ef-state",
             n_nodes=2,
-            value_children=1,
+            value_children=0,
             xis=jnp.array([0.0, 1 / 8]),
             nus=15.0,
         )
@@ -41,7 +40,7 @@ def test_dirichlet_node_prediction_error():
     dirichlet_node_prediction_error(
         edges=edges,
         attributes=attributes,
-        node_idx=1,
+        node_idx=0,
     )
 
     # test the plotting function

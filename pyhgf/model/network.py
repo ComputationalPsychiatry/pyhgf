@@ -1,6 +1,5 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import jax.numpy as jnp
@@ -10,18 +9,19 @@ from jax.lax import scan, switch
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
 
-from pyhgf.plots import plot_correlations, plot_network, plot_nodes, plot_trajectories
-from pyhgf.typing import (
-    AdjacencyLists,
-    Attributes,
-    Edges,
-    NetworkParameters,
-    UpdateSequence,
+from pyhgf.model import (
+    add_binary_state,
+    add_categorical_state,
+    add_continuous_state,
+    add_dp_state,
+    add_ef_state,
+    get_couplings,
 )
+from pyhgf.plots import graphviz, networkx
+from pyhgf.typing import Attributes, Edges, NetworkParameters, UpdateSequence
 from pyhgf.utils import (
     add_edges,
     beliefs_propagation,
-    fill_categorical_state_node,
     get_input_idxs,
     get_update_sequence,
     to_pandas,
@@ -59,10 +59,13 @@ class Network:
     def __init__(self) -> None:
         """Initialize an empty neural network."""
         self.edges: Edges = ()
+        self.n_nodes: int = 0  # number of nodes in the network
         self.node_trajectories: Dict = {}
         self.attributes: Attributes = {-1: {"time_step": 0.0}}
         self.update_sequence: Optional[UpdateSequence] = None
         self.scan_fn: Optional[Callable] = None
+        self.additional_parameters: Dict = {}
+        self.input_dim: list = []
 
     @property
     def input_idxs(self):
@@ -102,6 +105,10 @@ class Network:
             errors associated with impossible parameter space and improves sampling.
 
         """
+        # get the dimension of the input nodes
+        if not self.input_dim:
+            self.get_input_dimension()
+
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
@@ -122,9 +129,9 @@ class Network:
 
     def input_data(
         self,
-        input_data: Union[np.ndarray, tuple],
+        input_data: np.ndarray,
         time_steps: Optional[np.ndarray] = None,
-        observed: Optional[Union[np.ndarray, tuple]] = None,
+        observed: Optional[np.ndarray] = None,
         input_idxs: Optional[Tuple[int]] = None,
     ):
         """Add new observations.
@@ -132,12 +139,14 @@ class Network:
         Parameters
         ----------
         input_data :
-            2d array of new observations (time x features).
+            A 2d array of new observations (time x observation). Input nodes can receive
+            floats or vectors according to their dimensions. This matrix is further
+            split into tuple of columns accordingly.
         time_steps :
             Time steps vector (optional). If `None`, this will default to
             `np.ones(len(input_data))`.
         observed :
-            A time * input node boolean array masking `input_data`. In case of missing
+            A 2d array of mask (time x number of input nodes). In case of missing
             inputs, (i.e. `observed` is `0`), the input node will have value and
             volatility set to `0.0`. If the parent(s) of this input receive prediction
             error from other children, they simply ignore this one. If they are not
@@ -152,45 +161,46 @@ class Network:
             Indexes on the state nodes receiving observations.
 
         """
+        if input_data.ndim == 1:
+            input_data = input_data[:, jnp.newaxis]
+
         # set the input nodes indexes
         if input_idxs is not None:
             self.input_idxs = input_idxs
 
-        # belief propagation function
+        # generate the belief propagation function
         if self.scan_fn is None:
             self = self.create_belief_propagation_fn()
 
-        # input_data should be a tuple of n by time_steps arrays
-        if not isinstance(input_data, tuple):
-            if observed is None:
-                observed = np.ones(input_data.shape, dtype=int)
-            if input_data.ndim == 1:
-
-                # Interleave observations and masks
-                input_data = (input_data, observed)
-            else:
-                observed = jnp.hsplit(observed, input_data.shape[1])
-                observations = jnp.hsplit(input_data, input_data.shape[1])
-
-                # Interleave observations and masks
-                input_data = tuple(
-                    [
-                        item.flatten()
-                        for pair in zip(observations, observed)
-                        for item in pair
-                    ]
-                )
-
         # time steps vector
         if time_steps is None:
-            time_steps = np.ones(input_data[0].shape[0])
+            time_steps = np.ones(input_data.shape[0])
+
+        # observation mask
+        if observed is None:
+            observed = tuple(
+                [
+                    np.ones(input_data.shape[0], dtype=int)
+                    for _ in range(len(self.input_idxs))
+                ]
+            )
+        elif isinstance(observed, np.ndarray):
+            if observed.ndim == 1:
+                observed = (observed,)
+            else:
+                observed = tuple(observed[:, i] for i in range(observed.shape[1]))
+
+        # format input_data according to the input nodes dimension
+        split_indices = np.cumsum(self.input_dim[:-1])
+        values = tuple(np.split(input_data, split_indices, axis=1))
+
+        # wrap the inputs
+        inputs = values, observed, time_steps
 
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
         # using precision-weighted prediction errors
-        last_attributes, node_trajectories = scan(
-            self.scan_fn, self.attributes, (*input_data, time_steps)
-        )
+        last_attributes, node_trajectories = scan(self.scan_fn, self.attributes, inputs)
 
         # belief trajectories
         self.node_trajectories = node_trajectories
@@ -247,30 +257,40 @@ class Network:
             Indexes on the state nodes receiving observations.
 
         """
+        if input_data.ndim == 1:
+            input_data = input_data[:, jnp.newaxis]
+
         # set the input nodes indexes
         if input_idxs is not None:
             self.input_idxs = input_idxs
 
-        # input_data should be a tuple of n by time_steps arrays
-        if not isinstance(input_data, tuple):
-            if observed is None:
-                observed = np.ones(input_data.shape, dtype=int)
-            if input_data.ndim == 1:
+        # get the dimension of the input nodes
+        if not self.input_dim:
+            self.get_input_dimension()
 
-                # Interleave observations and masks
-                input_data = (input_data, observed)
-            else:
-                observed = jnp.hsplit(observed, input_data.shape[1])
-                observations = jnp.hsplit(input_data, input_data.shape[1])
-
-                # Interleave observations and masks
-                input_data = tuple(
-                    [item for pair in zip(observations, observed) for item in pair]
-                )
+        # generate the belief propagation function
+        if self.scan_fn is None:
+            self = self.create_belief_propagation_fn()
 
         # time steps vector
         if time_steps is None:
-            time_steps = np.ones(input_data[0].shape[0])
+            time_steps = np.ones(input_data.shape[0])
+
+        # observation mask
+        if observed is None:
+            observed = tuple(
+                [
+                    np.ones(input_data.shape[0], dtype=int)
+                    for _ in range(len(self.input_idxs))
+                ]
+            )
+
+        # format input_data according to the input nodes dimension
+        split_indices = np.cumsum(self.input_dim[:-1])
+        values = tuple(np.split(input_data, split_indices, axis=1))
+
+        # wrap the inputs
+        inputs = values, observed, time_steps
 
         # create the update functions that will be scanned
         branches_fn = [
@@ -285,11 +305,11 @@ class Network:
 
         # create the function that will be scanned
         def switching_propagation(attributes, scan_input):
-            (*data, idx) = scan_input
+            data, idx = scan_input
             return switch(idx, branches_fn, attributes, data)
 
         # wrap the inputs
-        scan_input = (*input_data, time_steps, branches_idx)
+        scan_input = (inputs, branches_idx)
 
         # scan over the input data and apply the switching belief propagation functions
         _, node_trajectories = scan(switching_propagation, self.attributes, scan_input)
@@ -329,7 +349,7 @@ class Network:
             be a regular state node that can have value and/or volatility
             parents/children. If `"binary-state"`, the node should be the
             value parent of a binary input. State nodes filtering distribution from the
-            exponential family can be created using `"exponential-state"`.
+            exponential family can be created using `"ef-state"`.
 
         .. note::
             When using a categorical state node, the `binary_parameters` can be used to
@@ -380,282 +400,102 @@ class Network:
 
         """
         if kind not in [
-            "DP-state",
-            "exponential-state",
+            "dp-state",
+            "ef-state",
             "categorical-state",
             "continuous-state",
             "binary-state",
-            "generic-state",
         ]:
             raise ValueError(
                 (
                     "Invalid node type. Should be one of the following: "
-                    "'DP-state', 'continuous-state', 'binary-state', "
-                    "'exponential-state', 'generic-state' or 'categorical-state'"
+                    "'dp-state', 'continuous-state', 'binary-state', "
+                    "'ef-state', or 'categorical-state'"
                 )
             )
 
-        # assess children number
-        # this is required to ensure the coupling functions match
-        children_number = 1
-        if value_children is None:
-            children_number = 0
-        elif isinstance(value_children, int):
-            children_number = 1
-        elif isinstance(value_children, list):
-            children_number = len(value_children)
-
-        # transform coupling parameter into tuple of indexes and strenghts
-        couplings = []
-        for indexes in [
-            value_parents,
-            volatility_parents,
-            value_children,
-            volatility_children,
-        ]:
-            if indexes is not None:
-                if isinstance(indexes, int):
-                    coupling_idxs = tuple([indexes])
-                    coupling_strengths = tuple([1.0])
-                elif isinstance(indexes, list):
-                    coupling_idxs = tuple(indexes)
-                    coupling_strengths = tuple([1.0] * len(coupling_idxs))
-                elif isinstance(indexes, tuple):
-                    coupling_idxs = tuple(indexes[0])
-                    coupling_strengths = tuple(indexes[1])
-            else:
-                coupling_idxs, coupling_strengths = None, None
-            couplings.append((coupling_idxs, coupling_strengths))
+        # turn coupling indexes of various kinds
+        # into tuples of indexes and coupling strength
         value_parents, volatility_parents, value_children, volatility_children = (
-            couplings
+            get_couplings(
+                value_parents, volatility_parents, value_children, volatility_children
+            )
         )
 
         # create the default parameters set according to the node type
         if kind == "continuous-state":
-            default_parameters = {
-                "mean": 0.0,
-                "expected_mean": 0.0,
-                "precision": 1.0,
-                "expected_precision": 1.0,
-                "volatility_coupling_children": volatility_children[1],
-                "volatility_coupling_parents": volatility_parents[1],
-                "value_coupling_children": value_children[1],
-                "value_coupling_parents": value_parents[1],
-                "tonic_volatility": -4.0,
-                "tonic_drift": 0.0,
-                "autoconnection_strength": 1.0,
-                "observed": 1,
-                "temp": {
-                    "effective_precision": 0.0,
-                    "value_prediction_error": 0.0,
-                    "volatility_prediction_error": 0.0,
-                },
-            }
-        elif kind == "binary-state":
-            default_parameters = {
-                "observed": 1,
-                "mean": 0,
-                "expected_mean": 0.5,
-                "precision": 1.0,
-                "expected_precision": 1.0,
-                "value_coupling_parents": value_parents[1],
-                "temp": {
-                    "value_prediction_error": 0.0,
-                },
-            }
-        elif kind == "generic-state":
-            default_parameters = {
-                "mean": 0.0,
-                "observed": 1,
-            }
-        elif "exponential-state" in kind:
-            default_parameters = {
-                "nus": 3.0,
-                "xis": jnp.array([0.0, 1.0]),
-                "mean": 0.0,
-                "observed": 1,
-            }
-        elif kind == "categorical-state":
-            if "n_categories" in node_parameters:
-                n_categories = node_parameters["n_categories"]
-            elif "n_categories" in additional_parameters:
-                n_categories = additional_parameters["n_categories"]
-            else:
-                n_categories = 4
-            binary_parameters = {
-                "n_categories": n_categories,
-                "precision_1": 1.0,
-                "precision_2": 1.0,
-                "precision_3": 1.0,
-                "mean_1": 1 / n_categories,
-                "mean_2": -jnp.log(n_categories - 1),
-                "mean_3": 0.0,
-                "tonic_volatility_2": -4.0,
-                "tonic_volatility_3": -4.0,
-            }
-            binary_idxs: List[int] = [
-                1 + i + len(self.edges) for i in range(n_categories)
-            ]
-            default_parameters = {
-                "binary_idxs": binary_idxs,  # type: ignore
-                "n_categories": n_categories,
-                "surprise": 0.0,
-                "kl_divergence": 0.0,
-                "alpha": jnp.ones(n_categories),
-                "observed": jnp.ones(n_categories, dtype=int),
-                "mean": jnp.array([1.0 / n_categories] * n_categories),
-                "binary_parameters": binary_parameters,
-            }
-        elif kind == "DP-state":
-
-            if "batch_size" in additional_parameters.keys():
-                batch_size = additional_parameters["batch_size"]
-            elif "batch_size" in node_parameters.keys():
-                batch_size = node_parameters["batch_size"]
-            else:
-                batch_size = 10
-
-            default_parameters = {
-                "batch_size": batch_size,  # number of branches available in the network
-                "n": jnp.zeros(batch_size),  # number of observation in each cluster
-                "n_total": 0,  # the total number of observations in the node
-                "alpha": 1.0,  # concentration parameter for the implied Dirichlet dist.
-                "expected_means": jnp.zeros(batch_size),
-                "expected_sigmas": jnp.ones(batch_size),
-                "sensory_precision": 1.0,
-                "activated": jnp.zeros(batch_size),
-                "value_coupling_children": (1.0,),
-                "mean": 0.0,
-                "n_active_cluster": 0,
-            }
-
-        # Update the default node parameters using keywords args and dictonary
-        if bool(additional_parameters):
-            # ensure that all passed values are valid keys
-            invalid_keys = [
-                key
-                for key in additional_parameters.keys()
-                if key not in default_parameters.keys()
-            ]
-
-            if invalid_keys:
-                raise ValueError(
-                    (
-                        "Some parameter(s) passed as keyword arguments were not found "
-                        f"in the default key list for this node (i.e. {invalid_keys})."
-                        " If you want to create a new key in the node attributes, "
-                        "please use the node_parameters argument instead."
-                    )
-                )
-
-            # if keyword parameters were provided, update the default_parameters dict
-            default_parameters.update(additional_parameters)
-
-        # update the defaults using the dict parameters
-        default_parameters.update(node_parameters)
-        node_parameters = default_parameters
-
-        # define the type of node that is created
-        if kind == "generic-state":
-            node_type = 0
-        elif kind == "binary-state":
-            node_type = 1
-        elif kind == "continuous-state":
-            node_type = 2
-        elif kind == "exponential-state":
-            node_type = 3
-        elif kind == "DP-state":
-            node_type = 4
-        elif kind == "categorical-state":
-            node_type = 5
-
-        for _ in range(n_nodes):
-            # convert the structure to a list to modify it
-            edges_as_list: List = list(self.edges)
-
-            node_idx = len(self.edges)  # the index of the new node
-
-            # for mutiple value children, set a default tuple with corresponding length
-            if children_number != len(coupling_fn):
-                if coupling_fn == (None,):
-                    coupling_fn = children_number * coupling_fn
-                else:
-                    raise ValueError(
-                        "The number of coupling fn and value children do not match"
-                    )
-
-            # add a new edge
-            edges_as_list.append(
-                AdjacencyLists(
-                    node_type, None, None, None, None, coupling_fn=coupling_fn
-                )
+            self = add_continuous_state(
+                network=self,
+                n_nodes=n_nodes,
+                value_parents=value_parents,
+                volatility_parents=volatility_parents,
+                value_children=value_children,
+                volatility_children=volatility_children,
+                node_parameters=node_parameters,
+                additional_parameters=additional_parameters,
+                coupling_fn=coupling_fn,
             )
-
-            # convert the list back to a tuple
-            self.edges = tuple(edges_as_list)
-
-            # update the node structure
-            self.attributes[node_idx] = deepcopy(node_parameters)
-
-            # Update the edges of the parents and children accordingly
-            # --------------------------------------------------------
-            if value_parents[0] is not None:
-                self.add_edges(
-                    kind="value",
-                    parent_idxs=value_parents[0],
-                    children_idxs=node_idx,
-                    coupling_strengths=value_parents[1],  # type: ignore
-                )
-            if value_children[0] is not None:
-                self.add_edges(
-                    kind="value",
-                    parent_idxs=node_idx,
-                    children_idxs=value_children[0],
-                    coupling_strengths=value_children[1],  # type: ignore
-                    coupling_fn=coupling_fn,
-                )
-            if volatility_children[0] is not None:
-                self.add_edges(
-                    kind="volatility",
-                    parent_idxs=node_idx,
-                    children_idxs=volatility_children[0],
-                    coupling_strengths=volatility_children[1],  # type: ignore
-                )
-            if volatility_parents[0] is not None:
-                self.add_edges(
-                    kind="volatility",
-                    parent_idxs=volatility_parents[0],
-                    children_idxs=node_idx,
-                    coupling_strengths=volatility_parents[1],  # type: ignore
-                )
-
-        if kind == "categorical-state":
-            # if we are creating a categorical state or state-transition node
-            # we have to generate the implied binary network(s) here
-            self = fill_categorical_state_node(
-                self,
-                node_idx=node_idx,
-                binary_states_idxs=node_parameters["binary_idxs"],  # type: ignore
-                binary_parameters=binary_parameters,
+        elif kind == "binary-state":
+            self = add_binary_state(
+                network=self,
+                n_nodes=n_nodes,
+                value_parents=value_parents,
+                volatility_parents=volatility_parents,
+                value_children=value_children,
+                volatility_children=volatility_children,
+                node_parameters=node_parameters,
+                additional_parameters=additional_parameters,
+            )
+        elif kind == "ef-state":
+            self = add_ef_state(
+                network=self,
+                n_nodes=n_nodes,
+                node_parameters=node_parameters,
+                additional_parameters=additional_parameters,
+                value_children=value_children,
+            )
+        elif kind == "categorical-state":
+            self = add_categorical_state(
+                network=self,
+                n_nodes=n_nodes,
+                node_parameters=node_parameters,
+                additional_parameters=additional_parameters,
+            )
+        elif kind == "dp-state":
+            self = add_dp_state(
+                network=self,
+                n_nodes=n_nodes,
+                node_parameters=node_parameters,
+                additional_parameters=additional_parameters,
             )
 
         return self
 
     def plot_nodes(self, node_idxs: Union[int, List[int]], **kwargs):
         """Plot the node(s) beliefs trajectories."""
-        return plot_nodes(network=self, node_idxs=node_idxs, **kwargs)
+        return graphviz.plot_nodes(network=self, node_idxs=node_idxs, **kwargs)
 
     def plot_trajectories(self, **kwargs):
         """Plot the parameters trajectories."""
-        return plot_trajectories(network=self, **kwargs)
+        return graphviz.plot_trajectories(network=self, **kwargs)
 
     def plot_correlations(self):
         """Plot the heatmap of cross-trajectories correlation."""
-        return plot_correlations(network=self)
+        return graphviz.plot_correlations(network=self)
 
-    def plot_network(self):
+    def plot_network(self, backend: str = "graphviz"):
         """Visualization of node network using GraphViz."""
-        return plot_network(network=self)
+        if backend == "graphviz":
+            return graphviz.plot_network(network=self)
+        elif backend == "networkx":
+            return networkx.plot_network(network=self)
+        else:
+            raise ValueError(
+                (
+                    "Invalid backend."
+                    " Should be one of the following: 'graphviz' or 'networkx'",
+                )
+            )
 
     def to_pandas(self) -> pd.DataFrame:
         """Export the nodes trajectories and surprise as a Pandas data frame.
@@ -754,4 +594,22 @@ class Network:
         self.attributes = attributes
         self.edges = edges
 
+        return self
+
+    def get_input_dimension(
+        self,
+    ) -> "Network":
+        """Get input node dimensions.
+
+        All nodes have dimension 1, except exponential family state nodes and
+        categorical state node.
+        """
+        for idx in self.input_idxs:
+            if self.edges[idx].node_type == 3:
+                dim = self.attributes[idx]["dimension"]
+            elif self.edges[idx].node_type == 5:
+                dim = self.attributes[idx]["n_categories"]
+            else:
+                dim = 1
+            self.input_dim.append(dim)
         return self

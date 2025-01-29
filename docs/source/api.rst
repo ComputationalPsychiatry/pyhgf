@@ -46,6 +46,16 @@ Continuous nodes
     continuous_node_posterior_update
     continuous_node_posterior_update_ehgf
 
+Exponential family
+------------------
+
+.. currentmodule:: pyhgf.updates.posterior.exponential
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.exponential
+
+    posterior_update_exponential_family_dynamic
+
 Prediction steps
 ================
 
@@ -89,7 +99,7 @@ Prediction error steps
 Compute the value and volatility prediction errors of a given node. The prediction error can only be computed after the posterior update (or observation) of a given node.
 
 Binary state nodes
-^^^^^^^^^^^^^^^^^^
+------------------
 
 .. currentmodule:: pyhgf.updates.prediction_error.binary
 
@@ -100,7 +110,7 @@ Binary state nodes
     binary_finite_state_node_prediction_error
 
 Categorical state nodes
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 .. currentmodule:: pyhgf.updates.prediction_error.categorical
 
@@ -110,7 +120,7 @@ Categorical state nodes
     categorical_state_prediction_error
 
 Continuous state nodes
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 
 .. currentmodule:: pyhgf.updates.prediction_error.continuous
 
@@ -122,7 +132,7 @@ Continuous state nodes
     continuous_node_prediction_error
 
 Dirichlet state nodes
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 .. currentmodule:: pyhgf.updates.prediction_error.dirichlet
 
@@ -137,14 +147,15 @@ Dirichlet state nodes
     clusters_likelihood
 
 Exponential family
-^^^^^^^^^^^^^^^^^^
+------------------
 
 .. currentmodule:: pyhgf.updates.prediction_error.exponential
 
 .. autosummary::
    :toctree: generated/pyhgf.updates.prediction_error.exponential
 
-    prediction_error_update_exponential_family
+    prediction_error_update_exponential_family_fixed
+    prediction_error_update_exponential_family_dynamic
 
 Distribution
 ************
@@ -179,22 +190,44 @@ and creates a standard node structure for these models.
 
    HGF
    Network
+   add_continuous_state
+   add_binary_state
+   add_ef_state
+   add_categorical_state
+   add_dp_state
+   get_couplings
+   update_parameters
+   insert_nodes
 
 Plots
 *****
 
 Plotting functionalities to visualize parameters trajectories and correlations after
-observing new data.
+observing new data. We are currently fully supporting Graphviz. NetworkX is also
+available for some functions.
 
-.. currentmodule:: pyhgf.plots
+Graphviz
+========
+
+.. currentmodule:: pyhgf.plots.graphviz
 
 .. autosummary::
-   :toctree: generated/pyhgf.plots
+   :toctree: generated/pyhgf.plots.graphviz
 
    plot_trajectories
    plot_correlations
    plot_network
    plot_nodes
+
+Networkx
+========
+
+.. currentmodule:: pyhgf.plots.networkx
+
+.. autosummary::
+   :toctree: generated/pyhgf.plots.networkx
+
+   plot_network
 
 Response
 ********
@@ -230,6 +263,8 @@ Utilities for manipulating neural networks.
    to_pandas
    add_edges
    get_input_idxs
+   add_parent
+   remove_node
 
 Math
 ****

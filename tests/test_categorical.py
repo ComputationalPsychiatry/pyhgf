@@ -10,9 +10,9 @@ def test_categorical_state_node():
     # generate some categorical inputs data
     np.random.seed(123)
     input_data = np.array(
-        [np.random.multinomial(n=1, pvals=[0.1, 0.2, 0.7]) for _ in range(3)]
-    ).T
-    input_data = np.vstack([[0.0] * input_data.shape[1], input_data])
+        [np.random.multinomial(n=1, pvals=[0.1, 0.2, 0.7]) for _ in range(10)],
+        dtype=float,
+    )
 
     # create the categorical HGF
     categorical_hgf = Network().add_nodes(
@@ -24,16 +24,14 @@ def test_categorical_state_node():
     )
 
     # fitting the model forwards
-    categorical_hgf.input_data(
-        input_data=(input_data, np.ones(input_data.shape, dtype=int))
-    )
+    categorical_hgf.input_data(input_data=input_data)
 
     # export to pandas data frame
     categorical_hgf.to_pandas()
 
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 0.8222526
+        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2844281
     )
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["surprise"].sum(), 7.6738853
+        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.514427
     )

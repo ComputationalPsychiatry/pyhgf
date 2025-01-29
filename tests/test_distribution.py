@@ -54,7 +54,7 @@ def test_logp():
     assert jnp.isclose(log_likelihood.sum(), 1141.0585)
 
 
-def test_vectorized_continuous_logp():
+def test_vectorized_continuous_logp(benchmark):
     """Test the vectorized version of the log-probability function."""
 
     timeseries = load_data("continuous")
@@ -128,32 +128,39 @@ def test_vectorized_continuous_logp():
     )
 
     # model fit
-    log_likelihoods = vectorized_logp_two_levels(
-        input_data=input_data,
-        response_function_inputs=jnp.ones(2),
-        response_function_parameters=response_function_parameters,
-        time_steps=time_steps,
-        mean_1=_mean_1,
-        mean_2=_mean_2,
-        mean_3=_mean_3,
-        precision_1=_precision_1,
-        precision_2=_precision_2,
-        precision_3=_precision_3,
-        tonic_volatility_1=_tonic_volatility_1,
-        tonic_volatility_2=_tonic_volatility_2,
-        tonic_volatility_3=_tonic_volatility_3,
-        tonic_drift_1=_tonic_drift_1,
-        tonic_drift_2=_tonic_drift_2,
-        tonic_drift_3=_tonic_drift_3,
-        volatility_coupling_1=_volatility_coupling_1,
-        volatility_coupling_2=_volatility_coupling_2,
-        input_precision=_input_precision,
-    )
+    def get_likelihood():
+        return vectorized_logp_two_levels(
+            input_data=input_data,
+            response_function_inputs=jnp.ones(2),
+            response_function_parameters=response_function_parameters,
+            time_steps=time_steps,
+            mean_1=_mean_1,
+            mean_2=_mean_2,
+            mean_3=_mean_3,
+            precision_1=_precision_1,
+            precision_2=_precision_2,
+            precision_3=_precision_3,
+            tonic_volatility_1=_tonic_volatility_1,
+            tonic_volatility_2=_tonic_volatility_2,
+            tonic_volatility_3=_tonic_volatility_3,
+            tonic_drift_1=_tonic_drift_1,
+            tonic_drift_2=_tonic_drift_2,
+            tonic_drift_3=_tonic_drift_3,
+            volatility_coupling_1=_volatility_coupling_1,
+            volatility_coupling_2=_volatility_coupling_2,
+            input_precision=_input_precision,
+        )
+
+    # warmup
+    _ = get_likelihood()
+
+    # benchmark
+    log_likelihoods = benchmark(get_likelihood)
 
     assert jnp.isclose(log_likelihoods.sum(), 2282.1165).all()
 
 
-def test_vectorized_binary_logp():
+def test_vectorized_binary_logp(benchmark):
     """Test the vectorized version of the log-probability function."""
 
     u, y = load_data("binary")
@@ -227,27 +234,34 @@ def test_vectorized_binary_logp():
     )
 
     # model fit
-    log_likelihoods = vectorized_logp_two_levels(
-        input_data=input_data,
-        response_function_inputs=np.array([y] * 2),
-        response_function_parameters=response_function_parameters,
-        time_steps=time_steps,
-        mean_1=_mean_1,
-        mean_2=_mean_2,
-        mean_3=_mean_3,
-        precision_1=_precision_1,
-        precision_2=_precision_2,
-        precision_3=_precision_3,
-        tonic_volatility_1=_tonic_volatility_1,
-        tonic_volatility_2=_tonic_volatility_2,
-        tonic_volatility_3=_tonic_volatility_3,
-        tonic_drift_1=_tonic_drift_1,
-        tonic_drift_2=_tonic_drift_2,
-        tonic_drift_3=_tonic_drift_3,
-        volatility_coupling_1=_volatility_coupling_1,
-        volatility_coupling_2=_volatility_coupling_2,
-        input_precision=_input_precision,
-    )
+    def get_likelihood():
+        return vectorized_logp_two_levels(
+            input_data=input_data,
+            response_function_inputs=np.array([y] * 2),
+            response_function_parameters=response_function_parameters,
+            time_steps=time_steps,
+            mean_1=_mean_1,
+            mean_2=_mean_2,
+            mean_3=_mean_3,
+            precision_1=_precision_1,
+            precision_2=_precision_2,
+            precision_3=_precision_3,
+            tonic_volatility_1=_tonic_volatility_1,
+            tonic_volatility_2=_tonic_volatility_2,
+            tonic_volatility_3=_tonic_volatility_3,
+            tonic_drift_1=_tonic_drift_1,
+            tonic_drift_2=_tonic_drift_2,
+            tonic_drift_3=_tonic_drift_3,
+            volatility_coupling_1=_volatility_coupling_1,
+            volatility_coupling_2=_volatility_coupling_2,
+            input_precision=_input_precision,
+        )
+
+    # warmup
+    _ = get_likelihood()
+
+    # benchmark
+    log_likelihoods = benchmark(get_likelihood)
 
     assert jnp.isclose(log_likelihoods.sum(), -283.83594).all()
 
@@ -534,7 +548,7 @@ def test_pytensor_logp():
     assert jnp.isclose(logp, -200.2442167699337)
 
 
-def test_pytensor_grad_logp():
+def test_pytensor_grad_logp_continuous(benchmark):
     """Test the pytensor gradient hgf_logp op."""
 
     ##################
@@ -552,20 +566,31 @@ def test_pytensor_grad_logp():
         response_function_inputs=None,
     )
 
-    tonic_volatility_1 = hgf_logp_grad_op(
-        tonic_volatility_1=-3.0,
-        tonic_volatility_2=-3.0,
-        input_precision=1e4,
-        tonic_drift_1=0.0,
-        tonic_drift_2=0.0,
-        precision_1=1.0,
-        precision_2=1.0,
-        mean_1=1.0,
-        mean_2=0.0,
-        volatility_coupling_1=1.0,
-    )[6].eval()
+    def get_grad_volatility_1():
+        return hgf_logp_grad_op(
+            tonic_volatility_1=-3.0,
+            tonic_volatility_2=-3.0,
+            input_precision=1e4,
+            tonic_drift_1=0.0,
+            tonic_drift_2=0.0,
+            precision_1=1.0,
+            precision_2=1.0,
+            mean_1=1.0,
+            mean_2=0.0,
+            volatility_coupling_1=1.0,
+        )[6].eval()
+
+    # warmup
+    _ = get_grad_volatility_1()
+
+    # benchmark
+    tonic_volatility_1 = benchmark(get_grad_volatility_1)
 
     assert jnp.isclose(tonic_volatility_1, -3.3479857)
+
+
+def test_pytensor_grad_logp_binary(benchmark):
+    """Test the pytensor gradient hgf_logp op."""
 
     ##############
     # Binary HGF #
@@ -582,18 +607,25 @@ def test_pytensor_grad_logp():
         response_function_inputs=y[np.newaxis, :],
     )
 
-    tonic_volatility_2 = hgf_logp_grad_op(
-        tonic_volatility_1=jnp.inf,
-        tonic_volatility_2=-6.0,
-        input_precision=jnp.inf,
-        tonic_drift_1=0.0,
-        tonic_drift_2=0.0,
-        precision_1=0.0,
-        precision_2=1e4,
-        mean_1=jnp.inf,
-        mean_2=0.5,
-        volatility_coupling_1=1.0,
-    )[7].eval()
+    def get_grad_volatility_2():
+        return hgf_logp_grad_op(
+            tonic_volatility_1=jnp.inf,
+            tonic_volatility_2=-6.0,
+            input_precision=jnp.inf,
+            tonic_drift_1=0.0,
+            tonic_drift_2=0.0,
+            precision_1=0.0,
+            precision_2=1e4,
+            mean_1=jnp.inf,
+            mean_2=0.5,
+            volatility_coupling_1=1.0,
+        )[7].eval()
+
+    # warmup
+    _ = get_grad_volatility_2()
+
+    # benchmark
+    tonic_volatility_2 = benchmark(get_grad_volatility_2)
 
     assert jnp.isclose(tonic_volatility_2, 10.866466)
 
