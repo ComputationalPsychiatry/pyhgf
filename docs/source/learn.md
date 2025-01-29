@@ -187,6 +187,14 @@ Dynamic inference over both the mean and variance of a normal distribution.
 A generalisation of the binary Hierarchical Gaussian Filter to multiarmed bandit where the probabilities of the outcomes are evolving independently.
 :::
 
+:::{grid-item-card}  Causal discovery for predictive coding
+:link: example_4
+:link-type: ref
+:img-top: ./images/causal_discovery.png
+
+Deriving a causal discovery prediction error to track the causal coupling strength between two random variable over time.
+:::
+
 ::::
 
 ## Exercises
