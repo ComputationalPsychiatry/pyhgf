@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.network &#8212; pyhgf 0.2.2 documentation</title>
+    <title>pyhgf.model.network &#8212; pyhgf 0.2.3 documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=000c92bf"></script>
+    <script src="../../../_static/documentation_options.js?v=a47416a6"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -444,7 +444,7 @@
     <span class="n">add_ef_state</span><span class="p">,</span>
     <span class="n">get_couplings</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_correlations</span><span class="p">,</span> <span class="n">plot_network</span><span class="p">,</span> <span class="n">plot_nodes</span><span class="p">,</span> <span class="n">plot_trajectories</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">networkx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attributes</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">NetworkParameters</span><span class="p">,</span> <span class="n">UpdateSequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_edges</span><span class="p">,</span>
@@ -905,19 +905,29 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the node(s) beliefs trajectories.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">plot_nodes</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="o">=</span><span class="n">node_idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="o">=</span><span class="n">node_idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the parameters trajectories.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">plot_trajectories</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_correlations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the heatmap of cross-trajectories correlation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">plot_correlations</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_correlations</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">plot_network</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;graphviz&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Visualization of node network using GraphViz.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">plot_network</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;graphviz&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_network</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;networkx&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">networkx</span><span class="o">.</span><span class="n">plot_network</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;Invalid backend.&quot;</span>
+                    <span class="s2">&quot; Should be one of the following: &#39;graphviz&#39; or &#39;networkx&#39;&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Export the nodes trajectories and surprise as a Pandas data frame.</span>

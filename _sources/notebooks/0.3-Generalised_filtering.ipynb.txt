@@ -347,30 +347,32 @@
     "tags": []
    },
    "source": [
-    "````{note} From sufficient statistics to distribution parameters and backwards\n",
+    ":::{note} From sufficient statistics to distribution parameters and backwards\n",
     ":class: dropdown\n",
     "\n",
     "When using a 1-dimensional Gaussian distribution, Setting $\\xi = [0, \\frac{1}{8}]$ is equivalent to a mean $\\mu = 0.0$ and a variance $\\sigma^2 = \\frac{1}{8}$. You can convert between distribution parameters and expected sufficient statistics using the distribution classes from PyHGF (when implemented):\n",
     "\n",
-    "```{code-cell} python\n",
+    "```python\n",
     "from pyhgf.math import Normal\n",
     "\n",
     "# from an observation to sufficient statistics\n",
     "Normal.sufficient_statistics_from_observations(x=1.5)\n",
     "```\n",
     "> Array([1.5 , 2.25], dtype=float32)\n",
-    "```{code-cell} python\n",
+    "\n",
+    "```python\n",
     "# from distribution parameters to sufficient statistics\n",
     "Normal.sufficient_statistics_from_parameters(mean=0.0, variance=4.0)\n",
     "```\n",
     "> Array([0., 4.], dtype=float32)\n",
-    "```{code-cell} python\n",
+    "\n",
+    "```python\n",
     "# from sufficient statistics to distribution parameters\n",
     "Normal.parameters_from_sufficient_statistics(xis=[0.0, 4.0])\n",
     "```\n",
     "> (0.0, 4.0)\n",
     "\n",
-    "````"
+    ":::"
    ]
   },
   {
@@ -417,7 +419,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f69845ec530>"
+       "<graphviz.sources.Source at 0x7fec53b15520>"
       ]
      },
      "execution_count": 7,
@@ -665,7 +667,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f6984591040>"
+       "<graphviz.sources.Source at 0x7fec4dea0950>"
       ]
      },
      "execution_count": 13,
@@ -1239,7 +1241,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f69784b16a0>"
+       "<graphviz.sources.Source at 0x7fec3c292780>"
       ]
      },
      "execution_count": 21,
@@ -1292,7 +1294,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Last updated: Tue Jan 14 2025\n",
+      "Last updated: Wed Jan 15 2025\n",
       "\n",
       "Python implementation: CPython\n",
       "Python version       : 3.12.3\n",
@@ -1302,13 +1304,13 @@
       "jax   : 0.4.31\n",
       "jaxlib: 0.4.31\n",
       "\n",
-      "numpy     : 1.26.0\n",
+      "matplotlib: 3.10.0\n",
+      "jax       : 0.4.31\n",
+      "seaborn   : 0.13.2\n",
+      "IPython   : 8.31.0\n",
       "sys       : 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]\n",
       "pyhgf     : 0.2.1.post4.dev0+d49aafe9\n",
-      "jax       : 0.4.31\n",
-      "IPython   : 8.31.0\n",
-      "seaborn   : 0.13.2\n",
-      "matplotlib: 3.10.0\n",
+      "numpy     : 1.26.0\n",
       "\n",
       "Watermark: 2.5.0\n",
       "\n"

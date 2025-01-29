@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed &#8212; pyhgf 0.2.2 documentation</title>
+    <title>pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed &#8212; pyhgf 0.2.3 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=000c92bf"></script>
+    <script src="../../_static/documentation_options.js?v=a47416a6"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -448,10 +448,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.insert_nodes.html">pyhgf.model.insert_nodes</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots/pyhgf.plots.plot_trajectories.html">pyhgf.plots.plot_trajectories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots/pyhgf.plots.plot_correlations.html">pyhgf.plots.plot_correlations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots/pyhgf.plots.plot_network.html">pyhgf.plots.plot_network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots/pyhgf.plots.plot_nodes.html">pyhgf.plots.plot_nodes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_trajectories.html">pyhgf.plots.graphviz.plot_trajectories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_correlations.html">pyhgf.plots.graphviz.plot_correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html">pyhgf.plots.graphviz.plot_network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_nodes.html">pyhgf.plots.graphviz.plot_nodes</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html">pyhgf.plots.networkx.plot_network</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.first_level_gaussian_surprise.html">pyhgf.response.first_level_gaussian_surprise</a></li>
@@ -545,7 +548,7 @@
 <h1>pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed<a class="headerlink" href="#pyhgf-updates-prediction-error-exponential-prediction-error-update-exponential-family-fixed" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.prediction_error.exponential.</span></span><span class="sig-name descname"><span class="pre">prediction_error_update_exponential_family_fixed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">AdjacencyLists</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sufficient_stats_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/pyhgf/updates/prediction_error/exponential.html#prediction_error_update_exponential_family_fixed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.prediction_error.exponential.</span></span><span class="sig-name descname"><span class="pre">prediction_error_update_exponential_family_fixed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sufficient_stats_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/pyhgf/updates/prediction_error/exponential.html#prediction_error_update_exponential_family_fixed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed" title="Link to this definition">#</a></dt>
 <dd><p>Update the parameters of an exponential family distribution.</p>
 <p>Assuming that <span class="math notranslate nohighlight">\(nu\)</span> is fixed, updating the hyperparameters of the distribution
 is given by:</p>
@@ -555,11 +558,6 @@ is given by:</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>attributes</strong></dt><dd><p>The attributes of the probabilistic nodes.</p>
-</dd>
-<dt><strong>edges</strong></dt><dd><p>The edges of the probabilistic nodes as a tuple of
-<code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as the node
-number. For each node, the index lists the value and volatility parents and
-children.</p>
 </dd>
 <dt><strong>node_idx</strong></dt><dd><p>Pointer to the value parent node that will be updated.</p>
 </dd>

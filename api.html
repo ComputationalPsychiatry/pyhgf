@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>API &#8212; pyhgf 0.2.2 documentation</title>
+    <title>API &#8212; pyhgf 0.2.3 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=000c92bf"></script>
+    <script src="_static/documentation_options.js?v=a47416a6"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -462,10 +462,15 @@
 </li>
 <li><p><a class="reference internal" href="#distribution" id="id19">Distribution</a></p></li>
 <li><p><a class="reference internal" href="#model" id="id20">Model</a></p></li>
-<li><p><a class="reference internal" href="#plots" id="id21">Plots</a></p></li>
-<li><p><a class="reference internal" href="#response" id="id22">Response</a></p></li>
-<li><p><a class="reference internal" href="#utils" id="id23">Utils</a></p></li>
-<li><p><a class="reference internal" href="#math" id="id24">Math</a></p></li>
+<li><p><a class="reference internal" href="#plots" id="id21">Plots</a></p>
+<ul>
+<li><p><a class="reference internal" href="#graphviz" id="id22">Graphviz</a></p></li>
+<li><p><a class="reference internal" href="#networkx" id="id23">Networkx</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#response" id="id24">Response</a></p></li>
+<li><p><a class="reference internal" href="#utils" id="id25">Utils</a></p></li>
+<li><p><a class="reference internal" href="#math" id="id26">Math</a></p></li>
 </ul>
 </li>
 </ul>
@@ -721,27 +726,42 @@ and creates a standard node structure for these models.</p>
 <section id="plots">
 <h2><a class="toc-backref" href="#id21" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <p>Plotting functionalities to visualize parameters trajectories and correlations after
-observing new data.</p>
+observing new data. We are currently fully supporting Graphviz. NetworkX is also
+available for some functions.</p>
+<section id="graphviz">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots/pyhgf.plots.plot_trajectories.html#pyhgf.plots.plot_trajectories" title="pyhgf.plots.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_trajectories.html#pyhgf.plots.graphviz.plot_trajectories" title="pyhgf.plots.graphviz.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
 <td><p>Plot the trajectories of the nodes' sufficient statistics and surprise.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots/pyhgf.plots.plot_correlations.html#pyhgf.plots.plot_correlations" title="pyhgf.plots.plot_correlations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_correlations</span></code></a>(network)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_correlations.html#pyhgf.plots.graphviz.plot_correlations" title="pyhgf.plots.graphviz.plot_correlations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_correlations</span></code></a>(network)</p></td>
 <td><p>Plot the heatmap correlation of the sufficient statistics trajectories.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots/pyhgf.plots.plot_network.html#pyhgf.plots.plot_network" title="pyhgf.plots.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html#pyhgf.plots.graphviz.plot_network" title="pyhgf.plots.graphviz.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
 <td><p>Visualization of node network using GraphViz.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots/pyhgf.plots.plot_nodes.html#pyhgf.plots.plot_nodes" title="pyhgf.plots.plot_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_nodes</span></code></a>(network, node_idxs[, ci, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_nodes.html#pyhgf.plots.graphviz.plot_nodes" title="pyhgf.plots.graphviz.plot_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_nodes</span></code></a>(network, node_idxs[, ci, ...])</p></td>
 <td><p>Plot the trajectory of expected sufficient statistics of a set of nodes.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
+<section id="networkx">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html#pyhgf.plots.networkx.plot_network" title="pyhgf.plots.networkx.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network[, figsize, node_size, ...])</p></td>
+<td><p>Visualization of node network using NetworkX and pydot layout.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
 <section id="response">
-<h2><a class="toc-backref" href="#id22" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id24" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
 <p>A collection of response functions. A response function is simply a callable taking at
 least the HGF instance as input after observation and returning surprise.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
@@ -766,7 +786,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="utils">
-<h2><a class="toc-backref" href="#id23" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id25" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
 <p>Utilities for manipulating neural networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
@@ -802,7 +822,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="math">
-<h2><a class="toc-backref" href="#id24" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id26" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
 <p>Math functions and probability densities.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
@@ -911,7 +931,11 @@ least the HGF instance as input after observation and returning surprise.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distribution">Distribution</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plots">Plots</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plots">Plots</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#graphviz">Graphviz</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#networkx">Networkx</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#response">Response</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#utils">Utils</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#math">Math</a></li>

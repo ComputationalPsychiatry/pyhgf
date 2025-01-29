@@ -37,6 +37,7 @@ notebooks/5-Non_linear_value_coupling
 notebooks/Example_1_Heart_rate_variability.ipynb
 notebooks/Example_2_Input_node_volatility_coupling.ipynb
 notebooks/Example_3_Multi_armed_bandit.ipynb
+notebooks/Example_4_Causal_discovery.ipynb
 ```
 
 ```{toctree}
@@ -184,6 +185,14 @@ Dynamic inference over both the mean and variance of a normal distribution.
 :img-top: ./images/multiarmedbandittask.png
 
 A generalisation of the binary Hierarchical Gaussian Filter to multiarmed bandit where the probabilities of the outcomes are evolving independently.
+:::
+
+:::{grid-item-card}  Causal discovery for predictive coding
+:link: example_4
+:link-type: ref
+:img-top: ./images/causal_discovery.png
+
+Deriving a causal discovery prediction error to track the causal coupling strength between two random variable over time.
 :::
 
 ::::

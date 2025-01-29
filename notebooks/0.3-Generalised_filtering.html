@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.2.2 documentation</title>
+    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.2.3 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=000c92bf"></script>
+    <script src="../_static/documentation_options.js?v=a47416a6"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -416,6 +416,7 @@
 
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -687,12 +688,26 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <p class="admonition-title">Note</p>
 <p>From sufficient statistics to distribution parameters and backwards</p>
 <p>When using a 1-dimensional Gaussian distribution, Setting <span class="math notranslate nohighlight">\(\xi = [0, \frac{1}{8}]\)</span> is equivalent to a mean <span class="math notranslate nohighlight">\(\mu = 0.0\)</span> and a variance <span class="math notranslate nohighlight">\(\sigma^2 = \frac{1}{8}\)</span>. You can convert between distribution parameters and expected sufficient statistics using the distribution classes from PyHGF (when implemented):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">Normal</span>
+
+<span class="c1"># from an observation to sufficient statistics</span>
+<span class="n">Normal</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+</pre></div>
+</div>
 <blockquote>
 <div><p>Array([1.5 , 2.25], dtype=float32)</p>
 </div></blockquote>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># from distribution parameters to sufficient statistics</span>
+<span class="n">Normal</span><span class="o">.</span><span class="n">sufficient_statistics_from_parameters</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">variance</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+</pre></div>
+</div>
 <blockquote>
 <div><p>Array([0., 4.], dtype=float32)</p>
 </div></blockquote>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># from sufficient statistics to distribution parameters</span>
+<span class="n">Normal</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">(</span><span class="n">xis</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+</pre></div>
+</div>
 <blockquote>
 <div><p>(0.0, 4.0)</p>
 </div></blockquote>
@@ -1086,23 +1101,23 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Jan 14 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed Jan 29 2025
 
 Python implementation: CPython
 Python version       : 3.12.8
 IPython version      : 8.31.0
 
-pyhgf : 0.2.2
+pyhgf : 0.2.3
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 8.31.0
-jax       : 0.4.31
-matplotlib: 3.10.0
-numpy     : 1.26.0
 sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
 seaborn   : 0.13.2
-pyhgf     : 0.2.2
+IPython   : 8.31.0
+numpy     : 1.26.0
+pyhgf     : 0.2.3
+matplotlib: 3.10.0
+jax       : 0.4.31
 
 Watermark: 2.5.0
 </pre></div>
