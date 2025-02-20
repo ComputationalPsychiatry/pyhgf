@@ -4,8 +4,12 @@ from .beliefs_propagation import beliefs_propagation
 from .fill_categorical_state_node import fill_categorical_state_node
 from .get_input_idxs import get_input_idxs
 from .get_update_sequence import get_update_sequence
+from .handle_observation import handle_observation
+from .inference_prediction import inference_prediction
 from .list_branches import list_branches
 from .remove_node import remove_node
+from .sample_node_distribution import sample_node_distribution
+from .scan_sampling import scan_sampling
 from .to_pandas import to_pandas
 
 __all__ = [
@@ -18,4 +22,8 @@ __all__ = [
     "list_branches",
     "to_pandas",
     "remove_node",
+    "sample_node_distribution",
+    "inference_prediction",
+    "scan_sampling",
+    "handle_observation",
 ]

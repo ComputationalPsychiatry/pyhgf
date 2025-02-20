@@ -1,24 +1,26 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict, Tuple
 
-from jax import jit
-from jax.typing import ArrayLike
+from jax import jit, random
 
-from pyhgf.typing import Attributes, Edges, UpdateSequence
 from pyhgf.updates.observation import set_observation
+from pyhgf.utils.handle_observation import handle_observation
 
 
-@partial(jit, static_argnames=("update_sequence", "edges", "input_idxs"))
+@partial(
+    jit, static_argnames=("update_sequence", "edges", "input_idxs", "sophisticated")
+)
 def beliefs_propagation(
-    attributes: Attributes,
-    inputs: Tuple[ArrayLike, ...],
-    update_sequence: UpdateSequence,
-    edges: Edges,
-    input_idxs: Tuple[int],
-) -> Tuple[Dict, Dict]:
-    """Update the network's parameters after observing new data point(s).
+    attributes: dict,
+    inputs: tuple,
+    update_sequence,
+    edges,
+    input_idxs: tuple,
+    sophisticated: bool,
+    rng_key: random.PRNGKey = None,
+) -> tuple:
+    """Update the networks parameters after observing new data point(s).
 
     This function performs the beliefs propagation step. Belief propagation consists in:
     1. A prediction sequence, from the leaves of the graph to the roots.
@@ -44,6 +46,10 @@ def beliefs_propagation(
         The sequence of updates that will be applied to the node structure.
     edges :
         Information on the network's edges.
+    sophisticated :
+        A boolean indicating whether the network use sophisticated inference or not.
+    rng_key :
+        Random key for the random number generator.
     input_idxs :
         List input indexes.
 
@@ -53,49 +59,73 @@ def beliefs_propagation(
         A tuple of parameters structure (carryover and accumulated).
 
     """
-    prediction_steps, update_steps = update_sequence
+    if sophisticated:
 
-    # unpack input data - ((ndarrays, ...), (1darrays, ...), float64)
-    values_tuple, observed_tuple, time_step = inputs
+        # Use the passed rng_key without reinitializing it.
+        prediction_steps, update_steps = update_sequence
 
-    attributes[-1]["time_step"] = time_step
+        # Assign time_step (e.g. input data) to a special key in attributes.
+        attributes[-1]["time_step"] = inputs
 
-    # 1 - Prediction sequence
-    # -----------------------
-    for step in prediction_steps:
+        # Run prediction steps.
+        for node_idx, update_fn in prediction_steps:
+            attributes = update_fn(
+                attributes=attributes, node_idx=node_idx, edges=edges
+            )
 
-        node_idx, update_fn = step
+        # Handle observations on specified input nodes.
+        for node_idx in input_idxs:
+            attributes, rng_key = handle_observation(
+                attributes, node_idx, rng_key, sophisticated, edges
+            )
 
-        attributes = update_fn(
-            attributes=attributes,
-            node_idx=node_idx,
-            edges=edges,
-        )
+        # Run update steps.
+        for node_idx, update_fn in update_steps:
+            attributes = update_fn(
+                attributes=attributes, node_idx=node_idx, edges=edges
+            )
 
-    # 2 - Observations
-    # ----------------
-    for values, observed, node_idx in zip(values_tuple, observed_tuple, input_idxs):
+        return attributes, attributes, rng_key
 
-        attributes = set_observation(
-            attributes=attributes,
-            node_idx=node_idx,
-            values=values.squeeze(),
-            observed=observed,
-        )
+    else:
 
-    # 3 - Update sequence
-    # -------------------
-    for step in update_steps:
+        prediction_steps, update_steps = update_sequence
 
-        node_idx, update_fn = step
+        # unpack input data - ((ndarrays, ...), (1darrays, ...), float64)
+        values_tuple, observed_tuple, time_step = inputs
 
-        attributes = update_fn(
-            attributes=attributes,
-            node_idx=node_idx,
-            edges=edges,
-        )
+        attributes[-1]["time_step"] = time_step
 
-    return (
-        attributes,
-        attributes,
-    )  # ("carryover", "accumulated")
+        # 1 - Séquence de prédiction
+        for step in prediction_steps:
+            node_idx, update_fn = step
+            attributes = update_fn(
+                attributes=attributes,
+                node_idx=node_idx,
+                edges=edges,
+            )
+
+        for values, observed, node_idx in zip(values_tuple, observed_tuple, input_idxs):
+
+            attributes = set_observation(
+                attributes=attributes,
+                node_idx=node_idx,
+                values=values.squeeze(),
+                observed=observed,
+            )
+
+        # 3 - Update sequence
+        # -------------------
+        for step in update_steps:
+
+            node_idx, update_fn = step
+
+            attributes = update_fn(
+                attributes=attributes,
+                node_idx=node_idx,
+                edges=edges,
+            )
+        return (
+            attributes,
+            attributes,
+        )  # ("carryover", "accumulated")

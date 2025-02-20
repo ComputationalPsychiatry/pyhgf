@@ -3,12 +3,39 @@
 from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
+import numpy as np
 import pandas as pd
 
 from pyhgf.math import binary_surprise, gaussian_surprise
 
 if TYPE_CHECKING:
     from pyhgf.model import Network
+
+
+def flatten_with_trajectory(x):
+    """Flatten an array while preserving trajectory information.
+
+    Parameters
+    ----------
+    x : array-like
+        Input array, which can have one or more dimensions.
+
+    Returns
+    -------
+    tuple
+
+    """
+    x_arr = jnp.asarray(x)
+    if x_arr.ndim >= 2:
+        n_traj, n_steps = x_arr.shape[:2]
+        flat = x_arr.reshape(
+            n_traj * n_steps, *x_arr.shape[2:]
+        )  # Preserve additional dimensions
+        # Create the trajectory vector
+        trajectory = np.repeat(np.arange(n_traj), n_steps)
+        return flat, trajectory
+    else:
+        return x_arr, None
 
 
 def to_pandas(network: "Network") -> pd.DataFrame:
@@ -22,73 +49,80 @@ def to_pandas(network: "Network") -> pd.DataFrame:
 
     """
     n_nodes = len(network.edges)
-    # get time and time steps from the first input node
+
+    # --- Process time steps and time ---
+    # Assume time_step is stored in the last input node.
+    ts = network.node_trajectories[-1]["time_step"]
+    ts_arr = jnp.asarray(ts)
+    if ts_arr.ndim < 2:
+        # If there is no trajectory dimension, assume a single trajectory.
+        time_steps_flat = np.array(ts_arr)
+        time_flat = np.cumsum(time_steps_flat)
+        trajectory_ids = np.zeros_like(time_flat, dtype=int)
+    else:
+        # Compute cumulative sum separately for each trajectory
+        n_traj, n_steps = ts_arr.shape
+        time_list = [jnp.cumsum(ts_arr[i]) for i in range(n_traj)]
+        time_arr = jnp.concatenate(time_list, axis=0)
+        time_steps_flat = ts_arr.reshape(-1)
+        trajectory_ids = np.repeat(np.arange(n_traj), n_steps)
+        time_flat = np.array(time_arr)
+
+    # Create initial DataFrame with "trajectory", "time_steps", and "time" columns
     trajectories_df = pd.DataFrame(
         {
-            "time_steps": network.node_trajectories[-1]["time_step"],
-            "time": jnp.cumsum(network.node_trajectories[-1]["time_step"]),
+            "trajectory": trajectory_ids,
+            "time_steps": np.array(time_steps_flat),
+            "time": time_flat,
         }
     )
 
-    # loop over continuous and binary state nodes and store sufficient statistics
-    # ---------------------------------------------------------------------------
+    # --- Process state node statistics (binary and continuous) ---
     states_indexes = [i for i in range(n_nodes) if network.edges[i].node_type in [1, 2]]
-    df = pd.DataFrame(
-        dict(
-            [
-                (f"x_{i}_{var}", network.node_trajectories[i][var])
-                for i in states_indexes
-                for var in network.node_trajectories[i].keys()
-                if (("mean" in var) or ("precision" in var))
-            ]
-        )
-    )
-    trajectories_df = pd.concat([trajectories_df, df], axis=1)
+    stats_dict = {}
+    for i in states_indexes:
+        for var, data in network.node_trajectories[i].items():
+            if ("mean" in var) or ("precision" in var):
+                data_arr = jnp.asarray(data)
+                if data_arr.ndim >= 2:
+                    flat, _ = flatten_with_trajectory(data_arr)
+                    col_name = f"x_{i}_{var}"
+                    stats_dict[col_name] = np.array(flat)
+                else:
+                    col_name = f"x_{i}_{var}"
+                    stats_dict[col_name] = np.array(data_arr)
+    df_stats = pd.DataFrame(stats_dict)
+    trajectories_df = pd.concat([trajectories_df, df_stats], axis=1)
 
-    # loop over exponential family state nodes and store sufficient statistics
-    # ------------------------------------------------------------------------
+    # --- Process exponential family nodes (node_type == 3) ---
     ef_indexes = [i for i in range(n_nodes) if network.edges[i].node_type == 3]
     for i in ef_indexes:
         for var in ["nus", "xis", "mean"]:
-            if network.node_trajectories[i][var].ndim == 1:
-                trajectories_df = pd.concat(
-                    [
-                        trajectories_df,
-                        pd.DataFrame(
-                            dict([(f"x_{i}_{var}", network.node_trajectories[i][var])])
-                        ),
-                    ],
-                    axis=1,
-                )
+            data = network.node_trajectories[i][var]
+            data_arr = jnp.asarray(data)
+            if data_arr.ndim >= 2:
+                flat, _ = flatten_with_trajectory(data_arr)
+                col_name = f"x_{i}_{var}"
+                trajectories_df[col_name] = np.array(flat)
             else:
-                for ii in range(network.node_trajectories[i][var].shape[1]):
-                    trajectories_df = pd.concat(
-                        [
-                            trajectories_df,
-                            pd.DataFrame(
-                                dict(
-                                    [
-                                        (
-                                            f"x_{i}_{var}_{ii}",
-                                            network.node_trajectories[i][var][:, ii],
-                                        )
-                                    ]
-                                )
-                            ),
-                        ],
-                        axis=1,
-                    )
+                trajectories_df[f"x_{i}_{var}"] = np.array(data_arr)
 
-    # add surprise from binary state nodes
+    # --- Compute and add surprise ---
+    # Compute surprise for binary nodes (node_type == 1)
     binary_indexes = [i for i in range(n_nodes) if network.edges[i].node_type == 1]
     for bin_idx in binary_indexes:
         surprise = binary_surprise(
             x=network.node_trajectories[bin_idx]["mean"],
             expected_mean=network.node_trajectories[bin_idx]["expected_mean"],
         )
-        trajectories_df[f"x_{bin_idx}_surprise"] = surprise
+        surp_arr = jnp.asarray(surprise)
+        if surp_arr.ndim >= 2:
+            flat, _ = flatten_with_trajectory(surp_arr)
+            trajectories_df[f"x_{bin_idx}_surprise"] = np.array(flat)
+        else:
+            trajectories_df[f"x_{bin_idx}_surprise"] = np.array(surp_arr)
 
-    # add surprise from continuous state nodes
+    # Compute surprise for continuous nodes (node_type == 2)
     continuous_indexes = [i for i in range(n_nodes) if network.edges[i].node_type == 2]
     for con_idx in continuous_indexes:
         surprise = gaussian_surprise(
@@ -96,11 +130,17 @@ def to_pandas(network: "Network") -> pd.DataFrame:
             expected_mean=network.node_trajectories[con_idx]["expected_mean"],
             expected_precision=network.node_trajectories[con_idx]["expected_precision"],
         )
-        trajectories_df[f"x_{con_idx}_surprise"] = surprise
+        surp_arr = jnp.asarray(surprise)
+        if surp_arr.ndim >= 2:
+            flat, _ = flatten_with_trajectory(surp_arr)
+            trajectories_df[f"x_{con_idx}_surprise"] = np.array(flat)
+        else:
+            trajectories_df[f"x_{con_idx}_surprise"] = np.array(surp_arr)
 
-    # compute the global surprise over all node
-    trajectories_df["total_surprise"] = trajectories_df.iloc[
-        :, trajectories_df.columns.str.contains("_surprise")
-    ].sum(axis=1, min_count=1)
+    # Compute total surprise by summing all "_surprise" columns
+    surprise_cols = [col for col in trajectories_df.columns if "_surprise" in col]
+    trajectories_df["total_surprise"] = trajectories_df[surprise_cols].sum(
+        axis=1, min_count=1
+    )
 
     return trajectories_df

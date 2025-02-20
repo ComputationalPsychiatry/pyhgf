@@ -167,3 +167,59 @@ def test_custom_sequence():
         branches_idx=branches_idx,
         input_data=u,
     )
+
+
+def test_create_inference_fn():
+    """Test the creation of the inference function."""
+    # Create a simple network
+    network = Network()
+    network.add_nodes(kind="continuous-state")
+    network.add_nodes(kind="binary-state")
+
+    # Create the inference function (scan_fn)
+    network.create_inference_fn(overwrite=True, update_type="eHGF")
+
+    assert (
+        network.scan_fn is not None
+    ), "Inference function (scan_fn) should be created."
+    assert network.update_sequence is not None, "Update sequence should be initialized."
+
+    # Test with overwrite=False
+    old_scan_fn = network.scan_fn
+    network.create_inference_fn(overwrite=False)
+    assert (
+        network.scan_fn == old_scan_fn
+    ), "scan_fn should not be overwritten when overwrite=False."
+
+    # Test with invalid update type
+    with raises(ValueError):
+        network.create_inference_fn(update_type="invalid_type")
+
+
+def test_input_data_prediction():
+    """Test the input_data_prediction method."""
+    # Create a network and define scan_fn
+    network = Network()
+    network.add_nodes(kind="continuous-state")
+    network.add_nodes(kind="binary-state")
+    network.create_inference_fn()
+
+    # Input data for prediction
+    time_steps = np.linspace(0, 1, 100)
+    input_idxs = (0, 1)  # Assume two input nodes
+
+    # Perform prediction
+    network.input_data_prediction(time_steps=time_steps, input_idxs=input_idxs)
+
+    assert (
+        network.last_attributes is not None
+    ), "last_attributes should be updated after prediction."
+    assert (
+        network.node_trajectories is not None
+    ), "node_trajectories should be populated after prediction."
+
+    # Test with default time steps
+    network.input_data_prediction(input_idxs=input_idxs)
+    assert (
+        len(network.node_trajectories) == 100
+    ), "Default time steps should create 100 trajectory updates."

@@ -19,6 +19,9 @@ classifiers = [
 ]
 version = "0.2.3"
 
+[tool.poetry.group.dev.dependencies]
+pytest-cov = "^6.0.0"
+
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
 enable = true
