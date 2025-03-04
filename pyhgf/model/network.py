@@ -1,10 +1,13 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+import copy
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
+from jax import lax
 from jax.lax import scan, switch
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
@@ -84,56 +87,67 @@ class Network:
         self.input_idxs = value
 
     def create_belief_propagation_fn(
-        self, overwrite: bool = True, update_type: str = "eHGF"
+        self,
+        overwrite: bool = True,
+        update_type: str = "eHGF",
+        sophisticated: bool = False,
+        rng_key: Optional[jax.random.PRNGKey] = None,
     ) -> "Network":
         """Create the belief propagation function.
 
-        .. note:
-           This step is called by default when using py:meth:`input_data`.
-
         Parameters
         ----------
-        overwrite :
-            If `True` (default), create a new belief propagation function and ignore
-            preexisting values. Otherwise, do not create a new function if the attribute
-            `scan_fn` is already defined.
-        update_type :
-            The type of update to perform for volatility coupling. Can be `"eHGF"`
-            (defaults) or `"standard"`. The eHGF update step was proposed as an
-            alternative to the original definition in that it starts by updating the
-            mean and then the precision of the parent node, which generally reduces the
-            errors associated with impossible parameter space and improves sampling.
+        overwrite : bool, optional
+            Flag indicating whether to overwrite the existing scan function.
+        update_type : str, optional
+            Specifies the type of update sequence.
+        sophisticated : bool, optional
+            If True, the belief propagation function will use a programmed behavior
+            (e.g. using `handle_observation` with RNG) when an RNG key is provided.
+        rng_key : Optional[jax.random.PRNGKey], optional
+            RNG key to be passed to the belief propagation function. If not provided,
+            and if sophisticated is True, the function will generate a default key.
+
+        Returns
+        -------
+        Network
+            The current network instance with the new belief propagation function bound
+            to the ``scan_fn`` attribute.
 
         """
-        # get the dimension of the input nodes
+        # Ensure the input dimensions are available.
         if not self.input_dim:
             self.get_input_dimension()
 
-        # create the update sequence if it does not already exist
+        # Create the update sequence if it does not already exist.
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
                 network=self, update_type=update_type
             )
 
-        # create the belief propagation function
-        # this function is used by scan to loop over observations
+        # Create (or overwrite) the belief propagation function.
         if (self.scan_fn is None) or overwrite:
             self.scan_fn = Partial(
                 beliefs_propagation,
                 update_sequence=self.update_sequence,
                 edges=self.edges,
                 input_idxs=self.input_idxs,
+                sophisticated=sophisticated,
+                rng_key=rng_key,
             )
 
         return self
 
     def input_data(
         self,
-        input_data: np.ndarray,
+        input_data: Optional[np.ndarray] = None,
+        n_trajectories: int = 1,
         time_steps: Optional[np.ndarray] = None,
         observed: Optional[np.ndarray] = None,
         input_idxs: Optional[Tuple[int]] = None,
-    ):
+        rng_key: Optional[jax.random.PRNGKey] = None,
+        simulate_future: bool = False,  # new parameter to trigger future simulation
+    ) -> "Network":
         """Add new observations.
 
         Parameters
@@ -145,6 +159,9 @@ class Network:
         time_steps :
             Time steps vector (optional). If `None`, this will default to
             `np.ones(len(input_data))`.
+        n_trajectories :
+            The number of trajectories to run. If `None`, the function will run a single
+            trajectory.
         observed :
             A 2d array of mask (time x number of input nodes). In case of missing
             inputs, (i.e. `observed` is `0`), the input node will have value and
@@ -159,54 +176,171 @@ class Network:
             missing in the event log, or rejected trials).
         input_idxs :
             Indexes on the state nodes receiving observations.
+        rng_key :
+            Random key for the random number generator.
+        simulate_future :
+            If True, the function will simulate future trajectories
+            after processing the input data.
 
         """
-        if input_data.ndim == 1:
-            input_data = input_data[:, jnp.newaxis]
+        # --- Mode Propagation de Croyances (avec données d'observation) ---
+        if input_data is not None:
+            if input_data.ndim == 1:
+                input_data = input_data[:, jnp.newaxis]
 
-        # set the input nodes indexes
-        if input_idxs is not None:
-            self.input_idxs = input_idxs
+            # set the input nodes indexes
+            if input_idxs is not None:
+                self.input_idxs = input_idxs
 
-        # generate the belief propagation function
-        if self.scan_fn is None:
-            self = self.create_belief_propagation_fn()
+            # generate the belief propagation function
+            if self.scan_fn is None:
+                self = self.create_belief_propagation_fn(
+                    sophisticated=False, rng_key=None
+                )
 
-        # time steps vector
-        if time_steps is None:
-            time_steps = np.ones(input_data.shape[0])
+            # time steps vector
+            if time_steps is None:
+                time_steps = np.ones(input_data.shape[0])
 
-        # observation mask
-        if observed is None:
-            observed = tuple(
-                [
-                    np.ones(input_data.shape[0], dtype=int)
-                    for _ in range(len(self.input_idxs))
-                ]
+            # observation mask
+            if observed is None:
+                observed = tuple(
+                    [
+                        np.ones(input_data.shape[0], dtype=int)
+                        for _ in range(len(self.input_idxs))
+                    ]
+                )
+            elif isinstance(observed, np.ndarray):
+                if observed.ndim == 1:
+                    observed = (observed,)
+                else:
+                    observed = tuple(observed[:, i] for i in range(observed.shape[1]))
+
+            # format input_data according to the input nodes dimension
+            split_indices = np.cumsum(self.input_dim[:-1])
+            values = tuple(np.split(input_data, split_indices, axis=1))
+
+            # wrap the inputs
+            inputs = values, observed, time_steps
+            last_attributes, node_trajectories = scan(
+                self.scan_fn, self.attributes, inputs
             )
-        elif isinstance(observed, np.ndarray):
-            if observed.ndim == 1:
-                observed = (observed,)
-            else:
-                observed = tuple(observed[:, i] for i in range(observed.shape[1]))
 
-        # format input_data according to the input nodes dimension
-        split_indices = np.cumsum(self.input_dim[:-1])
-        values = tuple(np.split(input_data, split_indices, axis=1))
+            # belief trajectories
+            self.node_trajectories = node_trajectories
+            self.last_attributes = last_attributes
 
-        # wrap the inputs
-        inputs = values, observed, time_steps
+            # --- Optionally simulate future trajectories ---
+            if simulate_future:
+                # Ensure rng_key is valid
+                if rng_key is None:
+                    rng_key = jax.random.PRNGKey(0)
 
-        # this is where the model loops over the whole input time series
-        # at each time point, the node structure is traversed and beliefs are updated
-        # using precision-weighted prediction errors
-        last_attributes, node_trajectories = scan(self.scan_fn, self.attributes, inputs)
+                # Copy the current network state; using deepcopy is one option.
+                future_network = copy.deepcopy(self)
 
-        # belief trajectories
-        self.node_trajectories = node_trajectories
-        self.last_attributes = last_attributes
+                # For the future simulation we follow the inference branch.
+                # Here, we assume a default future time_steps length if not provided.
+                future_time_steps = np.ones(100)
 
-        return self
+                # Create the inference version of the scan function if needed.
+                if future_network.scan_fn is None:
+                    future_network = future_network.create_belief_propagation_fn(
+                        sophisticated=True, rng_key=rng_key
+                    )
+
+                # Define the single trajectory run (mirroring the inference branch).
+                def run_single_trajectory(rng_key, attributes):
+                    def scan_wrapper(carry, future_input):
+                        attr, key = carry
+                        new_attr, updated_attr, key = future_network.scan_fn(
+                            attr, future_input, rng_key=key
+                        )
+                        return (new_attr, key), updated_attr
+
+                    return lax.scan(
+                        scan_wrapper, (attributes, rng_key), future_time_steps
+                    )
+
+                # Add a batch dimension to the last attributes.
+                batched_attributes = jax.tree_util.tree_map(
+                    lambda x: jnp.broadcast_to(
+                        jnp.asarray(x), (n_trajectories,) + jnp.asarray(x).shape
+                    ),
+                    future_network.last_attributes,
+                )
+                rng_keys = jax.random.split(rng_key, n_trajectories)
+
+                # Use vmap to run multiple trajectories in parallel.
+                (final_attributes, _), future_node_trajectories = jax.vmap(
+                    run_single_trajectory
+                )(rng_keys, batched_attributes)
+
+                # Update the copied network with future simulation results.
+                future_network.node_trajectories = future_node_trajectories
+                future_network.last_attributes = final_attributes
+
+                # Return the network that now contains the future simulation.
+                return future_network
+
+            # If no future simulation is requested, return the updated network.
+            return self
+
+        # --- Mode Inférence/Prédiction (sans données d'observation) ---
+        else:
+            # Update input indices if provided.
+            if input_idxs is not None:
+                self.input_idxs = input_idxs
+
+            # If the scan function is not yet defined, create it.
+            if self.scan_fn is None:
+                self = self.create_belief_propagation_fn(
+                    sophisticated=True, rng_key=rng_key
+                )
+
+            # If no time_steps are provided, use a default array.
+            if time_steps is None:
+                time_steps = np.ones(100)
+
+            # Initialize the RNG key if necessary.
+            if rng_key is None:
+                rng_key = jax.random.PRNGKey(0)
+
+            # Define the function to execute a single trajectory.
+            def run_single_trajectory(rng_key, attributes):
+                # Wrapper function used within lax.scan.
+                def scan_wrapper(carry, inputs):
+                    # carry contains attributes and the RNG key.
+                    attr, key = carry
+                    # Call the network's inference function (scan_fn).
+                    new_attr, updated_attr, key = self.scan_fn(
+                        attr, inputs, rng_key=key
+                    )
+                    return (new_attr, key), updated_attr
+
+                # Execute the scan over all time_steps.
+                return lax.scan(scan_wrapper, (attributes, rng_key), time_steps)
+
+            # Clone  self.attributes so it has a batch dimension
+            batched_attributes = jax.tree_util.tree_map(
+                lambda x: jnp.broadcast_to(
+                    jnp.asarray(x), (n_trajectories,) + jnp.asarray(x).shape
+                ),
+                self.attributes,
+            )
+            # Create n_trajectories different RNG keys.
+            rng_keys = jax.random.split(rng_key, n_trajectories)
+
+            # Use vmap to apply run_single_trajectory to each trajectory.
+            (final_attributes, _), node_trajectories = jax.vmap(run_single_trajectory)(
+                rng_keys, batched_attributes
+            )
+
+            # Store the results in the self object.
+            self.node_trajectories = node_trajectories
+            self.last_attributes = final_attributes
+
+            return self
 
     def input_custom_sequence(
         self,

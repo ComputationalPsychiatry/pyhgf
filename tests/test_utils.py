@@ -139,3 +139,46 @@ def test_remove_node():
 
     assert len(new_attributes) == 5
     assert len(new_edges) == 4
+
+
+def test_scan_sampling():
+    """Test the scan_sampling function."""
+    from pyhgf.model import scan_sampling
+
+    # Mock attributes for a single node
+    attributes = {0: {"expected_mean": 0.5, "expected_precision": 10.0}}
+    rng_key = jnp.array([0, 1])
+    node_idx = 0
+    model_type = 2  # Continuous
+    num_samples = 10
+
+    samples = scan_sampling(attributes, node_idx, rng_key, model_type, num_samples)
+
+    assert samples.shape == (num_samples,), "Sample size should match num_samples."
+    assert jnp.all(
+        jnp.isfinite(samples)
+    ), "Samples should be finite and not include NaNs or infinities."
+
+
+def test_handle_observation():
+    """Test the handle_observation function."""
+    from pyhgf.model import handle_observation
+
+    # Mock attributes and inputs
+    attributes = {0: {"expected_mean": 0.5, "expected_precision": 10.0}}
+    rng_key = jnp.array([0, 1])
+    node_idx = 0
+    sophisticated = True
+    edges = {0: {"node_type": 2}}  # Continuous
+
+    updated_attributes, new_rng_key = handle_observation(
+        attributes, node_idx, rng_key, sophisticated, edges
+    )
+
+    assert 0 in updated_attributes, "Node index should exist in updated attributes."
+    assert (
+        updated_attributes[0]["observed"] == 1
+    ), "Observation should be set when sophisticated=True."
+    assert (
+        new_rng_key is not None
+    ), "Random key should be updated after handling observation."

@@ -16,5 +16,5 @@ coverage.xm
 .pytest_cache
 dist/*
 target*
-*DS_Store
-.benchmarks/
+poetry.lock
+pyproject.toml
