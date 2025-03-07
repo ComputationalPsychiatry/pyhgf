@@ -1,0 +1,6 @@
+﻿pyhgf.response.first\_level\_gaussian\_surprise
+===============================================
+
+.. currentmodule:: pyhgf.response
+
+.. autofunction:: first_level_gaussian_surprise
