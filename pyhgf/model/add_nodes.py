@@ -411,34 +411,38 @@ def insert_nodes(
         # Update the edges of the parents and children accordingly
         # --------------------------------------------------------
         if value_parents[0] is not None:
-            network.add_edges(
-                kind="value",
-                parent_idxs=value_parents[0],
-                children_idxs=node_idx,
-                coupling_strengths=value_parents[1],  # type: ignore
-            )
+            for idx, cpl in zip(value_parents[0], value_parents[1]):
+                network.add_edges(
+                    kind="value",
+                    parent_idxs=idx,
+                    children_idxs=node_idx,
+                    coupling_strengths=cpl,  # type: ignore
+                )
         if value_children[0] is not None:
-            network.add_edges(
-                kind="value",
-                parent_idxs=node_idx,
-                children_idxs=value_children[0],
-                coupling_strengths=value_children[1],  # type: ignore
-                coupling_fn=coupling_fn,
-            )
+            for idx, cpl in zip(value_children[0], value_children[1]):
+                network.add_edges(
+                    kind="value",
+                    parent_idxs=node_idx,
+                    children_idxs=idx,
+                    coupling_strengths=cpl,  # type: ignore
+                    coupling_fn=coupling_fn,
+                )
         if volatility_children[0] is not None:
-            network.add_edges(
-                kind="volatility",
-                parent_idxs=node_idx,
-                children_idxs=volatility_children[0],
-                coupling_strengths=volatility_children[1],  # type: ignore
-            )
+            for idx, cpl in zip(volatility_children[0], volatility_children[1]):
+                network.add_edges(
+                    kind="volatility",
+                    parent_idxs=node_idx,
+                    children_idxs=idx,
+                    coupling_strengths=cpl,  # type: ignore
+                )
         if volatility_parents[0] is not None:
-            network.add_edges(
-                kind="volatility",
-                parent_idxs=volatility_parents[0],
-                children_idxs=node_idx,
-                coupling_strengths=volatility_parents[1],  # type: ignore
-            )
+            for idx, cpl in zip(volatility_parents[0], volatility_parents[1]):
+                network.add_edges(
+                    kind="volatility",
+                    parent_idxs=idx,
+                    children_idxs=node_idx,
+                    coupling_strengths=cpl,  # type: ignore
+                )
 
         network.n_nodes += 1
 

@@ -30,7 +30,7 @@ def test_categorical_state_node():
     categorical_hgf.to_pandas()
 
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2844281
+        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2846234
     )
     assert jnp.isclose(
         categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.514427

@@ -418,7 +418,10 @@ class Network:
         # into tuples of indexes and coupling strength
         value_parents, volatility_parents, value_children, volatility_children = (
             get_couplings(
-                value_parents, volatility_parents, value_children, volatility_children
+                value_parents=value_parents,
+                volatility_parents=volatility_parents,
+                value_children=value_children,
+                volatility_children=volatility_children,
             )
         )
 
