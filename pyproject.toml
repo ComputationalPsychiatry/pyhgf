@@ -17,7 +17,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.2.3"
+version = "0.2.4"
 
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
