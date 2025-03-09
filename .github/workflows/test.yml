@@ -67,7 +67,7 @@ jobs:
 
       # # Step 10: Download baseline benchmark artifact
       # - name: Download baseline benchmark
-      #   uses: actions/download-artifact@v3
+      #   uses: actions/download-artifact@v4
       #   with:
       #     name: baseline-benchmark
       #     path: .benchmarks/baseline_benchmark.json
