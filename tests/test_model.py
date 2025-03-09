@@ -29,6 +29,8 @@ def test_network():
         .add_nodes(volatility_children=[2, 3])
         .add_nodes(volatility_children=2)
         .add_nodes(volatility_children=7)
+        .add_nodes(value_parents=8)
+        .add_nodes(volatility_parents=9)
     )
 
     # sanity check on the network structure
