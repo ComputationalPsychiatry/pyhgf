@@ -85,7 +85,7 @@ jobs:
 
       # Step 13: Upload benchmark artifact
       - name: Upload baseline benchmark
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: baseline-benchmark
           path: .benchmarks/new_benchmark.json
