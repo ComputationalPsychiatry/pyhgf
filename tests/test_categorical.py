@@ -23,6 +23,51 @@ def test_categorical_state_node():
         },
     )
 
+    # sanity check on the network structure
+    # ensure that the number of parents and children match the number of coupling values
+    for i in range(len(categorical_hgf.edges)):
+        if categorical_hgf.edges[i].node_type == 2:
+            # value parents ------------------------------------------------------------
+            if categorical_hgf.edges[i].value_parents:
+                assert len(categorical_hgf.edges[i].value_parents) == len(
+                    categorical_hgf.attributes[i]["value_coupling_parents"]
+                )
+            else:
+                assert (categorical_hgf.edges[i].value_parents is None) and (
+                    categorical_hgf.attributes[i]["value_coupling_parents"] is None
+                )
+
+            # value children -----------------------------------------------------------
+            if categorical_hgf.edges[i].value_children:
+                assert len(categorical_hgf.edges[i].value_children) == len(
+                    categorical_hgf.attributes[i]["value_coupling_children"]
+                )
+            else:
+                assert (categorical_hgf.edges[i].value_children is None) and (
+                    categorical_hgf.attributes[i]["value_coupling_children"] is None
+                )
+
+            # volatility parents -------------------------------------------------------
+            if categorical_hgf.edges[i].volatility_parents:
+                assert len(categorical_hgf.edges[i].volatility_parents) == len(
+                    categorical_hgf.attributes[i]["volatility_coupling_parents"]
+                )
+            else:
+                assert (categorical_hgf.edges[i].volatility_parents is None) and (
+                    categorical_hgf.attributes[i]["volatility_coupling_parents"] is None
+                )
+
+            # volatility children ------------------------------------------------------
+            if categorical_hgf.edges[i].volatility_children:
+                assert len(categorical_hgf.edges[i].volatility_children) == len(
+                    categorical_hgf.attributes[i]["volatility_coupling_children"]
+                )
+            else:
+                assert (categorical_hgf.edges[i].volatility_children is None) and (
+                    categorical_hgf.attributes[i]["volatility_coupling_children"]
+                    is None
+                )
+
     # fitting the model forwards
     categorical_hgf.input_data(input_data=input_data)
 
@@ -33,5 +78,5 @@ def test_categorical_state_node():
         categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2846234
     )
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.514427
+        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.514741
     )

@@ -31,6 +31,50 @@ def test_network():
         .add_nodes(volatility_children=7)
     )
 
+    # sanity check on the network structure
+    # ensure that the number of parents and children match the number of coupling values
+    for i in range(len(custom_hgf.edges)):
+        if custom_hgf.edges[i].node_type == 2:
+            # value parents ------------------------------------------------------------
+            if custom_hgf.edges[i].value_parents:
+                assert len(custom_hgf.edges[i].value_parents) == len(
+                    custom_hgf.attributes[i]["value_coupling_parents"]
+                )
+            else:
+                assert (custom_hgf.edges[i].value_parents is None) and (
+                    custom_hgf.attributes[i]["value_coupling_parents"] is None
+                )
+
+            # value children -----------------------------------------------------------
+            if custom_hgf.edges[i].value_children:
+                assert len(custom_hgf.edges[i].value_children) == len(
+                    custom_hgf.attributes[i]["value_coupling_children"]
+                )
+            else:
+                assert (custom_hgf.edges[i].value_children is None) and (
+                    custom_hgf.attributes[i]["value_coupling_children"] is None
+                )
+
+            # volatility parents -------------------------------------------------------
+            if custom_hgf.edges[i].volatility_parents:
+                assert len(custom_hgf.edges[i].volatility_parents) == len(
+                    custom_hgf.attributes[i]["volatility_coupling_parents"]
+                )
+            else:
+                assert (custom_hgf.edges[i].volatility_parents is None) and (
+                    custom_hgf.attributes[i]["volatility_coupling_parents"] is None
+                )
+
+            # volatility children ------------------------------------------------------
+            if custom_hgf.edges[i].volatility_children:
+                assert len(custom_hgf.edges[i].volatility_children) == len(
+                    custom_hgf.attributes[i]["volatility_coupling_children"]
+                )
+            else:
+                assert (custom_hgf.edges[i].volatility_children is None) and (
+                    custom_hgf.attributes[i]["volatility_coupling_children"] is None
+                )
+
     custom_hgf.create_belief_propagation_fn(overwrite=False)
     custom_hgf.create_belief_propagation_fn(overwrite=True)
 
