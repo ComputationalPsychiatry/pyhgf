@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Non-linear value coupling between continuous state nodes &#8212; pyhgf 0.2.3 documentation</title>
+    <title>Non-linear value coupling between continuous state nodes &#8212; pyhgf 0.2.4 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=a47416a6"></script>
+    <script src="../_static/documentation_options.js?v=6ffd866b"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -694,7 +694,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/735ba19bd3fdb692d0e63080adaaef3bb45741664a4e2d6d5472e0e66992118d.png" src="../_images/735ba19bd3fdb692d0e63080adaaef3bb45741664a4e2d6d5472e0e66992118d.png" />
+<img alt="../_images/f7a56ec8fdedd408a8fea27378fb1038847971de152621de5fadee7a163fdaa9.png" src="../_images/f7a56ec8fdedd408a8fea27378fb1038847971de152621de5fadee7a163fdaa9.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -711,7 +711,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/e672702d84fc5da62331dca9f153e9940409c8d3cd752975b7b8697bafbd761d.png" src="../_images/e672702d84fc5da62331dca9f153e9940409c8d3cd752975b7b8697bafbd761d.png" />
+<img alt="../_images/6df21bdb0a41cf7458d2d46e2c29c42d90d107b1852d48594b02cc18f16be9de.png" src="../_images/6df21bdb0a41cf7458d2d46e2c29c42d90d107b1852d48594b02cc18f16be9de.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -745,7 +745,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/ba1b149d0e382ced1a7d26b79a6bb063463a052c5a6377fdeb3ebcf74b757ae0.png" src="../_images/ba1b149d0e382ced1a7d26b79a6bb063463a052c5a6377fdeb3ebcf74b757ae0.png" />
+<img alt="../_images/04f8a72f343db3c92ce4c4fc3a44f257aca4f7e6ad98278b2a701b4c340d0639.png" src="../_images/04f8a72f343db3c92ce4c4fc3a44f257aca4f7e6ad98278b2a701b4c340d0639.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -971,23 +971,23 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed Jan 29 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sun Mar 09 2025
 
 Python implementation: CPython
-Python version       : 3.12.8
+Python version       : 3.12.9
 IPython version      : 8.31.0
 
-pyhgf : 0.2.3
+pyhgf : 0.2.4
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-seaborn   : 0.13.2
-sys       : 3.12.8 (main, Dec  4 2024, 06:20:31) [GCC 13.2.0]
 matplotlib: 3.10.0
-pyhgf     : 0.2.3
-IPython   : 8.31.0
+sys       : 3.12.9 (main, Feb  5 2025, 03:22:31) [GCC 13.3.0]
 numpy     : 1.26.0
+pyhgf     : 0.2.4
 jax       : 0.4.31
+seaborn   : 0.13.2
+IPython   : 8.31.0
 
 Watermark: 2.5.0
 </pre></div>

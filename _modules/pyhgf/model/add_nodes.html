@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.add_nodes &#8212; pyhgf 0.2.3 documentation</title>
+    <title>pyhgf.model.add_nodes &#8212; pyhgf 0.2.4 documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=a47416a6"></script>
+    <script src="../../../_static/documentation_options.js?v=6ffd866b"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -861,34 +861,38 @@
         <span class="c1"># Update the edges of the parents and children accordingly</span>
         <span class="c1"># --------------------------------------------------------</span>
         <span class="k">if</span> <span class="n">value_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
-                <span class="n">parent_idxs</span><span class="o">=</span><span class="n">value_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">children_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-                <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">value_parents</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># type: ignore</span>
-            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cpl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">value_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">value_parents</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                    <span class="n">parent_idxs</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                    <span class="n">children_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                    <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">cpl</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+                <span class="p">)</span>
         <span class="k">if</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
-                <span class="n">parent_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-                <span class="n">children_idxs</span><span class="o">=</span><span class="n">value_children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">value_children</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># type: ignore</span>
-                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cpl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">value_children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                    <span class="n">parent_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                    <span class="n">children_idxs</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                    <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">cpl</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+                    <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+                <span class="p">)</span>
         <span class="k">if</span> <span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatility&quot;</span><span class="p">,</span>
-                <span class="n">parent_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-                <span class="n">children_idxs</span><span class="o">=</span><span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">volatility_children</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># type: ignore</span>
-            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cpl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">volatility_children</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatility&quot;</span><span class="p">,</span>
+                    <span class="n">parent_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                    <span class="n">children_idxs</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                    <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">cpl</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+                <span class="p">)</span>
         <span class="k">if</span> <span class="n">volatility_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatility&quot;</span><span class="p">,</span>
-                <span class="n">parent_idxs</span><span class="o">=</span><span class="n">volatility_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">children_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-                <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">volatility_parents</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># type: ignore</span>
-            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cpl</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">volatility_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">volatility_parents</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">network</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatility&quot;</span><span class="p">,</span>
+                    <span class="n">parent_idxs</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                    <span class="n">children_idxs</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                    <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">cpl</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+                <span class="p">)</span>
 
         <span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span> <span class="o">+=</span> <span class="mi">1</span>
 
