@@ -1,0 +1,6 @@
+﻿pyhgf.model.add\_dp\_state
+==========================
+
+.. currentmodule:: pyhgf.model
+
+.. autofunction:: add_dp_state

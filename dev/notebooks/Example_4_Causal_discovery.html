@@ -1,0 +1,1101 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Example 4: Causal discovery in a predictive coding network &#8212; pyhgf 0.0.0.post1.dev0+954542d documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d6d8164d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"02ec14f39e5a479380977a31c40dfd0a": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "8717a631844b4d42810850ee78bac769": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_fe91237ae86f4f2492c46775824946c9", "msg_id": "", "outputs": [{"data": {"text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">Sampling chain 1, 0 divergences <span style=\"color: #008000; text-decoration-color: #008000\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span> <span style=\"color: #800080; text-decoration-color: #800080\">100%</span> <span style=\"color: #008080; text-decoration-color: #008080\">0:00:00</span> / <span style=\"color: #808000; text-decoration-color: #808000\">0:00:01</span>\n</pre>\n", "text/plain": "Sampling chain 1, 0 divergences \u001b[32m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m \u001b[35m100%\u001b[0m \u001b[36m0:00:00\u001b[0m / \u001b[33m0:00:01\u001b[0m\n"}, "metadata": {}, "output_type": "display_data"}], "tabbable": null, "tooltip": null}}, "909a33efc7314d59988a5047b8a5252d": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_02ec14f39e5a479380977a31c40dfd0a", "msg_id": "", "outputs": [{"data": {"text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">Sampling chain 0, 0 divergences <span style=\"color: #008000; text-decoration-color: #008000\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span> <span style=\"color: #800080; text-decoration-color: #800080\">100%</span> <span style=\"color: #008080; text-decoration-color: #008080\">0:00:00</span> / <span style=\"color: #808000; text-decoration-color: #808000\">0:00:03</span>\n</pre>\n", "text/plain": "Sampling chain 0, 0 divergences \u001b[32m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m \u001b[35m100%\u001b[0m \u001b[36m0:00:00\u001b[0m / \u001b[33m0:00:03\u001b[0m\n"}, "metadata": {}, "output_type": "display_data"}], "tabbable": null, "tooltip": null}}, "fe91237ae86f4f2492c46775824946c9": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}}, "version_major": 2, "version_minor": 0}</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/Example_4_Causal_discovery';</script>
+    <link rel="icon" href="../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html" />
+    <link rel="prev" title="Example 3: A multi-armed bandit task with independent rewards and punishments" href="Example_3_Multi_armed_bandit.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Example 4: Causal discovery in a predictive coding network</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Example 4: Causal discovery in a predictive coding network</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="example-4-causal-discovery-in-a-predictive-coding-network">
+<span id="example-4"></span><h1>Example 4: Causal discovery in a predictive coding network<a class="headerlink" href="#example-4-causal-discovery-in-a-predictive-coding-network" title="Link to this heading">#</a></h1>
+<p><a class="reference external" href="https://colab.research.google.com/github/ilabcode/pyhgf/blob/master/docs/source/notebooks/Example_3_Multi_armed_bandit.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="tip admonition">
+<p class="admonition-title">Authors</p>
+<ul class="simple">
+<li><p>Lina Walkowiak, Aarhus University, Denmark (<a class="reference internal" href="#202205493&#64;post.au.dk"><span class="xref myst">202205493&#64;post.au.dk</span></a>)</p></li>
+<li><p>Nicolas Legrand, Aarhus University, Denmark (<a class="reference internal" href="#nicolas.legrand&#64;cas.au.dk"><span class="xref myst">nicolas.legrand&#64;cas.au.dk</span></a>)</p></li>
+</ul>
+</div>
+<div class="cell tag_hide-cell docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell content</span>
+<span class="expanded">Hide code cell content</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
+
+<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+
+  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Edges</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>In this notebook, we are interested in the possibility of dynamic causal discovery in predictive coding networks. Generalised hierarchical Gaussian filters are Bayesian models, and as such, they imply a portion of causality in the framework: a parent node can exert a causal influence on a child node. The strength of this causal influence is controlled by <code class="docutils literal notranslate"><span class="pre">*_couplings_*</span></code> parameters in the network’s attributes.</p>
+<p>This is in a situation where the parent is updated by the prediction errors returned by the children. But causality can also be inferred from variables that remain independent during the learning process - therefore the cause should not be updated based on a change in the effect. This corresponds to a causal discovery principle, and we can define <span class="math notranslate nohighlight">\( \alpha_{1 \rightarrow 2} \in [0, 1]\)</span> the <em>causal strength</em> that describes how much a variable <span class="math notranslate nohighlight">\(X_1\)</span> is influencing another variable <span class="math notranslate nohighlight">\(X_2\)</span>. In this tutorial, we explain how to infer this variable dynamically using causal prediction errors.</p>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading">#</a></h2>
+<p>We create two time series, <span class="math notranslate nohighlight">\(x_1\)</span> and  <span class="math notranslate nohighlight">\(x_2\)</span>, with <span class="math notranslate nohighlight">\(x_1\)</span> influencing <span class="math notranslate nohighlight">\(x_2\)</span> with a an intensity noted <span class="math notranslate nohighlight">\(\alpha_{1 \rightarrow 2} \in [0, 1]\)</span> that is varying over time. Both random variables are Gaussian random walks such as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align*} 
+    X_1 &amp; \sim \mathcal{N}(\mu_1, \sigma_1^2) \\
+    X_2 &amp; \sim \mathcal{N}(\mu_2, \sigma_2^2) \\
+\end{align*} 
+\end{split}\]</div>
+<p>We can explicitly inform this model that <span class="math notranslate nohighlight">\(X_1\)</span> influences <span class="math notranslate nohighlight">\(X_2\)</span> from one time step to the next proportionally to a coupling strength, such as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align*} 
+    X_2 = \alpha X_1 + X_2 \\
+\end{align*} 
+\end{split}\]</div>
+<p>Given the <a class="reference external" href="https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables">rule for the sum of normally distributed random variables</a>, we have:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align*} 
+    X_2 &amp; \sim \mathcal{N}(\alpha \mu_1 + \mu_2, \alpha^2 \sigma_1^2 + \sigma_2^2) \\
+\end{align*} 
+\end{split}\]</div>
+<p>We simulate below two vectors following these principles:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parameters</span>
+<span class="n">n_samples</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="c1"># Generate x_1 and x_2 as a random walk</span>
+<span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+
+<span class="c1"># Coupling vector</span>
+<span class="n">coupling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">.8</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+    <span class="n">n_samples</span> <span class="o">/</span> <span class="mi">10</span>
+<span class="p">)</span>
+
+<span class="c1"># Update x_2 so it is influenced by x_1 according to the coupling vector</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+    <span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">coupling</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">x1</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mf">.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-cell docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell content</span>
+<span class="expanded">Hide code cell content</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$x_1$ (Independent Series)&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#4c72b0&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;x2 (Dependent Series)&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#55a868&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Simulated Time Series with Varying Coupling Strengths&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Value&quot;</span>
+<span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">coupling</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">coupling</span><span class="p">)),</span>
+    <span class="n">coupling</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Coupling strength&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Coupling strength&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/5e0d7fce9a563d9c03cfee59f234c804d13eb47cd64f4d69c48b9887030289aa.png" src="../_images/5e0d7fce9a563d9c03cfee59f234c804d13eb47cd64f4d69c48b9887030289aa.png" />
+</div>
+</details>
+</div>
+</section>
+<section id="a-non-causal-network">
+<h2>A non-causal network<a class="headerlink" href="#a-non-causal-network" title="Link to this heading">#</a></h2>
+<p>We can filter these streams of observation using a simple one-level model without assuming dependencies between the parent nodes or the variables.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize two independent HGFs for X1 and X2</span>
+<span class="n">non_causal_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/0d114d27f4ca950ac389e7596f6e3b062d8bee094060d93a08ea6f63b7fd8778.svg" src="../_images/0d114d27f4ca950ac389e7596f6e3b062d8bee094060d93a08ea6f63b7fd8778.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Input the time series</span>
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+<span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot trajectories for each HGF</span>
+<span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/7c7a24cc88ccdf3984f581518642e37507ebf2d8a74adb7fbd753434d07f81e1.png" src="../_images/7c7a24cc88ccdf3984f581518642e37507ebf2d8a74adb7fbd753434d07f81e1.png" />
+</div>
+</div>
+</section>
+<section id="deriving-causal-prediction-errors">
+<h2>Deriving causal prediction errors<a class="headerlink" href="#deriving-causal-prediction-errors" title="Link to this heading">#</a></h2>
+<p>We can also assume that the first input node tries to discover its causal children over time by trying to contribute the the prediction of the other node and learning from their error in doing so. Given a new observation <span class="math notranslate nohighlight">\(u_1\)</span>, received by the node <span class="math notranslate nohighlight">\(x_1\)</span>, we can define a precision-weighted prediction errors <span class="math notranslate nohighlight">\(\delta_1\)</span> for the non-causal hypothesis, where node <span class="math notranslate nohighlight">\(1\)</span> only use its expectation to predict new incoming values$:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align*} 
+    \delta_2 &amp; = (u - \mu_2) \cdot \frac{1}{\sigma_2^2} \\
+\end{align*} 
+\end{split}\]</div>
+<p>And we can also define a second prediction error <span class="math notranslate nohighlight">\(\delta_{1 \rightarrow 2}\)</span> for the causal hypothesis, this time assuming that <span class="math notranslate nohighlight">\(X_1\)</span> is added to <span class="math notranslate nohighlight">\(X_2\)</span> proportionally to a coupling strength <span class="math notranslate nohighlight">\(\alpha\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align*} 
+    \delta_{1 \rightarrow 2} &amp; = (u - \mu_2 - \alpha \mu_1) \cdot \frac{1}{\alpha^2 \sigma_1^2 + \sigma_2^2} \\
+\end{align*} 
+\end{split}\]</div>
+<p>Let <span class="math notranslate nohighlight">\(f(\alpha)\)</span> denote the squared precision-weigthed prediction error when assuming a given <span class="math notranslate nohighlight">\(\alpha\)</span> as:</p>
+<div class="math notranslate nohighlight">
+\[
+f(\alpha) = (u - \mu_2 - \alpha \mu_1)^2 \cdot \frac{1}{\alpha^2 \sigma_1^2 + \sigma_2^2}
+\]</div>
+<p>This function has a first derivative defined as:</p>
+<div class="math notranslate nohighlight">
+\[
+f'(\alpha) = -\frac{2 \left({\mu}_{1} x + {\mu}_{2} - u\right) \left(\left({\mu}_{2} - y\right) {\sigma}_{1}^2 x - {\mu}_{1} {\sigma}_{2}\right)}{\left({\sigma}_{1}^2 x^{2} + {\sigma}_{2}^2\right)^{2}}
+\]</div>
+<p>We want to find the value of <span class="math notranslate nohighlight">\(\alpha\)</span> that minimises <span class="math notranslate nohighlight">\(\delta_{1 \rightarrow 2}\)</span> (<span class="math notranslate nohighlight">\(\delta_2\)</span> being a special case where <span class="math notranslate nohighlight">\(\alpha = 0\)</span>). Two roots can be found at:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align*} 
+\hat{\alpha}_1 &amp; = -\frac{{\mu}_{2} - u}{{\mu}_{1}} \\
+\\
+\hat{\alpha}_2 &amp; = \frac{{\mu}_{1} {\sigma}_{2}^2}{\left({\mu}_{2} - u\right) {\sigma}_{1}^2}
+\end{align*} 
+\end{split}\]</div>
+<p>It is therefore possible to recover the implied parameter <span class="math notranslate nohighlight">\(\hat{\alpha}\)</span> over the range <span class="math notranslate nohighlight">\([0, 1]\)</span> by returning <span class="math notranslate nohighlight">\(\alpha \in [0.0, \hat{\alpha}_1, \hat{\alpha}_2, 1.0]\)</span> such that <span class="math notranslate nohighlight">\(0.0 &lt;= \alpha &lt;= 1.0\)</span> that minimize the precision-weigthed prediction error <span class="math notranslate nohighlight">\(f(\alpha)\)</span>.</p>
+</section>
+<section id="causal-coupling-model">
+<h2>Causal coupling model<a class="headerlink" href="#causal-coupling-model" title="Link to this heading">#</a></h2>
+<p>In this section, we create a coupled HGF model to capture the causal influence of the variable <span class="math notranslate nohighlight">\(x_1\)</span> on the variable <span class="math notranslate nohighlight">\(x_2\)</span>. This setup now implies learning the strength of a causal connection between <span class="math notranslate nohighlight">\(x_1\)</span> and <span class="math notranslate nohighlight">\(x_2\)</span>, which should reflect the actual value used for the simulations above. We therefore use the same model as a starting point and will add an extra step in the update sequence to learn the causal coupling strength over time.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize a causal HGF</span>
+<span class="n">causal_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="add-a-causal-connection-between-the-two-nodes">
+<h3>Add a causal connection between the two nodes<a class="headerlink" href="#add-a-causal-connection-between-the-two-nodes" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add the coupling strength in the node attributes</span>
+<span class="n">causal_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;causal_coupling_children&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Update the edges variable so it stores the index of the causal child</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">causal_hgf</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
+<span class="n">adjacency_list</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a new adjacency variable for this case</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CausalAdjacencyLists</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">node_type</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">value_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
+    <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
+    <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
+    <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">causal_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
+
+<span class="n">causal_adjacency_list</span> <span class="o">=</span> <span class="n">CausalAdjacencyLists</span><span class="p">(</span>
+    <span class="n">node_type</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">node_type</span><span class="p">,</span>
+    <span class="n">value_parents</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">value_parents</span><span class="p">,</span>
+    <span class="n">volatility_parents</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">,</span>
+    <span class="n">value_children</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>
+    <span class="n">volatility_children</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+    <span class="n">causal_children</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Insert the new variable back to the edges</span>
+<span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">causal_adjacency_list</span>
+<span class="n">causal_hgf</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="create-the-causal-update-function">
+<h3>Create the causal update function<a class="headerlink" href="#create-the-causal-update-function" title="Link to this heading">#</a></h3>
+<p>Now that the variables are in place in the network, we need to create a new update function that will estimate the causal strength between the two variables at each belief propagation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prediction_error</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">mu_2</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">mu_1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">var_1</span> <span class="o">+</span> <span class="n">var_2</span> <span class="p">)</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_alpha</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">):</span>
+
+    <span class="c1"># find root 1</span>
+    <span class="n">alpha_hat_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mu_1</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span> <span class="p">(</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu_1</span><span class="p">)</span>
+
+    <span class="c1"># find root 2</span>
+    <span class="n">alpha_hat_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="p">(</span><span class="n">mu_1</span> <span class="o">*</span> <span class="n">var_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">var_1</span><span class="p">))</span>
+
+    <span class="c1"># evaluate at 0, 1 and the two possible roots</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">alpha_hat_1</span><span class="p">,</span> <span class="n">alpha_hat_2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">candidates</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">candidates</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">candidates</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># return prediction errors for all candidates</span>
+    <span class="n">pe</span> <span class="o">=</span> <span class="n">prediction_error</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">candidates</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">pe</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;edges&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">continuous_node_causal_strength</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the causal strength between this node and all causal children.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value parent node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get the expected mean and precision from the causal parent</span>
+    <span class="n">parent_expected_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">parent_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+
+    <span class="c1"># set a learning rate for the speed of updating</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+    <span class="c1"># for all causal children, compute the new causal strength</span>
+    <span class="n">new_strengths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">causal_child_idx</span><span class="p">,</span> <span class="n">strength</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">causal_children</span><span class="p">,</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;causal_coupling_children&quot;</span><span class="p">],</span>
+    <span class="p">):</span>
+
+        <span class="c1"># get children&#39;s expected mean and precision</span>
+        <span class="n">child_expected_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+
+        <span class="c1"># get a new estimate of alpha</span>
+        <span class="n">new_alpha</span> <span class="o">=</span> <span class="n">find_alpha</span><span class="p">(</span>
+            <span class="n">u</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">],</span> 
+            <span class="n">mu_1</span><span class="o">=</span><span class="n">parent_expected_mean</span><span class="p">,</span>
+            <span class="n">mu_2</span><span class="o">=</span><span class="n">child_expected_mean</span><span class="p">,</span> 
+            <span class="n">var_1</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">parent_expected_precision</span><span class="p">,</span> 
+            <span class="n">var_2</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">child_expected_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">new_strengths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">strength</span> <span class="o">+</span> <span class="p">(</span><span class="n">new_alpha</span> <span class="o">-</span> <span class="n">strength</span><span class="p">)</span> <span class="o">*</span> <span class="n">learning_rate</span><span class="p">)</span>
+
+    <span class="c1"># update the strengths vector</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;causal_coupling_children&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_strengths</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">attributes</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add this step at the end of the belief propagation sequence</span>
+<span class="c1"># Here we simply re-use the previous sequence as template</span>
+<span class="n">predictions</span><span class="p">,</span> <span class="n">updates</span> <span class="o">=</span> <span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span>
+<span class="n">updates</span> <span class="o">+=</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">continuous_node_causal_strength</span><span class="p">),)</span>
+<span class="n">causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
+<span class="n">causal_hgf</span> <span class="o">=</span> <span class="n">causal_hgf</span><span class="o">.</span><span class="n">create_belief_propagation_fn</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="fitting-data-and-visualisation">
+<h2>Fitting data and visualisation<a class="headerlink" href="#fitting-data-and-visualisation" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">causal_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">axs</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">coupling</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">axs</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">coupling</span><span class="p">)),</span>
+    <span class="n">coupling</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Coupling strength&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">axs</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Coupling strength&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">coupling_ax</span> <span class="o">=</span> <span class="n">axs</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+<span class="n">coupling_ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">causal_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;causal_coupling_children&quot;</span><span class="p">],</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Inferred coupling strength&quot;</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#c69255&quot;</span><span class="p">,</span>
+    <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">axs</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">axs</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Infering causal coupling over time using a fixed learning rate&quot;</span><span class="p">)</span>
+
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/038ef9911f0efe4c0d21fb9dff22bfec077937e40146f88940dd6c1ff62e59dd.png" src="../_images/038ef9911f0efe4c0d21fb9dff22bfec077937e40146f88940dd6c1ff62e59dd.png" />
+</div>
+</div>
+</section>
+<section id="system-configuration">
+<h2>System configuration<a class="headerlink" href="#system-configuration" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> watermark
+<span class="o">%</span><span class="k">watermark</span> -n -u -v -iv -w -p pyhgf,jax,jaxlib
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sun Mar 09 2025
+
+Python implementation: CPython
+Python version       : 3.12.9
+IPython version      : 8.31.0
+
+pyhgf : 0.0.0.post1.dev0+954542d
+jax   : 0.4.31
+jaxlib: 0.4.31
+
+numpy     : 1.26.0
+jax       : 0.4.31
+pyhgf     : 0.0.0.post1.dev0+954542d
+sys       : 3.12.9 (main, Feb  5 2025, 03:22:31) [GCC 13.3.0]
+IPython   : 8.31.0
+matplotlib: 3.10.0
+seaborn   : 0.13.2
+
+Watermark: 2.5.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Example_3_Multi_armed_bandit.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Example 3: A multi-armed bandit task with independent rewards and punishments</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation">Simulation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-non-causal-network">A non-causal network</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deriving-causal-prediction-errors">Deriving causal prediction errors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#causal-coupling-model">Causal coupling model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#add-a-causal-connection-between-the-two-nodes">Add a causal connection between the two nodes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-the-causal-update-function">Create the causal update function</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fitting-data-and-visualisation">Fitting data and visualisation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/notebooks/Example_4_Causal_discovery.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2025, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
