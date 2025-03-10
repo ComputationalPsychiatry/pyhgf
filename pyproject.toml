@@ -22,8 +22,7 @@ version = "0.2.4"
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
 enable = true
-# Set the source of the version to __init__.py
-source = ".src/pyhgf/__init__.py"
+style = "pep440"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
@@ -67,3 +66,4 @@ build-backend = "maturin"
 # "extension-module" tells pyo3 we want to build an extension module (skips linking against libpython.so)
 features = ["pyo3/extension-module"]
 requires-python = ">=3.9,<3.13"
+name = "rshgf"

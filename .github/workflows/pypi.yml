@@ -23,7 +23,7 @@ jobs:
         poetry install --with dev
     - name: Build wheels
       run: |
-        poetry run maturin build --release
+        poetry run maturin build --release --sdist
     - name: Build a binary wheel and a source tarball
       run: >-
         poetry build
