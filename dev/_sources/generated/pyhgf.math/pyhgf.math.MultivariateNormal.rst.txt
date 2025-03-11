@@ -1,0 +1,26 @@
+﻿pyhgf.math.MultivariateNormal
+=============================
+
+.. currentmodule:: pyhgf.math
+
+.. autoclass:: MultivariateNormal
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MultivariateNormal.__init__
+      ~MultivariateNormal.base_measure
+      ~MultivariateNormal.parameters_from_sufficient_statistics
+      ~MultivariateNormal.sufficient_statistics_from_observations
+      ~MultivariateNormal.sufficient_statistics_from_parameters
+   
+   
+
+   
+   
+   

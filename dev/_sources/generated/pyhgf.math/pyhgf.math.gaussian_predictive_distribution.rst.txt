@@ -1,0 +1,6 @@
+﻿pyhgf.math.gaussian\_predictive\_distribution
+=============================================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: gaussian_predictive_distribution
