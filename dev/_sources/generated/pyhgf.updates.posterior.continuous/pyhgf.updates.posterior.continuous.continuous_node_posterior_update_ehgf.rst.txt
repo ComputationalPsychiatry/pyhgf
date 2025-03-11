@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.continuous.continuous\_node\_posterior\_update\_ehgf
+============================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.continuous
+
+.. autofunction:: continuous_node_posterior_update_ehgf
