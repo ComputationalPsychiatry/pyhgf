@@ -1,6 +1,0 @@
-﻿pyhgf.math.sigmoid
-==================
-
-.. currentmodule:: pyhgf.math
-
-.. autofunction:: sigmoid
