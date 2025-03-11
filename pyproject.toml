@@ -66,4 +66,5 @@ build-backend = "maturin"
 # "extension-module" tells pyo3 we want to build an extension module (skips linking against libpython.so)
 features = ["pyo3/extension-module"]
 requires-python = ">=3.9,<3.13"
-name = "rshgf"
+name = "pyhgf"  # Python package name (must match PyPI project name)
+module-name = "rshgf"  # Name of the Rust module when imported in Python
