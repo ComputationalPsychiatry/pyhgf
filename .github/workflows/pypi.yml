@@ -10,8 +10,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -26,8 +24,8 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           pip install maturin
       - name: Build Rust package
-        run: maturin build --release --sdist
+        run: maturin build --release --out dist/
       - name: Build Python package
-        run: poetry build
+        run: poetry build -f sdist -o dist/
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

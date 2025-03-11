@@ -52,7 +52,7 @@ jobs:
       
       # Step 7: Install the Rust package
       - name: Build and Install the Package
-        run: poetry run maturin build --release --sdist
+        run: poetry run maturin develop --release
 
       # Step 8: Run Tests and Generate Coverage Report
       - name: Run tests and coverage
