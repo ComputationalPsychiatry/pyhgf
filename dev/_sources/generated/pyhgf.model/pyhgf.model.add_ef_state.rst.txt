@@ -1,0 +1,6 @@
+﻿pyhgf.model.add\_ef\_state
+==========================
+
+.. currentmodule:: pyhgf.model
+
+.. autofunction:: add_ef_state

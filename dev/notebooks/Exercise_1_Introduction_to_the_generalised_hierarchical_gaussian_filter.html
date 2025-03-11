@@ -1,0 +1,1176 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.0.0.post1.dev0+ab9a227 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=1d19b13e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter';</script>
+    <link rel="icon" href="../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Zurich CPC II: Application to reinforcement learning" href="Exercise_2_Bayesian_reinforcement_learning.html" />
+    <link rel="prev" title="Example 4: Causal discovery in a predictive coding network" href="Example_4_Causal_discovery.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="zurich-cpc-i-introduction-to-the-generalised-hierarchical-gaussian-filter">
+<span id="hgf-exercises-1"></span><h1>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter<a class="headerlink" href="#zurich-cpc-i-introduction-to-the-generalised-hierarchical-gaussian-filter" title="Link to this heading">#</a></h1>
+<p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell tag_hide-cell docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell content</span>
+<span class="expanded">Hide code cell content</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
+<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+
+  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<div class="cell tag_hide-cell docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell content</span>
+<span class="expanded">Hide code cell content</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tutorial is the first part of an introductory tutorial to the generalised Hierarchical Gaussian Filter delivered to the <a class="reference external" href="https://www.translationalneuromodeling.org/cpcourse/">Zurich Computational Psychiatry Course 2024</a>. We estimate both tutorials to take about 3-4 hours to complete.</p>
+</div>
+<p>In the first part of the workshop, we will introduce the theoretical foundations of the generalised Hierarchical Gaussian Filter (gHGF). We have seen in the previous presentations that the gHGF can be seen as an instance of dynamic hierarchical networks, a very flexible and versatile family of networks. We want now to see how such networks can be turned into a generative model of nested stochastic processes that describe hidden states of the world.</p>
+<p>We will start by reviewing the mathematical description of such operations and how to implement them in standard Python/Numpy. Then, we will start using PyHGF and see how it can help us invert this generative model, so we can update beliefs when presented with observations (what we call here running the model forward).</p>
+<p>We will then apply this to real-world data (weather dataset) by creating an agent that <em>uses</em> this model to filter sensory information and update internal beliefs about hidden states of the world.</p>
+<section id="the-generative-model">
+<h2>The generative model<a class="headerlink" href="#the-generative-model" title="Link to this heading">#</a></h2>
+<section id="gaussian-random-walks">
+<h3>Gaussian Random Walks<a class="headerlink" href="#gaussian-random-walks" title="Link to this heading">#</a></h3>
+<p>The gHGF is built as a generalisation and nodalisation of the <a class="reference external" href="https://en.wikipedia.org/wiki/Random_walk#Gaussian_random_walk">Gaussian Random Walk</a> (GRW), which means that each node in the network encodes a GRW and can influence or be influenced by another child/parent node. A GRW is a <a class="reference external" href="https://en.wikipedia.org/wiki/Stochastic_process">stochastic process</a> that generate a new observation <span class="math notranslate nohighlight">\(x_1^{(k)}\)</span> at each time step <span class="math notranslate nohighlight">\(k\)</span> from a normal distribution and using the previous observation <span class="math notranslate nohighlight">\(x_1^{(k-1)}\)</span> as its mean such as:</p>
+<div class="math notranslate nohighlight">
+\[
+x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the fixed variance of the distribution. You can find more details on this as well as some code to get started with the simulations in the first tutorial on the <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html#">PyHGF documentation</a>.</p>
+<div class="exercise admonition" id="exercise1.1">
+
+<p class="admonition-title"><span class="caption-number">Exercise 1 </span></p>
+<section id="exercise-content">
+<p>Using the equation above, write a Python code that implements a Gaussian random walk using the following parameters: <span class="math notranslate nohighlight">\(\sigma^2 = 1\)</span> and <span class="math notranslate nohighlight">\(x_1^{(0)} = 0\)</span>.</p>
+</section>
+</div>
+</section>
+<section id="probabilistic-coupling-between-nodes">
+<h3>Probabilistic coupling between nodes<a class="headerlink" href="#probabilistic-coupling-between-nodes" title="Link to this heading">#</a></h3>
+<p>We have simulated above a simple GRW. At each time point, this process is fully described by the implied Normal distribution, which is parametrised by the mean and the variance. The gHGF hierarchically generalize this process by making the parameters of a stochastic process depend on another node at a different level, and thus another GRW <span id="id1">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span>. But because a Gaussian distribution is defined by two parameters (mean and variance), we can distinguish two ways for a node to influence another node: <strong>value coupling</strong> (targetting the value <span class="math notranslate nohighlight">\(\mu\)</span> of the child node) or <strong>volatility coupling</strong> (targetting the volatility <span class="math notranslate nohighlight">\(\sigma^2\)</span> of the child node).</p>
+<section id="value-coupling">
+<h4>Value coupling<a class="headerlink" href="#value-coupling" title="Link to this heading">#</a></h4>
+<p>Let’s consider for example a network constituted of two nodes <span class="math notranslate nohighlight">\(x_1\)</span> and <span class="math notranslate nohighlight">\(x_2\)</span>, as it is found in the continuous HGF <span id="id2">[<a class="reference internal" href="../references.html#id3" title="Christoph D. Mathys, Ekaterina I. Lomakina, Jean Daunizeau, Sandra Iglesias, Kay H. Brodersen, Karl J. Friston, and Klaas E. Stephan. Uncertainty in perception and the hierarchical gaussian filter. Frontiers in Human Neuroscience, 2014. URL: https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825, doi:10.3389/fnhum.2014.00825.">Mathys <em>et al.</em>, 2014</a>]</span>. The node <span class="math notranslate nohighlight">\(x_1\)</span> is performing a GRW as previously described. We can add a dependency on the mean of the distribution (<strong>value coupling</strong>) by assuming that <span class="math notranslate nohighlight">\(x_1\)</span> inherits the difference step from <span class="math notranslate nohighlight">\(x_2\)</span>, instead of using only its own previous value. Mathematically, this would write:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+x_2^{(k)} \sim \mathcal{N}(x_2^{(k-1)}, \, \sigma_2^2) \\
+x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
+\end{split}\]</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>This generative process reads top-down: the node higher in the hierarchy (<span class="math notranslate nohighlight">\(x_2\)</span>) generates new values and passes them to the child nodes. We can also control how much the node <span class="math notranslate nohighlight">\(x_1\)</span> is influenced by its previous (see examples <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html#value-coupling">here</a>). To keep things simple in this exercise, we will assume that <span class="math notranslate nohighlight">\(x_1\)</span> is fully influenced by its previous value, as noted in the equation, therefore <span class="math notranslate nohighlight">\(x_2\)</span> can be seen as a <em>drift parent</em>.</p>
+</div>
+<p>Let’s define a time series <code class="docutils literal notranslate"><span class="pre">x_2</span></code> that represent the evolution of the states of the parent node:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="mi">125</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#4c72b0&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time step (k)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$x_</span><span class="si">{2}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/9dfb14aae9c6c70bbced6aa38b9339c6db9dbd833d20254d2a4bbe56508f8787.png" src="../_images/9dfb14aae9c6c70bbced6aa38b9339c6db9dbd833d20254d2a4bbe56508f8787.png" />
+</div>
+</div>
+<div class="exercise admonition" id="exercise1.2">
+
+<p class="admonition-title"><span class="caption-number">Exercise 2 </span></p>
+<section id="exercise-content">
+<p>Write a Python code that generates values for <span class="math notranslate nohighlight">\(x_1\)</span> using the value coupling equation above with <span class="math notranslate nohighlight">\(\mu_1^{0} = 0.0\)</span> and <span class="math notranslate nohighlight">\(\sigma_1 = 1.5\)</span>.</p>
+</section>
+</div>
+</section>
+<section id="volatility-coupling">
+<h4>Volatility coupling<a class="headerlink" href="#volatility-coupling" title="Link to this heading">#</a></h4>
+<p>We can of course arrange things differently, making this time <span class="math notranslate nohighlight">\(x_2\)</span> having an influence on the <em>variance</em> of <span class="math notranslate nohighlight">\(x_1\)</span> instead. This is what we call <strong>volatility coupling</strong> and this will be of particular interest for computational psychiatry as this will let us create agents that dynamically learn uncertainty about their beliefs. This means that for state <span class="math notranslate nohighlight">\(x_1\)</span>, the mean of the Gaussian random walk on time point <span class="math notranslate nohighlight">\(k\)</span> is given by its previous value <span class="math notranslate nohighlight">\(x_1^{(k-1)}\)</span>, while the step size (or variance) depends on the current value of the higher level state, <span class="math notranslate nohighlight">\(x_2^{(k)}\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[
+x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
+\]</div>
+<p>where the exact dependency is of the form</p>
+<div class="math notranslate nohighlight">
+\[
+    f(x_2^{(k)}) = \exp(x_2^{(k)} + \omega_1)
+\]</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<ul class="simple">
+<li><p>Here the volatility is not simply inherited from the higher node, it is mixed with another quantity (<span class="math notranslate nohighlight">\(\omega_1\)</span>). This is because we don’t want the parent node to explain all the variance alone, the child node (<span class="math notranslate nohighlight">\(x_1\)</span>) also has a parameter for its own variance and expects some variability by itself. The parent node can weigh on this by adding or removing variance in the final quantity. <span class="math notranslate nohighlight">\(\omega\)</span> is sometimes refered to as the <em>tonic</em> part of the variance, or the <em>evolution rate</em>, while <span class="math notranslate nohighlight">\(x_2\)</span> is the <em>phasic</em> part of the variance.</p></li>
+<li><p>We use the exponential to ensure that the variance will always be positive.</p></li>
+</ul>
+</div>
+<p>Let’s create a new time series for the volatility parent <span class="math notranslate nohighlight">\(x_2\)</span>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">1000</span><span class="p">),</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">6</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="exercise admonition" id="exercise1.3">
+
+<p class="admonition-title"><span class="caption-number">Exercise 3 </span></p>
+<section id="exercise-content">
+<ul class="simple">
+<li><p>Using the equation above and your previous implementation, write a Python code that generates values for <span class="math notranslate nohighlight">\(x_1\)</span> with <span class="math notranslate nohighlight">\(\omega_1 = -6.0\)</span>, <span class="math notranslate nohighlight">\(\mu_1^{(0)} = 0.0\)</span>,</p></li>
+<li><p>What happens when we increase the values of <span class="math notranslate nohighlight">\(\omega_1\)</span>?</p></li>
+<li><p>What happens to <span class="math notranslate nohighlight">\(x_1\)</span> when the variable <span class="math notranslate nohighlight">\(x_2\)</span> increases its value?</p></li>
+</ul>
+</section>
+</div>
+</section>
+</section>
+</section>
+<section id="model-inversion-the-generalized-hierarchical-gaussian-filter">
+<h2>Model inversion: the generalized Hierarchical Gaussian Filter<a class="headerlink" href="#model-inversion-the-generalized-hierarchical-gaussian-filter" title="Link to this heading">#</a></h2>
+<p>Building on these principles, we can create networks of arbitrary size and shape made of probabilistic nodes (nodes that represent the evolution of a Gaussian Random Walk) that can be connected with each other through <strong>value</strong> or <strong>volatility</strong> coupling. We have covered these points in the previous exercise using a simplified network made of two nodes.</p>
+<p><a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/index.html">PyHGF</a> adds most of its values in that it allows the creation and manipulation of large and complex networks easily, and it automates the transmission of values between nodes. You can refer to <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.2-Creating_networks.html">the second part of the tutorial documentation</a> which covers the manipulation of networks for more details.</p>
+<p>But this is not the only thing it does. So far we have simulated observations from the generative model, going for the leaves to the root of the network. This describes how we expect the environment to behave, but not how an agent would learn from it. To do so we need to invert this model: we want to provide the observations, and let the network update the nodes accordingly, so the beliefs always reflect the current state of the environment. This process requires propagating precision prediction errors from the root to the leaves of the network, and this is where most of PyHGF’s dark magic is most useful.</p>
+<figure class="align-default" id="networks">
+<img alt="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" />
+<figcaption>
+<p><span class="caption-number">Fig. 8 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+<p>In the following example, we illustrate how we can create a network with a more complex structure (i.e. a two-level continuous Hierarchical Gaussian Filter) and how this model can be inverted to update beliefs when presented with new observations.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># load an example time series for continuous inputs</span>
+<span class="n">timeseries</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="s2">&quot;continuous&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">timeseries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the implied probabilistic network</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/27fe5f25c909183ea7b612320a02628b71b5e1915fe2c4bc35dc815fc064b0cc.svg" src="../_images/27fe5f25c909183ea7b612320a02628b71b5e1915fe2c4bc35dc815fc064b0cc.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># add new observations</span>
+<span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">timeseries</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the trajectories of the model beliefs</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4fbb2154666358471c330ffd159672e7ca96129f1649a3e2a7794330dc9c664c.png" src="../_images/4fbb2154666358471c330ffd159672e7ca96129f1649a3e2a7794330dc9c664c.png" />
+</div>
+</div>
+<div class="exercise admonition" id="exercise1.4">
+
+<p class="admonition-title"><span class="caption-number">Exercise 4 </span></p>
+<section id="exercise-content">
+<p>Each state node comes with parameters <code class="docutils literal notranslate"><span class="pre">mean</span></code>, <code class="docutils literal notranslate"><span class="pre">precision</span></code> and <code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code> that can be provided when creating the network. Using the function above, try to change these values. How does this influence the belief trajectories?</p>
+</section>
+</div>
+</section>
+<section id="practice-filtering-the-worlds-weather">
+<h2>Practice: Filtering the worlds weather<a class="headerlink" href="#practice-filtering-the-worlds-weather" title="Link to this heading">#</a></h2>
+<p>In the previous section, we introduced the computational concept behind the generalised Hierarchical Gaussian Filter. For the time left before the break, you are going to apply this knowledge to a more practical context: filtering the world’s weather. We will use data from <span id="id3">[<a class="reference internal" href="../references.html#id11" title="Stefan Pfenninger and Iain Staffell. Long-term patterns of european PV output using 30 years of validated hourly reanalysis and satellite data. Energy, 114:1251–1265, November 2016. URL: https://doi.org/10.1016/j.energy.2016.08.060, doi:10.1016/j.energy.2016.08.060.">Pfenninger and Staffell, 2016</a>, <a class="reference internal" href="../references.html#id12" title="Iain Staffell and Stefan Pfenninger. Using bias-corrected reanalysis to simulate current and future wind power output. Energy, 114:1224–1239, November 2016. URL: https://doi.org/10.1016/j.energy.2016.08.068, doi:10.1016/j.energy.2016.08.068.">Staffell and Pfenninger, 2016</a>]</span> that is made available <a class="reference external" href="https://renewables.ninja/">here</a>. This database contains hourly recordings of various weather parameters that have been tracked over one year at different positions in the world. The data from Aarhus can be loaded using the following function call:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aarhus_weather_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+    <span class="s2">&quot;https://raw.githubusercontent.com/ilabcode/hgf-data/main/datasets/weather.csv&quot;</span>
+<span class="p">)</span>
+<span class="n">aarhus_weather_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>time</th>
+      <th>t2m</th>
+      <th>prectotland</th>
+      <th>precsnoland</th>
+      <th>snomas</th>
+      <th>rhoa</th>
+      <th>swgdn</th>
+      <th>swtdn</th>
+      <th>cldtot</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2019-01-01 00:00</td>
+      <td>7.387</td>
+      <td>0.124</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.249</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.931</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2019-01-01 01:00</td>
+      <td>7.472</td>
+      <td>0.200</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.247</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.865</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2019-01-01 02:00</td>
+      <td>7.635</td>
+      <td>0.196</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.244</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.701</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2019-01-01 03:00</td>
+      <td>7.224</td>
+      <td>0.061</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.245</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.387</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2019-01-01 04:00</td>
+      <td>6.147</td>
+      <td>0.018</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.250</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.128</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>The data frame contains the following parameters, recorded every hour over the year of 2019:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>parameter</p></th>
+<th class="head"><p>description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>t2m</p></td>
+<td><p>The 2-meter above ground level air temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p>prectotland</p></td>
+<td><p>The rain precipitation rate (mm/hour)</p></td>
+</tr>
+<tr class="row-even"><td><p>precsnoland</p></td>
+<td><p>Snow precipitation rate (mm/hour)</p></td>
+</tr>
+<tr class="row-odd"><td><p>snomas</p></td>
+<td><p>Total snow storage land (kg/m2)</p></td>
+</tr>
+<tr class="row-even"><td><p>rhoa</p></td>
+<td><p>Air density at surface (kg/m3)</p></td>
+</tr>
+<tr class="row-odd"><td><p>swgdn</p></td>
+<td><p>Surface incoming shortwave flux (W/m2) (considering cloud cover) (The value at the surface is approximately 1000 W/m2 on a clear day at solar noon in the summer months)</p></td>
+</tr>
+<tr class="row-even"><td><p>swtdn</p></td>
+<td><p>Toa (top of atmosphere) incoming shortwave flux (W/m2)</p></td>
+</tr>
+<tr class="row-odd"><td><p>cldtot</p></td>
+<td><p>Total cloud area fraction. An average over grid cells and summed over all height above ground ([0,1] scale where 0 is no cloud and 1 is very cloudy)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load time series example data</span>
+<span class="n">timeserie</span> <span class="o">=</span> <span class="n">aarhus_weather_df</span><span class="p">[</span><span class="s2">&quot;t2m&quot;</span><span class="p">][:</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">30</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+<span class="c1"># This is where we define all the model parameters - You can control the value of</span>
+<span class="c1"># different variables at different levels using the corresponding dictionary.</span>
+
+<span class="n">hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># add new observations</span>
+<span class="n">hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">timeserie</span><span class="p">)</span>
+
+<span class="c1"># visualization of the belief trajectories</span>
+<span class="n">hgf</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/9dd3f16e2936fb598657e83b5b766f60d359d011c0be967f0f94a3a12822af32.png" src="../_images/9dd3f16e2936fb598657e83b5b766f60d359d011c0be967f0f94a3a12822af32.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.response</span><span class="w"> </span><span class="kn">import</span> <span class="n">first_level_gaussian_surprise</span>
+
+<span class="n">hgf</span><span class="o">.</span><span class="n">surprise</span><span class="p">(</span><span class="n">response_function</span><span class="o">=</span><span class="n">first_level_gaussian_surprise</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(308.5377, dtype=float32)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="exercise admonition" id="exercise1.5">
+
+<p class="admonition-title"><span class="caption-number">Exercise 5 </span></p>
+<section id="exercise-content">
+<p>What quantity are we measuring in the code cell above? What does this represent?</p>
+</section>
+</div>
+<div class="exercise admonition" id="exercise1.6">
+
+<p class="admonition-title"><span class="caption-number">Exercise 6 </span></p>
+<section id="exercise-content">
+<ul class="simple">
+<li><p>Select a city and download a recording OR use the data frame loaded above.</p></li>
+<li><p>Fit a network using one of the variables and estimate the total Gaussian surprise.</p></li>
+<li><p>Can you try to come up with a better model (one that would minimize the total Gaussian surprise)? You can try to change the initial mean and precision of the tonic volatility or add a layer to the network.</p></li>
+</ul>
+</section>
+</div>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="solutions">
+<h1>Solutions<a class="headerlink" href="#solutions" title="Link to this heading">#</a></h1>
+<div class="solution admonition" id="solution-exercise1.1">
+
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.1"> Exercise 1</a></p>
+<section id="solution-content">
+<p>We can simulate a simple Gaussian Random Walk in Python either using a for loop and a list:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">grw_1</span><span class="p">,</span> <span class="n">mean</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">200</span><span class="p">):</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">grw_1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or using Numpy’s built-in <code class="docutils literal notranslate"><span class="pre">cumsum</span></code> function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">grw_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">200</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Both methods will generate the same result. The Numpy version is more concise, but can be more difficult to debug when we have nested GRW.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">grw_1</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Loop&quot;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">grw_2</span><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Cumsum&quot;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time step (k)&quot;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;$x_</span><span class="si">{1}</span><span class="s2">$&quot;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</div>
+<div class="solution admonition" id="solution-exercise1.2">
+
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.2"> Exercise 2</a></p>
+<section id="solution-content">
+<p>We can simulate values from <span class="math notranslate nohighlight">\(x_1\)</span> using a for loop:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_1</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">sigma_1</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_2</span><span class="p">:</span>
+    <span class="n">mu_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_1</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">sigma_1</span><span class="p">)</span>
+    <span class="n">x_1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mu_1</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</div>
+<div class="solution admonition" id="solution-exercise1.3">
+
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.3"> Exercise 3</a></p>
+<section id="solution-content">
+<p>We can simulate values from <span class="math notranslate nohighlight">\(x_1\)</span> using a for loop:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_1</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">sigma_1</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_2</span><span class="p">:</span>
+    <span class="n">mu_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_1</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">sigma_1</span><span class="p">)</span>
+    <span class="n">x_1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mu_1</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</div>
+<div class="solution admonition" id="solution-exercise1.4">
+
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.4"> Exercise 4</a></p>
+<section id="solution-content">
+<p>The code below will change mean, precision and tonic volatility at the first level. Here we use Python’s OOP features to express model creation, input data and plotting by chaining method call.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">timeseries</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">plot_trajectories</span><span class="p">()</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</div>
+<div class="solution admonition" id="solution-exercise1.5">
+
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.5"> Exercise 5</a></p>
+<section id="solution-content">
+<p>This method return the Gaussian surprise at each time point, which are then summed. The sum of the Gaussian surprise reflect the performances of the model at predicting the next value, larger values pointing to a model more surprise by its inputs, therefore poor performances. The surprise is define as <span class="math notranslate nohighlight">\(s = -log(p)\)</span>, this is thus the negative of the log probability function. Log probability functions are commonly used by sampling algorithm, it is thus straigthforwars to sample a model parameters when this function is available. There are an infinity of response possible functions - just like there is an infinity of possible networks - for more details on how to use tem, you can refer to the <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/2-Using_custom_response_functions.html">tutorial on custom response models</a>.</p>
+</section>
+</div>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="system-configuration">
+<h1>System configuration<a class="headerlink" href="#system-configuration" title="Link to this heading">#</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> watermark
+<span class="o">%</span><span class="k">watermark</span> -n -u -v -iv -w -p pyhgf,jax,jaxlib
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Mar 11 2025
+
+Python implementation: CPython
+Python version       : 3.12.9
+IPython version      : 8.34.0
+
+pyhgf : 0.0.0.post1.dev0+ab9a227
+jax   : 0.4.31
+jaxlib: 0.4.31
+
+pyhgf     : 0.0.0.post1.dev0+ab9a227
+pandas    : 2.2.3
+seaborn   : 0.13.2
+sys       : 3.12.9 (main, Feb  5 2025, 03:22:31) [GCC 13.3.0]
+numpy     : 1.26.0
+matplotlib: 3.10.1
+IPython   : 8.34.0
+
+Watermark: 2.5.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Example_4_Causal_discovery.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Example 4: Causal discovery in a predictive coding network</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Exercise_2_Bayesian_reinforcement_learning.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Zurich CPC II: Application to reinforcement learning</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-generative-model">The generative model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gaussian-random-walks">Gaussian Random Walks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#probabilistic-coupling-between-nodes">Probabilistic coupling between nodes</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#value-coupling">Value coupling</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#volatility-coupling">Volatility coupling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-inversion-the-generalized-hierarchical-gaussian-filter">Model inversion: the generalized Hierarchical Gaussian Filter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#practice-filtering-the-worlds-weather">Practice: Filtering the worlds weather</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#solutions">Solutions</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2025, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,704 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pyhgf.math.gaussian_surprise &#8212; pyhgf 0.0.0.post1.dev0+ab9a227 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=1d19b13e"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pyhgf.math/pyhgf.math.gaussian_surprise';</script>
+    <link rel="icon" href="../../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="pyhgf.math.dirichlet_kullback_leibler" href="pyhgf.math.dirichlet_kullback_leibler.html" />
+    <link rel="prev" title="pyhgf.math.binary_surprise" href="pyhgf.math.binary_surprise.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.categorical/pyhgf.updates.posterior.categorical.categorical_state_update.html">pyhgf.updates.posterior.categorical.categorical_state_update</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.html">pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.html">pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous/pyhgf.updates.posterior.continuous.continuous_node_posterior_update.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.exponential/pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic.html">pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.binary/pyhgf.updates.prediction.binary.binary_state_node_prediction.html">pyhgf.updates.prediction.binary.binary_state_node_prediction</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_mean.html">pyhgf.updates.prediction.continuous.predict_mean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_precision.html">pyhgf.updates.prediction.continuous.predict_precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html">pyhgf.updates.prediction.continuous.continuous_node_prediction</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.dirichlet/pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction.html">pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error.html">pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_finite_state_node_prediction_error.html">pyhgf.updates.prediction_error.binary.binary_finite_state_node_prediction_error</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.categorical/pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error.html">pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error.html">pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error.html">pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error.html">pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error.html">pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.update_cluster.html">pyhgf.updates.prediction_error.dirichlet.update_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.create_cluster.html">pyhgf.updates.prediction_error.dirichlet.create_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.get_candidate.html">pyhgf.updates.prediction_error.dirichlet.get_candidate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.likely_cluster_proposal.html">pyhgf.updates.prediction_error.dirichlet.likely_cluster_proposal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.clusters_likelihood.html">pyhgf.updates.prediction_error.dirichlet.clusters_likelihood</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_dynamic.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_dynamic</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.logp.html">pyhgf.distribution.logp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.hgf_logp.html">pyhgf.distribution.hgf_logp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFLogpGradOp.html">pyhgf.distribution.HGFLogpGradOp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFDistribution.html">pyhgf.distribution.HGFDistribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFPointwise.html">pyhgf.distribution.HGFPointwise</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html">pyhgf.model.HGF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_binary_state.html">pyhgf.model.add_binary_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_ef_state.html">pyhgf.model.add_ef_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_categorical_state.html">pyhgf.model.add_categorical_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_dp_state.html">pyhgf.model.add_dp_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.get_couplings.html">pyhgf.model.get_couplings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.update_parameters.html">pyhgf.model.update_parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.insert_nodes.html">pyhgf.model.insert_nodes</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_trajectories.html">pyhgf.plots.graphviz.plot_trajectories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_correlations.html">pyhgf.plots.graphviz.plot_correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html">pyhgf.plots.graphviz.plot_network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_nodes.html">pyhgf.plots.graphviz.plot_nodes</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html">pyhgf.plots.networkx.plot_network</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.first_level_gaussian_surprise.html">pyhgf.response.first_level_gaussian_surprise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.total_gaussian_surprise.html">pyhgf.response.total_gaussian_surprise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.first_level_binary_surprise.html">pyhgf.response.first_level_binary_surprise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax.html">pyhgf.response.binary_softmax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.Normal.html">pyhgf.math.Normal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.gaussian_predictive_distribution.html">pyhgf.math.gaussian_predictive_distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.gaussian_density.html">pyhgf.math.gaussian_density</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.sigmoid.html">pyhgf.math.sigmoid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.binary_surprise.html">pyhgf.math.binary_surprise</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.math.gaussian_surprise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.dirichlet_kullback_leibler.html">pyhgf.math.dirichlet_kullback_leibler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.binary_surprise_finite_precision.html">pyhgf.math.binary_surprise_finite_precision</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../api.html" class="nav-link">API</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.math.gaussian_surprise</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pyhgf-math-gaussian-surprise">
+<h1>pyhgf.math.gaussian_surprise<a class="headerlink" href="#pyhgf-math-gaussian-surprise" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyhgf.math.gaussian_surprise">
+<span class="sig-prename descclassname"><span class="pre">pyhgf.math.</span></span><span class="sig-name descname"><span class="pre">gaussian_surprise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Array</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool_</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Array</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool_</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Array</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool_</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Array</span></span></span><a class="reference internal" href="../../_modules/pyhgf/math.html#gaussian_surprise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.math.gaussian_surprise" title="Link to this definition">#</a></dt>
+<dd><p>Surprise at an outcome under a Gaussian prediction.</p>
+<p>The surprise elicited by an observation <span class="math notranslate nohighlight">\(x\)</span> under a Gaussian distribution
+with expected mean <span class="math notranslate nohighlight">\(\hat{\mu}\)</span> and expected precision <span class="math notranslate nohighlight">\(\hat{\pi}\)</span> is
+given by:</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{2} (\log(2 \pi) - \log(\hat{\pi}) + \hat{\pi}(x - \hat{\mu})^2)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\pi\)</span> is the mathematical constant.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x</strong></dt><dd><p>The outcome.</p>
+</dd>
+<dt><strong>expected_mean</strong></dt><dd><p>The expected mean of the Gaussian distribution.</p>
+</dd>
+<dt><strong>expected_precision</strong></dt><dd><p>The expected precision of the Gaussian distribution.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>surprise</dt><dd><p>The Gaussian surprise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_surprise</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gaussian_surprise</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">expected_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="go">`Array(2.9189386, dtype=float32, weak_type=True)`</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pyhgf.math.binary_surprise.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pyhgf.math.binary_surprise</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pyhgf.math.dirichlet_kullback_leibler.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pyhgf.math.dirichlet_kullback_leibler</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyhgf.math.gaussian_surprise"><code class="docutils literal notranslate"><span class="pre">gaussian_surprise()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/generated/pyhgf.math/pyhgf.math.gaussian_surprise.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2025, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
