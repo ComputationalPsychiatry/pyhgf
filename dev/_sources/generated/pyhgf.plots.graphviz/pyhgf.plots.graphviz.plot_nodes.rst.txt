@@ -1,0 +1,6 @@
+﻿pyhgf.plots.graphviz.plot\_nodes
+================================
+
+.. currentmodule:: pyhgf.plots.graphviz
+
+.. autofunction:: plot_nodes

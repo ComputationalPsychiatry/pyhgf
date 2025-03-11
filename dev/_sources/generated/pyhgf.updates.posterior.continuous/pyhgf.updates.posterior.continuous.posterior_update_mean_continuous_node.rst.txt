@@ -1,0 +1,12 @@
+﻿pyhgf.updates.posterior.continuous.posterior\_update\_mean\_continuous\_node
+============================================================================
+
+.. automodule:: pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      posterior_update_mean_continuous_node
+   
