@@ -1,14 +1,14 @@
 [project]
 name = "pyhgf"
-
-[tool.poetry]
-name = "pyhgf"
 description = "Dynamic neural networks for predictive coding"
-authors = ["Nicolas Legrand <nicolas.legrand@cas.au.dk>"]
+authors = [
+    { name = "Nicolas Legrand", email = "nicolas.legrand@cas.au.dk" }
+]
 license = "GPL-3.0"
+requires-python = ">=3.10,<3.13"
 readme = "README.md"
-homepage = "https://computationalpsychiatry.github.io/pyhgf/"
 repository = "https://github.com/ComputationalPsychiatry/pyhgf"
+url = "https://computationalpsychiatry.github.io/pyhgf/"
 keywords = ["reinforcement learning", "predictive coding", "neural networks", "graphs", "variational inference", "active inference", "causal inference"]
 include = [
     "src/pyhgf/data/usdchf.txt",
@@ -21,21 +21,24 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 version = "0.2.4"
+dependencies = [
+    "numpy>=1.18",
+    "matplotlib>=3.4.0",
+    "seaborn>=0.13.2",
+    "arviz>=0.21.0",
+    "pymc>=5.17.0",
+    "jax>=0.4.26,<0.4.32",
+    "jaxlib>=0.4.26,<0.4.32",
+]
+
+[tool.poetry]
 
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
 enable = true
 style = "pep440"
 
-[tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-numpy = "^1.18"
-matplotlib = "^3.4.0"
-seaborn = "^0.13.2"
-arviz = "^0.21.0"
-pymc = "^5.17.0"
-jax = "^0.4.26,<0.4.32"
-jaxlib = "^0.4.26,<0.4.32"
+
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.1.3"
