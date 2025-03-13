@@ -24,7 +24,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          pip install maturin
+          pip install maturin==1.8.1
       - name: Build Rust package
         run: maturin build --release --out dist/
       # - name: Build Python package
