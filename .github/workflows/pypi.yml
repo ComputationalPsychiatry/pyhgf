@@ -30,4 +30,4 @@ jobs:
       - name: Build Python package
         run: poetry build -f sdist -o dist/
       - name: Publish package distributions to PyPI
-        run: maturin publish
+        run: maturin publish --verbose
