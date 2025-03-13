@@ -1,3 +1,6 @@
+[project]
+name = "pyhgf"
+
 [tool.poetry]
 name = "pyhgf"
 description = "Dynamic neural networks for predictive coding"
@@ -29,7 +32,7 @@ python = ">=3.10,<3.13"
 numpy = "^1.18"
 matplotlib = "^3.4.0"
 seaborn = "^0.13.2"
-arviz = "^0.20.0"
+arviz = "^0.21.0"
 pymc = "^5.17.0"
 jax = "^0.4.26,<0.4.32"
 jaxlib = "^0.4.26,<0.4.32"
@@ -59,7 +62,7 @@ networkx = "^3.4.2"
 pydot = "^3.0.4"
 
 [build-system]
-requires = ["poetry-core", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "maturin>=1.4,<2.0"]
+requires = ["poetry-core", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "maturin==1.8.3"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -67,3 +70,6 @@ build-backend = "maturin"
 features = ["pyo3/extension-module"]
 requires-python = ">=3.9,<3.13"
 module-name = "pyhgf.rshgf"  # Name of the Rust module when imported in Python
+bindings = "pyo3"  # If using PyO3
+strip = true  # Strips debugging symbols to reduce wheel size
+include = ["README.md"]  # Ensure README is included in the package
