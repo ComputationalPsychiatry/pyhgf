@@ -16,8 +16,8 @@
 </g>
 <g id="clust2" class="cluster">
 <title>cluster10 x 320</title>
-<path fill="none" stroke="black" d="M161.31,-8C161.31,-8 644.31,-8 644.31,-8 650.31,-8 656.31,-14 656.31,-20 656.31,-20 656.31,-109.95 656.31,-109.95 656.31,-115.95 650.31,-121.95 644.31,-121.95 644.31,-121.95 161.31,-121.95 161.31,-121.95 155.31,-121.95 149.31,-115.95 149.31,-109.95 149.31,-109.95 149.31,-20 149.31,-20 149.31,-14 155.31,-8 161.31,-8"/>
-<text text-anchor="middle" x="616.81" y="-15.8" font-family="Times,serif" font-size="14.00">10 x 320</text>
+<path fill="none" stroke="black" d="M208.31,-8C208.31,-8 691.31,-8 691.31,-8 697.31,-8 703.31,-14 703.31,-20 703.31,-20 703.31,-109.95 703.31,-109.95 703.31,-115.95 697.31,-121.95 691.31,-121.95 691.31,-121.95 208.31,-121.95 208.31,-121.95 202.31,-121.95 196.31,-115.95 196.31,-109.95 196.31,-109.95 196.31,-20 196.31,-20 196.31,-14 202.31,-8 208.31,-8"/>
+<text text-anchor="middle" x="663.81" y="-15.8" font-family="Times,serif" font-size="14.00">10 x 320</text>
 </g>
 <!-- sigma_temperature -->
 <g id="node1" class="node">
@@ -41,8 +41,22 @@
 <path fill="none" stroke="black" d="M172.13,-278.18C199.7,-264.71 232.35,-248.75 261.04,-234.74"/>
 <polygon fill="black" stroke="black" points="262.75,-237.8 270.2,-230.26 259.68,-231.51 262.75,-237.8"/>
 </g>
-<!-- mu_volatility -->
+<!-- mu_temperature -->
 <g id="node2" class="node">
+<title>mu_temperature</title>
+<ellipse fill="none" stroke="black" cx="334.31" cy="-309.38" rx="96.33" ry="37.45"/>
+<text text-anchor="middle" x="334.31" y="-320.68" font-family="Times,serif" font-size="14.00">mu_temperature</text>
+<text text-anchor="middle" x="334.31" y="-305.68" font-family="Times,serif" font-size="14.00">~</text>
+<text text-anchor="middle" x="334.31" y="-290.68" font-family="Times,serif" font-size="14.00">Normal</text>
+</g>
+<!-- mu_temperature&#45;&gt;inverse_temperature -->
+<g id="edge4" class="edge">
+<title>mu_temperature&#45;&gt;inverse_temperature</title>
+<path fill="none" stroke="black" d="M333.97,-271.8C333.9,-263.63 333.82,-254.85 333.74,-246.32"/>
+<polygon fill="black" stroke="black" points="337.24,-246.07 333.65,-236.1 330.24,-246.13 337.24,-246.07"/>
+</g>
+<!-- mu_volatility -->
+<g id="node3" class="node">
 <title>mu_volatility</title>
 <ellipse fill="none" stroke="black" cx="525.31" cy="-309.38" rx="77.15" ry="37.45"/>
 <text text-anchor="middle" x="525.31" y="-320.68" font-family="Times,serif" font-size="14.00">mu_volatility</text>
@@ -64,7 +78,7 @@
 <polygon fill="black" stroke="black" points="528.81,-246.1 525.31,-236.1 521.81,-246.1 528.81,-246.1"/>
 </g>
 <!-- sigma_volatility -->
-<g id="node3" class="node">
+<g id="node4" class="node">
 <title>sigma_volatility</title>
 <ellipse fill="none" stroke="black" cx="711.31" cy="-309.38" rx="91.43" ry="37.45"/>
 <text text-anchor="middle" x="711.31" y="-320.68" font-family="Times,serif" font-size="14.00">sigma_volatility</text>
@@ -77,59 +91,45 @@
 <path fill="none" stroke="black" d="M659.99,-278.32C633.71,-262.93 601.84,-244.26 575.7,-228.94"/>
 <polygon fill="black" stroke="black" points="577.46,-225.92 567.07,-223.89 573.92,-231.96 577.46,-225.92"/>
 </g>
-<!-- mu_temperature -->
-<g id="node4" class="node">
-<title>mu_temperature</title>
-<ellipse fill="none" stroke="black" cx="334.31" cy="-309.38" rx="96.33" ry="37.45"/>
-<text text-anchor="middle" x="334.31" y="-320.68" font-family="Times,serif" font-size="14.00">mu_temperature</text>
-<text text-anchor="middle" x="334.31" y="-305.68" font-family="Times,serif" font-size="14.00">~</text>
-<text text-anchor="middle" x="334.31" y="-290.68" font-family="Times,serif" font-size="14.00">Normal</text>
-</g>
-<!-- mu_temperature&#45;&gt;inverse_temperature -->
-<g id="edge4" class="edge">
-<title>mu_temperature&#45;&gt;inverse_temperature</title>
-<path fill="none" stroke="black" d="M333.97,-271.8C333.9,-263.63 333.82,-254.85 333.74,-246.32"/>
-<polygon fill="black" stroke="black" points="337.24,-246.07 333.65,-236.1 330.24,-246.13 337.24,-246.07"/>
-</g>
-<!-- pointwise_loglikelihood -->
-<g id="node7" class="node">
-<title>pointwise_loglikelihood</title>
-<polygon fill="none" stroke="black" points="647.81,-102.98 464.81,-102.98 464.81,-49.98 647.81,-49.98 647.81,-102.98"/>
-<text text-anchor="middle" x="556.31" y="-87.78" font-family="Times,serif" font-size="14.00">pointwise_loglikelihood</text>
-<text text-anchor="middle" x="556.31" y="-72.78" font-family="Times,serif" font-size="14.00">~</text>
-<text text-anchor="middle" x="556.31" y="-57.78" font-family="Times,serif" font-size="14.00">Deterministic</text>
-</g>
-<!-- volatility&#45;&gt;pointwise_loglikelihood -->
-<g id="edge7" class="edge">
-<title>volatility&#45;&gt;pointwise_loglikelihood</title>
-<path fill="none" stroke="black" d="M534.61,-161.44C538.55,-146.19 543.13,-128.46 547.07,-113.23"/>
-<polygon fill="black" stroke="black" points="550.56,-113.71 549.67,-103.15 543.78,-111.96 550.56,-113.71"/>
-</g>
 <!-- log_likelihood -->
-<g id="node8" class="node">
+<g id="node7" class="node">
 <title>log_likelihood</title>
-<ellipse fill="lightgrey" stroke="black" cx="302.31" cy="-76.48" rx="144.91" ry="37.45"/>
-<text text-anchor="middle" x="302.31" y="-87.78" font-family="Times,serif" font-size="14.00">log_likelihood</text>
-<text text-anchor="middle" x="302.31" y="-72.78" font-family="Times,serif" font-size="14.00">~</text>
-<text text-anchor="middle" x="302.31" y="-57.78" font-family="Times,serif" font-size="14.00">CustomDist_log_likelihood</text>
+<ellipse fill="lightgrey" stroke="black" cx="550.31" cy="-76.48" rx="144.91" ry="37.45"/>
+<text text-anchor="middle" x="550.31" y="-87.78" font-family="Times,serif" font-size="14.00">log_likelihood</text>
+<text text-anchor="middle" x="550.31" y="-72.78" font-family="Times,serif" font-size="14.00">~</text>
+<text text-anchor="middle" x="550.31" y="-57.78" font-family="Times,serif" font-size="14.00">CustomDist_log_likelihood</text>
 </g>
 <!-- volatility&#45;&gt;log_likelihood -->
 <g id="edge5" class="edge">
 <title>volatility&#45;&gt;log_likelihood</title>
-<path fill="none" stroke="black" d="M499.36,-164.92C488.14,-152.57 474.17,-139.26 459.31,-129.95 445.06,-121.03 429.12,-113.44 413.01,-107.05"/>
-<polygon fill="black" stroke="black" points="414.1,-103.72 403.51,-103.42 411.6,-110.26 414.1,-103.72"/>
+<path fill="none" stroke="black" d="M532.88,-161.11C535.3,-149.48 538.02,-136.43 540.58,-124.16"/>
+<polygon fill="black" stroke="black" points="544.07,-124.59 542.68,-114.08 537.21,-123.16 544.07,-124.59"/>
 </g>
-<!-- inverse_temperature&#45;&gt;pointwise_loglikelihood -->
+<!-- pointwise_loglikelihood -->
+<g id="node8" class="node">
+<title>pointwise_loglikelihood</title>
+<polygon fill="none" stroke="black" points="387.81,-102.98 204.81,-102.98 204.81,-49.98 387.81,-49.98 387.81,-102.98"/>
+<text text-anchor="middle" x="296.31" y="-87.78" font-family="Times,serif" font-size="14.00">pointwise_loglikelihood</text>
+<text text-anchor="middle" x="296.31" y="-72.78" font-family="Times,serif" font-size="14.00">~</text>
+<text text-anchor="middle" x="296.31" y="-57.78" font-family="Times,serif" font-size="14.00">Deterministic</text>
+</g>
+<!-- volatility&#45;&gt;pointwise_loglikelihood -->
 <g id="edge8" class="edge">
-<title>inverse_temperature&#45;&gt;pointwise_loglikelihood</title>
-<path fill="none" stroke="black" d="M391.9,-165.91C425.16,-148.02 466.6,-125.73 499.56,-108"/>
-<polygon fill="black" stroke="black" points="501.47,-110.95 508.61,-103.13 498.15,-104.79 501.47,-110.95"/>
+<title>volatility&#45;&gt;pointwise_loglikelihood</title>
+<path fill="none" stroke="black" d="M501.14,-164.45C489.9,-151.56 475.45,-137.98 459.31,-129.95 434.04,-117.39 423.49,-129.55 396.31,-121.95 382.76,-118.17 368.69,-112.85 355.52,-107.21"/>
+<polygon fill="black" stroke="black" points="356.68,-103.89 346.12,-103.06 353.85,-110.3 356.68,-103.89"/>
 </g>
 <!-- inverse_temperature&#45;&gt;log_likelihood -->
 <g id="edge6" class="edge">
 <title>inverse_temperature&#45;&gt;log_likelihood</title>
-<path fill="none" stroke="black" d="M323.84,-160.79C320.83,-149.16 317.47,-136.15 314.31,-123.93"/>
-<polygon fill="black" stroke="black" points="317.61,-122.7 311.72,-113.89 310.83,-124.45 317.61,-122.7"/>
+<path fill="none" stroke="black" d="M390.89,-165.6C418.66,-150.25 452.17,-131.72 481.3,-115.63"/>
+<polygon fill="black" stroke="black" points="483.12,-118.61 490.18,-110.71 479.74,-112.49 483.12,-118.61"/>
+</g>
+<!-- inverse_temperature&#45;&gt;pointwise_loglikelihood -->
+<g id="edge7" class="edge">
+<title>inverse_temperature&#45;&gt;pointwise_loglikelihood</title>
+<path fill="none" stroke="black" d="M322.11,-161.11C317.36,-145.73 311.85,-127.87 307.15,-112.61"/>
+<polygon fill="black" stroke="black" points="310.48,-111.54 304.19,-103.02 303.79,-113.6 310.48,-111.54"/>
 </g>
 </g>
 </svg>
