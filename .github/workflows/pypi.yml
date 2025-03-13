@@ -2,10 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    branches:
-      - "*"
-    # tags:
-    #   - "v*"  # Run only on version tags (e.g., v1.0.0)
+    tags:
+      - "v*"  # Run only on version tags (e.g., v1.0.0)
 
 jobs:
   build:
