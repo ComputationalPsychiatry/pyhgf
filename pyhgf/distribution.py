@@ -35,9 +35,9 @@ def logp(
     response_function_parameters: ArrayLike,
     input_data: ArrayLike,
     time_steps: ArrayLike,
-    response_function_inputs: Optional[ArrayLike],
-    response_function: Optional[Callable],
     hgf: HGF,
+    response_function_inputs: Optional[Union[ArrayLike, tuple]],
+    response_function: Callable = lambda: None,
 ) -> float:
     """Compute the log-probability of a decision model under belief trajectories.
 
@@ -118,13 +118,13 @@ def logp(
     time_steps :
         An array of input time steps where the first dimension is the number of models
         to fit in parallel.
+    hgf :
+        An instance of a two or three-level Hierarchical Gaussian Filter.
     response_function_inputs :
         An array of behavioural inputs passed to the response function where the first
         dimension is the number of models to fit in parallel.
     response_function :
         The response function that is used by the decision model.
-    hgf :
-        An instance of a two or three-level Hierarchical Gaussian Filter.
 
     Returns
     -------

@@ -50,6 +50,7 @@ def test_update_binary_input_parents():
         update_sequence=binary_hgf.update_sequence,
         edges=binary_hgf.edges,
         input_idxs=(0,),
+        sophisticated=False,
     )
     for idx, val in zip(
         ["mean", "expected_mean", "expected_precision"],

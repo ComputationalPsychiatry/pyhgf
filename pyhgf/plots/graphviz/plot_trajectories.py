@@ -114,6 +114,7 @@ def plot_trajectories(
         three_levels_hgf.plot_trajectories();
 
     """
+    # Get the trajectories
     trajectories_df = network.to_pandas()
     n_nodes = len(network.edges)
 
