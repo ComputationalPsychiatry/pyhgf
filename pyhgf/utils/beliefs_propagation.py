@@ -1,24 +1,31 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
+# Author: Sylvain Estebe
+
 
 from functools import partial
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
-from jax import jit
+from jax import jit, random
 from jax.typing import ArrayLike
 
 from pyhgf.typing import Attributes, Edges, UpdateSequence
 from pyhgf.updates.observation import set_observation
+from pyhgf.utils.sample_node_distribution import sample_node_distribution
 
 
-@partial(jit, static_argnames=("update_sequence", "edges", "input_idxs"))
+@partial(
+    jit, static_argnames=("update_sequence", "edges", "input_idxs", "observations")
+)
 def beliefs_propagation(
     attributes: Attributes,
     inputs: Tuple[ArrayLike, ...],
     update_sequence: UpdateSequence,
     edges: Edges,
     input_idxs: Tuple[int],
+    observations: str = "external",
+    rng_key: Optional[random.PRNGKey] = None,
 ) -> Tuple[Dict, Dict]:
-    """Update the network's parameters after observing new data point(s).
+    """Update the networks parameters after observing new data point(s).
 
     This function performs the beliefs propagation step. Belief propagation consists in:
     1. A prediction sequence, from the leaves of the graph to the roots.
@@ -44,6 +51,14 @@ def beliefs_propagation(
         The sequence of updates that will be applied to the node structure.
     edges :
         Information on the network's edges.
+    observations :
+        A string indicating how the network receive new observations. Can be
+        `"external"` (default) when new observation are provided, `"generative"` - in
+        which case the network sample observation from its own predictive distribution,
+        or `"deprived"` so no observation are provided.
+    rng_key :
+        Random key for the random number generator. This is only used when
+        `observations=generative` for sampling from the node distribution.
     input_idxs :
         List input indexes.
 
@@ -55,45 +70,48 @@ def beliefs_propagation(
     """
     prediction_steps, update_steps = update_sequence
 
-    # unpack input data - ((ndarrays, ...), (1darrays, ...), float64)
+    # when observations is "generative", only time_step is provided
+    # and the other variables are None
     values_tuple, observed_tuple, time_step = inputs
 
+    # Assign the time_step (or input data) to the attributes.
     attributes[-1]["time_step"] = time_step
 
-    # 1 - Prediction sequence
-    # -----------------------
-    for step in prediction_steps:
+    # 1. Prediction sequence (common for both modes)
+    for node_idx, update_fn in prediction_steps:
+        attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
-        node_idx, update_fn = step
+    # 2. Receive new observations
+    if observations == "genertative":
+        # Inline handling of observation for each input node
+        for node_idx in input_idxs:
+            # Sample the node distribution
+            sampled_value, rng_key = sample_node_distribution(
+                attributes=attributes,  # cast for type compatibility
+                node_idx=node_idx,
+                rng_key=rng_key,
+                model_type=edges[node_idx].node_type,
+            )
+            # Set the observation (using a constant observation flag, here set as 1)
+            attributes = set_observation(
+                attributes=attributes,
+                node_idx=node_idx,
+                values=sampled_value,
+                observed=1,
+            )
+    elif observations == "external":
+        # Unpack observation data and update each input node.
+        for values, observed, node_idx in zip(values_tuple, observed_tuple, input_idxs):
+            attributes = set_observation(
+                attributes=attributes,
+                node_idx=node_idx,
+                values=values.squeeze(),
+                observed=observed,
+            )
 
-        attributes = update_fn(
-            attributes=attributes,
-            node_idx=node_idx,
-            edges=edges,
-        )
-
-    # 2 - Observations
-    # ----------------
-    for values, observed, node_idx in zip(values_tuple, observed_tuple, input_idxs):
-
-        attributes = set_observation(
-            attributes=attributes,
-            node_idx=node_idx,
-            values=values.squeeze(),
-            observed=observed,
-        )
-
-    # 3 - Update sequence
-    # -------------------
-    for step in update_steps:
-
-        node_idx, update_fn = step
-
-        attributes = update_fn(
-            attributes=attributes,
-            node_idx=node_idx,
-            edges=edges,
-        )
+    # 3. Update sequence (common for both modes)
+    for node_idx, update_fn in update_steps:
+        attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
     return (
         attributes,
