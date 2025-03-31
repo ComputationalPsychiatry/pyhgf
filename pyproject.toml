@@ -7,14 +7,7 @@ authors = [
 license = "GPL-3.0"
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
-repository = "https://github.com/ComputationalPsychiatry/pyhgf"
-url = "https://computationalpsychiatry.github.io/pyhgf/"
 keywords = ["reinforcement learning", "predictive coding", "neural networks", "graphs", "variational inference", "active inference", "causal inference"]
-include = [
-    "src/pyhgf/data/usdchf.txt",
-    "rc/pyhgf/data/binary_input.txt",
-    "src/pyhgf/data/binary_response.txt",
-]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -31,15 +24,24 @@ dependencies = [
     "jaxlib>=0.4.26,<0.4.32",
 ]
 
+[project.urls]
+homepage = "https://computationalpsychiatry.github.io/pyhgf/"
+repository = "https://github.com/ComputationalPsychiatry/pyhgf"
+documentation = "https://computationalpsychiatry.github.io/pyhgf/learn.html"
+
 
 [tool.poetry]
+include = [
+    "src/pyhgf/data/usdchf.txt",
+    "rc/pyhgf/data/binary_input.txt",
+    "src/pyhgf/data/binary_response.txt",
+]
 version = "0.0.0"
 
 [tool.poetry-dynamic-versioning]
 # Enable dynamic versioning
 enable = true
 style = "pep440"
-version-file = "pyhgf/__init__.py"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.1.3"
