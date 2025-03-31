@@ -15,7 +15,6 @@ def test_network():
     #####################
     # Creating networks #
     #####################
-
     custom_hgf = (
         Network()
         .add_nodes(kind="continuous-state")
