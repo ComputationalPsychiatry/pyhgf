@@ -9,12 +9,12 @@ repos:
     hooks:
     - id: isort
 -   repo: https://github.com/ambv/black
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
     - id: black
       language_version: python3
 -   repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
+    rev: 7.2.0
     hooks:
     - id: flake8
 -   repo: https://github.com/pycqa/pydocstyle
@@ -24,7 +24,7 @@ repos:
         args: ['--ignore', 'D213,D100,D203,D104']
         files: ^pyhgf/
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.13.0'
+    rev: 'v1.15.0'
     hooks:
     - id: mypy 
       files: ^pyhgf/
