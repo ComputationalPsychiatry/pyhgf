@@ -1,18 +1,19 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
 
 from jax import jit
+
+from pyhgf.typing import Attributes
 
 
 @partial(jit, static_argnames=("node_idx"))
 def set_observation(
-    attributes: Dict,
+    attributes: Attributes,
     node_idx: int,
     values: float,
     observed: int,
-) -> Dict:
+) -> Attributes:
     r"""Add observations to the target node by setting the posterior to a given value.
 
     Parameters

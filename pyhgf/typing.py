@@ -34,7 +34,7 @@ Attributes = Dict[Union[int, str], Dict]
 Edges = Tuple[AdjacencyLists, ...]
 
 # the update sequence
-Sequence = Tuple[Tuple[int, Callable], ...]
+Sequence = Tuple[Tuple[int, Callable[..., Attributes]], ...]
 UpdateSequence = Tuple[Sequence, Sequence]
 
 # a fully defined network

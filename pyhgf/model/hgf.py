@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -35,27 +35,27 @@ class HGF(Network):
         self,
         n_levels: Optional[int] = 2,
         model_type: str = "continuous",
-        initial_mean: Dict = {
+        initial_mean: dict = {
             "1": 0.0,
             "2": 0.0,
             "3": 0.0,
         },
-        initial_precision: Dict = {
+        initial_precision: dict = {
             "1": 1.0,
             "2": 1.0,
             "3": 1.0,
         },
         continuous_precision: Union[float, np.ndarray, ArrayLike] = 1e4,
-        tonic_volatility: Dict = {
+        tonic_volatility: dict = {
             "1": -3.0,
             "2": -3.0,
             "3": -3.0,
         },
-        volatility_coupling: Dict = {"1": 1.0, "2": 1.0},
+        volatility_coupling: dict = {"1": 1.0, "2": 1.0},
         eta0: Union[float, np.ndarray, ArrayLike] = 0.0,
         eta1: Union[float, np.ndarray, ArrayLike] = 1.0,
         binary_precision: Union[float, np.ndarray, ArrayLike] = jnp.inf,
-        tonic_drift: Dict = {
+        tonic_drift: dict = {
             "1": 0.0,
             "2": 0.0,
             "3": 0.0,
@@ -199,7 +199,7 @@ class HGF(Network):
     def surprise(
         self,
         response_function: Optional[Callable] = None,
-        response_function_inputs: Tuple = (),
+        response_function_inputs: Optional[Union[ArrayLike, tuple]] = None,
         response_function_parameters: Optional[
             Union[np.ndarray, ArrayLike, float]
         ] = None,
