@@ -82,7 +82,7 @@ def beliefs_propagation(
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
     # 2. Receive new observations
-    if observations == "genertative":
+    if observations == "generative":
         # Inline handling of observation for each input node
         for node_idx in input_idxs:
             # Sample the node distribution
@@ -108,6 +108,13 @@ def beliefs_propagation(
                 values=values.squeeze(),
                 observed=observed,
             )
+    elif observations == "deprived":
+        pass
+
+    else:
+        # if observation is not parametrised correctly
+        # return an empty dictionary one and crash the scan iteration
+        attributes = {}
 
     # 3. Update sequence (common for both modes)
     for node_idx, update_fn in update_steps:

@@ -1,5 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
+
 import jax.numpy as jnp
+import pytest
 from jax import random
 from pytest import raises
 
@@ -177,6 +179,8 @@ def test_belief_propagation():
         observations="generative",
         rng_key=rng_key,
     )
+    assert jnp.isclose(new_attributes[0]["mean"], -1.2515389)
+    assert jnp.isclose(new_attributes[1]["mean"], 1.0)
 
     # 3 - Deprived ---------------------------------------------------------------------
     new_attributes, _ = beliefs_propagation(
@@ -188,3 +192,17 @@ def test_belief_propagation():
         observations="deprived",
         rng_key=None,
     )
+    assert jnp.isclose(new_attributes[0]["mean"], 0.0)
+    assert jnp.isclose(new_attributes[1]["mean"], 0.0)
+
+    # expected error when the parameter has invalid name
+    with pytest.raises(KeyError):
+        new_attributes, _ = beliefs_propagation(
+            attributes=attributes,
+            inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0),
+            update_sequence=update_sequence,
+            edges=edges,
+            input_idxs=(0, 1),
+            observations="error",
+            rng_key=None,
+        )
