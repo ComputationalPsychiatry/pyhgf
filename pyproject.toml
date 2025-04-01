@@ -66,6 +66,8 @@ maturin = "^1.7.4"
 pytest-benchmark = "^5.1.0"
 networkx = "^3.4.2"
 pydot = "^3.0.4"
+sphinx-proof = "^0.2.1"
+sphinxcontrib-mermaid = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "maturin==1.8.3"]
