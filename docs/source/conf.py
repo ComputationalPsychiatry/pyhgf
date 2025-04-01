@@ -46,8 +46,10 @@ extensions = [
     "myst_nb",
     "sphinx_design",
     "sphinxcontrib.bibtex",
+    'sphinxcontrib.mermaid',
     "sphinx_togglebutton",
     "sphinx_exercise",
+    "sphinx_proof",
 ]
 
 panels_add_bootstrap_css = False
@@ -60,6 +62,7 @@ intersphinx_mapping = {
 
 # Generate the API documentation when building
 autosummary_generate = True
+autodoc_typehints = "description"
 numpydoc_show_class_members = False
 
 # raise an error if the documentation does not build and exit the process

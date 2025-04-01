@@ -83,8 +83,6 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.
 :::
 
-:::
-
 :::{grid-item-card}  Planning and action
 :link: planning_acting
 :link-type: ref
@@ -92,6 +90,7 @@ Predict, filter and smooth any distribution from the exponential family using ge
 
 Planning and acting with predictive coding networks.
 :::
+
 ::::
 
 
