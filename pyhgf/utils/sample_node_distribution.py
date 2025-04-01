@@ -39,7 +39,5 @@ def sample_node_distribution(
         mu = attributes[node_idx]["expected_mean"]
         precision = attributes[node_idx]["expected_precision"]
         sample = random.normal(rng_key) * (1.0 / jnp.sqrt(precision)) + mu
-    else:
-        sample = jnp.nan
 
     return sample
