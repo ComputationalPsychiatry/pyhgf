@@ -46,7 +46,7 @@ def test_update_binary_input_parents():
     # apply sequence
     new_attributes, _ = beliefs_propagation(
         attributes=binary_hgf.attributes,
-        inputs=(data, time_steps, observed),
+        inputs=(data, time_steps, observed, None),
         update_sequence=binary_hgf.update_sequence,
         edges=binary_hgf.edges,
         input_idxs=(0,),

@@ -160,37 +160,37 @@ def test_belief_propagation():
     # 1 - External ---------------------------------------------------------------------
     new_attributes, _ = beliefs_propagation(
         attributes=attributes,
-        inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0),
+        inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0, None),
         update_sequence=update_sequence,
         edges=edges,
         input_idxs=(0, 1),
         observations="external",
-        rng_key=None,
+        action_fn=None,
     )
 
     # 2 - Generative -------------------------------------------------------------------
     rng_key = random.PRNGKey(0)
     new_attributes, _ = beliefs_propagation(
         attributes=attributes,
-        inputs=(None, None, 1.0),
+        inputs=(None, None, 1.0, rng_key),
         update_sequence=update_sequence,
         edges=edges,
         input_idxs=(0, 1),
         observations="generative",
-        rng_key=rng_key,
+        action_fn=None,
     )
-    assert jnp.isclose(new_attributes[0]["mean"], -1.2515389)
+    assert jnp.isclose(new_attributes[0]["mean"], -0.20584226)
     assert jnp.isclose(new_attributes[1]["mean"], 1.0)
 
     # 3 - Deprived ---------------------------------------------------------------------
     new_attributes, _ = beliefs_propagation(
         attributes=attributes,
-        inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0),
+        inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0, None),
         update_sequence=update_sequence,
         edges=edges,
         input_idxs=(0, 1),
         observations="deprived",
-        rng_key=None,
+        action_fn=None,
     )
     assert jnp.isclose(new_attributes[0]["mean"], 0.0)
     assert jnp.isclose(new_attributes[1]["mean"], 0.0)
@@ -199,10 +199,24 @@ def test_belief_propagation():
     with pytest.raises(KeyError):
         new_attributes, _ = beliefs_propagation(
             attributes=attributes,
-            inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0),
+            inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0, None),
             update_sequence=update_sequence,
             edges=edges,
             input_idxs=(0, 1),
             observations="error",
-            rng_key=None,
+            action_fn=None,
         )
+
+    # with an action function
+    def action_fn(attributes, inputs):
+        return attributes, inputs
+
+    new_attributes, _ = beliefs_propagation(
+        attributes=attributes,
+        inputs=(jnp.array([0.25, 1.0]), jnp.array([1, 1]), 1.0, None),
+        update_sequence=update_sequence,
+        edges=edges,
+        input_idxs=(0, 1),
+        observations="external",
+        action_fn=action_fn,
+    )
