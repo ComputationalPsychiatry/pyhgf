@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
+from jax import random
 from jax.lax import scan, switch
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
@@ -66,6 +67,9 @@ class Network:
         self.scan_fn: Optional[Callable] = None
         self.additional_parameters: Dict = {}
         self.input_dim: list = []
+        self.action_fn: Optional[
+            Callable[[Attributes, tuple], tuple[Attributes, tuple]]
+        ] = None
 
     @property
     def input_idxs(self):
@@ -123,6 +127,7 @@ class Network:
                 update_sequence=self.update_sequence,
                 edges=self.edges,
                 input_idxs=self.input_idxs,
+                action_fn=self.action_fn,
             )
 
         return self
@@ -133,6 +138,7 @@ class Network:
         time_steps: Optional[np.ndarray] = None,
         observed: Optional[np.ndarray] = None,
         input_idxs: Optional[Tuple[int]] = None,
+        rng_keys: Optional[random.PRNGKey] = None,
     ):
         """Add new observations.
 
@@ -159,8 +165,15 @@ class Network:
             missing in the event log, or rejected trials).
         input_idxs :
             Indexes on the state nodes receiving observations.
+        rng_keys :
+            Optional. A random key for the random number generator. This is only used
+            when an action function is provided.
 
         """
+        if rng_keys is not None:
+            # get one key for each time step
+            rng_keys = random.split(rng_keys, num=input_data.shape[0])
+
         if input_data.ndim == 1:
             input_data = input_data[:, jnp.newaxis]
 
@@ -195,7 +208,7 @@ class Network:
         values = tuple(np.split(input_data, split_indices, axis=1))
 
         # wrap the inputs
-        inputs = values, observed, time_steps
+        inputs = values, observed, time_steps, rng_keys
 
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
@@ -216,6 +229,7 @@ class Network:
         time_steps: Optional[np.ndarray] = None,
         observed: Optional[np.ndarray] = None,
         input_idxs: Optional[Tuple[int]] = None,
+        rng_keys: Optional[random.PRNGKey] = None,
     ):
         """Add new observations with custom update sequences.
 
@@ -255,8 +269,15 @@ class Network:
             missing in the event log, or rejected trials).
         input_idxs :
             Indexes on the state nodes receiving observations.
+        rng_keys :
+            Optional. A random key for the random number generator. This is only used
+            when an action function is provided.
 
         """
+        if rng_keys is not None:
+            # get one key for each time step
+            rng_keys = random.split(rng_keys, num=input_data.shape[0])
+
         if input_data.ndim == 1:
             input_data = input_data[:, jnp.newaxis]
 
@@ -290,7 +311,7 @@ class Network:
         values = tuple(np.split(input_data, split_indices, axis=1))
 
         # wrap the inputs
-        inputs = values, observed, time_steps
+        inputs = values, observed, time_steps, rng_keys
 
         # create the update functions that will be scanned
         branches_fn = [

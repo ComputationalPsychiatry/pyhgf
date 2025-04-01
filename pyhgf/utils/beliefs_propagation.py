@@ -3,9 +3,9 @@
 
 
 from functools import partial
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
-from jax import jit, random
+from jax import jit
 from jax.typing import ArrayLike
 
 from pyhgf.typing import Attributes, Edges, UpdateSequence
@@ -14,7 +14,14 @@ from pyhgf.utils.sample_node_distribution import sample_node_distribution
 
 
 @partial(
-    jit, static_argnames=("update_sequence", "edges", "input_idxs", "observations")
+    jit,
+    static_argnames=(
+        "update_sequence",
+        "edges",
+        "input_idxs",
+        "observations",
+        "action_fn",
+    ),
 )
 def beliefs_propagation(
     attributes: Attributes,
@@ -23,7 +30,7 @@ def beliefs_propagation(
     edges: Edges,
     input_idxs: Tuple[int],
     observations: str = "external",
-    rng_key: Optional[random.PRNGKey] = None,
+    action_fn: Optional[Callable[[Attributes, tuple], tuple[Attributes, tuple]]] = None,
 ) -> Tuple[Dict, Dict]:
     """Update the networks parameters after observing new data point(s).
 
@@ -51,16 +58,18 @@ def beliefs_propagation(
         The sequence of updates that will be applied to the node structure.
     edges :
         Information on the network's edges.
+    input_idxs :
+        List input indexes.
     observations :
         A string indicating how the network receive new observations. Can be
         `"external"` (default) when new observation are provided, `"generative"` - in
         which case the network sample observation from its own predictive distribution,
         or `"deprived"` so no observation are provided.
-    rng_key :
-        Random key for the random number generator. This is only used when
-        `observations=generative` for sampling from the node distribution.
-    input_idxs :
-        List input indexes.
+    action_fn :
+        Optional. When provided, can implement action, decisions or transformation in
+        the environment. The function should receive and return the attributes of the
+        network and the inputs. This function is called after prediction and before
+        observation.
 
     Returns
     -------
@@ -72,25 +81,37 @@ def beliefs_propagation(
 
     # when observations is "generative", only time_step is provided
     # and the other variables are None
-    values_tuple, observed_tuple, time_step = inputs
+    values_tuple, observed_tuple, time_step, rng_key = inputs
 
     # Assign the time_step (or input data) to the attributes.
     attributes[-1]["time_step"] = time_step
 
-    # 1. Prediction sequence (common for both modes)
+    # 1. Prediction sequence -----------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     for node_idx, update_fn in prediction_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
-    # 2. Receive new observations
+    # act on the environment before observation
+    if action_fn:
+
+        # Call the action function if provided -
+        # this function can transform attributes and inputs before the observation step
+        attributes, inputs = action_fn(attributes, inputs)
+        values_tuple, observed_tuple, time_step, rng_key = (
+            inputs  # overwrite the inputs
+        )
+
+    # 2. Receive new observations ------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     if observations == "generative":
         # Inline handling of observation for each input node
         for node_idx in input_idxs:
             # Sample the node distribution
-            sampled_value, rng_key = sample_node_distribution(
-                attributes=attributes,  # cast for type compatibility
+            sampled_value = sample_node_distribution(
+                attributes=attributes,
+                edges=edges,
                 node_idx=node_idx,
                 rng_key=rng_key,
-                model_type=edges[node_idx].node_type,
             )
             # Set the observation (using a constant observation flag, here set as 1)
             attributes = set_observation(
@@ -113,10 +134,11 @@ def beliefs_propagation(
 
     else:
         # if observation is not parametrised correctly
-        # return an empty dictionary one and crash the scan iteration
+        # return an empty dictionary and crash the scan iteration
         attributes = {}
 
-    # 3. Update sequence (common for both modes)
+    # 3. Update sequence (common for both modes) ---------------------------------------
+    # ----------------------------------------------------------------------------------
     for node_idx, update_fn in update_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 

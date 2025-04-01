@@ -2,51 +2,44 @@
 # Author: Sylvain Estebe
 
 import jax.numpy as jnp
-from jax import lax, random
+from jax import random
 
-from pyhgf.typing import Attributes
+from pyhgf.typing import Attributes, Edges
 
 
 def sample_node_distribution(
     attributes: Attributes,
+    edges: Edges,
     node_idx: int,
     rng_key: random.PRNGKey,
-    model_type: int,
 ) -> tuple[float, random.PRNGKey]:
-    """Sample a value from the distribution of the specified node.
+    """Sample a value from the distribution of an input node.
 
     Parameters
     ----------
-    attributes : Dict[int, dict]
+    attributes :
         The dictionary of node parameters, keyed by node index.
-    node_idx : int
+    edges :
+        Information on the network's edges.
+    node_idx :
         The index of the child nodes whose distribution is to be sampled.
-    rng_key : random.PRNGKey
+    rng_key :
         A PRNG key for random number generation.
-    model_type : int
-        Specifies the distribution type (e.g., discrete=1, continuous=2).
 
     Returns
     -------
-    sample : float
+    sample :
         The sampled value from the node's distribution.
-    rng_key : random.PRNGKey
-        Updated PRNG key.
 
     """
-    # Fetch parameters from attributes
-    mu = attributes[node_idx]["expected_mean"]
-    precision = attributes[node_idx]["expected_precision"]
-    sigma = 1.0 / jnp.sqrt(precision)
+    if edges[node_idx].node_type == 1:
+        mu = attributes[node_idx]["expected_mean"]
+        sample = jnp.float32(random.bernoulli(rng_key, p=mu))
+    elif edges[node_idx].node_type == 2:
+        mu = attributes[node_idx]["expected_mean"]
+        precision = attributes[node_idx]["expected_precision"]
+        sample = random.normal(rng_key) * (1.0 / jnp.sqrt(precision)) + mu
+    else:
+        sample = jnp.nan
 
-    # Split RNG key
-    rng_key, subkey = random.split(rng_key)
-
-    # Sample conditionally based on model type
-    sample = lax.cond(
-        model_type == 2,
-        lambda _: random.normal(subkey) * sigma + mu,  # Continuous distribution
-        lambda _: jnp.float32(random.bernoulli(subkey)),  # Discrete (Bernoulli)
-        operand=None,
-    )
-    return sample, rng_key
+    return sample
