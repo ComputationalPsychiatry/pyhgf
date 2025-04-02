@@ -34,7 +34,7 @@ jobs:
         run: |
           sudo apt-get install graphviz
           poetry install --with dev
-          poetry run sphinx-build -j 4 -T -b html docs/source docs/build/html
+          poetry run sphinx-build -j 1 -T -b html docs/source docs/build/html
 
       # 4. Deploy the documentation for the 'release' event
       - name: Deploy Stable 🚀
