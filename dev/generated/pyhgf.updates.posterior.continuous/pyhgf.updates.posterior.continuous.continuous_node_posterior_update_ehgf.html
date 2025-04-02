@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf &#8212; pyhgf 0.0.0.post1.dev0+1ae8646 documentation</title>
+    <title>pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
   
   
   
@@ -35,6 +35,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=a9b03c1f"></script>
+    <script src="../../_static/documentation_options.js?v=eef198c1"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -545,7 +546,7 @@
 <h1>pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf<a class="headerlink" href="#pyhgf-updates-posterior-continuous-continuous-node-posterior-update-ehgf" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.continuous.</span></span><span class="sig-name descname"><span class="pre">continuous_node_posterior_update_ehgf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">AdjacencyLists</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/continuous/continuous_node_posterior_update_ehgf.html#continuous_node_posterior_update_ehgf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.continuous.</span></span><span class="sig-name descname"><span class="pre">continuous_node_posterior_update_ehgf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/continuous/continuous_node_posterior_update_ehgf.html#continuous_node_posterior_update_ehgf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf" title="Link to this definition">#</a></dt>
 <dd><p>Update the posterior of a continuous node using the eHGF update.</p>
 <p>The eHGF posterior update is a two-step process:
 1. Update the posterior mean and assume that the posterior precision is equal to
@@ -577,6 +578,16 @@ For each node, the index list value and volatility parents and children.</p>
 <dt>attributes</dt><dd><p>The updated attributes of the probabilistic nodes.</p>
 </dd>
 </dl>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attributes</strong> (<em>Dict</em>)</p></li>
+<li><p><strong>node_idx</strong> (<em>int</em>)</p></li>
+<li><p><strong>edges</strong> (<em>Tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em></p>
 </dd>
 </dl>
 <div class="admonition seealso">

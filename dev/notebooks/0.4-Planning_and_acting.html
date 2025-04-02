@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Planning and acting with predictive coding networks &#8212; pyhgf 0.0.0.post1.dev0+1ae8646 documentation</title>
+    <title>Planning and acting with predictive coding networks &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
   
   
   
@@ -35,6 +35,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=a9b03c1f"></script>
+    <script src="../_static/documentation_options.js?v=eef198c1"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -54,6 +55,14 @@
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/0.4-Planning_and_acting';</script>
     <link rel="icon" href="../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -530,7 +539,10 @@
 <section id="adding-an-action-layer">
 <h2>Adding an action layer<a class="headerlink" href="#adding-an-action-layer" title="Link to this heading">#</a></h2>
 <p>By adding a step in the belief propagation function, we can create agents that perform actions and interact with the environment (e.g., influencing the observation it might be presented). When provided, a new function, <code class="docutils literal notranslate"><span class="pre">action_fn,</span></code> can perform actions, decide, or influence the environment after the prediction step and before the observation step.</p>
-<p>We illustrate how to implement this by using a two-bandit design, where the value of the contingencies increases or decreases depending on whether the bandit is exploited by the agent. An exploited bandit will decrease its contingency such as: <span class="math notranslate nohighlight">\(c = c - (\lambda c)\)</span>, whereas a bandit that was not exploited will increase its contingency such as: <span class="math notranslate nohighlight">\(c = c + \lambda * (1 - c)\)</span>. We, therefore, have to interact with the environment inside the inference loop. Luckily, we can do this by defining the corresponding action function.</p>
+<pre  class="mermaid">
+        flowchart TB
+  A[Predictions] -- Action_fn --&gt; B[Observation]  --&gt; C[Prediction-errors]
+    </pre><p>We illustrate how to implement this by using a two-bandit design, where the value of the contingencies increases or decreases depending on whether the bandit is exploited by the agent. An exploited bandit will decrease its contingency such as: <span class="math notranslate nohighlight">\(c = c - (\lambda c)\)</span>, whereas a bandit that was not exploited will increase its contingency such as: <span class="math notranslate nohighlight">\(c = c + \lambda * (1 - c)\)</span>. We, therefore, have to interact with the environment inside the inference loop. Luckily, we can do this by defining the corresponding action function.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># we start by defining a simple network with two binary branches</span>
@@ -666,23 +678,23 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Apr 01 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed Apr 02 2025
 
 Python implementation: CPython
 Python version       : 3.12.9
 IPython version      : 9.0.2
 
-pyhgf : 0.0.0.post1.dev0+1ae8646
+pyhgf : 0.0.0.post1.dev0+650547e
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-seaborn   : 0.13.2
-pyhgf     : 0.0.0.post1.dev0+1ae8646
-jax       : 0.4.31
 numpy     : 1.26.0
+seaborn   : 0.13.2
 IPython   : 9.0.2
-sys       : 3.12.9 (main, Feb  5 2025, 03:22:31) [GCC 13.3.0]
 matplotlib: 3.10.1
+sys       : 3.12.9 (main, Feb  5 2025, 03:22:31) [GCC 13.3.0]
+pyhgf     : 0.0.0.post1.dev0+650547e
+jax       : 0.4.31
 
 Watermark: 2.5.0
 </pre></div>

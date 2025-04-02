@@ -43,8 +43,8 @@
     "```{admonition} Authors\n",
     ":class: tip\n",
     "\n",
-    "- Lina Walkowiak, Aarhus University, Denmark ([202205493@post.au.dk](202205493@post.au.dk))\n",
-    "- Nicolas Legrand, Aarhus University, Denmark ([nicolas.legrand@cas.au.dk](nicolas.legrand@cas.au.dk))\n",
+    "- Lina Walkowiak, Aarhus University, Denmark (<202205493@post.au.dk>)\n",
+    "- Nicolas Legrand, Aarhus University, Denmark (<nicolas.legrand@cas.au.dk>)\n",
     "```"
    ]
   },
@@ -389,7 +389,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f604878b380>"
+       "<graphviz.sources.Source at 0x7fd307f42e10>"
       ]
      },
      "execution_count": 6,
@@ -514,11 +514,12 @@
     "tags": []
    },
    "source": [
-    "```{prf:proof} Derivation of $f'(\\alpha)$\n",
-    ":label: first-derivative\n",
+    "```{prf:proof}\n",
     ":class: dropdown\n",
     "    \n",
-    "With the squared precision-weighted prediction error function defined as: \n",
+    "### Derivation of $f'(\\alpha)$\n",
+    "\n",
+    "The squared precision-weighted prediction error function is defined as: \n",
     "$$\n",
     "f(\\alpha) = (u - \\mu_2 - \\alpha \\mu_1)^2 \\cdot \\frac{1}{\\alpha^2 \\sigma_1^2 + \\sigma_2^2}\n",
     "$$\n",
@@ -569,10 +570,11 @@
     "\\end{align*} \n",
     "$$\n",
     "\n",
-    "```{prf:proof} Finding the roots of $f'(\\alpha)$\n",
-    ":label: roots\n",
+    "```{prf:proof}\n",
     ":class: dropdown\n",
     "    \n",
+    "### Finding the roots of $f'(\\alpha)$\n",
+    "\n",
     "To identify the critical points of $f(\\alpha)$, we solve for the values of $\\alpha$ where $f'(\\alpha) = 0$. This condition is satisfied when the numerator of the derivative equals zero.\n",
     "\n",
     "As described above, the numerator of the derivative of the precision-weighted prediction error function $f(\\alpha)$ is given by:\n",
@@ -1065,13 +1067,13 @@
       "jax   : 0.4.31\n",
       "jaxlib: 0.4.31\n",
       "\n",
-      "sys       : 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]\n",
-      "pyhgf     : 0.2.4\n",
-      "numpy     : 1.26.0\n",
       "IPython   : 9.0.2\n",
-      "jax       : 0.4.31\n",
-      "seaborn   : 0.13.2\n",
+      "numpy     : 1.26.0\n",
+      "sys       : 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]\n",
       "matplotlib: 3.10.1\n",
+      "pyhgf     : 0.2.4\n",
+      "seaborn   : 0.13.2\n",
+      "jax       : 0.4.31\n",
       "\n",
       "Watermark: 2.5.0\n",
       "\n"

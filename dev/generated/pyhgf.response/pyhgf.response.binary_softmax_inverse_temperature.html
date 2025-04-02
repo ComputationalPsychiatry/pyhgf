@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.response.binary_softmax_inverse_temperature &#8212; pyhgf 0.0.0.post1.dev0+1ae8646 documentation</title>
+    <title>pyhgf.response.binary_softmax_inverse_temperature &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
   
   
   
@@ -35,6 +35,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=a9b03c1f"></script>
+    <script src="../../_static/documentation_options.js?v=eef198c1"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -547,7 +548,7 @@
 <h1>pyhgf.response.binary_softmax_inverse_temperature<a class="headerlink" href="#pyhgf-response-binary-softmax-inverse-temperature" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.response.binary_softmax_inverse_temperature">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.response.</span></span><span class="sig-name descname"><span class="pre">binary_softmax_inverse_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hgf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html#pyhgf.model.HGF" title="pyhgf.model.HGF"><span class="pre">HGF</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool_,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool_,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../_modules/pyhgf/response.html#binary_softmax_inverse_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.response.binary_softmax_inverse_temperature" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.response.</span></span><span class="sig-name descname"><span class="pre">binary_softmax_inverse_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hgf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool_,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool_,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/response.html#binary_softmax_inverse_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.response.binary_softmax_inverse_temperature" title="Link to this definition">#</a></dt>
 <dd><p>Surprise from a binary sofmax parametrized by the inverse temperature.</p>
 <p>The probability of chosing A is given by:</p>
 <div class="math notranslate nohighlight">
@@ -572,6 +573,12 @@ temperature  is provided.</p>
 <dt>surprise</dt><dd><p>The surprise under the binary sofmax model.</p>
 </dd>
 </dl>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hgf</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html#pyhgf.model.HGF" title="pyhgf.model.HGF"><em>HGF</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
 </dd>
 </dl>
 </dd></dl>

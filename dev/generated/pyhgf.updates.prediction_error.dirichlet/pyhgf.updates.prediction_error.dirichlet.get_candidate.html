@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.updates.prediction_error.dirichlet.get_candidate &#8212; pyhgf 0.0.0.post1.dev0+1ae8646 documentation</title>
+    <title>pyhgf.updates.prediction_error.dirichlet.get_candidate &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
   
   
   
@@ -35,6 +35,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=a9b03c1f"></script>
+    <script src="../../_static/documentation_options.js?v=eef198c1"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -545,7 +546,7 @@
 <h1>pyhgf.updates.prediction_error.dirichlet.get_candidate<a class="headerlink" href="#pyhgf-updates-prediction-error-dirichlet-get-candidate" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.prediction_error.dirichlet.get_candidate">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.prediction_error.dirichlet.</span></span><span class="sig-name descname"><span class="pre">get_candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensory_precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Array</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool_</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Array</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool_</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">number</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/pyhgf/updates/prediction_error/dirichlet.html#get_candidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.prediction_error.dirichlet.get_candidate" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.prediction_error.dirichlet.</span></span><span class="sig-name descname"><span class="pre">get_candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensory_precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/prediction_error/dirichlet.html#get_candidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.prediction_error.dirichlet.get_candidate" title="Link to this definition">#</a></dt>
 <dd><p>Find the best cluster candidate given previous clusters and an input value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -569,6 +570,18 @@
 <dt>sigma</dt><dd><p>The standard deviation of the new candidate cluster.</p>
 </dd>
 </dl>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<em>float</em>)</p></li>
+<li><p><strong>sensory_precision</strong> (<em>float</em>)</p></li>
+<li><p><strong>expected_mean</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool_</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
+<li><p><strong>expected_sigma</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool_</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
+<li><p><strong>n_samples</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Tuple</em>[float, float]</p>
 </dd>
 </dl>
 </dd></dl>
