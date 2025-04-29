@@ -25,7 +25,5 @@ jobs:
           pip install maturin
       - name: Build Rust package
         run: maturin build --release
-      - name: Build Python package
-        run: poetry build -f sdist -o dist/
       - name: Publish package distributions to PyPI
         run: maturin publish
