@@ -203,8 +203,21 @@ Plots
 *****
 
 Plotting functionalities to visualize parameters trajectories and correlations after
-observing new data. We are currently fully supporting Graphviz. NetworkX is also
-available for some functions.
+observing new data. We are currently fully supporting Graphviz for network structure and
+Matplotlib for time series visualization. NetworkX is also available for some functions. 
+
+Matplotlib
+==========
+
+.. currentmodule:: pyhgf.plots.matplotlib
+
+.. autosummary::
+   :toctree: generated/pyhgf.plots.matplotlib
+
+   plot_trajectories
+   plot_correlations
+   plot_nodes
+   plot_samples
 
 Graphviz
 ========
@@ -214,10 +227,7 @@ Graphviz
 .. autosummary::
    :toctree: generated/pyhgf.plots.graphviz
 
-   plot_trajectories
-   plot_correlations
    plot_network
-   plot_nodes
 
 Networkx
 ========
@@ -265,6 +275,7 @@ Utilities for manipulating neural networks.
    get_input_idxs
    add_parent
    remove_node
+   sample
 
 Math
 ****

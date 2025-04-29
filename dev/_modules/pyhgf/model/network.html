@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.network &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
+    <title>pyhgf.model.network &#8212; pyhgf 0.0.0.post1.dev0+8737833 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=eef198c1"></script>
+    <script src="../../../_static/documentation_options.js?v=92c20612"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -453,7 +453,7 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">add_ef_state</span><span class="p">,</span>
     <span class="n">get_couplings</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">networkx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">matplotlib</span><span class="p">,</span> <span class="n">networkx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attributes</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">NetworkParameters</span><span class="p">,</span> <span class="n">UpdateSequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_edges</span><span class="p">,</span>
@@ -462,6 +462,7 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">get_update_sequence</span><span class="p">,</span>
     <span class="n">to_pandas</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample</span>
 
 
 <div class="viewcode-block" id="Network">
@@ -501,14 +502,17 @@ window.addEventListener("load", () => mermaid.run());
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span> <span class="o">=</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of nodes in the network</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UpdateSequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn_sample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
             <span class="n">Callable</span><span class="p">[[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Attributes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="nd">@property</span>
@@ -528,7 +532,10 @@ window.addEventListener("load", () => mermaid.run());
         <span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">create_belief_propagation_fn</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
+        <span class="n">sampling_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the belief propagation function.</span>
 
@@ -547,6 +554,9 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            alternative to the original definition in that it starts by updating the</span>
 <span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
 <span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+<span class="sd">        sampling_fn :</span>
+<span class="sd">            If `True`, also create a generative sampling function. This is used for</span>
+<span class="sd">            generative sampling of the network. Defaults to `False`.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get the dimension of the input nodes</span>
@@ -567,6 +577,17 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">update_sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">,</span>
                 <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
                 <span class="n">input_idxs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
+                <span class="n">action_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Create the generative scan function if it doesn&#39;t exist, and if requested.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sampling_fn</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample_scan_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+                <span class="n">beliefs_propagation</span><span class="p">,</span>
+                <span class="n">update_sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">,</span>
+                <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+                <span class="n">input_idxs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
+                <span class="n">observations</span><span class="o">=</span><span class="s2">&quot;generative&quot;</span><span class="p">,</span>
                 <span class="n">action_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">,</span>
             <span class="p">)</span>
 
@@ -658,6 +679,31 @@ window.addEventListener("load", () => mermaid.run());
         <span class="c1"># belief trajectories</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="o">=</span> <span class="n">last_attributes</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_predictions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng_key</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate predictions using the utility predict function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_predictions :</span>
+<span class="sd">            Number of predictions to generate.</span>
+<span class="sd">        time_steps :</span>
+<span class="sd">            Array of time steps.</span>
+<span class="sd">        rng_key :</span>
+<span class="sd">            Random number generator key, by default PRNGKey(0).</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">time_steps</span><span class="o">=</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">n_predictions</span><span class="o">=</span><span class="n">n_predictions</span><span class="p">,</span> <span class="n">rng_key</span><span class="o">=</span><span class="n">rng_key</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -937,18 +983,22 @@ window.addEventListener("load", () => mermaid.run());
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the node(s) beliefs trajectories.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="o">=</span><span class="n">node_idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="o">=</span><span class="n">node_idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the parameters trajectories.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the parameters trajectories.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">plot_samples</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_correlations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the heatmap of cross-trajectories correlation.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_correlations</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">plot_correlations</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;graphviz&quot;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Visualization of node network using GraphViz.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Visualization of node network using GraphViz or Networkx.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;graphviz&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_network</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;networkx&quot;</span><span class="p">:</span>

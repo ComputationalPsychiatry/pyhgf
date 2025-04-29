@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.response.binary_softmax_inverse_temperature &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
+    <title>pyhgf.response.binary_softmax_inverse_temperature &#8212; pyhgf 0.0.0.post1.dev0+8737833 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=eef198c1"></script>
+    <script src="../../_static/documentation_options.js?v=92c20612"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -448,10 +448,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.insert_nodes.html">pyhgf.model.insert_nodes</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_trajectories.html">pyhgf.plots.graphviz.plot_trajectories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_correlations.html">pyhgf.plots.graphviz.plot_correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html">pyhgf.plots.matplotlib.plot_trajectories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_correlations.html">pyhgf.plots.matplotlib.plot_correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_nodes.html">pyhgf.plots.matplotlib.plot_nodes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_samples.html">pyhgf.plots.matplotlib.plot_samples</a></li>
+</ul>
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html">pyhgf.plots.graphviz.plot_network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_nodes.html">pyhgf.plots.graphviz.plot_nodes</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html">pyhgf.plots.networkx.plot_network</a></li>
@@ -473,6 +476,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -548,7 +552,7 @@
 <h1>pyhgf.response.binary_softmax_inverse_temperature<a class="headerlink" href="#pyhgf-response-binary-softmax-inverse-temperature" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.response.binary_softmax_inverse_temperature">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.response.</span></span><span class="sig-name descname"><span class="pre">binary_softmax_inverse_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hgf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool_,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool_,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/response.html#binary_softmax_inverse_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.response.binary_softmax_inverse_temperature" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.response.</span></span><span class="sig-name descname"><span class="pre">binary_softmax_inverse_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hgf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/response.html#binary_softmax_inverse_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.response.binary_softmax_inverse_temperature" title="Link to this definition">#</a></dt>
 <dd><p>Surprise from a binary sofmax parametrized by the inverse temperature.</p>
 <p>The probability of chosing A is given by:</p>
 <div class="math notranslate nohighlight">

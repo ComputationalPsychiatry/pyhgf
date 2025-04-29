@@ -24,7 +24,9 @@
       ~Network.plot_correlations
       ~Network.plot_network
       ~Network.plot_nodes
+      ~Network.plot_samples
       ~Network.plot_trajectories
+      ~Network.sample
       ~Network.surprise
       ~Network.to_pandas
    

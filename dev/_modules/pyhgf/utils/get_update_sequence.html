@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.utils.get_update_sequence &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
+    <title>pyhgf.utils.get_update_sequence &#8212; pyhgf 0.0.0.post1.dev0+8737833 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=eef198c1"></script>
+    <script src="../../../_static/documentation_options.js?v=92c20612"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -591,7 +591,6 @@ window.addEventListener("load", () => mermaid.run());
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update</span>
 
                 <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
-
                     <span class="n">update_fn</span> <span class="o">=</span> <span class="kc">None</span>
 
                 <span class="n">update_sequence</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">idx</span><span class="p">,</span> <span class="n">update_fn</span><span class="p">))</span>
@@ -601,7 +600,6 @@ window.addEventListener("load", () => mermaid.run());
         <span class="c1"># verify that all children have been updated</span>
         <span class="n">update_fn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">nodes_without_prediction_error</span><span class="p">:</span>
-
             <span class="n">all_parents</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">i</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="p">[</span>
@@ -616,7 +614,6 @@ window.addEventListener("load", () => mermaid.run());
             <span class="c1"># unless this is an exponential family state node with fixed learning rate</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_parents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-
                     <span class="c1"># retrieve the desired sufficient statistics function</span>
                     <span class="c1"># from the side parameter dictionary</span>
                     <span class="n">sufficient_stats_fn</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">additional_parameters</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span>
@@ -639,7 +636,6 @@ window.addEventListener("load", () => mermaid.run());
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># if this node has been updated</span>
                 <span class="k">if</span> <span class="n">idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nodes_without_posterior_update</span><span class="p">:</span>
-
                     <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="k">pass</span>
                     <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>

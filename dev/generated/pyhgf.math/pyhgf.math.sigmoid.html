@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.math.sigmoid &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
+    <title>pyhgf.math.sigmoid &#8212; pyhgf 0.0.0.post1.dev0+8737833 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=eef198c1"></script>
+    <script src="../../_static/documentation_options.js?v=92c20612"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -446,10 +446,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.insert_nodes.html">pyhgf.model.insert_nodes</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_trajectories.html">pyhgf.plots.graphviz.plot_trajectories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_correlations.html">pyhgf.plots.graphviz.plot_correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html">pyhgf.plots.matplotlib.plot_trajectories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_correlations.html">pyhgf.plots.matplotlib.plot_correlations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_nodes.html">pyhgf.plots.matplotlib.plot_nodes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_samples.html">pyhgf.plots.matplotlib.plot_samples</a></li>
+</ul>
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html">pyhgf.plots.graphviz.plot_network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_nodes.html">pyhgf.plots.graphviz.plot_nodes</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html">pyhgf.plots.networkx.plot_network</a></li>
@@ -471,6 +474,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
 </ul>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -551,13 +555,13 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool_</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
-<li><p><strong>lower_bound</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool_</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
-<li><p><strong>upper_bound</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool_</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
+<li><p><strong>x</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
+<li><p><strong>lower_bound</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
+<li><p><strong>upper_bound</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Array</em> | <em>ndarray</em> | <em>bool_</em> | <em>number</em> | bool | int | float | complex</p>
+<dd class="field-even"><p><em>Array</em> | <em>ndarray</em> | <em>bool</em> | <em>number</em> | bool | int | float | complex</p>
 </dd>
 </dl>
 </dd></dl>

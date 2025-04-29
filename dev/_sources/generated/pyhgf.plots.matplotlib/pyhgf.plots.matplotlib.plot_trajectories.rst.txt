@@ -1,0 +1,6 @@
+﻿pyhgf.plots.matplotlib.plot\_trajectories
+=========================================
+
+.. currentmodule:: pyhgf.plots.matplotlib
+
+.. autofunction:: plot_trajectories

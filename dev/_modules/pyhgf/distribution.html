@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.distribution &#8212; pyhgf 0.0.0.post1.dev0+650547e documentation</title>
+    <title>pyhgf.distribution &#8212; pyhgf 0.0.0.post1.dev0+8737833 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=eef198c1"></script>
+    <script src="../../_static/documentation_options.js?v=92c20612"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -570,7 +570,6 @@ window.addEventListener("load", () => mermaid.run());
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">hgf</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
-
         <span class="c1"># update this network&#39;s attributes</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_precision</span>
 
@@ -598,7 +597,6 @@ window.addEventListener("load", () => mermaid.run());
             <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">volatility_coupling_2</span><span class="p">,)</span>
 
     <span class="k">elif</span> <span class="n">hgf</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
-
         <span class="c1"># update this network&#39;s attributes</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_1</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_2</span>
@@ -932,23 +930,26 @@ window.addEventListener("load", () => mermaid.run());
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform node operations.&quot;&quot;&quot;</span>
         <span class="p">(</span>
-            <span class="n">grad_mean_1</span><span class="p">,</span>
-            <span class="n">grad_mean_2</span><span class="p">,</span>
-            <span class="n">grad_mean_3</span><span class="p">,</span>
-            <span class="n">grad_precision_1</span><span class="p">,</span>
-            <span class="n">grad_precision_2</span><span class="p">,</span>
-            <span class="n">grad_precision_3</span><span class="p">,</span>
-            <span class="n">grad_tonic_volatility_1</span><span class="p">,</span>
-            <span class="n">grad_tonic_volatility_2</span><span class="p">,</span>
-            <span class="n">grad_tonic_volatility_3</span><span class="p">,</span>
-            <span class="n">grad_tonic_drift_1</span><span class="p">,</span>
-            <span class="n">grad_tonic_drift_2</span><span class="p">,</span>
-            <span class="n">grad_tonic_drift_3</span><span class="p">,</span>
-            <span class="n">grad_volatility_coupling_1</span><span class="p">,</span>
-            <span class="n">grad_volatility_coupling_2</span><span class="p">,</span>
-            <span class="n">grad_input_precision</span><span class="p">,</span>
-            <span class="n">grad_response_function_parameters</span><span class="p">,</span>
-        <span class="p">),</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_logp</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
+            <span class="p">(</span>
+                <span class="n">grad_mean_1</span><span class="p">,</span>
+                <span class="n">grad_mean_2</span><span class="p">,</span>
+                <span class="n">grad_mean_3</span><span class="p">,</span>
+                <span class="n">grad_precision_1</span><span class="p">,</span>
+                <span class="n">grad_precision_2</span><span class="p">,</span>
+                <span class="n">grad_precision_3</span><span class="p">,</span>
+                <span class="n">grad_tonic_volatility_1</span><span class="p">,</span>
+                <span class="n">grad_tonic_volatility_2</span><span class="p">,</span>
+                <span class="n">grad_tonic_volatility_3</span><span class="p">,</span>
+                <span class="n">grad_tonic_drift_1</span><span class="p">,</span>
+                <span class="n">grad_tonic_drift_2</span><span class="p">,</span>
+                <span class="n">grad_tonic_drift_3</span><span class="p">,</span>
+                <span class="n">grad_volatility_coupling_1</span><span class="p">,</span>
+                <span class="n">grad_volatility_coupling_2</span><span class="p">,</span>
+                <span class="n">grad_input_precision</span><span class="p">,</span>
+                <span class="n">grad_response_function_parameters</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">_</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_logp</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
 
         <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">grad_mean_1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">grad_mean_2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
