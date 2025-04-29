@@ -24,7 +24,9 @@
       ~HGF.plot_correlations
       ~HGF.plot_network
       ~HGF.plot_nodes
+      ~HGF.plot_samples
       ~HGF.plot_trajectories
+      ~HGF.sample
       ~HGF.surprise
       ~HGF.to_pandas
    

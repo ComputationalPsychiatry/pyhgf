@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.utils.beliefs_propagation &#8212; pyhgf 0.2.4 documentation</title>
+    <title>pyhgf.utils.beliefs_propagation &#8212; pyhgf 0.2.5 documentation</title>
   
   
   
@@ -34,6 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -42,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=6ffd866b"></script>
+    <script src="../../../_static/documentation_options.js?v=cb850272"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -51,7 +52,14 @@
     <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/utils/beliefs_propagation';</script>
     <link rel="icon" href="../../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -426,28 +434,42 @@
                   
   <h1>Source code for pyhgf.utils.beliefs_propagation</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
+<span class="c1"># Author: Sylvain Estebe</span>
+
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attributes</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">UpdateSequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_observation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.sample_node_distribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_node_distribution</span>
 
 
 <div class="viewcode-block" id="beliefs_propagation">
 <a class="viewcode-back" href="../../../generated/pyhgf.utils/pyhgf.utils.beliefs_propagation.html#pyhgf.utils.beliefs_propagation">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;update_sequence&quot;</span><span class="p">,</span> <span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;input_idxs&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span>
+    <span class="n">jit</span><span class="p">,</span>
+    <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">&quot;update_sequence&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;edges&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;input_idxs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;observations&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;action_fn&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">beliefs_propagation</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">update_sequence</span><span class="p">:</span> <span class="n">UpdateSequence</span><span class="p">,</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
     <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">observations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;external&quot;</span><span class="p">,</span>
+    <span class="n">action_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the network&#39;s parameters after observing new data point(s).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the networks parameters after observing new data point(s).</span>
 
 <span class="sd">    This function performs the beliefs propagation step. Belief propagation consists in:</span>
 <span class="sd">    1. A prediction sequence, from the leaves of the graph to the roots.</span>
@@ -475,6 +497,16 @@
 <span class="sd">        Information on the network&#39;s edges.</span>
 <span class="sd">    input_idxs :</span>
 <span class="sd">        List input indexes.</span>
+<span class="sd">    observations :</span>
+<span class="sd">        A string indicating how the network receive new observations. Can be</span>
+<span class="sd">        `&quot;external&quot;` (default) when new observation are provided, `&quot;generative&quot;` - in</span>
+<span class="sd">        which case the network sample observation from its own predictive distribution,</span>
+<span class="sd">        or `&quot;deprived&quot;` so no observation are provided.</span>
+<span class="sd">    action_fn :</span>
+<span class="sd">        Optional. When provided, can implement action, decisions or transformation in</span>
+<span class="sd">        the environment. The function should receive and return the attributes of the</span>
+<span class="sd">        network and the inputs. This function is called after prediction and before</span>
+<span class="sd">        observation.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -484,45 +516,67 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">prediction_steps</span><span class="p">,</span> <span class="n">update_steps</span> <span class="o">=</span> <span class="n">update_sequence</span>
 
-    <span class="c1"># unpack input data - ((ndarrays, ...), (1darrays, ...), float64)</span>
-    <span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">time_step</span> <span class="o">=</span> <span class="n">inputs</span>
+    <span class="c1"># when observations is &quot;generative&quot;, only time_step is provided</span>
+    <span class="c1"># and the other variables are None</span>
+    <span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">rng_key</span> <span class="o">=</span> <span class="n">inputs</span>
 
+    <span class="c1"># Assign the time_step (or input data) to the attributes.</span>
     <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_step</span>
 
-    <span class="c1"># 1 - Prediction sequence</span>
-    <span class="c1"># -----------------------</span>
-    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">prediction_steps</span><span class="p">:</span>
+    <span class="c1"># 1. Prediction sequence -----------------------------------------------------------</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
+    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">prediction_steps</span><span class="p">:</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
 
-        <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="o">=</span> <span class="n">step</span>
-
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span>
-            <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
-            <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-            <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
+    <span class="c1"># act on the environment before observation</span>
+    <span class="k">if</span> <span class="n">action_fn</span><span class="p">:</span>
+        <span class="c1"># Call the action function if provided -</span>
+        <span class="c1"># this function can transform attributes and inputs before the observation step</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span> <span class="o">=</span> <span class="n">action_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+        <span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">rng_key</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">inputs</span>  <span class="c1"># overwrite the inputs</span>
         <span class="p">)</span>
 
-    <span class="c1"># 2 - Observations</span>
-    <span class="c1"># ----------------</span>
-    <span class="k">for</span> <span class="n">values</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">input_idxs</span><span class="p">):</span>
+    <span class="c1"># 2. Receive new observations ------------------------------------------------------</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
+    <span class="k">if</span> <span class="n">observations</span> <span class="o">==</span> <span class="s2">&quot;generative&quot;</span><span class="p">:</span>
+        <span class="c1"># Inline handling of observation for each input node</span>
+        <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="n">input_idxs</span><span class="p">:</span>
+            <span class="c1"># Sample the node distribution</span>
+            <span class="n">sampled_value</span> <span class="o">=</span> <span class="n">sample_node_distribution</span><span class="p">(</span>
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+                <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
+                <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                <span class="n">rng_key</span><span class="o">=</span><span class="n">rng_key</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Set the observation (using a constant observation flag, here set as 1)</span>
+            <span class="n">attributes</span> <span class="o">=</span> <span class="n">set_observation</span><span class="p">(</span>
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+                <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">sampled_value</span><span class="p">,</span>
+                <span class="n">observed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">observations</span> <span class="o">==</span> <span class="s2">&quot;external&quot;</span><span class="p">:</span>
+        <span class="c1"># Unpack observation data and update each input node.</span>
+        <span class="k">for</span> <span class="n">values</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">input_idxs</span><span class="p">):</span>
+            <span class="n">attributes</span> <span class="o">=</span> <span class="n">set_observation</span><span class="p">(</span>
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+                <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">values</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
+                <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">observations</span> <span class="o">==</span> <span class="s2">&quot;deprived&quot;</span><span class="p">:</span>
+        <span class="k">pass</span>
 
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">set_observation</span><span class="p">(</span>
-            <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
-            <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-            <span class="n">values</span><span class="o">=</span><span class="n">values</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span>
-            <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span>
-        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># if observation is not parametrised correctly</span>
+        <span class="c1"># return an empty dictionary and crash the scan iteration</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="c1"># 3 - Update sequence</span>
-    <span class="c1"># -------------------</span>
-    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">update_steps</span><span class="p">:</span>
-
-        <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="o">=</span> <span class="n">step</span>
-
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span>
-            <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
-            <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-            <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
-        <span class="p">)</span>
+    <span class="c1"># 3. Update sequence (common for both modes) ---------------------------------------</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
+    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_steps</span><span class="p">:</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span>
@@ -579,7 +633,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     <br/>
   </p>
 </div>

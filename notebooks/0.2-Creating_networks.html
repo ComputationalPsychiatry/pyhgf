@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.2.4 documentation</title>
+    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.2.5 documentation</title>
   
   
   
@@ -35,6 +35,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=6ffd866b"></script>
+    <script src="../_static/documentation_options.js?v=cb850272"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -51,7 +52,6 @@
     <script>let toggleOpenOnPrint = 'true';</script>
     <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -388,6 +388,8 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Creating and manipulating networks of probabilistic nodes</a></li>
 
 <li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
@@ -759,7 +761,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/54ef099105a12e75a070135033f2069ff9d1182afef7d677004aa27cc2c63362.png" src="../_images/54ef099105a12e75a070135033f2069ff9d1182afef7d677004aa27cc2c63362.png" />
+<img alt="../_images/322171978424d95e85f1b7b5d1a48e7365751c2422eb14b78ff5db8397f2fc8b.png" src="../_images/322171978424d95e85f1b7b5d1a48e7365751c2422eb14b78ff5db8397f2fc8b.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -898,7 +900,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/9809437d0883931c5c9096d7437296e88d8e5be10823057fc509ef5f44add255.png" src="../_images/9809437d0883931c5c9096d7437296e88d8e5be10823057fc509ef5f44add255.png" />
+<img alt="../_images/98f60b0d9fbde7857c0a101afd12c1689abdb4a43aa2157dd3b038577e972d35.png" src="../_images/98f60b0d9fbde7857c0a101afd12c1689abdb4a43aa2157dd3b038577e972d35.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -967,7 +969,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/086eb3e9517b663ea9bf88f37fa8a2fa9d286c1d9195c047226389fec51af80a.png" src="../_images/086eb3e9517b663ea9bf88f37fa8a2fa9d286c1d9195c047226389fec51af80a.png" />
+<img alt="../_images/35af82d1e7bfcf563aa0d90f6e8d0ebb7288f364892b715c4a35cb93d81f3916.png" src="../_images/35af82d1e7bfcf563aa0d90f6e8d0ebb7288f364892b715c4a35cb93d81f3916.png" />
 </div>
 </div>
 </section>
@@ -1071,30 +1073,6 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 <p>The HGF class include a built-in <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.model.HGF.get_update_sequence()</span></code> method to automatically generate the update sequence from the network structure, assuming that we want to propagate the beliefs from the lower part of the tree (the input nodes) to its upper part (nodes that do not have parents).</p>
 </section>
-<section id="time-varying-update-sequences">
-<h2>Time-varying update sequences<a class="headerlink" href="#time-varying-update-sequences" title="Link to this heading">#</a></h2>
-<section id="static-assignation-of-update-sequences">
-<h3>Static assignation of update sequences<a class="headerlink" href="#static-assignation-of-update-sequences" title="Link to this heading">#</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Work in progress</p>
-</div>
-</section>
-<section id="dynamic-assignation-of-update-sequences">
-<h3>Dynamic assignation of update sequences<a class="headerlink" href="#dynamic-assignation-of-update-sequences" title="Link to this heading">#</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Work in progress</p>
-</div>
-</section>
-</section>
-<section id="working-with-missing-or-unobserved-input-sequences">
-<h2>Working with missing or unobserved input sequences<a class="headerlink" href="#working-with-missing-or-unobserved-input-sequences" title="Link to this heading">#</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Work in progress</p>
-</div>
-</section>
 </section>
 <section class="tex2jax_ignore mathjax_ignore" id="system-configuration">
 <h1>System configuration<a class="headerlink" href="#system-configuration" title="Link to this heading">#</a></h1>
@@ -1106,22 +1084,22 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Mar 13 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Apr 29 2025
 
 Python implementation: CPython
-Python version       : 3.12.9
-IPython version      : 8.34.0
+Python version       : 3.12.10
+IPython version      : 9.2.0
 
-pyhgf : 0.2.4
+pyhgf : 0.2.5
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 8.34.0
-sys       : 3.12.9 (main, Feb  5 2025, 03:22:31) [GCC 13.3.0]
-pyhgf     : 0.2.4
-seaborn   : 0.13.2
-numpy     : 1.26.0
+sys       : 3.12.10 (main, Apr  8 2025, 22:38:13) [GCC 13.3.0]
+IPython   : 9.2.0
+numpy     : 2.2.5
 matplotlib: 3.10.1
+seaborn   : 0.13.2
+pyhgf     : 0.2.5
 
 Watermark: 2.5.0
 </pre></div>
@@ -1204,12 +1182,6 @@ Watermark: 2.5.0
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-custom-update-sequences">Creating custom update sequences</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#time-varying-update-sequences">Time-varying update sequences</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#static-assignation-of-update-sequences">Static assignation of update sequences</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-assignation-of-update-sequences">Dynamic assignation of update sequences</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#working-with-missing-or-unobserved-input-sequences">Working with missing or unobserved input sequences</a></li>
 </ul>
 </li>
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
@@ -1260,7 +1232,7 @@ Watermark: 2.5.0
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     <br/>
   </p>
 </div>

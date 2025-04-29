@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>API &#8212; pyhgf 0.2.4 documentation</title>
+    <title>API &#8212; pyhgf 0.2.5 documentation</title>
   
   
   
@@ -35,6 +35,7 @@
     <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=6ffd866b"></script>
+    <script src="_static/documentation_options.js?v=cb850272"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -52,9 +53,6 @@
     <script src="_static/togglebutton.js?v=4a39c7ea"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api';</script>
     <link rel="icon" href="_static/logo_small.svg"/>
     <link rel="index" title="Index" href="genindex.html" />
@@ -464,13 +462,14 @@
 <li><p><a class="reference internal" href="#model" id="id20">Model</a></p></li>
 <li><p><a class="reference internal" href="#plots" id="id21">Plots</a></p>
 <ul>
-<li><p><a class="reference internal" href="#graphviz" id="id22">Graphviz</a></p></li>
-<li><p><a class="reference internal" href="#networkx" id="id23">Networkx</a></p></li>
+<li><p><a class="reference internal" href="#matplotlib" id="id22">Matplotlib</a></p></li>
+<li><p><a class="reference internal" href="#graphviz" id="id23">Graphviz</a></p></li>
+<li><p><a class="reference internal" href="#networkx" id="id24">Networkx</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#response" id="id24">Response</a></p></li>
-<li><p><a class="reference internal" href="#utils" id="id25">Utils</a></p></li>
-<li><p><a class="reference internal" href="#math" id="id26">Math</a></p></li>
+<li><p><a class="reference internal" href="#response" id="id25">Response</a></p></li>
+<li><p><a class="reference internal" href="#utils" id="id26">Utils</a></p></li>
+<li><p><a class="reference internal" href="#math" id="id27">Math</a></p></li>
 </ul>
 </li>
 </ul>
@@ -486,7 +485,7 @@
 <p>Update the sufficient statistics of a state node after receiving prediction errors from children nodes. The prediction errors from all the children below the node should be computed before calling the posterior update step.</p>
 <section id="categorical-nodes">
 <h4><a class="toc-backref" href="#id6" role="doc-backlink">Categorical nodes</a><a class="headerlink" href="#categorical-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.categorical/pyhgf.updates.posterior.categorical.categorical_state_update.html#pyhgf.updates.posterior.categorical.categorical_state_update" title="pyhgf.updates.posterior.categorical.categorical_state_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">categorical_state_update</span></code></a>(attributes, ...)</p></td>
 <td><p>Update the categorical input node given an array of binary observations.</p></td>
@@ -497,7 +496,7 @@
 </section>
 <section id="continuous-nodes">
 <h4><a class="toc-backref" href="#id7" role="doc-backlink">Continuous nodes</a><a class="headerlink" href="#continuous-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.continuous/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.html#module-pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node" title="pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_mean_continuous_node</span></code></a></p></td>
 <td><p></p></td>
@@ -517,7 +516,7 @@
 </section>
 <section id="exponential-family">
 <h4><a class="toc-backref" href="#id8" role="doc-backlink">Exponential family</a><a class="headerlink" href="#exponential-family" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.exponential/pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic.html#pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic" title="pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_exponential_family_dynamic</span></code></a>(...)</p></td>
 <td><p>Update the hyperparameters of an ef state node using HGF-implied learning rates.</p></td>
@@ -532,7 +531,7 @@
 <p>Compute the expectation for future observation given the influence of parent nodes. The prediction step are executed for all nodes, top-down, before any observation.</p>
 <section id="binary-nodes">
 <h4><a class="toc-backref" href="#id10" role="doc-backlink">Binary nodes</a><a class="headerlink" href="#binary-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.binary/pyhgf.updates.prediction.binary.binary_state_node_prediction.html#pyhgf.updates.prediction.binary.binary_state_node_prediction" title="pyhgf.updates.prediction.binary.binary_state_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">binary_state_node_prediction</span></code></a>(attributes, ...)</p></td>
 <td><p>Get the new expected mean and precision of a binary state node.</p></td>
@@ -543,7 +542,7 @@
 </section>
 <section id="id1">
 <h4><a class="toc-backref" href="#id11" role="doc-backlink">Continuous nodes</a><a class="headerlink" href="#id1" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_mean.html#pyhgf.updates.prediction.continuous.predict_mean" title="pyhgf.updates.prediction.continuous.predict_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_mean</span></code></a>(attributes, edges, node_idx)</p></td>
 <td><p>Compute the expected mean of a continuous state node.</p></td>
@@ -560,7 +559,7 @@
 </section>
 <section id="dirichlet-processes">
 <h4><a class="toc-backref" href="#id12" role="doc-backlink">Dirichlet processes</a><a class="headerlink" href="#dirichlet-processes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.dirichlet/pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction.html#pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction" title="pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dirichlet_node_prediction</span></code></a>(edges, attributes, ...)</p></td>
 <td><p>Prediction of a Dirichlet process node.</p></td>
@@ -575,7 +574,7 @@
 <p>Compute the value and volatility prediction errors of a given node. The prediction error can only be computed after the posterior update (or observation) of a given node.</p>
 <section id="binary-state-nodes">
 <h4><a class="toc-backref" href="#id14" role="doc-backlink">Binary state nodes</a><a class="headerlink" href="#binary-state-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error.html#pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error" title="pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">binary_state_node_prediction_error</span></code></a>(...)</p></td>
 <td><p>Compute the value prediction errors and predicted precision of a binary node.</p></td>
@@ -589,7 +588,7 @@
 </section>
 <section id="categorical-state-nodes">
 <h4><a class="toc-backref" href="#id15" role="doc-backlink">Categorical state nodes</a><a class="headerlink" href="#categorical-state-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.categorical/pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error.html#pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error" title="pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">categorical_state_prediction_error</span></code></a>(...)</p></td>
 <td><p>Prediction error from a categorical state node.</p></td>
@@ -600,7 +599,7 @@
 </section>
 <section id="continuous-state-nodes">
 <h4><a class="toc-backref" href="#id16" role="doc-backlink">Continuous state nodes</a><a class="headerlink" href="#continuous-state-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error.html#pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error" title="pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continuous_node_value_prediction_error</span></code></a>(...)</p></td>
 <td><p>Compute the value prediction error of a state node.</p></td>
@@ -617,7 +616,7 @@
 </section>
 <section id="dirichlet-state-nodes">
 <h4><a class="toc-backref" href="#id17" role="doc-backlink">Dirichlet state nodes</a><a class="headerlink" href="#dirichlet-state-nodes" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error.html#pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error" title="pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dirichlet_node_prediction_error</span></code></a>(edges, ...)</p></td>
 <td><p>Prediction error and update the child networks of a Dirichlet process node.</p></td>
@@ -643,7 +642,7 @@
 </section>
 <section id="id2">
 <h4><a class="toc-backref" href="#id18" role="doc-backlink">Exponential family</a><a class="headerlink" href="#id2" title="Link to this heading">#</a></h4>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html#pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed" title="pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction_error_update_exponential_family_fixed</span></code></a>(...)</p></td>
 <td><p>Update the parameters of an exponential family distribution.</p></td>
@@ -661,7 +660,7 @@
 <h2><a class="toc-backref" href="#id19" role="doc-backlink">Distribution</a><a class="headerlink" href="#distribution" title="Link to this heading">#</a></h2>
 <p>The Hierarchical Gaussian Filter as a PyMC distribution. This distribution can be
 embedded in models using PyMC&gt;=5.0.0.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.distribution/pyhgf.distribution.logp.html#pyhgf.distribution.logp" title="pyhgf.distribution.logp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logp</span></code></a></p></td>
 <td><p>Compute the log-probability of a decision model under belief trajectories.</p></td>
@@ -687,7 +686,7 @@ embedded in models using PyMC&gt;=5.0.0.</p>
 <p>The main class is used to create a standard Hierarchical Gaussian Filter for binary or
 continuous inputs, with two or three levels. This class wraps the previous JAX modules
 and creates a standard node structure for these models.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.HGF.html#pyhgf.model.HGF" title="pyhgf.model.HGF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HGF</span></code></a></p></td>
 <td><p>The two-level and three-level Hierarchical Gaussian Filters (HGF).</p></td>
@@ -726,31 +725,42 @@ and creates a standard node structure for these models.</p>
 <section id="plots">
 <h2><a class="toc-backref" href="#id21" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <p>Plotting functionalities to visualize parameters trajectories and correlations after
-observing new data. We are currently fully supporting Graphviz. NetworkX is also
-available for some functions.</p>
-<section id="graphviz">
-<h3><a class="toc-backref" href="#id22" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+observing new data. We are currently fully supporting Graphviz for network structure and
+Matplotlib for time series visualization. NetworkX is also available for some functions.</p>
+<section id="matplotlib">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_trajectories.html#pyhgf.plots.graphviz.plot_trajectories" title="pyhgf.plots.graphviz.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html#pyhgf.plots.matplotlib.plot_trajectories" title="pyhgf.plots.matplotlib.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
 <td><p>Plot the trajectories of the nodes' sufficient statistics and surprise.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_correlations.html#pyhgf.plots.graphviz.plot_correlations" title="pyhgf.plots.graphviz.plot_correlations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_correlations</span></code></a>(network)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_correlations.html#pyhgf.plots.matplotlib.plot_correlations" title="pyhgf.plots.matplotlib.plot_correlations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_correlations</span></code></a>(network)</p></td>
 <td><p>Plot the heatmap correlation of the sufficient statistics trajectories.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_nodes.html#pyhgf.plots.matplotlib.plot_nodes" title="pyhgf.plots.matplotlib.plot_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_nodes</span></code></a>(network, node_idxs[, ci, ...])</p></td>
+<td><p>Plot the trajectory of expected sufficient statistics of a set of nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_samples.html#pyhgf.plots.matplotlib.plot_samples" title="pyhgf.plots.matplotlib.plot_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_samples</span></code></a>(network[, show_total_surprise, ...])</p></td>
+<td><p>Plot simulation trajectories for nodes.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="graphviz">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html#pyhgf.plots.graphviz.plot_network" title="pyhgf.plots.graphviz.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
 <td><p>Visualization of node network using GraphViz.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_nodes.html#pyhgf.plots.graphviz.plot_nodes" title="pyhgf.plots.graphviz.plot_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_nodes</span></code></a>(network, node_idxs[, ci, ...])</p></td>
-<td><p>Plot the trajectory of expected sufficient statistics of a set of nodes.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
 <section id="networkx">
-<h3><a class="toc-backref" href="#id23" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html#pyhgf.plots.networkx.plot_network" title="pyhgf.plots.networkx.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network[, figsize, node_size, ...])</p></td>
 <td><p>Visualization of node network using NetworkX and pydot layout.</p></td>
@@ -761,10 +771,10 @@ available for some functions.</p>
 </section>
 </section>
 <section id="response">
-<h2><a class="toc-backref" href="#id24" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id25" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
 <p>A collection of response functions. A response function is simply a callable taking at
 least the HGF instance as input after observation and returning surprise.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.response/pyhgf.response.first_level_gaussian_surprise.html#pyhgf.response.first_level_gaussian_surprise" title="pyhgf.response.first_level_gaussian_surprise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">first_level_gaussian_surprise</span></code></a>(hgf[, ...])</p></td>
 <td><p>Gaussian surprise at the first level of a probabilistic network.</p></td>
@@ -786,12 +796,12 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="utils">
-<h2><a class="toc-backref" href="#id25" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id26" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
 <p>Utilities for manipulating neural networks.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.beliefs_propagation.html#pyhgf.utils.beliefs_propagation" title="pyhgf.utils.beliefs_propagation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beliefs_propagation</span></code></a>(attributes, inputs, ...)</p></td>
-<td><p>Update the network's parameters after observing new data point(s).</p></td>
+<td><p>Update the networks parameters after observing new data point(s).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.list_branches.html#pyhgf.utils.list_branches" title="pyhgf.utils.list_branches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_branches</span></code></a>(node_idxs, edges[, branch_list])</p></td>
 <td><p>Return the branch of a network from a given set of root nodes.</p></td>
@@ -817,14 +827,17 @@ least the HGF instance as input after observation and returning surprise.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.remove_node.html#pyhgf.utils.remove_node" title="pyhgf.utils.remove_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_node</span></code></a>(attributes, edges, index)</p></td>
 <td><p>Remove a given node from the network.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.sample.html#pyhgf.utils.sample" title="pyhgf.utils.sample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample</span></code></a>(network, time_steps[, n_predictions, ...])</p></td>
+<td><p>Sample n_predictions forward in generative mode.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
 </section>
 <section id="math">
-<h2><a class="toc-backref" href="#id26" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id27" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
 <p>Math functions and probability densities.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.MultivariateNormal.html#pyhgf.math.MultivariateNormal" title="pyhgf.math.MultivariateNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultivariateNormal</span></code></a>()</p></td>
 <td><p>The multivariate normal as an exponential family distribution.</p></td>
@@ -932,6 +945,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distribution">Distribution</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plots">Plots</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#matplotlib">Matplotlib</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#graphviz">Graphviz</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#networkx">Networkx</a></li>
 </ul>
@@ -985,7 +999,7 @@ least the HGF instance as input after observation and returning surprise.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     <br/>
   </p>
 </div>

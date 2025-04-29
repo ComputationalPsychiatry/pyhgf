@@ -6,6 +6,7 @@
 notebooks/0.1-Theory.ipynb
 notebooks/0.2-Creating_networks.ipynb
 notebooks/0.3-Generalised_filtering.ipynb
+notebooks/0.4-Planning_and_acting.ipynb
 ```
 
 ```{toctree}
@@ -79,9 +80,17 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 :link-type: ref
 :img-top: ./images/multivariate_normal.gif
 
-
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.
 :::
+
+:::{grid-item-card}  Planning and action
+:link: planning_acting
+:link-type: ref
+
+
+Planning and acting with predictive coding networks.
+:::
+
 ::::
 
 

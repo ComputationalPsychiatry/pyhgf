@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction\_error.continuous.continuous\_node\_volatility\_prediction\_error
-==========================================================================================
-
-.. currentmodule:: pyhgf.updates.prediction_error.continuous
-
-.. autofunction:: continuous_node_volatility_prediction_error

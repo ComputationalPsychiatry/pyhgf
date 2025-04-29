@@ -1,6 +1,0 @@
-﻿pyhgf.plots.networkx.plot\_network
-==================================
-
-.. currentmodule:: pyhgf.plots.networkx
-
-.. autofunction:: plot_network

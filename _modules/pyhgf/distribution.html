@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.distribution &#8212; pyhgf 0.2.4 documentation</title>
+    <title>pyhgf.distribution &#8212; pyhgf 0.2.5 documentation</title>
   
   
   
@@ -34,6 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
@@ -42,7 +43,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=6ffd866b"></script>
+    <script src="../../_static/documentation_options.js?v=cb850272"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -51,7 +52,14 @@
     <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/distribution';</script>
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -464,9 +472,9 @@
     <span class="n">response_function_parameters</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">input_data</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">time_steps</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-    <span class="n">response_function_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">],</span>
-    <span class="n">response_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span>
     <span class="n">hgf</span><span class="p">:</span> <span class="n">HGF</span><span class="p">,</span>
+    <span class="n">response_function_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]],</span>
+    <span class="n">response_function</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-probability of a decision model under belief trajectories.</span>
 
@@ -547,13 +555,13 @@
 <span class="sd">    time_steps :</span>
 <span class="sd">        An array of input time steps where the first dimension is the number of models</span>
 <span class="sd">        to fit in parallel.</span>
+<span class="sd">    hgf :</span>
+<span class="sd">        An instance of a two or three-level Hierarchical Gaussian Filter.</span>
 <span class="sd">    response_function_inputs :</span>
 <span class="sd">        An array of behavioural inputs passed to the response function where the first</span>
 <span class="sd">        dimension is the number of models to fit in parallel.</span>
 <span class="sd">    response_function :</span>
 <span class="sd">        The response function that is used by the decision model.</span>
-<span class="sd">    hgf :</span>
-<span class="sd">        An instance of a two or three-level Hierarchical Gaussian Filter.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -562,7 +570,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">hgf</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
-
         <span class="c1"># update this network&#39;s attributes</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_precision</span>
 
@@ -590,7 +597,6 @@
             <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">volatility_coupling_2</span><span class="p">,)</span>
 
     <span class="k">elif</span> <span class="n">hgf</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
-
         <span class="c1"># update this network&#39;s attributes</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_1</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_2</span>
@@ -924,23 +930,26 @@
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform node operations.&quot;&quot;&quot;</span>
         <span class="p">(</span>
-            <span class="n">grad_mean_1</span><span class="p">,</span>
-            <span class="n">grad_mean_2</span><span class="p">,</span>
-            <span class="n">grad_mean_3</span><span class="p">,</span>
-            <span class="n">grad_precision_1</span><span class="p">,</span>
-            <span class="n">grad_precision_2</span><span class="p">,</span>
-            <span class="n">grad_precision_3</span><span class="p">,</span>
-            <span class="n">grad_tonic_volatility_1</span><span class="p">,</span>
-            <span class="n">grad_tonic_volatility_2</span><span class="p">,</span>
-            <span class="n">grad_tonic_volatility_3</span><span class="p">,</span>
-            <span class="n">grad_tonic_drift_1</span><span class="p">,</span>
-            <span class="n">grad_tonic_drift_2</span><span class="p">,</span>
-            <span class="n">grad_tonic_drift_3</span><span class="p">,</span>
-            <span class="n">grad_volatility_coupling_1</span><span class="p">,</span>
-            <span class="n">grad_volatility_coupling_2</span><span class="p">,</span>
-            <span class="n">grad_input_precision</span><span class="p">,</span>
-            <span class="n">grad_response_function_parameters</span><span class="p">,</span>
-        <span class="p">),</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_logp</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
+            <span class="p">(</span>
+                <span class="n">grad_mean_1</span><span class="p">,</span>
+                <span class="n">grad_mean_2</span><span class="p">,</span>
+                <span class="n">grad_mean_3</span><span class="p">,</span>
+                <span class="n">grad_precision_1</span><span class="p">,</span>
+                <span class="n">grad_precision_2</span><span class="p">,</span>
+                <span class="n">grad_precision_3</span><span class="p">,</span>
+                <span class="n">grad_tonic_volatility_1</span><span class="p">,</span>
+                <span class="n">grad_tonic_volatility_2</span><span class="p">,</span>
+                <span class="n">grad_tonic_volatility_3</span><span class="p">,</span>
+                <span class="n">grad_tonic_drift_1</span><span class="p">,</span>
+                <span class="n">grad_tonic_drift_2</span><span class="p">,</span>
+                <span class="n">grad_tonic_drift_3</span><span class="p">,</span>
+                <span class="n">grad_volatility_coupling_1</span><span class="p">,</span>
+                <span class="n">grad_volatility_coupling_2</span><span class="p">,</span>
+                <span class="n">grad_input_precision</span><span class="p">,</span>
+                <span class="n">grad_response_function_parameters</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">_</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_logp</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
 
         <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">grad_mean_1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">grad_mean_2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
@@ -1396,7 +1405,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     <br/>
   </p>
 </div>
