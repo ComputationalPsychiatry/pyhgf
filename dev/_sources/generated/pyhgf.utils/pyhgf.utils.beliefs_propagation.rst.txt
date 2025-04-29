@@ -1,6 +1,0 @@
-﻿pyhgf.utils.beliefs\_propagation
-================================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: beliefs_propagation
