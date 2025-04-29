@@ -148,11 +148,9 @@ def plot_nodes(
                 # plotting standard deviation - in the case of a binary input node, the
                 # CI should be read from the value parent using the sigmoid transform
                 if ci is True:
-
                     # get parent nodes and sum predictions
                     mean_parent, precision_parent = 0.0, 0.0
                     for idx in network.edges[node_idx].value_parents:  # type: ignore
-
                         # compute  mu +/- sd at time t-1
                         # and use the sigmoid transform before plotting
                         mean_parent += trajectories_df[f"x_{idx}_expected_mean"]
@@ -164,7 +162,6 @@ def plot_nodes(
                     y2 = 1 / (1 + np.exp(-mean_parent - sd))
 
             if ci is True:
-
                 axs[i].fill_between(
                     x=trajectories_df["time"],
                     y1=y1,
@@ -180,7 +177,6 @@ def plot_nodes(
         # plotting state nodes
         # --------------------
         else:
-
             axs[i].set_title(
                 f"State Node {node_idx}",
                 loc="left",

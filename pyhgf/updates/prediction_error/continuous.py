@@ -111,9 +111,9 @@ def continuous_node_volatility_prediction_error(
             attributes[node_idx]["volatility_coupling_parents"]
         )
 
-    attributes[node_idx]["temp"][
-        "volatility_prediction_error"
-    ] = volatility_prediction_error
+    attributes[node_idx]["temp"]["volatility_prediction_error"] = (
+        volatility_prediction_error
+    )
 
     return attributes
 

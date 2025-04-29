@@ -8,7 +8,6 @@ from matplotlib.axes import Axes
 from pyhgf.plots.matplotlib.plot_nodes import plot_nodes
 
 if TYPE_CHECKING:
-
     from pyhgf.model import Network
 
 
@@ -128,7 +127,6 @@ def plot_trajectories(
     # --------------
     ax_i = n_nodes - 1
     for node_idx in range(n_nodes):
-
         if node_idx in network.input_idxs:
             _show_posterior = True
             color = "#4c72b0"

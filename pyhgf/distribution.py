@@ -133,7 +133,6 @@ def logp(
 
     """
     if hgf.model_type == "continuous":
-
         # update this network's attributes
         hgf.attributes[0]["precision"] = input_precision
 
@@ -161,7 +160,6 @@ def logp(
             hgf.attributes[3]["volatility_coupling_children"] = (volatility_coupling_2,)
 
     elif hgf.model_type == "binary":
-
         # update this network's attributes
         hgf.attributes[0]["mean"] = mean_1
         hgf.attributes[1]["mean"] = mean_2
@@ -486,23 +484,26 @@ class HGFLogpGradOp(Op):
     ):
         """Perform node operations."""
         (
-            grad_mean_1,
-            grad_mean_2,
-            grad_mean_3,
-            grad_precision_1,
-            grad_precision_2,
-            grad_precision_3,
-            grad_tonic_volatility_1,
-            grad_tonic_volatility_2,
-            grad_tonic_volatility_3,
-            grad_tonic_drift_1,
-            grad_tonic_drift_2,
-            grad_tonic_drift_3,
-            grad_volatility_coupling_1,
-            grad_volatility_coupling_2,
-            grad_input_precision,
-            grad_response_function_parameters,
-        ), _ = self.grad_logp(*inputs)
+            (
+                grad_mean_1,
+                grad_mean_2,
+                grad_mean_3,
+                grad_precision_1,
+                grad_precision_2,
+                grad_precision_3,
+                grad_tonic_volatility_1,
+                grad_tonic_volatility_2,
+                grad_tonic_volatility_3,
+                grad_tonic_drift_1,
+                grad_tonic_drift_2,
+                grad_tonic_drift_3,
+                grad_volatility_coupling_1,
+                grad_volatility_coupling_2,
+                grad_input_precision,
+                grad_response_function_parameters,
+            ),
+            _,
+        ) = self.grad_logp(*inputs)
 
         outputs[0][0] = np.asarray(grad_mean_1, dtype=node.outputs[0].dtype)
         outputs[1][0] = np.asarray(grad_mean_2, dtype=node.outputs[1].dtype)

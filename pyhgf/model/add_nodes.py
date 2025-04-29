@@ -159,7 +159,6 @@ def add_ef_state(
 
     # loop over the indexes of nodes created in the previous step
     for node_idx in range(network.n_nodes - 1, network.n_nodes - n_nodes - 1, -1):
-
         # create the sufficient statistic function and store in the side parameters
         if network.attributes[node_idx]["distribution"] == "normal":
             sufficient_stats_fn = Normal().sufficient_statistics_from_observations
@@ -178,7 +177,6 @@ def add_ef_state(
         ] = sufficient_stats_fn
 
         if "hgf" in network.attributes[node_idx]["learning"]:
-
             # create a collection of continuous state nodes
             # to track the sufficient statistics of the implied distribution
             for i in range(n_suff_stats):

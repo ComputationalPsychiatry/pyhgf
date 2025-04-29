@@ -12,6 +12,7 @@ from pyhgf.math import (
 
 
 def test_gaussian_surprise():
+    """Test the Gaussian surprise function."""
     surprise = gaussian_surprise(
         x=jnp.array([1.0, 1.0]),
         expected_mean=jnp.array([0.0, 0.0]),
@@ -21,7 +22,7 @@ def test_gaussian_surprise():
 
 
 def test_multivariate_normal():
-
+    """Test the MultivariateNormal node."""
     ss = MultivariateNormal.sufficient_statistics_from_observations(
         jnp.array([1.0, 2.0])
     )
@@ -45,7 +46,7 @@ def test_multivariate_normal():
 
 
 def test_normal():
-
+    """Test the Normal node."""
     ss = Normal.sufficient_statistics_from_observations(jnp.array(1.0))
     assert jnp.isclose(ss, jnp.array([1.0, 1.0], dtype="float32")).all()
 
@@ -60,13 +61,13 @@ def test_normal():
 
 
 def test_gaussian_predictive_distribution():
-
+    """Test the Gaussian predictive distribution function."""
     pdf = gaussian_predictive_distribution(x=1.5, xi=[0.0, 1 / 8], nu=5.0)
     assert jnp.isclose(pdf, jnp.array(0.00845728, dtype="float32"))
 
 
 def test_binary_surprise_finite_precision():
-
+    """Test the binary surprise finite precision function."""
     surprise = binary_surprise_finite_precision(
         value=1.0,
         expected_mean=0.0,
@@ -78,5 +79,6 @@ def test_binary_surprise_finite_precision():
 
 
 def test_sigmoid_inverse_temperature():
+    """Test the sigmoid inverse temperature function."""
     s = sigmoid_inverse_temperature(x=0.4, temperature=6.0)
     assert jnp.isclose(s, jnp.array(0.08070617906683485, dtype="float32"))

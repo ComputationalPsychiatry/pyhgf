@@ -93,7 +93,6 @@ def beliefs_propagation(
 
     # act on the environment before observation
     if action_fn:
-
         # Call the action function if provided -
         # this function can transform attributes and inputs before the observation step
         attributes, inputs = action_fn(attributes, inputs)

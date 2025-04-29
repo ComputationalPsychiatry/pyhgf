@@ -113,7 +113,6 @@ def prediction_error_update_exponential_family_dynamic(
         attributes[node_idx]["observation_ss"],
         strict=True,
     ):
-
         # blank update in the case of unobserved value
         attributes[parent_idx]["observed"] = attributes[node_idx]["observed"]
 

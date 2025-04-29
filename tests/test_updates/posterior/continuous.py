@@ -10,7 +10,7 @@ from pyhgf.updates.posterior.continuous import (
 
 
 def test_continuous_posterior_updates():
-
+    """Test the continuous posterior updates."""
     network = (
         Network()
         .add_nodes()

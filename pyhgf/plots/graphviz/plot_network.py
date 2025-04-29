@@ -38,7 +38,6 @@ def plot_network(network: "Network") -> "Source":
 
     # create the rest of nodes
     for idx in range(len(network.edges)):
-
         style = "filled" if idx in network.input_idxs else ""
 
         if network.edges[idx].node_type == 1:
@@ -89,7 +88,6 @@ def plot_network(network: "Network") -> "Source":
 
         if value_parents is not None:
             for value_parents_idx in value_parents:
-
                 # get the coupling function from the value parent
                 child_idx = network.edges[value_parents_idx].value_children.index(i)
                 coupling_fn = network.edges[value_parents_idx].coupling_fn[child_idx]

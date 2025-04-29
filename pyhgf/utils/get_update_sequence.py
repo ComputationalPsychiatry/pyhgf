@@ -154,7 +154,6 @@ def get_update_sequence(
                         update_fn = continuous_node_posterior_update
 
                 elif network.edges[idx].node_type == 4:
-
                     update_fn = None
 
                 update_sequence.append((idx, update_fn))
@@ -164,7 +163,6 @@ def get_update_sequence(
         # verify that all children have been updated
         update_fn = None
         for idx in nodes_without_prediction_error:
-
             all_parents = [
                 i
                 for idx in [
@@ -179,7 +177,6 @@ def get_update_sequence(
             # unless this is an exponential family state node with fixed learning rate
             if len(all_parents) == 0:
                 if network.edges[idx].node_type == 3:
-
                     # retrieve the desired sufficient statistics function
                     # from the side parameter dictionary
                     sufficient_stats_fn = network.additional_parameters[idx][
@@ -202,7 +199,6 @@ def get_update_sequence(
             else:
                 # if this node has been updated
                 if idx not in nodes_without_posterior_update:
-
                     if network.edges[idx].node_type == 0:
                         pass
                     elif network.edges[idx].node_type == 1:

@@ -55,7 +55,6 @@ def posterior_update_exponential_family_dynamic(
     # prediction error - expectation differential
     pe, ed = [], []
     for parent_idx in edges[node_idx].value_parents or []:
-
         pe.append(
             attributes[parent_idx]["mean"] - attributes[parent_idx]["expected_mean"]
         )

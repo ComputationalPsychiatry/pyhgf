@@ -7,7 +7,7 @@ from pyhgf.model import Network
 
 
 def test_one_node_hgf():
-
+    """Test the one node HGF with one observation step."""
     # one level HGF and one observation step
     one_node__hgf = (
         Network()
@@ -29,7 +29,7 @@ def test_one_node_hgf():
 
 
 def test_two_nodes_hgf():
-
+    """Test the two nodes HGF with one observation step."""
     # one level HGF with a volatility parent and one observation step
     two_nodes__hgf = (
         Network()
@@ -57,8 +57,7 @@ def test_two_nodes_hgf():
 
 
 def test_nonlinear_coupling_fn():
-    """Tests if the coupling function is passed correctly
-    into the network"""
+    """Tests if the coupling function is passed correctly into the network."""
 
     # creating a simple coupling function
     def coupling_fn(x):
@@ -100,6 +99,7 @@ def test_nonlinear_coupling_fn():
 
 
 def test_continuous_scan_loop():
+    """Test the continuous HGF with a scan loop."""
     timeserie = load_data("continuous")
 
     two_level_hgf = (

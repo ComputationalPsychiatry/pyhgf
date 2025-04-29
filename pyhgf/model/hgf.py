@@ -156,7 +156,6 @@ class HGF(Network):
                     )
 
             elif model_type == "binary":
-
                 if binary_precision == jnp.inf:
                     # X - 0
                     self.add_nodes(

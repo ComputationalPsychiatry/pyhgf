@@ -13,7 +13,7 @@ from pyhgf.utils.beliefs_propagation import beliefs_propagation
 
 
 def test_imports():
-    """Test the data import function"""
+    """Test the data import function."""
     _ = load_data("continuous")
     _, _ = load_data("binary")
 
@@ -23,7 +23,6 @@ def test_imports():
 
 def test_add_edges():
     """Test the add_edges function."""
-
     # add value coupling
     network = Network().add_nodes(n_nodes=3)
     network.add_edges(parent_idxs=1, children_idxs=0, coupling_strengths=1.0)
@@ -58,7 +57,6 @@ def test_find_branch():
 
 def test_set_update_sequence():
     """Test the set_update_sequence function."""
-
     # a standard binary HGF
     network1 = (
         Network()
@@ -146,7 +144,6 @@ def test_remove_node():
 
 def test_belief_propagation():
     """Test the belief propagation function for three observation types."""
-
     network = (
         Network()
         .add_nodes(kind="continuous-state")
@@ -223,9 +220,10 @@ def test_belief_propagation():
 
 
 def test_sample():
-    """
-    Test the sample function to ensure it returns a dictionary of arrays, where each
-    array's first dimension is equal to the number of predictions.
+    """Test the sample function.
+
+    Ensure it returns a dictionary of arrays, where each array's first dimension is
+    equal to the number of predictions.
     """
     # Create a minimal network instance.
     network = (

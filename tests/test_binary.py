@@ -9,6 +9,7 @@ from pyhgf.utils import beliefs_propagation
 
 
 def test_gaussian_density():
+    """Test the Gaussian density function."""
     surprise = gaussian_density(
         x=jnp.array([1.0, 1.0]),
         mean=jnp.array([0.0, 0.0]),
@@ -18,10 +19,12 @@ def test_gaussian_density():
 
 
 def test_sgm():
+    """Test the sigmoid function."""
     assert jnp.all(jnp.isclose(sigmoid(jnp.array([0.3, 0.3])), 0.5744425))
 
 
 def test_binary_surprise():
+    """Test the binary surprise function."""
     surprise = binary_surprise(
         x=jnp.array([1.0]),
         expected_mean=jnp.array([0.2]),
@@ -30,7 +33,7 @@ def test_binary_surprise():
 
 
 def test_update_binary_input_parents():
-
+    """Test the update of the binary input parents."""
     binary_hgf = (
         Network()
         .add_nodes(kind="binary-state")
@@ -69,7 +72,7 @@ def test_update_binary_input_parents():
 
 
 def test_binary_scan_loop():
-
+    """Test the binary scan loop."""
     u, _ = load_data("binary")
 
     binary_hgf = (

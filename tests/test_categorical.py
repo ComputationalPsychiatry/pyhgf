@@ -7,6 +7,7 @@ from pyhgf.model import Network
 
 
 def test_categorical_state_node():
+    """Test the categorical state node."""
     # generate some categorical inputs data
     np.random.seed(123)
     input_data = np.array(

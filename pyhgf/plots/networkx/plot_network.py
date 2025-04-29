@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 import matplotlib.pyplot as plt
 
 if TYPE_CHECKING:
-
     from pyhgf.model import Network
 
 

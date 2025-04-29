@@ -1,28 +1,18 @@
 exclude: |
     (?x)^(
-        setup.py|
         docs/.*|
     )$
+    
 repos:
--   repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.10.1
-    hooks:
-    - id: isort
--   repo: https://github.com/ambv/black
-    rev: 25.1.0
-    hooks:
-    - id: black
-      language_version: python3
--   repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
-    hooks:
-    - id: flake8
--   repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-    -   id: pydocstyle
-        args: ['--ignore', 'D213,D100,D203,D104']
-        files: ^pyhgf/
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.11.4
+  hooks:
+    # Run the linter.
+    - id: ruff
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: 'v1.15.0'
     hooks:

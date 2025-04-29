@@ -9,6 +9,7 @@ from pyhgf.model import HGF, Network
 
 
 def test_plotting_functions():
+    """Test the plotting functions of the HGF class."""
     # Read USD-CHF data
     timeserie = load_data("continuous")
 

@@ -147,13 +147,11 @@ def posterior_update_mean_continuous_node(
             # sum the precision weigthed prediction errors over all children
             value_precision_weigthed_prediction_error += (
                 (
-                    (
-                        value_coupling
-                        * attributes[value_child_idx]["expected_precision"]
-                        * coupling_fn_prime
-                    )
-                    / node_precision
+                    value_coupling
+                    * attributes[value_child_idx]["expected_precision"]
+                    * coupling_fn_prime
                 )
+                / node_precision
             ) * value_prediction_error
 
     # Volatility coupling updates - update the mean of a volatility parent

@@ -56,7 +56,6 @@ def test_logp():
 
 def test_vectorized_continuous_logp(benchmark):
     """Test the vectorized version of the log-probability function."""
-
     timeseries = load_data("continuous")
     hgf = HGF(n_levels=2, model_type="continuous")
 
@@ -162,7 +161,6 @@ def test_vectorized_continuous_logp(benchmark):
 
 def test_vectorized_binary_logp(benchmark):
     """Test the vectorized version of the log-probability function."""
-
     u, y = load_data("binary")
     hgf = HGF(n_levels=2, model_type="binary")
 
@@ -267,8 +265,7 @@ def test_vectorized_binary_logp(benchmark):
 
 
 def test_hgf_logp():
-    """Test the hgf_logp function used by Distribution Ops on three level models"""
-
+    """Test the hgf_logp function used by Distribution Ops on three level models."""
     ##############################
     # Three-level continuous HGF #
     ##############################
@@ -434,7 +431,6 @@ def test_hgf_logp():
 
 def test_pytensor_pointwise_logp():
     """Test the pytensor HGFPointwise op."""
-
     ##############
     # Binary HGF #
     ##############
@@ -474,7 +470,6 @@ def test_pytensor_pointwise_logp():
 
 def test_pytensor_logp():
     """Test the pytensor hgf_logp op."""
-
     ##################
     # Continuous HGF #
     ##################
@@ -550,7 +545,6 @@ def test_pytensor_logp():
 
 def test_pytensor_grad_logp_continuous(benchmark):
     """Test the pytensor gradient hgf_logp op."""
-
     ##################
     # Continuous HGF #
     ##################
@@ -591,7 +585,6 @@ def test_pytensor_grad_logp_continuous(benchmark):
 
 def test_pytensor_grad_logp_binary(benchmark):
     """Test the pytensor gradient hgf_logp op."""
-
     ##############
     # Binary HGF #
     ##############
@@ -632,7 +625,6 @@ def test_pytensor_grad_logp_binary(benchmark):
 
 def test_pymc_sampling():
     """Test the pytensor hgf_logp op."""
-
     ##############
     # Continuous #
     ##############

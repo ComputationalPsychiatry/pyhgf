@@ -11,6 +11,7 @@ from pyhgf.updates.prediction_error.dirichlet import (
 
 
 def test_get_candidate():
+    """Test the get_candidate function."""
     mean, precision = get_candidate(
         value=5.0,
         sensory_precision=1.0,
@@ -23,7 +24,7 @@ def test_get_candidate():
 
 
 def test_dirichlet_node_prediction_error():
-
+    """Test the Dirichlet node prediction error function."""
     network = (
         Network()
         .add_nodes(kind="dp-state", batch_size=2)

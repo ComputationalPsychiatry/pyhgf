@@ -156,7 +156,6 @@ def update_cluster(operands: Tuple, edges: Edges, node_idx: int) -> Attributes:
 
     # activate the corresponding branch and pass the value
     for i, value_parent_idx in enumerate(edges[node_idx].value_parents):  # type: ignore
-
         attributes[value_parent_idx]["observed"] = jnp.where(cluster_idx == i, 1.0, 0.0)
         attributes[value_parent_idx]["mean"] = value
 
@@ -198,7 +197,6 @@ def create_cluster(operands: Tuple, edges: Edges, node_idx: int) -> Attributes:
     )
 
     for i, value_parent_idx in enumerate(edges[node_idx].value_parents):  # type: ignore
-
         attributes[value_parent_idx]["observed"] = 0.0
         attributes[value_parent_idx]["mean"] = value
 

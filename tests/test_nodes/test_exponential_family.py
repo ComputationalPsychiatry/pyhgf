@@ -9,7 +9,7 @@ from pyhgf.rshgf import Network as RsNetwork
 
 
 def test_gaussian():
-
+    """Test the Gaussian node."""
     timeseries = load_data("continuous")
 
     # Rust -----------------------------------------------------------------------------
@@ -35,7 +35,7 @@ def test_gaussian():
 
 
 def test_multivariate_gaussian():
-
+    """Test the multivariate Gaussian node."""
     # simulate an ordered spiral data set
     np.random.seed(123)
     N = 1000

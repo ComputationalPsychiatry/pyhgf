@@ -142,7 +142,6 @@ class Network:
 
         # Create the generative scan function if it doesn't exist, and if requested.
         if (self.scan_fn_sample is None) and sampling_fn:
-
             self.sample_scan_fn = Partial(
                 beliefs_propagation,
                 update_sequence=self.update_sequence,

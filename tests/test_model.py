@@ -10,8 +10,7 @@ from pyhgf.response import total_gaussian_surprise
 
 
 def test_network():
-    """Test the network class"""
-
+    """Test the network class."""
     #####################
     # Creating networks #
     #####################
@@ -87,7 +86,7 @@ def test_network():
 
 
 def test_continuous_hgf():
-    """Test the continuous HGF"""
+    """Test the continuous HGF."""
     ##############
     # Continuous #
     ##############
@@ -132,8 +131,7 @@ def test_continuous_hgf():
 
 
 def test_binary_hgf():
-    """Test the binary HGF"""
-
+    """Test the binary HGF."""
     ##########
     # Binary #
     ##########
@@ -179,8 +177,7 @@ def test_binary_hgf():
 
 
 def test_custom_sequence():
-    """Test the continuous HGF"""
-
+    """Test the continuous HGF."""
     ############################
     # dynamic update sequences #
     ############################
