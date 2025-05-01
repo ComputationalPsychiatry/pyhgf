@@ -43,6 +43,9 @@ def binary_state_node_prediction_error(
     # store the prediction errors in the binary node
     attributes[node_idx]["temp"]["value_prediction_error"] = value_prediction_error
 
+    # here we also update the precision
+    attributes[node_idx]["precision"] = attributes[node_idx]["expected_precision"]
+
     return attributes
 
 

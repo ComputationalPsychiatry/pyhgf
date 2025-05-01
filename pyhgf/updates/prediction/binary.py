@@ -26,7 +26,24 @@ def binary_state_node_prediction(
 
     .. math::
 
-        \hat{\pi}_b^{(k)} = \frac{1}{\hat{\mu}^{(k)}(1-\hat{\mu}^{(k)})}
+        \hat{\pi}_b^{(k)} = \hat{\mu}^{(k)}(1-\hat{\mu}^{(k)})
+
+    which corresponds to the uncertainty at the first level (i.e. inverse of the
+    precision).
+
+    .. warning::
+
+        However, we keep the same name internally (i.e. `"precision"`) so this value can
+        be used by the posterior update at the second level without differentiating
+        between binary and continuous state nodes.
+
+    .. note::
+
+        Here we use the inverse (i.e. uncertainty) so this value can be use as such in
+        the posterior update of the value parent (eq. 81, Weber et al., v2) without
+        requiering a different update step for binary vs. continuous nodes to compensate
+        for this, the value prediction error is divided by the expected_precision in the
+        prediction error step.
 
     Parameters
     ----------
@@ -54,14 +71,16 @@ def binary_state_node_prediction(
         expected_mean += attributes[value_parent_idx]["expected_mean"]
 
     # Estimate the new expected mean using the sigmoid transform
+    # eq. 80 in Weber et al., v2
     expected_mean = sigmoid(expected_mean)
-
-    # Estimate the new expected precision from the new expected mean - use the inverse
-    # to fit the posterior update of the value parent(eq. 97, Weber et al., v1)
-    # here we also update the precision
-    # so the expected precision remains during the observation step
-    attributes[node_idx]["expected_precision"] = expected_mean * (1 - expected_mean)
-    attributes[node_idx]["precision"] = attributes[node_idx]["expected_precision"]
     attributes[node_idx]["expected_mean"] = expected_mean
+
+    # Estimate the new expected precision from the new expected mean
+    # note that here we use the inverse (i.e. uncertainty) so this value can be use
+    # as such in the posterior update of the value parent (eq. 81, Weber et al., v2)
+    # without requiering a different update step for binary vs. continuous nodes
+    # to compensate for this, the value prediction error is divided by the
+    # expected_precision in the prediction error step
+    attributes[node_idx]["expected_precision"] = expected_mean * (1 - expected_mean)
 
     return attributes
