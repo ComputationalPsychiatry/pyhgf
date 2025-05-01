@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.prediction_error.binary &#8212; pyhgf 0.0.0.post1.dev0+1634fdd documentation</title>
+    <title>pyhgf.updates.prediction_error.binary &#8212; pyhgf 0.0.0.post1.dev0+ee1c8b2 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../../_static/documentation_options.js?v=0d10a1a4"></script>
+    <script src="../../../../_static/documentation_options.js?v=b38a0597"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -479,6 +479,9 @@ window.addEventListener("load", () => mermaid.run());
 
     <span class="c1"># store the prediction errors in the binary node</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;value_prediction_error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_prediction_error</span>
+
+    <span class="c1"># here we also update the precision</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">attributes</span></div>
 
