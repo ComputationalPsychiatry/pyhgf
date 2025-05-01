@@ -22,6 +22,7 @@ dependencies = [
     "pymc>=5.17.0",
     "jax>=0.4.26,<0.4.32",
     "jaxlib>=0.4.26,<0.4.32",
+    "graphviz>=0.20.3",
 ]
 
 [project.urls]
@@ -51,7 +52,6 @@ docutils = "^0.21.2"
 myst-nb = "^1.0.0"
 numpydoc = "^1.6.0"
 myst-parser = "^4.0.0"
-graphviz = "^0.20.3"
 watermark = "^2.5.0"
 sphinx-togglebutton = "^0.3.2"
 sphinx-design = "^0.6.1"
