@@ -1,0 +1,43 @@
+﻿pyhgf.distribution.HGFPointwise
+===============================
+
+.. currentmodule:: pyhgf.distribution
+
+.. autoclass:: HGFPointwise
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~HGFPointwise.L_op
+      ~HGFPointwise.R_op
+      ~HGFPointwise.__init__
+      ~HGFPointwise.add_tag_trace
+      ~HGFPointwise.do_constant_folding
+      ~HGFPointwise.grad
+      ~HGFPointwise.inplace_on_inputs
+      ~HGFPointwise.make_node
+      ~HGFPointwise.make_py_thunk
+      ~HGFPointwise.make_thunk
+      ~HGFPointwise.perform
+      ~HGFPointwise.prepare_node
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~HGFPointwise.default_output
+      ~HGFPointwise.destroy_map
+      ~HGFPointwise.itypes
+      ~HGFPointwise.otypes
+      ~HGFPointwise.view_map
+   
+   
