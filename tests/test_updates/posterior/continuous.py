@@ -6,6 +6,7 @@ from pyhgf.model import Network
 from pyhgf.updates.posterior.continuous import (
     continuous_node_posterior_update,
     continuous_node_posterior_update_ehgf,
+    continuous_node_posterior_update_unbounded,
 )
 
 

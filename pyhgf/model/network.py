@@ -58,8 +58,25 @@ class Network:
 
     """
 
-    def __init__(self) -> None:
-        """Initialize an empty neural network."""
+    def __init__(self, update_type: str = "unbounded") -> None:
+        """Initialize an empty neural network.
+
+        Parameters
+        ----------
+        update_type :
+            The type of update to perform for volatility coupling. Can be `"unbounded"`
+            (defaults), `"ehgf"` or `"standard"`. The unbounded approximation was
+            recently introduced to avoid negative precisions updates, which greatly
+            improve sampling performance. The eHGF update step was proposed as an
+            alternative to the original definition in that it starts by updating the
+            mean and then the precision of the parent node, which generally reduces the
+            errors associated with impossible parameter space and improves sampling.
+
+            .. note:
+              The different update steps only apply to nodes having at least one
+              volatility parents. In other cases, the regular HGF updates are applied.
+
+        """
         self.edges: Edges = ()
         self.n_nodes: int = 0  # number of nodes in the network
         self.node_trajectories: Dict = {}
@@ -74,6 +91,7 @@ class Network:
             Callable[[Attributes, tuple], tuple[Attributes, tuple]]
         ] = None
         self.last_attributes: Optional[Attributes] = None
+        self.update_type = update_type
 
     @property
     def input_idxs(self):
@@ -94,7 +112,6 @@ class Network:
     def create_belief_propagation_fn(
         self,
         overwrite: bool = True,
-        update_type: str = "unbounded",
         sampling_fn: bool = False,
     ) -> "Network":
         """Create the belief propagation function.
@@ -108,19 +125,6 @@ class Network:
             If `True` (default), create a new belief propagation function and ignore
             preexisting values. Otherwise, do not create a new function if the attribute
             `scan_fn` is already defined.
-        update_type :
-            The type of update to perform for volatility coupling. Can be `"unbounded"`
-            (defaults), `"ehgf"` or `"standard"`. The unbounded approximation was
-            recently introduced to avoid negative precisions updates, which greatly
-            improve sampling performance. The eHGF update step was proposed as an
-            alternative to the original definition in that it starts by updating the
-            mean and then the precision of the parent node, which generally reduces the
-            errors associated with impossible parameter space and improves sampling.
-
-            .. note:
-              The different update steps only apply to nodes having at least one
-              volatility parents. In other cases, the regular HGF updates are applied.
-
         sampling_fn :
             If `True`, also create a generative sampling function. This is used for
             generative sampling of the network. Defaults to `False`.
@@ -133,7 +137,7 @@ class Network:
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=update_type
+                network=self, update_type=self.update_type
             )
 
         # create the belief propagation function
