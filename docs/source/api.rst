@@ -309,7 +309,6 @@ Math functions and probability densities.
     Normal
     gaussian_predictive_distribution
     gaussian_density
-    sigmoid
     binary_surprise
     gaussian_surprise
     dirichlet_kullback_leibler

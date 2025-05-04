@@ -5,7 +5,7 @@ from typing import Dict
 
 from jax import jit
 
-from pyhgf.math import sigmoid
+from jax.nn import sigmoid
 from pyhgf.typing import Edges
 
 

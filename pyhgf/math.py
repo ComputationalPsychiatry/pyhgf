@@ -191,15 +191,6 @@ def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Arr
     return precision / jnp.sqrt(2 * jnp.pi) * jnp.exp(-precision / 2 * (x - mean) ** 2)
 
 
-def sigmoid(
-    x: Union[ArrayLike, float],
-    lower_bound: Union[ArrayLike, float] = 0.0,
-    upper_bound: Union[ArrayLike, float] = 1.0,
-) -> ArrayLike:
-    """Logistic sigmoid function."""
-    return (upper_bound - lower_bound) / (1 + jnp.exp(-x)) + lower_bound
-
-
 def binary_surprise(
     x: Union[float, ArrayLike], expected_mean: Union[float, ArrayLike]
 ) -> ArrayLike:

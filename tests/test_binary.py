@@ -3,7 +3,7 @@
 import jax.numpy as jnp
 
 from pyhgf import load_data
-from pyhgf.math import binary_surprise, gaussian_density, sigmoid
+from pyhgf.math import binary_surprise, gaussian_density
 from pyhgf.model import Network
 from pyhgf.utils import beliefs_propagation
 
@@ -16,11 +16,6 @@ def test_gaussian_density():
         precision=jnp.array([1.0, 1.0]),
     )
     assert jnp.all(jnp.isclose(surprise, 0.24197073))
-
-
-def test_sgm():
-    """Test the sigmoid function."""
-    assert jnp.all(jnp.isclose(sigmoid(jnp.array([0.3, 0.3])), 0.5744425))
 
 
 def test_binary_surprise():
