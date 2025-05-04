@@ -13,7 +13,7 @@ from pyhgf.typing import Edges
 def continuous_node_posterior_update_unbounded(
     attributes: Dict, node_idx: int, edges: Edges, **args
 ) -> Dict:
-    """Update the posterior of a continuous node using an unbounded approximation.
+    """Update the posterior of a continuous node with unbounded quadratic approximation.
 
     Parameters
     ----------
@@ -73,6 +73,7 @@ def continuous_node_posterior_update_unbounded(
     pi_l1 = attributes[node_idx]["expected_precision"] + 0.5 * attributes[node_idx][
         "volatility_coupling_children"
     ][0] ** 2 * w_child * (1 - w_child)
+
     mu_l1 = (
         attributes[node_idx]["expected_mean"]
         + (
@@ -101,7 +102,7 @@ def continuous_node_posterior_update_unbounded(
     )
 
     delta_phi = (
-        1 / attributes[volatility_child_idx]["precision"]
+        (1 / attributes[volatility_child_idx]["precision"])
         + (
             attributes[volatility_child_idx]["mean"]
             - (attributes[volatility_child_idx]["expected_mean"])
@@ -119,9 +120,10 @@ def continuous_node_posterior_update_unbounded(
         "volatility_coupling_children"
     ][0] ** 2 * w_phi * (w_phi + (2 * w_phi - 1) * delta_phi)
 
-    mu_hat_phi = ((2 * pi_l2 - 1.0) * phi * attributes[node_idx]["expected_mean"]) / (
+    mu_hat_phi = ((2.0 * pi_l2 - 1.0) * phi + attributes[node_idx]["expected_mean"]) / (
         2.0 * pi_l2
     )
+
     mu_l2 = (
         mu_hat_phi
         + (
@@ -159,9 +161,12 @@ def continuous_node_posterior_update_unbounded(
         phi_r=1.0,
     )
 
+    # jax.debug.print("---------------")
     # jax.debug.print("🤯 weigthing: {x} 🤯", x=weigthing)
     # jax.debug.print("🤯 mu_l1: {x} 🤯", x=mu_l1)
     # jax.debug.print("🤯 mu_l2: {x} 🤯", x=mu_l2)
+    # jax.debug.print("🤯 pi_l1: {x} 🤯", x=pi_l1)
+    # jax.debug.print("🤯 pi_l2: {x} 🤯", x=pi_l2)
 
     posterior_precision = (1 - weigthing) * pi_l1 + weigthing * pi_l2
     posterior_mean = (1 - weigthing) * mu_l1 + weigthing * mu_l2
