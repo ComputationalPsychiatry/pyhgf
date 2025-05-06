@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.plots.matplotlib.plot_nodes &#8212; pyhgf 0.0.0.post1.dev0+54fbaf4 documentation</title>
+    <title>pyhgf.plots.matplotlib.plot_nodes &#8212; pyhgf 0.0.0.post1.dev0+9e2c7fd documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../../_static/documentation_options.js?v=1d749ae0"></script>
+    <script src="../../../../_static/documentation_options.js?v=a87ecfd5"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -556,8 +556,12 @@ window.addEventListener("load", () => mermaid.run());
             <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">input_label</span> <span class="o">=</span> <span class="s2">&quot;Continuous&quot;</span>
                 <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-                    <span class="n">x</span><span class="o">=</span><span class="n">trajectories_df</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
-                    <span class="n">y</span><span class="o">=</span><span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_mean&quot;</span><span class="p">],</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">trajectories_df</span><span class="o">.</span><span class="n">time</span><span class="p">[</span>
+                        <span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_observed&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                    <span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_mean&quot;</span><span class="p">][</span>
+                        <span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_observed&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                    <span class="p">],</span>
                     <span class="n">s</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
                     <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Input&quot;</span><span class="p">,</span>
                     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#2a2a2a&quot;</span><span class="p">,</span>
@@ -574,8 +578,12 @@ window.addEventListener("load", () => mermaid.run());
             <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">input_label</span> <span class="o">=</span> <span class="s2">&quot;Binary&quot;</span>
                 <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-                    <span class="n">x</span><span class="o">=</span><span class="n">trajectories_df</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
-                    <span class="n">y</span><span class="o">=</span><span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_mean&quot;</span><span class="p">],</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">trajectories_df</span><span class="o">.</span><span class="n">time</span><span class="p">[</span>
+                        <span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_observed&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                    <span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_mean&quot;</span><span class="p">][</span>
+                        <span class="n">trajectories_df</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;x_</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_observed&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                    <span class="p">],</span>
                     <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Input&quot;</span><span class="p">,</span>
                     <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#2a2a2a&quot;</span><span class="p">,</span>
                     <span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
