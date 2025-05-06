@@ -119,8 +119,12 @@ def plot_nodes(
             if network.edges[node_idx].node_type == 2:
                 input_label = "Continuous"
                 axs[i].scatter(
-                    x=trajectories_df.time,
-                    y=trajectories_df[f"x_{node_idx}_mean"],
+                    x=trajectories_df.time[
+                        trajectories_df[f"x_{node_idx}_observed"] == 1
+                    ],
+                    y=trajectories_df[f"x_{node_idx}_mean"][
+                        trajectories_df[f"x_{node_idx}_observed"] == 1
+                    ],
                     s=3,
                     label="Input",
                     color="#2a2a2a",
@@ -137,8 +141,12 @@ def plot_nodes(
             elif network.edges[node_idx].node_type == 1:
                 input_label = "Binary"
                 axs[i].scatter(
-                    x=trajectories_df.time,
-                    y=trajectories_df[f"x_{node_idx}_mean"],
+                    x=trajectories_df.time[
+                        trajectories_df[f"x_{node_idx}_observed"] == 1
+                    ],
+                    y=trajectories_df[f"x_{node_idx}_mean"][
+                        trajectories_df[f"x_{node_idx}_observed"] == 1
+                    ],
                     label="Input",
                     color="#2a2a2a",
                     zorder=2,
