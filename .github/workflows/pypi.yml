@@ -6,9 +6,8 @@ on:
     #  - "v*"
 
 jobs:
-  publish:
+  build:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -26,10 +25,27 @@ jobs:
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4
         with:
+          name: wheels-${{ matrix.os }}-py${{ matrix.python }}
           path: target/wheels/*.whl
 
-  publish-all:
-    needs: publish
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: PyO3/maturin-action@v1
+        with:
+          python-version: "3.12"  # Any version is fine
+          command: sdist
+
+      - name: Upload sdist as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: target/wheels/*.tar.gz
+
+  publish:
+    needs: [build, sdist]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -38,7 +54,13 @@ jobs:
         with:
           path: dist
 
+      - name: Flatten wheels and sdists
+        run: |
+          mkdir -p upload
+          find dist -name "*.whl" -exec cp {} upload/ \;
+          find dist -name "*.tar.gz" -exec cp {} upload/ \;
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages: dist/**/*.{whl,tar.gz}
+          packages: upload/*
