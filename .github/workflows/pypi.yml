@@ -26,7 +26,6 @@ jobs:
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python }}
           path: target/wheels/*.whl
 
   publish-all:
@@ -42,4 +41,4 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages: dist/**/*.whl
+          packages: dist/**/*.{whl,tar.gz}
