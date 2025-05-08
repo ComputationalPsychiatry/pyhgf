@@ -36,15 +36,33 @@ Categorical nodes
 Continuous nodes
 ----------------
 
-.. currentmodule:: pyhgf.updates.posterior.continuous
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.continuous
+   :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf
+
+    continuous_node_posterior_update_ehgf
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
 
     posterior_update_mean_continuous_node
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
+
     posterior_update_precision_continuous_node
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update
+
     continuous_node_posterior_update
-    continuous_node_posterior_update_ehgf
 
 Exponential family
 ------------------
@@ -291,7 +309,6 @@ Math functions and probability densities.
     Normal
     gaussian_predictive_distribution
     gaussian_density
-    sigmoid
     binary_surprise
     gaussian_surprise
     dirichlet_kullback_leibler

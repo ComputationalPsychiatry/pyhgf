@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.prediction.binary &#8212; pyhgf 0.2.5 documentation</title>
+    <title>pyhgf.updates.prediction.binary &#8212; pyhgf 0.2.6 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../../_static/documentation_options.js?v=cb850272"></script>
+    <script src="../../../../_static/documentation_options.js?v=fc7d8818"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -440,7 +440,7 @@ window.addEventListener("load", () => mermaid.run());
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Edges</span>
 
 
@@ -463,7 +463,24 @@ window.addEventListener("load", () => mermaid.run());
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \hat{\pi}_b^{(k)} = \frac{1}{\hat{\mu}^{(k)}(1-\hat{\mu}^{(k)})}</span>
+<span class="sd">        \hat{\pi}_b^{(k)} = \hat{\mu}^{(k)}(1-\hat{\mu}^{(k)})</span>
+
+<span class="sd">    which corresponds to the uncertainty at the first level (i.e. inverse of the</span>
+<span class="sd">    precision).</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        However, we keep the same name internally (i.e. `&quot;precision&quot;`) so this value can</span>
+<span class="sd">        be used by the posterior update at the second level without differentiating</span>
+<span class="sd">        between binary and continuous state nodes.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        Here we use the inverse (i.e. uncertainty) so this value can be use as such in</span>
+<span class="sd">        the posterior update of the value parent (eq. 81, Weber et al., v2) without</span>
+<span class="sd">        requiering a different update step for binary vs. continuous nodes to compensate</span>
+<span class="sd">        for this, the value prediction error is divided by the expected_precision in the</span>
+<span class="sd">        prediction error step.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -491,15 +508,17 @@ window.addEventListener("load", () => mermaid.run());
         <span class="n">expected_mean</span> <span class="o">+=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
 
     <span class="c1"># Estimate the new expected mean using the sigmoid transform</span>
+    <span class="c1"># eq. 80 in Weber et al., v2</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">)</span>
-
-    <span class="c1"># Estimate the new expected precision from the new expected mean - use the inverse</span>
-    <span class="c1"># to fit the posterior update of the value parent(eq. 97, Weber et al., v1)</span>
-    <span class="c1"># here we also update the precision</span>
-    <span class="c1"># so the expected precision remains during the observation step</span>
-    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>
-    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span>
+
+    <span class="c1"># Estimate the new expected precision from the new expected mean</span>
+    <span class="c1"># note that here we use the inverse (i.e. uncertainty) so this value can be use</span>
+    <span class="c1"># as such in the posterior update of the value parent (eq. 81, Weber et al., v2)</span>
+    <span class="c1"># without requiering a different update step for binary vs. continuous nodes</span>
+    <span class="c1"># to compensate for this, the value prediction error is divided by the</span>
+    <span class="c1"># expected_precision in the prediction error step</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">attributes</span></div>
 
