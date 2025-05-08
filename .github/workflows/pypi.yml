@@ -61,4 +61,4 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages: upload/*.whl upload/*.tar.gz
+          packages-dir: upload/
