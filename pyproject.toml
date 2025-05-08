@@ -86,6 +86,7 @@ include = ["README.md"]  # Ensure README is included in the package
 select = ["D"]
 extend-include = ["*.ipynb"]
 ignore = ["D100", "D104"]
+line-length = 88
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
