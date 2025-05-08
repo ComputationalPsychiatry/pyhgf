@@ -53,12 +53,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
-
       - name: Flatten wheels and sdists
         run: |
           mkdir -p upload
-          find dist -name "*.whl" -exec cp {} upload/ \;
-          find dist -name "*.tar.gz" -exec cp {} upload/ \;
+          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} upload/ \;
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
