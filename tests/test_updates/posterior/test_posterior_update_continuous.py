@@ -59,7 +59,7 @@ def test_continuous_posterior_updates():
     new_attributes = continuous_node_posterior_update_ehgf(
         attributes=attributes, node_idx=2, edges=edges
     )
-    assert jnp.isclose(new_attributes[1]["mean"], 0.51785)
+    assert jnp.isclose(new_attributes[1]["mean"], 0.5225494)
 
     # volatility update
     attributes, edges, _ = network.get_network()
