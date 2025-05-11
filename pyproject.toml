@@ -15,7 +15,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "numpy>=2.2.5",
+    "numpy>=2.0.0",
     "matplotlib>=3.4.0",
     "seaborn>=0.13.2",
     "arviz>=0.21.0",
