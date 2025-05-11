@@ -147,8 +147,6 @@ def test_binary_hgf():
         tonic_volatility={"1": None, "2": -6.0},
         tonic_drift={"1": None, "2": 0.0},
         volatility_coupling={"1": None},
-        eta0=0.0,
-        eta1=1.0,
         binary_precision=jnp.inf,
     )
 
@@ -167,8 +165,6 @@ def test_binary_hgf():
         tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
         tonic_drift={"1": None, "2": 0.0, "3": 0.0},
         volatility_coupling={"1": None, "2": 1.0},
-        eta0=0.0,
-        eta1=1.0,
         binary_precision=jnp.inf,
     )
     three_level_binary_hgf.input_data(input_data=u)
@@ -191,8 +187,6 @@ def test_custom_sequence():
         tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
         tonic_drift={"1": None, "2": 0.0, "3": 0.0},
         volatility_coupling={"1": None, "2": 1.0},
-        eta0=0.0,
-        eta1=1.0,
         binary_precision=jnp.inf,
     )
 

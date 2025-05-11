@@ -71,11 +71,11 @@ def test_set_update_sequence():
 
     # a standard continuous HGF
     network2 = (
-        Network()
+        Network(update_type="standard")
         .add_nodes()
         .add_nodes(value_children=0)
         .add_nodes(volatility_children=1)
-        .create_belief_propagation_fn(update_type="standard")
+        .create_belief_propagation_fn()
     )
     predictions, updates = network2.update_sequence
     assert len(predictions) == 3
