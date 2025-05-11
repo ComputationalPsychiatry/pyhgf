@@ -5,7 +5,6 @@ from typing import Dict
 
 import jax.numpy as jnp
 from jax import Array, jit
-
 from pyhgf.typing import Edges
 
 
@@ -128,7 +127,7 @@ def predict_precision(attributes: Dict, edges: Edges, node_idx: int) -> Array:
 
     .. math::
 
-        \gamma_a^{(k) = \Omega_a^{(k)}} \hat{\pi}_a^{(k)}
+        \gamma_a^{(k)} = \Omega_a^{(k)} \hat{\pi}_a^{(k)}
 
     This value is also saved in the node for later use during the update steps.
 
@@ -235,6 +234,12 @@ def continuous_node_prediction(
        arXiv. https://doi.org/10.48550/ARXIV.2305.10937
 
     """
+    # if this node has volatility parent(s), store the current variance
+    # to be used by the posterior update if using unbounded approximation
+    attributes[node_idx]["temp"]["current_variance"] = (
+        1 / attributes[node_idx]["precision"]
+    )
+
     # Get the new expected mean
     expected_mean = predict_mean(attributes, edges, node_idx)
 

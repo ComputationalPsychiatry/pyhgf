@@ -58,7 +58,7 @@ class Network:
 
     """
 
-    def __init__(self, update_type: str = "unbounded") -> None:
+    def __init__(self, update_type: str = "eHGF") -> None:
         """Initialize an empty neural network.
 
         Parameters

@@ -158,6 +158,8 @@ def get_update_sequence(
                             update_fn = continuous_node_posterior_update
                     elif update_type == "standard":
                         update_fn = continuous_node_posterior_update
+                    else:
+                        raise ValueError("Invalid update type.")
 
                 elif network.edges[idx].node_type == 4:
                     update_fn = None

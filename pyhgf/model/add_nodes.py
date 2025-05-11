@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 def add_continuous_state(
     network: Network,
     n_nodes: int,
-    value_parents,
-    volatility_parents,
-    value_children,
-    volatility_children,
+    value_parents: tuple,
+    volatility_parents: tuple,
+    value_children: tuple,
+    volatility_children: tuple,
     node_parameters: Dict,
     additional_parameters: Dict,
     coupling_fn: Tuple[Optional[Callable], ...],
@@ -46,6 +46,7 @@ def add_continuous_state(
             "effective_precision": 0.0,
             "value_prediction_error": 0.0,
             "volatility_prediction_error": 0.0,
+            "current_variance": 1.0,
         },
     }
 

@@ -372,6 +372,7 @@ class HGFLogpGradOp(Op):
         input_data: Union[ArrayLike] = np.nan,
         time_steps: Optional[ArrayLike] = None,
         model_type: str = "continous",
+        update_type: str = "eHGF",
         n_levels: int = 2,
         response_function: Optional[Callable] = None,
         response_function_inputs: Optional[ArrayLike] = None,
@@ -391,6 +392,19 @@ class HGFLogpGradOp(Op):
             time_steps vector will default to an integer vector starting at 0.
         model_type :
             The model type to use (can be "continuous" or "binary").
+        update_type :
+            The type of update to perform for volatility coupling. Can be `"unbounded"`
+            (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
+            recently introduced to avoid negative precisions updates, which greatly
+            improve sampling performance. The eHGF update step was proposed as an
+            alternative to the original definition in that it starts by updating the
+            mean and then the precision of the parent node, which generally reduces the
+            errors associated with impossible parameter space and improves sampling.
+
+            .. note:
+              The different update steps only apply to nodes having at least one
+              volatility parents. In other cases, the regular HGF updates are applied.
+
         n_levels :
             The number of hierarchies in the perceptual model (can be `2` or `3`). If
             `None`, the nodes hierarchy is not created and might be provided afterwards
@@ -407,7 +421,9 @@ class HGFLogpGradOp(Op):
             time_steps = np.ones(shape=input_data.shape)
 
         # create the default HGF template to be use by the logp function
-        self.hgf = HGF(n_levels=n_levels, model_type=model_type)
+        self.hgf = HGF(
+            n_levels=n_levels, model_type=model_type, update_type=update_type
+        )
 
         # create a vectorized version of the logp function
         vectorized_logp = vmap(
@@ -613,6 +629,7 @@ class HGFDistribution(Op):
         input_data: ArrayLike = jnp.nan,
         time_steps: Optional[ArrayLike] = None,
         model_type: str = "continuous",
+        update_type: str = "eHGF",
         n_levels: int = 2,
         response_function: Optional[Callable] = None,
         response_function_inputs: Optional[ArrayLike] = None,
@@ -632,6 +649,19 @@ class HGFDistribution(Op):
             instead, the time vector will default to an integers vector starting at 0.
         model_type :
             The model type to use (can be "continuous" or "binary").
+        update_type :
+            The type of update to perform for volatility coupling. Can be `"unbounded"`
+            (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
+            recently introduced to avoid negative precisions updates, which greatly
+            improve sampling performance. The eHGF update step was proposed as an
+            alternative to the original definition in that it starts by updating the
+            mean and then the precision of the parent node, which generally reduces the
+            errors associated with impossible parameter space and improves sampling.
+
+            .. note:
+              The different update steps only apply to nodes having at least one
+              volatility parents. In other cases, the regular HGF updates are applied.
+
         n_levels :
             The number of hierarchies in the perceptual model (can be `2` or `3`). If
             `None`, the nodes hierarchy is not created and might be provided afterwards
@@ -650,7 +680,9 @@ class HGFDistribution(Op):
         assert time_steps.shape == input_data.shape
 
         # create the default HGF template to be use by the logp function
-        self.hgf = HGF(n_levels=n_levels, model_type=model_type)
+        self.hgf = HGF(
+            n_levels=n_levels, model_type=model_type, update_type=update_type
+        )
 
         # create a vectorized version of the logp function
         vectorized_logp = vmap(

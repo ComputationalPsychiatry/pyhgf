@@ -5,7 +5,6 @@ from typing import Dict
 
 import jax.numpy as jnp
 from jax import jit
-import jax
 from pyhgf.typing import Edges
 
 
@@ -39,6 +38,11 @@ def continuous_node_posterior_update_unbounded(
     """
     volatility_child_idx = edges[node_idx].volatility_children[0]  # type: ignore
 
+    # # Recover the precision of the child node at the previous time step --------------
+    previous_child_variance = attributes[volatility_child_idx]["temp"][
+        "current_variance"
+    ]
+
     # ----------------------------------------------------------------------------------
     # First quadratic approximation L1 -------------------------------------------------
     # ----------------------------------------------------------------------------------
@@ -47,7 +51,7 @@ def continuous_node_posterior_update_unbounded(
         * attributes[node_idx]["expected_mean"]
         + attributes[volatility_child_idx]["tonic_volatility"]
     ) / (
-        (1 / attributes[volatility_child_idx]["expected_precision"])
+        previous_child_variance
         + jnp.exp(
             attributes[node_idx]["volatility_coupling_children"][0]
             * attributes[node_idx]["expected_mean"]
@@ -62,7 +66,7 @@ def continuous_node_posterior_update_unbounded(
         )
         ** 2
     ) / (
-        (1 / attributes[volatility_child_idx]["expected_precision"])
+        previous_child_variance
         + jnp.exp(
             attributes[node_idx]["volatility_coupling_children"][0]
             * attributes[node_idx]["expected_mean"]
@@ -86,15 +90,13 @@ def continuous_node_posterior_update_unbounded(
     # ----------------------------------------------------------------------------------
     # Second quadratic approximation L2 ------------------------------------------------
     # ----------------------------------------------------------------------------------
-    phi = jnp.log(
-        (1 / attributes[volatility_child_idx]["expected_precision"]) * (2 + jnp.sqrt(3))
-    )
+    phi = jnp.log(previous_child_variance * (2 + jnp.sqrt(3)))
 
     w_phi = jnp.exp(
         attributes[node_idx]["volatility_coupling_children"][0] * phi
         + attributes[volatility_child_idx]["tonic_volatility"]
     ) / (
-        (1 / attributes[volatility_child_idx]["expected_precision"])
+        previous_child_variance
         + jnp.exp(
             attributes[node_idx]["volatility_coupling_children"][0] * phi
             + attributes[volatility_child_idx]["tonic_volatility"]
@@ -109,7 +111,7 @@ def continuous_node_posterior_update_unbounded(
         )
         ** 2
     ) / (
-        (1 / attributes[volatility_child_idx]["expected_precision"])
+        previous_child_variance
         + jnp.exp(
             attributes[node_idx]["volatility_coupling_children"][0] * phi
             + attributes[volatility_child_idx]["tonic_volatility"]
@@ -147,7 +149,7 @@ def continuous_node_posterior_update_unbounded(
                 )
                 ** 2
             )
-            / ((1 / attributes[volatility_child_idx]["expected_precision"]) * pi_l1)
+            / (previous_child_variance * pi_l1)
         )
     )
 
@@ -160,13 +162,6 @@ def continuous_node_posterior_update_unbounded(
         theta_r=0.0,
         phi_r=1.0,
     )
-
-    # jax.debug.print("---------------")
-    # jax.debug.print("🤯 weigthing: {x} 🤯", x=weigthing)
-    # jax.debug.print("🤯 mu_l1: {x} 🤯", x=mu_l1)
-    # jax.debug.print("🤯 mu_l2: {x} 🤯", x=mu_l2)
-    # jax.debug.print("🤯 pi_l1: {x} 🤯", x=pi_l1)
-    # jax.debug.print("🤯 pi_l2: {x} 🤯", x=pi_l2)
 
     posterior_precision = (1 - weigthing) * pi_l1 + weigthing * pi_l2
     posterior_mean = (1 - weigthing) * mu_l1 + weigthing * mu_l2

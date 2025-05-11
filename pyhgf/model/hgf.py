@@ -35,6 +35,7 @@ class HGF(Network):
         self,
         n_levels: Optional[int] = 2,
         model_type: str = "continuous",
+        update_type: str = "eHGF",
         initial_mean: dict = {
             "1": 0.0,
             "2": 0.0,
@@ -52,8 +53,6 @@ class HGF(Network):
             "3": -3.0,
         },
         volatility_coupling: dict = {"1": 1.0, "2": 1.0},
-        eta0: Union[float, np.ndarray, ArrayLike] = 0.0,
-        eta1: Union[float, np.ndarray, ArrayLike] = 1.0,
         binary_precision: Union[float, np.ndarray, ArrayLike] = jnp.inf,
         tonic_drift: dict = {
             "1": 0.0,
@@ -71,6 +70,19 @@ class HGF(Network):
             Defaults to `2` for a 2-level HGF.
         model_type : str
             The model type to use (can be `"continuous"` or `"binary"`).
+        update_type :
+            The type of update to perform for volatility coupling. Can be `"unbounded"`
+            (defaults), `"ehgf"` or `"standard"`. The unbounded approximation was
+            recently introduced to avoid negative precisions updates, which greatly
+            improve sampling performance. The eHGF update step was proposed as an
+            alternative to the original definition in that it starts by updating the
+            mean and then the precision of the parent node, which generally reduces the
+            errors associated with impossible parameter space and improves sampling.
+
+            .. note:
+              The different update steps only apply to nodes having at least one
+              volatility parents. In other cases, the regular HGF updates are applied.
+
         initial_mean :
             A dictionary containing the initial values for the initial mean at
             different levels of the hierarchy. Defaults set to `0.0`.
@@ -106,9 +118,10 @@ class HGF(Network):
             random walk. Defaults set all entries to `0.0` (no drift).
 
         """
-        Network.__init__(self)
+        Network.__init__(self, update_type=update_type)
         self.model_type = model_type
         self.n_levels = n_levels
+        self.update_type = update_type
 
         if model_type not in ["continuous", "binary"]:
             raise ValueError("Invalid model type.")
