@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.model.Network &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.model.Network &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -555,7 +555,7 @@
 <h1>pyhgf.model.Network<a class="headerlink" href="#pyhgf-model-network" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.model.Network">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">Network</span></span><a class="reference internal" href="../../_modules/pyhgf/model/network.html#Network"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.Network" title="Link to this definition">#</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">Network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'eHGF'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/network.html#Network"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.Network" title="Link to this definition">#</a></dt>
 <dd><p>A predictive coding neural network.</p>
 <p>This is the core class to define and manipulate neural networks, that consists in
 1. attributes, 2. structure and 3. update sequences.</p>
@@ -581,12 +581,30 @@ parametrized version of <code class="xref py py-func docutils literal notranslat
 </dd>
 </dl>
 </dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>update_type</strong> (<em>str</em>)</p>
+</dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.model.Network.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/network.html#Network.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.Network.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'eHGF'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/network.html#Network.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.Network.__init__" title="Link to this definition">#</a></dt>
 <dd><p>Initialize an empty neural network.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>update_type</strong></dt><dd><p>The type of update to perform for volatility coupling. Can be <cite>“unbounded”</cite>
+(defaults), <cite>“ehgf”</cite> or <cite>“standard”</cite>. The unbounded approximation was
+recently introduced to avoid negative precisions updates, which greatly
+improve sampling performance. The eHGF update step was proposed as an
+alternative to the original definition in that it starts by updating the
+mean and then the precision of the parent node, which generally reduces the
+errors associated with impossible parameter space and improves sampling.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>update_type</strong> (<em>str</em>)</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
@@ -596,7 +614,7 @@ parametrized version of <code class="xref py py-func docutils literal notranslat
 <p class="rubric">Methods</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.Network.__init__" title="pyhgf.model.Network.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.Network.__init__" title="pyhgf.model.Network.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([update_type])</p></td>
 <td><p>Initialize an empty neural network.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_edges</span></code>([kind, parent_idxs, ...])</p></td>

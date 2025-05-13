@@ -1,6 +1,0 @@
-﻿pyhgf.utils.sample
-==================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: sample

@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.utils.get_update_sequence &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.utils.get_update_sequence &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -444,6 +444,7 @@ window.addEventListener("load", () => mermaid.run());
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.posterior.continuous</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">continuous_node_posterior_update</span><span class="p">,</span>
     <span class="n">continuous_node_posterior_update_ehgf</span><span class="p">,</span>
+    <span class="n">continuous_node_posterior_update_unbounded</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.posterior.exponential</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">posterior_update_exponential_family_dynamic</span><span class="p">,</span>
@@ -582,13 +583,20 @@ window.addEventListener("load", () => mermaid.run());
             <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nodes_without_prediction_error</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">all_children</span><span class="p">]):</span>
                 <span class="n">no_update</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update_unbounded</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update</span>
+                    <span class="k">elif</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                             <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update_ehgf</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update</span>
                     <span class="k">elif</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid update type.&quot;</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
                     <span class="n">update_fn</span> <span class="o">=</span> <span class="kc">None</span>

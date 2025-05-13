@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.distribution &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.distribution &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -817,6 +817,7 @@ window.addEventListener("load", () => mermaid.run());
         <span class="n">input_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
         <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;continous&quot;</span><span class="p">,</span>
+        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
         <span class="n">n_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">response_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_function_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -836,6 +837,19 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            time_steps vector will default to an integer vector starting at 0.</span>
 <span class="sd">        model_type :</span>
 <span class="sd">            The model type to use (can be &quot;continuous&quot; or &quot;binary&quot;).</span>
+<span class="sd">        update_type :</span>
+<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
+<span class="sd">            (defaults), `&quot;eHGF&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
+<span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
+<span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
+<span class="sd">            alternative to the original definition in that it starts by updating the</span>
+<span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
+<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+
+<span class="sd">            .. note:</span>
+<span class="sd">              The different update steps only apply to nodes having at least one</span>
+<span class="sd">              volatility parents. In other cases, the regular HGF updates are applied.</span>
+
 <span class="sd">        n_levels :</span>
 <span class="sd">            The number of hierarchies in the perceptual model (can be `2` or `3`). If</span>
 <span class="sd">            `None`, the nodes hierarchy is not created and might be provided afterwards</span>
@@ -852,7 +866,9 @@ window.addEventListener("load", () => mermaid.run());
             <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
         <span class="c1"># create the default HGF template to be use by the logp function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hgf</span> <span class="o">=</span> <span class="n">HGF</span><span class="p">(</span><span class="n">n_levels</span><span class="o">=</span><span class="n">n_levels</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hgf</span> <span class="o">=</span> <span class="n">HGF</span><span class="p">(</span>
+            <span class="n">n_levels</span><span class="o">=</span><span class="n">n_levels</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="n">update_type</span>
+        <span class="p">)</span>
 
         <span class="c1"># create a vectorized version of the logp function</span>
         <span class="n">vectorized_logp</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span>
@@ -1064,6 +1080,7 @@ window.addEventListener("load", () => mermaid.run());
         <span class="n">input_data</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
         <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;continuous&quot;</span><span class="p">,</span>
+        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
         <span class="n">n_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">response_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_function_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1083,6 +1100,19 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            instead, the time vector will default to an integers vector starting at 0.</span>
 <span class="sd">        model_type :</span>
 <span class="sd">            The model type to use (can be &quot;continuous&quot; or &quot;binary&quot;).</span>
+<span class="sd">        update_type :</span>
+<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
+<span class="sd">            (defaults), `&quot;eHGF&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
+<span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
+<span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
+<span class="sd">            alternative to the original definition in that it starts by updating the</span>
+<span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
+<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+
+<span class="sd">            .. note:</span>
+<span class="sd">              The different update steps only apply to nodes having at least one</span>
+<span class="sd">              volatility parents. In other cases, the regular HGF updates are applied.</span>
+
 <span class="sd">        n_levels :</span>
 <span class="sd">            The number of hierarchies in the perceptual model (can be `2` or `3`). If</span>
 <span class="sd">            `None`, the nodes hierarchy is not created and might be provided afterwards</span>
@@ -1101,7 +1131,9 @@ window.addEventListener("load", () => mermaid.run());
         <span class="k">assert</span> <span class="n">time_steps</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">input_data</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="c1"># create the default HGF template to be use by the logp function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hgf</span> <span class="o">=</span> <span class="n">HGF</span><span class="p">(</span><span class="n">n_levels</span><span class="o">=</span><span class="n">n_levels</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hgf</span> <span class="o">=</span> <span class="n">HGF</span><span class="p">(</span>
+            <span class="n">n_levels</span><span class="o">=</span><span class="n">n_levels</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="n">update_type</span>
+        <span class="p">)</span>
 
         <span class="c1"># create a vectorized version of the logp function</span>
         <span class="n">vectorized_logp</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span>

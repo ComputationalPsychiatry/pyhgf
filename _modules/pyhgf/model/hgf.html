@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.hgf &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.model.hgf &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -474,6 +474,7 @@ window.addEventListener("load", () => mermaid.run());
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;continuous&quot;</span><span class="p">,</span>
+        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
         <span class="n">initial_mean</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
             <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
@@ -491,8 +492,6 @@ window.addEventListener("load", () => mermaid.run());
             <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">,</span>
         <span class="p">},</span>
         <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
-        <span class="n">eta0</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">eta1</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">binary_precision</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
         <span class="n">tonic_drift</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
@@ -510,6 +509,19 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            Defaults to `2` for a 2-level HGF.</span>
 <span class="sd">        model_type : str</span>
 <span class="sd">            The model type to use (can be `&quot;continuous&quot;` or `&quot;binary&quot;`).</span>
+<span class="sd">        update_type :</span>
+<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
+<span class="sd">            (defaults), `&quot;ehgf&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
+<span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
+<span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
+<span class="sd">            alternative to the original definition in that it starts by updating the</span>
+<span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
+<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+
+<span class="sd">            .. note:</span>
+<span class="sd">              The different update steps only apply to nodes having at least one</span>
+<span class="sd">              volatility parents. In other cases, the regular HGF updates are applied.</span>
+
 <span class="sd">        initial_mean :</span>
 <span class="sd">            A dictionary containing the initial values for the initial mean at</span>
 <span class="sd">            different levels of the hierarchy. Defaults set to `0.0`.</span>
@@ -545,9 +557,10 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            random walk. Defaults set all entries to `0.0` (no drift).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">Network</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">Network</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="n">update_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="n">model_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_levels</span> <span class="o">=</span> <span class="n">n_levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span>
 
         <span class="k">if</span> <span class="n">model_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;continuous&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid model type.&quot;</span><span class="p">)</span>

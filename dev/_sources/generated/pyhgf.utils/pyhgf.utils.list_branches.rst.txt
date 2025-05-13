@@ -1,6 +1,0 @@
-﻿pyhgf.utils.list\_branches
-==========================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: list_branches

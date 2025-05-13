@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.network &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.model.network &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -497,8 +497,25 @@ window.addEventListener("load", () => mermaid.run());
 
 <div class="viewcode-block" id="Network.__init__">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an empty neural network.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an empty neural network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        update_type :</span>
+<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
+<span class="sd">            (defaults), `&quot;ehgf&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
+<span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
+<span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
+<span class="sd">            alternative to the original definition in that it starts by updating the</span>
+<span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
+<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+
+<span class="sd">            .. note:</span>
+<span class="sd">              The different update steps only apply to nodes having at least one</span>
+<span class="sd">              volatility parents. In other cases, the regular HGF updates are applied.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span> <span class="o">=</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of nodes in the network</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -512,7 +529,8 @@ window.addEventListener("load", () => mermaid.run());
         <span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
             <span class="n">Callable</span><span class="p">[[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
         <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Attributes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Attributes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span></div>
 
 
     <span class="nd">@property</span>
@@ -534,7 +552,6 @@ window.addEventListener("load", () => mermaid.run());
     <span class="k">def</span><span class="w"> </span><span class="nf">create_belief_propagation_fn</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
         <span class="n">sampling_fn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the belief propagation function.</span>
@@ -548,12 +565,6 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            If `True` (default), create a new belief propagation function and ignore</span>
 <span class="sd">            preexisting values. Otherwise, do not create a new function if the attribute</span>
 <span class="sd">            `scan_fn` is already defined.</span>
-<span class="sd">        update_type :</span>
-<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;eHGF&quot;`</span>
-<span class="sd">            (defaults) or `&quot;standard&quot;`. The eHGF update step was proposed as an</span>
-<span class="sd">            alternative to the original definition in that it starts by updating the</span>
-<span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
-<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
 <span class="sd">        sampling_fn :</span>
 <span class="sd">            If `True`, also create a generative sampling function. This is used for</span>
 <span class="sd">            generative sampling of the network. Defaults to `False`.</span>
@@ -566,7 +577,7 @@ window.addEventListener("load", () => mermaid.run());
         <span class="c1"># create the update sequence if it does not already exist</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
-                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="n">update_type</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
             <span class="p">)</span>
 
         <span class="c1"># create the belief propagation function</span>

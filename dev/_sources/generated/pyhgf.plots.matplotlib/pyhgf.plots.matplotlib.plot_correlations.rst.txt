@@ -1,6 +1,0 @@
-﻿pyhgf.plots.matplotlib.plot\_correlations
-=========================================
-
-.. currentmodule:: pyhgf.plots.matplotlib
-
-.. autofunction:: plot_correlations

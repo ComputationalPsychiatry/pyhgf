@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.add_nodes &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.model.add_nodes &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -455,10 +455,10 @@ window.addEventListener("load", () => mermaid.run());
 <span class="k">def</span><span class="w"> </span><span class="nf">add_continuous_state</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
     <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">value_parents</span><span class="p">,</span>
-    <span class="n">volatility_parents</span><span class="p">,</span>
-    <span class="n">value_children</span><span class="p">,</span>
-    <span class="n">volatility_children</span><span class="p">,</span>
+    <span class="n">value_parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">volatility_parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">value_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">volatility_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
     <span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
@@ -483,6 +483,7 @@ window.addEventListener("load", () => mermaid.run());
             <span class="s2">&quot;effective_precision&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
             <span class="s2">&quot;value_prediction_error&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
             <span class="s2">&quot;volatility_prediction_error&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;current_variance&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">}</span>
 

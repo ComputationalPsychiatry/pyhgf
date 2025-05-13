@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.distribution.HGFLogpGradOp &#8212; pyhgf 0.2.6 documentation</title>
+    <title>pyhgf.distribution.HGFLogpGradOp &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=fc7d8818"></script>
+    <script src="../../_static/documentation_options.js?v=58050c01"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -555,7 +555,7 @@
 <h1>pyhgf.distribution.HGFLogpGradOp<a class="headerlink" href="#pyhgf-distribution-hgflogpgradop" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.distribution.HGFLogpGradOp">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyhgf.distribution.</span></span><span class="sig-name descname"><span class="pre">HGFLogpGradOp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continous'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/distribution.html#HGFLogpGradOp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.distribution.HGFLogpGradOp" title="Link to this definition">#</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyhgf.distribution.</span></span><span class="sig-name descname"><span class="pre">HGFLogpGradOp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continous'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'eHGF'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/distribution.html#HGFLogpGradOp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.distribution.HGFLogpGradOp" title="Link to this definition">#</a></dt>
 <dd><p>Gradient Op for the HGF distribution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -563,6 +563,7 @@
 <li><p><strong>input_data</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
 <li><p><strong>time_steps</strong> (<em>ndarray</em><em> | </em><em>Array</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>model_type</strong> (<em>str</em>)</p></li>
+<li><p><strong>update_type</strong> (<em>str</em>)</p></li>
 <li><p><strong>n_levels</strong> (<em>int</em>)</p></li>
 <li><p><strong>response_function</strong> (<em>Callable</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>response_function_inputs</strong> (<em>ndarray</em><em> | </em><em>Array</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>None</em>)</p></li>
@@ -571,7 +572,7 @@
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.distribution.HGFLogpGradOp.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continous'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/distribution.html#HGFLogpGradOp.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.distribution.HGFLogpGradOp.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'continous'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'eHGF'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/distribution.html#HGFLogpGradOp.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.distribution.HGFLogpGradOp.__init__" title="Link to this definition">#</a></dt>
 <dd><p>Initialize function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -586,6 +587,14 @@ If one of the list items is <cite>None</cite>, or if <cite>None</cite> is provid
 time_steps vector will default to an integer vector starting at 0.</p>
 </dd>
 <dt><strong>model_type</strong></dt><dd><p>The model type to use (can be “continuous” or “binary”).</p>
+</dd>
+<dt><strong>update_type</strong></dt><dd><p>The type of update to perform for volatility coupling. Can be <cite>“unbounded”</cite>
+(defaults), <cite>“eHGF”</cite> or <cite>“standard”</cite>. The unbounded approximation was
+recently introduced to avoid negative precisions updates, which greatly
+improve sampling performance. The eHGF update step was proposed as an
+alternative to the original definition in that it starts by updating the
+mean and then the precision of the parent node, which generally reduces the
+errors associated with impossible parameter space and improves sampling.</p>
 </dd>
 <dt><strong>n_levels</strong></dt><dd><p>The number of hierarchies in the perceptual model (can be <cite>2</cite> or <cite>3</cite>). If
 <cite>None</cite>, the nodes hierarchy is not created and might be provided afterwards
@@ -604,6 +613,7 @@ response functions.</p>
 <li><p><strong>input_data</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>)</p></li>
 <li><p><strong>time_steps</strong> (<em>ndarray</em><em> | </em><em>Array</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>model_type</strong> (<em>str</em>)</p></li>
+<li><p><strong>update_type</strong> (<em>str</em>)</p></li>
 <li><p><strong>n_levels</strong> (<em>int</em>)</p></li>
 <li><p><strong>response_function</strong> (<em>Callable</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>response_function_inputs</strong> (<em>ndarray</em><em> | </em><em>Array</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>None</em>)</p></li>
