@@ -3,7 +3,7 @@ use crate::model::Network;
 /// Prediction from a continuous state node
 /// 
 /// # Arguments
-/// * `network` - The main network containing the node.
+/// * `network` - The main network structure.
 /// * `node_idx` - The node index.
 /// 
 /// # Returns
