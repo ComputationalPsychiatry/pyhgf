@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 from pyhgf.typing import AdjacencyLists
 
@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 def fill_categorical_state_node(
     network: "Network",
     node_idx: int,
-    binary_states_idxs: List[int],
-    binary_parameters: Dict,
+    binary_states_idxs: list[int],
+    binary_parameters: dict,
 ) -> "Network":
     """Generate a binary network implied by categorical state(-transition) nodes.
 
@@ -44,7 +44,7 @@ def fill_categorical_state_node(
     )
 
     # add the value coupling between the categorical and binary states
-    edges_as_list: List[AdjacencyLists] = list(network.edges)
+    edges_as_list: list[AdjacencyLists] = list(network.edges)
     edges_as_list[node_idx] = AdjacencyLists(
         5, tuple(binary_states_idxs), None, None, None, (None,)
     )

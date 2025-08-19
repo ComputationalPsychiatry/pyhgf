@@ -1,18 +1,16 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
-from jax import Array, jit
+from jax import jit
 
 from pyhgf.typing import Edges
 
 
 @partial(jit, static_argnames=("node_idx"))
 def continuous_node_value_prediction_error(
-    attributes: Dict,
+    attributes: dict,
     node_idx: int,
-) -> Array:
+) -> dict:
     r"""Compute the value prediction error of a state node.
 
     The value prediction error :math:`\delta_j^{(k)}` of a continuous state node is
@@ -62,8 +60,8 @@ def continuous_node_value_prediction_error(
 
 @partial(jit, static_argnames=("node_idx"))
 def continuous_node_volatility_prediction_error(
-    attributes: Dict, node_idx: int
-) -> Dict:
+    attributes: dict, node_idx: int
+) -> dict:
     r"""Compute the volatility prediction error of a state node.
 
     The volatility prediction error :math:`\Delta_j^{(k)}` of a state node
@@ -120,8 +118,8 @@ def continuous_node_volatility_prediction_error(
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def continuous_node_prediction_error(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Store prediction errors in an input node.
 
     Parameters

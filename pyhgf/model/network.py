@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -64,8 +64,8 @@ class Network:
         Parameters
         ----------
         update_type :
-            The type of update to perform for volatility coupling. Can be `"unbounded"`
-            (defaults), `"ehgf"` or `"standard"`. The unbounded approximation was
+            The type of update to perform for volatility coupling. Can be `"eHGF"`
+            (defaults), `"unbounded"` or `"standard"`. The unbounded approximation was
             recently introduced to avoid negative precisions updates, which greatly
             improve sampling performance. The eHGF update step was proposed as an
             alternative to the original definition in that it starts by updating the
@@ -79,13 +79,13 @@ class Network:
         """
         self.edges: Edges = ()
         self.n_nodes: int = 0  # number of nodes in the network
-        self.node_trajectories: Dict = {}
-        self.predictions: Dict = {}
+        self.node_trajectories: dict = {}
+        self.predictions: dict = {}
         self.attributes: Attributes = {-1: {"time_step": 0.0}}
         self.update_sequence: Optional[UpdateSequence] = None
         self.scan_fn: Optional[Callable] = None
         self.scan_fn_sample: Optional[Callable] = None
-        self.additional_parameters: Dict = {}
+        self.additional_parameters: dict = {}
         self.input_dim: list = []
         self.action_fn: Optional[
             Callable[[Attributes, tuple], tuple[Attributes, tuple]]
@@ -168,8 +168,8 @@ class Network:
         self,
         input_data: np.ndarray,
         time_steps: Optional[np.ndarray] = None,
-        observed: Optional[np.ndarray] = None,
-        input_idxs: Optional[Tuple[int]] = None,
+        observed: Optional[tuple[np.ndarray, ...]] = None,
+        input_idxs: Optional[tuple[int]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
     ):
         """Add new observations.
@@ -280,12 +280,12 @@ class Network:
 
     def input_custom_sequence(
         self,
-        update_branches: Tuple[UpdateSequence],
+        update_branches: tuple[UpdateSequence],
         branches_idx: np.array,
         input_data: np.ndarray,
         time_steps: Optional[np.ndarray] = None,
-        observed: Optional[np.ndarray] = None,
-        input_idxs: Optional[Tuple[int]] = None,
+        observed: Optional[tuple[np.ndarray, ...]] = None,
+        input_idxs: Optional[tuple[int, ...]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
     ):
         """Add new observations with custom update sequences.
@@ -410,12 +410,12 @@ class Network:
         self,
         kind: str = "continuous-state",
         n_nodes: int = 1,
-        node_parameters: Dict = {},
-        value_children: Optional[Union[List, Tuple, int]] = None,
-        value_parents: Optional[Union[List, Tuple, int]] = None,
-        volatility_children: Optional[Union[List, Tuple, int]] = None,
-        volatility_parents: Optional[Union[List, Tuple, int]] = None,
-        coupling_fn: Tuple[Optional[Callable], ...] = (None,),
+        node_parameters: dict = {},
+        value_children: Optional[Union[list, tuple, int]] = None,
+        value_parents: Optional[Union[list, tuple, int]] = None,
+        volatility_children: Optional[Union[list, tuple, int]] = None,
+        volatility_parents: Optional[Union[list, tuple, int]] = None,
+        coupling_fn: tuple[Optional[Callable], ...] = (None,),
         **additional_parameters,
     ):
         """Add new input/state node(s) to the neural network.
@@ -552,7 +552,7 @@ class Network:
 
         return self
 
-    def plot_nodes(self, node_idxs: Union[int, List[int]], **kwargs):
+    def plot_nodes(self, node_idxs: Union[int, list[int]], **kwargs):
         """Plot the node(s) beliefs trajectories."""
         return matplotlib.plot_nodes(network=self, node_idxs=node_idxs, **kwargs)
 
@@ -597,10 +597,8 @@ class Network:
     def surprise(
         self,
         response_function: Callable,
-        response_function_inputs: Tuple = (),
-        response_function_parameters: Optional[
-            Union[np.ndarray, ArrayLike, float]
-        ] = None,
+        response_function_inputs: tuple = (),
+        response_function_parameters: Optional[Union[tuple, ArrayLike, float]] = None,
     ) -> float:
         """Surprise of the model conditioned by the response function.
 
@@ -639,10 +637,10 @@ class Network:
     def add_edges(
         self,
         kind="value",
-        parent_idxs=Union[int, List[int]],
-        children_idxs=Union[int, List[int]],
-        coupling_strengths: Union[float, List[float], Tuple[float]] = 1.0,
-        coupling_fn: Tuple[Optional[Callable], ...] = (None,),
+        parent_idxs=Union[int, list[int]],
+        children_idxs=Union[int, list[int]],
+        coupling_strengths: Union[float, list[float], tuple[float]] = 1.0,
+        coupling_fn: tuple[Optional[Callable], ...] = (None,),
     ) -> "Network":
         """Add a value or volatility coupling link between a set of nodes.
 

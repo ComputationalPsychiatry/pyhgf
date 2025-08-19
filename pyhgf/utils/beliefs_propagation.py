@@ -3,7 +3,7 @@
 
 
 from functools import partial
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Optional
 
 from jax import jit
 from jax.typing import ArrayLike
@@ -25,13 +25,13 @@ from pyhgf.utils.sample_node_distribution import sample_node_distribution
 )
 def beliefs_propagation(
     attributes: Attributes,
-    inputs: Tuple[ArrayLike, ...],
+    inputs: tuple[ArrayLike, ...],
     update_sequence: UpdateSequence,
     edges: Edges,
-    input_idxs: Tuple[int],
+    input_idxs: tuple[int],
     observations: str = "external",
     action_fn: Optional[Callable[[Attributes, tuple], tuple[Attributes, tuple]]] = None,
-) -> Tuple[Dict, Dict]:
+) -> tuple[dict, dict]:
     """Update the networks parameters after observing new data point(s).
 
     This function performs the beliefs propagation step. Belief propagation consists in:

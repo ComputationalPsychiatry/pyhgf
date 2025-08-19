@@ -83,10 +83,11 @@ strip = true  # Strips debugging symbols to reduce wheel size
 include = ["README.md"]  # Ensure README is included in the package
 
 [tool.ruff]
-select = ["D"]
 extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["D"]
 ignore = ["D100", "D104"]
-line-length = 88
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

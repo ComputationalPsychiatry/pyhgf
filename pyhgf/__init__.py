@@ -3,7 +3,7 @@
 import pkgutil
 from importlib.metadata import version
 from io import BytesIO
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ import pandas as pd
 __version__ = version("pyhgf")
 
 
-def load_data(dataset: str) -> Union[Tuple[np.ndarray, ...], np.ndarray]:
+def load_data(dataset: str) -> Union[tuple[np.ndarray, ...], np.ndarray]:
     """Load dataset for continuous or binary HGF.
 
     Parameters

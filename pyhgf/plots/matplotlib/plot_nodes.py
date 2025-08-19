@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,13 +12,13 @@ if TYPE_CHECKING:
 
 def plot_nodes(
     network: "Network",
-    node_idxs: Union[int, List[int]],
+    node_idxs: Union[int, list[int]],
     ci: bool = True,
     show_surprise: bool = True,
     show_posterior: bool = False,
-    figsize: Tuple[int, int] = (12, 5),
-    color: Optional[Union[Tuple, str]] = None,
-    axs: Optional[Union[List, Axes]] = None,
+    figsize: tuple[int, int] = (12, 5),
+    color: Optional[Union[tuple, str]] = None,
+    axs: Optional[Union[list, Axes]] = None,
 ):
     r"""Plot the trajectory of expected sufficient statistics of a set of nodes.
 

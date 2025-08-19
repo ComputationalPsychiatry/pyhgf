@@ -1,19 +1,17 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 import jax.numpy as jnp
 from jax import grad, jit
 from jax.lax import cond
 from jax.tree_util import Partial
-
+from jax import Array
 from pyhgf.typing import Edges
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def posterior_update_precision_continuous_node(
-    attributes: Dict,
+    attributes: dict,
     edges: Edges,
     node_idx: int,
 ) -> float:
@@ -141,7 +139,7 @@ def posterior_update_precision_continuous_node(
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def precision_update(attributes: Dict, edges: Edges, node_idx: int) -> float:
+def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     """Compute new precision in the case of observed values.
 
     Parameters
@@ -243,7 +241,7 @@ def precision_update(attributes: Dict, edges: Edges, node_idx: int) -> float:
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def precision_update_missing_values(
-    attributes: Dict, edges: Edges, node_idx: int
+    attributes: dict, edges: Edges, node_idx: int
 ) -> float:
     """Compute new precision in the case of missing observations.
 

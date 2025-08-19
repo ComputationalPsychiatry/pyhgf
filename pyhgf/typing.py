@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Callable, Dict, NamedTuple, Optional, Tuple, Union
+from typing import Callable, NamedTuple, Optional, Union
 
 
 class AdjacencyLists(NamedTuple):
@@ -20,22 +20,22 @@ class AdjacencyLists(NamedTuple):
     """
 
     node_type: int
-    value_parents: Optional[Tuple]
-    volatility_parents: Optional[Tuple]
-    value_children: Optional[Tuple]
-    volatility_children: Optional[Tuple]
-    coupling_fn: Tuple[Optional[Callable], ...]
+    value_parents: Optional[tuple]
+    volatility_parents: Optional[tuple]
+    value_children: Optional[tuple]
+    volatility_children: Optional[tuple]
+    coupling_fn: tuple[Optional[Callable], ...]
 
 
 # the nodes' attributes
-Attributes = Dict[Union[int, str], Dict]
+Attributes = dict[Union[int, str], dict]
 
 # the network edges
-Edges = Tuple[AdjacencyLists, ...]
+Edges = tuple[AdjacencyLists, ...]
 
 # the update sequence
-Sequence = Tuple[Tuple[int, Callable[..., Attributes]], ...]
-UpdateSequence = Tuple[Sequence, Sequence]
+Sequence = tuple[tuple[int, Callable[..., Attributes]], ...]
+UpdateSequence = tuple[Sequence, Sequence]
 
 # a fully defined network
-NetworkParameters = Tuple[Attributes, Edges, UpdateSequence]
+NetworkParameters = tuple[Attributes, Edges, UpdateSequence]

@@ -1,11 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Tuple
-
 from pyhgf.typing import Edges
 
 
-def get_input_idxs(edges: Edges) -> Tuple[int, ...]:
+def get_input_idxs(edges: Edges) -> tuple[int, ...]:
     """List all possible default inputs nodes.
 
     An input node is a state node without any child.

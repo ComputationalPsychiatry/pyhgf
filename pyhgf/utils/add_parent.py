@@ -1,14 +1,12 @@
 # Author: Louie Mølgaard Hessellund <hessellundlouie@gmail.com>
 
-from typing import Dict, Tuple
-
 from pyhgf.typing import AdjacencyLists, Edges
 from pyhgf.utils.add_edges import add_edges
 
 
 def add_parent(
-    attributes: Dict, edges: Edges, index: int, coupling_type: str, mean: float
-) -> Tuple[Dict, Edges]:
+    attributes: dict, edges: Edges, index: int, coupling_type: str, mean: float
+) -> tuple[dict, Edges]:
     r"""Add a new continuous-state parent node to the attributes and edges of a network.
 
     Parameters
@@ -57,7 +55,7 @@ def add_parent(
         },
     }
 
-    # Add new AdjacencyList with empty values, to Edges tuple
+    # Add new AdjacencyLlist with empty values, to Edges tuple
     new_adj_list = AdjacencyLists(
         node_type=2,
         value_parents=None,

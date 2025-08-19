@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 from jax import jit
 
 from jax.nn import sigmoid
@@ -11,8 +9,8 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def binary_state_node_prediction(
-    attributes: Dict, edges: Edges, node_idx: int, **args
-) -> Dict:
+    attributes: dict, edges: Edges, node_idx: int, **args
+) -> dict:
     r"""Get the new expected mean and precision of a binary state node.
 
     The predictions of a binary state node :math:`b` at time :math:`k` depends on the

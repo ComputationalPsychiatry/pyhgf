@@ -1,8 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
+from jax.nn import sigmoid
 import jax.numpy as jnp
 from jax import jit
 from pyhgf.typing import Edges
@@ -10,8 +9,8 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def continuous_node_posterior_update_unbounded(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Update the posterior of a continuous node with unbounded quadratic approximation.
 
     Parameters
@@ -167,7 +166,6 @@ def continuous_node_posterior_update_unbounded(
     posterior_mean = (1 - weigthing) * mu_l1 + weigthing * mu_l2
 
     # update the posterior mean and precision using the unbounded update step
-    # we start with the mean update using the expected precision as an approximation
     attributes[node_idx]["precision"] = posterior_precision
     attributes[node_idx]["mean"] = posterior_mean
 
@@ -176,7 +174,7 @@ def continuous_node_posterior_update_unbounded(
 
 def s(x: float, theta: float, phi: float):
     r"""Compute the sigmoid parametrised by :math`\phi` and :math`\theta`."""
-    return 1 / (1 + jnp.exp(-phi * (x - theta)))
+    return sigmoid(phi * (x - theta))
 
 
 def b(

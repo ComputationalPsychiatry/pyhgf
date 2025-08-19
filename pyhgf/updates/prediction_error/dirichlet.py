@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict, Tuple
-
 import jax.numpy as jnp
 from jax import Array, jit, random
 from jax._src.typing import Array as KeyArray
@@ -18,7 +16,7 @@ from pyhgf.typing import Attributes, Edges
 @partial(jit, static_argnames=("edges", "node_idx"))
 def dirichlet_node_prediction_error(
     edges: Edges,
-    attributes: Dict,
+    attributes: dict,
     node_idx: int,
     **args,
 ) -> Attributes:
@@ -132,7 +130,7 @@ def dirichlet_node_prediction_error(
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def update_cluster(operands: Tuple, edges: Edges, node_idx: int) -> Attributes:
+def update_cluster(operands: tuple, edges: Edges, node_idx: int) -> Attributes:
     """Update an existing cluster.
 
     Parameters
@@ -169,7 +167,7 @@ def update_cluster(operands: Tuple, edges: Edges, node_idx: int) -> Attributes:
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def create_cluster(operands: Tuple, edges: Edges, node_idx: int) -> Attributes:
+def create_cluster(operands: tuple, edges: Edges, node_idx: int) -> Attributes:
     """Create a new cluster.
 
     Parameters
@@ -222,7 +220,7 @@ def get_candidate(
     expected_mean: ArrayLike,
     expected_sigma: ArrayLike,
     n_samples: int = 20_000,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Find the best cluster candidate given previous clusters and an input value.
 
     Parameters
@@ -291,7 +289,7 @@ def likely_cluster_proposal(
     expected_sigma=ArrayLike,
     key: KeyArray = random.key(42),
     n_samples: int = 20_000,
-) -> Tuple[Array, Array, Array]:
+) -> tuple[Array, Array, Array]:
     """Sample likely new belief distributions given pre-existing clusters.
 
     Parameters

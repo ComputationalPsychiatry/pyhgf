@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 import jax.numpy as jnp
 from jax import Array, jit
 
@@ -11,7 +9,7 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("node_idx"))
 def binary_state_node_prediction_error(
-    attributes: Dict, node_idx: int, **args
+    attributes: dict, node_idx: int, **args
 ) -> Array:
     """Compute the value prediction errors and predicted precision of a binary node.
 
@@ -51,8 +49,8 @@ def binary_state_node_prediction_error(
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def binary_finite_state_node_prediction_error(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Update the posterior of a binary node given finite precision of the input.
 
     Parameters

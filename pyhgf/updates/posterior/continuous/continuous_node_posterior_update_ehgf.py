@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 from jax import jit
 
 from pyhgf.typing import Edges
@@ -15,8 +13,8 @@ from .posterior_update_precision_continuous_node import (
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def continuous_node_posterior_update_ehgf(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Update the posterior of a continuous node using the eHGF update.
 
     The eHGF posterior update is a two-step process:

@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Callable, Dict
+from typing import Callable
 
 import jax.numpy as jnp
 from jax import jit
@@ -11,7 +11,7 @@ from pyhgf.typing import Attributes, Edges
 
 @partial(jit, static_argnames=("edges", "node_idx", "sufficient_stats_fn"))
 def prediction_error_update_exponential_family_fixed(
-    attributes: Dict, node_idx: int, sufficient_stats_fn: Callable, **args
+    attributes: dict, node_idx: int, sufficient_stats_fn: Callable, **args
 ) -> Attributes:
     r"""Update the parameters of an exponential family distribution.
 
@@ -64,7 +64,7 @@ def prediction_error_update_exponential_family_fixed(
 
 @partial(jit, static_argnames=("edges", "node_idx", "sufficient_stats_fn"))
 def prediction_error_update_exponential_family_dynamic(
-    attributes: Dict, edges: Edges, node_idx: int, sufficient_stats_fn: Callable, **args
+    attributes: dict, edges: Edges, node_idx: int, sufficient_stats_fn: Callable, **args
 ) -> Attributes:
     r"""Pass the expected sufficient statistics to the implied continuous nodes.
 

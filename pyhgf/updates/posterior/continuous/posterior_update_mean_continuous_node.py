@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 from jax import grad, jit
 
 from pyhgf.typing import Edges
@@ -10,7 +8,7 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def posterior_update_mean_continuous_node(
-    attributes: Dict,
+    attributes: dict,
     edges: Edges,
     node_idx: int,
     node_precision: float,

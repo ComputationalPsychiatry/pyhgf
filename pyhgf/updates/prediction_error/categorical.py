@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 from jax import jit
 
 from pyhgf.typing import Edges
@@ -10,8 +8,8 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def categorical_state_prediction_error(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Prediction error from a categorical state node.
 
     The update will pass the input observations to the binary state nodes.

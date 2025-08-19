@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -17,8 +17,8 @@ def plot_trajectories(
     show_surprise: bool = True,
     show_posterior: bool = False,
     show_total_surprise: bool = False,
-    figsize: Tuple[int, int] = (18, 9),
-    axs: Optional[Union[List, Axes]] = None,
+    figsize: tuple[int, int] = (18, 9),
+    axs: Optional[Union[list, Axes]] = None,
 ) -> Axes:
     r"""Plot the trajectories of the nodes' sufficient statistics and surprise.
 

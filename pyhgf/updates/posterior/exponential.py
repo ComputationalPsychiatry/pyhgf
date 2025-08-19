@@ -1,8 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
-
 import jax.numpy as jnp
 from jax import jit
 
@@ -11,7 +9,7 @@ from pyhgf.typing import Attributes, Edges
 
 @partial(jit, static_argnames=("edges", "node_idx", "sufficient_stats_fn"))
 def posterior_update_exponential_family_dynamic(
-    attributes: Dict, edges: Edges, node_idx: int, **args
+    attributes: dict, edges: Edges, node_idx: int, **args
 ) -> Attributes:
     r"""Update the hyperparameters of an ef state node using HGF-implied learning rates.
 

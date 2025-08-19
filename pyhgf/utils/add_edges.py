@@ -1,19 +1,19 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 from pyhgf.typing import AdjacencyLists, Edges
 
 
 def add_edges(
-    attributes: Dict,
+    attributes: dict,
     edges: Edges,
     kind="value",
-    parent_idxs=Union[int, List[int]],
-    children_idxs=Union[int, List[int]],
-    coupling_strengths: Union[float, List[float], Tuple[float]] = 1.0,
-    coupling_fn: Tuple[Optional[Callable], ...] = (None,),
-) -> Tuple:
+    parent_idxs=Union[int, list[int]],
+    children_idxs=Union[int, list[int]],
+    coupling_strengths: Union[float, list[float], tuple[float]] = 1.0,
+    coupling_fn: tuple[Optional[Callable], ...] = (None,),
+) -> tuple:
     """Add a value or volatility coupling link between a set of nodes.
 
     Parameters

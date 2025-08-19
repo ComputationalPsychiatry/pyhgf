@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 import jax.numpy as jnp
 
@@ -22,9 +22,9 @@ def add_continuous_state(
     volatility_parents: tuple,
     value_children: tuple,
     volatility_children: tuple,
-    node_parameters: Dict,
-    additional_parameters: Dict,
-    coupling_fn: Tuple[Optional[Callable], ...],
+    node_parameters: dict,
+    additional_parameters: dict,
+    coupling_fn: tuple[Optional[Callable], ...],
 ):
     """Add continuous state node(s) to a network."""
     node_type = 2
@@ -76,8 +76,8 @@ def add_binary_state(
     volatility_parents,
     value_children,
     volatility_children,
-    node_parameters: Dict,
-    additional_parameters: Dict,
+    node_parameters: dict,
+    additional_parameters: dict,
 ):
     """Add binary state node(s) to a network."""
     # define the type of node that is created
@@ -198,7 +198,7 @@ def add_ef_state(
 
 
 def add_categorical_state(
-    network: Network, n_nodes: int, node_parameters: Dict, additional_parameters: Dict
+    network: Network, n_nodes: int, node_parameters: dict, additional_parameters: dict
 ) -> Network:
     """Add categorical state node(s) to a network."""
     node_type = 5
@@ -220,7 +220,7 @@ def add_categorical_state(
         "tonic_volatility_2": -4.0,
         "tonic_volatility_3": -4.0,
     }
-    binary_idxs: List[int] = [1 + i + len(network.edges) for i in range(n_categories)]
+    binary_idxs: list[int] = [1 + i + len(network.edges) for i in range(n_categories)]
     default_parameters = {
         "binary_idxs": binary_idxs,  # type: ignore
         "n_categories": n_categories,
@@ -256,7 +256,7 @@ def add_categorical_state(
 
 
 def add_dp_state(
-    network: Network, n_nodes: int, node_parameters: Dict, additional_parameters: Dict
+    network: Network, n_nodes: int, node_parameters: dict, additional_parameters: dict
 ):
     """Add a Dirichlet Process node to a network."""
     node_type = 4
@@ -298,11 +298,11 @@ def add_dp_state(
 
 
 def get_couplings(
-    value_parents: Optional[Union[Tuple, List, int]],
-    volatility_parents: Optional[Union[Tuple, List, int]],
-    value_children: Optional[Union[Tuple, List, int]],
-    volatility_children: Optional[Union[Tuple, List, int]],
-) -> Tuple[Tuple, ...]:
+    value_parents: Optional[Union[tuple, list, int]],
+    volatility_parents: Optional[Union[tuple, list, int]],
+    value_children: Optional[Union[tuple, list, int]],
+    volatility_children: Optional[Union[tuple, list, int]],
+) -> tuple[tuple, ...]:
     """Transform coupling parameter into tuple of indexes and strenghts."""
     couplings = []
     for indexes in [
@@ -329,8 +329,8 @@ def get_couplings(
 
 
 def update_parameters(
-    node_parameters: Dict, default_parameters: Dict, additional_parameters: Dict
-) -> Dict:
+    node_parameters: dict, default_parameters: dict, additional_parameters: dict
+) -> dict:
     """Update the default node parameters using keywords args and dictonary."""
     if bool(additional_parameters):
         # ensure that all passed values are valid keys
@@ -363,12 +363,12 @@ def insert_nodes(
     network: Network,
     n_nodes: int,
     node_type: int,
-    node_parameters: Dict,
-    value_parents: Tuple = (None, None),
-    volatility_parents: Tuple = (None, None),
-    value_children: Tuple = (None, None),
-    volatility_children: Tuple = (None, None),
-    coupling_fn: Tuple[Optional[Callable], ...] = (None,),
+    node_parameters: dict,
+    value_parents: tuple = (None, None),
+    volatility_parents: tuple = (None, None),
+    value_children: tuple = (None, None),
+    volatility_children: tuple = (None, None),
+    coupling_fn: tuple[Optional[Callable], ...] = (None,),
 ) -> Network:
     """Insert a set of parametrised node in a network."""
     # ensure that the set of coupling functions match with the number of child nodes
@@ -392,7 +392,7 @@ def insert_nodes(
 
     for _ in range(n_nodes):
         # convert the structure to a list to modify it
-        edges_as_list: List = list(network.edges)
+        edges_as_list: list = list(network.edges)
 
         node_idx = network.n_nodes  # the index of the new node
 

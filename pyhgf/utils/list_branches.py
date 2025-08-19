@@ -1,11 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import List, Tuple
-
 import numpy as np
 
 
-def list_branches(node_idxs: List, edges: Tuple, branch_list: List = []) -> List:
+def list_branches(node_idxs: list, edges: tuple, branch_list: list = []) -> list:
     """Return the branch of a network from a given set of root nodes.
 
     This function searches recursively and lists the parents above a given node. If all

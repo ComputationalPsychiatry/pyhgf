@@ -1,7 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
 
 import jax.numpy as jnp
 from jax import Array, jit
@@ -10,7 +9,7 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def predict_mean(
-    attributes: Dict,
+    attributes: dict,
     edges: Edges,
     node_idx: int,
 ) -> Array:
@@ -102,7 +101,7 @@ def predict_mean(
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def predict_precision(attributes: Dict, edges: Edges, node_idx: int) -> Array:
+def predict_precision(attributes: dict, edges: Edges, node_idx: int) -> Array:
     r"""Compute the expected precision of a continuous state node.
 
     The expected precision at time :math:`k` for a state node :math:`a` is given by:
@@ -197,8 +196,8 @@ def predict_precision(attributes: Dict, edges: Edges, node_idx: int) -> Array:
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def continuous_node_prediction(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Update the expected mean and expected precision of a continuous node.
 
     Parameters

@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from jax.tree_util import Partial
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 def get_update_sequence(
     network: "Network", update_type: str
-) -> Tuple[Sequence, Sequence]:
+) -> tuple[Sequence, Sequence]:
     """Generate an update sequence from the network's structure.
 
     This function return an optimized update sequence considering the edges of the
@@ -62,8 +62,8 @@ def get_update_sequence(
 
     """
     # initialize the update and prediction sequences
-    update_sequence: List = []
-    prediction_sequence: List = []
+    update_sequence: list = []
+    prediction_sequence: list = []
 
     n_nodes = len(network.edges)
 

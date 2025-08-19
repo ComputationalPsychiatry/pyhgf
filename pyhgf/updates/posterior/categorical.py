@@ -1,7 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Dict
 
 import jax.numpy as jnp
 from jax import jit
@@ -12,8 +11,8 @@ from pyhgf.typing import Edges
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def categorical_state_update(
-    attributes: Dict, node_idx: int, edges: Edges, **args
-) -> Dict:
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
     """Update the categorical input node given an array of binary observations.
 
     This function should be called **after** the update of the implied binary HGFs. It

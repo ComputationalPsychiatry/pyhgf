@@ -1,7 +1,7 @@
 # Author: Sylvain Estebe
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 def plot_samples(
     network: "Network",
     show_total_surprise: bool = False,
-    figsize: Tuple[int, int] = (18, 9),
-    axs: Optional[Union[List, Axes]] = None,
+    figsize: tuple[int, int] = (18, 9),
+    axs: Optional[Union[list, Axes]] = None,
 ) -> Axes:
     """Plot simulation trajectories for nodes.
 

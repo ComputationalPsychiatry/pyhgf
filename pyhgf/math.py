@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Tuple, Union
+from typing import Union
 
 import jax.numpy as jnp
 from jax import Array
@@ -54,7 +54,7 @@ class MultivariateNormal:
     @staticmethod
     def parameters_from_sufficient_statistics(
         xis: ArrayLike, dimension: int
-    ) -> Tuple[Array, Array]:
+    ) -> tuple[Array, Array]:
         """Compute the distribution parameters from the sufficient statistics.
 
         Parameters
@@ -119,7 +119,7 @@ class Normal:
         return 1 / (jnp.sqrt(2 * jnp.pi))
 
     @staticmethod
-    def parameters_from_sufficient_statistics(xis: ArrayLike) -> Tuple[float, float]:
+    def parameters_from_sufficient_statistics(xis: ArrayLike) -> tuple[float, float]:
         """Compute the distribution parameters from the sufficient statistics.
 
         Parameters
@@ -186,14 +186,14 @@ def gaussian_predictive_distribution(x: float, xi: ArrayLike, nu: float) -> floa
     )
 
 
-def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> ArrayLike:
+def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Array:
     """Gaussian density as defined by mean and precision."""
     return precision / jnp.sqrt(2 * jnp.pi) * jnp.exp(-precision / 2 * (x - mean) ** 2)
 
 
 def binary_surprise(
     x: Union[float, ArrayLike], expected_mean: Union[float, ArrayLike]
-) -> ArrayLike:
+) -> Array:
     r"""Surprise at a binary outcome.
 
     The surprise ellicited by a binary observation :math:`x` under the expected

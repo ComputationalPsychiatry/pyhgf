@@ -1,17 +1,17 @@
 # Author: Louie Mølgaard Hessellund <hessellundlouie@gmail.com>
 
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 from pyhgf.typing import AdjacencyLists, Edges
 
 
 def _remove_edges(
-    attributes: Dict,
+    attributes: dict,
     edges: Edges,
     kind: str = "value",
-    parent_idxs=Union[int, List[int]],
-    children_idxs=Union[int, List[int]],
-) -> Tuple[Dict, Edges]:
+    parent_idxs=Union[int, list[int]],
+    children_idxs=Union[int, list[int]],
+) -> tuple[dict, Edges]:
     """Remove a value or volatility coupling link between a set of nodes.
 
     Parameters
@@ -29,7 +29,7 @@ def _remove_edges(
 
     Returns
     -------
-    Tuple[Dict, Edges]
+    tuple[dict, Edges]
         Updated attributes and edges with removed connections.
 
     """
@@ -144,7 +144,7 @@ def _remove_edges(
     return attributes, tuple(edges_as_list)
 
 
-def remove_node(attributes: Dict, edges: Edges, index: int) -> Tuple[Dict, Edges]:
+def remove_node(attributes: dict, edges: Edges, index: int) -> tuple[dict, Edges]:
     """Remove a given node from the network.
 
     This function removes a node from the network by deleting its parameters in the
@@ -161,7 +161,7 @@ def remove_node(attributes: Dict, edges: Edges, index: int) -> Tuple[Dict, Edges
 
     Returns
     -------
-    Tuple[Dict, Edges]
+    tuple[dict, Edges]
         Updated attributes and edges with the node removed and indices adjusted.
 
     """

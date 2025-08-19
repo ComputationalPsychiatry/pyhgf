@@ -1,7 +1,5 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Dict
-
 import jax.numpy as jnp
 
 from pyhgf.math import Normal
@@ -10,7 +8,7 @@ from pyhgf.typing import Attributes, Edges
 
 def dirichlet_node_prediction(
     edges: Edges,
-    attributes: Dict,
+    attributes: dict,
     node_idx: int,
     **args,
 ) -> Attributes:

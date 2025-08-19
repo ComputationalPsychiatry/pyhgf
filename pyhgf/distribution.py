@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -496,7 +496,7 @@ class HGFLogpGradOp(Op):
         return Apply(self, inputs, outputs)
 
     def perform(
-        self, node, inputs: List[TensorVariable], outputs: List[TensorVariable]
+        self, node, inputs: list[TensorVariable], outputs: list[TensorVariable]
     ):
         """Perform node operations."""
         (
@@ -757,15 +757,15 @@ class HGFDistribution(Op):
         return Apply(self, inputs, outputs)
 
     def perform(
-        self, node, inputs: List[TensorVariable], outputs: List[TensorVariable]
+        self, node, inputs: list[TensorVariable], outputs: list[TensorVariable]
     ):
         """Run the function forward."""
         log_likelihood, _ = self.hgf_logp(*inputs)
         outputs[0][0] = np.asarray(log_likelihood, dtype=float)
 
     def grad(
-        self, inputs: List[TensorVariable], output_gradients: List[TensorVariable]
-    ) -> List[TensorVariable]:
+        self, inputs: list[TensorVariable], output_gradients: list[TensorVariable]
+    ) -> list[TensorVariable]:
         """Gradient of the function."""
         (
             grad_mean_1,
@@ -923,7 +923,7 @@ class HGFPointwise(Op):
         return Apply(self, inputs, outputs)
 
     def perform(
-        self, node, inputs: List[TensorVariable], outputs: List[TensorVariable]
+        self, node, inputs: list[TensorVariable], outputs: list[TensorVariable]
     ):
         """Run the function forward."""
         _, pointwise_log_likelihood = self.hgf_logp(*inputs)
