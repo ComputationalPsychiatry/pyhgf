@@ -1,0 +1,1258 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.0.0.post1.dev0+8bc345f documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=8509e836"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/0.2-Creating_networks';</script>
+    <link rel="icon" href="../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Generalised Bayesian Filtering of exponential family distributions" href="0.3-Generalised_filtering.html" />
+    <link rel="prev" title="Introduction to the Generalised Hierarchical Gaussian Filter" href="0.1-Theory.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Creating and manipulating networks of probabilistic nodes</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="creating-and-manipulating-networks-of-probabilistic-nodes">
+<span id="probabilistic-networks"></span><h1>Creating and manipulating networks of probabilistic nodes<a class="headerlink" href="#creating-and-manipulating-networks-of-probabilistic-nodes" title="Link to this heading">#</a></h1>
+<p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.2-Creating_networks.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
+<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+
+  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span><span class="p">,</span> <span class="n">HGF</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">AdjacencyLists</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p><a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/index.html#">pyhgf</a> is designed with inspiration from graph neural network libraries that can support message-passing schemes and perform belief propagation through networks of probabilistic nodes. Here, this principle is applied to predictive processing and focuses on networks that are structured as <strong>rooted trees</strong> and perform variational message passing to update beliefs about the state of the environment, inferred from the observations at the root of the tree. While this library is optimized to implement the standard two-level and three-level HGF <span id="id1">[<a class="reference internal" href="../references.html#id3" title="Christoph D. Mathys, Ekaterina I. Lomakina, Jean Daunizeau, Sandra Iglesias, Kay H. Brodersen, Karl J. Friston, and Klaas E. Stephan. Uncertainty in perception and the hierarchical gaussian filter. Frontiers in Human Neuroscience, 2014. URL: https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825, doi:10.3389/fnhum.2014.00825.">Mathys <em>et al.</em>, 2014</a>, <a class="reference internal" href="../references.html#id2" title="Christoph D. Mathys. A Bayesian foundation for individual learning under uncertainty. Frontiers in Human Neuroscience, 5(May):1–20, 2011. URL: http://journal.frontiersin.org/article/10.3389/fnhum.2011.00039/abstract, doi:10.3389/fnhum.2011.00039.">Mathys, 2011</a>]</span>, as well as the generalized HGF <span id="id2">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span>, it can also be applied to much larger use cases, with the idea is to generalize belief propagation as it has been described so far to larger and more complex networks that will capture a greater variety of environmental structure. Therefore, the library is also designed to facilitate the creation and manipulation of such probabilistic networks. Importantly, here we consider that a probabilistic network should be defined by the following four variables:</p>
+<ol class="arabic simple">
+<li><p>the network parameters</p></li>
+<li><p>the network structure</p></li>
+<li><p>the update function(s)</p></li>
+<li><p>the update sequence(s)
+Splitting the networks this way makes the components easily compatible with JAX main transformations, and dynamically accessible during the inference processes, which allows the creation of agents that can manipulate these components to minimize surprise.</p></li>
+</ol>
+<p>In this notebook, we dive into the details of creating such networks and illustrate their modularity by the manipulation of the four main variables.</p>
+<section id="theory-and-implementation-details">
+<h2>Theory and implementation details<a class="headerlink" href="#theory-and-implementation-details" title="Link to this heading">#</a></h2>
+<p>A let <span class="math notranslate nohighlight">\(\mathcal{N}_{k} = \{\theta, \xi, \mathcal{F}, \Sigma \}\)</span> be a probabilistic network with <span class="math notranslate nohighlight">\(k\)</span> probabilistic nodes. The variable</p>
+<div class="math notranslate nohighlight">
+\[\theta = \{\theta_1, ..., \theta_{k}\}\]</div>
+<p>is the parameter set, and each parameter is a set of real values. Nodes’ parameters can be used to register sufficient statistics of the distributions as well as various coupling weights. This component is registered as the <code class="docutils literal notranslate"><span class="pre">attributes</span></code> dictionary.</p>
+<p>The <em>shape</em> of the hierarchical structure is defined by its <a class="reference external" href="https://en.wikipedia.org/wiki/Adjacency_list">adjacency list</a>, which registers the connections between a node and other nodes from the network.</p>
+<div class="math notranslate nohighlight">
+\[\xi = \{\xi_1, ..., \xi_{k} \}\]</div>
+<p>where every edge <span class="math notranslate nohighlight">\(\xi_k\)</span> contains <span class="math notranslate nohighlight">\(m\)</span> sets of node indexes, <span class="math notranslate nohighlight">\(m\)</span> being the adjacency dimension (here we only consider value and volatility coupling, therefore <span class="math notranslate nohighlight">\(m=2\)</span>).</p>
+<p>The way beliefs are being updated, or the type of generic computation that is performed by the nodes are defined by the set of <span class="math notranslate nohighlight">\(n\)</span> update functions</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{F} = \{f_1, ..., f_n\}\]</div>
+<p>In this set, each update function is linked to a node from the node indexes <span class="math notranslate nohighlight">\(n \in 1, ..., k\)</span> to which the function should apply. The most standard uses of the HGF only require continuous and/or binary update functions for input and states node that can be found in the <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates()</span></code> sub-module.</p>
+<p>The dynamic of belief propagation dynamics (which part of the network should be updated and in which order) are controlled by the ordered update sequence</p>
+<div class="math notranslate nohighlight">
+\[\Sigma = [f_1(n_1), ..., f_i(n_j), f \in \mathcal{F}, n \in 1, ..., k ]\]</div>
+<p>This list describes the sequence of function-to-nodes instructions executed during the inference and update processes.</p>
+<figure class="align-default" id="graph-fig">
+<img alt="../_images/graph_network.svg" src="../_images/graph_network.svg" />
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">Only four variables are needed to create a dynamic graph neural network: 1. The nodes’ attributes, 2. The nodes’ edges, 3. The update functions and 4. the update sequences.</span><a class="headerlink" href="#graph-fig" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Compatibility with JAX transformations
+One of the advantages of reasoning this way is that it dissociates variables that are transparent to the JAX framework and can be expressed as “PyTress” from variables that should be filtered before transformations. The variable <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (<span class="math notranslate nohighlight">\(\theta\)</span>) is typically expressed as a PyTree while the other variables that contain parametrized functions are filtered. See <a class="reference external" href="https://jax.readthedocs.io/en/latest/notebooks/thinking_in_jax.html#jit-mechanics-tracing-and-static-variables">the documattion</a> for further details on JAX transformations.</p>
+</div>
+<section id="creating-probabilistic-nodes">
+<h3>Creating probabilistic nodes<a class="headerlink" href="#creating-probabilistic-nodes" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+
+<span class="n">attributes</span> <span class="o">=</span> <span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">AdjacencyLists</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)),</span>
+    <span class="n">AdjacencyLists</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,),</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)),</span>
+    <span class="n">AdjacencyLists</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The code above illustrates creating a probabilistic network of 3 nodes with simple parameter sets <span class="math notranslate nohighlight">\((mean = 0.0, precision = 1.0)\)</span>. Node 2 is the value parent of node 1. Node 3 is the value parent of node 2 and has no parents. The first integer of the <code class="docutils literal notranslate"><span class="pre">AdjacencyLists</span></code> represents the node type (here <code class="docutils literal notranslate"><span class="pre">0</span></code> for continuous inputs and <code class="docutils literal notranslate"><span class="pre">2</span></code> for continuous state nodes).</p>
+</section>
+<section id="visualizing-probabilistic-networks">
+<h3>Visualizing probabilistic networks<a class="headerlink" href="#visualizing-probabilistic-networks" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a three-level HGF using default parameters</span>
+<span class="n">hgf</span> <span class="o">=</span> <span class="n">HGF</span><span class="p">(</span><span class="n">n_levels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;continuous&quot;</span><span class="p">)</span>
+<span class="n">hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/b206995142a3c111a412aa92199b648e4347df5db1c8da041cf657c02c724447.svg" src="../_images/b206995142a3c111a412aa92199b648e4347df5db1c8da041cf657c02c724447.svg" />
+</div>
+</div>
+</section>
+</section>
+<section id="modifying-the-attributes">
+<h2>Modifying the attributes<a class="headerlink" href="#modifying-the-attributes" title="Link to this heading">#</a></h2>
+<p>The simpler change we can make on a network is to change the values of some of its parameters. The parameters are stored in the <code class="docutils literal notranslate"><span class="pre">attributes</span></code> variable as a dictionary where the key (integers) are node indexes. Therefore, modifying the precision of the third node in the previous example is as simple as:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>It is also possible to initialize the network with given attribute values. You can provide additional parameters by using the <code class="docutils literal notranslate"><span class="pre">node_parameters</span></code> arguments in <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyhgf.model.add_nodes()</span></code>, or simply by passing additional keyword arguments. When using keyword arguments, the key should match with the existing keys found in the node’s attributes. This is not a requirement when passing values using <code class="docutils literal notranslate"><span class="pre">node_parameters</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># method 1</span>
+<span class="n">new_input_precision_1</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">precision</span><span class="o">=</span><span class="mf">10.0</span>
+<span class="p">)</span>
+
+<span class="c1"># method 2</span>
+<span class="n">new_input_precision_2</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">node_parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># both methods change the default values, but only method 2 will create a new key without error</span>
+<span class="k">assert</span> <span class="p">(</span>
+    <span class="n">new_input_precision_1</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+    <span class="o">==</span> <span class="n">new_input_precision_2</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>However, modifying parameter values <em>manually</em> should not be that common as this is something we want the model to perform dynamically as we present new observations, but this can be used for example to generate prior predictive by sampling some parameter values from a distribution.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>What is a valid parameter/value?
+A probabilistic node can store an arbitrary number of parameters. Parameter values should be valid JAX types, therefore a node cannot contain strings. Most of the nodes that are being used in the HGF use Gaussian distribution, therefore they contain the current mean and precision (<code class="docutils literal notranslate"><span class="pre">mean</span></code> and <code class="docutils literal notranslate"><span class="pre">precision</span></code>) as well as the expected mean and precision (<code class="docutils literal notranslate"><span class="pre">expected_mean</span></code> and <code class="docutils literal notranslate"><span class="pre">expected_precision</span></code>).</p>
+</div>
+</section>
+<section id="modifying-the-edges">
+<h2>Modifying the edges<a class="headerlink" href="#modifying-the-edges" title="Link to this heading">#</a></h2>
+<p>The second way we can modify a probabilistic network is by modifying its structure (i.e. the number of nodes, the type of nodes and the way they are connected with each other). Because nodes and connections are modular, a large variety of network structures can be declared. The only restrictions are that the network should be <strong>acyclic</strong> and <strong>rooted</strong> (the roots being input nodes).</p>
+<p>For example, the following networks are valid HGF structures:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">a_custom_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+<span class="p">)</span>
+<span class="n">a_custom_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/110f4f355521578eeccc473ff746cc380d8b518412a3c56a8c63e7e9daeea9ac.svg" src="../_images/110f4f355521578eeccc473ff746cc380d8b518412a3c56a8c63e7e9daeea9ac.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">another_custom_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="p">)</span>
+<span class="n">another_custom_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/ee55c48ba6d1cc3f5f35cc2b6ceaaf10c6e2d6e2e2489e2b7e1cff4f51c935c4.svg" src="../_images/ee55c48ba6d1cc3f5f35cc2b6ceaaf10c6e2d6e2e2489e2b7e1cff4f51c935c4.svg" />
+</div>
+</div>
+<p>The structure of the probabilistic network is stored in the <code class="docutils literal notranslate"><span class="pre">edges</span></code> variable which consists of a tuple of <code class="docutils literal notranslate"><span class="pre">ContingencyLists</span></code> that store the indexes of value/volatility parents/children for each node. For example, accessing the nodes connected to node <code class="docutils literal notranslate"><span class="pre">4</span></code> in the example above is done with:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># the node structure</span>
+<span class="n">another_custom_hgf</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AdjacencyLists(node_type=2, value_parents=None, volatility_parents=(6,), value_children=(1,), volatility_children=None, coupling_fn=(None,))
+</pre></div>
+</div>
+</div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Different types of coupling
+Contrary to standard graph networks, the directed connection between nodes can have multiple forms. The standard HGF is built on combinations of <em>value coupling</em> and <em>volatility coupling</em> bindings, but this can be extended to an arbitrary number of types.</p>
+</div>
+<section id="multivariate-coupling">
+<h3>Multivariate coupling<a class="headerlink" href="#multivariate-coupling" title="Link to this heading">#</a></h3>
+<p>As we can see in the examples above, nodes in a valid HGF network can be influenced by multiple parents (either value or volatility parents). Similarly, a single node can be influenced by multiple children. This feature is termed <em>multivariate descendency</em> and <em>multivariate ascendency</em> (respectively) and is a central addition to the generalization of the HGF <span id="id3">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span> that was implemented in this package, as well as in the <a class="reference external" href="https://github.com/ComputationalPsychiatry/HierarchicalGaussianFiltering.jl">Julia counterpart</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Hierarchical Gaussian Filters have often been described in terms of levels. For example, the two-level and three-level HGFs are specific instances of  node structures designed to track the volatility and meta-volatility of binary or continuous processes, respectively. While such models can easily be implemented in this framework, the notion of level itself is now less informative. This is a consequence of the multivariate control and influence properties, which can result in structures in which some nodes have a position in the hierarchy that cannot be clearly disambiguated.</p>
+</div>
+<section id="the-case-of-multivariate-descendency">
+<h4>The case of <em>multivariate descendency</em><a class="headerlink" href="#the-case-of-multivariate-descendency" title="Link to this heading">#</a></h4>
+<p><em>Multivariate descendency</em> refers to situations where a node exerts a predictive influence (and is updated backwards through prediction errors) on multiple children nodes, either via value or volatility coupling.</p>
+<section id="continuous-value-coupling">
+<h5>Continuous value coupling<a class="headerlink" href="#continuous-value-coupling" title="Link to this heading">#</a></h5>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># simulate some time series - one Gaussian noise and one noisy in wave</span>
+<span class="n">u_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">u_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="mi">30</span><span class="p">)</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">u_0</span><span class="p">,</span> <span class="n">u_1</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># creating a network that contains many child nodes are value coupled to one parent node</span>
+<span class="n">many_value_children_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># plot the network</span>
+<span class="n">many_value_children_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/d2c2950ec0d492b1849cc88336f424f51e867c818e7a6c10a093734f3427c1a1.svg" src="../_images/d2c2950ec0d492b1849cc88336f424f51e867c818e7a6c10a093734f3427c1a1.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_value_children_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axs</span> <span class="o">=</span> <span class="n">many_value_children_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> 
+        <span class="n">input_data</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#4c72b0&quot;</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">edgecolors</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+        <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/27ac22bd1b7ce564c08c335b2d6d0f13cf9bfadd6efdbfc299b3e896dd978d50.png" src="../_images/27ac22bd1b7ce564c08c335b2d6d0f13cf9bfadd6efdbfc299b3e896dd978d50.png" />
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this figure, we can observe the joint influence of the two input nodes over the shared value parents: the shared parent tries to find a compromise between the drifts of the two child nodes.</p>
+</div>
+</section>
+<section id="continuous-volatility-coupling">
+<h5>Continuous volatility coupling<a class="headerlink" href="#continuous-volatility-coupling" title="Link to this heading">#</a></h5>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">input_data</span><span class="p">[</span><span class="mi">900</span><span class="p">:]</span> <span class="o">*=</span> <span class="mi">3</span>
+<span class="n">input_data</span><span class="p">[</span><span class="mi">200</span><span class="p">:</span><span class="mi">400</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">3</span>
+<span class="n">input_data</span><span class="p">[</span><span class="mi">600</span><span class="p">:</span><span class="mi">800</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># creating a network that contains many child nodes that are volatility coupled to one parent node</span>
+<span class="n">many_volatility_children_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">mean</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># plot the network</span>
+<span class="n">many_volatility_children_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/5e0cd470150aa7e6d2146deafee22c387cf160419f282fa4476eeaf039b0217a.svg" src="../_images/5e0cd470150aa7e6d2146deafee22c387cf160419f282fa4476eeaf039b0217a.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_volatility_children_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_volatility_children_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/537cde4d255f7c8d14ce3b43a48f461a246c607470987e90480c0f76b362368c.png" src="../_images/537cde4d255f7c8d14ce3b43a48f461a246c607470987e90480c0f76b362368c.png" />
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this figure, we can see that the two continuous nodes that are predicting the values of the two input nodes are directly influenced by the burst of noises alternatively appearing in the two input time series. This is reflected in changes in the underlying mean as the node tries to track the more volatile changes in the inputs, but critically, we can also observe changes around the precision of the expectations on both sides: if an input node is getting more noisy, the expectations around the second input node will also get more uncertain, and the surprise more important, due to the shared variance.</p>
+</div>
+</section>
+<section id="coupling-with-binary-nodes">
+<h5>Coupling with binary nodes<a class="headerlink" href="#coupling-with-binary-nodes" title="Link to this heading">#</a></h5>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="c1"># simulate two binary outcomes from sinusoidal contingencies</span>
+<span class="n">u_0_prob</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="mi">45</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">u_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">u_0_prob</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">u_1_prob</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="mi">90</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">u_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">u_1_prob</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">u_0</span><span class="p">,</span> <span class="n">u_1</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># creating a network that contains two binary child nodes</span>
+<span class="c1"># value coupled to one value parent node</span>
+<span class="n">many_binary_children_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># plot the network</span>
+<span class="n">many_binary_children_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/0accd9589b61656913fb558e5eafb8c2021742fd9753dceea16af8d5d96f12fd.svg" src="../_images/0accd9589b61656913fb558e5eafb8c2021742fd9753dceea16af8d5d96f12fd.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_binary_children_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axs</span> <span class="o">=</span> <span class="n">many_binary_children_hgf</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+
+<span class="c1"># plot the real contingencies</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">u_0_prob</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Contingencies - Input Node 0&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">u_1_prob</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Contingencies - Input Node 1&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/98f60b0d9fbde7857c0a101afd12c1689abdb4a43aa2157dd3b038577e972d35.png" src="../_images/98f60b0d9fbde7857c0a101afd12c1689abdb4a43aa2157dd3b038577e972d35.png" />
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This figure shows the observations received by the two binary inputs (lower panels, the lines represent the real contingencies) and their joint influence on the expected values by the shared parent (i.e. shared binary node) and the value parent of the binary node.</p>
+</div>
+</section>
+</section>
+<section id="the-case-of-multivariate-ascendency">
+<h4>The case of <em>multivariate ascendency</em><a class="headerlink" href="#the-case-of-multivariate-ascendency" title="Link to this heading">#</a></h4>
+<p><em>Multivariate ascendency</em> refers to situations where a node is influenced (and updates backwards through prediction errors) by multiple value or volatility parents.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="c1"># simulate some time series - sampling from N(0, 1) sometime multiplied by 3</span>
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">.05</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">input_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="mi">45</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">input_data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="mi">45</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+<span class="n">input_data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="value-coupling">
+<h4>Value coupling<a class="headerlink" href="#value-coupling" title="Link to this heading">#</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># creating a network with multiple volatility parents</span>
+<span class="n">many_value_parents_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">)</span>
+    <span class="c1">#.add_nodes(value_children=[0], tonic_volatility=-2.0)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># plot the network</span>
+<span class="n">many_value_parents_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/15a6020c56fc755ad986a8e39afdca024ed153de4b75d1750f8dd430f720a602.svg" src="../_images/15a6020c56fc755ad986a8e39afdca024ed153de4b75d1750f8dd430f720a602.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_value_parents_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_value_parents_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/35af82d1e7bfcf563aa0d90f6e8d0ebb7288f364892b715c4a35cb93d81f3916.png" src="../_images/35af82d1e7bfcf563aa0d90f6e8d0ebb7288f364892b715c4a35cb93d81f3916.png" />
+</div>
+</div>
+</section>
+<section id="volatility-coupling">
+<h4>Volatility coupling<a class="headerlink" href="#volatility-coupling" title="Link to this heading">#</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="c1"># simulate some time series - sampling from N(0, 1) sometime multiplied by 3</span>
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">.2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">input_data</span><span class="p">[</span><span class="mi">250</span><span class="p">:</span><span class="mi">750</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">5</span>
+<span class="n">input_data</span><span class="p">[</span><span class="mi">1000</span><span class="p">:</span><span class="mi">1500</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># creating a network with multiple volatility parents</span>
+<span class="n">many_volatility_parents_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="p">)</span>
+
+<span class="c1"># plot the network</span>
+<span class="n">many_volatility_parents_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/0a3d2e97c37f60ef46dc1b5974026a891a6d8076a940fc9e7c498226e439f284.svg" src="../_images/0a3d2e97c37f60ef46dc1b5974026a891a6d8076a940fc9e7c498226e439f284.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_volatility_parents_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_volatility_parents_hgf</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>AdjacencyLists(node_type=2, value_parents=None, volatility_parents=(2, 3), value_children=None, volatility_children=None, coupling_fn=(None,))
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_volatility_parents_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/75f22525ae1bcea8e3c0111aa7398bd0b0403904f8a7a011ef09553c932082a6.png" src="../_images/75f22525ae1bcea8e3c0111aa7398bd0b0403904f8a7a011ef09553c932082a6.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="creating-custom-update-functions">
+<h2>Creating custom update functions<a class="headerlink" href="#creating-custom-update-functions" title="Link to this heading">#</a></h2>
+<p>The structure of the network and the node’s parameters are the most static component of the network. Actually, we could consider that the network already exists once those two variables are in place. However in <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/index.html#">pyhgf</a> we consider that the update functions <span class="math notranslate nohighlight">\(\mathcal{F} = \{f_1, ..., f_n\}\)</span> and the update sequence <span class="math notranslate nohighlight">\(\Sigma = [f_1(n_1), ..., f_i(n_j), f \in \mathcal{F}, n \in 1, ..., k ]\)</span> (the order of update) are also part of the models. This choice was made to explicitly account that there is no one unique way of modelling the way beliefs propagate through the network, and a core task for predictive coding applications is to develop new <em>probabilistic nodes</em> that account for a greater variety of phenomena. This step critically requires modelling beliefs diffusion, and therefore to modify, or creating the underlying update functions.</p>
+<section id="update-functions">
+<h3>Update functions<a class="headerlink" href="#update-functions" title="Link to this heading">#</a></h3>
+<p>Update functions are the heart of the HGF filtering procedure, these functions implement the message-passing and parameter-updating steps between nodes. An update function in its simpler form is a Python function defined as</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_fn</span><span class="p">(</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+
+    <span class="c1"># some computation here</span>
+    <span class="c1"># ---------------------</span>
+
+    <span class="k">return</span> <span class="n">new_attributes</span>
+</pre></div>
+</div>
+<p>In other words, it is updating the parameters of the network by applying certain transformations using the node <span class="math notranslate nohighlight">\(i\)</span> as a reference. This usually means that an observation has reached node <span class="math notranslate nohighlight">\(i\)</span> and we want to send prediction error to the parent nodes and update their sufficient statistics. The function has access to the entire parameters and nodes structure, which means that it can retrieve parameters from parents, children, grandparents etc… But in practice, message-passing updates make heavy use of the mean-field approximation, which only requires accessing the most proximal nodes.</p>
+</section>
+</section>
+<section id="creating-custom-update-sequences">
+<h2>Creating custom update sequences<a class="headerlink" href="#creating-custom-update-sequences" title="Link to this heading">#</a></h2>
+<p>Update sequences define the dynamics of beliefs propagation through the probabilistic network. In its simpler form, an update sequence is a sequence of update functions pointing to a node index such as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">update_sequence</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="n">update_fn1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">update_fn2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The HGF class include a built-in <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.model.HGF.get_update_sequence()</span></code> method to automatically generate the update sequence from the network structure, assuming that we want to propagate the beliefs from the lower part of the tree (the input nodes) to its upper part (nodes that do not have parents).</p>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="system-configuration">
+<h1>System configuration<a class="headerlink" href="#system-configuration" title="Link to this heading">#</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> watermark
+<span class="o">%</span><span class="k">watermark</span> -n -u -v -iv -w -p pyhgf,jax,jaxlib
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Aug 19 2025
+
+Python implementation: CPython
+Python version       : 3.12.3
+IPython version      : 9.2.0
+
+pyhgf : 0.0.0.post1.dev0+8bc345f
+jax   : 0.4.31
+jaxlib: 0.4.31
+
+seaborn   : 0.13.2
+sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
+IPython   : 9.2.0
+matplotlib: 3.10.1
+pyhgf     : 0.0.0.post1.dev0+8bc345f
+numpy     : 2.2.5
+
+Watermark: 2.5.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="0.1-Theory.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Introduction to the Generalised Hierarchical Gaussian Filter</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="0.3-Generalised_filtering.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Generalised Bayesian Filtering of exponential family distributions</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Creating and manipulating networks of probabilistic nodes</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#theory-and-implementation-details">Theory and implementation details</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-probabilistic-nodes">Creating probabilistic nodes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-probabilistic-networks">Visualizing probabilistic networks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-the-attributes">Modifying the attributes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-the-edges">Modifying the edges</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#multivariate-coupling">Multivariate coupling</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#the-case-of-multivariate-descendency">The case of <em>multivariate descendency</em></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-value-coupling">Continuous value coupling</a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-volatility-coupling">Continuous volatility coupling</a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#coupling-with-binary-nodes">Coupling with binary nodes</a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#the-case-of-multivariate-ascendency">The case of <em>multivariate ascendency</em></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#value-coupling">Value coupling</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#volatility-coupling">Volatility coupling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-custom-update-functions">Creating custom update functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#update-functions">Update functions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-custom-update-sequences">Creating custom update sequences</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/notebooks/0.2-Creating_networks.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2025, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

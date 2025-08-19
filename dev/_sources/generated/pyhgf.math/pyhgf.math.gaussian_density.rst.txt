@@ -1,0 +1,6 @@
+﻿pyhgf.math.gaussian\_density
+============================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: gaussian_density
