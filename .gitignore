@@ -21,3 +21,4 @@ target*
 pyhgf/*.so
 Makefile
 uv.lock
+Cargo.lock
