@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.0.0.post1.dev0+8bc345f documentation</title>
+    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=8509e836"></script>
+    <script src="../_static/documentation_options.js?v=58050c01"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -701,10 +701,10 @@ Contrary to standard graph networks, the directed connection between nodes can h
 <section id="continuous-value-coupling">
 <h5>Continuous value coupling<a class="headerlink" href="#continuous-value-coupling" title="Link to this heading">#</a></h5>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># simulate some time series - one Gaussian noise and one noisy in wave</span>
@@ -761,7 +761,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/27ac22bd1b7ce564c08c335b2d6d0f13cf9bfadd6efdbfc299b3e896dd978d50.png" src="../_images/27ac22bd1b7ce564c08c335b2d6d0f13cf9bfadd6efdbfc299b3e896dd978d50.png" />
+<img alt="../_images/5308f802d3b1827fe35c9fc2ea202fc4f52e20207c1e5545b205bbc4b05e306b.png" src="../_images/5308f802d3b1827fe35c9fc2ea202fc4f52e20207c1e5545b205bbc4b05e306b.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -772,10 +772,10 @@ Contrary to standard graph networks, the directed connection between nodes can h
 <section id="continuous-volatility-coupling">
 <h5>Continuous volatility coupling<a class="headerlink" href="#continuous-volatility-coupling" title="Link to this heading">#</a></h5>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -827,7 +827,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/537cde4d255f7c8d14ce3b43a48f461a246c607470987e90480c0f76b362368c.png" src="../_images/537cde4d255f7c8d14ce3b43a48f461a246c607470987e90480c0f76b362368c.png" />
+<img alt="../_images/0584b54bb35d424892e9b21e08ddab0a739edd8eaba11bd034572dd098c3f216.png" src="../_images/0584b54bb35d424892e9b21e08ddab0a739edd8eaba11bd034572dd098c3f216.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -881,10 +881,10 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axs</span> <span class="o">=</span> <span class="n">many_binary_children_hgf</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
@@ -900,7 +900,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/98f60b0d9fbde7857c0a101afd12c1689abdb4a43aa2157dd3b038577e972d35.png" src="../_images/98f60b0d9fbde7857c0a101afd12c1689abdb4a43aa2157dd3b038577e972d35.png" />
+<img alt="../_images/05a6d8f728786917fc19502362c40209f4c2271959b05d32f17a2c9848973dd4.png" src="../_images/05a6d8f728786917fc19502362c40209f4c2271959b05d32f17a2c9848973dd4.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -969,7 +969,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/35af82d1e7bfcf563aa0d90f6e8d0ebb7288f364892b715c4a35cb93d81f3916.png" src="../_images/35af82d1e7bfcf563aa0d90f6e8d0ebb7288f364892b715c4a35cb93d81f3916.png" />
+<img alt="../_images/850c7ddaddba874c5509b915aa02aaaf448975ae4ccab3414a8d9f4374d1e6a2.png" src="../_images/850c7ddaddba874c5509b915aa02aaaf448975ae4ccab3414a8d9f4374d1e6a2.png" />
 </div>
 </div>
 </section>
@@ -1039,7 +1039,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/75f22525ae1bcea8e3c0111aa7398bd0b0403904f8a7a011ef09553c932082a6.png" src="../_images/75f22525ae1bcea8e3c0111aa7398bd0b0403904f8a7a011ef09553c932082a6.png" />
+<img alt="../_images/8f2d257e0a868c04467f8d6d1441cb64bb412729b5bb1c2186041f1981e35863.png" src="../_images/8f2d257e0a868c04467f8d6d1441cb64bb412729b5bb1c2186041f1981e35863.png" />
 </div>
 </div>
 </section>
@@ -1084,22 +1084,22 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Aug 19 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.2.0
+IPython version      : 9.4.0
 
-pyhgf : 0.0.0.post1.dev0+8bc345f
+pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-seaborn   : 0.13.2
+matplotlib: 3.10.5
 sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
-IPython   : 9.2.0
-matplotlib: 3.10.1
-pyhgf     : 0.0.0.post1.dev0+8bc345f
-numpy     : 2.2.5
+pyhgf     : 0.2.7
+IPython   : 9.4.0
+numpy     : 2.3.2
+seaborn   : 0.13.2
 
 Watermark: 2.5.0
 </pre></div>

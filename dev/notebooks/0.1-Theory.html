@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.0.0.post1.dev0+8bc345f documentation</title>
+    <title>Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=8509e836"></script>
+    <script src="../_static/documentation_options.js?v=58050c01"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -528,10 +528,10 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 \]</div>
 <p>where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the variance of the distribution.</p>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -556,7 +556,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/cc546dc2a621f64ee3dae08d7f96c68c1502d52a8bee7f11cc463af64a1745c4.png" src="../_images/cc546dc2a621f64ee3dae08d7f96c68c1502d52a8bee7f11cc463af64a1745c4.png" />
+<img alt="../_images/5e43d3fd378b9ef7465419717f81a73b40ce8799aa60b9af4acb93b58cc9da55.png" src="../_images/5e43d3fd378b9ef7465419717f81a73b40ce8799aa60b9af4acb93b58cc9da55.png" />
 </div>
 </div>
 <p>This simple process will be our first building block. Importantly here, the variability of the sensory input is constant across time: even if we don’t know exactly in which direction the time series is going to move in the future, we know that it is unlikely to make certain kinds of big jumps because it is controlled by a fixed parameter, the variance <span class="math notranslate nohighlight">\(\sigma^2\)</span>.</p>
@@ -587,7 +587,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \rho, \sigma^2)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/028e604fde002a0d9b998b8dd2b29b96bc75a376b87dd6216b5695364c76246f.png" src="../_images/028e604fde002a0d9b998b8dd2b29b96bc75a376b87dd6216b5695364c76246f.png" />
+<img alt="../_images/b110f094a3996cec4261d7c649f39a5e887846345c894941fbf7e455ee990681.png" src="../_images/b110f094a3996cec4261d7c649f39a5e887846345c894941fbf7e455ee990681.png" />
 </div>
 </div>
 </section>
@@ -600,10 +600,10 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \phi(m - x_1^{(k-1)}), \sigma^2)
 \]</div>
 <p>We repeat the same simulation below using <span class="math notranslate nohighlight">\(\phi = .4\)</span> and <span class="math notranslate nohighlight">\(m = 12.0\)</span>.</p>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -638,7 +638,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \phi(m - x_1^{(k-1)}), \sigma^2)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/ccddd7515c77e0edd99f5a7b0ad5476f2bc503de927c4f32595e758d191c0c0d.png" src="../_images/ccddd7515c77e0edd99f5a7b0ad5476f2bc503de927c4f32595e758d191c0c0d.png" />
+<img alt="../_images/60d4546ffc6d4e1b60f5ed05d9c83feff393d3c5ac9e86205fc39f2466be6f6f.png" src="../_images/60d4546ffc6d4e1b60f5ed05d9c83feff393d3c5ac9e86205fc39f2466be6f6f.png" />
 </div>
 </div>
 <p>With the two examples above, we have seen that a <a class="reference internal" href="#term-Gaussian-Random-Walk"><span class="xref std std-term">Gaussian Random Walk</span></a> - the simple iterative sampling from a given Gaussian distribution at each time step - can be further influenced by two kinds of parameterizations:</p>
@@ -705,10 +705,10 @@ $<span class="math notranslate nohighlight">\(
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -738,7 +738,7 @@ $<span class="math notranslate nohighlight">\(
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/7e292abac114e85e389bca46f90fa604e5114cabd9377d8b2da34ddcc5a29e36.png" src="../_images/7e292abac114e85e389bca46f90fa604e5114cabd9377d8b2da34ddcc5a29e36.png" />
+<img alt="../_images/e699ad41e6fddbc6c19a6ccbea5814735a9ebecb3a0c39cb46fc3db5990ca062.png" src="../_images/e699ad41e6fddbc6c19a6ccbea5814735a9ebecb3a0c39cb46fc3db5990ca062.png" />
 </div>
 </div>
 </section>
@@ -763,10 +763,10 @@ x_2^{(k)} \sim \mathcal{N}(x_2^{(k-1)}, \, \exp(\omega_2))
 \]</div>
 <p>The model described above can be implemented in Python as the following:</p>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -804,7 +804,7 @@ x_2^{(k)} \sim \mathcal{N}(x_2^{(k-1)}, \, \exp(\omega_2))
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/729933f8661a8aaa2b4ed5cd59ea0ef5644d6b526ca79d76bff763c4a1fe0d7f.png" src="../_images/729933f8661a8aaa2b4ed5cd59ea0ef5644d6b526ca79d76bff763c4a1fe0d7f.png" />
+<img alt="../_images/d3b8b3e402b1bc04b6bc0f5d5395889ae6e89e1ce0165996b1d349468409efa4.png" src="../_images/d3b8b3e402b1bc04b6bc0f5d5395889ae6e89e1ce0165996b1d349468409efa4.png" />
 </div>
 </div>
 <p>In this example, it becomes apparent that the volatility of the observation is not constant in time anymore, but depends on the values observed at the level above.</p>
@@ -904,21 +904,21 @@ Given the expectation from the prediction step</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Aug 19 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.2.0
+IPython version      : 9.4.0
 
-pyhgf : 0.0.0.post1.dev0+8bc345f
+pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
+IPython   : 9.4.0
+numpy     : 2.3.2
 seaborn   : 0.13.2
-IPython   : 9.2.0
-numpy     : 2.2.5
 sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
-matplotlib: 3.10.1
+matplotlib: 3.10.5
 
 Watermark: 2.5.0
 </pre></div>

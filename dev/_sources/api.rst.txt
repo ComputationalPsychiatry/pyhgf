@@ -43,6 +43,8 @@ Continuous nodes
 
     continuous_node_posterior_update_ehgf
 
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
+
 .. autosummary::
    :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
 

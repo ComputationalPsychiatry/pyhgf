@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.0.0.post1.dev0+8bc345f documentation</title>
+    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=8509e836"></script>
+    <script src="../_static/documentation_options.js?v=58050c01"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -493,10 +493,10 @@
 <span id="generalised-filtering"></span><h1>Generalised Bayesian Filtering of exponential family distributions<a class="headerlink" href="#generalised-bayesian-filtering-of-exponential-family-distributions" title="Link to this heading">#</a></h1>
 <p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.3-Generalised_filtering.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
@@ -583,10 +583,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -622,7 +622,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/ffae002ecbd50110c415ebc3e2c1e9d5e4b18b806dc55f6ef41d8959f0ba944f.png" src="../_images/ffae002ecbd50110c415ebc3e2c1e9d5e4b18b806dc55f6ef41d8959f0ba944f.png" />
+<img alt="../_images/8fdb4b9eff88eddaf5b26e8d60ba704e08561bc5e892392741bae7b857e9ba80.png" src="../_images/8fdb4b9eff88eddaf5b26e8d60ba704e08561bc5e892392741bae7b857e9ba80.png" />
 </div>
 </div>
 <p>The vizualisation of the predictive distribution over new observations require integrating the joint probability of the prior <span class="math notranslate nohighlight">\(g_{\xi, \nu}(\vartheta)\)</span> and the posterior <span class="math notranslate nohighlight">\(f_x(\vartheta)\)</span>. In the case of a univariate normal, the <em>Gaussian-predictive</em> distribution is given by:</p>
@@ -632,10 +632,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 \]</div>
 <p>When <span class="math notranslate nohighlight">\(\xi = 0, 1\)</span>, this corresponds to the Student’s-t distribution with <span class="math notranslate nohighlight">\(\nu + 1\)</span> degrees of freedom, as evidenced here:</p>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -658,7 +658,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/2c498b974d26201a4231e6652df1e2b979d2cf37e6984cd8c752d45fbd4aae16.png" src="../_images/2c498b974d26201a4231e6652df1e2b979d2cf37e6984cd8c752d45fbd4aae16.png" />
+<img alt="../_images/f395151a5bc9cc416da34e4b46f521644e44e136bbb0f42e001eca14123fe378.png" src="../_images/f395151a5bc9cc416da34e4b46f521644e44e136bbb0f42e001eca14123fe378.png" />
 </div>
 </div>
 </section>
@@ -767,10 +767,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -795,7 +795,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/c49104f010337659a0e70dc589cb9b8dd07d1e9f30b44e06e253be885f3b78dc.png" src="../_images/c49104f010337659a0e70dc589cb9b8dd07d1e9f30b44e06e253be885f3b78dc.png" />
+<img alt="../_images/76e6690c4576c55913a89180d2dda5fcd30dfef1597c162bc22f45a07c88e357.png" src="../_images/76e6690c4576c55913a89180d2dda5fcd30dfef1597c162bc22f45a07c88e357.png" />
 </div>
 </div>
 <p>We can see that larger values for <span class="math notranslate nohighlight">\(\nu\)</span> correspond to a lower learning rate, and therefore smoother transition between states.</p>
@@ -865,7 +865,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a570fff1061714be977ef65898a8fb5f89acb13dd59b7bd187323297066e8124.png" src="../_images/a570fff1061714be977ef65898a8fb5f89acb13dd59b7bd187323297066e8124.png" />
+<img alt="../_images/40df6c7d2aeb14aaadbda4ef078e6273f05d8ec76afc97be8a58873379756533.png" src="../_images/40df6c7d2aeb14aaadbda4ef078e6273f05d8ec76afc97be8a58873379756533.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -1103,23 +1103,23 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Aug 19 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.2.0
+IPython version      : 9.4.0
 
-pyhgf : 0.0.0.post1.dev0+8bc345f
+pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-jax       : 0.4.31
 seaborn   : 0.13.2
-IPython   : 9.2.0
+jax       : 0.4.31
+matplotlib: 3.10.5
+IPython   : 9.4.0
+pyhgf     : 0.2.7
+numpy     : 2.3.2
 sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
-pyhgf     : 0.0.0.post1.dev0+8bc345f
-matplotlib: 3.10.1
-numpy     : 2.2.5
 
 Watermark: 2.5.0
 </pre></div>

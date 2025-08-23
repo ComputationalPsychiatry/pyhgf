@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>The categorical Hierarchical Gaussian Filter &#8212; pyhgf 0.0.0.post1.dev0+8bc345f documentation</title>
+    <title>The categorical Hierarchical Gaussian Filter &#8212; pyhgf 0.2.7 documentation</title>
   
   
   
@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=8509e836"></script>
+    <script src="../_static/documentation_options.js?v=58050c01"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -497,10 +497,10 @@
 <p>The categorical state node and the categorical state-transition nodes are still work in progress. The examples provided here are given for illustration. Things may change or not work until the official publication.</p>
 </div>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
@@ -515,10 +515,10 @@
 </details>
 </div>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
@@ -565,7 +565,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/6ce11000b6b906f56a9f6670bd66d7465cfe61ca12742a2bc1ac63a02cab9c36.png" src="../_images/6ce11000b6b906f56a9f6670bd66d7465cfe61ca12742a2bc1ac63a02cab9c36.png" />
+<img alt="../_images/8ae96722c7f27a0cef8a61e9afc4b7362c2f42421c4e8072360a4fe94268d961.png" src="../_images/8ae96722c7f27a0cef8a61e9afc4b7362c2f42421c4e8072360a4fe94268d961.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -679,7 +679,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/e56345096891caf39c43676f79f8c139905e41307132b18c5d9ee1b005c0c961.png" src="../_images/e56345096891caf39c43676f79f8c139905e41307132b18c5d9ee1b005c0c961.png" />
+<img alt="../_images/9d6a819ce8f429d137b6bc8c4455e0e2abae89a8e17fa986a388e781c1016db7.png" src="../_images/9d6a819ce8f429d137b6bc8c4455e0e2abae89a8e17fa986a388e781c1016db7.png" />
 </div>
 </div>
 </section>
@@ -731,10 +731,10 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The CustomOp needs `make_node`, `perform` and `grad`.</span>
@@ -827,24 +827,24 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue Aug 19 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.2.0
+IPython version      : 9.4.0
 
-pyhgf : 0.0.0.post1.dev0+8bc345f
+pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-pytensor  : 2.30.3
+numpy     : 2.3.2
 seaborn   : 0.13.2
-matplotlib: 3.10.1
-IPython   : 9.2.0
-numpy     : 2.2.5
+pytensor  : 2.31.7
+pyhgf     : 0.2.7
+matplotlib: 3.10.5
 jax       : 0.4.31
 sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
-pyhgf     : 0.0.0.post1.dev0+8bc345f
+IPython   : 9.4.0
 
 Watermark: 2.5.0
 </pre></div>

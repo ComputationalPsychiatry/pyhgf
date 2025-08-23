@@ -28,10 +28,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:01.891061Z",
-     "iopub.status.busy": "2025-08-19T09:51:01.889691Z",
-     "iopub.status.idle": "2025-08-19T09:51:01.906916Z",
-     "shell.execute_reply": "2025-08-19T09:51:01.904634Z"
+     "iopub.execute_input": "2025-08-23T17:57:07.371743Z",
+     "iopub.status.busy": "2025-08-23T17:57:07.371543Z",
+     "iopub.status.idle": "2025-08-23T17:57:07.389730Z",
+     "shell.execute_reply": "2025-08-23T17:57:07.388837Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -54,10 +54,10 @@
    "id": "6430ec8b-1b42-450b-9ed5-a9866384042f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:01.913761Z",
-     "iopub.status.busy": "2025-08-19T09:51:01.913118Z",
-     "iopub.status.idle": "2025-08-19T09:51:04.904389Z",
-     "shell.execute_reply": "2025-08-19T09:51:04.903381Z"
+     "iopub.execute_input": "2025-08-23T17:57:07.391993Z",
+     "iopub.status.busy": "2025-08-23T17:57:07.391773Z",
+     "iopub.status.idle": "2025-08-23T17:57:09.625727Z",
+     "shell.execute_reply": "2025-08-23T17:57:09.624562Z"
     }
    },
    "outputs": [],
@@ -99,10 +99,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:04.906921Z",
-     "iopub.status.busy": "2025-08-19T09:51:04.906651Z",
-     "iopub.status.idle": "2025-08-19T09:51:05.403865Z",
-     "shell.execute_reply": "2025-08-19T09:51:05.403068Z"
+     "iopub.execute_input": "2025-08-23T17:57:09.631766Z",
+     "iopub.status.busy": "2025-08-23T17:57:09.629833Z",
+     "iopub.status.idle": "2025-08-23T17:57:10.058515Z",
+     "shell.execute_reply": "2025-08-23T17:57:10.057636Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -186,10 +186,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:05.406023Z",
-     "iopub.status.busy": "2025-08-19T09:51:05.405820Z",
-     "iopub.status.idle": "2025-08-19T09:51:05.648017Z",
-     "shell.execute_reply": "2025-08-19T09:51:05.647226Z"
+     "iopub.execute_input": "2025-08-23T17:57:10.060622Z",
+     "iopub.status.busy": "2025-08-23T17:57:10.060450Z",
+     "iopub.status.idle": "2025-08-23T17:57:10.234794Z",
+     "shell.execute_reply": "2025-08-23T17:57:10.233694Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -254,10 +254,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:05.650003Z",
-     "iopub.status.busy": "2025-08-19T09:51:05.649790Z",
-     "iopub.status.idle": "2025-08-19T09:51:06.047706Z",
-     "shell.execute_reply": "2025-08-19T09:51:06.046852Z"
+     "iopub.execute_input": "2025-08-23T17:57:10.237300Z",
+     "iopub.status.busy": "2025-08-23T17:57:10.237096Z",
+     "iopub.status.idle": "2025-08-23T17:57:10.551934Z",
+     "shell.execute_reply": "2025-08-23T17:57:10.550940Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -367,10 +367,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:06.049832Z",
-     "iopub.status.busy": "2025-08-19T09:51:06.049632Z",
-     "iopub.status.idle": "2025-08-19T09:51:06.060350Z",
-     "shell.execute_reply": "2025-08-19T09:51:06.059535Z"
+     "iopub.execute_input": "2025-08-23T17:57:10.554088Z",
+     "iopub.status.busy": "2025-08-23T17:57:10.553913Z",
+     "iopub.status.idle": "2025-08-23T17:57:10.565490Z",
+     "shell.execute_reply": "2025-08-23T17:57:10.564665Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -417,10 +417,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:06.062478Z",
-     "iopub.status.busy": "2025-08-19T09:51:06.062269Z",
-     "iopub.status.idle": "2025-08-19T09:51:06.735747Z",
-     "shell.execute_reply": "2025-08-19T09:51:06.734845Z"
+     "iopub.execute_input": "2025-08-23T17:57:10.573852Z",
+     "iopub.status.busy": "2025-08-23T17:57:10.573640Z",
+     "iopub.status.idle": "2025-08-23T17:57:11.113639Z",
+     "shell.execute_reply": "2025-08-23T17:57:11.112821Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -534,10 +534,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:06.738086Z",
-     "iopub.status.busy": "2025-08-19T09:51:06.737878Z",
-     "iopub.status.idle": "2025-08-19T09:51:07.018454Z",
-     "shell.execute_reply": "2025-08-19T09:51:07.017561Z"
+     "iopub.execute_input": "2025-08-23T17:57:11.115900Z",
+     "iopub.status.busy": "2025-08-23T17:57:11.115708Z",
+     "iopub.status.idle": "2025-08-23T17:57:11.357119Z",
+     "shell.execute_reply": "2025-08-23T17:57:11.355856Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -773,10 +773,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-08-19T09:51:07.021100Z",
-     "iopub.status.busy": "2025-08-19T09:51:07.020890Z",
-     "iopub.status.idle": "2025-08-19T09:51:08.404072Z",
-     "shell.execute_reply": "2025-08-19T09:51:08.402912Z"
+     "iopub.execute_input": "2025-08-23T17:57:11.359399Z",
+     "iopub.status.busy": "2025-08-23T17:57:11.359230Z",
+     "iopub.status.idle": "2025-08-23T17:57:12.238739Z",
+     "shell.execute_reply": "2025-08-23T17:57:12.237828Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -788,21 +788,21 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Last updated: Tue Aug 19 2025\n",
+      "Last updated: Sat Aug 23 2025\n",
       "\n",
       "Python implementation: CPython\n",
-      "Python version       : 3.12.3\n",
-      "IPython version      : 9.2.0\n",
+      "Python version       : 3.12.10\n",
+      "IPython version      : 9.4.0\n",
       "\n",
       "pyhgf : 0.2.7\n",
       "jax   : 0.4.31\n",
       "jaxlib: 0.4.31\n",
       "\n",
-      "sys       : 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]\n",
-      "numpy     : 2.2.5\n",
-      "seaborn   : 0.13.2\n",
-      "IPython   : 9.2.0\n",
       "matplotlib: 3.10.1\n",
+      "seaborn   : 0.13.2\n",
+      "numpy     : 2.2.5\n",
+      "IPython   : 9.4.0\n",
+      "sys       : 3.12.10 (main, Apr  9 2025, 04:03:51) [Clang 20.1.0 ]\n",
       "\n",
       "Watermark: 2.5.0\n",
       "\n"
@@ -831,7 +831,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.12.3"
+   "version": "3.12.10"
   }
  },
  "nbformat": 4,
