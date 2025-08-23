@@ -19,6 +19,5 @@ target*
 *DS_Store
 .benchmarks/
 pyhgf/*.so
-Makefile
 uv.lock
 Cargo.lock
