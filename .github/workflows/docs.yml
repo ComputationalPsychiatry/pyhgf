@@ -35,6 +35,7 @@ jobs:
         run: |
           sudo apt-get install graphviz
           uv sync --dev
+          uv run python -m ipykernel install --user --name=pyhgf --display-name "Python (pyhgf)"
           uv run maturin develop --release
           uv run sphinx-build -j 1 -T -b html docs/source docs/build/html
 
