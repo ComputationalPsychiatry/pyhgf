@@ -25,4 +25,8 @@ lint:
 
 run-all-notebooks:
 	@echo "--- 📚 Running all notebooks ---"
-	cd docs/source/notebooks/ && jupyter nbconvert *.ipynb --to notebook --execute --inplace
+	cd docs/source/notebooks/ && uv run python -m nbconvert *.ipynb --to notebook --execute --inplace
+
+build-docs:
+	@echo "--- 📖 Building docs ---"
+	uv run sphinx-build -j 1 -T -b html docs/source docs/build/html

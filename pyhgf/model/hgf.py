@@ -103,12 +103,6 @@ class HGF(Network):
             the variance (the part that is affected by the parent nodes) and will
             define the strength of the connection between the node and the parent
             node. Defaults set to `1.0`.
-        eta0 :
-            The first categorical value of the binary node. Defaults to `0.0`. Only
-            relevant if `model_type="binary"`.
-        eta1 :
-            The second categorical value of the binary node. Defaults to `0.0`. Only
-            relevant if `model_type="binary"`.
         binary_precision :
             The precision of the binary input node. Default to `jnp.inf`. Only relevant
             if `model_type="binary"`.
