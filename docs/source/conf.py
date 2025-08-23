@@ -125,3 +125,5 @@ html_sidebars = {
     "cite": [],
     "references": [],
 }
+
+nb_kernel_name = "python3"
