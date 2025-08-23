@@ -23,18 +23,18 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install Poetry
+      - name: Install UV
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry self add "poetry-dynamic-versioning[plugin]"
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source .venv/bin/activate
 
       # 3. Install dependencies and build the documentation
       - name: Install dependencies and build docs
         run: |
           sudo apt-get install graphviz
-          poetry install --with dev
-          poetry run sphinx-build -j 1 -T -b html docs/source docs/build/html
+          uv sync --dev
+          uv run maturin develop --release
+          uv run sphinx-build -j 1 -T -b html docs/source docs/build/html
 
       # 4. Deploy the documentation for the 'release' event
       - name: Deploy Stable 🚀
