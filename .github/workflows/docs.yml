@@ -26,7 +26,9 @@ jobs:
       - name: Install UV
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source .venv/bin/activate
+          # add uv to PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          uv venv .venv   # create a uv-managed virtualenv
 
       # 3. Install dependencies and build the documentation
       - name: Install dependencies and build docs
