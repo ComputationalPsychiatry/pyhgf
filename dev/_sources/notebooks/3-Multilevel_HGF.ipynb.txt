@@ -37,7 +37,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "ba34f2ab-bca8-499d-bfd5-f2c022409b50",
    "metadata": {
     "editable": true,
@@ -54,10 +54,10 @@
     "\n",
     "from IPython.utils import io\n",
     "\n",
-    "if 'google.colab' in sys.modules:\n",
-    "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -383,7 +383,6 @@
    "outputs": [],
    "source": [
     "with pm.Model() as two_levels_binary_hgf:\n",
-    "\n",
     "    # tonic volatility\n",
     "    # ----------------\n",
     "    mu_volatility = pm.Normal(\"mu_volatility\", -5, 5)\n",
@@ -675,7 +674,7 @@
   "kernelspec": {
    "display_name": "pyhgf",
    "language": "python",
-   "name": "pyhgf"
+   "name": "python3"
   },
   "language_info": {
    "codemirror_mode": {
@@ -687,7 +686,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.12.10"
+   "version": "3.10.13"
   },
   "widgets": {
    "application/vnd.jupyter.widget-state+json": {

@@ -25,7 +25,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "31b80846",
    "metadata": {
     "editable": true,
@@ -48,10 +48,10 @@
     "\n",
     "from IPython.utils import io\n",
     "\n",
-    "if 'google.colab' in sys.modules:\n",
-    "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -543,7 +543,6 @@
     "means, variances = [], []\n",
     "nus = [3, 9, 35]\n",
     "for nu in nus:\n",
-    "\n",
     "    # set a new learning rate\n",
     "    generalised_filter.attributes[0][\"nus\"] = nu\n",
     "\n",
@@ -552,7 +551,7 @@
     "        xis=generalised_filter.input_data(input_data=y).node_trajectories[0][\"xis\"].T\n",
     "    )\n",
     "\n",
-    "    # save distribution parameters    \n",
+    "    # save distribution parameters\n",
     "    means.append(mean)\n",
     "    variances.append(variance)"
    ]
@@ -659,7 +658,7 @@
    },
    "outputs": [],
    "source": [
-    "univariate_hgf =  Network().add_nodes(kind=\"ef-state\", learning=\"hgf-1\")\n",
+    "univariate_hgf = Network().add_nodes(kind=\"ef-state\", learning=\"hgf-1\")\n",
     "univariate_hgf.attributes[1][\"precision\"] = 100.0\n",
     "univariate_hgf.attributes[4][\"precision\"] = 100.0"
    ]
@@ -795,7 +794,9 @@
    "source": [
     "# get the sufficient statistics from the first observation to parametrize the model\n",
     "mean, variance = jnp.apply_along_axis(\n",
-    "    Normal().parameters_from_sufficient_statistics, 1, univariate_hgf.node_trajectories[0][\"xis\"]\n",
+    "    Normal().parameters_from_sufficient_statistics,\n",
+    "    1,\n",
+    "    univariate_hgf.node_trajectories[0][\"xis\"],\n",
     ")"
    ]
   },
@@ -899,8 +900,13 @@
     "N = 1000\n",
     "theta = np.sort(np.sqrt(np.random.rand(N)) * 5 * np.pi)\n",
     "r_a = -2 * theta - np.pi\n",
-    "spiral_data = np.array([np.cos(theta) * r_a, np.sin(theta) * r_a]).T \n",
-    "spiral_data += np.random.randn(N, 2) * .75 + np.random.randn(N, 2) * 1.5 * np.tile(np.repeat((0, 1, 0, 1, 0, 1, 0, 1, 0, 1), 100), (2, 1)).T"
+    "spiral_data = np.array([np.cos(theta) * r_a, np.sin(theta) * r_a]).T\n",
+    "spiral_data += (\n",
+    "    np.random.randn(N, 2) * 0.75\n",
+    "    + np.random.randn(N, 2)\n",
+    "    * 1.5\n",
+    "    * np.tile(np.repeat((0, 1, 0, 1, 0, 1, 0, 1, 0, 1), 100), (2, 1)).T\n",
+    ")"
    ]
   },
   {
@@ -925,13 +931,17 @@
    },
    "outputs": [],
    "source": [
-    "bivariate_normal = Network().add_nodes(\n",
-    "    kind=\"ef-state\", \n",
-    "    nus=8.0,\n",
-    "    learning=\"generalised-filtering\", \n",
-    "    distribution=\"multivariate-normal\", \n",
-    "    dimension=2\n",
-    ").input_data(input_data=spiral_data)"
+    "bivariate_normal = (\n",
+    "    Network()\n",
+    "    .add_nodes(\n",
+    "        kind=\"ef-state\",\n",
+    "        nus=8.0,\n",
+    "        learning=\"generalised-filtering\",\n",
+    "        distribution=\"multivariate-normal\",\n",
+    "        dimension=2,\n",
+    "    )\n",
+    "    .input_data(input_data=spiral_data)\n",
+    ")"
    ]
   },
   {
@@ -950,7 +960,10 @@
    "source": [
     "# get the sufficient statistics from the first observation to parametrize the model\n",
     "means, covariances = jnp.apply_along_axis(\n",
-    "    MultivariateNormal().parameters_from_sufficient_statistics, 1, bivariate_normal.node_trajectories[0][\"xis\"], dimension=2\n",
+    "    MultivariateNormal().parameters_from_sufficient_statistics,\n",
+    "    1,\n",
+    "    bivariate_normal.node_trajectories[0][\"xis\"],\n",
+    "    dimension=2,\n",
     ")"
    ]
   },
@@ -1143,10 +1156,7 @@
    "outputs": [],
    "source": [
     "bivariate_hgf = Network().add_nodes(\n",
-    "    kind=\"ef-state\", \n",
-    "    learning=\"hgf-2\", \n",
-    "    distribution=\"multivariate-normal\", \n",
-    "    dimension=2\n",
+    "    kind=\"ef-state\", learning=\"hgf-2\", distribution=\"multivariate-normal\", dimension=2\n",
     ")\n",
     "\n",
     "# adapting prior parameter values to the sufficient statistics\n",
@@ -1154,7 +1164,7 @@
     "for node_idx in [2, 5, 8, 11, 14]:\n",
     "    bivariate_hgf.attributes[node_idx][\"tonic_volatility\"] = -2.0\n",
     "for node_idx in [1, 4, 7, 10, 13]:\n",
-    "    bivariate_hgf.attributes[node_idx][\"precision\"] = .01\n",
+    "    bivariate_hgf.attributes[node_idx][\"precision\"] = 0.01\n",
     "for node_idx in [9, 12, 15]:\n",
     "    bivariate_hgf.attributes[node_idx][\"mean\"] = 10.0"
    ]
@@ -1421,7 +1431,9 @@
    "source": [
     "# get the sufficient statistics\n",
     "xis = jnp.apply_along_axis(\n",
-    "    MultivariateNormal().sufficient_statistics_from_observations, 1, spiral_data,\n",
+    "    MultivariateNormal().sufficient_statistics_from_observations,\n",
+    "    1,\n",
+    "    spiral_data,\n",
     ")"
    ]
   },

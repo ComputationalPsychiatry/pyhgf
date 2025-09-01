@@ -29,7 +29,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "e9143ab5-131e-4a1c-9130-326c3538f888",
    "metadata": {
     "editable": true,
@@ -50,10 +50,11 @@
    "source": [
     "import sys\n",
     "from IPython.utils import io\n",
-    "if 'google.colab' in sys.modules:\n",
     "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -134,7 +135,8 @@
     "p2 = np.random.dirichlet(alpha=[1, 1, 2, 20, 20, 2, 1, 1])\n",
     "p3 = np.random.dirichlet(alpha=[20, 20, 5, 2, 2, 1, 1, 1])\n",
     "input_data = np.array(\n",
-    "    [np.random.multinomial(n=1, pvals=p) for p in [p1, p2, p3] for _ in range(250)], dtype=float\n",
+    "    [np.random.multinomial(n=1, pvals=p) for p in [p1, p2, p3] for _ in range(250)],\n",
+    "    dtype=float,\n",
     ")"
    ]
   },
@@ -249,7 +251,9 @@
    "outputs": [],
    "source": [
     "categorical_hgf = Network().add_nodes(\n",
-    "    kind=\"categorical-state\", n_categories=8, binary_parameters={\"tonic_volatility_2\": -2.0},\n",
+    "    kind=\"categorical-state\",\n",
+    "    n_categories=8,\n",
+    "    binary_parameters={\"tonic_volatility_2\": -2.0},\n",
     ")"
    ]
   },
@@ -701,7 +705,6 @@
    "outputs": [],
    "source": [
     "def categorical_surprise(omega_2, hgf, input_data):\n",
-    "\n",
     "    # replace with a new omega in the model\n",
     "    for idx in np.arange(21, 31):\n",
     "        hgf.attributes[idx][\"tonic_volatility\"] = omega_2\n",

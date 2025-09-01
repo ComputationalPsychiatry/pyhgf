@@ -31,7 +31,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "56fadf0b-a1b3-4aeb-9d81-efd17975448d",
    "metadata": {
     "editable": true,
@@ -52,10 +52,11 @@
    "source": [
     "import sys\n",
     "from IPython.utils import io\n",
-    "if 'google.colab' in sys.modules:\n",
     "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -434,7 +435,9 @@
     "two_levels_continuous_hgf = (\n",
     "    Network()\n",
     "    .add_nodes(precision=1e4)\n",
-    "    .add_nodes(precision=1e4, mean=timeseries[0], tonic_volatility=-13.0, value_children=0)\n",
+    "    .add_nodes(\n",
+    "        precision=1e4, mean=timeseries[0], tonic_volatility=-13.0, value_children=0\n",
+    "    )\n",
     "    .add_nodes(precision=1e1, tonic_volatility=-2.0, volatility_children=1)\n",
     ")"
    ]

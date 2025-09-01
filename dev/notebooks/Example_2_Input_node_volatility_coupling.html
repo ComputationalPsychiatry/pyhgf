@@ -37,6 +37,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -501,10 +502,10 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
-<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-
-  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
 </pre></div>
 </div>
 </div>
@@ -576,7 +577,6 @@
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">],</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Greys</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">))):</span>
-
     <span class="c1"># extract the sufficient statistics from the input node (and parents)</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
     <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">mean_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]))</span>
@@ -597,7 +597,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/a1b6634e7739e3858476098e604a107e4237ac836a4802cad7baada3daf52d3a.png" src="../_images/a1b6634e7739e3858476098e604a107e4237ac836a4802cad7baada3daf52d3a.png" />
+<img alt="../_images/0b7c508050ccc68e8e821b0d0787bf61c29ef94b38bcacd3329624d54bf6366c.png" src="../_images/0b7c508050ccc68e8e821b0d0787bf61c29ef94b38bcacd3329624d54bf6366c.png" />
 </div>
 </div>
 </section>
@@ -642,7 +642,6 @@
 
 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">250</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Greys</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">))):</span>
-
     <span class="c1"># extract the sufficient statistics from the input node (and parents)</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="n">mean_precision_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
     <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">mean_precision_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
@@ -663,7 +662,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/088f6b0821fc182509e15db39d9b57e6e053132e0a544579a9bd3364383e62e3.png" src="../_images/088f6b0821fc182509e15db39d9b57e6e053132e0a544579a9bd3364383e62e3.png" />
+<img alt="../_images/e71ce4e1d9d63e46ffeceaf9ffff4ba0600c635d7bdebf84d642e5e1acaaefba.png" src="../_images/e71ce4e1d9d63e46ffeceaf9ffff4ba0600c635d7bdebf84d642e5e1acaaefba.png" />
 </div>
 </div>
 </section>
@@ -677,22 +676,22 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.4.0
+IPython version      : 9.5.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-pyhgf     : 0.2.7
-seaborn   : 0.13.2
-IPython   : 9.4.0
-matplotlib: 3.10.5
-sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
 numpy     : 2.3.2
+IPython   : 9.5.0
+matplotlib: 3.10.6
+seaborn   : 0.13.2
+pyhgf     : 0.2.7
 
 Watermark: 2.5.0
 </pre></div>

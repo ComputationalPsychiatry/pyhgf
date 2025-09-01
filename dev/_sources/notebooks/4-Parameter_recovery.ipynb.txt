@@ -31,7 +31,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "e00c09dd-b0ed-4e32-8bc7-af5868acdcd3",
    "metadata": {
     "editable": true,
@@ -52,10 +52,11 @@
    "source": [
     "import sys\n",
     "from IPython.utils import io\n",
-    "if 'google.colab' in sys.modules:\n",
     "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -310,7 +311,6 @@
    "outputs": [],
    "source": [
     "with pm.Model() as two_levels_binary_hgf:\n",
-    "\n",
     "    # tonic volatility\n",
     "    volatility = pm.Normal.dist(-3.0, 5, shape=N)\n",
     "    censored_volatility = pm.Censored(\n",

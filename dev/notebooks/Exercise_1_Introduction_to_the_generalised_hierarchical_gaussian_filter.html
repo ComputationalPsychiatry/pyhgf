@@ -37,6 +37,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -501,10 +502,11 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
-<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
 
-  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
 </pre></div>
 </div>
 </div>
@@ -593,7 +595,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/d7ff4bee8873aca7066dfdb8e2c260db2510a3896998d1fa2d747766a3db5bd4.png" src="../_images/d7ff4bee8873aca7066dfdb8e2c260db2510a3896998d1fa2d747766a3db5bd4.png" />
+<img alt="../_images/477281bf0394bd02b4503a8857affa07543c7d1fc51892b4222fec4d5134b6f5.png" src="../_images/477281bf0394bd02b4503a8857affa07543c7d1fc51892b4222fec4d5134b6f5.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.2">
@@ -670,7 +672,9 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">timeseries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">timeseries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -704,7 +708,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a91889f442c3d63728deec93e86bb943a23dea2708b8c2a4eac025776559b9ed.png" src="../_images/a91889f442c3d63728deec93e86bb943a23dea2708b8c2a4eac025776559b9ed.png" />
+<img alt="../_images/f3a7baae7a79bcea15a337cd85822341f71b65bdf61333d71efaaaba65541cb6.png" src="../_images/f3a7baae7a79bcea15a337cd85822341f71b65bdf61333d71efaaaba65541cb6.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.4">
@@ -881,7 +885,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/efaf56213146bce1fc04084ac01e05a6907978098d973c18d642e41c5df8a2d5.png" src="../_images/efaf56213146bce1fc04084ac01e05a6907978098d973c18d642e41c5df8a2d5.png" />
+<img alt="../_images/c6a8bd033d2ae7b805e3ce6e79551447a693f375cf96e1b2efa85b234f7b2b03.png" src="../_images/c6a8bd033d2ae7b805e3ce6e79551447a693f375cf96e1b2efa85b234f7b2b03.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -1017,23 +1021,23 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.4.0
+IPython version      : 9.5.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 9.4.0
+numpy     : 2.3.2
 pyhgf     : 0.2.7
 pandas    : 2.3.2
-numpy     : 2.3.2
-matplotlib: 3.10.5
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+matplotlib: 3.10.6
 seaborn   : 0.13.2
-sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
+IPython   : 9.5.0
 
 Watermark: 2.5.0
 </pre></div>

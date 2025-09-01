@@ -50,7 +50,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "bc2f0d67-9f24-4e44-ad7b-c04c22cff638",
    "metadata": {
     "editable": true,
@@ -73,10 +73,10 @@
     "\n",
     "from IPython.utils import io\n",
     "\n",
-    "if 'google.colab' in sys.modules:\n",
-    "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -224,17 +224,17 @@
     "n_samples = 1000\n",
     "\n",
     "# Generate x_1 and x_2 as a random walk\n",
-    "x1 = np.ones(n_samples) * 2 + np.random.normal(0, .1, n_samples)\n",
+    "x1 = np.ones(n_samples) * 2 + np.random.normal(0, 0.1, n_samples)\n",
     "x2 = np.zeros(n_samples)\n",
     "\n",
     "# Coupling vector\n",
-    "coupling = np.array([0.0, 0.0, 0.2, 0.2, 0.8, .8, 0.5, 0.5, 0.5, 0.5]).repeat(\n",
+    "coupling = np.array([0.0, 0.0, 0.2, 0.2, 0.8, 0.8, 0.5, 0.5, 0.5, 0.5]).repeat(\n",
     "    n_samples / 10\n",
     ")\n",
     "\n",
     "# Update x_2 so it is influenced by x_1 according to the coupling vector\n",
     "for i in range(1, n_samples):\n",
-    "    x2[i] = np.random.normal(x2[i-1] + coupling[i] * x1[i-1], .1)"
+    "    x2[i] = np.random.normal(x2[i - 1] + coupling[i] * x1[i - 1], 0.1)"
    ]
   },
   {
@@ -493,7 +493,7 @@
    ],
    "source": [
     "# Plot trajectories for each HGF\n",
-    "non_causal_hgf.plot_nodes(node_idxs=[0, 1]);\n",
+    "non_causal_hgf.plot_nodes(node_idxs=[0, 1])\n",
     "sns.despine()"
    ]
   },
@@ -831,6 +831,7 @@
     "    coupling_fn: Tuple[Optional[Callable], ...]\n",
     "    causal_children: Optional[Tuple]\n",
     "\n",
+    "\n",
     "causal_adjacency_list = CausalAdjacencyLists(\n",
     "    node_type=adjacency_list.node_type,\n",
     "    value_parents=adjacency_list.value_parents,\n",
@@ -902,7 +903,7 @@
    "outputs": [],
    "source": [
     "def prediction_error(u, alpha, mu_1, mu_2, var_1, var_2):\n",
-    "    return (u - mu_2 - alpha * mu_1)**2 * (1 / (alpha**2 * var_1 + var_2 ) )"
+    "    return (u - mu_2 - alpha * mu_1) ** 2 * (1 / (alpha**2 * var_1 + var_2))"
    ]
   },
   {
@@ -925,12 +926,13 @@
    "outputs": [],
    "source": [
     "def find_alpha(u, mu_1, mu_2, var_1, var_2):\n",
-    "\n",
     "    # find root 1\n",
-    "    alpha_hat_1 = jnp.where(mu_1 == 0.0, 0.0, - (mu_2 - u) / mu_1)\n",
+    "    alpha_hat_1 = jnp.where(mu_1 == 0.0, 0.0, -(mu_2 - u) / mu_1)\n",
     "\n",
     "    # find root 2\n",
-    "    alpha_hat_2 = jnp.where((mu_2 - u) == 0.0, 0.0, (mu_1 * var_2) / ((mu_2 - u) * var_1))\n",
+    "    alpha_hat_2 = jnp.where(\n",
+    "        (mu_2 - u) == 0.0, 0.0, (mu_1 * var_2) / ((mu_2 - u) * var_1)\n",
+    "    )\n",
     "\n",
     "    # evaluate at 0, 1 and the two possible roots\n",
     "    candidates = jnp.array([0.0, alpha_hat_1, alpha_hat_2, 1.0])\n",
@@ -938,7 +940,7 @@
     "\n",
     "    # return prediction errors for all candidates\n",
     "    pe = prediction_error(u, candidates, mu_1, mu_2, var_1, var_2)\n",
-    "    \n",
+    "\n",
     "    return candidates[jnp.argmin(pe)]"
    ]
   },
@@ -995,17 +997,16 @@
     "        edges[node_idx].causal_children,\n",
     "        attributes[node_idx][\"causal_coupling_children\"],\n",
     "    ):\n",
-    "\n",
     "        # get children's expected mean and precision\n",
     "        child_expected_mean = attributes[causal_child_idx][\"expected_mean\"]\n",
     "        child_expected_precision = attributes[causal_child_idx][\"expected_precision\"]\n",
     "\n",
     "        # get a new estimate of alpha\n",
     "        new_alpha = find_alpha(\n",
-    "            u=attributes[causal_child_idx][\"mean\"], \n",
+    "            u=attributes[causal_child_idx][\"mean\"],\n",
     "            mu_1=parent_expected_mean,\n",
-    "            mu_2=child_expected_mean, \n",
-    "            var_1=1 / parent_expected_precision, \n",
+    "            mu_2=child_expected_mean,\n",
+    "            var_1=1 / parent_expected_precision,\n",
     "            var_2=1 / child_expected_precision,\n",
     "        )\n",
     "\n",

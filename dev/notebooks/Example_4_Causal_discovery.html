@@ -37,6 +37,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -513,10 +514,10 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
-<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-
-  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
 </pre></div>
 </div>
 </div>
@@ -573,17 +574,17 @@
 <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">1000</span>
 
 <span class="c1"># Generate x_1 and x_2 as a random walk</span>
-<span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
+<span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
 <span class="n">x2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
 
 <span class="c1"># Coupling vector</span>
-<span class="n">coupling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">.8</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+<span class="n">coupling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
     <span class="n">n_samples</span> <span class="o">/</span> <span class="mi">10</span>
 <span class="p">)</span>
 
 <span class="c1"># Update x_2 so it is influenced by x_1 according to the coupling vector</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
-    <span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">coupling</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">x1</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mf">.1</span><span class="p">)</span>
+    <span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">coupling</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">x1</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">0.1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -625,7 +626,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/9cd4d92467d70c73234f1a96e3a80b8207058caf3c8ee695d046270e2571619e.png" src="../_images/9cd4d92467d70c73234f1a96e3a80b8207058caf3c8ee695d046270e2571619e.png" />
+<img alt="../_images/cbcfca113abaa5902ae818889b9c2f6d9bbaa81811c5dd28af0a247ee0e18772.png" src="../_images/cbcfca113abaa5902ae818889b9c2f6d9bbaa81811c5dd28af0a247ee0e18772.png" />
 </div>
 </div>
 </section>
@@ -668,13 +669,13 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot trajectories for each HGF</span>
-<span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+<span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/7cdbadd76542f2242630980fd183564b1c1e895d3c9c176330426c2bb7b00255.png" src="../_images/7cdbadd76542f2242630980fd183564b1c1e895d3c9c176330426c2bb7b00255.png" />
+<img alt="../_images/791aff31d4912fadd06dfcc4445c60036f4d98e344517a4a2a33e1ad94bddeda.png" src="../_images/791aff31d4912fadd06dfcc4445c60036f4d98e344517a4a2a33e1ad94bddeda.png" />
 </div>
 </div>
 </section>
@@ -834,6 +835,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
     <span class="n">causal_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
 
+
 <span class="n">causal_adjacency_list</span> <span class="o">=</span> <span class="n">CausalAdjacencyLists</span><span class="p">(</span>
     <span class="n">node_type</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">node_type</span><span class="p">,</span>
     <span class="n">value_parents</span><span class="o">=</span><span class="n">adjacency_list</span><span class="o">.</span><span class="n">value_parents</span><span class="p">,</span>
@@ -863,7 +865,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prediction_error</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">mu_2</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">mu_1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">var_1</span> <span class="o">+</span> <span class="n">var_2</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">mu_2</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">mu_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">var_1</span> <span class="o">+</span> <span class="n">var_2</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -871,12 +873,13 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_alpha</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">):</span>
-
     <span class="c1"># find root 1</span>
-    <span class="n">alpha_hat_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mu_1</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span> <span class="p">(</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu_1</span><span class="p">)</span>
+    <span class="n">alpha_hat_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mu_1</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu_1</span><span class="p">)</span>
 
     <span class="c1"># find root 2</span>
-    <span class="n">alpha_hat_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="p">(</span><span class="n">mu_1</span> <span class="o">*</span> <span class="n">var_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">var_1</span><span class="p">))</span>
+    <span class="n">alpha_hat_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="p">(</span><span class="n">mu_1</span> <span class="o">*</span> <span class="n">var_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">var_1</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="c1"># evaluate at 0, 1 and the two possible roots</span>
     <span class="n">candidates</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">alpha_hat_1</span><span class="p">,</span> <span class="n">alpha_hat_2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
@@ -884,7 +887,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 
     <span class="c1"># return prediction errors for all candidates</span>
     <span class="n">pe</span> <span class="o">=</span> <span class="n">prediction_error</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">)</span>
-    
+
     <span class="k">return</span> <span class="n">candidates</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">pe</span><span class="p">)]</span>
 </pre></div>
 </div>
@@ -926,17 +929,16 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
         <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">causal_children</span><span class="p">,</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;causal_coupling_children&quot;</span><span class="p">],</span>
     <span class="p">):</span>
-
         <span class="c1"># get children&#39;s expected mean and precision</span>
         <span class="n">child_expected_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
         <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
 
         <span class="c1"># get a new estimate of alpha</span>
         <span class="n">new_alpha</span> <span class="o">=</span> <span class="n">find_alpha</span><span class="p">(</span>
-            <span class="n">u</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">],</span> 
+            <span class="n">u</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">causal_child_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">],</span>
             <span class="n">mu_1</span><span class="o">=</span><span class="n">parent_expected_mean</span><span class="p">,</span>
-            <span class="n">mu_2</span><span class="o">=</span><span class="n">child_expected_mean</span><span class="p">,</span> 
-            <span class="n">var_1</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">parent_expected_precision</span><span class="p">,</span> 
+            <span class="n">mu_2</span><span class="o">=</span><span class="n">child_expected_mean</span><span class="p">,</span>
+            <span class="n">var_1</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">parent_expected_precision</span><span class="p">,</span>
             <span class="n">var_2</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">child_expected_precision</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1011,7 +1013,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/227cc593e2bac4bd513ee31075b994d04f26a36bb0f4dba14e07e8369f5f9963.png" src="../_images/227cc593e2bac4bd513ee31075b994d04f26a36bb0f4dba14e07e8369f5f9963.png" />
+<img alt="../_images/217b2b82c81d461869fa8b0cdb9a8b96afdea2ad9010a52f997c1e06706ebbf9.png" src="../_images/217b2b82c81d461869fa8b0cdb9a8b96afdea2ad9010a52f997c1e06706ebbf9.png" />
 </div>
 </div>
 </section>
@@ -1025,23 +1027,23 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.4.0
+IPython version      : 9.5.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
+IPython   : 9.5.0
+matplotlib: 3.10.6
 seaborn   : 0.13.2
-jax       : 0.4.31
-sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
 numpy     : 2.3.2
-IPython   : 9.4.0
 pyhgf     : 0.2.7
-matplotlib: 3.10.5
+jax       : 0.4.31
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
 
 Watermark: 2.5.0
 </pre></div>

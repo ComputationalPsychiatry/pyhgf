@@ -37,6 +37,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -506,10 +507,10 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
-<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-
-  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
 </pre></div>
 </div>
 </div>
@@ -560,7 +561,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/bad246addcc01e654a32e94cfbe8c3403524cce5eb892cc1196dbbb48bba487d.png" src="../_images/bad246addcc01e654a32e94cfbe8c3403524cce5eb892cc1196dbbb48bba487d.png" />
+<img alt="../_images/0f09b649998bf7738f018e272cc10b621eafffcc3c87f52302f0c12580c5f49a.png" src="../_images/0f09b649998bf7738f018e272cc10b621eafffcc3c87f52302f0c12580c5f49a.png" />
 </div>
 </div>
 <p>Imagine that this behaviour constitutes a signal of a given underlying phenomenon. Now, we want to measure the same phenomenon with another instrument that above an arbitrary threshold <span class="math notranslate nohighlight">\(a\)</span> can track the signal <span class="math notranslate nohighlight">\(u_2\)</span>, but below that threshold just gives us some noise. This measurement <span class="math notranslate nohighlight">\(u_1\)</span> is supposed to be also noisier than the underlying signal.</p>
@@ -586,7 +587,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/b5f988cf19828bf01b650cf8af31e8a80ea4e19ba5fa83c5f16e6b4afa600ff1.png" src="../_images/b5f988cf19828bf01b650cf8af31e8a80ea4e19ba5fa83c5f16e6b4afa600ff1.png" />
+<img alt="../_images/b5ca6b3816b129d19ca29c683a106fcc5ee0ccfea33c3b8095eddd138b3d05d7.png" src="../_images/b5ca6b3816b129d19ca29c683a106fcc5ee0ccfea33c3b8095eddd138b3d05d7.png" />
 </div>
 </div>
 <p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Rectifier_(neural_networks)">ReLU (rectified linear unit) activation function</a> is commonly used in artificial neural networks and is defined as the non-negative part of its argument:</p>
@@ -696,7 +697,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/6c582f21124e83e24c48661b2146f5a5f99ab9a73d34fdcd54e6bfbd0a1fd471.png" src="../_images/6c582f21124e83e24c48661b2146f5a5f99ab9a73d34fdcd54e6bfbd0a1fd471.png" />
+<img alt="../_images/5b833cbd43251c08352813426b56ac914b73da3162be3050744568c0b6802d86.png" src="../_images/5b833cbd43251c08352813426b56ac914b73da3162be3050744568c0b6802d86.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -713,7 +714,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/13aba5f33b12e801303c44502daf2e6d461a7ec69faa7ee1a69dd0460ad37c87.png" src="../_images/13aba5f33b12e801303c44502daf2e6d461a7ec69faa7ee1a69dd0460ad37c87.png" />
+<img alt="../_images/afdd983ce3fe20468339b3638bc0d5271817d2c011193ed5806bc9d271fa759a.png" src="../_images/afdd983ce3fe20468339b3638bc0d5271817d2c011193ed5806bc9d271fa759a.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -747,7 +748,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/a9c672e68657eb6e8b38ba89232ef11ff77286105a47719571707a4f5eb658a3.png" src="../_images/a9c672e68657eb6e8b38ba89232ef11ff77286105a47719571707a4f5eb658a3.png" />
+<img alt="../_images/3d444f5f7eb7e811440978921e97e3c0fab01d616578e3f952ba3618fd55f4e2.png" src="../_images/3d444f5f7eb7e811440978921e97e3c0fab01d616578e3f952ba3618fd55f4e2.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -810,7 +811,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8a6f6a2d7bbba8f903a9509310a38b259831b5bfe8ffff9d6545b9fc09243626.png" src="../_images/8a6f6a2d7bbba8f903a9509310a38b259831b5bfe8ffff9d6545b9fc09243626.png" />
+<img alt="../_images/90f5133a1d117570d5b578a91b3afad1eabcb9c9322cca6ccac4cb35125295fe.png" src="../_images/90f5133a1d117570d5b578a91b3afad1eabcb9c9322cca6ccac4cb35125295fe.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -845,7 +846,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/e84f48d5ef192744a4a1962b45648c4e42c4225e0962f460d8936524b3e9187b.png" src="../_images/e84f48d5ef192744a4a1962b45648c4e42c4225e0962f460d8936524b3e9187b.png" />
+<img alt="../_images/d8b3afd8cf4c41de5146079f70288693334e9f04e4e47ab8bff75b00da1b7c9e.png" src="../_images/d8b3afd8cf4c41de5146079f70288693334e9f04e4e47ab8bff75b00da1b7c9e.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -863,9 +864,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sinusoid_nonlinear_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">precision</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">std</span><span class="o">**</span><span class="mi">2</span>
-    <span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># x1 - node 1</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -898,7 +897,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8c895210230579e43cb466b3e5b6f5367339a6ef4773125fab3599eedd20014e.png" src="../_images/8c895210230579e43cb466b3e5b6f5367339a6ef4773125fab3599eedd20014e.png" />
+<img alt="../_images/33d7e29661c7542169a9e0ced66058ab20689ab3935bd18fceae58d263ab14b9.png" src="../_images/33d7e29661c7542169a9e0ced66058ab20689ab3935bd18fceae58d263ab14b9.png" />
 </div>
 </div>
 </section>
@@ -924,9 +923,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sinusoid_nonlinear_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">precision</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">std</span><span class="o">**</span><span class="mi">2</span>
-    <span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># x1 - node 1</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">,)</span>
@@ -958,7 +955,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/17710925a14ecd1939300ae92322b70052786372014f5c909a71753e9c720c25.png" src="../_images/17710925a14ecd1939300ae92322b70052786372014f5c909a71753e9c720c25.png" />
+<img alt="../_images/09c714c44d9b6080f3fa9c828d84023d87aba5fb18236bf674b5e0637c41f550.png" src="../_images/09c714c44d9b6080f3fa9c828d84023d87aba5fb18236bf674b5e0637c41f550.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>
@@ -973,23 +970,23 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat Aug 23 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.4.0
+IPython version      : 9.5.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-matplotlib: 3.10.5
-sys       : 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
-seaborn   : 0.13.2
-IPython   : 9.4.0
-numpy     : 2.3.2
-pyhgf     : 0.2.7
 jax       : 0.4.31
+numpy     : 2.3.2
+IPython   : 9.5.0
+seaborn   : 0.13.2
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+matplotlib: 3.10.6
+pyhgf     : 0.2.7
 
 Watermark: 2.5.0
 </pre></div>
