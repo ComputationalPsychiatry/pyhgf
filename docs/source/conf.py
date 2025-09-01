@@ -31,6 +31,9 @@ bibtex_default_style = "unsrt"
 
 # -- General configuration ---------------------------------------------------
 
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.

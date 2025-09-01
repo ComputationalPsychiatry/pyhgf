@@ -1,3 +1,7 @@
+```{eval-rst}
+:html_theme.sidebar_secondary.remove:
+```
+
 ```{toctree}
 :maxdepth: 2
 :hidden:
@@ -94,7 +98,7 @@ Planning and acting with predictive coding networks.
 ::::
 
 
-## The Hierarchical Gaussian Filter
+## The hierarchical Gaussian filter
 
 ::::{grid} 1 1 2 3
 :gutter: 1
@@ -145,15 +149,15 @@ How to adapt any model to specific behaviours and experimental design by using c
 :link-type: ref
 :img-top: ./images/multilevel-hgf.png
 
-How to use any model as a distribution to perform hierarchical inference at the group level.
+How to use any predictive coding network as a distribution to perform hierarchical inference.
 :::
 
-:::{grid-item-card} Parameter recovery, prior and posterior predictive sampling
+:::{grid-item-card} Parameter recovery
 :link: parameters_recovery
 :link-type: ref
 :img-top: ./images/parameter_recovery.png
 
-Recovering parameters from the generative model and using the sampling functionalities to estimate prior and posterior uncertainties.
+Recovering parameters from a known generative model.
 :::
 
 :::{grid-item-card} Non-linear value coupling
