@@ -46,7 +46,7 @@ extensions = [
     "myst_nb",
     "sphinx_design",
     "sphinxcontrib.bibtex",
-    'sphinxcontrib.mermaid',
+    "sphinxcontrib.mermaid",
     "sphinx_togglebutton",
     "sphinx_exercise",
     "sphinx_proof",

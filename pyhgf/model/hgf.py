@@ -19,7 +19,7 @@ class HGF(Network):
     Attributes
     ----------
     model_type :
-        The model implemented (can be `"continuous"`, `"binary"` or `"custom"`).
+        The model implemented (can be `"continuous"` or `"binary"`).
     n_levels :
         The number of hierarchies in the model, including the input vector. It cannot be
         less than 2.
