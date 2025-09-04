@@ -1,15 +1,15 @@
 use crate::model::Network;
-use crate::math::sufficient_statistics;
 
 /// Updating an exponential family state node
 /// 
 /// # Arguments
 /// * `network` - The main network containing the node.
 /// * `node_idx` - The node index.
+/// * `sufficient_statistics` - A function computing the sufficient statistics of an exponential family distribution.
 /// 
 /// # Returns
 /// * `network` - The network after message passing.
-pub fn prediction_error_exponential_state_node(network: &mut Network, node_idx: usize) {
+pub fn prediction_error_exponential_state_node(network: &mut Network, node_idx: usize, sufficient_statistics: fn(&f64) -> Vec<f64>) {
 
     let floats_attributes = network.attributes.floats.get_mut(&node_idx).expect("No floats attributes");
     let vectors_attributes = network.attributes.vectors.get_mut(&node_idx).expect("No vector attributes");
