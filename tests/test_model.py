@@ -7,6 +7,7 @@ from pytest import raises
 from pyhgf import load_data
 from pyhgf.model import HGF, Network
 from pyhgf.response import total_gaussian_surprise
+from pyhgf.typing import UpdateSequence
 
 
 def test_network():
@@ -191,12 +192,11 @@ def test_custom_sequence():
     )
 
     # create a custom update series
-    update_sequence1 = three_level_binary_hgf.update_sequence
-    update_sequence2 = update_sequence1[:2]
+    update_sequence1: UpdateSequence = three_level_binary_hgf.update_sequence
+    update_sequence2: UpdateSequence = three_level_binary_hgf.update_sequence
     update_branches = (update_sequence1, update_sequence2)
     branches_idx = np.random.binomial(n=1, p=0.5, size=len(u))
 
-    three_level_binary_hgf.inpu_dim = []
     three_level_binary_hgf.scan_fn = None
     three_level_binary_hgf.input_custom_sequence(
         update_branches=update_branches,

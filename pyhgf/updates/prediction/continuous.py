@@ -22,16 +22,16 @@ def predict_mean(
 
         \hat{\mu}_a^{(k)} = \lambda_a \mu_a^{(k-1)} + P_a^{(k)}
 
-    where :math:`P_a^{(k)}` is the drift rate (the total predicted drift of the mean,
-    which sums the tonic and - optionally - phasic drifts). The variable
+    where :math:`P_a^{(k)}` is the drift rate (the total predicted drift of the expected
+    mean, which sums the tonic and - optionally - phasic drifts). The variable
     :math:`lambda_a` represents the state's autoconnection strength, with
-    :math:`\lambda_a \in [0, 1]`. When :math:`lambda_a = 1`, the node is performing a
-    Gaussian Random Walk using the value :math:` P_a^{(k)}` as total drift rate. When
+    :math:`\lambda_a \in [0, 1]`. When :math:`\lambda_a = 1`, the node is performing a
+    Gaussian Random Walk using the value :math:`P_a^{(k)}` as total drift rate. When
     :math:`\lambda_a < 1`, the state will revert back to the total mean :math:`M_a`,
     which is given by:
 
     .. math::
-            M_a = \frac{\rho_a + f\left(x_b^{(k)}\right)} {1-\lambda_a},
+            M_a = \frac{\rho_a + f\left(\hat{\mu}_b^{(k)}\right)} {1-\lambda_a},
 
     If :math:`\lambda_a = 0`, the node is not influenced by its own mean anymore, but
     by the value received by the value parent.
@@ -86,9 +86,11 @@ def predict_mean(
             child_position = edges[value_parent_idx].value_children.index(node_idx)
             coupling_fn = edges[value_parent_idx].coupling_fn[child_position]
             if coupling_fn is None:
-                parent_value = attributes[value_parent_idx]["mean"]
+                parent_value = attributes[value_parent_idx]["expected_mean"]
             else:
-                parent_value = coupling_fn(attributes[value_parent_idx]["mean"])
+                parent_value = coupling_fn(
+                    attributes[value_parent_idx]["expected_mean"]
+                )
 
             driftrate += psi * parent_value
 
@@ -204,11 +206,13 @@ def continuous_node_prediction(
     ----------
     attributes :
         The attributes of the probabilistic nodes.
+
     .. note::
         The parameter structure also incorporates the value and volatility coupling
         strength with children and parents (i.e. `"value_coupling_parents"`,
         `"value_coupling_children"`, `"volatility_coupling_parents"`,
         `"volatility_coupling_children"`).
+
     node_idx :
         Pointer to the node that will be updated.
     edges :

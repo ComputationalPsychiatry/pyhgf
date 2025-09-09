@@ -1,6 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from typing import Callable, NamedTuple, Optional, Union
+from jaxlib.xla_extension import PjitFunction
 
 
 class AdjacencyLists(NamedTuple):
@@ -34,8 +35,26 @@ Attributes = dict[Union[int, str], dict]
 Edges = tuple[AdjacencyLists, ...]
 
 # the update sequence
-Sequence = tuple[tuple[int, Callable[..., Attributes]], ...]
-UpdateSequence = tuple[Sequence, Sequence]
+Sequence = tuple[tuple[int, PjitFunction], ...]
+
+
+class UpdateSequence(NamedTuple):
+    """Set of update functions to apply to the network."""
+
+    prediction_steps: Sequence
+    update_steps: Sequence
+    pre_prediction_steps: Optional[Sequence] = None
+    post_update_steps: Optional[Sequence] = None
+    action_steps: Optional[Sequence] = None
+
+
+class LearningSequence(NamedTuple):
+    """Set of update functions to apply to the network."""
+
+    prediction_steps: Sequence
+    update_steps: Sequence
+    learning_steps: Sequence
+
 
 # a fully defined network
 NetworkParameters = tuple[Attributes, Edges, UpdateSequence]

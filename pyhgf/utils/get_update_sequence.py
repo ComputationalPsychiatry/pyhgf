@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from jax.tree_util import Partial
 
-from pyhgf.typing import Sequence
 from pyhgf.updates.posterior.categorical import categorical_state_update
 from pyhgf.updates.posterior.continuous import (
     continuous_node_posterior_update,
@@ -27,14 +26,13 @@ from pyhgf.updates.prediction_error.exponential import (
     prediction_error_update_exponential_family_dynamic,
     prediction_error_update_exponential_family_fixed,
 )
+from pyhgf.typing import UpdateSequence
 
 if TYPE_CHECKING:
     from pyhgf.model import Network
 
 
-def get_update_sequence(
-    network: "Network", update_type: str
-) -> tuple[Sequence, Sequence]:
+def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
     """Generate an update sequence from the network's structure.
 
     This function return an optimized update sequence considering the edges of the
@@ -272,4 +270,8 @@ def get_update_sequence(
                 update_sequence.remove(step)
                 update_sequence.append(step)
 
-    return tuple(prediction_sequence), tuple(update_sequence)
+    return UpdateSequence(
+        prediction_steps=tuple(prediction_sequence),
+        update_steps=tuple(update_sequence),
+        action_steps=network.action_steps,
+    )

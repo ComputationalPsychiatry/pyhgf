@@ -9,6 +9,8 @@ from .remove_node import remove_node
 from .sample import sample
 from .sample_node_distribution import sample_node_distribution
 from .to_pandas import to_pandas
+from .learning import learning
+from .set_coupling import set_coupling
 
 __all__ = [
     "add_edges",
@@ -22,4 +24,6 @@ __all__ = [
     "remove_node",
     "sample_node_distribution",
     "sample",
+    "learning",
+    "set_coupling",
 ]

@@ -3,7 +3,6 @@
 
 
 from functools import partial
-from typing import Callable, Optional
 
 from jax import jit
 from jax.typing import ArrayLike
@@ -20,7 +19,6 @@ from pyhgf.utils.sample_node_distribution import sample_node_distribution
         "edges",
         "input_idxs",
         "observations",
-        "action_fn",
     ),
 )
 def beliefs_propagation(
@@ -30,7 +28,6 @@ def beliefs_propagation(
     edges: Edges,
     input_idxs: tuple[int],
     observations: str = "external",
-    action_fn: Optional[Callable[[Attributes, tuple], tuple[Attributes, tuple]]] = None,
 ) -> tuple[dict, dict]:
     """Update the networks parameters after observing new data point(s).
 
@@ -65,11 +62,6 @@ def beliefs_propagation(
         `"external"` (default) when new observation are provided, `"generative"` - in
         which case the network sample observation from its own predictive distribution,
         or `"deprived"` so no observation are provided.
-    action_fn :
-        Optional. When provided, can implement action, decisions or transformation in
-        the environment. The function should receive and return the attributes of the
-        network and the inputs. This function is called after prediction and before
-        observation.
 
     Returns
     -------
@@ -77,8 +69,6 @@ def beliefs_propagation(
         A tuple of parameters structure (carryover and accumulated).
 
     """
-    prediction_steps, update_steps = update_sequence
-
     # when observations is "generative", only time_step is provided
     # and the other variables are None
     values_tuple, observed_tuple, time_step, rng_key = inputs
@@ -86,16 +76,31 @@ def beliefs_propagation(
     # Assign the time_step (or input data) to the attributes.
     attributes[-1]["time_step"] = time_step
 
+    # (Optional) Pre-prediction updates ------------------------------------------------
+    # ----------------------------------------------------------------------------------
+    if update_sequence.pre_prediction_steps is not None:
+        for node_idx, update_fn in update_sequence.pre_prediction_steps:
+            attributes = update_fn(
+                attributes=attributes,
+                node_idx=node_idx,
+                edges=edges,
+                values_tuple=values_tuple,
+            )
+
     # 1. Prediction sequence -----------------------------------------------------------
     # ----------------------------------------------------------------------------------
-    for node_idx, update_fn in prediction_steps:
+    for node_idx, update_fn in update_sequence.prediction_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
     # act on the environment before observation
-    if action_fn:
-        # Call the action function if provided -
-        # this function can transform attributes and inputs before the observation step
-        attributes, inputs = action_fn(attributes, inputs)
+    if update_sequence.action_steps is not None:
+        for node_idx, update_fn in update_sequence.action_steps:
+            # Call the action function if provided -
+            # this function can transform attributes and inputs
+            # before the observation step
+            attributes, inputs = update_fn(
+                attributes=attributes, inputs=inputs, node_idx=node_idx
+            )
         values_tuple, observed_tuple, time_step, rng_key = (
             inputs  # overwrite the inputs
         )
@@ -136,10 +141,18 @@ def beliefs_propagation(
         # return an empty dictionary and crash the scan iteration
         attributes = {}
 
-    # 3. Update sequence (common for both modes) ---------------------------------------
+    # 3. Update sequence ---------------------------------------------------------------
     # ----------------------------------------------------------------------------------
-    for node_idx, update_fn in update_steps:
+    for node_idx, update_fn in update_sequence.update_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
+
+    # (Optional) Post-update sequence --------------------------------------------------
+    # ----------------------------------------------------------------------------------
+    if update_sequence.post_update_steps is not None:
+        for node_idx, update_fn in update_sequence.post_update_steps:
+            attributes = update_fn(
+                attributes=attributes, node_idx=node_idx, edges=edges
+            )
 
     return (
         attributes,

@@ -19,15 +19,24 @@ from pyhgf.model import (
     get_couplings,
 )
 from pyhgf.plots import graphviz, matplotlib, networkx
-from pyhgf.typing import Attributes, Edges, NetworkParameters, UpdateSequence
+from pyhgf.typing import (
+    Attributes,
+    Sequence,
+    Edges,
+    NetworkParameters,
+    UpdateSequence,
+    LearningSequence,
+)
 from pyhgf.utils import (
     add_edges,
     beliefs_propagation,
     get_input_idxs,
     get_update_sequence,
     to_pandas,
+    sample,
+    learning,
 )
-from pyhgf.utils.sample import sample
+from pyhgf.updates.learning import learning_weights
 
 
 class Network:
@@ -87,9 +96,7 @@ class Network:
         self.scan_fn_sample: Optional[Callable] = None
         self.additional_parameters: dict = {}
         self.input_dim: list = []
-        self.action_fn: Optional[
-            Callable[[Attributes, tuple], tuple[Attributes, tuple]]
-        ] = None
+        self.action_steps: Optional[Sequence] = None
         self.last_attributes: Optional[Attributes] = None
         self.update_type = update_type
 
@@ -98,16 +105,21 @@ class Network:
         """Idexes of state nodes that can observe new data points by default."""
         input_idxs = get_input_idxs(self.edges)
 
+        # check if the input indexes have been set manually
+        if hasattr(self, "_input_idxs") and self._input_idxs is not None:
+            return self._input_idxs
+
         # set the autoconnection strength and tonic volatility to 0
         for idx in input_idxs:
             if self.edges[idx].node_type == 2:
                 self.attributes[idx]["autoconnection_strength"] = 0.0
                 self.attributes[idx]["tonic_volatility"] = 0.0
+
         return input_idxs
 
     @input_idxs.setter
     def input_idxs(self, value):
-        self.input_idxs = value
+        self._input_idxs = value
 
     def create_belief_propagation_fn(
         self,
@@ -148,7 +160,6 @@ class Network:
                 update_sequence=self.update_sequence,
                 edges=self.edges,
                 input_idxs=self.input_idxs,
-                action_fn=self.action_fn,
             )
 
         # Create the generative scan function if it doesn't exist, and if requested.
@@ -159,8 +170,133 @@ class Network:
                 edges=self.edges,
                 input_idxs=self.input_idxs,
                 observations="generative",
-                action_fn=self.action_fn,
             )
+
+        return self
+
+    def create_learning_propagation_fn(
+        self,
+        inputs_x_idxs: tuple[int],
+        inputs_y_idxs: tuple[int],
+        overwrite: bool = True,
+    ) -> "Network":
+        """Create the belief propagation function.
+
+        .. note:
+           This step is called by default when using py:meth:`input_data`.
+
+        Parameters
+        ----------
+        inputs_x_idxs :
+            The indexes of the nodes receiving the predictors (x).
+        inputs_y_idxs :
+            The indexes of the nodes receiving the predictions (y).
+        overwrite :
+            If `True` (default), create a new belief propagation function and ignore
+            preexisting values. Otherwise, do not create a new function if the attribute
+            `scan_fn` is already defined.
+
+        """
+        # get the dimension of the input nodes
+        if not self.input_dim:
+            self.get_input_dimension()
+
+        # create the update sequence if it does not already exist
+        if self.update_sequence is None:
+            self.update_sequence = get_update_sequence(
+                network=self, update_type=self.update_type
+            )
+        # create the learning sequence
+        # all nodes except the prediction nodes should update their coupling strengths
+        learning_steps = [
+            (node_idx, learning_weights)
+            for node_idx, _ in self.update_sequence.prediction_steps
+            if node_idx not in inputs_x_idxs
+        ]
+
+        # do not update the last layer
+        update_steps = tuple(
+            [
+                step
+                for step in self.update_sequence.update_steps
+                if step[0] not in inputs_x_idxs
+            ]
+        )
+        # do not predict on the last layer
+        prediction_steps = tuple(
+            [
+                step
+                for step in self.update_sequence.prediction_steps
+                if step[0] not in inputs_x_idxs
+            ]
+        )
+
+        self.learning_sequence = LearningSequence(
+            prediction_steps=prediction_steps,
+            update_steps=update_steps,
+            learning_steps=tuple(learning_steps),  # type: ignore
+        )
+
+        # create the learning propagation function
+        # this function is used by scan to loop over predictors (x) and predictions (y)
+        if (self.scan_fn is None) or overwrite:
+            self.scan_fn = Partial(
+                learning,
+                learning_sequence=self.learning_sequence,
+                edges=self.edges,
+                inputs_x_idxs=inputs_x_idxs,
+                inputs_y_idxs=inputs_y_idxs,
+            )
+
+        return self
+
+    def train(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        inputs_x_idxs: tuple[int],
+        inputs_y_idxs: tuple[int],
+    ):
+        """Add new observations.
+
+        Parameters
+        ----------
+        x :
+            A tuple of n arrays containing the new predictors (x). Predictors values are
+            set to the obervation nodes defined by `inputs_x_idxs` before the prediction
+            steps.
+        y :
+            A tuple of n arrays containing the resulting predictions (y). Predictions
+            are observed in the observation steps in the nodes defined by
+            `inputs_y_idxs`.
+        inputs_x_idxs :
+            The indexes of the nodes receiving the predictors (x).
+        inputs_y_idxs :
+            The indexes of the nodes receiving the predictions (y).
+
+        """
+        if x.ndim == 1:
+            x = x[:, jnp.newaxis]
+        if y.ndim == 1:
+            y = y[:, jnp.newaxis]
+
+        # generate the belief propagation function
+        if self.scan_fn is None:
+            self = self.create_learning_propagation_fn(
+                inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs
+            )
+
+        # wrap the inputs
+        inputs = x, y
+
+        # this is where the model loops over the whole input time series
+        # at each time point, the node structure is traversed and beliefs are updated
+        # using precision-weighted prediction errors
+        last_attributes, node_trajectories = scan(self.scan_fn, self.attributes, inputs)
+
+        # belief trajectories
+        self.node_trajectories = node_trajectories
+        self.last_attributes = last_attributes
 
         return self
 
@@ -281,7 +417,7 @@ class Network:
     def input_custom_sequence(
         self,
         update_branches: tuple[UpdateSequence],
-        branches_idx: np.array,
+        branches_idx: np.ndarray,
         input_data: np.ndarray,
         time_steps: Optional[np.ndarray] = None,
         observed: Optional[tuple[np.ndarray, ...]] = None,
