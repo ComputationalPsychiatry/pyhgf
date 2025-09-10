@@ -6,7 +6,6 @@ from jax import jit
 from jax.typing import ArrayLike
 from pyhgf.typing import Attributes, Edges, LearningSequence
 from pyhgf.updates.observation import set_predictors, set_observation
-import jax
 
 
 @partial(
@@ -79,13 +78,11 @@ def learning(
             node_idx=node_idx,
             values=values.squeeze(),
         )
-    jax.debug.print("🤯 {x} 🤯", x=attributes[3]["expected_mean"])
 
     # 2. Prediction sequence -----------------------------------------------------------
     # ----------------------------------------------------------------------------------
     for node_idx, update_fn in learning_sequence.prediction_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
-    jax.debug.print("🤯 {x} 🤯", x=attributes[3]["expected_mean"])
 
     # 3. Receive new observations ------------------------------------------------------
     # ----------------------------------------------------------------------------------
@@ -98,19 +95,16 @@ def learning(
             values=values.squeeze(),
             observed=1,
         )
-    jax.debug.print("🤯 {x} 🤯", x=attributes[3]["expected_mean"])
 
     # 4. Update sequence ---------------------------------------------------------------
     # ----------------------------------------------------------------------------------
     for node_idx, update_fn in learning_sequence.update_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
-    jax.debug.print("🤯 {x} 🤯", x=attributes[3]["expected_mean"])
 
     # 5. Learning sequence -------------------------------------------------------------
     # ----------------------------------------------------------------------------------
     for node_idx, update_fn in learning_sequence.learning_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
-    jax.debug.print("🤯 {x} 🤯", x=attributes[3]["expected_mean"])
 
     return (
         attributes,
