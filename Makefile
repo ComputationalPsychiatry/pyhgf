@@ -9,7 +9,7 @@ install-dev:
 test:
 	uv run pytest
 
-setup-jupyter-lab:
+jupyter-lab:
 	uv run ipython kernel install --user --env VIRTUAL_ENV $(pwd)/.venv --name=pyhgf
 	uv run --with jupyter jupyter lab
 

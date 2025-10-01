@@ -60,7 +60,9 @@ dev-dependencies = [
     "sphinx-proof>=0.2.1",
     "sphinxcontrib-mermaid>=1.0.0",
     "treescope>=0.1.9",
-    "nbconvert>=7.16.6"
+    "nbconvert>=7.16.6",
+    "jupyterlab_myst>=2.4.2",
+    "pre-commit>=4.3.0"
 ]
 
 [build-system]
