@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pytest
 from jax.random import PRNGKey
 from pytest import raises
-
+import numpy as np
 from pyhgf import load_data
 from pyhgf.model import Network
 from pyhgf.typing import AdjacencyLists, UpdateSequence
@@ -207,13 +207,18 @@ def test_belief_propagation():
             observations="error",
         )
 
-    # with an action function
+    # with a custom functions
     def action_fn(node_idx, attributes, inputs):
         return attributes, inputs
+
+    def update_fn(node_idx, attributes, edges, **args):
+        return attributes
 
     update_sequence = UpdateSequence(
         prediction_steps=update_sequence.prediction_steps,
         update_steps=update_sequence.update_steps,
+        pre_prediction_steps=((0, update_fn),),
+        post_update_steps=((0, update_fn),),
         action_steps=((0, action_fn),),
     )
 
@@ -224,6 +229,34 @@ def test_belief_propagation():
         edges=edges,
         input_idxs=(0, 1),
         observations="external",
+    )
+
+
+def test_learning():
+    """Test the learning method for deep networks."""
+    # here x represents the visual input (River / No River)
+    x = np.array([1.0, 1.0])
+    x += np.random.normal(size=x.shape) / 100
+
+    # y represents the auditory and olfactory stimuli
+    y = np.array([[1.0, 1.0], [1.0, 0.0]]).T
+
+    network = (
+        Network(update_type="unbounded")
+        .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
+        .add_nodes(
+            value_children=[0, 1],
+            autoconnection_strength=0,
+            coupling_fn=(jnp.tanh, jnp.tanh),
+        )
+        .add_nodes(value_children=2, autoconnection_strength=0, coupling_fn=(jnp.tanh,))
+    )
+
+    network.train(
+        x=x,
+        y=y,
+        inputs_x_idxs=(3,),
+        inputs_y_idxs=(0, 1),
     )
 
 
