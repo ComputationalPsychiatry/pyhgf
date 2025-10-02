@@ -454,7 +454,7 @@ window.addEventListener("load", () => mermaid.run());
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the parameters of an exponential family distribution.</span>
 
 <span class="sd">    Assuming that :math:`nu` is fixed, updating the hyperparameters of the distribution</span>
-<span class="sd">    is given by:</span>
+<span class="sd">    is given by [1]_ as:</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        \xi \leftarrow \xi + \frac{1}{\nu + 1}(t(x)-\xi)</span>
@@ -513,7 +513,7 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">    fixed, the node convert the new observation into sufficient statistics and pass the</span>
 <span class="sd">    values to the implied continuous nodes. The new values for the vector :math:`nu`</span>
 <span class="sd">    are recovered in another posterior update, by observing the learning rate in the</span>
-<span class="sd">    continuous nodes, usually at the end of the sequence.</span>
+<span class="sd">    continuous nodes, usually at the end of the sequence. See [1]_ for more details.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

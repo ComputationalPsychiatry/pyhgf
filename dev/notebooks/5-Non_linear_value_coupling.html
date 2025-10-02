@@ -392,6 +392,8 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
 <ul class="nav bd-sidenav">
@@ -697,7 +699,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/5b833cbd43251c08352813426b56ac914b73da3162be3050744568c0b6802d86.png" src="../_images/5b833cbd43251c08352813426b56ac914b73da3162be3050744568c0b6802d86.png" />
+<img alt="../_images/65ff0341485848339fb1ced2b89059b190d7d9a59785b0017a1bc8c5bde53a5a.png" src="../_images/65ff0341485848339fb1ced2b89059b190d7d9a59785b0017a1bc8c5bde53a5a.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -714,7 +716,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/afdd983ce3fe20468339b3638bc0d5271817d2c011193ed5806bc9d271fa759a.png" src="../_images/afdd983ce3fe20468339b3638bc0d5271817d2c011193ed5806bc9d271fa759a.png" />
+<img alt="../_images/1a84fe3c9b6d5b23bf0a55e0463d36535df22f6056e6f9b4cac039166916ea23.png" src="../_images/1a84fe3c9b6d5b23bf0a55e0463d36535df22f6056e6f9b4cac039166916ea23.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -748,7 +750,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/3d444f5f7eb7e811440978921e97e3c0fab01d616578e3f952ba3618fd55f4e2.png" src="../_images/3d444f5f7eb7e811440978921e97e3c0fab01d616578e3f952ba3618fd55f4e2.png" />
+<img alt="../_images/1beda4ea0feb790ad46d4bd698fe05533e8283a0752ab99d4e92d54741807a30.png" src="../_images/1beda4ea0feb790ad46d4bd698fe05533e8283a0752ab99d4e92d54741807a30.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -811,7 +813,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/90f5133a1d117570d5b578a91b3afad1eabcb9c9322cca6ccac4cb35125295fe.png" src="../_images/90f5133a1d117570d5b578a91b3afad1eabcb9c9322cca6ccac4cb35125295fe.png" />
+<img alt="../_images/96fcb5b1843cf4a3a256e865c01d734a4f74ebe6acfb9c611ea554d654b74daa.png" src="../_images/96fcb5b1843cf4a3a256e865c01d734a4f74ebe6acfb9c611ea554d654b74daa.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -846,7 +848,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/d8b3afd8cf4c41de5146079f70288693334e9f04e4e47ab8bff75b00da1b7c9e.png" src="../_images/d8b3afd8cf4c41de5146079f70288693334e9f04e4e47ab8bff75b00da1b7c9e.png" />
+<img alt="../_images/a793d7f1b48cdaf083fd46a78abf773375ddd5500a9d84daf5714409a409b838.png" src="../_images/a793d7f1b48cdaf083fd46a78abf773375ddd5500a9d84daf5714409a409b838.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -897,7 +899,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/33d7e29661c7542169a9e0ced66058ab20689ab3935bd18fceae58d263ab14b9.png" src="../_images/33d7e29661c7542169a9e0ced66058ab20689ab3935bd18fceae58d263ab14b9.png" />
+<img alt="../_images/93e855aa4befbdab4ee446d3e571fc63e48b8002e86ffaf3370e4fe04f09cef1.png" src="../_images/93e855aa4befbdab4ee446d3e571fc63e48b8002e86ffaf3370e4fe04f09cef1.png" />
 </div>
 </div>
 </section>
@@ -955,7 +957,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/09c714c44d9b6080f3fa9c828d84023d87aba5fb18236bf674b5e0637c41f550.png" src="../_images/09c714c44d9b6080f3fa9c828d84023d87aba5fb18236bf674b5e0637c41f550.png" />
+<img alt="../_images/c251549a034326a50e90f9995c4e9f4282e59ad6752496ae4a54c6be1829e207.png" src="../_images/c251549a034326a50e90f9995c4e9f4282e59ad6752496ae4a54c6be1829e207.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>
@@ -970,23 +972,23 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Oct 02 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.5.0
+IPython version      : 9.6.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-jax       : 0.4.31
-numpy     : 2.3.2
-IPython   : 9.5.0
-seaborn   : 0.13.2
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-matplotlib: 3.10.6
 pyhgf     : 0.2.7
+jax       : 0.4.31
+matplotlib: 3.10.6
+numpy     : 2.3.3
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+seaborn   : 0.13.2
+IPython   : 9.6.0
 
 Watermark: 2.5.0
 </pre></div>

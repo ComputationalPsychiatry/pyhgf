@@ -291,16 +291,19 @@ Utilities for manipulating neural networks.
 .. autosummary::
    :toctree: generated/pyhgf.utils
 
-   beliefs_propagation
-   list_branches
-   fill_categorical_state_node
-   get_update_sequence
-   to_pandas
    add_edges
-   get_input_idxs
    add_parent
+   beliefs_propagation
+   fill_categorical_state_node
+   get_input_idxs
+   get_update_sequence
+   learning
+   list_branches
    remove_node
+   sample_node_distribution
    sample
+   set_coupling
+   to_pandas
 
 Math
 ****

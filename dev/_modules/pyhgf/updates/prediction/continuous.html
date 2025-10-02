@@ -454,22 +454,22 @@ window.addEventListener("load", () => mermaid.run());
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the expected mean of a continuous state node.</span>
 
 <span class="sd">    The expected mean at time :math:`k` for a state node :math:`a` with optional value</span>
-<span class="sd">    parent(s) :math:`b` is given by:</span>
+<span class="sd">    parent(s) :math:`b` is in [1]_ given by:</span>
 
 <span class="sd">    .. math::</span>
 
 <span class="sd">        \hat{\mu}_a^{(k)} = \lambda_a \mu_a^{(k-1)} + P_a^{(k)}</span>
 
-<span class="sd">    where :math:`P_a^{(k)}` is the drift rate (the total predicted drift of the mean,</span>
-<span class="sd">    which sums the tonic and - optionally - phasic drifts). The variable</span>
+<span class="sd">    where :math:`P_a^{(k)}` is the drift rate (the total predicted drift of the expected</span>
+<span class="sd">    mean, which sums the tonic and - optionally - phasic drifts). The variable</span>
 <span class="sd">    :math:`lambda_a` represents the state&#39;s autoconnection strength, with</span>
-<span class="sd">    :math:`\lambda_a \in [0, 1]`. When :math:`lambda_a = 1`, the node is performing a</span>
-<span class="sd">    Gaussian Random Walk using the value :math:` P_a^{(k)}` as total drift rate. When</span>
+<span class="sd">    :math:`\lambda_a \in [0, 1]`. When :math:`\lambda_a = 1`, the node is performing a</span>
+<span class="sd">    Gaussian Random Walk using the value :math:`P_a^{(k)}` as total drift rate. When</span>
 <span class="sd">    :math:`\lambda_a &lt; 1`, the state will revert back to the total mean :math:`M_a`,</span>
 <span class="sd">    which is given by:</span>
 
 <span class="sd">    .. math::</span>
-<span class="sd">            M_a = \frac{\rho_a + f\left(x_b^{(k)}\right)} {1-\lambda_a},</span>
+<span class="sd">            M_a = \frac{\rho_a + f\left(\hat{\mu}_b^{(k)}\right)} {1-\lambda_a},</span>
 
 <span class="sd">    If :math:`\lambda_a = 0`, the node is not influenced by its own mean anymore, but</span>
 <span class="sd">    by the value received by the value parent.</span>
@@ -524,9 +524,11 @@ window.addEventListener("load", () => mermaid.run());
             <span class="n">child_position</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">node_idx</span><span class="p">)</span>
             <span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">[</span><span class="n">child_position</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span>
+                    <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
 
             <span class="n">driftrate</span> <span class="o">+=</span> <span class="n">psi</span> <span class="o">*</span> <span class="n">parent_value</span>
 
@@ -545,7 +547,8 @@ window.addEventListener("load", () => mermaid.run());
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the expected precision of a continuous state node.</span>
 
-<span class="sd">    The expected precision at time :math:`k` for a state node :math:`a` is given by:</span>
+<span class="sd">    The expected precision at time :math:`k` for a state node :math:`a` is given by</span>
+<span class="sd">    [1]_:</span>
 
 <span class="sd">    .. math::</span>
 
@@ -642,17 +645,19 @@ window.addEventListener("load", () => mermaid.run());
 <span class="k">def</span><span class="w"> </span><span class="nf">continuous_node_prediction</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the expected mean and expected precision of a continuous node.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the expected mean and expected precision of a continuous node [1]_.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    attributes :</span>
 <span class="sd">        The attributes of the probabilistic nodes.</span>
+
 <span class="sd">    .. note::</span>
 <span class="sd">        The parameter structure also incorporates the value and volatility coupling</span>
 <span class="sd">        strength with children and parents (i.e. `&quot;value_coupling_parents&quot;`,</span>
 <span class="sd">        `&quot;value_coupling_children&quot;`, `&quot;volatility_coupling_parents&quot;`,</span>
 <span class="sd">        `&quot;volatility_coupling_children&quot;`).</span>
+
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the node that will be updated.</span>
 <span class="sd">    edges :</span>

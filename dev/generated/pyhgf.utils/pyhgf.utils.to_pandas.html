@@ -58,8 +58,8 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.utils.add_edges" href="pyhgf.utils.add_edges.html" />
-    <link rel="prev" title="pyhgf.utils.get_update_sequence" href="pyhgf.utils.get_update_sequence.html" />
+    <link rel="next" title="pyhgf.math.MultivariateNormal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html" />
+    <link rel="prev" title="pyhgf.utils.set_coupling" href="pyhgf.utils.set_coupling.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -475,16 +475,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
 </ul>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.to_pandas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.to_pandas</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -563,17 +566,14 @@
 <dd><p>Export the nodes trajectories and surprise as a Pandas data frame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt>trajectories_df</dt><dd><p>Pandas data frame with the time series of sufficient statistics and the
+<dd class="field-odd"><p>Pandas data frame with the time series of sufficient statistics and the
 surprise of each node in the structure.</p>
 </dd>
-</dl>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>trajectories_df</p>
 </dd>
-<dt class="field-even">Parameters<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>)</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>DataFrame</em></p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -591,20 +591,20 @@ surprise of each node in the structure.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyhgf.utils.get_update_sequence.html"
+       href="pyhgf.utils.set_coupling.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyhgf.utils.get_update_sequence</p>
+        <p class="prev-next-title">pyhgf.utils.set_coupling</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.utils.add_edges.html"
+       href="../pyhgf.math/pyhgf.math.MultivariateNormal.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.utils.add_edges</p>
+        <p class="prev-next-title">pyhgf.math.MultivariateNormal</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

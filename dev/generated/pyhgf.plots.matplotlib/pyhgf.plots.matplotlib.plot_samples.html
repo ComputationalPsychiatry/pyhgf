@@ -475,16 +475,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -565,34 +568,19 @@
 and overlays them on the plot. The figures should be passed to the <cite>axs</cite> argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>network</strong><span class="classifier">Network</span></dt><dd><p>Main Network instance.</p>
-</dd>
-<dt><strong>show_total_surprise</strong></dt><dd><p>If <cite>True</cite>, plot the sum of surprises across all nodes in the bottom panel.
-Defaults to <cite>False</cite>.</p>
-</dd>
-<dt><strong>figsize</strong><span class="classifier">tuple of int, default (18, 9)</span></dt><dd><p>Figure size.</p>
-</dd>
-<dt><strong>axs</strong><span class="classifier">list or Axes, optional</span></dt><dd><p>Axes on which to plot. A new figure is created if None.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>Axes</dt><dd><p>Matplotlib axes used for plotting.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>)</p></li>
-<li><p><strong>show_total_surprise</strong> (<em>bool</em>)</p></li>
-<li><p><strong>figsize</strong> (<em>tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>)</p></li>
-<li><p><strong>axs</strong> (<em>list</em><em> | </em><em>Axes</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>) – Main Network instance.</p></li>
+<li><p><strong>show_total_surprise</strong> (<em>bool</em>) – If <cite>True</cite>, plot the sum of surprises across all nodes in the bottom panel.
+Defaults to <cite>False</cite>.</p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em><em> of </em><em>int</em><em>, </em><em>default</em><em> (</em><em>18</em><em>, </em><em>9</em><em>)</em>) – Figure size.</p></li>
+<li><p><strong>axs</strong> (<em>list</em><em> or </em><em>Axes</em><em>, </em><em>optional</em>) – Axes on which to plot. A new figure is created if None.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Axes</em></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matplotlib axes used for plotting.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Axes</p>
 </dd>
 </dl>
 </dd></dl>

@@ -392,6 +392,8 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
 <ul class="nav bd-sidenav">
@@ -655,7 +657,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <figure class="align-default" id="networks">
 <img alt="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" />
 <figcaption>
-<p><span class="caption-number">Fig. 8 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <p>In the following example, we illustrate how we can create a network with a more complex structure (i.e. a two-level continuous Hierarchical Gaussian Filter) and how this model can be inverted to update beliefs when presented with new observations.</p>
@@ -1021,23 +1023,23 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Oct 02 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.5.0
+IPython version      : 9.6.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-numpy     : 2.3.2
-pyhgf     : 0.2.7
-pandas    : 2.3.2
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-matplotlib: 3.10.6
 seaborn   : 0.13.2
-IPython   : 9.5.0
+matplotlib: 3.10.6
+pandas    : 2.3.3
+numpy     : 2.3.3
+IPython   : 9.6.0
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+pyhgf     : 0.2.7
 
 Watermark: 2.5.0
 </pre></div>

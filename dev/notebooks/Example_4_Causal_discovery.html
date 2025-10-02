@@ -395,6 +395,8 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
 <ul class="nav bd-sidenav">
@@ -956,9 +958,9 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add this step at the end of the belief propagation sequence</span>
 <span class="c1"># Here we simply re-use the previous sequence as template</span>
-<span class="n">predictions</span><span class="p">,</span> <span class="n">updates</span> <span class="o">=</span> <span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span>
-<span class="n">updates</span> <span class="o">+=</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">continuous_node_causal_strength</span><span class="p">),)</span>
-<span class="n">causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
+<span class="n">update_steps</span> <span class="o">=</span> <span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span>
+<span class="n">update_steps</span> <span class="o">+=</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">continuous_node_causal_strength</span><span class="p">),)</span>
+<span class="n">causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">non_causal_hgf</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">update_steps</span><span class="o">=</span><span class="n">update_steps</span><span class="p">)</span>
 <span class="n">causal_hgf</span> <span class="o">=</span> <span class="n">causal_hgf</span><span class="o">.</span><span class="n">create_belief_propagation_fn</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1027,23 +1029,23 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon Sep 01 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Oct 02 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.5.0
+IPython version      : 9.6.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 9.5.0
-matplotlib: 3.10.6
-seaborn   : 0.13.2
-numpy     : 2.3.2
-pyhgf     : 0.2.7
 jax       : 0.4.31
+numpy     : 2.3.3
+matplotlib: 3.10.6
 sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+seaborn   : 0.13.2
+pyhgf     : 0.2.7
+IPython   : 9.6.0
 
 Watermark: 2.5.0
 </pre></div>

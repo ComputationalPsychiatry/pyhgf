@@ -50,16 +50,10 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 1,
    "id": "bc2f0d67-9f24-4e44-ad7b-c04c22cff638",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:48.798629Z",
-     "iopub.status.busy": "2025-08-23T18:02:48.798424Z",
-     "iopub.status.idle": "2025-08-23T18:02:48.803687Z",
-     "shell.execute_reply": "2025-08-23T18:02:48.802817Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -85,12 +79,6 @@
    "id": "edfee021-57f2-434a-9841-990ddeb4ee00",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:48.806353Z",
-     "iopub.status.busy": "2025-08-23T18:02:48.806115Z",
-     "iopub.status.idle": "2025-08-23T18:02:50.294404Z",
-     "shell.execute_reply": "2025-08-23T18:02:50.293399Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -207,12 +195,6 @@
    "id": "b75dd8a0-080f-44b2-99e8-80d052d5f683",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:50.297079Z",
-     "iopub.status.busy": "2025-08-23T18:02:50.296762Z",
-     "iopub.status.idle": "2025-08-23T18:02:50.303066Z",
-     "shell.execute_reply": "2025-08-23T18:02:50.302060Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -243,12 +225,6 @@
    "id": "567c09fd-89ef-49f4-8486-90e66c0f397c",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:50.306360Z",
-     "iopub.status.busy": "2025-08-23T18:02:50.305973Z",
-     "iopub.status.idle": "2025-08-23T18:02:50.724596Z",
-     "shell.execute_reply": "2025-08-23T18:02:50.723544Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -330,12 +306,6 @@
    "id": "a0a0217c",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:50.726915Z",
-     "iopub.status.busy": "2025-08-23T18:02:50.726700Z",
-     "iopub.status.idle": "2025-08-23T18:02:50.730491Z",
-     "shell.execute_reply": "2025-08-23T18:02:50.729608Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -359,12 +329,6 @@
    "id": "31b4b80c-6811-495a-b79a-7e680b4c67f9",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:50.732708Z",
-     "iopub.status.busy": "2025-08-23T18:02:50.732489Z",
-     "iopub.status.idle": "2025-08-23T18:02:50.761713Z",
-     "shell.execute_reply": "2025-08-23T18:02:50.760744Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -425,7 +389,7 @@
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x72d78431f2c0>"
+       "<graphviz.sources.Source at 0x7a47b0224ec0>"
       ]
      },
      "execution_count": 6,
@@ -443,12 +407,6 @@
    "id": "e73c0a6a-5ca0-4ccd-8256-aac0b98cdee8",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:50.763921Z",
-     "iopub.status.busy": "2025-08-23T18:02:50.763708Z",
-     "iopub.status.idle": "2025-08-23T18:02:51.414096Z",
-     "shell.execute_reply": "2025-08-23T18:02:51.413252Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -467,12 +425,6 @@
    "id": "0e9da04e-4f09-4b08-96a1-e889db4423aa",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:51.416266Z",
-     "iopub.status.busy": "2025-08-23T18:02:51.416014Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.345864Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.344900Z"
-    },
     "scrolled": true,
     "slideshow": {
      "slide_type": ""
@@ -724,12 +676,6 @@
    "id": "4584790a",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.348376Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.348144Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.351773Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.351043Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -761,12 +707,6 @@
    "id": "a23caa73-fac9-4ffe-8112-8bb61a20e252",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.353793Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.353585Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.368082Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.366786Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -784,12 +724,6 @@
    "id": "85485e7c-6846-4563-9b77-c090acf6586d",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.370640Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.370406Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.374231Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.372928Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -808,12 +742,6 @@
    "id": "6b165bfa-160b-43f4-a418-16e241f55634",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.376789Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.376550Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.382173Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.380700Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -849,12 +777,6 @@
    "id": "db91452c-9463-46b8-8a84-dc9c26077cb4",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.384596Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.384288Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.388022Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.387172Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -889,12 +811,6 @@
    "id": "ef37bca7-d5dc-4a74-992b-f8d3fd06460f",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.390164Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.389937Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.394086Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.393184Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -912,12 +828,6 @@
    "id": "932660a6-1cad-4ce2-8147-391dcb4522bd",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.396389Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.396167Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.401110Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.400008Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -950,12 +860,6 @@
    "id": "56f9b751",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.403483Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.403230Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.409293Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.408232Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -1024,12 +928,6 @@
    "id": "30337286-eaea-4dad-a681-9fc648da4a10",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.411390Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.411170Z",
-     "iopub.status.idle": "2025-08-23T18:02:52.414828Z",
-     "shell.execute_reply": "2025-08-23T18:02:52.414149Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -1039,9 +937,9 @@
    "source": [
     "# Add this step at the end of the belief propagation sequence\n",
     "# Here we simply re-use the previous sequence as template\n",
-    "predictions, updates = non_causal_hgf.update_sequence\n",
-    "updates += ((0, continuous_node_causal_strength),)\n",
-    "causal_hgf.update_sequence = (predictions, updates)\n",
+    "update_steps = non_causal_hgf.update_sequence.update_steps\n",
+    "update_steps += ((0, continuous_node_causal_strength),)\n",
+    "causal_hgf.update_sequence = non_causal_hgf.update_sequence._replace(update_steps=update_steps)\n",
     "causal_hgf = causal_hgf.create_belief_propagation_fn()"
    ]
   },
@@ -1065,12 +963,6 @@
    "id": "5394ad64-4b03-4bb4-a40b-0d87166fe082",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:52.417576Z",
-     "iopub.status.busy": "2025-08-23T18:02:52.417124Z",
-     "iopub.status.idle": "2025-08-23T18:02:53.010006Z",
-     "shell.execute_reply": "2025-08-23T18:02:53.009016Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -1087,12 +979,6 @@
    "id": "25a3e2f0-bb21-4275-bacf-50d6ba3497f7",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:53.012310Z",
-     "iopub.status.busy": "2025-08-23T18:02:53.012134Z",
-     "iopub.status.idle": "2025-08-23T18:02:53.225041Z",
-     "shell.execute_reply": "2025-08-23T18:02:53.224288Z"
-    },
     "scrolled": true,
     "slideshow": {
      "slide_type": ""
@@ -1162,12 +1048,6 @@
    "id": "3738137f-7eaf-49b3-a87a-c542ad949b7c",
    "metadata": {
     "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T18:02:53.227260Z",
-     "iopub.status.busy": "2025-08-23T18:02:53.227034Z",
-     "iopub.status.idle": "2025-08-23T18:02:53.244647Z",
-     "shell.execute_reply": "2025-08-23T18:02:53.243707Z"
-    },
     "slideshow": {
      "slide_type": ""
     },
@@ -1178,7 +1058,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Last updated: Sat Aug 23 2025\n",
+      "Last updated: Thu Oct 02 2025\n",
       "\n",
       "Python implementation: CPython\n",
       "Python version       : 3.12.10\n",
@@ -1188,13 +1068,14 @@
       "jax   : 0.4.31\n",
       "jaxlib: 0.4.31\n",
       "\n",
-      "jax       : 0.4.31\n",
       "numpy     : 2.2.5\n",
-      "matplotlib: 3.10.1\n",
       "sys       : 3.12.10 (main, Apr  9 2025, 04:03:51) [Clang 20.1.0 ]\n",
-      "IPython   : 9.4.0\n",
+      "jax       : 0.4.31\n",
       "seaborn   : 0.13.2\n",
+      "IPython   : 9.4.0\n",
       "pyhgf     : 0.2.7\n",
+      "platform  : 1.0.8\n",
+      "matplotlib: 3.10.1\n",
       "\n",
       "Watermark: 2.5.0\n",
       "\n"

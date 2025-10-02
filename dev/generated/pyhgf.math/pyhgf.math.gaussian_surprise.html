@@ -477,16 +477,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 </ul>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -571,30 +574,17 @@ given by:</p>
 <p>where <span class="math notranslate nohighlight">\(\pi\)</span> is the mathematical constant.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>x</strong></dt><dd><p>The outcome.</p>
-</dd>
-<dt><strong>expected_mean</strong></dt><dd><p>The expected mean of the Gaussian distribution.</p>
-</dd>
-<dt><strong>expected_precision</strong></dt><dd><p>The expected precision of the Gaussian distribution.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>surprise</dt><dd><p>The Gaussian surprise.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>)</p></li>
-<li><p><strong>expected_mean</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>)</p></li>
-<li><p><strong>expected_precision</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>)</p></li>
+<li><p><strong>x</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>) – The outcome.</p></li>
+<li><p><strong>expected_mean</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>) – The expected mean of the Gaussian distribution.</p></li>
+<li><p><strong>expected_precision</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>) – The expected precision of the Gaussian distribution.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Array</em></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Gaussian surprise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>surprise</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>

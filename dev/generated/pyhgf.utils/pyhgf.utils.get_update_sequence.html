@@ -58,8 +58,8 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.utils.to_pandas" href="pyhgf.utils.to_pandas.html" />
-    <link rel="prev" title="pyhgf.utils.fill_categorical_state_node" href="pyhgf.utils.fill_categorical_state_node.html" />
+    <link rel="next" title="pyhgf.utils.learning" href="pyhgf.utils.learning.html" />
+    <link rel="prev" title="pyhgf.utils.get_input_idxs" href="pyhgf.utils.get_input_idxs.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -475,16 +475,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
 </ul>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -567,33 +570,24 @@ network. The function ensures that the following principles apply:
 2. all children have been updated before the parent compute the prediction errors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>network</strong></dt><dd><p>A neural network, instance of <a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.network.Network"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.model.network.Network</span></code></a>.</p>
-</dd>
-<dt><strong>update_type</strong></dt><dd><p>The type of update to perform for volatility coupling. Can be <cite>“eHGF”</cite>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>) – A neural network, instance of <a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.network.Network"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.model.network.Network</span></code></a>.</p></li>
+<li><p><strong>update_type</strong> (<em>str</em>) – The type of update to perform for volatility coupling. Can be <cite>“eHGF”</cite>
 (defaults) or <cite>“standard”</cite>. The eHGF update step was proposed as an
 alternative to the original definition in that it starts by updating the
 mean and then the precision of the parent node, which generally reduces the
-errors associated with impossible parameter space and improves sampling.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>prediction_sequence</dt><dd><p>The sequence of prediction update.</p>
-</dd>
-<dt>update_sequence</dt><dd><p>The sequence of prediction error and posterior updates.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>)</p></li>
-<li><p><strong>update_type</strong> (<em>str</em>)</p></li>
+errors associated with impossible parameter space and improves sampling.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple[tuple[tuple[int, <em>Callable</em>[[…], dict[int | str, dict]]], …], tuple[tuple[int, <em>Callable</em>[[…], dict[int | str, dict]]], …]]</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>prediction_sequence</em> – The sequence of prediction update.</p></li>
+<li><p><em>update_sequence</em> – The sequence of prediction error and posterior updates.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>UpdateSequence</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -611,20 +605,20 @@ errors associated with impossible parameter space and improves sampling.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyhgf.utils.fill_categorical_state_node.html"
+       href="pyhgf.utils.get_input_idxs.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyhgf.utils.fill_categorical_state_node</p>
+        <p class="prev-next-title">pyhgf.utils.get_input_idxs</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.utils.to_pandas.html"
+       href="pyhgf.utils.learning.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.utils.to_pandas</p>
+        <p class="prev-next-title">pyhgf.utils.learning</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
