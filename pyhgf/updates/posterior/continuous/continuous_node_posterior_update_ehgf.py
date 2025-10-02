@@ -22,6 +22,8 @@ def continuous_node_posterior_update_ehgf(
     the expected precision.
     2. Update the posterior precision.
 
+    See [1]_ for more details.
+
     .. note::
         By updating the mean first, and approximating the precision using the expected,
         precision, this update step often perform better than the regular update and

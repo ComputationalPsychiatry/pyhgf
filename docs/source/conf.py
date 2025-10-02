@@ -44,6 +44,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.autosummary",
     "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
     "matplotlib.sphinxext.plot_directive",
     "numpydoc",
     "myst_nb",
@@ -54,6 +55,8 @@ extensions = [
     "sphinx_exercise",
     "sphinx_proof",
 ]
+
+napoleon_numpy_docstring = True  # Enable NumPy style
 
 panels_add_bootstrap_css = False
 

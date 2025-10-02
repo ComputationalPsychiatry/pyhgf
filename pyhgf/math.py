@@ -9,7 +9,7 @@ from jax.typing import ArrayLike
 
 
 class MultivariateNormal:
-    """The multivariate normal as an exponential family distribution.
+    """The multivariate normal as an exponential family distribution [1]_.
 
     References
     ----------
@@ -81,7 +81,7 @@ class MultivariateNormal:
 
 
 class Normal:
-    """The univariate normal as an exponential family distribution.
+    """The univariate normal as an exponential family distribution [1]_.
 
     References
     ----------
@@ -153,6 +153,8 @@ def gaussian_predictive_distribution(x: float, xi: ArrayLike, nu: float) -> floa
             \left( 1+\frac{(x-\xi_{x})^2}{(\nu+1)(\xi_{x^2}-\xi_x^2)} \right)
             ^{-\frac{\nu+2}{2}}
         \end{cases}
+
+    See [1]_ for more details.
 
     Parameters
     ----------
@@ -289,6 +291,8 @@ def dirichlet_kullback_leibler(alpha_1: ArrayLike, alpha_2: ArrayLike) -> Array:
          \sum_{i=1}^k \ln{\frac{\Gamma(\alpha_{2i})}{\Gamma(\alpha_{1i})}} +
          \sum_{i=1}^k(\alpha_{1i} -
          \alpha_{2i})\left[\psi(\alpha_{1i})-\psi(\sum_{i=1}^k\alpha_{1i})\right]
+
+    See [1]_ and [2]_ for more details.
 
     Parameters
     ----------

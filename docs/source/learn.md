@@ -11,6 +11,7 @@ notebooks/0.1-Theory.ipynb
 notebooks/0.2-Creating_networks.ipynb
 notebooks/0.3-Generalised_filtering.ipynb
 notebooks/0.4-Planning_and_acting.ipynb
+notebooks/0.5-Learning.ipynb
 ```
 
 ```{toctree}
@@ -93,6 +94,15 @@ Predict, filter and smooth any distribution from the exponential family using ge
 
 
 Planning and acting with predictive coding networks.
+:::
+
+:::{grid-item-card}  Learning
+:link: learning
+:link-type: ref
+:img-top: ./images/deep_networks.png
+
+
+Learning with predictive coding networks.
 :::
 
 ::::

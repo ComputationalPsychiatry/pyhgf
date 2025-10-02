@@ -16,7 +16,7 @@ def predict_mean(
     r"""Compute the expected mean of a continuous state node.
 
     The expected mean at time :math:`k` for a state node :math:`a` with optional value
-    parent(s) :math:`b` is given by:
+    parent(s) :math:`b` is in [1]_ given by:
 
     .. math::
 
@@ -106,7 +106,8 @@ def predict_mean(
 def predict_precision(attributes: dict, edges: Edges, node_idx: int) -> Array:
     r"""Compute the expected precision of a continuous state node.
 
-    The expected precision at time :math:`k` for a state node :math:`a` is given by:
+    The expected precision at time :math:`k` for a state node :math:`a` is given by
+    [1]_:
 
     .. math::
 
@@ -200,7 +201,7 @@ def predict_precision(attributes: dict, edges: Edges, node_idx: int) -> Array:
 def continuous_node_prediction(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
-    """Update the expected mean and expected precision of a continuous node.
+    """Update the expected mean and expected precision of a continuous node [1]_.
 
     Parameters
     ----------

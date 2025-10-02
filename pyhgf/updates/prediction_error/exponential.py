@@ -16,7 +16,7 @@ def prediction_error_update_exponential_family_fixed(
     r"""Update the parameters of an exponential family distribution.
 
     Assuming that :math:`nu` is fixed, updating the hyperparameters of the distribution
-    is given by:
+    is given by [1]_ as:
 
     .. math::
         \xi \leftarrow \xi + \frac{1}{\nu + 1}(t(x)-\xi)
@@ -72,7 +72,7 @@ def prediction_error_update_exponential_family_dynamic(
     fixed, the node convert the new observation into sufficient statistics and pass the
     values to the implied continuous nodes. The new values for the vector :math:`nu`
     are recovered in another posterior update, by observing the learning rate in the
-    continuous nodes, usually at the end of the sequence.
+    continuous nodes, usually at the end of the sequence. See [1]_ for more details.
 
     Parameters
     ----------

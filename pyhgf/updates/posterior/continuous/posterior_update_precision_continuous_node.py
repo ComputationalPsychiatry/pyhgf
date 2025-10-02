@@ -72,7 +72,7 @@ def posterior_update_precision_continuous_node(
 
         \gamma_j^{(k)} = \Omega_j^{(k)} \hat{\pi}_j^{(k)}
 
-    that was computed in the prediction step.
+    that was computed in the prediction step. See [1]_ for more details.
 
     Parameters
     ----------

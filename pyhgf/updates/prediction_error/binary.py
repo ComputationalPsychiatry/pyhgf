@@ -53,6 +53,8 @@ def binary_finite_state_node_prediction_error(
 ) -> dict:
     """Update the posterior of a binary node given finite precision of the input.
 
+    See [1]_ for more details.
+
     Parameters
     ----------
     attributes :

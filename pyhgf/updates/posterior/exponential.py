@@ -26,6 +26,8 @@ def posterior_update_exponential_family_dynamic(
     expectation (what was expected before compared to what is expected after). This
     ratio quantifies how much the model is learning from new observations.
 
+    See [1]_ for more details.
+
     Parameters
     ----------
     attributes :

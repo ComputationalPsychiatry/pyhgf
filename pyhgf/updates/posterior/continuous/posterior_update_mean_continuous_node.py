@@ -13,7 +13,7 @@ def posterior_update_mean_continuous_node(
     node_idx: int,
     node_precision: float,
 ) -> float:
-    r"""Update the mean of a state node using the value prediction errors.
+    r"""Update the mean of a state node using the value prediction errors [1]_.
 
     1. Mean update from value coupling.
 

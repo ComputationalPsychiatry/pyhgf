@@ -22,6 +22,8 @@ def continuous_node_posterior_update(
     2. Update the posterior mean and assume that the posterior precision is the value
     updated in the first step.
 
+    See [1]_ for more details.
+
     Parameters
     ----------
     attributes :

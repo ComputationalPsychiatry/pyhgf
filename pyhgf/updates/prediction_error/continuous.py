@@ -20,6 +20,8 @@ def continuous_node_value_prediction_error(
 
         \delta_j^{(k)} = \mu_j^{k} - \hat{\mu}_j^{k}
 
+    See [1]_ for more details.
+
     Parameters
     ----------
     attributes :
@@ -72,6 +74,8 @@ def continuous_node_volatility_prediction_error(
         \Delta_j^{(k)} = \frac{\hat{\pi}_j^{(k)}}{\pi_j^{(k)}} +
         \hat{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1
 
+    See [1]_ for more details.
+
     Parameters
     ----------
     attributes :
@@ -121,6 +125,8 @@ def continuous_node_prediction_error(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
     """Store prediction errors in an input node.
+
+    See [1]_ for more details.
 
     Parameters
     ----------
