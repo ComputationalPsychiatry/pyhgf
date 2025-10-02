@@ -144,16 +144,6 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 4,
-   "id": "0eee137c-07df-433c-97a6-fa4c3ea9f28e",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "input_data = np.array([x, x, x]).T"
-   ]
-  },
-  {
-   "cell_type": "code",
    "execution_count": 5,
    "id": "e25492c8-0fb1-489b-a286-f9854f6706ef",
    "metadata": {
@@ -245,7 +235,6 @@
     "    .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)\n",
     "    .add_nodes(value_children=[0, 1], autoconnection_strength=0, coupling_fn=(jnp.tanh, jnp.tanh))\n",
     "    .add_nodes(value_children=2, autoconnection_strength=0, coupling_fn=(jnp.tanh, ))\n",
-    "    #.add_nodes(volatility_children=2, precision=2.0, expected_precision=2.0)\n",
     ")\n",
     "network.plot_network()"
    ]

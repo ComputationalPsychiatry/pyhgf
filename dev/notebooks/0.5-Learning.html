@@ -561,20 +561,12 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We start by defining a simple network with two binary branches</span>
 <span class="n">network</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">))</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span> <span class="p">))</span>
-    <span class="c1">#.add_nodes(volatility_children=2, precision=2.0, expected_precision=2.0)</span>
 <span class="p">)</span>
 <span class="n">network</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
 </pre></div>
@@ -753,13 +745,13 @@ jax   : 0.4.31
 jaxlib: 0.4.31
 
 pyhgf     : 0.2.7
-seaborn   : 0.13.2
+treescope : 0.1.10
 sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
 matplotlib: 3.10.6
-jax       : 0.4.31
-treescope : 0.1.10
-IPython   : 9.6.0
 numpy     : 2.3.3
+seaborn   : 0.13.2
+jax       : 0.4.31
+IPython   : 9.6.0
 
 Watermark: 2.5.0
 </pre></div>
