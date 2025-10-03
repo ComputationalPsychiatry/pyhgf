@@ -1,6 +1,0 @@
-﻿pyhgf.utils.add\_parent
-=======================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: add_parent
