@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -435,7 +436,7 @@ window.addEventListener("load", () => mermaid.run());
   <h1>Source code for pyhgf.model.network</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -454,15 +455,24 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">get_couplings</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">matplotlib</span><span class="p">,</span> <span class="n">networkx</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attributes</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">NetworkParameters</span><span class="p">,</span> <span class="n">UpdateSequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Attributes</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Edges</span><span class="p">,</span>
+    <span class="n">NetworkParameters</span><span class="p">,</span>
+    <span class="n">UpdateSequence</span><span class="p">,</span>
+    <span class="n">LearningSequence</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_edges</span><span class="p">,</span>
     <span class="n">beliefs_propagation</span><span class="p">,</span>
     <span class="n">get_input_idxs</span><span class="p">,</span>
     <span class="n">get_update_sequence</span><span class="p">,</span>
     <span class="n">to_pandas</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">learning</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights</span>
 
 
 <div class="viewcode-block" id="Network">
@@ -503,8 +513,8 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        update_type :</span>
-<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
-<span class="sd">            (defaults), `&quot;ehgf&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
+<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;eHGF&quot;`</span>
+<span class="sd">            (defaults), `&quot;unbounded&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
 <span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
 <span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
 <span class="sd">            alternative to the original definition in that it starts by updating the</span>
@@ -518,17 +528,15 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span> <span class="o">=</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of nodes in the network</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UpdateSequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn_sample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-            <span class="n">Callable</span><span class="p">[[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Attributes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span></div>
 
@@ -538,16 +546,21 @@ window.addEventListener("load", () => mermaid.run());
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Idexes of state nodes that can observe new data points by default.&quot;&quot;&quot;</span>
         <span class="n">input_idxs</span> <span class="o">=</span> <span class="n">get_input_idxs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
 
+        <span class="c1"># check if the input indexes have been set manually</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_input_idxs&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_idxs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_idxs</span>
+
         <span class="c1"># set the autoconnection strength and tonic volatility to 0</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">input_idxs</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
         <span class="k">return</span> <span class="n">input_idxs</span>
 
     <span class="nd">@input_idxs</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">input_idxs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_idxs</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">create_belief_propagation_fn</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -588,7 +601,6 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">update_sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">,</span>
                 <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
                 <span class="n">input_idxs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
-                <span class="n">action_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># Create the generative scan function if it doesn&#39;t exist, and if requested.</span>
@@ -599,8 +611,133 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
                 <span class="n">input_idxs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
                 <span class="n">observations</span><span class="o">=</span><span class="s2">&quot;generative&quot;</span><span class="p">,</span>
-                <span class="n">action_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">action_fn</span><span class="p">,</span>
             <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_learning_propagation_fn</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the belief propagation function.</span>
+
+<span class="sd">        .. note:</span>
+<span class="sd">           This step is called by default when using py:meth:`input_data`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        inputs_x_idxs :</span>
+<span class="sd">            The indexes of the nodes receiving the predictors (x).</span>
+<span class="sd">        inputs_y_idxs :</span>
+<span class="sd">            The indexes of the nodes receiving the predictions (y).</span>
+<span class="sd">        overwrite :</span>
+<span class="sd">            If `True` (default), create a new belief propagation function and ignore</span>
+<span class="sd">            preexisting values. Otherwise, do not create a new function if the attribute</span>
+<span class="sd">            `scan_fn` is already defined.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the dimension of the input nodes</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_input_dimension</span><span class="p">()</span>
+
+        <span class="c1"># create the update sequence if it does not already exist</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+            <span class="p">)</span>
+        <span class="c1"># create the learning sequence</span>
+        <span class="c1"># all nodes except the prediction nodes should update their coupling strengths</span>
+        <span class="n">learning_steps</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learning_weights</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
+            <span class="k">if</span> <span class="n">node_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+        <span class="p">]</span>
+
+        <span class="c1"># do not update the last layer</span>
+        <span class="n">update_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">step</span>
+                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span>
+                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="c1"># do not predict on the last layer</span>
+        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">step</span>
+                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
+                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">learning_sequence</span> <span class="o">=</span> <span class="n">LearningSequence</span><span class="p">(</span>
+            <span class="n">prediction_steps</span><span class="o">=</span><span class="n">prediction_steps</span><span class="p">,</span>
+            <span class="n">update_steps</span><span class="o">=</span><span class="n">update_steps</span><span class="p">,</span>
+            <span class="n">learning_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">learning_steps</span><span class="p">),</span>  <span class="c1"># type: ignore</span>
+        <span class="p">)</span>
+
+        <span class="c1"># create the learning propagation function</span>
+        <span class="c1"># this function is used by scan to loop over predictors (x) and predictions (y)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+                <span class="n">learning</span><span class="p">,</span>
+                <span class="n">learning_sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_sequence</span><span class="p">,</span>
+                <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+                <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
+                <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new observations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            A tuple of n arrays containing the new predictors (x). Predictors values are</span>
+<span class="sd">            set to the obervation nodes defined by `inputs_x_idxs` before the prediction</span>
+<span class="sd">            steps.</span>
+<span class="sd">        y :</span>
+<span class="sd">            A tuple of n arrays containing the resulting predictions (y). Predictions</span>
+<span class="sd">            are observed in the observation steps in the nodes defined by</span>
+<span class="sd">            `inputs_y_idxs`.</span>
+<span class="sd">        inputs_x_idxs :</span>
+<span class="sd">            The indexes of the nodes receiving the predictors (x).</span>
+<span class="sd">        inputs_y_idxs :</span>
+<span class="sd">            The indexes of the nodes receiving the predictions (y).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="c1"># generate the belief propagation function</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_learning_propagation_fn</span><span class="p">(</span>
+                <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span> <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span>
+            <span class="p">)</span>
+
+        <span class="c1"># wrap the inputs</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+
+        <span class="c1"># this is where the model loops over the whole input time series</span>
+        <span class="c1"># at each time point, the node structure is traversed and beliefs are updated</span>
+        <span class="c1"># using precision-weighted prediction errors</span>
+        <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+
+        <span class="c1"># belief trajectories</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="o">=</span> <span class="n">last_attributes</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -608,8 +745,8 @@ window.addEventListener("load", () => mermaid.run());
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">input_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">rng_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new observations.</span>
@@ -720,12 +857,12 @@ window.addEventListener("load", () => mermaid.run());
 
     <span class="k">def</span><span class="w"> </span><span class="nf">input_custom_sequence</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">update_branches</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">UpdateSequence</span><span class="p">],</span>
-        <span class="n">branches_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+        <span class="n">update_branches</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">UpdateSequence</span><span class="p">],</span>
+        <span class="n">branches_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">input_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">rng_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new observations with custom update sequences.</span>
@@ -850,12 +987,12 @@ window.addEventListener("load", () => mermaid.run());
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{},</span>
-        <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">value_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
+        <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+        <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
         <span class="o">**</span><span class="n">additional_parameters</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new input/state node(s) to the neural network.</span>
@@ -992,7 +1129,7 @@ window.addEventListener("load", () => mermaid.run());
 
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">plot_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the node(s) beliefs trajectories.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_idxs</span><span class="o">=</span><span class="n">node_idxs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -1037,10 +1174,8 @@ window.addEventListener("load", () => mermaid.run());
     <span class="k">def</span><span class="w"> </span><span class="nf">surprise</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">response_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-        <span class="n">response_function_inputs</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="p">(),</span>
-        <span class="n">response_function_parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-            <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">response_function_inputs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">response_function_parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Surprise of the model conditioned by the response function.</span>
 
@@ -1079,10 +1214,10 @@ window.addEventListener("load", () => mermaid.run());
     <span class="k">def</span><span class="w"> </span><span class="nf">add_edges</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
-        <span class="n">parent_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
-        <span class="n">children_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
-        <span class="n">coupling_strengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
+        <span class="n">parent_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">children_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">coupling_strengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a value or volatility coupling link between a set of nodes.</span>
 

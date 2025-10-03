@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -436,7 +437,6 @@ window.addEventListener("load", () => mermaid.run());
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">jit</span>
@@ -447,29 +447,29 @@ window.addEventListener("load", () => mermaid.run());
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_mean.html#pyhgf.updates.prediction.continuous.predict_mean">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_mean</span><span class="p">(</span>
-    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the expected mean of a continuous state node.</span>
 
 <span class="sd">    The expected mean at time :math:`k` for a state node :math:`a` with optional value</span>
-<span class="sd">    parent(s) :math:`b` is given by:</span>
+<span class="sd">    parent(s) :math:`b` is in [1]_ given by:</span>
 
 <span class="sd">    .. math::</span>
 
 <span class="sd">        \hat{\mu}_a^{(k)} = \lambda_a \mu_a^{(k-1)} + P_a^{(k)}</span>
 
-<span class="sd">    where :math:`P_a^{(k)}` is the drift rate (the total predicted drift of the mean,</span>
-<span class="sd">    which sums the tonic and - optionally - phasic drifts). The variable</span>
+<span class="sd">    where :math:`P_a^{(k)}` is the drift rate (the total predicted drift of the expected</span>
+<span class="sd">    mean, which sums the tonic and - optionally - phasic drifts). The variable</span>
 <span class="sd">    :math:`lambda_a` represents the state&#39;s autoconnection strength, with</span>
-<span class="sd">    :math:`\lambda_a \in [0, 1]`. When :math:`lambda_a = 1`, the node is performing a</span>
-<span class="sd">    Gaussian Random Walk using the value :math:` P_a^{(k)}` as total drift rate. When</span>
+<span class="sd">    :math:`\lambda_a \in [0, 1]`. When :math:`\lambda_a = 1`, the node is performing a</span>
+<span class="sd">    Gaussian Random Walk using the value :math:`P_a^{(k)}` as total drift rate. When</span>
 <span class="sd">    :math:`\lambda_a &lt; 1`, the state will revert back to the total mean :math:`M_a`,</span>
 <span class="sd">    which is given by:</span>
 
 <span class="sd">    .. math::</span>
-<span class="sd">            M_a = \frac{\rho_a + f\left(x_b^{(k)}\right)} {1-\lambda_a},</span>
+<span class="sd">            M_a = \frac{\rho_a + f\left(\hat{\mu}_b^{(k)}\right)} {1-\lambda_a},</span>
 
 <span class="sd">    If :math:`\lambda_a = 0`, the node is not influenced by its own mean anymore, but</span>
 <span class="sd">    by the value received by the value parent.</span>
@@ -524,9 +524,11 @@ window.addEventListener("load", () => mermaid.run());
             <span class="n">child_position</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">node_idx</span><span class="p">)</span>
             <span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">[</span><span class="n">child_position</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                <span class="n">parent_value</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span>
+                    <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
 
             <span class="n">driftrate</span> <span class="o">+=</span> <span class="n">psi</span> <span class="o">*</span> <span class="n">parent_value</span>
 
@@ -542,10 +544,11 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="predict_precision">
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_precision.html#pyhgf.updates.prediction.continuous.predict_precision">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">predict_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">predict_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the expected precision of a continuous state node.</span>
 
-<span class="sd">    The expected precision at time :math:`k` for a state node :math:`a` is given by:</span>
+<span class="sd">    The expected precision at time :math:`k` for a state node :math:`a` is given by</span>
+<span class="sd">    [1]_:</span>
 
 <span class="sd">    .. math::</span>
 
@@ -640,19 +643,21 @@ window.addEventListener("load", () => mermaid.run());
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#pyhgf.updates.prediction.continuous.continuous_node_prediction">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">continuous_node_prediction</span><span class="p">(</span>
-    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the expected mean and expected precision of a continuous node.</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the expected mean and expected precision of a continuous node [1]_.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    attributes :</span>
 <span class="sd">        The attributes of the probabilistic nodes.</span>
+
 <span class="sd">    .. note::</span>
 <span class="sd">        The parameter structure also incorporates the value and volatility coupling</span>
 <span class="sd">        strength with children and parents (i.e. `&quot;value_coupling_parents&quot;`,</span>
 <span class="sd">        `&quot;value_coupling_children&quot;`, `&quot;volatility_coupling_parents&quot;`,</span>
 <span class="sd">        `&quot;volatility_coupling_children&quot;`).</span>
+
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the node that will be updated.</span>
 <span class="sd">    edges :</span>

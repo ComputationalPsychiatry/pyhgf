@@ -32,11 +32,12 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -391,6 +392,8 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
 <ul class="nav bd-sidenav">
@@ -493,28 +496,29 @@
 <span id="hgf-exercises-1"></span><h1>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter<a class="headerlink" href="#zurich-cpc-i-introduction-to-the-generalised-hierarchical-gaussian-filter" title="Link to this heading">#</a></h1>
 <p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
-<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
 
-  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
 </pre></div>
 </div>
 </div>
 </details>
 </div>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
@@ -577,10 +581,10 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
@@ -593,7 +597,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/9dfb14aae9c6c70bbced6aa38b9339c6db9dbd833d20254d2a4bbe56508f8787.png" src="../_images/9dfb14aae9c6c70bbced6aa38b9339c6db9dbd833d20254d2a4bbe56508f8787.png" />
+<img alt="../_images/477281bf0394bd02b4503a8857affa07543c7d1fc51892b4222fec4d5134b6f5.png" src="../_images/477281bf0394bd02b4503a8857affa07543c7d1fc51892b4222fec4d5134b6f5.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.2">
@@ -653,7 +657,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <figure class="align-default" id="networks">
 <img alt="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" />
 <figcaption>
-<p><span class="caption-number">Fig. 8 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <p>In the following example, we illustrate how we can create a network with a more complex structure (i.e. a two-level continuous Hierarchical Gaussian Filter) and how this model can be inverted to update beliefs when presented with new observations.</p>
@@ -670,7 +674,9 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">timeseries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">timeseries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">1e1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -704,7 +710,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/4fbb2154666358471c330ffd159672e7ca96129f1649a3e2a7794330dc9c664c.png" src="../_images/4fbb2154666358471c330ffd159672e7ca96129f1649a3e2a7794330dc9c664c.png" />
+<img alt="../_images/f3a7baae7a79bcea15a337cd85822341f71b65bdf61333d71efaaaba65541cb6.png" src="../_images/f3a7baae7a79bcea15a337cd85822341f71b65bdf61333d71efaaaba65541cb6.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.4">
@@ -881,7 +887,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/9dd3f16e2936fb598657e83b5b766f60d359d011c0be967f0f94a3a12822af32.png" src="../_images/9dd3f16e2936fb598657e83b5b766f60d359d011c0be967f0f94a3a12822af32.png" />
+<img alt="../_images/c6a8bd033d2ae7b805e3ce6e79551447a693f375cf96e1b2efa85b234f7b2b03.png" src="../_images/c6a8bd033d2ae7b805e3ce6e79551447a693f375cf96e1b2efa85b234f7b2b03.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -1017,23 +1023,23 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue May 13 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri Oct 03 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.2.0
+IPython version      : 9.6.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 9.2.0
 pyhgf     : 0.2.7
-matplotlib: 3.10.1
-numpy     : 2.2.5
+IPython   : 9.6.0
+matplotlib: 3.10.6
+numpy     : 2.3.3
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+pandas    : 2.3.3
 seaborn   : 0.13.2
-pandas    : 2.2.3
-sys       : 3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]
 
 Watermark: 2.5.0
 </pre></div>

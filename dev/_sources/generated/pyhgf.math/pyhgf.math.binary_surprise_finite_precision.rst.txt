@@ -1,6 +1,0 @@
-﻿pyhgf.math.binary\_surprise\_finite\_precision
-==============================================
-
-.. currentmodule:: pyhgf.math
-
-.. autofunction:: binary_surprise_finite_precision

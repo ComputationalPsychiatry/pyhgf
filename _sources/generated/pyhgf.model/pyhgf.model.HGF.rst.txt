@@ -17,6 +17,7 @@
       ~HGF.add_edges
       ~HGF.add_nodes
       ~HGF.create_belief_propagation_fn
+      ~HGF.create_learning_propagation_fn
       ~HGF.get_input_dimension
       ~HGF.get_network
       ~HGF.input_custom_sequence
@@ -29,6 +30,7 @@
       ~HGF.sample
       ~HGF.surprise
       ~HGF.to_pandas
+      ~HGF.train
    
    
 

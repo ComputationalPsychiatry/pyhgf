@@ -32,11 +32,12 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -391,6 +392,8 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
 <ul class="nav bd-sidenav">
@@ -493,20 +496,20 @@
 <span id="generalised-filtering"></span><h1>Generalised Bayesian Filtering of exponential family distributions<a class="headerlink" href="#generalised-bayesian-filtering-of-exponential-family-distributions" title="Link to this heading">#</a></h1>
 <p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.3-Generalised_filtering.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell tag_hide-cell docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell content</span>
-<span class="expanded">Hide code cell content</span>
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
-<span class="k">if</span> <span class="s1">&#39;google.colab&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-
-  <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-      <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
 </pre></div>
 </div>
 </div>
@@ -583,10 +586,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -622,7 +625,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/ffae002ecbd50110c415ebc3e2c1e9d5e4b18b806dc55f6ef41d8959f0ba944f.png" src="../_images/ffae002ecbd50110c415ebc3e2c1e9d5e4b18b806dc55f6ef41d8959f0ba944f.png" />
+<img alt="../_images/0b0149e7ac4dc5457eb53ba6d11a43279266895e06b0de134f7eb71d8a2aac3b.png" src="../_images/0b0149e7ac4dc5457eb53ba6d11a43279266895e06b0de134f7eb71d8a2aac3b.png" />
 </div>
 </div>
 <p>The vizualisation of the predictive distribution over new observations require integrating the joint probability of the prior <span class="math notranslate nohighlight">\(g_{\xi, \nu}(\vartheta)\)</span> and the posterior <span class="math notranslate nohighlight">\(f_x(\vartheta)\)</span>. In the case of a univariate normal, the <em>Gaussian-predictive</em> distribution is given by:</p>
@@ -632,10 +635,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 \]</div>
 <p>When <span class="math notranslate nohighlight">\(\xi = 0, 1\)</span>, this corresponds to the Student’s-t distribution with <span class="math notranslate nohighlight">\(\nu + 1\)</span> degrees of freedom, as evidenced here:</p>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
@@ -658,7 +661,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/2c498b974d26201a4231e6652df1e2b979d2cf37e6984cd8c752d45fbd4aae16.png" src="../_images/2c498b974d26201a4231e6652df1e2b979d2cf37e6984cd8c752d45fbd4aae16.png" />
+<img alt="../_images/dd2888f84f5e4a7e107093590b1c7bf0cf3002ebeb19dcac7a83532118b02d29.png" src="../_images/dd2888f84f5e4a7e107093590b1c7bf0cf3002ebeb19dcac7a83532118b02d29.png" />
 </div>
 </div>
 </section>
@@ -750,7 +753,6 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">means</span><span class="p">,</span> <span class="n">variances</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 <span class="n">nus</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">35</span><span class="p">]</span>
 <span class="k">for</span> <span class="n">nu</span> <span class="ow">in</span> <span class="n">nus</span><span class="p">:</span>
-
     <span class="c1"># set a new learning rate</span>
     <span class="n">generalised_filter</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;nus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nu</span>
 
@@ -759,7 +761,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
         <span class="n">xis</span><span class="o">=</span><span class="n">generalised_filter</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
     <span class="p">)</span>
 
-    <span class="c1"># save distribution parameters    </span>
+    <span class="c1"># save distribution parameters</span>
     <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
     <span class="n">variances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
 </pre></div>
@@ -767,10 +769,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell tag_hide-input docutils container">
-<details class="hide above-input">
+<details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
-<span class="collapsed">Show code cell source</span>
-<span class="expanded">Hide code cell source</span>
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -795,7 +797,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/c49104f010337659a0e70dc589cb9b8dd07d1e9f30b44e06e253be885f3b78dc.png" src="../_images/c49104f010337659a0e70dc589cb9b8dd07d1e9f30b44e06e253be885f3b78dc.png" />
+<img alt="../_images/a46241ec6d2826bd0c98ab003bea30df08105572fed13e2680e9f926d104a9db.png" src="../_images/a46241ec6d2826bd0c98ab003bea30df08105572fed13e2680e9f926d104a9db.png" />
 </div>
 </div>
 <p>We can see that larger values for <span class="math notranslate nohighlight">\(\nu\)</span> correspond to a lower learning rate, and therefore smoother transition between states.</p>
@@ -810,7 +812,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <p>with <span class="math notranslate nohighlight">\(\delta\)</span> the prediction error at time <span class="math notranslate nohighlight">\(k\)</span> and <span class="math notranslate nohighlight">\(\Delta\)</span> the differential of expectations (before and after observing the new value).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">univariate_hgf</span> <span class="o">=</span>  <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;hgf-1&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">univariate_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;hgf-1&quot;</span><span class="p">)</span>
 <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">100.0</span>
 <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">100.0</span>
 </pre></div>
@@ -838,7 +840,9 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the sufficient statistics from the first observation to parametrize the model</span>
 <span class="n">mean</span><span class="p">,</span> <span class="n">variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
-    <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span>
+    <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="n">univariate_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">],</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -865,7 +869,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a570fff1061714be977ef65898a8fb5f89acb13dd59b7bd187323297066e8124.png" src="../_images/a570fff1061714be977ef65898a8fb5f89acb13dd59b7bd187323297066e8124.png" />
+<img alt="../_images/b557f7efe239d933eedd500ba7f98b440f4b65a9c0fdda476d9b1316c371d41f.png" src="../_images/b557f7efe239d933eedd500ba7f98b440f4b65a9c0fdda476d9b1316c371d41f.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -882,8 +886,13 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
 <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
 <span class="n">r_a</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-<span class="n">spiral_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">])</span><span class="o">.</span><span class="n">T</span> 
-<span class="n">spiral_data</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.75</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="n">spiral_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_a</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+<span class="n">spiral_data</span> <span class="o">+=</span> <span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.75</span>
+    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="o">*</span> <span class="mf">1.5</span>
+    <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -892,13 +901,17 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <h4>Generalised Bayesian Filtering: using a fixed <span class="math notranslate nohighlight">\(\nu\)</span><a class="headerlink" href="#id3" title="Link to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_normal</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> 
-    <span class="n">nus</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
-    <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;generalised-filtering&quot;</span><span class="p">,</span> 
-    <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span> 
-    <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
-<span class="p">)</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">spiral_data</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_normal</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span>
+        <span class="n">nus</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+        <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;generalised-filtering&quot;</span><span class="p">,</span>
+        <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span>
+        <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">spiral_data</span><span class="p">)</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -907,7 +920,10 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the sufficient statistics from the first observation to parametrize the model</span>
 <span class="n">means</span><span class="p">,</span> <span class="n">covariances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
-    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bivariate_normal</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">],</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="n">bivariate_normal</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">],</span>
+    <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1044,10 +1060,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bivariate_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> 
-    <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;hgf-2&quot;</span><span class="p">,</span> 
-    <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span> 
-    <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span> <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;hgf-2&quot;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span>
 <span class="p">)</span>
 
 <span class="c1"># adapting prior parameter values to the sufficient statistics</span>
@@ -1055,7 +1068,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">14</span><span class="p">]:</span>
     <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span>
 <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">]:</span>
-    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">.01</span>
+    <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.01</span>
 <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">15</span><span class="p">]:</span>
     <span class="n">bivariate_hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
 </pre></div>
@@ -1083,7 +1096,9 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get the sufficient statistics</span>
 <span class="n">xis</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span>
-    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">spiral_data</span><span class="p">,</span>
+    <span class="n">MultivariateNormal</span><span class="p">()</span><span class="o">.</span><span class="n">sufficient_statistics_from_observations</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span>
+    <span class="n">spiral_data</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1103,23 +1118,23 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue May 13 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri Oct 03 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.2.0
+IPython version      : 9.6.0
 
 pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-jax       : 0.4.31
-sys       : 3.12.3 (main, Feb  4 2025, 14:48:35) [GCC 13.3.0]
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
 seaborn   : 0.13.2
-IPython   : 9.2.0
-matplotlib: 3.10.1
+matplotlib: 3.10.6
 pyhgf     : 0.2.7
-numpy     : 2.2.5
+IPython   : 9.6.0
+jax       : 0.4.31
+numpy     : 2.3.3
 
 Watermark: 2.5.0
 </pre></div>

@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -438,7 +439,6 @@ window.addEventListener("load", () => mermaid.run());
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
@@ -457,18 +457,16 @@ window.addEventListener("load", () => mermaid.run());
         <span class="s2">&quot;edges&quot;</span><span class="p">,</span>
         <span class="s2">&quot;input_idxs&quot;</span><span class="p">,</span>
         <span class="s2">&quot;observations&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;action_fn&quot;</span><span class="p">,</span>
     <span class="p">),</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">beliefs_propagation</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span><span class="p">,</span>
-    <span class="n">inputs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="n">update_sequence</span><span class="p">:</span> <span class="n">UpdateSequence</span><span class="p">,</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
-    <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">input_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">observations</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;external&quot;</span><span class="p">,</span>
-    <span class="n">action_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Attributes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the networks parameters after observing new data point(s).</span>
 
 <span class="sd">    This function performs the beliefs propagation step. Belief propagation consists in:</span>
@@ -502,11 +500,6 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">        `&quot;external&quot;` (default) when new observation are provided, `&quot;generative&quot;` - in</span>
 <span class="sd">        which case the network sample observation from its own predictive distribution,</span>
 <span class="sd">        or `&quot;deprived&quot;` so no observation are provided.</span>
-<span class="sd">    action_fn :</span>
-<span class="sd">        Optional. When provided, can implement action, decisions or transformation in</span>
-<span class="sd">        the environment. The function should receive and return the attributes of the</span>
-<span class="sd">        network and the inputs. This function is called after prediction and before</span>
-<span class="sd">        observation.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -514,8 +507,6 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">        A tuple of parameters structure (carryover and accumulated).</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">prediction_steps</span><span class="p">,</span> <span class="n">update_steps</span> <span class="o">=</span> <span class="n">update_sequence</span>
-
     <span class="c1"># when observations is &quot;generative&quot;, only time_step is provided</span>
     <span class="c1"># and the other variables are None</span>
     <span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">rng_key</span> <span class="o">=</span> <span class="n">inputs</span>
@@ -523,16 +514,31 @@ window.addEventListener("load", () => mermaid.run());
     <span class="c1"># Assign the time_step (or input data) to the attributes.</span>
     <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_step</span>
 
+    <span class="c1"># (Optional) Pre-prediction updates ------------------------------------------------</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
+    <span class="k">if</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">pre_prediction_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">pre_prediction_steps</span><span class="p">:</span>
+            <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span>
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+                <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
+                <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
+                <span class="n">values_tuple</span><span class="o">=</span><span class="n">values_tuple</span><span class="p">,</span>
+            <span class="p">)</span>
+
     <span class="c1"># 1. Prediction sequence -----------------------------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">prediction_steps</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span><span class="p">:</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
 
     <span class="c1"># act on the environment before observation</span>
-    <span class="k">if</span> <span class="n">action_fn</span><span class="p">:</span>
-        <span class="c1"># Call the action function if provided -</span>
-        <span class="c1"># this function can transform attributes and inputs before the observation step</span>
-        <span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span> <span class="o">=</span> <span class="n">action_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">action_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">action_steps</span><span class="p">:</span>
+            <span class="c1"># Call the action function if provided -</span>
+            <span class="c1"># this function can transform attributes and inputs</span>
+            <span class="c1"># before the observation step</span>
+            <span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span>
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span>
+            <span class="p">)</span>
         <span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">rng_key</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">inputs</span>  <span class="c1"># overwrite the inputs</span>
         <span class="p">)</span>
@@ -573,10 +579,18 @@ window.addEventListener("load", () => mermaid.run());
         <span class="c1"># return an empty dictionary and crash the scan iteration</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="c1"># 3. Update sequence (common for both modes) ---------------------------------------</span>
+    <span class="c1"># 3. Update sequence ---------------------------------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_steps</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span><span class="p">:</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
+
+    <span class="c1"># (Optional) Post-update sequence --------------------------------------------------</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
+    <span class="k">if</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">post_update_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">update_sequence</span><span class="o">.</span><span class="n">post_update_steps</span><span class="p">:</span>
+            <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span>
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span>
+            <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span>

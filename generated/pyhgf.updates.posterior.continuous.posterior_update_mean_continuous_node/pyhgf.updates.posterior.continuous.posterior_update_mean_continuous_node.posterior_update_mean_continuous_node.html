@@ -32,11 +32,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -60,7 +61,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node" href="../pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node.html" />
-    <link rel="prev" title="pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf.html" />
+    <link rel="prev" title="pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -387,6 +388,9 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf</a></li>
 </ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded</a></li>
+</ul>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node</a></li>
 </ul>
@@ -473,16 +477,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -558,7 +565,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.</span></span><span class="sig-name descname"><span class="pre">posterior_update_mean_continuous_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_precision</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/continuous/posterior_update_mean_continuous_node.html#posterior_update_mean_continuous_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node" title="Link to this definition">#</a></dt>
-<dd><p>Update the mean of a state node using the value prediction errors.</p>
+<dd><p>Update the mean of a state node using the value prediction errors <a class="reference internal" href="#rc0c1c3e2aefe-1" id="id1">[1]</a>.</p>
 <ol class="arabic simple">
 <li><p>Mean update from value coupling.</p></li>
 </ol>
@@ -603,54 +610,37 @@ step <code class="xref py py-func docutils literal notranslate"><span class="pre
 <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction_errors.continuous.continuous_node_volatility_prediction_error()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>attributes</strong></dt><dd><p>The attributes of the probabilistic nodes.</p>
-</dd>
-<dt><strong>edges</strong></dt><dd><p>The edges of the probabilistic nodes as a tuple of
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attributes</strong> (<em>dict</em>) – The attributes of the probabilistic nodes.</p></li>
+<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes as a tuple of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as the node
 number. For each node, the index lists the value and volatility parents and
-children.</p>
-</dd>
-<dt><strong>node_idx</strong></dt><dd><p>Pointer to the value parent node that will be updated.</p>
-</dd>
-<dt><strong>node_precision</strong></dt><dd><p>The precision of the node. Depending on the kind of volatility update, this
+children.</p></li>
+<li><p><strong>node_idx</strong> (<em>int</em>) – Pointer to the value parent node that will be updated.</p></li>
+<li><p><strong>node_precision</strong> (<em>float</em>) – The precision of the node. Depending on the kind of volatility update, this
 value can be the expected precision (ehgf), or the posterior from the update
-(standard).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>posterior_mean</dt><dd><p>The new posterior mean.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>attributes</strong> (<em>Dict</em>)</p></li>
-<li><p><strong>edges</strong> (<em>Tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>)</p></li>
-<li><p><strong>node_idx</strong> (<em>int</em>)</p></li>
-<li><p><strong>node_precision</strong> (<em>float</em>)</p></li>
+(standard).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>float</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The new posterior mean.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>posterior_mean</p>
 </dd>
 </dl>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<dl class="simple">
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_precision_continuous_node</span></code></dt><dd></dd>
-</dl>
-</div>
 <p class="rubric">Notes</p>
 <p>This update step is similar to the one used for the state node, except that it uses
 the observed value instead of the mean of the child node, and the expected mean of
 the parent node instead of the expected mean of the child node.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_precision_continuous_node</span></code></p>
+</div>
 <p class="rubric">References</p>
 <div role="list" class="citation-list">
 <div class="citation" id="rc0c1c3e2aefe-1" role="doc-biblioentry">
-<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;
 Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
 arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.10937">https://doi.org/10.48550/ARXIV.2305.10937</a></p>
@@ -671,12 +661,12 @@ arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.1
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf.html"
+       href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf</p>
+        <p class="prev-next-title">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded</p>
       </div>
     </a>
     <a class="right-next"

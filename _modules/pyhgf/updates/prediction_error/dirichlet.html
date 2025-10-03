@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -436,8 +437,6 @@ window.addEventListener("load", () => mermaid.run());
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">jit</span><span class="p">,</span> <span class="n">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax._src.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span> <span class="k">as</span> <span class="n">KeyArray</span>
@@ -455,7 +454,7 @@ window.addEventListener("load", () => mermaid.run());
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">dirichlet_node_prediction_error</span><span class="p">(</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="o">**</span><span class="n">args</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
@@ -572,7 +571,7 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="update_cluster">
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.update_cluster.html#pyhgf.updates.prediction_error.dirichlet.update_cluster">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">update_cluster</span><span class="p">(</span><span class="n">operands</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_cluster</span><span class="p">(</span><span class="n">operands</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update an existing cluster.</span>
 
 <span class="sd">    Parameters</span>
@@ -612,7 +611,7 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="create_cluster">
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.create_cluster.html#pyhgf.updates.prediction_error.dirichlet.create_cluster">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_cluster</span><span class="p">(</span><span class="n">operands</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_cluster</span><span class="p">(</span><span class="n">operands</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new cluster.</span>
 
 <span class="sd">    Parameters</span>
@@ -668,7 +667,7 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">expected_mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">expected_sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20_000</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the best cluster candidate given previous clusters and an input value.</span>
 
 <span class="sd">    Parameters</span>
@@ -740,7 +739,7 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">expected_sigma</span><span class="o">=</span><span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">key</span><span class="p">:</span> <span class="n">KeyArray</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="mi">42</span><span class="p">),</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20_000</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample likely new belief distributions given pre-existing clusters.</span>
 
 <span class="sd">    Parameters</span>

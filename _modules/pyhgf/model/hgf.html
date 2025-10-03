@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -456,7 +457,7 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    model_type :</span>
-<span class="sd">        The model implemented (can be `&quot;continuous&quot;`, `&quot;binary&quot;` or `&quot;custom&quot;`).</span>
+<span class="sd">        The model implemented (can be `&quot;continuous&quot;` or `&quot;binary&quot;`).</span>
 <span class="sd">    n_levels :</span>
 <span class="sd">        The number of hierarchies in the model, including the input vector. It cannot be</span>
 <span class="sd">        less than 2.</span>
@@ -542,12 +543,6 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            the variance (the part that is affected by the parent nodes) and will</span>
 <span class="sd">            define the strength of the connection between the node and the parent</span>
 <span class="sd">            node. Defaults set to `1.0`.</span>
-<span class="sd">        eta0 :</span>
-<span class="sd">            The first categorical value of the binary node. Defaults to `0.0`. Only</span>
-<span class="sd">            relevant if `model_type=&quot;binary&quot;`.</span>
-<span class="sd">        eta1 :</span>
-<span class="sd">            The second categorical value of the binary node. Defaults to `0.0`. Only</span>
-<span class="sd">            relevant if `model_type=&quot;binary&quot;`.</span>
 <span class="sd">        binary_precision :</span>
 <span class="sd">            The precision of the binary input node. Default to `jnp.inf`. Only relevant</span>
 <span class="sd">            if `model_type=&quot;binary&quot;`.</span>

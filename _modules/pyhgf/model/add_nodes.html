@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -438,7 +439,7 @@ window.addEventListener("load", () => mermaid.run());
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 
@@ -459,9 +460,9 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">volatility_parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="n">value_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="n">volatility_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-    <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add continuous state node(s) to a network.&quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">2</span>
@@ -516,8 +517,8 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">volatility_parents</span><span class="p">,</span>
     <span class="n">value_children</span><span class="p">,</span>
     <span class="n">volatility_children</span><span class="p">,</span>
-    <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add binary state node(s) to a network.&quot;&quot;&quot;</span>
     <span class="c1"># define the type of node that is created</span>
@@ -644,7 +645,7 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="add_categorical_state">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.add_categorical_state.html#pyhgf.model.add_categorical_state">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_categorical_state</span><span class="p">(</span>
-    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add categorical state node(s) to a network.&quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">5</span>
@@ -666,7 +667,7 @@ window.addEventListener("load", () => mermaid.run());
         <span class="s2">&quot;tonic_volatility_2&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
         <span class="s2">&quot;tonic_volatility_3&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="n">binary_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_categories</span><span class="p">)]</span>
+    <span class="n">binary_idxs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_categories</span><span class="p">)]</span>
     <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;binary_idxs&quot;</span><span class="p">:</span> <span class="n">binary_idxs</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
         <span class="s2">&quot;n_categories&quot;</span><span class="p">:</span> <span class="n">n_categories</span><span class="p">,</span>
@@ -705,7 +706,7 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="add_dp_state">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.add_dp_state.html#pyhgf.model.add_dp_state">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_dp_state</span><span class="p">(</span>
-    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a Dirichlet Process node to a network.&quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">4</span>
@@ -750,11 +751,11 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="get_couplings">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.get_couplings.html#pyhgf.model.get_couplings">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_couplings</span><span class="p">(</span>
-    <span class="n">value_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
-    <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
-    <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
-    <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+    <span class="n">value_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+    <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+    <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+    <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform coupling parameter into tuple of indexes and strenghts.&quot;&quot;&quot;</span>
     <span class="n">couplings</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">indexes</span> <span class="ow">in</span> <span class="p">[</span>
@@ -784,8 +785,8 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="update_parameters">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.update_parameters.html#pyhgf.model.update_parameters">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_parameters</span><span class="p">(</span>
-    <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">default_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="n">Dict</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">default_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the default node parameters using keywords args and dictonary.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">additional_parameters</span><span class="p">):</span>
         <span class="c1"># ensure that all passed values are valid keys</span>
@@ -821,12 +822,12 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
     <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">node_type</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">node_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">value_parents</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-    <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-    <span class="n">value_children</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-    <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
+    <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">value_parents</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="n">volatility_parents</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="n">value_children</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="n">volatility_children</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert a set of parametrised node in a network.&quot;&quot;&quot;</span>
     <span class="c1"># ensure that the set of coupling functions match with the number of child nodes</span>
@@ -850,7 +851,7 @@ window.addEventListener("load", () => mermaid.run());
 
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">):</span>
         <span class="c1"># convert the structure to a list to modify it</span>
-        <span class="n">edges_as_list</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
+        <span class="n">edges_as_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
 
         <span class="n">node_idx</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">n_nodes</span>  <span class="c1"># the index of the new node</span>
 

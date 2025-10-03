@@ -32,11 +32,12 @@
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -429,62 +430,62 @@
   <nav class="contents" id="table-of-contents" role="doc-toc">
 <span id="api-ref"></span><p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#api" id="id3">API</a></p>
+<li><p><a class="reference internal" href="#api" id="id7">API</a></p>
 <ul>
-<li><p><a class="reference internal" href="#updates-functions" id="id4">Updates functions</a></p>
+<li><p><a class="reference internal" href="#updates-functions" id="id8">Updates functions</a></p>
 <ul>
-<li><p><a class="reference internal" href="#posterior-updates" id="id5">Posterior updates</a></p>
+<li><p><a class="reference internal" href="#posterior-updates" id="id9">Posterior updates</a></p>
 <ul>
-<li><p><a class="reference internal" href="#categorical-nodes" id="id6">Categorical nodes</a></p></li>
-<li><p><a class="reference internal" href="#continuous-nodes" id="id7">Continuous nodes</a></p></li>
-<li><p><a class="reference internal" href="#exponential-family" id="id8">Exponential family</a></p></li>
+<li><p><a class="reference internal" href="#categorical-nodes" id="id10">Categorical nodes</a></p></li>
+<li><p><a class="reference internal" href="#continuous-nodes" id="id11">Continuous nodes</a></p></li>
+<li><p><a class="reference internal" href="#exponential-family" id="id12">Exponential family</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#prediction-steps" id="id9">Prediction steps</a></p>
+<li><p><a class="reference internal" href="#prediction-steps" id="id13">Prediction steps</a></p>
 <ul>
-<li><p><a class="reference internal" href="#binary-nodes" id="id10">Binary nodes</a></p></li>
-<li><p><a class="reference internal" href="#id1" id="id11">Continuous nodes</a></p></li>
-<li><p><a class="reference internal" href="#dirichlet-processes" id="id12">Dirichlet processes</a></p></li>
+<li><p><a class="reference internal" href="#binary-nodes" id="id14">Binary nodes</a></p></li>
+<li><p><a class="reference internal" href="#id2" id="id15">Continuous nodes</a></p></li>
+<li><p><a class="reference internal" href="#dirichlet-processes" id="id16">Dirichlet processes</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#prediction-error-steps" id="id13">Prediction error steps</a></p>
+<li><p><a class="reference internal" href="#prediction-error-steps" id="id17">Prediction error steps</a></p>
 <ul>
-<li><p><a class="reference internal" href="#binary-state-nodes" id="id14">Binary state nodes</a></p></li>
-<li><p><a class="reference internal" href="#categorical-state-nodes" id="id15">Categorical state nodes</a></p></li>
-<li><p><a class="reference internal" href="#continuous-state-nodes" id="id16">Continuous state nodes</a></p></li>
-<li><p><a class="reference internal" href="#dirichlet-state-nodes" id="id17">Dirichlet state nodes</a></p></li>
-<li><p><a class="reference internal" href="#id2" id="id18">Exponential family</a></p></li>
+<li><p><a class="reference internal" href="#binary-state-nodes" id="id18">Binary state nodes</a></p></li>
+<li><p><a class="reference internal" href="#categorical-state-nodes" id="id19">Categorical state nodes</a></p></li>
+<li><p><a class="reference internal" href="#continuous-state-nodes" id="id20">Continuous state nodes</a></p></li>
+<li><p><a class="reference internal" href="#dirichlet-state-nodes" id="id21">Dirichlet state nodes</a></p></li>
+<li><p><a class="reference internal" href="#id4" id="id22">Exponential family</a></p></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#distribution" id="id19">Distribution</a></p></li>
-<li><p><a class="reference internal" href="#model" id="id20">Model</a></p></li>
-<li><p><a class="reference internal" href="#plots" id="id21">Plots</a></p>
+<li><p><a class="reference internal" href="#distribution" id="id23">Distribution</a></p></li>
+<li><p><a class="reference internal" href="#model" id="id24">Model</a></p></li>
+<li><p><a class="reference internal" href="#plots" id="id25">Plots</a></p>
 <ul>
-<li><p><a class="reference internal" href="#matplotlib" id="id22">Matplotlib</a></p></li>
-<li><p><a class="reference internal" href="#graphviz" id="id23">Graphviz</a></p></li>
-<li><p><a class="reference internal" href="#networkx" id="id24">Networkx</a></p></li>
+<li><p><a class="reference internal" href="#matplotlib" id="id26">Matplotlib</a></p></li>
+<li><p><a class="reference internal" href="#graphviz" id="id27">Graphviz</a></p></li>
+<li><p><a class="reference internal" href="#networkx" id="id28">Networkx</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#response" id="id25">Response</a></p></li>
-<li><p><a class="reference internal" href="#utils" id="id26">Utils</a></p></li>
-<li><p><a class="reference internal" href="#math" id="id27">Math</a></p></li>
+<li><p><a class="reference internal" href="#response" id="id29">Response</a></p></li>
+<li><p><a class="reference internal" href="#utils" id="id30">Utils</a></p></li>
+<li><p><a class="reference internal" href="#math" id="id31">Math</a></p></li>
 </ul>
 </li>
 </ul>
 </nav>
 <section id="api">
-<h1><a class="toc-backref" href="#id3" role="doc-backlink">API</a><a class="headerlink" href="#api" title="Link to this heading">#</a></h1>
+<h1><a class="toc-backref" href="#id7" role="doc-backlink">API</a><a class="headerlink" href="#api" title="Link to this heading">#</a></h1>
 <section id="updates-functions">
-<h2><a class="toc-backref" href="#id4" role="doc-backlink">Updates functions</a><a class="headerlink" href="#updates-functions" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Updates functions</a><a class="headerlink" href="#updates-functions" title="Link to this heading">#</a></h2>
 <p>Update functions are the heart of probabilistic networks as they shape the propagation of beliefs in the neural hierarchy. The library implements the standard variational updates for value and volatility coupling, as described in Weber et al. (2023).</p>
 <p>The <cite>updates</cite> module contains the update functions used during the belief propagation. Update functions are available through three sub-modules, organized according to their functional roles. We usually dissociate the first updates, triggered top-down (from the leaves to the roots of the networks), that are prediction steps and recover the current state of inference. The second updates are the prediction error, signalling the divergence between the prediction and the new observation (for input nodes), or state (for state nodes). Interleaved with these steps are posterior update steps, where a node receives prediction errors from the child nodes and estimates new statistics.</p>
 <section id="posterior-updates">
-<h3><a class="toc-backref" href="#id5" role="doc-backlink">Posterior updates</a><a class="headerlink" href="#posterior-updates" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Posterior updates</a><a class="headerlink" href="#posterior-updates" title="Link to this heading">#</a></h3>
 <p>Update the sufficient statistics of a state node after receiving prediction errors from children nodes. The prediction errors from all the children below the node should be computed before calling the posterior update step.</p>
 <section id="categorical-nodes">
-<h4><a class="toc-backref" href="#id6" role="doc-backlink">Categorical nodes</a><a class="headerlink" href="#categorical-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id10" role="doc-backlink">Categorical nodes</a><a class="headerlink" href="#categorical-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.categorical/pyhgf.updates.posterior.categorical.categorical_state_update.html#pyhgf.updates.posterior.categorical.categorical_state_update" title="pyhgf.updates.posterior.categorical.categorical_state_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">categorical_state_update</span></code></a>(attributes, ...)</p></td>
@@ -495,7 +496,7 @@
 </div>
 </section>
 <section id="continuous-nodes">
-<h4><a class="toc-backref" href="#id7" role="doc-backlink">Continuous nodes</a><a class="headerlink" href="#continuous-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id11" role="doc-backlink">Continuous nodes</a><a class="headerlink" href="#continuous-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf.html#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf" title="pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continuous_node_posterior_update_ehgf</span></code></a>(...)</p></td>
@@ -506,13 +507,16 @@
 </div>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded" title="pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continuous_node_posterior_update_unbounded</span></code></a>(...)</p></td>
+<td><p>Update the posterior of a continuous node with unbounded quadratic approximation.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html#pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node" title="pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_mean_continuous_node</span></code></a>(...)</p></td>
-<td><p>Update the mean of a state node using the value prediction errors.</p></td>
+<td><p>Update the mean of a state node using the value prediction errors <a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html#rc0c1c3e2aefe-1" id="id1"><span>[Rc0c1c3e2aefe-1]</span></a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -535,7 +539,7 @@
 </div>
 </section>
 <section id="exponential-family">
-<h4><a class="toc-backref" href="#id8" role="doc-backlink">Exponential family</a><a class="headerlink" href="#exponential-family" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id12" role="doc-backlink">Exponential family</a><a class="headerlink" href="#exponential-family" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.exponential/pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic.html#pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic" title="pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_exponential_family_dynamic</span></code></a>(...)</p></td>
@@ -547,10 +551,10 @@
 </section>
 </section>
 <section id="prediction-steps">
-<h3><a class="toc-backref" href="#id9" role="doc-backlink">Prediction steps</a><a class="headerlink" href="#prediction-steps" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Prediction steps</a><a class="headerlink" href="#prediction-steps" title="Link to this heading">#</a></h3>
 <p>Compute the expectation for future observation given the influence of parent nodes. The prediction step are executed for all nodes, top-down, before any observation.</p>
 <section id="binary-nodes">
-<h4><a class="toc-backref" href="#id10" role="doc-backlink">Binary nodes</a><a class="headerlink" href="#binary-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id14" role="doc-backlink">Binary nodes</a><a class="headerlink" href="#binary-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.binary/pyhgf.updates.prediction.binary.binary_state_node_prediction.html#pyhgf.updates.prediction.binary.binary_state_node_prediction" title="pyhgf.updates.prediction.binary.binary_state_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">binary_state_node_prediction</span></code></a>(attributes, ...)</p></td>
@@ -560,8 +564,8 @@
 </table>
 </div>
 </section>
-<section id="id1">
-<h4><a class="toc-backref" href="#id11" role="doc-backlink">Continuous nodes</a><a class="headerlink" href="#id1" title="Link to this heading">#</a></h4>
+<section id="id2">
+<h4><a class="toc-backref" href="#id15" role="doc-backlink">Continuous nodes</a><a class="headerlink" href="#id2" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_mean.html#pyhgf.updates.prediction.continuous.predict_mean" title="pyhgf.updates.prediction.continuous.predict_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_mean</span></code></a>(attributes, edges, node_idx)</p></td>
@@ -571,14 +575,14 @@
 <td><p>Compute the expected precision of a continuous state node.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#pyhgf.updates.prediction.continuous.continuous_node_prediction" title="pyhgf.updates.prediction.continuous.continuous_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continuous_node_prediction</span></code></a>(attributes, ...)</p></td>
-<td><p>Update the expected mean and expected precision of a continuous node.</p></td>
+<td><p>Update the expected mean and expected precision of a continuous node <a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#rad74659bc93e-1" id="id3"><span>[Rad74659bc93e-1]</span></a>.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
 <section id="dirichlet-processes">
-<h4><a class="toc-backref" href="#id12" role="doc-backlink">Dirichlet processes</a><a class="headerlink" href="#dirichlet-processes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id16" role="doc-backlink">Dirichlet processes</a><a class="headerlink" href="#dirichlet-processes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.dirichlet/pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction.html#pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction" title="pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dirichlet_node_prediction</span></code></a>(edges, attributes, ...)</p></td>
@@ -590,10 +594,10 @@
 </section>
 </section>
 <section id="prediction-error-steps">
-<h3><a class="toc-backref" href="#id13" role="doc-backlink">Prediction error steps</a><a class="headerlink" href="#prediction-error-steps" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Prediction error steps</a><a class="headerlink" href="#prediction-error-steps" title="Link to this heading">#</a></h3>
 <p>Compute the value and volatility prediction errors of a given node. The prediction error can only be computed after the posterior update (or observation) of a given node.</p>
 <section id="binary-state-nodes">
-<h4><a class="toc-backref" href="#id14" role="doc-backlink">Binary state nodes</a><a class="headerlink" href="#binary-state-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id18" role="doc-backlink">Binary state nodes</a><a class="headerlink" href="#binary-state-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error.html#pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error" title="pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">binary_state_node_prediction_error</span></code></a>(...)</p></td>
@@ -607,7 +611,7 @@
 </div>
 </section>
 <section id="categorical-state-nodes">
-<h4><a class="toc-backref" href="#id15" role="doc-backlink">Categorical state nodes</a><a class="headerlink" href="#categorical-state-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id19" role="doc-backlink">Categorical state nodes</a><a class="headerlink" href="#categorical-state-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.categorical/pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error.html#pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error" title="pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">categorical_state_prediction_error</span></code></a>(...)</p></td>
@@ -618,7 +622,7 @@
 </div>
 </section>
 <section id="continuous-state-nodes">
-<h4><a class="toc-backref" href="#id16" role="doc-backlink">Continuous state nodes</a><a class="headerlink" href="#continuous-state-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id20" role="doc-backlink">Continuous state nodes</a><a class="headerlink" href="#continuous-state-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error.html#pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error" title="pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continuous_node_value_prediction_error</span></code></a>(...)</p></td>
@@ -635,7 +639,7 @@
 </div>
 </section>
 <section id="dirichlet-state-nodes">
-<h4><a class="toc-backref" href="#id17" role="doc-backlink">Dirichlet state nodes</a><a class="headerlink" href="#dirichlet-state-nodes" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id21" role="doc-backlink">Dirichlet state nodes</a><a class="headerlink" href="#dirichlet-state-nodes" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error.html#pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error" title="pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dirichlet_node_prediction_error</span></code></a>(edges, ...)</p></td>
@@ -660,8 +664,8 @@
 </table>
 </div>
 </section>
-<section id="id2">
-<h4><a class="toc-backref" href="#id18" role="doc-backlink">Exponential family</a><a class="headerlink" href="#id2" title="Link to this heading">#</a></h4>
+<section id="id4">
+<h4><a class="toc-backref" href="#id22" role="doc-backlink">Exponential family</a><a class="headerlink" href="#id4" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html#pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed" title="pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction_error_update_exponential_family_fixed</span></code></a>(...)</p></td>
@@ -677,7 +681,7 @@
 </section>
 </section>
 <section id="distribution">
-<h2><a class="toc-backref" href="#id19" role="doc-backlink">Distribution</a><a class="headerlink" href="#distribution" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">Distribution</a><a class="headerlink" href="#distribution" title="Link to this heading">#</a></h2>
 <p>The Hierarchical Gaussian Filter as a PyMC distribution. This distribution can be
 embedded in models using PyMC&gt;=5.0.0.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
@@ -702,7 +706,7 @@ embedded in models using PyMC&gt;=5.0.0.</p>
 </div>
 </section>
 <section id="model">
-<h2><a class="toc-backref" href="#id20" role="doc-backlink">Model</a><a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id24" role="doc-backlink">Model</a><a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
 <p>The main class is used to create a standard Hierarchical Gaussian Filter for binary or
 continuous inputs, with two or three levels. This class wraps the previous JAX modules
 and creates a standard node structure for these models.</p>
@@ -743,12 +747,12 @@ and creates a standard node structure for these models.</p>
 </div>
 </section>
 <section id="plots">
-<h2><a class="toc-backref" href="#id21" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id25" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <p>Plotting functionalities to visualize parameters trajectories and correlations after
 observing new data. We are currently fully supporting Graphviz for network structure and
 Matplotlib for time series visualization. NetworkX is also available for some functions.</p>
 <section id="matplotlib">
-<h3><a class="toc-backref" href="#id22" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html#pyhgf.plots.matplotlib.plot_trajectories" title="pyhgf.plots.matplotlib.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
@@ -768,7 +772,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="graphviz">
-<h3><a class="toc-backref" href="#id23" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html#pyhgf.plots.graphviz.plot_network" title="pyhgf.plots.graphviz.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
@@ -779,7 +783,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="networkx">
-<h3><a class="toc-backref" href="#id24" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html#pyhgf.plots.networkx.plot_network" title="pyhgf.plots.networkx.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network[, figsize, node_size, ...])</p></td>
@@ -791,7 +795,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </section>
 </section>
 <section id="response">
-<h2><a class="toc-backref" href="#id25" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id29" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
 <p>A collection of response functions. A response function is simply a callable taking at
 least the HGF instance as input after observation and returning surprise.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
@@ -816,54 +820,63 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="utils">
-<h2><a class="toc-backref" href="#id26" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id30" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
 <p>Utilities for manipulating neural networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.beliefs_propagation.html#pyhgf.utils.beliefs_propagation" title="pyhgf.utils.beliefs_propagation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beliefs_propagation</span></code></a>(attributes, inputs, ...)</p></td>
-<td><p>Update the networks parameters after observing new data point(s).</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.list_branches.html#pyhgf.utils.list_branches" title="pyhgf.utils.list_branches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_branches</span></code></a>(node_idxs, edges[, branch_list])</p></td>
-<td><p>Return the branch of a network from a given set of root nodes.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html#pyhgf.utils.fill_categorical_state_node" title="pyhgf.utils.fill_categorical_state_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_categorical_state_node</span></code></a>(network, ...)</p></td>
-<td><p>Generate a binary network implied by categorical state(-transition) nodes.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_update_sequence.html#pyhgf.utils.get_update_sequence" title="pyhgf.utils.get_update_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_update_sequence</span></code></a>(network, update_type)</p></td>
-<td><p>Generate an update sequence from the network's structure.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.to_pandas.html#pyhgf.utils.to_pandas" title="pyhgf.utils.to_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code></a>(network)</p></td>
-<td><p>Export the nodes trajectories and surprise as a Pandas data frame.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.add_edges.html#pyhgf.utils.add_edges" title="pyhgf.utils.add_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_edges</span></code></a>(attributes, edges[, kind, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.add_edges.html#pyhgf.utils.add_edges" title="pyhgf.utils.add_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_edges</span></code></a>(attributes, edges[, kind, ...])</p></td>
 <td><p>Add a value or volatility coupling link between a set of nodes.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_input_idxs.html#pyhgf.utils.get_input_idxs" title="pyhgf.utils.get_input_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_input_idxs</span></code></a>(edges)</p></td>
-<td><p>List all possible default inputs nodes.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.add_parent.html#pyhgf.utils.add_parent" title="pyhgf.utils.add_parent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_parent</span></code></a>(attributes, edges, index, ...)</p></td>
 <td><p>Add a new continuous-state parent node to the attributes and edges of a network.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.beliefs_propagation.html#pyhgf.utils.beliefs_propagation" title="pyhgf.utils.beliefs_propagation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beliefs_propagation</span></code></a>(attributes, inputs, ...)</p></td>
+<td><p>Update the networks parameters after observing new data point(s).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html#pyhgf.utils.fill_categorical_state_node" title="pyhgf.utils.fill_categorical_state_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_categorical_state_node</span></code></a>(network, ...)</p></td>
+<td><p>Generate a binary network implied by categorical state(-transition) nodes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_input_idxs.html#pyhgf.utils.get_input_idxs" title="pyhgf.utils.get_input_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_input_idxs</span></code></a>(edges)</p></td>
+<td><p>List all possible default inputs nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_update_sequence.html#pyhgf.utils.get_update_sequence" title="pyhgf.utils.get_update_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_update_sequence</span></code></a>(network, update_type)</p></td>
+<td><p>Generate an update sequence from the network's structure.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.learning.html#pyhgf.utils.learning" title="pyhgf.utils.learning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">learning</span></code></a>(attributes, inputs, inputs_x_idxs, ...)</p></td>
+<td><p>Update the networks coupling parameters using prospective configuration.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.list_branches.html#pyhgf.utils.list_branches" title="pyhgf.utils.list_branches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_branches</span></code></a>(node_idxs, edges[, branch_list])</p></td>
+<td><p>Return the branch of a network from a given set of root nodes.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.remove_node.html#pyhgf.utils.remove_node" title="pyhgf.utils.remove_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_node</span></code></a>(attributes, edges, index)</p></td>
 <td><p>Remove a given node from the network.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.sample.html#pyhgf.utils.sample" title="pyhgf.utils.sample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample</span></code></a>(network, time_steps[, n_predictions, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.sample_node_distribution.html#pyhgf.utils.sample_node_distribution" title="pyhgf.utils.sample_node_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_node_distribution</span></code></a>(attributes, edges, ...)</p></td>
+<td><p>Sample a value from the distribution of an input node.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.sample.html#pyhgf.utils.sample" title="pyhgf.utils.sample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample</span></code></a>(network, time_steps[, n_predictions, ...])</p></td>
 <td><p>Sample n_predictions forward in generative mode.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.set_coupling.html#pyhgf.utils.set_coupling" title="pyhgf.utils.set_coupling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_coupling</span></code></a>(attributes, edges, parent_idx, ...)</p></td>
+<td><p>Set a new coupling strength between a parent and a child node.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.to_pandas.html#pyhgf.utils.to_pandas" title="pyhgf.utils.to_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code></a>(network)</p></td>
+<td><p>Export the nodes trajectories and surprise as a Pandas data frame.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
 <section id="math">
-<h2><a class="toc-backref" href="#id27" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id31" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
 <p>Math functions and probability densities.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.MultivariateNormal.html#pyhgf.math.MultivariateNormal" title="pyhgf.math.MultivariateNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultivariateNormal</span></code></a>()</p></td>
-<td><p>The multivariate normal as an exponential family distribution.</p></td>
+<td><p>The multivariate normal as an exponential family distribution <a class="reference internal" href="generated/pyhgf.math/pyhgf.math.MultivariateNormal.html#r2fcf60062970-1" id="id5"><span>[R2fcf60062970-1]</span></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.Normal.html#pyhgf.math.Normal" title="pyhgf.math.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>()</p></td>
-<td><p>The univariate normal as an exponential family distribution.</p></td>
+<td><p>The univariate normal as an exponential family distribution <a class="reference internal" href="generated/pyhgf.math/pyhgf.math.Normal.html#rf25c987ee749-1" id="id6"><span>[Rf25c987ee749-1]</span></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.gaussian_predictive_distribution.html#pyhgf.math.gaussian_predictive_distribution" title="pyhgf.math.gaussian_predictive_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_predictive_distribution</span></code></a>(x, xi, nu)</p></td>
 <td><p>Density of the Gaussian-predictive distribution.</p></td>
@@ -947,7 +960,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prediction-steps">Prediction steps</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#binary-nodes">Binary nodes</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Continuous nodes</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Continuous nodes</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#dirichlet-processes">Dirichlet processes</a></li>
 </ul>
 </li>
@@ -956,7 +969,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#categorical-state-nodes">Categorical state nodes</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-state-nodes">Continuous state nodes</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#dirichlet-state-nodes">Dirichlet state nodes</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Exponential family</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Exponential family</a></li>
 </ul>
 </li>
 </ul>

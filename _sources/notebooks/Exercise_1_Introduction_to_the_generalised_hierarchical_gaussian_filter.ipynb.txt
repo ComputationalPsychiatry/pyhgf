@@ -31,15 +31,15 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "56fadf0b-a1b3-4aeb-9d81-efd17975448d",
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:17.796771Z",
-     "iopub.status.busy": "2025-05-11T20:58:17.796439Z",
-     "iopub.status.idle": "2025-05-11T20:58:17.802697Z",
-     "shell.execute_reply": "2025-05-11T20:58:17.801676Z"
+     "iopub.execute_input": "2025-08-23T18:02:54.808004Z",
+     "iopub.status.busy": "2025-08-23T18:02:54.807430Z",
+     "iopub.status.idle": "2025-08-23T18:02:54.817934Z",
+     "shell.execute_reply": "2025-08-23T18:02:54.815812Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -52,10 +52,11 @@
    "source": [
     "import sys\n",
     "from IPython.utils import io\n",
-    "if 'google.colab' in sys.modules:\n",
     "\n",
-    "  with io.capture_output() as captured:\n",
-    "      ! pip install pyhgf watermark"
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip uninstall -y jax jaxlib\n",
+    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {
@@ -65,10 +66,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:17.805822Z",
-     "iopub.status.busy": "2025-05-11T20:58:17.805525Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.065956Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.065026Z"
+     "iopub.execute_input": "2025-08-23T18:02:54.821390Z",
+     "iopub.status.busy": "2025-08-23T18:02:54.821082Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.169165Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.168126Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -196,10 +197,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.069230Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.068634Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.073955Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.073208Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.171486Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.171222Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.174690Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.173849Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -218,10 +219,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.076104Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.075842Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.183794Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.182928Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.176675Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.176469Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.289020Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.288117Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -309,10 +310,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.186260Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.185829Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.190225Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.189539Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.291103Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.290916Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.295263Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.294550Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -396,10 +397,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.192422Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.192202Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.199008Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.197910Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.297310Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.297142Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.301969Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.301106Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -419,10 +420,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.201200Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.201008Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.205739Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.204785Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.304035Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.303861Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.307879Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.307068Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -434,7 +435,9 @@
     "two_levels_continuous_hgf = (\n",
     "    Network()\n",
     "    .add_nodes(precision=1e4)\n",
-    "    .add_nodes(precision=1e4, mean=timeseries[0], tonic_volatility=-13.0, value_children=0)\n",
+    "    .add_nodes(\n",
+    "        precision=1e4, mean=timeseries[0], tonic_volatility=-13.0, value_children=0\n",
+    "    )\n",
     "    .add_nodes(precision=1e1, tonic_volatility=-2.0, volatility_children=1)\n",
     ")"
    ]
@@ -446,10 +449,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.207907Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.207711Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.329079Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.328298Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.309841Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.309663Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.350550Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.349585Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -463,49 +466,49 @@
        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n",
        "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n",
        " \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n",
-       "<!-- Generated by graphviz version 9.0.0 (20231125.0833)\n",
+       "<!-- Generated by graphviz version 2.43.0 (0)\n",
        " -->\n",
        "<!-- Title: hgf&#45;nodes Pages: 1 -->\n",
        "<svg width=\"44pt\" height=\"188pt\"\n",
        " viewBox=\"0.00 0.00 44.00 188.00\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n",
        "<g id=\"graph0\" class=\"graph\" transform=\"scale(1 1) rotate(0) translate(4 184)\">\n",
        "<title>hgf&#45;nodes</title>\n",
-       "<polygon fill=\"white\" stroke=\"none\" points=\"-4,4 -4,-184 40,-184 40,4 -4,4\"/>\n",
+       "<polygon fill=\"white\" stroke=\"transparent\" points=\"-4,4 -4,-184 40,-184 40,4 -4,4\"/>\n",
        "<!-- x_0 -->\n",
        "<g id=\"node1\" class=\"node\">\n",
        "<title>x_0</title>\n",
        "<ellipse fill=\"lightgrey\" stroke=\"black\" cx=\"18\" cy=\"-18\" rx=\"18\" ry=\"18\"/>\n",
-       "<text text-anchor=\"middle\" x=\"18\" y=\"-13.32\" font-family=\"Times,serif\" font-size=\"14.00\">0</text>\n",
+       "<text text-anchor=\"middle\" x=\"18\" y=\"-14.3\" font-family=\"Times,serif\" font-size=\"14.00\">0</text>\n",
        "</g>\n",
        "<!-- x_1 -->\n",
        "<g id=\"node2\" class=\"node\">\n",
        "<title>x_1</title>\n",
        "<ellipse fill=\"none\" stroke=\"black\" cx=\"18\" cy=\"-90\" rx=\"18\" ry=\"18\"/>\n",
-       "<text text-anchor=\"middle\" x=\"18\" y=\"-85.33\" font-family=\"Times,serif\" font-size=\"14.00\">1</text>\n",
+       "<text text-anchor=\"middle\" x=\"18\" y=\"-86.3\" font-family=\"Times,serif\" font-size=\"14.00\">1</text>\n",
        "</g>\n",
        "<!-- x_1&#45;&gt;x_0 -->\n",
        "<g id=\"edge1\" class=\"edge\">\n",
        "<title>x_1&#45;&gt;x_0</title>\n",
-       "<path fill=\"none\" stroke=\"black\" d=\"M18,-71.7C18,-64.41 18,-55.73 18,-47.54\"/>\n",
-       "<polygon fill=\"black\" stroke=\"black\" points=\"21.5,-47.62 18,-37.62 14.5,-47.62 21.5,-47.62\"/>\n",
+       "<path fill=\"none\" stroke=\"black\" d=\"M18,-71.7C18,-63.98 18,-54.71 18,-46.11\"/>\n",
+       "<polygon fill=\"black\" stroke=\"black\" points=\"21.5,-46.1 18,-36.1 14.5,-46.1 21.5,-46.1\"/>\n",
        "</g>\n",
        "<!-- x_2 -->\n",
        "<g id=\"node3\" class=\"node\">\n",
        "<title>x_2</title>\n",
        "<ellipse fill=\"none\" stroke=\"black\" cx=\"18\" cy=\"-162\" rx=\"18\" ry=\"18\"/>\n",
-       "<text text-anchor=\"middle\" x=\"18\" y=\"-157.32\" font-family=\"Times,serif\" font-size=\"14.00\">2</text>\n",
+       "<text text-anchor=\"middle\" x=\"18\" y=\"-158.3\" font-family=\"Times,serif\" font-size=\"14.00\">2</text>\n",
        "</g>\n",
        "<!-- x_2&#45;&gt;x_1 -->\n",
        "<g id=\"edge2\" class=\"edge\">\n",
        "<title>x_2&#45;&gt;x_1</title>\n",
-       "<path fill=\"none\" stroke=\"gray\" stroke-dasharray=\"5,2\" d=\"M18,-143.7C18,-135.64 18,-125.89 18,-116.98\"/>\n",
-       "<ellipse fill=\"gray\" stroke=\"gray\" cx=\"18\" cy=\"-112.6\" rx=\"4\" ry=\"4\"/>\n",
+       "<path fill=\"none\" stroke=\"gray\" stroke-dasharray=\"5,2\" d=\"M18,-143.7C18,-135.39 18,-125.28 18,-116.14\"/>\n",
+       "<ellipse fill=\"gray\" stroke=\"gray\" cx=\"18\" cy=\"-112.1\" rx=\"4\" ry=\"4\"/>\n",
        "</g>\n",
        "</g>\n",
        "</svg>\n"
       ],
       "text/plain": [
-       "<graphviz.sources.Source at 0x7f3d5d6e2db0>"
+       "<graphviz.sources.Source at 0x77c15cc5fbf0>"
       ]
      },
      "execution_count": 8,
@@ -525,10 +528,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.331122Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.330921Z",
-     "iopub.status.idle": "2025-05-11T20:58:19.721485Z",
-     "shell.execute_reply": "2025-05-11T20:58:19.720577Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.352773Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.352579Z",
+     "iopub.status.idle": "2025-08-23T18:02:56.773268Z",
+     "shell.execute_reply": "2025-08-23T18:02:56.772310Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -548,10 +551,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:19.723807Z",
-     "iopub.status.busy": "2025-05-11T20:58:19.723607Z",
-     "iopub.status.idle": "2025-05-11T20:58:20.615822Z",
-     "shell.execute_reply": "2025-05-11T20:58:20.614992Z"
+     "iopub.execute_input": "2025-08-23T18:02:56.775656Z",
+     "iopub.status.busy": "2025-08-23T18:02:56.775426Z",
+     "iopub.status.idle": "2025-08-23T18:02:57.722421Z",
+     "shell.execute_reply": "2025-08-23T18:02:57.721364Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -629,10 +632,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:20.618150Z",
-     "iopub.status.busy": "2025-05-11T20:58:20.617843Z",
-     "iopub.status.idle": "2025-05-11T20:58:26.246822Z",
-     "shell.execute_reply": "2025-05-11T20:58:26.245925Z"
+     "iopub.execute_input": "2025-08-23T18:02:57.724680Z",
+     "iopub.status.busy": "2025-08-23T18:02:57.724501Z",
+     "iopub.status.idle": "2025-08-23T18:03:03.034430Z",
+     "shell.execute_reply": "2025-08-23T18:03:03.033549Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -797,10 +800,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:26.249509Z",
-     "iopub.status.busy": "2025-05-11T20:58:26.249274Z",
-     "iopub.status.idle": "2025-05-11T20:58:27.431128Z",
-     "shell.execute_reply": "2025-05-11T20:58:27.429968Z"
+     "iopub.execute_input": "2025-08-23T18:03:03.036550Z",
+     "iopub.status.busy": "2025-08-23T18:03:03.036380Z",
+     "iopub.status.idle": "2025-08-23T18:03:04.433192Z",
+     "shell.execute_reply": "2025-08-23T18:03:04.432298Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -847,10 +850,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:27.433573Z",
-     "iopub.status.busy": "2025-05-11T20:58:27.433348Z",
-     "iopub.status.idle": "2025-05-11T20:58:27.482741Z",
-     "shell.execute_reply": "2025-05-11T20:58:27.482011Z"
+     "iopub.execute_input": "2025-08-23T18:03:04.435137Z",
+     "iopub.status.busy": "2025-08-23T18:03:04.434958Z",
+     "iopub.status.idle": "2025-08-23T18:03:04.491214Z",
+     "shell.execute_reply": "2025-08-23T18:03:04.490255Z"
     },
     "slideshow": {
      "slide_type": ""
@@ -1102,10 +1105,10 @@
    "metadata": {
     "editable": true,
     "execution": {
-     "iopub.execute_input": "2025-05-11T20:58:27.484895Z",
-     "iopub.status.busy": "2025-05-11T20:58:27.484696Z",
-     "iopub.status.idle": "2025-05-11T20:58:27.501242Z",
-     "shell.execute_reply": "2025-05-11T20:58:27.500541Z"
+     "iopub.execute_input": "2025-08-23T18:03:04.495825Z",
+     "iopub.status.busy": "2025-08-23T18:03:04.495215Z",
+     "iopub.status.idle": "2025-08-23T18:03:04.518922Z",
+     "shell.execute_reply": "2025-08-23T18:03:04.517935Z"
     },
     "scrolled": true,
     "slideshow": {
@@ -1118,23 +1121,23 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Last updated: Sun May 11 2025\n",
+      "Last updated: Sat Aug 23 2025\n",
       "\n",
       "Python implementation: CPython\n",
-      "Python version       : 3.12.3\n",
-      "IPython version      : 9.2.0\n",
+      "Python version       : 3.12.10\n",
+      "IPython version      : 9.4.0\n",
       "\n",
-      "pyhgf : 0.2.6\n",
+      "pyhgf : 0.2.7\n",
       "jax   : 0.4.31\n",
       "jaxlib: 0.4.31\n",
       "\n",
-      "numpy     : 2.2.5\n",
       "pandas    : 2.2.3\n",
       "seaborn   : 0.13.2\n",
+      "pyhgf     : 0.2.7\n",
+      "sys       : 3.12.10 (main, Apr  9 2025, 04:03:51) [Clang 20.1.0 ]\n",
       "matplotlib: 3.10.1\n",
-      "IPython   : 9.2.0\n",
-      "sys       : 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]\n",
-      "pyhgf     : 0.2.6\n",
+      "IPython   : 9.4.0\n",
+      "numpy     : 2.2.5\n",
       "\n",
       "Watermark: 2.5.0\n",
       "\n"
@@ -1177,7 +1180,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.12.3"
+   "version": "3.12.10"
   }
  },
  "nbformat": 4,

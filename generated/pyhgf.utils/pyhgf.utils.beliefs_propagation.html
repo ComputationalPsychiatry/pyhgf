@@ -32,11 +32,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -57,8 +58,8 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.utils.list_branches" href="pyhgf.utils.list_branches.html" />
-    <link rel="prev" title="pyhgf.response.binary_softmax_inverse_temperature" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html" />
+    <link rel="next" title="pyhgf.utils.fill_categorical_state_node" href="pyhgf.utils.fill_categorical_state_node.html" />
+    <link rel="prev" title="pyhgf.utils.add_parent" href="pyhgf.utils.add_parent.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -386,6 +387,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf</a></li>
 </ul>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded</a></li>
+</ul>
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html">pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node</a></li>
 </ul>
 <ul class="nav bd-sidenav">
@@ -471,16 +475,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
 </ul>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.beliefs_propagation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.math/pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
@@ -555,7 +562,7 @@
 <h1>pyhgf.utils.beliefs_propagation<a class="headerlink" href="#pyhgf-utils-beliefs-propagation" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.utils.beliefs_propagation">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.</span></span><span class="sig-name descname"><span class="pre">beliefs_propagation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'external'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/beliefs_propagation.html#beliefs_propagation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.beliefs_propagation" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.</span></span><span class="sig-name descname"><span class="pre">beliefs_propagation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'external'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/beliefs_propagation.html#beliefs_propagation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.beliefs_propagation" title="Link to this definition">#</a></dt>
 <dd><p>Update the networks parameters after observing new data point(s).</p>
 <p>This function performs the beliefs propagation step. Belief propagation consists in:
 1. A prediction sequence, from the leaves of the graph to the roots.
@@ -567,53 +574,28 @@ This function returns a tuple of two new <cite>parameter_structure</cite> (i.e. 
 and the accumulated in the context of <code class="xref py py-func docutils literal notranslate"><span class="pre">jax.lax.scan()</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>attributes</strong></dt><dd><p>The dictionaries of nodes’ parameters. This variable is updated and returned
-after the beliefs propagation step.</p>
-</dd>
-<dt><strong>inputs</strong></dt><dd><p>A tuple of n by time steps arrays containing the new observation(s), the time
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attributes</strong> (<em>dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>dict</em><em>]</em>) – The dictionaries of nodes’ parameters. This variable is updated and returned
+after the beliefs propagation step.</p></li>
+<li><p><strong>inputs</strong> (<em>tuple</em><em>[</em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em>, </em><em>...</em><em>]</em>) – A tuple of n by time steps arrays containing the new observation(s), the time
 steps as well as a boolean mask for observed values. The new observations are a
 tuple of array, with length equal to the number of input nodes. Each input node
 can receive observations  The time steps are the last
-column of the array, the default is unit incrementation.</p>
-</dd>
-<dt><strong>update_sequence</strong></dt><dd><p>The sequence of updates that will be applied to the node structure.</p>
-</dd>
-<dt><strong>edges</strong></dt><dd><p>Information on the network’s edges.</p>
-</dd>
-<dt><strong>input_idxs</strong></dt><dd><p>List input indexes.</p>
-</dd>
-<dt><strong>observations</strong></dt><dd><p>A string indicating how the network receive new observations. Can be
+column of the array, the default is unit incrementation.</p></li>
+<li><p><strong>update_sequence</strong> (<em>UpdateSequence</em>) – The sequence of updates that will be applied to the node structure.</p></li>
+<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – Information on the network’s edges.</p></li>
+<li><p><strong>input_idxs</strong> (<em>tuple</em><em>[</em><em>int</em><em>]</em>) – List input indexes.</p></li>
+<li><p><strong>observations</strong> (<em>str</em>) – A string indicating how the network receive new observations. Can be
 <cite>“external”</cite> (default) when new observation are provided, <cite>“generative”</cite> - in
 which case the network sample observation from its own predictive distribution,
-or <cite>“deprived”</cite> so no observation are provided.</p>
-</dd>
-<dt><strong>action_fn</strong></dt><dd><p>Optional. When provided, can implement action, decisions or transformation in
-the environment. The function should receive and return the attributes of the
-network and the inputs. This function is called after prediction and before
-observation.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>attributes, attributes</dt><dd><p>A tuple of parameters structure (carryover and accumulated).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>attributes</strong> (<em>Dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>Dict</em><em>]</em>)</p></li>
-<li><p><strong>inputs</strong> (<em>Tuple</em><em>[</em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em>, </em><em>...</em><em>]</em>)</p></li>
-<li><p><strong>update_sequence</strong> (<em>Tuple</em><em>[</em><em>Tuple</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>Callable</em><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><em>Dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>Dict</em><em>]</em><em>]</em><em>]</em><em>, </em><em>...</em><em>]</em><em>, </em><em>Tuple</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>Callable</em><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><em>Dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>Dict</em><em>]</em><em>]</em><em>]</em><em>, </em><em>...</em><em>]</em><em>]</em>)</p></li>
-<li><p><strong>edges</strong> (<em>Tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>)</p></li>
-<li><p><strong>input_idxs</strong> (<em>Tuple</em><em>[</em><em>int</em><em>]</em>)</p></li>
-<li><p><strong>observations</strong> (<em>str</em>)</p></li>
-<li><p><strong>action_fn</strong> (<em>Callable</em><em>[</em><em>[</em><em>Dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>Dict</em><em>]</em><em>, </em><em>tuple</em><em>]</em><em>, </em><em>tuple</em><em>[</em><em>Dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>Dict</em><em>]</em><em>, </em><em>tuple</em><em>]</em><em>] </em><em>| </em><em>None</em>)</p></li>
+or <cite>“deprived”</cite> so no observation are provided.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Tuple</em>[<em>Dict</em>, <em>Dict</em>]</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple of parameters structure (carryover and accumulated).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>attributes, attributes</p>
 </dd>
 </dl>
 </dd></dl>
@@ -631,20 +613,20 @@ observation.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html"
+       href="pyhgf.utils.add_parent.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyhgf.response.binary_softmax_inverse_temperature</p>
+        <p class="prev-next-title">pyhgf.utils.add_parent</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.utils.list_branches.html"
+       href="pyhgf.utils.fill_categorical_state_node.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.utils.list_branches</p>
+        <p class="prev-next-title">pyhgf.utils.fill_categorical_state_node</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

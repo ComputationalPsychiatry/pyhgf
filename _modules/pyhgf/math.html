@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -435,7 +436,7 @@ window.addEventListener("load", () => mermaid.run());
   <h1>Source code for pyhgf.math</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span>
@@ -446,7 +447,7 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="MultivariateNormal">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.MultivariateNormal.html#pyhgf.math.MultivariateNormal">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultivariateNormal</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The multivariate normal as an exponential family distribution.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The multivariate normal as an exponential family distribution [1]_.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -491,7 +492,7 @@ window.addEventListener("load", () => mermaid.run());
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parameters_from_sufficient_statistics</span><span class="p">(</span>
         <span class="n">xis</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the distribution parameters from the sufficient statistics.</span>
 
 <span class="sd">        Parameters</span>
@@ -521,7 +522,7 @@ window.addEventListener("load", () => mermaid.run());
 <div class="viewcode-block" id="Normal">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.Normal.html#pyhgf.math.Normal">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Normal</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The univariate normal as an exponential family distribution.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The univariate normal as an exponential family distribution [1]_.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -559,7 +560,7 @@ window.addEventListener("load", () => mermaid.run());
         <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">parameters_from_sufficient_statistics</span><span class="p">(</span><span class="n">xis</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parameters_from_sufficient_statistics</span><span class="p">(</span><span class="n">xis</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the distribution parameters from the sufficient statistics.</span>
 
 <span class="sd">        Parameters</span>
@@ -597,6 +598,8 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            ^{-\frac{\nu+2}{2}}</span>
 <span class="sd">        \end{cases}</span>
 
+<span class="sd">    See [1]_ for more details.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    x :</span>
@@ -632,7 +635,7 @@ window.addEventListener("load", () => mermaid.run());
 
 <div class="viewcode-block" id="gaussian_density">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.gaussian_density.html#pyhgf.math.gaussian_density">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gaussian_density</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gaussian_density</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian density as defined by mean and precision.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">precision</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">precision</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
 
@@ -642,7 +645,7 @@ window.addEventListener("load", () => mermaid.run());
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.binary_surprise.html#pyhgf.math.binary_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">binary_surprise</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span> <span class="n">expected_mean</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise at a binary outcome.</span>
 
 <span class="sd">    The surprise ellicited by a binary observation :math:`x` under the expected</span>
@@ -744,6 +747,8 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">         \sum_{i=1}^k \ln{\frac{\Gamma(\alpha_{2i})}{\Gamma(\alpha_{1i})}} +</span>
 <span class="sd">         \sum_{i=1}^k(\alpha_{1i} -</span>
 <span class="sd">         \alpha_{2i})\left[\psi(\alpha_{1i})-\psi(\sum_{i=1}^k\alpha_{1i})\right]</span>
+
+<span class="sd">    See [1]_ and [2]_ for more details.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

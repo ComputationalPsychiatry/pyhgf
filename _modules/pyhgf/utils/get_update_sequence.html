@@ -31,11 +31,12 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -435,11 +436,10 @@ window.addEventListener("load", () => mermaid.run());
   <h1>Source code for pyhgf.utils.get_update_sequence</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Partial</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.posterior.categorical</span><span class="w"> </span><span class="kn">import</span> <span class="n">categorical_state_update</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.posterior.continuous</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">continuous_node_posterior_update</span><span class="p">,</span>
@@ -462,6 +462,7 @@ window.addEventListener("load", () => mermaid.run());
     <span class="n">prediction_error_update_exponential_family_dynamic</span><span class="p">,</span>
     <span class="n">prediction_error_update_exponential_family_fixed</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">UpdateSequence</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
@@ -469,9 +470,7 @@ window.addEventListener("load", () => mermaid.run());
 
 <div class="viewcode-block" id="get_update_sequence">
 <a class="viewcode-back" href="../../../generated/pyhgf.utils/pyhgf.utils.get_update_sequence.html#pyhgf.utils.get_update_sequence">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_update_sequence</span><span class="p">(</span>
-    <span class="n">network</span><span class="p">:</span> <span class="s2">&quot;Network&quot;</span><span class="p">,</span> <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_update_sequence</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="s2">&quot;Network&quot;</span><span class="p">,</span> <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UpdateSequence</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate an update sequence from the network&#39;s structure.</span>
 
 <span class="sd">    This function return an optimized update sequence considering the edges of the</span>
@@ -499,8 +498,8 @@ window.addEventListener("load", () => mermaid.run());
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># initialize the update and prediction sequences</span>
-    <span class="n">update_sequence</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">prediction_sequence</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">update_sequence</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prediction_sequence</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="n">n_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">)</span>
 
@@ -709,7 +708,11 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">update_sequence</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
                 <span class="n">update_sequence</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">prediction_sequence</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">update_sequence</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">UpdateSequence</span><span class="p">(</span>
+        <span class="n">prediction_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">prediction_sequence</span><span class="p">),</span>
+        <span class="n">update_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">update_sequence</span><span class="p">),</span>
+        <span class="n">action_steps</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">action_steps</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 
