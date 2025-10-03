@@ -1,0 +1,6 @@
+﻿pyhgf.response.first\_level\_binary\_surprise
+=============================================
+
+.. currentmodule:: pyhgf.response
+
+.. autofunction:: first_level_binary_surprise

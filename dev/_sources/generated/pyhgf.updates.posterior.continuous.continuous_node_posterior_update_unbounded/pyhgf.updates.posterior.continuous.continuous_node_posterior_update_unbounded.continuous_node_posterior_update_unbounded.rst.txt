@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.continuous.continuous\_node\_posterior\_update\_unbounded.continuous\_node\_posterior\_update\_unbounded
+================================================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
+
+.. autofunction:: continuous_node_posterior_update_unbounded

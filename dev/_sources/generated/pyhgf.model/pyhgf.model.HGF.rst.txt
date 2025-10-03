@@ -1,0 +1,45 @@
+﻿pyhgf.model.HGF
+===============
+
+.. currentmodule:: pyhgf.model
+
+.. autoclass:: HGF
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~HGF.__init__
+      ~HGF.add_edges
+      ~HGF.add_nodes
+      ~HGF.create_belief_propagation_fn
+      ~HGF.create_learning_propagation_fn
+      ~HGF.get_input_dimension
+      ~HGF.get_network
+      ~HGF.input_custom_sequence
+      ~HGF.input_data
+      ~HGF.plot_correlations
+      ~HGF.plot_network
+      ~HGF.plot_nodes
+      ~HGF.plot_samples
+      ~HGF.plot_trajectories
+      ~HGF.sample
+      ~HGF.surprise
+      ~HGF.to_pandas
+      ~HGF.train
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~HGF.input_idxs
+   
+   
