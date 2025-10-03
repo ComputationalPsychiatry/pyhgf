@@ -537,7 +537,7 @@
 <p>The hierarchical Gaussian filter is built on top of a generative model that is governed by Gaussian random walks. As such, this model is mostly used to model the time-resolved evolution of beliefs in volatile environments. But the framework can easily extend to traditional applications of predictive coding, such as deep neural networks, where the variational message passing replaces the use of gradient descent during training.</p>
 <p>In this notebook, we start from the foundational application of predictive coding networks as a replacement for backpropagation <span id="id1">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span> based on <strong>prospective configuration</strong>, where the most likely neural activation is inferred before weight updates. We show that the variational updates that follow the prediction errors can replace prospective configuration based on gradient descent over the energy function of a predictive coding network, and validate this approach on the “bear example” from <span id="id2">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span>.</p>
 <figure class="align-default" id="task">
-<img alt="https://iiif.elifesciences.org/lax/27879%2Felife-27879-fig1-v3.tif/full/1500,/0/default.jpg" src="https://iiif.elifesciences.org/lax/27879%2Felife-27879-fig1-v3.tif/full/1500,/0/default.jpg" />
+<img alt="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41593-023-01514-1/MediaObjects/41593_2023_1514_Fig1_HTML.png?as=webp" src="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41593-023-01514-1/MediaObjects/41593_2023_1514_Fig1_HTML.png?as=webp" />
 <figcaption>
 <p><span class="caption-number">Fig. 4 </span><span class="caption-text">Learning with prospective configuration.</span><a class="headerlink" href="#task" title="Link to this image">#</a></p>
 </figcaption>
@@ -732,7 +732,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Oct 02 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri Oct 03 2025
 
 Python implementation: CPython
 Python version       : 3.12.3
@@ -742,14 +742,14 @@ pyhgf : 0.2.7
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 9.6.0
-matplotlib: 3.10.6
-pyhgf     : 0.2.7
-numpy     : 2.3.3
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-treescope : 0.1.10
-jax       : 0.4.31
 seaborn   : 0.13.2
+sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+numpy     : 2.3.3
+pyhgf     : 0.2.7
+IPython   : 9.6.0
+jax       : 0.4.31
+matplotlib: 3.10.6
+treescope : 0.1.10
 
 Watermark: 2.5.0
 </pre></div>
