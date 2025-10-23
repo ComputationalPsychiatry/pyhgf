@@ -5,37 +5,75 @@ on:
     branches:
       - master
   pull_request:
+    # This will run the action for pull requests from any branch
     branches:
-      - "*"
+      - '*'
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.12']
+        python-version: ['3.13']
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v2
-      name: Configure pip caching
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    - name: Install dependencies
-      run: |
-        sudo apt-get install graphviz
-        pip install -r requirements-tests.txt
-        pip install ipykernel coverage pytest pytest-cov
-        python -m ipykernel install --user --name python3
-    - name: Run tests and coverage
-      run: |
-        pytest ./tests/ --cov=./src/pyhgf/ --cov-report=xml
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }} # required
+      # Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python environment
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Step 3: Install UV
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          # add uv to PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          uv venv .venv   # create a uv-managed virtualenv
+
+      # Step 4: Install System Dependencies
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+      
+      # Step 5: Install Rust
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      # Step 6: Install Python Dependencies using Poetry
+      - name: Install dependencies
+        run: |
+          uv sync --dev
+      
+      # Step 7: Install the Rust package
+      - name: Build and Install the Package
+        run: uv run maturin develop --release
+
+      # Step 8: Run Tests and Generate Coverage Report
+      - name: Run tests and coverage
+        run: |
+          uv run pytest ./tests/ --cov=./pyhgf/ --cov-report=xml --cov-branch
+
+      # Step 9: Upload Coverage Report to Codecov
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      # Step 10: Run pytest-benchmark
+      - name: Run pytest-benchmark
+        run: |
+          uv run pytest --benchmark-only --benchmark-json=.benchmarks/new_benchmark.json
+
+      # Step 11: Upload benchmark artifact
+      - name: Upload baseline benchmark
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-benchmark
+          path: .benchmarks/new_benchmark.json

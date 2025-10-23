@@ -8,6 +8,7 @@ from pyhgf.response import binary_softmax, binary_softmax_inverse_temperature
 
 
 def test_binary_responses():
+    """Test the binary responses."""
     u, y = load_data("binary")
 
     # two-level binary HGF

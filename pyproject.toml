@@ -1,0 +1,93 @@
+[project]
+name = "pyhgf"
+description = "Dynamic neural networks for predictive coding"
+authors = [
+    { name = "Nicolas Legrand", email = "nicolas.legrand@cas.au.dk" }
+]
+license = "GPL-3.0"
+requires-python = ">=3.10,<=3.13"
+readme = "README.md"
+keywords = ["reinforcement learning", "predictive coding", "neural networks", "graphs", "variational inference", "active inference", "causal inference"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+dependencies = [
+    "numpy>=2.0.0",
+    "matplotlib>=3.4.0",
+    "seaborn>=0.13.2",
+    "arviz>=0.21.0",
+    "pymc>=5.25.1",
+    "jax>=0.4.26,<0.4.32",
+    "jaxlib>=0.4.26,<0.4.32",
+    "graphviz>=0.20.3",
+]
+
+[project.urls]
+homepage = "https://computationalpsychiatry.github.io/pyhgf/"
+repository = "https://github.com/ComputationalPsychiatry/pyhgf"
+documentation = "https://computationalpsychiatry.github.io/pyhgf/learn.html"
+
+[tool.poetry-dynamic-versioning]
+# Enable dynamic versioning
+enable = true
+style = "pep440"
+
+[tool.uv]
+dev-dependencies = [
+    "sphinx>=8.1.3",
+    "pydata-sphinx-theme>=0.16.1",
+    "sphinxcontrib-bibtex>=2.6.1",
+    "docutils>=0.21.2",
+    "myst-nb>=1.0.0",
+    "numpydoc>=1.6.0",
+    "myst-parser>=4.0.0",
+    "watermark>=2.5.0",
+    "sphinx-togglebutton>=0.3.2",
+    "sphinx-design>=0.6.1",
+    "sphinx-exercise>=1.0.1",
+    "ipywidgets>=8.1.5",
+    "ipykernel>=6.29.5",
+    "coverage>=7.6.3",
+    "pytest>=8.3.3",
+    "pytest-cov>=6.0.0",
+    "maturin>=1.9.3",
+    "pytest-benchmark>=5.1.0",
+    "networkx>=3.4.2",
+    "pydot>=3.0.4",
+    "sphinx-proof>=0.2.1",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "treescope>=0.1.9",
+    "nbconvert>=7.16.6",
+    "jupyterlab_myst>=2.4.2",
+    "pre-commit>=4.3.0"
+]
+
+[build-system]
+requires = ["maturin>=1.9.3", "setuptools-scm>=8"]
+build-backend = "maturin"
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "node-and-date"
+
+[tool.maturin]
+# "extension-module" tells pyo3 we want to build an extension module (skips linking against libpython.so)
+features = ["pyo3/extension-module"]
+requires-python = ">=3.10,<3.13"
+module-name = "pyhgf.rshgf"  # Name of the Rust module when imported in Python
+bindings = "pyo3"  # If using PyO3
+strip = true  # Strips debugging symbols to reduce wheel size
+include = ["README.md", "src/pyhgf/data/**"]  # Ensure README is included in the package
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["D"]
+ignore = ["D100", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

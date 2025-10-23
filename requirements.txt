@@ -1,9 +1,0 @@
-numpy>=1.18
-matplotlib>=3.0.2
-seaborn>=0.9.0
-arviz>=0.12.0
-pymc>=5.0.0
-jax>=0.4.26
-jaxlib>=0.4.26
-setuptools>=38.4
-packaging

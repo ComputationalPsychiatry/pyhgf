@@ -13,20 +13,33 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
+      # 1. Checkout the repository
       - name: Checkout 🛎️
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+      # 2. Set up Python 3.13
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
-      - name: Build
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          # add uv to PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          uv venv .venv   # create a uv-managed virtualenv
+
+      # 3. Install dependencies and build the documentation
+      - name: Install dependencies and build docs
         run: |
           sudo apt-get install graphviz
-          pip install -r requirements-docs.txt
-          sphinx-build -j 4 -T -b html docs/source docs/build/html
+          uv sync --dev
+          uv run python -m ipykernel install --user --name=pyhgf --display-name "Python (pyhgf)"
+          uv run maturin develop --release
+          uv run sphinx-build -j 1 -T -b html docs/source docs/build/html
 
+      # 4. Deploy the documentation for the 'release' event
       - name: Deploy Stable 🚀
         if: github.event_name == 'release'
         uses: JamesIves/github-pages-deploy-action@v4
@@ -34,8 +47,9 @@ jobs:
           folder: docs/build/html
           branch: gh-pages
 
+      # 5. Deploy the documentation for pull requests (Dev version)
       - name: Deploy Dev 🚀
-        if: (github.event_name == 'pull_request') || (github.event_name == 'push')
+        if: github.event_name == 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: docs/build/html

@@ -1,0 +1,23 @@
+name: Rust Crate CI
+
+on:
+    release:
+      types: [published]
+    pull_request:
+      types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Run tests
+        run: cargo test

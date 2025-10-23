@@ -17,7 +17,7 @@ import pyhgf
 # -- Project information -----------------------------------------------------
 
 project = "pyhgf"
-copyright = u"2022-{}, Nicolas Legrand".format(time.strftime("%Y"))
+copyright = "2022-{}, Nicolas Legrand".format(time.strftime("%Y"))
 author = "Nicolas Legrand"
 release = pyhgf.__version__
 
@@ -25,11 +25,14 @@ nb_execution_timeout = 300
 
 image_scrapers = ("matplotlib",)
 
-bibtex_bibfiles = ['refs.bib']
+bibtex_bibfiles = ["refs.bib"]
 bibtex_reference_style = "author_year"
 bibtex_default_style = "unsrt"
 
 # -- General configuration ---------------------------------------------------
+
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -41,14 +44,19 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.autosummary",
     "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
     "matplotlib.sphinxext.plot_directive",
     "numpydoc",
     "myst_nb",
-    "sphinxcontrib.bibtex",
-    "sphinx_togglebutton",
     "sphinx_design",
+    "sphinxcontrib.bibtex",
+    "sphinxcontrib.mermaid",
+    "sphinx_togglebutton",
     "sphinx_exercise",
+    "sphinx_proof",
 ]
+
+napoleon_numpy_docstring = True  # Enable NumPy style
 
 panels_add_bootstrap_css = False
 
@@ -60,6 +68,7 @@ intersphinx_mapping = {
 
 # Generate the API documentation when building
 autosummary_generate = True
+autodoc_typehints = "description"
 numpydoc_show_class_members = False
 
 # raise an error if the documentation does not build and exit the process
@@ -73,10 +82,10 @@ plot_html_show_formats = False
 plot_html_show_source_link = False
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'myst-nb',
-    '.ipynb': 'myst-nb',
-    '.myst': 'myst-nb',
+    ".rst": "restructuredtext",
+    ".md": "myst-nb",
+    ".ipynb": "myst-nb",
+    ".myst": "myst-nb",
 }
 
 # The master toctree document.
@@ -95,7 +104,7 @@ html_theme_options = {
     "icon_links": [
         dict(
             name="GitHub",
-            url="https://github.com/ilabcode/pyhgf",
+            url="https://github.com/ComputationalPsychiatry/pyhgf",
             icon="fa-brands fa-square-github",
         ),
         dict(
@@ -112,13 +121,13 @@ html_theme_options = {
     "logo": {
         "text": "pyhgf",
     },
-    "show_nav_level": 2
+    "show_nav_level": 2,
 }
 
 myst_enable_extensions = ["dollarmath", "colon_fence"]
 
 html_sidebars = {
-  "api": [],
-  "cite": [],
-  "references": [],
+    "api": [],
+    "cite": [],
+    "references": [],
 }

@@ -22,17 +22,6 @@ Posterior updates
 
 Update the sufficient statistics of a state node after receiving prediction errors from children nodes. The prediction errors from all the children below the node should be computed before calling the posterior update step.
 
-Binary nodes
-------------
-
-.. currentmodule:: pyhgf.updates.posterior.binary
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.binary
-
-    binary_node_update_infinite
-    binary_node_update_finite
-
 
 Categorical nodes
 -----------------
@@ -42,20 +31,45 @@ Categorical nodes
 .. autosummary::
    :toctree: generated/pyhgf.updates.posterior.categorical
 
-    categorical_input_update
+    categorical_state_update
 
 Continuous nodes
 ----------------
 
-.. currentmodule:: pyhgf.updates.posterior.continuous
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.continuous
+   :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf
+
+    continuous_node_posterior_update_ehgf
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
+
+    continuous_node_posterior_update_unbounded
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
 
     posterior_update_mean_continuous_node
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
+
     posterior_update_precision_continuous_node
-    continuous_node_update
-    continuous_node_update_ehgf
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update
+
+    continuous_node_posterior_update
 
 Exponential family
 ------------------
@@ -65,7 +79,7 @@ Exponential family
 .. autosummary::
    :toctree: generated/pyhgf.updates.posterior.exponential
 
-    posterior_update_exponential_family
+    posterior_update_exponential_family_dynamic
 
 Prediction steps
 ================
@@ -109,75 +123,46 @@ Prediction error steps
 
 Compute the value and volatility prediction errors of a given node. The prediction error can only be computed after the posterior update (or observation) of a given node.
 
-Inputs
-------
-
-Binary inputs
-^^^^^^^^^^^^^
-
-.. currentmodule:: pyhgf.updates.prediction_error.inputs.binary
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.inputs.binary
-
-    binary_input_prediction_error_infinite_precision
-    binary_input_prediction_error_finite_precision
-
-Continuous inputs
-^^^^^^^^^^^^^^^^^
-
-.. currentmodule:: pyhgf.updates.prediction_error.inputs.continuous
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.inputs.continuous
-
-    continuous_input_volatility_prediction_error
-    continuous_input_value_prediction_error
-    continuous_input_prediction_error
-
-Generic input
-^^^^^^^^^^^^^
-
-.. currentmodule:: pyhgf.updates.prediction_error.inputs.generic
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.inputs.generic
-
-    generic_input_prediction_error
-
-State nodes
------------
-
-
 Binary state nodes
-^^^^^^^^^^^^^^^^^^
+------------------
 
-.. currentmodule:: pyhgf.updates.prediction_error.nodes.binary
+.. currentmodule:: pyhgf.updates.prediction_error.binary
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.nodes.binary
+   :toctree: generated/pyhgf.updates.prediction_error.binary
 
     binary_state_node_prediction_error
+    binary_finite_state_node_prediction_error
 
-Continuous state nodes
-^^^^^^^^^^^^^^^^^^^^^^
+Categorical state nodes
+-----------------------
 
-.. currentmodule:: pyhgf.updates.prediction_error.nodes.continuous
+.. currentmodule:: pyhgf.updates.prediction_error.categorical
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.nodes.continuous
+   :toctree: generated/pyhgf.updates.prediction_error.categorical
+
+    categorical_state_prediction_error
+
+Continuous state nodes
+----------------------
+
+.. currentmodule:: pyhgf.updates.prediction_error.continuous
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.prediction_error.continuous
 
     continuous_node_value_prediction_error
     continuous_node_volatility_prediction_error
     continuous_node_prediction_error
 
-Dirichlet processes
-^^^^^^^^^^^^^^^^^^^
+Dirichlet state nodes
+---------------------
 
-.. currentmodule:: pyhgf.updates.prediction_error.nodes.dirichlet
+.. currentmodule:: pyhgf.updates.prediction_error.dirichlet
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.nodes.dirichlet
+   :toctree: generated/pyhgf.updates.prediction_error.dirichlet
 
     dirichlet_node_prediction_error
     update_cluster
@@ -185,6 +170,17 @@ Dirichlet processes
     get_candidate
     likely_cluster_proposal
     clusters_likelihood
+
+Exponential family
+------------------
+
+.. currentmodule:: pyhgf.updates.prediction_error.exponential
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.prediction_error.exponential
+
+    prediction_error_update_exponential_family_fixed
+    prediction_error_update_exponential_family_dynamic
 
 Distribution
 ************
@@ -196,6 +192,7 @@ embedded in models using PyMC>=5.0.0.
 
 .. autosummary::
    :toctree: generated/pyhgf.distribution
+   :nosignatures:
 
    logp
    hgf_logp
@@ -214,24 +211,58 @@ and creates a standard node structure for these models.
 
 .. autosummary::
    :toctree: generated/pyhgf.model
+   :nosignatures:
 
    HGF
+   Network
+   add_continuous_state
+   add_binary_state
+   add_ef_state
+   add_categorical_state
+   add_dp_state
+   get_couplings
+   update_parameters
+   insert_nodes
 
 Plots
 *****
 
 Plotting functionalities to visualize parameters trajectories and correlations after
-observing new data.
+observing new data. We are currently fully supporting Graphviz for network structure and
+Matplotlib for time series visualization. NetworkX is also available for some functions. 
 
-.. currentmodule:: pyhgf.plots
+Matplotlib
+==========
+
+.. currentmodule:: pyhgf.plots.matplotlib
 
 .. autosummary::
-   :toctree: generated/pyhgf.plots
+   :toctree: generated/pyhgf.plots.matplotlib
 
    plot_trajectories
    plot_correlations
-   plot_network
    plot_nodes
+   plot_samples
+
+Graphviz
+========
+
+.. currentmodule:: pyhgf.plots.graphviz
+
+.. autosummary::
+   :toctree: generated/pyhgf.plots.graphviz
+
+   plot_network
+
+Networkx
+========
+
+.. currentmodule:: pyhgf.plots.networkx
+
+.. autosummary::
+   :toctree: generated/pyhgf.plots.networkx
+
+   plot_network
 
 Response
 ********
@@ -260,12 +291,19 @@ Utilities for manipulating neural networks.
 .. autosummary::
    :toctree: generated/pyhgf.utils
 
-   beliefs_propagation
-   list_branches
-   fill_categorical_state_node
-   get_update_sequence
-   to_pandas
    add_edges
+   add_parent
+   beliefs_propagation
+   fill_categorical_state_node
+   get_input_idxs
+   get_update_sequence
+   learning
+   list_branches
+   remove_node
+   sample_node_distribution
+   sample
+   set_coupling
+   to_pandas
 
 Math
 ****
@@ -281,7 +319,6 @@ Math functions and probability densities.
     Normal
     gaussian_predictive_distribution
     gaussian_density
-    sigmoid
     binary_surprise
     gaussian_surprise
     dirichlet_kullback_leibler

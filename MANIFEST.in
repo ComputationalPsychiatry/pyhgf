@@ -1,3 +1,0 @@
-include src/pyhgf/data/usdchf.txt
-include src/pyhgf/data/binary_input.txt
-include src/pyhgf/data/binary_response.txt

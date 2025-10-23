@@ -1,3 +1,7 @@
+```{eval-rst}
+:html_theme.sidebar_secondary.remove:
+```
+
 ```{toctree}
 :maxdepth: 2
 :hidden:
@@ -6,6 +10,8 @@
 notebooks/0.1-Theory.ipynb
 notebooks/0.2-Creating_networks.ipynb
 notebooks/0.3-Generalised_filtering.ipynb
+notebooks/0.4-Planning_and_acting.ipynb
+notebooks/0.5-Learning.ipynb
 ```
 
 ```{toctree}
@@ -26,6 +32,7 @@ notebooks/1.3-Continuous_HGF.ipynb
 notebooks/2-Using_custom_response_functions.ipynb
 notebooks/3-Multilevel_HGF.ipynb
 notebooks/4-Parameter_recovery.ipynb
+notebooks/5-Non_linear_value_coupling
 ```
 
 ```{toctree}
@@ -36,7 +43,7 @@ notebooks/4-Parameter_recovery.ipynb
 notebooks/Example_1_Heart_rate_variability.ipynb
 notebooks/Example_2_Input_node_volatility_coupling.ipynb
 notebooks/Example_3_Multi_armed_bandit.ipynb
-notebooks/Example_4_Iowa_Gambling_Task.ipynb
+notebooks/Example_4_Causal_discovery.ipynb
 ```
 
 ```{toctree}
@@ -50,7 +57,7 @@ notebooks/Exercise_2_Bayesian_reinforcement_learning.ipynb
 
 # Learn
 
-In this section, you can find tutorial notebooks that describe the internals of pyhgf, the theory behind the Hierarchical Gaussian filter, and step-by-step application and use cases of the model. At the beginning of every tutorial, you will find a badge [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ilabcode/pyhgf/blob/master/docs/source/notebooks/0.1-Creating_networks.ipynb) to run the notebook interactively in a Google Colab session.
+In this section, you can find tutorial notebooks that describe the internals of pyhgf, the theory behind the Hierarchical Gaussian filter, and step-by-step application and use cases of the model. At the beginning of every tutorial, you will find a badge [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Creating_networks.ipynb) to run the notebook interactively in a Google Colab session.
 
 ## Theory
 
@@ -68,7 +75,7 @@ How the generative model of the Hierarchical Gaussian filter can be turned into 
 :::{grid-item-card}  Creating and manipulating networks of probabilistic nodes
 :link: probabilistic_networks
 :link-type: ref
-:img-top: ./images/graph_networks.svg
+:img-top: ./images/graph_network.svg
 
 How to create and manipulate a network of probabilistic nodes for reinforcement learning? Working at the intersection of graphs, neural networks and probabilistic frameworks.
 :::
@@ -76,15 +83,32 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 :::{grid-item-card}  Generalised Bayesian filtering
 :link: generalised_filtering
 :link-type: ref
-:img-top: ./images/multivariate_hgf.gif
-
+:img-top: ./images/multivariate_normal.gif
 
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.
 :::
+
+:::{grid-item-card}  Planning and action
+:link: planning_acting
+:link-type: ref
+
+
+Planning and acting with predictive coding networks.
+:::
+
+:::{grid-item-card}  Learning
+:link: learning
+:link-type: ref
+:img-top: ./images/deep_networks.png
+
+
+Learning with predictive coding networks.
+:::
+
 ::::
 
 
-## The Hierarchical Gaussian Filter
+## The hierarchical Gaussian filter
 
 ::::{grid} 1 1 2 3
 :gutter: 1
@@ -92,7 +116,7 @@ Predict, filter and smooth any distribution from the exponential family using ge
 :::{grid-item-card}  The binary Hierarchical Gaussian Filter
 :link: binary_hgf
 :link-type: ref
-:img-top: ./images/binary.png
+:img-top: ./images/binary.svg
 
 Introducing with example the binary Hierarchical Gaussian filter and its applications to reinforcement learning.
 :::
@@ -100,7 +124,7 @@ Introducing with example the binary Hierarchical Gaussian filter and its applica
 :::{grid-item-card}  The categorical Hierarchical Gaussian Filter
 :link: categorical_hgf
 :link-type: ref
-:img-top: ./images/categorical.png
+:img-top: ./images/categorical.svg
 
 The categorical Hierarchical Gaussian Filter is a generalisation of the binary HGF to handle categorical distribution with and without transition probabilities.
 :::
@@ -108,7 +132,7 @@ The categorical Hierarchical Gaussian Filter is a generalisation of the binary H
 :::{grid-item-card}  The continuous Hierarchical Gaussian Filter
 :link: continuous_hgf
 :link-type: ref
-:img-top: ./images/continuous.png
+:img-top: ./images/continuous.svg
 
 Introducing with example the continuous Hierarchical Gaussian filter and its applications to signal processing.
 :::
@@ -135,15 +159,15 @@ How to adapt any model to specific behaviours and experimental design by using c
 :link-type: ref
 :img-top: ./images/multilevel-hgf.png
 
-How to use any model as a distribution to perform hierarchical inference at the group level.
+How to use any predictive coding network as a distribution to perform hierarchical inference.
 :::
 
-:::{grid-item-card} Parameter recovery, prior and posterior predictive sampling
+:::{grid-item-card} Parameter recovery
 :link: parameters_recovery
 :link-type: ref
 :img-top: ./images/parameter_recovery.png
 
-Recovering parameters from the generative model and using the sampling functionalities to estimate prior and posterior uncertainties.
+Recovering parameters from a known generative model.
 :::
 
 :::{grid-item-card} Non-linear value coupling
@@ -186,24 +210,22 @@ Dynamic inference over both the mean and variance of a normal distribution.
 A generalisation of the binary Hierarchical Gaussian Filter to multiarmed bandit where the probabilities of the outcomes are evolving independently.
 :::
 
-:::{grid-item-card} Modeling optimism bias in the Iowa Gambling task
-:link: example_4
-:link-type: ref
-
-Modeling optimism bias in the Iowa Gambling task by varying the autocorrelation strength in a continuous Hierarchical Gaussian Filter.
-:::
-
-::::
-
 ### Non-parametric predictive coding
 
 ::::{grid} 1 1 2 3
 
 :::{grid-item-card} Self-organizing neural network using Dirichlet Process nodes
 :link: example_3
-:link-type: ref
+=======
+:::{grid-item-card}  Causal discovery for predictive coding
+:link: example_4
 
+:link-type: ref
+:img-top: ./images/causal_discovery.png
+
+Deriving a causal discovery prediction error to track the causal coupling strength between two random variable over time.
 :::
+
 ::::
 
 ## Exercises
@@ -217,6 +239,7 @@ Hand-on exercises for theComputational Psychiatry Course (Zurich) to build intui
 :::{grid-item-card} Introduction to the Generalised Hierarchical Gaussian Filter
 :link: hgf_exercises_1
 :link-type: ref
+:img-top: ./images/cpc_tutorial_1.png
 
 Theoretical introduction to the generative model of the generalised Hierarchical Gaussian Filter and presentation of the update functions (i.e. the first inversion of the model). 
 :::
@@ -224,7 +247,7 @@ Theoretical introduction to the generative model of the generalised Hierarchical
 :::{grid-item-card} Applying the Hierarchical Gaussian Filter to reinforcement learning
 :link: hgf_exercises_2
 :link-type: ref
-:img-top: ./images/model_comparison.png
+:img-top: ./images/cpc_tutorial_2.png
 
 Practical application of the generalised Hierarchical Gaussian Filter to reinforcement learning problems and estimation of parameters through MCMC sampling (i.e. the second inversion of the model). 
 :::

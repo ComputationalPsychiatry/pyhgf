@@ -2,10 +2,43 @@
 
 If you are using the *pyhgf* package for your research, we ask you to cite the following paper in the final publication:
 
-* Mathys, C. (2011). A Bayesian foundation for individual learning under uncertainty. Frontiers in Human Neuroscience, 5. https://doi.org/10.3389/fnhum.2011.00039
-* Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K. H., Friston, K. J., & Stephan, K. E. (2014). Uncertainty in perception and the hierarchical Gaussian filter. Frontiers in Human Neuroscience, 8. https://doi.org/10.3389/fnhum.2014.00825
+> Legrand, N., Weber, L., Waade, P. T., Daugaard, A. H. M., Khodadadi, M., Mikuš, N., & Mathys, C. (2024). pyhgf: A neural network library for predictive coding (Version 1). arXiv. https://doi.org/10.48550/ARXIV.2410.09206
 
-*In BibTeX format:*
+```text
+@misc{https://doi.org/10.48550/arxiv.2410.09206,
+  doi = {10.48550/ARXIV.2410.09206},
+  url = {https://arxiv.org/abs/2410.09206},
+  author = {Legrand,  Nicolas and Weber,  Lilian and Waade,  Peter Thestrup and Daugaard,  Anna Hedvig Møller and Khodadadi,  Mojtaba and Mikuš,  Nace and Mathys,  Chris},
+  keywords = {Neural and Evolutionary Computing (cs.NE),  Artificial Intelligence (cs.AI),  Machine Learning (cs.LG),  Neurons and Cognition (q-bio.NC),  FOS: Computer and information sciences,  FOS: Computer and information sciences,  FOS: Biological sciences,  FOS: Biological sciences},
+  title = {pyhgf: A neural network library for predictive coding},
+  publisher = {arXiv},
+  year = {2024},
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+```
+
+If your application is using the generalised Hierarchical Gaussian Filer, we also ask you to cite the following publication:
+
+> Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., & Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 2). arXiv. https://doi.org/10.48550/ARXIV.2305.10937 
+
+```text
+@misc{https://doi.org/10.48550/arxiv.2305.10937,
+  doi = {10.48550/ARXIV.2305.10937},
+  url = {https://arxiv.org/abs/2305.10937},
+  author = {Weber,  Lilian Aline and Waade,  Peter Thestrup and Legrand,  Nicolas and Møller,  Anna Hedvig and Stephan,  Klaas Enno and Mathys,  Christoph},
+  keywords = {Neural and Evolutionary Computing (cs.NE),  Neurons and Cognition (q-bio.NC),  FOS: Computer and information sciences,  FOS: Computer and information sciences,  FOS: Biological sciences,  FOS: Biological sciences},
+  title = {The generalized Hierarchical Gaussian Filter},
+  publisher = {arXiv},
+  year = {2023},
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+```
+
+If you want to refere to the fundational description of the Hierarchical Gaussian Filter, or other important mathematical derivations, please refer to the following publications:
+
+> Mathys, C. (2011). A Bayesian foundation for individual learning under uncertainty. Frontiers in Human Neuroscience, 5. https://doi.org/10.3389/fnhum.2011.00039  
+
+> Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K. H., Friston, K. J., & Stephan, K. E. (2014). Uncertainty in perception and the hierarchical Gaussian filter. Frontiers in Human Neuroscience, 8. https://doi.org/10.3389/fnhum.2014.00825
 
 ```text
 @article{2011:mathys,

@@ -2,12 +2,14 @@
 
 import jax.numpy as jnp
 import numpy as np
+from jax.random import PRNGKey
 
 from pyhgf import load_data
 from pyhgf.model import HGF, Network
 
 
 def test_plotting_functions():
+    """Test the plotting functions of the HGF class."""
     # Read USD-CHF data
     timeserie = load_data("continuous")
 
@@ -27,7 +29,7 @@ def test_plotting_functions():
     ).input_data(input_data=timeserie)
 
     # plot trajectories
-    two_level_continuous.plot_trajectories()
+    two_level_continuous.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     two_level_continuous.plot_correlations()
@@ -37,7 +39,8 @@ def test_plotting_functions():
 
     # plot nodes
     two_level_continuous.plot_nodes(
-        node_idxs=2, show_current_state=True, show_observations=True
+        node_idxs=2,
+        show_posterior=True,
     )
 
     # Set up standard 3-level HGF for continuous inputs
@@ -52,18 +55,29 @@ def test_plotting_functions():
     ).input_data(input_data=timeserie)
 
     # plot trajectories
-    three_level_continuous.plot_trajectories()
+    three_level_continuous.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     three_level_continuous.plot_correlations()
 
     # plot node structures
     three_level_continuous.plot_network()
+    three_level_continuous.plot_network(backend="networkx")
 
     # plot nodes
     three_level_continuous.plot_nodes(
-        node_idxs=2, show_current_state=True, show_observations=True
+        node_idxs=2,
+        show_posterior=True,
     )
+
+    # plot sampling function
+    three_level_continuous.create_belief_propagation_fn(sampling_fn=True)
+    three_level_continuous.sample(
+        time_steps=np.ones(100),
+        rng_key=PRNGKey(4),
+        n_predictions=50,
+    )
+    three_level_continuous.plot_samples()
 
     ##########
     # Binary #
@@ -80,13 +94,11 @@ def test_plotting_functions():
         tonic_volatility={"1": None, "2": -6.0},
         tonic_drift={"1": None, "2": 0.0},
         volatility_coupling={"1": None},
-        eta0=0.0,
-        eta1=1.0,
         binary_precision=jnp.inf,
     ).input_data(u)
 
     # plot trajectories
-    two_level_binary_hgf.plot_trajectories()
+    two_level_binary_hgf.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     two_level_binary_hgf.plot_correlations()
@@ -96,7 +108,8 @@ def test_plotting_functions():
 
     # plot node structures
     two_level_binary_hgf.plot_nodes(
-        node_idxs=2, show_current_state=True, show_observations=True
+        node_idxs=1,
+        show_posterior=True,
     )
 
     three_level_binary_hgf = HGF(
@@ -107,13 +120,11 @@ def test_plotting_functions():
         tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
         tonic_drift={"1": None, "2": 0.0, "3": 0.0},
         volatility_coupling={"1": None, "2": 1.0},
-        eta0=0.0,
-        eta1=1.0,
         binary_precision=jnp.inf,
     ).input_data(u)
 
     # plot trajectories
-    three_level_binary_hgf.plot_trajectories()
+    three_level_binary_hgf.plot_trajectories(show_total_surprise=True)
 
     # plot correlations
     three_level_binary_hgf.plot_correlations()
@@ -123,8 +134,18 @@ def test_plotting_functions():
 
     # plot node structures
     three_level_binary_hgf.plot_nodes(
-        node_idxs=2, show_current_state=True, show_observations=True
+        node_idxs=2,
+        show_posterior=True,
     )
+
+    # plot sampling function
+    three_level_binary_hgf.create_belief_propagation_fn(sampling_fn=True)
+    three_level_binary_hgf.sample(
+        time_steps=np.ones(100),
+        rng_key=PRNGKey(4),
+        n_predictions=50,
+    )
+    three_level_binary_hgf.plot_samples()
 
     #############
     # Categorical
@@ -132,13 +153,13 @@ def test_plotting_functions():
 
     # generate some categorical inputs data
     input_data = np.array(
-        [np.random.multinomial(n=1, pvals=[0.1, 0.2, 0.7]) for _ in range(3)]
-    ).T
-    input_data = np.vstack([[0.0] * input_data.shape[1], input_data])
+        [np.random.multinomial(n=1, pvals=[0.1, 0.2, 0.7]) for _ in range(10)],
+        dtype=float,
+    )
 
     # create the categorical HGF
     categorical_hgf = Network().add_nodes(
-        kind="categorical-input",
+        kind="categorical-state",
         node_parameters={
             "n_categories": 3,
             "binary_parameters": {"tonic_volatility_2": -2.0},
@@ -146,7 +167,7 @@ def test_plotting_functions():
     )
 
     # fitting the model forwards
-    categorical_hgf.input_data(input_data=input_data.T)
+    categorical_hgf.input_data(input_data=input_data)
 
     # plot node structures
     categorical_hgf.plot_network()
