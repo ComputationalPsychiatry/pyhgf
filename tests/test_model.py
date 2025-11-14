@@ -203,3 +203,63 @@ def test_custom_sequence():
         branches_idx=branches_idx,
         input_data=u,
     )
+
+def test_add_value_parent_layer():
+    """Test building a fully connected parent layer."""
+    net = Network()
+
+    # Create 4 bottom nodes
+    net = net.add_nodes(kind="continuous-state", n_nodes=4, precision=1.0)
+    bottom = list(range(4))
+
+    # Add one parent layer of size 3
+    net, parents = net.add_value_parent_layer(
+        children_idxs=bottom,
+        n_parents=3,
+        precision=1.0,
+        tonic_volatility=-1.0,
+        autoconnection_strength=0.2,
+    )
+
+    # Expect exactly 3 new nodes
+    assert len(parents) == 3
+
+    # For each parent, check fully-connected structure
+    for p in parents:
+        assert net.edges[p].value_children == bottom
+        assert len(net.attributes[p]["value_coupling_children"]) == len(bottom)
+
+def test_add_value_parent_stack():
+    """Test building a multi-layer deep parent stack."""
+    net = Network()
+
+    # Base layer of 4 nodes
+    net = net.add_nodes(kind="continuous-state", n_nodes=4, precision=1.0)
+    bottom = list(range(4))
+
+    # Build 3 → 2 → 1 parent stack
+    net, layers = net.add_value_parent_stack(
+        start_children_idxs=bottom,
+        layer_sizes=[3, 2, 1],
+        precision=1.0,
+        tonic_volatility=-1.0,
+        autoconnection_strength=0.3,
+    )
+
+    # Check layer sizes
+    assert layers[0] and len(layers[0]) == 3
+    assert layers[1] and len(layers[1]) == 2
+    assert layers[2] and len(layers[2]) == 1
+
+    # Check connections are fully dense
+    # Layer 0 → bottom
+    for p in layers[0]:
+        assert net.edges[p].value_children == bottom
+
+    # Layer 1 → layer 0
+    for p in layers[1]:
+        assert net.edges[p].value_children == layers[0]
+
+    # Layer 2 → layer 1
+    for p in layers[2]:
+        assert net.edges[p].value_children == layers[1]
