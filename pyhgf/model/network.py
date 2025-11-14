@@ -717,6 +717,26 @@ class Network:
                     " Should be one of the following: 'graphviz' or 'networkx'",
                 )
             )
+        
+    def plot_deep_network(self, layers, backend="graphviz", **kwargs):
+        """
+        Plot the network in a deep-learning style (layer-by-layer).
+        
+        Parameters
+        ----------
+        layers : list of list of int
+            Groups of node indices, arranged by layer.
+        backend : str
+            Only 'graphviz' is supported for now.
+        **kwargs :
+            Passed to the underlying plotting function.
+        """
+        if backend == "graphviz":
+            return graphviz.plot_deep_network(network=self, layers=layers, **kwargs)
+        else:
+            raise ValueError(
+                "Invalid backend. plot_deep_network currently supports only backend='graphviz'."
+            )
 
     def to_pandas(self) -> pd.DataFrame:
         """Export the nodes trajectories and surprise as a Pandas data frame.
@@ -832,3 +852,126 @@ class Network:
                 dim = 1
             self.input_dim.append(dim)
         return self
+
+    def add_value_parent_layer(
+        self,
+        children_idxs: Union[int, list[int], tuple[int, ...]],
+        *,
+        n_parents: int = 1,
+        precision: float = 1.0,
+        mean: float = 0.0,
+        tonic_volatility: Optional[float] = None,
+        autoconnection_strength: Optional[float] = None,
+        coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
+        coupling_fn: tuple[Optional[Callable], ...] = (None,),
+    ) -> tuple["Network", list[int]]:
+        """
+        Add a fully connected 'layer' of continuous-state value parents.
+
+        Each new parent connects to *all* nodes in the provided list of children,
+        analogous to a dense layer in deep learning.
+
+        Parameters
+        ----------
+        children_idxs : int | list[int]
+            Index or list of indices for the child nodes below this layer.
+        n_parents : int
+            Number of parent nodes to create in this layer.
+        precision, mean, tonic_volatility, autoconnection_strength : float
+            Parameters for the new parent nodes.
+        coupling_strengths, coupling_fn :
+            Strengths and functions defining the coupling to the child nodes.
+
+        Returns
+        -------
+        self, new_parent_idxs : tuple[Network, list[int]]
+            The updated network and the list of new parent node indices.
+        """
+        # Normalize children to list
+        if isinstance(children_idxs, int):
+            children = [children_idxs]
+        else:
+            children = list(children_idxs)
+
+        # Track current node count to infer new indices
+        start_n = self.n_nodes
+        new_parent_idxs: list[int] = []
+
+        # Define node parameters
+        kwargs = {
+            "precision": precision,
+            "mean": mean,
+            "coupling_fn": coupling_fn,
+        }
+        if tonic_volatility is not None:
+            kwargs["tonic_volatility"] = tonic_volatility
+        if autoconnection_strength is not None:
+            kwargs["autoconnection_strength"] = autoconnection_strength
+
+        # Add all parent nodes (one per neuron in the new layer)
+        for _ in range(n_parents):
+            self = self.add_nodes(
+                kind="continuous-state",
+                value_children=(children, [coupling_strengths] * len(children)),  # fully connect to all below
+                **kwargs,
+            )
+            new_parent_idxs.append(self.n_nodes - 1)
+
+        return self, new_parent_idxs
+
+    def add_value_parent_stack(
+        self,
+        start_children_idxs: Union[int, list[int], tuple[int, ...]],
+        layer_sizes: list[int],
+        *,
+        precision: float = 1.0,
+        mean: float = 0.0,
+        tonic_volatility: Optional[float] = None,
+        autoconnection_strength: Optional[float] = None,
+        coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
+        coupling_fn: tuple[Optional[Callable], ...] = (None,),
+    ) -> tuple["Network", list[list[int]]]:
+        """
+        Add multiple fully connected 'layers' of value parents stacked above a set of children.
+
+        Each new layer connects *fully* to the layer below — every parent node in a new
+        layer receives input from every node in the previous layer.
+
+        Parameters
+        ----------
+        start_children_idxs : int | list[int]
+            Index or list of indices for the bottom layer (existing children).
+        layer_sizes : list[int]
+            Number of parent nodes to create in each new layer.
+        Other parameters :
+            Passed through to each `add_value_parent_layer` call.
+
+        Returns
+        -------
+        self, layers_parent_idxs : tuple[Network, list[list[int]]]
+            The network and a list of lists of indices for each newly added layer.
+        """
+        # Normalize starting children
+        if isinstance(start_children_idxs, int):
+            current_children = [start_children_idxs]
+        else:
+            current_children = list(start_children_idxs)
+
+        layers: list[list[int]] = []
+
+        # Build layer by layer
+        for size in layer_sizes:
+            self, new_parents = self.add_value_parent_layer(
+                children_idxs=current_children,
+                n_parents=size,
+                precision=precision,
+                mean=mean,
+                tonic_volatility=tonic_volatility,
+                autoconnection_strength=autoconnection_strength,
+                coupling_strengths=coupling_strengths,
+                coupling_fn=coupling_fn,
+            )
+            layers.append(new_parents)
+            current_children = new_parents  # feed forward to next layer
+
+        return self, layers
