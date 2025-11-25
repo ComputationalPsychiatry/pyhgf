@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction\_error.dirichlet.dirichlet\_node\_prediction\_error
+============================================================================
+
+.. currentmodule:: pyhgf.updates.prediction_error.dirichlet
+
+.. autofunction:: dirichlet_node_prediction_error

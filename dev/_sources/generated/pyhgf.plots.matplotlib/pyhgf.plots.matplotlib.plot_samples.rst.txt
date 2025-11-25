@@ -1,0 +1,6 @@
+﻿pyhgf.plots.matplotlib.plot\_samples
+====================================
+
+.. currentmodule:: pyhgf.plots.matplotlib
+
+.. autofunction:: plot_samples
