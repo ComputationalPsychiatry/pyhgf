@@ -36,7 +36,7 @@ from pyhgf.utils import (
     sample,
     learning,
 )
-from pyhgf.updates.learning import learning_weights
+from pyhgf.updates.learning import learning_weights_fixed, learning_weights_dynamic
 
 
 class Network:
@@ -179,6 +179,7 @@ class Network:
         inputs_x_idxs: tuple[int],
         inputs_y_idxs: tuple[int],
         overwrite: bool = True,
+        lr: Union[str, float] = 0.2,
     ) -> "Network":
         """Create the belief propagation function.
 
@@ -195,6 +196,8 @@ class Network:
             If `True` (default), create a new belief propagation function and ignore
             preexisting values. Otherwise, do not create a new function if the attribute
             `scan_fn` is already defined.
+        lr :
+            The kind of learning to use for the coupling strengths.
 
         """
         # get the dimension of the input nodes
@@ -208,10 +211,18 @@ class Network:
             )
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
+        if lr == "dynamic":
+            learning_weights = learning_weights_dynamic
+        elif isinstance(lr, float):
+            learning_weights = Partial(learning_weights_fixed, lr=lr)
+        else:
+            raise ValueError("Invalid lr value. Should be 'dynamic' or a float value.")
+
         learning_steps = [
             (node_idx, learning_weights)
             for node_idx, _ in self.update_sequence.prediction_steps
-            if node_idx not in inputs_x_idxs
+            if (node_idx not in inputs_x_idxs)
+            and (self.edges[node_idx].volatility_children is None)
         ]
 
         # do not update the last layer
@@ -250,12 +261,14 @@ class Network:
 
         return self
 
-    def train(
+    def fit(
         self,
         x: np.ndarray,
         y: np.ndarray,
         inputs_x_idxs: tuple[int],
         inputs_y_idxs: tuple[int],
+        lr: Union[str, float] = 0.2,
+        overwrite: bool = True,
     ):
         """Add new observations.
 
@@ -273,6 +286,8 @@ class Network:
             The indexes of the nodes receiving the predictors (x).
         inputs_y_idxs :
             The indexes of the nodes receiving the predictions (y).
+        lr :
+            The kind of learning to use for the coupling strengths.
 
         """
         if x.ndim == 1:
@@ -281,9 +296,9 @@ class Network:
             y = y[:, jnp.newaxis]
 
         # generate the belief propagation function
-        if self.scan_fn is None:
+        if (self.scan_fn is None) and overwrite:
             self = self.create_learning_propagation_fn(
-                inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs
+                inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs, lr=lr
             )
 
         # wrap the inputs
