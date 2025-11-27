@@ -68,7 +68,9 @@ def learning_weights_fixed(
             )
 
             # add a check to avoid inf coupling values
-            new_value_coupling = jnp.where(jnp.isinf(new_value_coupling), value_coupling, new_value_coupling)
+            new_value_coupling = jnp.where(
+                jnp.isinf(new_value_coupling), value_coupling, new_value_coupling
+            )
 
             # update the coupling strength in the attributes dictionary for both nodes
             set_coupling(
