@@ -66,6 +66,10 @@ def learning_weights_fixed(
             new_value_coupling = (
                 value_coupling + (expected_coupling - value_coupling) * lr
             )
+
+            # add a check to avoid inf coupling values
+            new_value_coupling = jnp.where(jnp.isinf(new_value_coupling), value_coupling, new_value_coupling)
+
             # update the coupling strength in the attributes dictionary for both nodes
             set_coupling(
                 parent_idx=value_parent_idx,
