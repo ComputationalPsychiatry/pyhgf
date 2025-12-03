@@ -35,8 +35,8 @@ documentation = "https://computationalpsychiatry.github.io/pyhgf/learn.html"
 enable = true
 style = "pep440"
 
-[project.optional-dependencies]
-dev = [
+[tool.uv]
+dev-dependencies = [
     "sphinx>=8.1.3",
     "pydata-sphinx-theme>=0.16.1",
     "sphinxcontrib-bibtex>=2.6.1",
@@ -82,6 +82,7 @@ module-name = "pyhgf.rshgf"  # Name of the Rust module when imported in Python
 bindings = "pyo3"  # If using PyO3
 strip = true  # Strips debugging symbols to reduce wheel size
 include = ["README.md", "src/pyhgf/data/**"]  # Ensure README is included in the package
+python-packages = ["pyhgf"]
 
 [tool.ruff]
 include = ["pyproject.toml", "**/*.py", "**/*.ipynb"]
