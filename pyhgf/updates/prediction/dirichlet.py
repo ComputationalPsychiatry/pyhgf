@@ -40,14 +40,12 @@ def dirichlet_node_prediction(
     # get the parameter (mean and variance) from the exponential state parent nodes
     value_parent_idxs = edges[node_idx].value_parents
     if value_parent_idxs is not None:
-        parameters = jnp.array(
-            [
-                Normal().parameters_from_sufficient_statistics(
-                    xis=attributes[parent_idx]["xis"]
-                )
-                for parent_idx in value_parent_idxs
-            ]
-        )
+        parameters = jnp.array([
+            Normal().parameters_from_sufficient_statistics(
+                xis=attributes[parent_idx]["xis"]
+            )
+            for parent_idx in value_parent_idxs
+        ])
 
         attributes[node_idx]["expected_means"] = parameters[:, 0]
         attributes[node_idx]["expected_sigmas"] = jnp.sqrt(parameters[:, 1])

@@ -2,10 +2,10 @@
 
 import jax.numpy as jnp
 import numpy as np
+from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf import load_data
 from pyhgf.model import Network as PyNetwork
-from pyhgf.rshgf import Network as RsNetwork
 
 
 def test_gaussian():

@@ -1,6 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from typing import Callable, NamedTuple, Optional, Union
+
 from jaxlib.xla_extension import PjitFunction
 
 

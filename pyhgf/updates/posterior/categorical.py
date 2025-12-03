@@ -47,20 +47,16 @@ def categorical_state_update(
 
     """
     # get the expected values before the update
-    expected_mean = jnp.array(
-        [
-            attributes[value_parent_idx]["expected_mean"]
-            for value_parent_idx in edges[node_idx].value_parents  # type: ignore
-        ]
-    )
+    expected_mean = jnp.array([
+        attributes[value_parent_idx]["expected_mean"]
+        for value_parent_idx in edges[node_idx].value_parents  # type: ignore
+    ])
 
     # get the new values after the update from the continuous state
-    updated_mean = jnp.array(
-        [
-            attributes[edges[parent_idx].value_parents[0]]["mean"]
-            for parent_idx in edges[node_idx].value_parents  # type: ignore
-        ]
-    )
+    updated_mean = jnp.array([
+        attributes[edges[parent_idx].value_parents[0]]["mean"]
+        for parent_idx in edges[node_idx].value_parents  # type: ignore
+    ])
     updated_mean = 1 / (1 + jnp.exp(-updated_mean))  # logit transform
 
     # compute the prediction error (observed - expected) at time K

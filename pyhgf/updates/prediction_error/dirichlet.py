@@ -1,6 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
+
 import jax.numpy as jnp
 from jax import Array, jit, random
 from jax._src.typing import Array as KeyArray

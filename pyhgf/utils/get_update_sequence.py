@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from jax.tree_util import Partial
 
+from pyhgf.typing import UpdateSequence
 from pyhgf.updates.posterior.categorical import categorical_state_update
 from pyhgf.updates.posterior.continuous import (
     continuous_node_posterior_update,
@@ -26,7 +27,6 @@ from pyhgf.updates.prediction_error.exponential import (
     prediction_error_update_exponential_family_dynamic,
     prediction_error_update_exponential_family_fixed,
 )
-from pyhgf.typing import UpdateSequence
 
 if TYPE_CHECKING:
     from pyhgf.model import Network
@@ -227,9 +227,10 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
                         # add the posterior update here
                         # this will be moved at the end of the sequence later
-                        update_sequence.append(
-                            (idx, posterior_update_exponential_family_dynamic)
-                        )
+                        update_sequence.append((
+                            idx,
+                            posterior_update_exponential_family_dynamic,
+                        ))
                     elif network.edges[idx].node_type == 4:
                         update_fn = dirichlet_node_prediction_error
                     elif network.edges[idx].node_type == 5:

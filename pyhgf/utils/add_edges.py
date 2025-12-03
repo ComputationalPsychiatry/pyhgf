@@ -1,7 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from typing import Callable, Optional, Union
+
 import jax.numpy as jnp
+
 from pyhgf.typing import AdjacencyLists, Edges
 
 
@@ -81,12 +83,10 @@ def add_edges(
                 )
             else:
                 value_children = value_children + tuple(children_idxs)
-                attributes[parent_idx]["value_coupling_children"] = jnp.concatenate(
-                    [
-                        attributes[parent_idx]["value_coupling_children"],
-                        jnp.array(coupling_strengths),
-                    ]
-                )
+                attributes[parent_idx]["value_coupling_children"] = jnp.concatenate([
+                    attributes[parent_idx]["value_coupling_children"],
+                    jnp.array(coupling_strengths),
+                ])
 
         elif kind == "volatility":
             if volatility_children is None:
@@ -97,12 +97,10 @@ def add_edges(
             else:
                 volatility_children = volatility_children + tuple(children_idxs)
                 attributes[parent_idx]["volatility_coupling_children"] = (
-                    jnp.concatenate(
-                        [
-                            attributes[parent_idx]["volatility_coupling_children"],
-                            jnp.array(coupling_strengths),
-                        ]
-                    )
+                    jnp.concatenate([
+                        attributes[parent_idx]["volatility_coupling_children"],
+                        jnp.array(coupling_strengths),
+                    ])
                 )
 
         # save the updated edges back
@@ -136,12 +134,10 @@ def add_edges(
                 )
             else:
                 value_parents = value_parents + tuple(parent_idxs)
-                attributes[children_idx]["value_coupling_parents"] = jnp.concatenate(
-                    [
-                        attributes[children_idx]["value_coupling_parents"],
-                        jnp.array(coupling_strengths),
-                    ]
-                )
+                attributes[children_idx]["value_coupling_parents"] = jnp.concatenate([
+                    attributes[children_idx]["value_coupling_parents"],
+                    jnp.array(coupling_strengths),
+                ])
         elif kind == "volatility":
             if volatility_parents is None:
                 volatility_parents = tuple(parent_idxs)
@@ -151,12 +147,10 @@ def add_edges(
             else:
                 volatility_parents = volatility_parents + tuple(parent_idxs)
                 attributes[children_idx]["volatility_coupling_parents"] = (
-                    jnp.concatenate(
-                        [
-                            attributes[children_idx]["volatility_coupling_parents"],
-                            jnp.array(coupling_strengths),
-                        ]
-                    )
+                    jnp.concatenate([
+                        attributes[children_idx]["volatility_coupling_parents"],
+                        jnp.array(coupling_strengths),
+                    ])
                 )
 
         # save the updated edges back
