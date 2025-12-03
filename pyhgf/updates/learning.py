@@ -1,9 +1,10 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-import jax
-from jax import jit
+
 import jax.numpy as jnp
+from jax import jit
+
 from pyhgf.typing import Attributes, Edges
 from pyhgf.updates.prediction.continuous import predict_mean
 from pyhgf.utils import set_coupling
@@ -114,12 +115,10 @@ def learning_weights_dynamic(
 
     # get the sum of parents' precision
     if edges[node_idx].value_parents is not None:
-        sum_parents_precision = jnp.array(
-            [
-                attributes[parent_idx]["precision"]
-                for parent_idx in edges[node_idx].value_parents  # type: ignore
-            ]
-        ).sum()
+        sum_parents_precision = jnp.array([
+            attributes[parent_idx]["precision"]
+            for parent_idx in edges[node_idx].value_parents  # type: ignore
+        ]).sum()
 
         pe = attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
 
@@ -128,12 +127,10 @@ def learning_weights_dynamic(
             attributes[node_idx]["value_coupling_parents"],
         ):
             # get the sum of squared prediction errors that was received by this parent
-            sum_children_pe = jnp.array(
-                [
-                    attributes[child_idx]["temp"]["value_prediction_error"] ** 2
-                    for child_idx in edges[value_parent_idx].value_children  # type: ignore
-                ]
-            ).sum()
+            sum_children_pe = jnp.array([
+                attributes[child_idx]["temp"]["value_prediction_error"] ** 2
+                for child_idx in edges[value_parent_idx].value_children  # type: ignore
+            ]).sum()
 
             pe_weighting = (
                 attributes[node_idx]["temp"]["value_prediction_error"] ** 2

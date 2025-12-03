@@ -35,8 +35,8 @@ documentation = "https://computationalpsychiatry.github.io/pyhgf/learn.html"
 enable = true
 style = "pep440"
 
-[tool.uv]
-dev-dependencies = [
+[project.optional-dependencies]
+dev = [
     "sphinx>=8.1.3",
     "pydata-sphinx-theme>=0.16.1",
     "sphinxcontrib-bibtex>=2.6.1",
@@ -62,7 +62,8 @@ dev-dependencies = [
     "treescope>=0.1.9",
     "nbconvert>=7.16.6",
     "jupyterlab_myst>=2.4.2",
-    "pre-commit>=4.3.0"
+    "pre-commit>=4.3.0",
+    "ruff>=0.14.7"
 ]
 
 [build-system]
@@ -83,11 +84,16 @@ strip = true  # Strips debugging symbols to reduce wheel size
 include = ["README.md", "src/pyhgf/data/**"]  # Ensure README is included in the package
 
 [tool.ruff]
+include = ["pyproject.toml", "**/*.py", "**/*.ipynb"]
 extend-include = ["*.ipynb"]
 
 [tool.ruff.lint]
-select = ["D"]
+select = ["D", "I"]
 ignore = ["D100", "D104"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.format]
+# Ensure the formatter is on (replaces Black)
+preview = true

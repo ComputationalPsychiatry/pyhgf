@@ -1,9 +1,10 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from jax import jit
 
+from jax import jit
 from jax.nn import sigmoid
+
 from pyhgf.typing import Edges
 
 

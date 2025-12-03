@@ -1,6 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
+
 from jax import jit
 
 from pyhgf.typing import Edges

@@ -20,8 +20,8 @@ pre-commit:
 
 lint:
 	@echo "--- 🧹 Running linters ---"
-	uv run ruff format . 						        # running ruff formatting
-	uv run ruff check **/*.py --fix						# running ruff linting
+	uv run ruff format . 						# running ruff formatting
+	uv run ruff check --fix	--extend-select=I	# running ruff linting
 
 run-all-notebooks:
 	@echo "--- 📚 Running all notebooks ---"

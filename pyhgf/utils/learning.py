@@ -4,8 +4,9 @@ from functools import partial
 
 from jax import jit
 from jax.typing import ArrayLike
+
 from pyhgf.typing import Attributes, Edges, LearningSequence
-from pyhgf.updates.observation import set_predictors, set_observation
+from pyhgf.updates.observation import set_observation, set_predictors
 
 
 @partial(

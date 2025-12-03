@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from pyhgf.typing import Edges, Attributes
+from pyhgf.typing import Attributes, Edges
 
 
 def set_coupling(

@@ -4,13 +4,13 @@ from .beliefs_propagation import beliefs_propagation
 from .fill_categorical_state_node import fill_categorical_state_node
 from .get_input_idxs import get_input_idxs
 from .get_update_sequence import get_update_sequence
+from .learning import learning
 from .list_branches import list_branches
 from .remove_node import remove_node
 from .sample import sample
 from .sample_node_distribution import sample_node_distribution
-from .to_pandas import to_pandas
-from .learning import learning
 from .set_coupling import set_coupling
+from .to_pandas import to_pandas
 
 __all__ = [
     "add_edges",

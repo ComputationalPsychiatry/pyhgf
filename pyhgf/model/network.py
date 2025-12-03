@@ -21,22 +21,22 @@ from pyhgf.model import (
 from pyhgf.plots import graphviz, matplotlib, networkx
 from pyhgf.typing import (
     Attributes,
-    Sequence,
     Edges,
-    NetworkParameters,
-    UpdateSequence,
     LearningSequence,
+    NetworkParameters,
+    Sequence,
+    UpdateSequence,
 )
+from pyhgf.updates.learning import learning_weights_dynamic, learning_weights_fixed
 from pyhgf.utils import (
     add_edges,
     beliefs_propagation,
     get_input_idxs,
     get_update_sequence,
-    to_pandas,
-    sample,
     learning,
+    sample,
+    to_pandas,
 )
-from pyhgf.updates.learning import learning_weights_fixed, learning_weights_dynamic
 
 
 class Network:
@@ -226,21 +226,17 @@ class Network:
         ]
 
         # do not update the last layer
-        update_steps = tuple(
-            [
-                step
-                for step in self.update_sequence.update_steps
-                if step[0] not in inputs_x_idxs
-            ]
-        )
+        update_steps = tuple([
+            step
+            for step in self.update_sequence.update_steps
+            if step[0] not in inputs_x_idxs
+        ])
         # do not predict on the last layer
-        prediction_steps = tuple(
-            [
-                step
-                for step in self.update_sequence.prediction_steps
-                if step[0] not in inputs_x_idxs
-            ]
-        )
+        prediction_steps = tuple([
+            step
+            for step in self.update_sequence.prediction_steps
+            if step[0] not in inputs_x_idxs
+        ])
 
         self.learning_sequence = LearningSequence(
             prediction_steps=prediction_steps,
@@ -374,12 +370,10 @@ class Network:
 
         # observation mask
         if observed is None:
-            observed = tuple(
-                [
-                    np.ones(input_data.shape[0], dtype=int)
-                    for _ in range(len(self.input_idxs))
-                ]
-            )
+            observed = tuple([
+                np.ones(input_data.shape[0], dtype=int)
+                for _ in range(len(self.input_idxs))
+            ])
         elif isinstance(observed, np.ndarray):
             if observed.ndim == 1:
                 observed = (observed,)
@@ -507,12 +501,10 @@ class Network:
 
         # observation mask
         if observed is None:
-            observed = tuple(
-                [
-                    np.ones(input_data.shape[0], dtype=int)
-                    for _ in range(len(self.input_idxs))
-                ]
-            )
+            observed = tuple([
+                np.ones(input_data.shape[0], dtype=int)
+                for _ in range(len(self.input_idxs))
+            ])
 
         # format input_data according to the input nodes dimension
         split_indices = np.cumsum(self.input_dim[:-1])
@@ -726,12 +718,10 @@ class Network:
         elif backend == "networkx":
             return networkx.plot_network(network=self)
         else:
-            raise ValueError(
-                (
-                    "Invalid backend."
-                    " Should be one of the following: 'graphviz' or 'networkx'",
-                )
-            )
+            raise ValueError((
+                "Invalid backend."
+                " Should be one of the following: 'graphviz' or 'networkx'",
+            ))
 
     def to_pandas(self) -> pd.DataFrame:
         """Export the nodes trajectories and surprise as a Pandas data frame.

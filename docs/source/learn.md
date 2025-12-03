@@ -44,6 +44,7 @@ notebooks/Example_1_Heart_rate_variability.ipynb
 notebooks/Example_2_Input_node_volatility_coupling.ipynb
 notebooks/Example_3_Multi_armed_bandit.ipynb
 notebooks/Example_4_Causal_discovery.ipynb
+notebooks/Example_5_Iowa_Gambling_Task.ipynb
 ```
 
 ```{toctree}
@@ -216,6 +217,13 @@ A generalisation of the binary Hierarchical Gaussian Filter to multiarmed bandit
 :img-top: ./images/causal_discovery.png
 
 Deriving a causal discovery prediction error to track the causal coupling strength between two random variable over time.
+:::
+
+:::{grid-item-card}  Modelling win-frequency bias in the Iowa Gambling Task
+:link: example_5
+:link-type: ref
+
+Using autoconnection strength to model biases in the Iowa Gambling Task.
 :::
 
 ::::

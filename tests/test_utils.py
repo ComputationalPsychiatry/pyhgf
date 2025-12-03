@@ -1,10 +1,11 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 import jax.numpy as jnp
+import numpy as np
 import pytest
 from jax.random import PRNGKey
 from pytest import raises
-import numpy as np
+
 from pyhgf import load_data
 from pyhgf.model import Network
 from pyhgf.typing import AdjacencyLists, UpdateSequence
