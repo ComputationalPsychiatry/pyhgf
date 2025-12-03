@@ -3,10 +3,12 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from graphviz import Digraph
     from graphviz.sources import Source
-
     from pyhgf.model import Network
 
+import graphviz
+from graphviz import Digraph  # <-- Add this
 
 def plot_network(network: "Network") -> "Source":
     """Visualization of node network using GraphViz.
@@ -115,3 +117,71 @@ def plot_network(network: "Network") -> "Source":
     graphviz_structure = graphviz_structure.unflatten(stagger=3)
 
     return graphviz_structure
+
+def plot_deep_network(network: "Network", layers, filename=None, view=True):
+    """
+    Deep-learning style plot of a network using GraphViz.
+    """
+    from graphviz import Digraph
+
+    dot = Digraph(
+        "deep-network",
+        graph_attr={
+            "rankdir": "TB",      # Top → Bottom flow
+            "splines": "ortho",
+            "nodesep": "0.7",
+            "ranksep": "0.9",
+        },
+        node_attr={
+            "shape": "box",
+            "style": "rounded,filled",
+            "fillcolor": "#E8E8E8",
+            "color": "#444444",
+            "penwidth": "1.2",
+            "fontname": "Helvetica",
+            "fontsize": "12",
+        },
+        edge_attr={
+            "arrowhead": "vee",
+            "arrowsize": "0.9",
+            "color": "#444444",
+            "penwidth": "1.0",
+        }
+    )
+
+    # Reverse so the bottom layer appears at the bottom visually
+    layers_reversed = list(reversed(layers))
+    layer_names = []
+
+    num_layers = len(layers)
+
+    # Create each layer block
+    for i, layer_nodes in enumerate(layers_reversed):
+        n_units = len(layer_nodes)
+
+        true_idx = num_layers - 1 - i  # index in original (bottom=0)
+
+        if true_idx == 0:
+            label = f"Input Layer\n({n_units} units)"
+        elif true_idx == num_layers - 1:
+            label = f"Output Layer\n({n_units} units)"
+        else:
+            label = f"Hidden Layer {true_idx}\n({n_units} units)"
+
+        name = f"layer_{i}"
+        layer_names.append(name)
+
+        dot.node(name, label=label)
+
+    # Draw downward arrows between layers
+    for i in range(len(layer_names) - 1):
+        dot.edge(
+            layer_names[i],
+            layer_names[i + 1],
+            xlabel="fully connected"
+        )
+
+    if filename is not None:
+        dot.render(filename, view=view, format="pdf")
+
+    return dot
