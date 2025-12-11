@@ -213,20 +213,24 @@ def test_add_value_parent_layer():
     bottom = list(range(4))
 
     # Add one parent layer of size 3
-    net, parents = net.add_value_parent_layer(
-        children_idxs=bottom,
-        n_parents=3,
+    n_nodes_before = net.n_nodes
+    net = net.add_layer(
+        size=3,
+        value_children=bottom,
         precision=1.0,
         tonic_volatility=-1.0,
         autoconnection_strength=0.2,
     )
 
     # Expect exactly 3 new nodes
-    assert len(parents) == 3
+    assert net.n_nodes == n_nodes_before + 3
+
+    # Get the indices of the newly added parents
+    parents = list(range(n_nodes_before, net.n_nodes))
 
     # For each parent, check fully-connected structure
     for p in parents:
-        assert net.edges[p].value_children == bottom
+        assert net.edges[p].value_children == tuple(bottom)
         assert len(net.attributes[p]["value_coupling_children"]) == len(bottom)
 
 def test_add_value_parent_stack():
@@ -238,28 +242,39 @@ def test_add_value_parent_stack():
     bottom = list(range(4))
 
     # Build 3 → 2 → 1 parent stack
-    net, layers = net.add_value_parent_stack(
-        start_children_idxs=bottom,
+    n_nodes_before = net.n_nodes
+    net = net.add_value_parent_stack(
+        value_children=bottom,
         layer_sizes=[3, 2, 1],
         precision=1.0,
         tonic_volatility=-1.0,
         autoconnection_strength=0.3,
     )
 
+    # Check total nodes added (3 + 2 + 1 = 6)
+    assert net.n_nodes == n_nodes_before + 6
+
+    # Manually compute layer indices based on layer sizes
+    layers = [
+        list(range(n_nodes_before, n_nodes_before + 3)),  # Layer 0: indices 4, 5, 6
+        list(range(n_nodes_before + 3, n_nodes_before + 5)),  # Layer 1: indices 7, 8
+        list(range(n_nodes_before + 5, n_nodes_before + 6)),  # Layer 2: index 9
+    ]
+
     # Check layer sizes
-    assert layers[0] and len(layers[0]) == 3
-    assert layers[1] and len(layers[1]) == 2
-    assert layers[2] and len(layers[2]) == 1
+    assert len(layers[0]) == 3
+    assert len(layers[1]) == 2
+    assert len(layers[2]) == 1
 
     # Check connections are fully dense
     # Layer 0 → bottom
     for p in layers[0]:
-        assert net.edges[p].value_children == bottom
+        assert net.edges[p].value_children == tuple(bottom)
 
     # Layer 1 → layer 0
     for p in layers[1]:
-        assert net.edges[p].value_children == layers[0]
+        assert net.edges[p].value_children == tuple(layers[0])
 
     # Layer 2 → layer 1
     for p in layers[2]:
-        assert net.edges[p].value_children == layers[1]
+        assert net.edges[p].value_children == tuple(layers[1])

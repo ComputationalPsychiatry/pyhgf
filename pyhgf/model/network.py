@@ -860,125 +860,131 @@ class Network:
             self.input_dim.append(dim)
         return self
 
-    def add_value_parent_layer(
+    def add_layer(
         self,
-        children_idxs: Union[int, list[int], tuple[int, ...]],
-        *,
-        n_parents: int = 1,
-        precision: float = 1.0,
-        mean: float = 0.0,
-        tonic_volatility: Optional[float] = None,
-        autoconnection_strength: Optional[float] = None,
+        size: int = 1,
+        value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: tuple[Optional[Callable], ...] = (None,),
-    ) -> tuple["Network", list[int]]:
-        """
-        Add a fully connected 'layer' of continuous-state value parents.
+        **node_parameters,
+    ) -> "Network":
+        """Add a fully connected layer of continuous-state value parents.
 
-        Each new parent connects to *all* nodes in the provided list of children,
-        analogous to a dense layer in deep learning.
+        Each new parent connects to all nodes in the provided list of children,
+        analogous to a dense layer in deep learning. By default, connects to all
+        orphan nodes (nodes without value parents).
 
         Parameters
         ----------
-        children_idxs : int | list[int]
-            Index or list of indices for the child nodes below this layer.
-        n_parents : int
+        size
             Number of parent nodes to create in this layer.
-        precision, mean, tonic_volatility, autoconnection_strength : float
-            Parameters for the new parent nodes.
-        coupling_strengths, coupling_fn :
-            Strengths and functions defining the coupling to the child nodes.
+        value_children
+            Index or list of indices for the child nodes below this layer.
+            If None, automatically connects to all orphan nodes in the network.
+        coupling_strengths
+            Coupling strength(s) to the child nodes. Can be a single float
+            (applied to all connections) or a list/tuple of floats.
+        coupling_fn
+            Coupling function(s) between the new nodes and their value children.
+        **node_parameters
+            Additional keyword parameters for node configuration (e.g., precision,
+            mean, tonic_volatility). These will be passed to add_nodes.
 
         Returns
         -------
-        self, new_parent_idxs : tuple[Network, list[int]]
-            The updated network and the list of new parent node indices.
+        self
+            The updated network for method chaining.
+
         """
-        # Normalize children to list
-        if isinstance(children_idxs, int):
-            children = [children_idxs]
+        # Auto-detect orphan nodes if no children specified
+        if value_children is None:
+            children = []
+            for idx in range(len(self.edges)):
+                # A node is orphan if it has no value parents
+                if self.edges[idx].value_parents is None:
+                    children.append(idx)
+            if not children:
+                raise ValueError(
+                    "No orphan nodes found. Please specify value_children explicitly."
+                )
         else:
-            children = list(children_idxs)
+            # Normalize children to list
+            if isinstance(value_children, int):
+                children = [value_children]
+            else:
+                children = list(value_children)
 
-        # Track current node count to infer new indices
-        start_n = self.n_nodes
-        new_parent_idxs: list[int] = []
-
-        # Define node parameters
-        kwargs = {
-            "precision": precision,
-            "mean": mean,
+        # Add node parameters that shouldn't be overridden
+        node_params = {
             "coupling_fn": coupling_fn,
+            **node_parameters,
         }
-        if tonic_volatility is not None:
-            kwargs["tonic_volatility"] = tonic_volatility
-        if autoconnection_strength is not None:
-            kwargs["autoconnection_strength"] = autoconnection_strength
 
-        # Add all parent nodes (one per neuron in the new layer)
-        for _ in range(n_parents):
+        # Add all parent nodes (one per unit in the new layer)
+        for _ in range(size):
             self = self.add_nodes(
                 kind="continuous-state",
-                value_children=(children, [coupling_strengths] * len(children)),  # fully connect to all below
-                **kwargs,
+                value_children=(children, [coupling_strengths] * len(children)),
+                **node_params,
             )
-            new_parent_idxs.append(self.n_nodes - 1)
 
-        return self, new_parent_idxs
+        return self
 
     def add_value_parent_stack(
         self,
-        start_children_idxs: Union[int, list[int], tuple[int, ...]],
         layer_sizes: list[int],
-        *,
-        precision: float = 1.0,
-        mean: float = 0.0,
-        tonic_volatility: Optional[float] = None,
-        autoconnection_strength: Optional[float] = None,
+        value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: tuple[Optional[Callable], ...] = (None,),
-    ) -> tuple["Network", list[list[int]]]:
-        """
-        Add multiple fully connected 'layers' of value parents stacked above a set of children.
+        **node_parameters,
+    ) -> "Network":
+        """Add multiple fully connected layers of value parents stacked sequentially.
 
-        Each new layer connects *fully* to the layer below — every parent node in a new
-        layer receives input from every node in the previous layer.
+        Each new layer connects fully to the layer below — every parent node in a new
+        layer receives input from every node in the previous layer. By default, the
+        first layer connects to all orphan nodes.
 
         Parameters
         ----------
-        start_children_idxs : int | list[int]
-            Index or list of indices for the bottom layer (existing children).
-        layer_sizes : list[int]
+        layer_sizes
             Number of parent nodes to create in each new layer.
-        Other parameters :
-            Passed through to each `add_value_parent_layer` call.
+        value_children
+            Index or list of indices for the bottom layer (existing children).
+            If None, automatically connects to all orphan nodes for the first layer.
+        coupling_strengths
+            Coupling strength(s) to apply across all layers.
+        coupling_fn
+            Coupling function(s) to apply across all layers.
+        **node_parameters
+            Additional keyword parameters for node configuration (e.g., precision,
+            mean, tonic_volatility). Applied to all layers.
 
         Returns
         -------
-        self, layers_parent_idxs : tuple[Network, list[list[int]]]
-            The network and a list of lists of indices for each newly added layer.
+        self
+            The updated network for method chaining.
+
         """
-        # Normalize starting children
-        if isinstance(start_children_idxs, int):
-            current_children = [start_children_idxs]
-        else:
-            current_children = list(start_children_idxs)
-
-        layers: list[list[int]] = []
-
         # Build layer by layer
-        for size in layer_sizes:
-            self, new_parents = self.add_value_parent_layer(
-                children_idxs=current_children,
-                n_parents=size,
-                precision=precision,
-                mean=mean,
-                tonic_volatility=tonic_volatility,
-                autoconnection_strength=autoconnection_strength,
-                coupling_strengths=coupling_strengths,
-                coupling_fn=coupling_fn,
-            )
-            layers.append(new_parents)
-            current_children = new_parents  # feed forward to next layer
+        for i, size in enumerate(layer_sizes):
+            # For the first layer, use the provided children or auto-detect
+            # For subsequent layers, the children are automatically the orphans (previous layer)
+            if i == 0:
+                self = self.add_layer(
+                    size=size,
+                    value_children=value_children,
+                    coupling_strengths=coupling_strengths,
+                    coupling_fn=coupling_fn,
+                    **node_parameters,
+                )
+            else:
+                # After first layer, auto-connect to orphans (which are the previous layer)
+                self = self.add_layer(
+                    size=size,
+                    value_children=None,  # Auto-detect orphans
+                    coupling_strengths=coupling_strengths,
+                    coupling_fn=coupling_fn,
+                    **node_parameters,
+                )
 
-        return self, layers
+        return self
