@@ -82,6 +82,18 @@ def plot_network(network: "Network") -> "Source":
                 fillcolor="#e2d8c1",
             )
 
+        elif network.edges[idx].node_type == 6:
+            # Value-volatility hybrid node
+            # Double circle with gray outer ring (volatility) and solid inner (value)
+            graphviz_structure.node(
+                f"x_{idx}",
+                label=f"{idx}",
+                style="filled",
+                shape="doublecircle",
+                color="gray",
+                fillcolor="white" if idx not in network.input_idxs else "lightgray",
+            )
+
     # connect value parents
     for i, index in enumerate(network.edges):
         value_parents = index.value_parents

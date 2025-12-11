@@ -68,6 +68,82 @@ def add_continuous_state(
 
     return network
 
+def add_value_volatility_state(
+    network: Network,
+    n_nodes: int,
+    value_parents: tuple,
+    value_children: tuple,
+    node_parameters: dict,
+    additional_parameters: dict,
+    coupling_fn: tuple[Optional[Callable], ...],
+):
+    """Add value-volatility state node(s) with implicit internal volatility level.
+    
+    This node type combines a value level (external facing) with an implicit
+    volatility level (internal). The volatility level modulates the value level's
+    precision, enabling predictive coding networks with fewer explicit nodes.
+    """
+    node_type = 6
+
+    # Value-volatility nodes cannot have external volatility parents/children
+    # The volatility coupling is internal
+    volatility_parents = (None, None)
+    volatility_children = (None, None)
+
+    default_parameters = {
+        # Value level parameters (external facing)
+        "mean": 0.0,
+        "expected_mean": 0.0,
+        "precision": 1.0,
+        "expected_precision": 1.0,
+        "tonic_volatility": -4.0,
+        "tonic_drift": 0.0,
+        "autoconnection_strength": 1.0,
+
+        # Volatility level parameters (implicit internal)
+        "mean_vol": 0.0,
+        "expected_mean_vol": 0.0,
+        "precision_vol": 1.0,
+        "expected_precision_vol": 1.0,
+        "tonic_volatility_vol": -2.0,
+        "tonic_drift_vol": 0.0,
+        "autoconnection_strength_vol": 1.0,
+
+        # Internal coupling
+        "volatility_coupling_internal": 1.0,
+
+        # External coupling (value only)
+        "value_coupling_children": value_children[1],
+        "value_coupling_parents": value_parents[1],
+
+        # State
+        "observed": 1,
+        "temp": {
+            "effective_precision": 0.0,
+            "value_prediction_error": 0.0,
+            "volatility_prediction_error": 0.0,
+            "effective_precision_vol": 0.0,
+            "current_variance": 1.0,
+        },
+    }
+
+    node_parameters = update_parameters(
+        node_parameters, default_parameters, additional_parameters
+    )
+
+    network = insert_nodes(
+        network=network,
+        n_nodes=n_nodes,
+        node_type=node_type,
+        node_parameters=node_parameters,
+        value_parents=value_parents,
+        volatility_parents=volatility_parents,
+        value_children=value_children,
+        volatility_children=volatility_children,
+        coupling_fn=coupling_fn,
+    )
+
+    return network
 
 def add_binary_state(
     network: Network,

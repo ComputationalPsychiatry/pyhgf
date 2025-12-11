@@ -26,6 +26,10 @@ from pyhgf.updates.prediction_error.exponential import (
     prediction_error_update_exponential_family_dynamic,
     prediction_error_update_exponential_family_fixed,
 )
+from pyhgf.updates.prediction.value_volatility import value_volatility_node_prediction
+from pyhgf.updates.prediction_error.value_volatility import value_volatility_node_prediction_error
+from pyhgf.updates.posterior.value_volatility import value_volatility_node_posterior_update
+
 from pyhgf.typing import UpdateSequence
 
 if TYPE_CHECKING:
@@ -111,6 +115,9 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
                     prediction_sequence.append((idx, continuous_node_prediction))
                 elif network.edges[idx].node_type == 4:
                     prediction_sequence.append((idx, dirichlet_node_prediction))
+                elif network.edges[idx].node_type == 6:
+                  prediction_sequence.append((idx, value_volatility_node_prediction))
+                
 
         if not nodes_without_prediction:
             break
@@ -161,6 +168,9 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
                 elif network.edges[idx].node_type == 4:
                     update_fn = None
+                
+                elif network.edges[idx].node_type == 6:
+                  update_fn = value_volatility_node_posterior_update
 
                 update_sequence.append((idx, update_fn))
                 nodes_without_posterior_update.remove(idx)
@@ -237,6 +247,10 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
                         # add the update here, this will move at the end of the sequence
                         update_sequence.append((idx, categorical_state_update))
+                    
+                    elif network.edges[idx].node_type == 6:
+                      update_fn = value_volatility_node_prediction_error
+                    
                     else:
                         raise ValueError(f"Invalid node type encountered at node {idx}")
 

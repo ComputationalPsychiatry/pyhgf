@@ -14,6 +14,7 @@ from pyhgf.model import (
     add_binary_state,
     add_categorical_state,
     add_continuous_state,
+    add_value_volatility_state,
     add_dp_state,
     add_ef_state,
     get_couplings,
@@ -37,7 +38,6 @@ from pyhgf.utils import (
     learning,
 )
 from pyhgf.updates.learning import learning_weights
-
 
 class Network:
     """A predictive coding neural network.
@@ -619,12 +619,13 @@ class Network:
             "categorical-state",
             "continuous-state",
             "binary-state",
+            "value-volatility",
         ]:
             raise ValueError(
                 (
                     "Invalid node type. Should be one of the following: "
                     "'dp-state', 'continuous-state', 'binary-state', "
-                    "'ef-state', or 'categorical-state'"
+                    "'ef-state', 'categorical-state', or 'value-volatility'"
                 )
             )
 
@@ -652,6 +653,18 @@ class Network:
                 additional_parameters=additional_parameters,
                 coupling_fn=coupling_fn,
             )
+
+        elif kind == "value-volatility":
+            self = add_value_volatility_state(
+                network=self,
+                n_nodes=n_nodes,
+                value_parents=value_parents,
+                value_children=value_children,
+                node_parameters=node_parameters,
+                additional_parameters=additional_parameters,
+                coupling_fn=coupling_fn,
+            )
+        
         elif kind == "binary-state":
             self = add_binary_state(
                 network=self,
