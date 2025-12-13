@@ -206,7 +206,9 @@ def test_custom_sequence():
 
 def test_add_value_parent_layer():
     """Test building a fully connected parent layer."""
-    net = Network()
+    from pyhgf.model import DeepNetwork
+
+    net = DeepNetwork()
 
     # Create 4 bottom nodes
     net = net.add_nodes(kind="continuous-state", n_nodes=4, precision=1.0)
@@ -233,9 +235,15 @@ def test_add_value_parent_layer():
         assert net.edges[p].value_children == tuple(bottom)
         assert len(net.attributes[p]["value_coupling_children"]) == len(bottom)
 
-def test_add_value_parent_stack():
-    """Test building a multi-layer deep parent stack."""
-    net = Network()
+    # Check that layer was tracked
+    assert len(net.layers) == 2  # base layer + added layer
+    assert net.layers[1] == parents
+
+def test_add_layer_stack():
+    """Test building a multi-layer stack."""
+    from pyhgf.model import DeepNetwork
+
+    net = DeepNetwork()
 
     # Base layer of 4 nodes
     net = net.add_nodes(kind="continuous-state", n_nodes=4, precision=1.0)
@@ -243,7 +251,7 @@ def test_add_value_parent_stack():
 
     # Build 3 → 2 → 1 parent stack
     n_nodes_before = net.n_nodes
-    net = net.add_value_parent_stack(
+    net = net.add_layer_stack(
         value_children=bottom,
         layer_sizes=[3, 2, 1],
         precision=1.0,
@@ -254,12 +262,11 @@ def test_add_value_parent_stack():
     # Check total nodes added (3 + 2 + 1 = 6)
     assert net.n_nodes == n_nodes_before + 6
 
-    # Manually compute layer indices based on layer sizes
-    layers = [
-        list(range(n_nodes_before, n_nodes_before + 3)),  # Layer 0: indices 4, 5, 6
-        list(range(n_nodes_before + 3, n_nodes_before + 5)),  # Layer 1: indices 7, 8
-        list(range(n_nodes_before + 5, n_nodes_before + 6)),  # Layer 2: index 9
-    ]
+    # Check that layers were tracked automatically
+    assert len(net.layers) == 4  # base + 3 added layers
+
+    # Get tracked layers (excluding base layer at index 0)
+    layers = net.layers[1:]  # Skip base layer
 
     # Check layer sizes
     assert len(layers[0]) == 3
