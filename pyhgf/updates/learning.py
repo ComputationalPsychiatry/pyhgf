@@ -2,6 +2,7 @@
 
 from functools import partial
 
+import jax
 import jax.numpy as jnp
 from jax import jit
 
@@ -57,7 +58,7 @@ def learning_weights_fixed(
             # the new mean observed by the child that this parent seek to explain
             # here prediction error are equally shared among the parents
             observed = attributes[node_idx]["expected_mean"] + weighting * pe
-
+            jax.debug.print("🤯 {x} 🤯", x=node_idx)
             expected_coupling = observed / (
                 coupling_fn(attributes[value_parent_idx]["mean"])
             )

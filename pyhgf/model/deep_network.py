@@ -234,12 +234,12 @@ class DeepNetwork(Network):
         lr: Union[str, float] = 0.2,
         overwrite: bool = True,
     ):
-        """Fit the deep network to predictors (X) and outcomes (Y).
+        """Fit the deep network to predictors (X, top layer) and outcomes (Y, bottom).
 
         If inputs_x_idxs and inputs_y_idxs are not provided, this method automatically
         detects them based on the tracked layer structure:
-        - inputs_x_idxs: the first (bottom) layer
-        - inputs_y_idxs: the last (top) layer
+        - inputs_x_idxs: the first (top) layer
+        - inputs_y_idxs: the last (bottom) layer
 
         Parameters
         ----------
@@ -248,9 +248,9 @@ class DeepNetwork(Network):
         y :
             Target values (predictions/labels).
         inputs_x_idxs :
-            Node indices receiving the predictors. If None, uses the first layer.
+            Node indices receiving the predictors. If None, uses the top layer.
         inputs_y_idxs :
-            Node indices receiving the predictions. If None, uses the last layer.
+            Node indices receiving the predictions. If None, uses the bottom layer.
         lr :
             Learning rate for coupling strength updates. Either "dynamic" or a float.
             If a float is provided, the value will be used as learning rate.
@@ -270,7 +270,7 @@ class DeepNetwork(Network):
                     "No layers tracked. Either provide inputs_x_idxs explicitly "
                     "or use add_layer() to build the network."
                 )
-            inputs_x_idxs = tuple(self.layers[0])  # First layer
+            inputs_x_idxs = tuple(self.layers[-1])  # First layer
 
         if inputs_y_idxs is None:
             if not self.layers:
@@ -278,7 +278,7 @@ class DeepNetwork(Network):
                     "No layers tracked. Either provide inputs_y_idxs explicitly "
                     "or use add_layer() to build the network."
                 )
-            inputs_y_idxs = tuple(self.layers[-1])  # Last layer
+            inputs_y_idxs = tuple(self.layers[0])  # Last layer
 
         # Call parent fit method
         return super().fit(

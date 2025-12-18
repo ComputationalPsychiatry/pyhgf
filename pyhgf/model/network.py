@@ -294,7 +294,7 @@ class Network:
             y = y[:, jnp.newaxis]
 
         # generate the belief propagation function
-        if (self.scan_fn is None) and overwrite:
+        if (self.scan_fn is None) or overwrite:
             self = self.create_learning_propagation_fn(
                 inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs, lr=lr
             )

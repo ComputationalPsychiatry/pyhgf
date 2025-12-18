@@ -180,9 +180,9 @@ def plot_deep_network(
         true_idx = num_layers - 1 - i  # index in original (bottom=0)
 
         if true_idx == 0:
-            label = f"Input Layer\n({n_units} units)"
+            label = f"Outcome Layer (Y) \n({n_units} units)"
         elif true_idx == num_layers - 1:
-            label = f"Output Layer\n({n_units} units)"
+            label = f"Prediction Layer (X)\n({n_units} units)"
         else:
             label = f"Hidden Layer {true_idx}\n({n_units} units)"
 
