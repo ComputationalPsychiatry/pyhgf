@@ -11,7 +11,7 @@ test:
 
 jupyter-lab:
 	uv run ipython kernel install --user --env VIRTUAL_ENV $(pwd)/.venv --name=pyhgf
-	uv run --with jupyter jupyter lab
+	uv run --with jupyter jupyter lab --port 1111
 
 pre-commit:
 	uv run pre-commit install

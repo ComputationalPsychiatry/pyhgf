@@ -225,32 +225,6 @@ class DeepNetwork(Network):
                 "Invalid backend. Currently supports only backend='graphviz'."
             )
 
-    def plot_layers(self, backend: str = "graphviz", **kwargs):
-        """Plot the network in a deep-learning style using tracked layers.
-
-        This is a convenience method that uses the automatically tracked layer
-        structure, so you don't need to manually specify layer indices.
-
-        Parameters
-        ----------
-        backend :
-            The plotting backend to use. Only 'graphviz' is supported.
-        **kwargs
-            Additional arguments passed to the plotting function.
-
-        Returns
-        -------
-        The plot object (depends on backend).
-
-        """
-        if not self.layers:
-            raise ValueError(
-                "No layers tracked. Use add_layer() or add_layer_stack() "
-                "to build the network, or use plot_network() for manual plotting."
-            )
-
-        return self.plot_deep_network(layers=self.layers, backend=backend, **kwargs)
-
     def fit(
         self,
         x: np.ndarray,
