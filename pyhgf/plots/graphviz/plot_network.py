@@ -1,22 +1,29 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from graphviz import Digraph
     from graphviz.sources import Source
-    from pyhgf.model import Network
 
-import graphviz
-from graphviz import Digraph  # <-- Add this
+    from pyhgf.model import DeepNetwork, Network
 
-def plot_network(network: "Network") -> "Source":
+from graphviz import Digraph
+
+
+def plot_network(network: Network) -> Source:
     """Visualization of node network using GraphViz.
 
     Parameters
     ----------
     network :
         An instance of main Network class.
+
+    Returns
+    -------
+    graphviz_structure :
+        Graphviz object.
 
     Notes
     -----
@@ -118,16 +125,27 @@ def plot_network(network: "Network") -> "Source":
 
     return graphviz_structure
 
-def plot_deep_network(network: "Network", layers, filename=None, view=True):
-    """
-    Deep-learning style plot of a network using GraphViz.
-    """
-    from graphviz import Digraph
 
-    dot = Digraph(
+def plot_deep_network(
+    deep_network: DeepNetwork, filename: Optional[str] = None, view: bool = True
+):
+    """Visualisation of a fully connected deep network using GraphViz.
+
+    Parameters
+    ----------
+    deep_network :
+    layers :
+
+    Returns
+    -------
+    graphviz_structure :
+        Graphviz object.
+
+    """
+    graphviz_structure = Digraph(
         "deep-network",
         graph_attr={
-            "rankdir": "TB",      # Top → Bottom flow
+            "rankdir": "TB",  # Top → Bottom flow
             "splines": "ortho",
             "nodesep": "0.7",
             "ranksep": "0.9",
@@ -146,14 +164,14 @@ def plot_deep_network(network: "Network", layers, filename=None, view=True):
             "arrowsize": "0.9",
             "color": "#444444",
             "penwidth": "1.0",
-        }
+        },
     )
 
     # Reverse so the bottom layer appears at the bottom visually
-    layers_reversed = list(reversed(layers))
+    layers_reversed = list(reversed(deep_network.layers))
     layer_names = []
 
-    num_layers = len(layers)
+    num_layers = len(deep_network.layers)
 
     # Create each layer block
     for i, layer_nodes in enumerate(layers_reversed):
@@ -171,17 +189,15 @@ def plot_deep_network(network: "Network", layers, filename=None, view=True):
         name = f"layer_{i}"
         layer_names.append(name)
 
-        dot.node(name, label=label)
+        graphviz_structure.node(name, label=label)
 
     # Draw downward arrows between layers
     for i in range(len(layer_names) - 1):
-        dot.edge(
-            layer_names[i],
-            layer_names[i + 1],
-            xlabel="fully connected"
+        graphviz_structure.edge(
+            layer_names[i], layer_names[i + 1], xlabel="fully connected"
         )
 
     if filename is not None:
-        dot.render(filename, view=view, format="pdf")
+        graphviz_structure.render(filename, view=view, format="pdf")
 
-    return dot
+    return graphviz_structure

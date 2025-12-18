@@ -204,6 +204,7 @@ def test_custom_sequence():
         input_data=u,
     )
 
+
 def test_add_value_parent_layer():
     """Test building a fully connected parent layer."""
     from pyhgf.model import DeepNetwork
@@ -238,6 +239,7 @@ def test_add_value_parent_layer():
     # Check that layer was tracked
     assert len(net.layers) == 2  # base layer + added layer
     assert net.layers[1] == parents
+
 
 def test_add_layer_stack():
     """Test building a multi-layer stack."""

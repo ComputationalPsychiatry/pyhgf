@@ -1,8 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import Optional, Union, Callable
+from __future__ import annotations
 
-import jax.numpy as jnp
+from typing import Callable, Optional, Union
+
 import numpy as np
 
 from pyhgf.model.network import Network
@@ -55,7 +56,7 @@ class DeepNetwork(Network):
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: tuple[Optional[Callable], ...] = (None,),
         **node_parameters,
-    ) -> "DeepNetwork":
+    ) -> DeepNetwork:
         """Add a fully connected layer and track it.
 
         Each new parent connects to all nodes in the provided list of children,
@@ -132,7 +133,7 @@ class DeepNetwork(Network):
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: tuple[Optional[Callable], ...] = (None,),
         **node_parameters,
-    ) -> "DeepNetwork":
+    ) -> DeepNetwork:
         """Add multiple fully connected layers and track them.
 
         Builds multiple layers sequentially, with each layer automatically tracking
@@ -180,7 +181,7 @@ class DeepNetwork(Network):
 
         return self
 
-    def add_nodes(self, *args, **kwargs) -> "DeepNetwork":
+    def add_nodes(self, *args, **kwargs) -> DeepNetwork:
         """Add nodes and track as a layer if they form the base.
 
         This overrides Network.add_nodes to track base/input layers.
@@ -191,7 +192,7 @@ class DeepNetwork(Network):
         super().add_nodes(*args, **kwargs)
 
         # If this is creating multiple nodes at once, track as a layer
-        n_nodes = kwargs.get('n_nodes', 1)
+        n_nodes = kwargs.get("n_nodes", 1)
         if n_nodes > 1:
             new_layer_idxs = list(range(n_nodes_before, self.n_nodes))
             # Only add to layers if this is the first layer (base layer)
@@ -200,14 +201,12 @@ class DeepNetwork(Network):
 
         return self
 
-    def plot_deep_network(self, layers, backend="graphviz", **kwargs):
+    def plot_deep_network(self, backend: str = "graphviz", **kwargs):
         """Plot the network in a deep-learning style (layer-by-layer).
 
         Parameters
         ----------
-        layers
-            Groups of node indices, arranged by layer.
-        backend
+        backend :
             The plotting backend to use. Only 'graphviz' is supported.
         **kwargs
             Additional arguments passed to the plotting function.
@@ -217,13 +216,13 @@ class DeepNetwork(Network):
         The plot object (depends on backend).
 
         """
-        from pyhgf.plots import graphviz
-
         if backend == "graphviz":
-            return graphviz.plot_deep_network(network=self, layers=layers, **kwargs)
+            from pyhgf.plots import graphviz
+
+            return graphviz.plot_deep_network(deep_network=self, **kwargs)
         else:
             raise ValueError(
-                "Invalid backend. plot_deep_network currently supports only backend='graphviz'."
+                "Invalid backend. Currently supports only backend='graphviz'."
             )
 
     def plot_layers(self, backend: str = "graphviz", **kwargs):
@@ -234,7 +233,7 @@ class DeepNetwork(Network):
 
         Parameters
         ----------
-        backend
+        backend :
             The plotting backend to use. Only 'graphviz' is supported.
         **kwargs
             Additional arguments passed to the plotting function.
@@ -261,31 +260,32 @@ class DeepNetwork(Network):
         lr: Union[str, float] = 0.2,
         overwrite: bool = True,
     ):
-        """Fit the deep network with automatic input/output detection.
+        """Fit the deep network to predictors (X) and outcomes (Y).
 
-        If inputs_x_idxs and inputs_y_idxs are not provided, this method
-        automatically detects them based on the tracked layer structure:
+        If inputs_x_idxs and inputs_y_idxs are not provided, this method automatically
+        detects them based on the tracked layer structure:
         - inputs_x_idxs: the first (bottom) layer
         - inputs_y_idxs: the last (top) layer
 
         Parameters
         ----------
-        x
+        x :
             Predictor values (input features).
-        y
+        y :
             Target values (predictions/labels).
-        inputs_x_idxs
+        inputs_x_idxs :
             Node indices receiving the predictors. If None, uses the first layer.
-        inputs_y_idxs
+        inputs_y_idxs :
             Node indices receiving the predictions. If None, uses the last layer.
-        lr
+        lr :
             Learning rate for coupling strength updates. Either "dynamic" or a float.
+            If a float is provided, the value will be used as learning rate.
         overwrite
-            Whether to recreate the propagation function if it exists.
+            Whether to recreate the propagation function if it already exists.
 
         Returns
         -------
-        self
+        self :
             The network with updated parameters.
 
         """
@@ -321,7 +321,7 @@ class DeepNetwork(Network):
 
         Returns
         -------
-        layer_sizes
+        layer_sizes :
             List of integers representing the number of nodes in each layer.
 
         """
@@ -332,21 +332,26 @@ class DeepNetwork(Network):
 
         Parameters
         ----------
-        layer_idx
+        layer_idx :
             The index of the layer (0 = first/bottom layer).
 
         Returns
         -------
-        node_indices
+        node_indices :
             List of node indices in that layer.
 
         """
         if layer_idx < 0 or layer_idx >= len(self.layers):
-            raise IndexError(f"Layer index {layer_idx} out of range. Network has {len(self.layers)} layers.")
+            raise IndexError(
+                (
+                    f"Layer index {layer_idx} out of range. "
+                    "Network has {len(self.layers)} layers."
+                )
+            )
         return self.layers[layer_idx]
 
     def __repr__(self) -> str:
-        """String representation showing layer structure."""
+        """Print string representation of layer structure."""
         if not self.layers:
             return f"DeepNetwork(nodes={self.n_nodes}, layers=[])"
 

@@ -1,4 +1,4 @@
-from .plot_network import plot_network, plot_deep_network
+from .plot_network import plot_deep_network, plot_network
 
 __all__ = [
     "plot_correlations",

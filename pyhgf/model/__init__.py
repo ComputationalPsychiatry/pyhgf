@@ -8,8 +8,8 @@ from .add_nodes import (
     insert_nodes,
     update_parameters,
 )
-from .network import Network
 from .deep_network import DeepNetwork
+from .network import Network
 
 from .hgf import HGF  # isort: skip
 

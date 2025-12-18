@@ -7,7 +7,7 @@ install-dev:
 	uv run maturin develop
 
 test:
-	uv run pytest
+	uv run pytest --cov --cov-report=term-missing
 
 jupyter-lab:
 	uv run ipython kernel install --user --env VIRTUAL_ENV $(pwd)/.venv --name=pyhgf
