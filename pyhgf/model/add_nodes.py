@@ -462,7 +462,7 @@ def insert_nodes(
         # for mutiple value children, set a default tuple with corresponding length
 
         if children_number != len(coupling_fn):
-            if coupling_fn == (None,):
+            if len(coupling_fn) == 1:
                 coupling_fn = children_number * coupling_fn
             else:
                 raise ValueError(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Callable, Optional, Union
 
+import jax.numpy as jnp
 import numpy as np
 
 from pyhgf.model.network import Network
@@ -44,17 +45,24 @@ class DeepNetwork(Network):
 
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        kind: str = "volatile-node",
+        coupling_fn: tuple[Optional[Callable], ...] = (jnp.tanh,),
+    ):
         """Initialize a DeepNetwork with layer tracking."""
         super().__init__()
-        self.layers = []  # Track layer structure: list of lists of node indices
+        self.layers: list = []  # Track layer structure: list of lists of node indices
+        self.kind = kind
+        self.coupling_fn = coupling_fn
 
     def add_layer(
         self,
         size: int = 1,
+        kind: Optional[str] = None,
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
-        coupling_fn: tuple[Optional[Callable], ...] = (None,),
+        coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
         **node_parameters,
     ) -> DeepNetwork:
         """Add a fully connected layer and track it.
@@ -65,28 +73,39 @@ class DeepNetwork(Network):
 
         Parameters
         ----------
-        size
+        size :
             Number of parent nodes to create in this layer.
-        value_children
+        kind :
+            The type of nodes to add (e.g., "continuous-state", "volatile-node"). If
+            None, defaults to the type of node declared in the class.
+        value_children :
             Index or list of indices for the child nodes below this layer.
             If None, automatically connects to all orphan nodes in the network.
-        coupling_strengths
+        coupling_strengths :
             Coupling strength(s) to the child nodes. Can be a single float
             (applied to all connections) or a list/tuple of floats.
-        coupling_fn
+        coupling_fn :
             Coupling function(s) between the new nodes and their value children.
         **node_parameters
             Additional keyword parameters for node configuration (e.g., precision,
-            mean, tonic_volatility). These will be passed to add_nodes.
+            mean, tonic_volatility, etc...). These will be passed to add_nodes.
 
         Returns
         -------
-        self
+        self :
             The updated network for method chaining.
 
         """
         # Track the number of nodes before adding
         n_nodes_before = self.n_nodes
+
+        # define the type of node to use in the hidden layers
+        if kind is None:
+            kind = self.kind
+
+        # define the coupling functions to use in the hidden layers
+        if coupling_fn is None:
+            coupling_fn = self.coupling_fn
 
         # Auto-detect orphan nodes if no children specified
         if value_children is None:
@@ -115,7 +134,7 @@ class DeepNetwork(Network):
         # Add all parent nodes (one per unit in the new layer)
         for _ in range(size):
             self.add_nodes(
-                kind="continuous-state",
+                kind=kind,
                 value_children=(children, [coupling_strengths] * len(children)),
                 **node_params,
             )
@@ -129,9 +148,10 @@ class DeepNetwork(Network):
     def add_layer_stack(
         self,
         layer_sizes: list[int],
+        kind: Optional[str] = None,
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
-        coupling_fn: tuple[Optional[Callable], ...] = (None,),
+        coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
         **node_parameters,
     ) -> DeepNetwork:
         """Add multiple fully connected layers and track them.
@@ -141,30 +161,42 @@ class DeepNetwork(Network):
 
         Parameters
         ----------
-        layer_sizes
+        layer_sizes :
             Number of parent nodes to create in each new layer.
-        value_children
+        kind :
+            The type of nodes to add (e.g., "continuous-state", "volatile-node"). If
+            None, defaults to the type of node declared in the class.
+        value_children :
             Index or list of indices for the bottom layer.
             If None, automatically connects to all orphan nodes for the first layer.
-        coupling_strengths
+        coupling_strengths :
             Coupling strength(s) to apply across all layers.
-        coupling_fn
+        coupling_fn :
             Coupling function(s) to apply across all layers.
         **node_parameters
             Additional keyword parameters for node configuration.
 
         Returns
         -------
-        self
+        self :
             The updated network for method chaining.
 
         """
+        # define the type of node to use in the hidden layers
+        if kind is None:
+            kind = self.kind
+
+        # define the coupling functions to use in the hidden layers
+        if coupling_fn is None:
+            coupling_fn = self.coupling_fn
+
         # Build layer by layer using the overridden add_layer
         # which automatically tracks each layer
         for i, size in enumerate(layer_sizes):
             if i == 0:
                 self.add_layer(
                     size=size,
+                    kind=kind,
                     value_children=value_children,
                     coupling_strengths=coupling_strengths,
                     coupling_fn=coupling_fn,

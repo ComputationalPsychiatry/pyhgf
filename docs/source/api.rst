@@ -71,6 +71,32 @@ Continuous nodes
 
     continuous_node_posterior_update
 
+Volatile nodes
+--------------
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_value_level
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_value_level
+
+    posterior_update_precision_value_level
+    posterior_update_mean_value_level
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level
+
+    posterior_update_precision_volatility_level
+    posterior_update_mean_volatility_level
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update
+
+    volatile_node_posterior_update
+
 Exponential family
 ------------------
 
