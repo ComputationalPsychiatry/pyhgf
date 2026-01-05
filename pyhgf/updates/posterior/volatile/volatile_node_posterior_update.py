@@ -2,16 +2,18 @@
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
 from functools import partial
+
 from jax import jit
+
 from pyhgf.typing import Edges
 
 from .posterior_update_value_level import (
-    posterior_update_precision_value_level,
     posterior_update_mean_value_level,
+    posterior_update_precision_value_level,
 )
 from .posterior_update_volatility_level import (
-    posterior_update_precision_volatility_level,
     posterior_update_mean_volatility_level,
+    posterior_update_precision_volatility_level,
 )
 
 

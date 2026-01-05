@@ -2,6 +2,7 @@
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
 from functools import partial
+
 from jax import jit
 
 

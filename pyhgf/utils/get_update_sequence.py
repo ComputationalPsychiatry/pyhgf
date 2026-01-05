@@ -14,9 +14,13 @@ from pyhgf.updates.posterior.continuous import (
 from pyhgf.updates.posterior.exponential import (
     posterior_update_exponential_family_dynamic,
 )
+from pyhgf.updates.posterior.volatile import (
+    volatile_node_posterior_update,
+)
 from pyhgf.updates.prediction.binary import binary_state_node_prediction
 from pyhgf.updates.prediction.continuous import continuous_node_prediction
 from pyhgf.updates.prediction.dirichlet import dirichlet_node_prediction
+from pyhgf.updates.prediction.volatile import value_volatility_node_prediction
 from pyhgf.updates.prediction_error.binary import binary_state_node_prediction_error
 from pyhgf.updates.prediction_error.categorical import (
     categorical_state_prediction_error,
@@ -27,15 +31,9 @@ from pyhgf.updates.prediction_error.exponential import (
     prediction_error_update_exponential_family_dynamic,
     prediction_error_update_exponential_family_fixed,
 )
-from pyhgf.updates.prediction.volatile import value_volatility_node_prediction
 from pyhgf.updates.prediction_error.volatile import (
     value_volatility_node_prediction_error,
 )
-from pyhgf.updates.posterior.volatile import (
-    volatile_node_posterior_update,
-)
-
-from pyhgf.typing import UpdateSequence
 
 if TYPE_CHECKING:
     from pyhgf.model import Network

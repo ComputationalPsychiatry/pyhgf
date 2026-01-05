@@ -2,6 +2,7 @@ from functools import partial
 
 import jax.numpy as jnp
 from jax import Array, jit
+
 from pyhgf.typing import Edges
 
 

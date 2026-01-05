@@ -16,9 +16,9 @@ from pyhgf.model import (
     add_binary_state,
     add_categorical_state,
     add_continuous_state,
-    add_volatile_node,
     add_dp_state,
     add_ef_state,
+    add_volatile_node,
     get_couplings,
 )
 from pyhgf.plots import graphviz, matplotlib, networkx
