@@ -1,3 +1,6 @@
+# Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
+# Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
+
 from functools import partial
 from jax import jit
 
@@ -24,7 +27,7 @@ def posterior_update_precision_volatility_level(
     posterior_precision += (
         0.5 * ((volatility_coupling * effective_precision_value) ** 2)
         + ((volatility_coupling * effective_precision_value) ** 2) * volatility_pe
-        - 0.5 * (volatility_coupling ** 2) * effective_precision_value * volatility_pe
+        - 0.5 * (volatility_coupling**2) * effective_precision_value * volatility_pe
     )
 
     return posterior_precision

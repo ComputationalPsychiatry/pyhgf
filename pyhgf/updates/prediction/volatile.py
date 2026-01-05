@@ -4,13 +4,14 @@ import jax.numpy as jnp
 from jax import Array, jit
 from pyhgf.typing import Edges
 
+
 @partial(jit, static_argnames=("node_idx",))
 def predict_mean_volatility_level(
     attributes: dict,
     node_idx: int,
 ) -> Array:
     """Predict the mean of the implicit volatility level.
-    
+
     This is analogous to predicting a volatility parent node.
     """
     time_step = attributes[-1]["time_step"]
@@ -60,7 +61,7 @@ def predict_mean_value_level(
     node_idx: int,
 ) -> Array:
     """Predict the mean of the value level (external facing).
-    
+
     This uses value parents if they exist.
     """
     time_step = attributes[-1]["time_step"]
@@ -103,7 +104,7 @@ def predict_precision_value_level(
     node_idx: int,
 ) -> tuple[Array, Array]:
     """Predict the precision of the value level using the implicit volatility level.
-    
+
     The volatility level's mean modulates the value level's precision.
     """
     time_step = attributes[-1]["time_step"]
@@ -119,7 +120,9 @@ def predict_precision_value_level(
     volatility_coupling_internal = attributes[node_idx]["volatility_coupling_internal"]
 
     # Total volatility = tonic + contribution from implicit volatility parent
-    total_volatility = tonic_volatility + (volatility_coupling_internal * expected_mean_vol)
+    total_volatility = tonic_volatility + (
+        volatility_coupling_internal * expected_mean_vol
+    )
 
     # Compute predicted volatility
     predicted_volatility = time_step * jnp.exp(total_volatility)
@@ -141,11 +144,11 @@ def value_volatility_node_prediction(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
     """Update the expected mean and expected precision of a value-volatility node.
-    
+
     This node has two internal levels:
     1. Volatility level (implicit, internal)
     2. Value level (external facing)
-    
+
     The volatility level predicts first, then affects the value level's precision.
     """
     # Store current variance for potential unbounded updates
@@ -155,8 +158,8 @@ def value_volatility_node_prediction(
 
     # 1. PREDICT VOLATILITY LEVEL (implicit internal state)
     expected_mean_vol = predict_mean_volatility_level(attributes, node_idx)
-    expected_precision_vol, effective_precision_vol = predict_precision_volatility_level(
-        attributes, node_idx
+    expected_precision_vol, effective_precision_vol = (
+        predict_precision_volatility_level(attributes, node_idx)
     )
 
     attributes[node_idx]["expected_mean_vol"] = expected_mean_vol

@@ -1,6 +1,8 @@
+# Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
+# Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
+
 from functools import partial
 from jax import grad, jit
-import jax.numpy as jnp
 from pyhgf.typing import Edges
 
 
@@ -11,7 +13,7 @@ def posterior_update_precision_value_level(
     node_idx: int,
 ) -> float:
     """Update the precision of the value level using value children's PEs.
-    
+
     This is similar to continuous node value coupling precision update.
     """
     # Start with expected precision
@@ -20,7 +22,7 @@ def posterior_update_precision_value_level(
     # Add contributions from value children
     if edges[node_idx].value_children is not None:
         for value_child_idx, value_coupling, coupling_fn in zip(
-            edges[node_idx].value_children,
+            edges[node_idx].value_children,  # type: ignore
             attributes[node_idx]["value_coupling_children"],
             edges[node_idx].coupling_fn,
         ):
@@ -29,15 +31,17 @@ def posterior_update_precision_value_level(
 
             # Linear coupling
             if coupling_fn is None:
-                posterior_precision += (value_coupling ** 2) * child_expected_precision
+                posterior_precision += (value_coupling**2) * child_expected_precision
             else:
                 # Non-linear coupling (with gradient)
                 coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
-                coupling_fn_second = grad(grad(coupling_fn))(attributes[node_idx]["mean"])
+                coupling_fn_second = grad(grad(coupling_fn))(
+                    attributes[node_idx]["mean"]
+                )
                 value_pe = attributes[value_child_idx]["temp"]["value_prediction_error"]
 
                 posterior_precision += child_expected_precision * (
-                    (value_coupling ** 2) * (coupling_fn_prime ** 2)
+                    (value_coupling**2) * (coupling_fn_prime**2)
                     - coupling_fn_second * value_pe
                 )
 
@@ -52,7 +56,7 @@ def posterior_update_mean_value_level(
     node_precision: float,
 ) -> float:
     """Update the mean of the value level using value children's PEs.
-    
+
     This is similar to continuous node value coupling mean update.
     """
     # Start with expected mean
@@ -63,7 +67,7 @@ def posterior_update_mean_value_level(
 
     if edges[node_idx].value_children is not None:
         for value_child_idx, value_coupling, coupling_fn in zip(
-            edges[node_idx].value_children,
+            edges[node_idx].value_children,  # type: ignore
             attributes[node_idx]["value_coupling_children"],
             edges[node_idx].coupling_fn,
         ):

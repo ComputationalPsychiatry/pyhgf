@@ -8,7 +8,7 @@ def value_volatility_node_value_prediction_error(
     attributes: dict, node_idx: int
 ) -> dict:
     """Compute the value prediction error of the value level.
-    
+
     This is used by external value parents (if any).
     """
     # Value PE for the value level
@@ -30,7 +30,7 @@ def value_volatility_node_volatility_prediction_error(
     attributes: dict, node_idx: int
 ) -> dict:
     """Compute the volatility prediction error for the implicit volatility level.
-    
+
     This is computed from the value level's precision surprise.
     """
     # Get value level parameters
@@ -40,9 +40,7 @@ def value_volatility_node_volatility_prediction_error(
 
     # Volatility PE from value level
     volatility_prediction_error = (
-        (expected_precision / precision)
-        + expected_precision * (value_pe ** 2)
-        - 1
+        (expected_precision / precision) + expected_precision * (value_pe**2) - 1
     )
 
     # This is internal coupling (always 1 volatility "parent")
@@ -60,7 +58,7 @@ def value_volatility_node_prediction_error(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
     """Compute both value and volatility prediction errors.
-    
+
     - Value PE: for external value parents (if any)
     - Volatility PE: for the implicit internal volatility level
     """

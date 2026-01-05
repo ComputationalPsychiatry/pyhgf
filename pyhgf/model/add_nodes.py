@@ -68,7 +68,8 @@ def add_continuous_state(
 
     return network
 
-def add_value_volatility_state(
+
+def add_volatile_node(
     network: Network,
     n_nodes: int,
     value_parents: tuple,
@@ -77,11 +78,16 @@ def add_value_volatility_state(
     additional_parameters: dict,
     coupling_fn: tuple[Optional[Callable], ...],
 ):
-    """Add value-volatility state node(s) with implicit internal volatility level.
-    
-    This node type combines a value level (external facing) with an implicit
-    volatility level (internal). The volatility level modulates the value level's
-    precision, enabling predictive coding networks with fewer explicit nodes.
+    """Add a continuous node with an implicit volatility parent.
+
+    This node type combines a continuous node with an implicit volatility parent. The
+    volatility parent modulates the child's precision, enabling dynamic learning rates
+    in predictive coding networks with fewer explicit nodes.
+
+    note::
+        Parameters relative to the volatility level (e.g., "mean_vol",
+        "expected_mean_vol", etc.) are included in the node's attributes using the
+        suffix "_vol".
     """
     node_type = 6
 
@@ -99,7 +105,6 @@ def add_value_volatility_state(
         "tonic_volatility": -4.0,
         "tonic_drift": 0.0,
         "autoconnection_strength": 1.0,
-
         # Volatility level parameters (implicit internal)
         "mean_vol": 0.0,
         "expected_mean_vol": 0.0,
@@ -108,14 +113,11 @@ def add_value_volatility_state(
         "tonic_volatility_vol": -2.0,
         "tonic_drift_vol": 0.0,
         "autoconnection_strength_vol": 1.0,
-
         # Internal coupling
         "volatility_coupling_internal": 1.0,
-
         # External coupling (value only)
         "value_coupling_children": value_children[1],
         "value_coupling_parents": value_parents[1],
-
         # State
         "observed": 1,
         "temp": {
@@ -144,6 +146,7 @@ def add_value_volatility_state(
     )
 
     return network
+
 
 def add_binary_state(
     network: Network,

@@ -103,11 +103,17 @@ def plot_network(
     # Draw regular continuous state nodes
     if regular_nodes:
         regular_colors = [
-            "lightblue" if G.nodes[node]["is_input"] else "white" for node in regular_nodes
+            "lightblue" if G.nodes[node]["is_input"] else "white"
+            for node in regular_nodes
         ]
         nx.draw_networkx_nodes(
-            G, pos, nodelist=regular_nodes, node_color=regular_colors,
-            node_size=node_size, edgecolors="black", ax=ax
+            G,
+            pos,
+            nodelist=regular_nodes,
+            node_color=regular_colors,
+            node_size=node_size,
+            edgecolors="black",
+            ax=ax,
         )
 
     # Draw value-volatility nodes with double circle effect
@@ -124,23 +130,25 @@ def plot_network(
 
             # Draw outer circle with dashed gray line (volatility)
             outer_circle = mpatches.Circle(
-                (x, y), radius_outer,
+                (x, y),
+                radius_outer,
                 fill=False,
                 edgecolor="gray",
                 linewidth=2,
                 linestyle=(0, (5, 5)),  # Explicit dash pattern: (offset, (dash, gap))
-                zorder=2
+                zorder=2,
             )
             ax.add_patch(outer_circle)
 
             # Draw inner circle with solid black line (value)
             inner_circle = mpatches.Circle(
-                (x, y), radius_inner,
+                (x, y),
+                radius_inner,
                 facecolor=node_color,
                 edgecolor="black",
                 linewidth=1.5,
-                linestyle='-',
-                zorder=3
+                linestyle="-",
+                zorder=3,
             )
             ax.add_patch(inner_circle)
 
