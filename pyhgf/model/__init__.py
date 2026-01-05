@@ -9,6 +9,7 @@ from .add_nodes import (
     insert_nodes,
     update_parameters,
 )
+from .deep_network import DeepNetwork
 from .network import Network
 
 from .hgf import HGF  # isort: skip
@@ -16,6 +17,7 @@ from .hgf import HGF  # isort: skip
 __all__ = [
     "HGF",
     "Network",
+    "DeepNetwork",
     "add_nodes",
     "add_continuous_state",
     "add_value_volatility_state",

@@ -1,5 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+from __future__ import annotations
+
 from typing import Callable, Optional, Union
 
 import jax.numpy as jnp
@@ -22,22 +24,22 @@ from pyhgf.model import (
 from pyhgf.plots import graphviz, matplotlib, networkx
 from pyhgf.typing import (
     Attributes,
-    Sequence,
     Edges,
-    NetworkParameters,
-    UpdateSequence,
     LearningSequence,
+    NetworkParameters,
+    Sequence,
+    UpdateSequence,
 )
+from pyhgf.updates.learning import learning_weights_dynamic, learning_weights_fixed
 from pyhgf.utils import (
     add_edges,
     beliefs_propagation,
     get_input_idxs,
     get_update_sequence,
-    to_pandas,
-    sample,
     learning,
+    sample,
+    to_pandas,
 )
-from pyhgf.updates.learning import learning_weights
 
 class Network:
     """A predictive coding neural network.
@@ -179,6 +181,7 @@ class Network:
         inputs_x_idxs: tuple[int],
         inputs_y_idxs: tuple[int],
         overwrite: bool = True,
+        lr: Union[str, float] = 0.2,
     ) -> "Network":
         """Create the belief propagation function.
 
@@ -195,6 +198,8 @@ class Network:
             If `True` (default), create a new belief propagation function and ignore
             preexisting values. Otherwise, do not create a new function if the attribute
             `scan_fn` is already defined.
+        lr :
+            The kind of learning to use for the coupling strengths.
 
         """
         # get the dimension of the input nodes
@@ -208,28 +213,32 @@ class Network:
             )
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
+        if lr == "dynamic":
+            learning_weights = learning_weights_dynamic
+        elif isinstance(lr, float):
+            learning_weights = Partial(learning_weights_fixed, lr=lr)
+        else:
+            raise ValueError("Invalid lr value. Should be 'dynamic' or a float value.")
+
         learning_steps = [
             (node_idx, learning_weights)
             for node_idx, _ in self.update_sequence.prediction_steps
-            if node_idx not in inputs_x_idxs
+            if (node_idx not in inputs_x_idxs)
+            and (self.edges[node_idx].volatility_children is None)
         ]
 
         # do not update the last layer
-        update_steps = tuple(
-            [
-                step
-                for step in self.update_sequence.update_steps
-                if step[0] not in inputs_x_idxs
-            ]
-        )
+        update_steps = tuple([
+            step
+            for step in self.update_sequence.update_steps
+            if step[0] not in inputs_x_idxs
+        ])
         # do not predict on the last layer
-        prediction_steps = tuple(
-            [
-                step
-                for step in self.update_sequence.prediction_steps
-                if step[0] not in inputs_x_idxs
-            ]
-        )
+        prediction_steps = tuple([
+            step
+            for step in self.update_sequence.prediction_steps
+            if step[0] not in inputs_x_idxs
+        ])
 
         self.learning_sequence = LearningSequence(
             prediction_steps=prediction_steps,
@@ -250,12 +259,14 @@ class Network:
 
         return self
 
-    def train(
+    def fit(
         self,
         x: np.ndarray,
         y: np.ndarray,
         inputs_x_idxs: tuple[int],
         inputs_y_idxs: tuple[int],
+        lr: Union[str, float] = 0.2,
+        overwrite: bool = True,
     ):
         """Add new observations.
 
@@ -273,6 +284,8 @@ class Network:
             The indexes of the nodes receiving the predictors (x).
         inputs_y_idxs :
             The indexes of the nodes receiving the predictions (y).
+        lr :
+            The kind of learning to use for the coupling strengths.
 
         """
         if x.ndim == 1:
@@ -281,9 +294,9 @@ class Network:
             y = y[:, jnp.newaxis]
 
         # generate the belief propagation function
-        if self.scan_fn is None:
+        if (self.scan_fn is None) or overwrite:
             self = self.create_learning_propagation_fn(
-                inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs
+                inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs, lr=lr
             )
 
         # wrap the inputs
@@ -359,12 +372,10 @@ class Network:
 
         # observation mask
         if observed is None:
-            observed = tuple(
-                [
-                    np.ones(input_data.shape[0], dtype=int)
-                    for _ in range(len(self.input_idxs))
-                ]
-            )
+            observed = tuple([
+                np.ones(input_data.shape[0], dtype=int)
+                for _ in range(len(self.input_idxs))
+            ])
         elif isinstance(observed, np.ndarray):
             if observed.ndim == 1:
                 observed = (observed,)
@@ -492,12 +503,10 @@ class Network:
 
         # observation mask
         if observed is None:
-            observed = tuple(
-                [
-                    np.ones(input_data.shape[0], dtype=int)
-                    for _ in range(len(self.input_idxs))
-                ]
-            )
+            observed = tuple([
+                np.ones(input_data.shape[0], dtype=int)
+                for _ in range(len(self.input_idxs))
+            ])
 
         # format input_data according to the input nodes dimension
         split_indices = np.cumsum(self.input_dim[:-1])
@@ -724,12 +733,10 @@ class Network:
         elif backend == "networkx":
             return networkx.plot_network(network=self)
         else:
-            raise ValueError(
-                (
-                    "Invalid backend."
-                    " Should be one of the following: 'graphviz' or 'networkx'",
-                )
-            )
+            raise ValueError((
+                "Invalid backend."
+                " Should be one of the following: 'graphviz' or 'networkx'",
+            ))
 
     def to_pandas(self) -> pd.DataFrame:
         """Export the nodes trajectories and surprise as a Pandas data frame.
@@ -785,9 +792,9 @@ class Network:
 
     def add_edges(
         self,
-        kind="value",
-        parent_idxs=Union[int, list[int]],
-        children_idxs=Union[int, list[int]],
+        parent_idxs: Union[int, list[int]],
+        children_idxs: Union[int, list[int]],
+        kind: str = "value",
         coupling_strengths: Union[float, list[float], tuple[float]] = 1.0,
         coupling_fn: tuple[Optional[Callable], ...] = (None,),
     ) -> "Network":
@@ -795,12 +802,12 @@ class Network:
 
         Parameters
         ----------
-        kind :
-            The kind of coupling, can be `"value"` or `"volatility"`.
         parent_idxs :
             The index(es) of the parent node(s).
         children_idxs :
             The index(es) of the children node(s).
+        kind :
+            The kind of coupling, can be `"value"` or `"volatility"`.
         coupling_strengths :
             The coupling strength betwen the parents and children.
         coupling_fn :

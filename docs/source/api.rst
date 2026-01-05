@@ -215,6 +215,7 @@ and creates a standard node structure for these models.
 
    HGF
    Network
+   DeepNetwork
    add_continuous_state
    add_binary_state
    add_ef_state
@@ -253,6 +254,7 @@ Graphviz
    :toctree: generated/pyhgf.plots.graphviz
 
    plot_network
+   plot_deep_network
 
 Networkx
 ========

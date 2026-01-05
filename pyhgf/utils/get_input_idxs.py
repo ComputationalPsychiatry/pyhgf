@@ -16,13 +16,8 @@ def get_input_idxs(edges: Edges) -> tuple[int, ...]:
         nodes. For each node, the index list value/volatility - parents/children.
 
     """
-    return tuple(
-        [
-            i
-            for i in range(len(edges))
-            if (
-                (edges[i].value_children is None)
-                & (edges[i].volatility_children is None)
-            )
-        ]
-    )
+    return tuple([
+        i
+        for i in range(len(edges))
+        if ((edges[i].value_children is None) & (edges[i].volatility_children is None))
+    ])

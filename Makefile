@@ -7,11 +7,11 @@ install-dev:
 	uv run maturin develop
 
 test:
-	uv run pytest
+	uv run pytest --cov --cov-report=term-missing
 
 jupyter-lab:
 	uv run ipython kernel install --user --env VIRTUAL_ENV $(pwd)/.venv --name=pyhgf
-	uv run --with jupyter jupyter lab
+	uv run --with jupyter jupyter lab --port 1111
 
 pre-commit:
 	uv run pre-commit install
@@ -20,8 +20,8 @@ pre-commit:
 
 lint:
 	@echo "--- 🧹 Running linters ---"
-	uv run ruff format . 						        # running ruff formatting
-	uv run ruff check **/*.py --fix						# running ruff linting
+	uv run ruff format . 						# running ruff formatting
+	uv run ruff check --fix	--extend-select=I	# running ruff linting
 
 run-all-notebooks:
 	@echo "--- 📚 Running all notebooks ---"

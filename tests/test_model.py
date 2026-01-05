@@ -5,7 +5,7 @@ import numpy as np
 from pytest import raises
 
 from pyhgf import load_data
-from pyhgf.model import HGF, Network
+from pyhgf.model import HGF, DeepNetwork, Network
 from pyhgf.response import total_gaussian_surprise
 from pyhgf.typing import UpdateSequence
 

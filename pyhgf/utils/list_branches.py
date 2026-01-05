@@ -29,28 +29,24 @@ def list_branches(node_idxs: list, edges: tuple, branch_list: list = []) -> list
     for idx in node_idxs:
         # add this node to the exclusion list
         branch_list.append(idx)
-        all_parents = np.array(
-            [
-                i
-                for i in [
-                    edges[idx].value_parents,
-                    edges[idx].volatility_parents,
-                ]
-                if i is not None
+        all_parents = np.array([
+            i
+            for i in [
+                edges[idx].value_parents,
+                edges[idx].volatility_parents,
             ]
-        ).flatten()
+            if i is not None
+        ]).flatten()
         for parent_idx in all_parents:
             # list the children for this node
-            all_children = np.array(
-                [
-                    i
-                    for i in [
-                        edges[parent_idx].value_children,
-                        edges[parent_idx].volatility_children,
-                    ]
-                    if i is not None
+            all_children = np.array([
+                i
+                for i in [
+                    edges[parent_idx].value_children,
+                    edges[parent_idx].volatility_children,
                 ]
-            ).flatten()
+                if i is not None
+            ]).flatten()
             # if this parent has only excluded children, add it to the exclusion list
             if np.all([i in branch_list for i in all_children]):
                 branch_list = list_branches(

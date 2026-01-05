@@ -5,11 +5,11 @@ import numpy as np
 from jax.random import PRNGKey
 
 from pyhgf import load_data
-from pyhgf.model import HGF, Network
+from pyhgf.model import HGF, DeepNetwork, Network
 
 
-def test_plotting_functions():
-    """Test the plotting functions of the HGF class."""
+def test_network_plotting():
+    """Test the plotting functions of the HGF and Network classes."""
     # Read USD-CHF data
     timeserie = load_data("continuous")
 
@@ -171,3 +171,17 @@ def test_plotting_functions():
 
     # plot node structures
     categorical_hgf.plot_network()
+
+
+def test_deep_network_plotting():
+    """Test the plotting functions of the DeepNetwork class."""
+    # Or chain them in a single expression (like Keras/PyTorch):
+    net = (
+        DeepNetwork()
+        .add_nodes(kind="continuous-state", n_nodes=4, precision=5.0)
+        .add_layer(size=3, precision=1.0, tonic_volatility=-1.0)
+        .add_layer(size=2, precision=0.5, tonic_volatility=-2.0)
+    )
+
+    # Visualize the network structure
+    net.plot_deep_network()

@@ -1,11 +1,12 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
+
 import jax.numpy as jnp
-from jax import grad, jit
+from jax import Array, grad, jit
 from jax.lax import cond
 from jax.tree_util import Partial
-from jax import Array
+
 from pyhgf.typing import Edges
 
 

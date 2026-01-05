@@ -1,20 +1,29 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from graphviz.sources import Source
 
-    from pyhgf.model import Network
+    from pyhgf.model import DeepNetwork, Network
+
+from graphviz import Digraph
 
 
-def plot_network(network: "Network") -> "Source":
+def plot_network(network: Network) -> Source:
     """Visualization of node network using GraphViz.
 
     Parameters
     ----------
     network :
         An instance of main Network class.
+
+    Returns
+    -------
+    graphviz_structure :
+        Graphviz object.
 
     Notes
     -----
@@ -125,5 +134,82 @@ def plot_network(network: "Network") -> "Source":
 
     # unflat the structure to better handle large/uneven networks
     graphviz_structure = graphviz_structure.unflatten(stagger=3)
+
+    return graphviz_structure
+
+
+def plot_deep_network(
+    deep_network: DeepNetwork, filename: Optional[str] = None, view: bool = True
+):
+    """Visualisation of a fully connected deep network using GraphViz.
+
+    Parameters
+    ----------
+    deep_network :
+    layers :
+
+    Returns
+    -------
+    graphviz_structure :
+        Graphviz object.
+
+    """
+    graphviz_structure = Digraph(
+        "deep-network",
+        graph_attr={
+            "rankdir": "TB",  # Top → Bottom flow
+            "splines": "ortho",
+            "nodesep": "0.7",
+            "ranksep": "0.9",
+        },
+        node_attr={
+            "shape": "box",
+            "style": "rounded,filled",
+            "fillcolor": "#E8E8E8",
+            "color": "#444444",
+            "penwidth": "1.2",
+            "fontname": "Helvetica",
+            "fontsize": "12",
+        },
+        edge_attr={
+            "arrowhead": "vee",
+            "arrowsize": "0.9",
+            "color": "#444444",
+            "penwidth": "1.0",
+        },
+    )
+
+    # Reverse so the bottom layer appears at the bottom visually
+    layers_reversed = list(reversed(deep_network.layers))
+    layer_names = []
+
+    num_layers = len(deep_network.layers)
+
+    # Create each layer block
+    for i, layer_nodes in enumerate(layers_reversed):
+        n_units = len(layer_nodes)
+
+        true_idx = num_layers - 1 - i  # index in original (bottom=0)
+
+        if true_idx == 0:
+            label = f"Outcome Layer (Y) \n({n_units} units)"
+        elif true_idx == num_layers - 1:
+            label = f"Prediction Layer (X)\n({n_units} units)"
+        else:
+            label = f"Hidden Layer {true_idx}\n({n_units} units)"
+
+        name = f"layer_{i}"
+        layer_names.append(name)
+
+        graphviz_structure.node(name, label=label)
+
+    # Draw downward arrows between layers
+    for i in range(len(layer_names) - 1):
+        graphviz_structure.edge(
+            layer_names[i], layer_names[i + 1], xlabel="fully connected"
+        )
+
+    if filename is not None:
+        graphviz_structure.render(filename, view=view, format="pdf")
 
     return graphviz_structure
