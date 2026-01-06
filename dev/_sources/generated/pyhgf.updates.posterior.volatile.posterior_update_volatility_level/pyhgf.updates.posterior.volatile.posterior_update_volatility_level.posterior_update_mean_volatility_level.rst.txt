@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.volatile.posterior\_update\_volatility\_level.posterior\_update\_mean\_volatility\_level
+================================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
+
+.. autofunction:: posterior_update_mean_volatility_level

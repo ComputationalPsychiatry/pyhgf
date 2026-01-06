@@ -422,6 +422,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -507,6 +509,7 @@
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
 <span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -532,8 +535,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">vjp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pytensor.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Apply</span><span class="p">,</span> <span class="n">Op</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 </pre></div>
 </div>
 </div>
@@ -570,7 +574,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/6f2df87e4b440b87c15f20baaa5df91e6a30277d27ca8c83efd713d14aeefaa4.png" src="../_images/6f2df87e4b440b87c15f20baaa5df91e6a30277d27ca8c83efd713d14aeefaa4.png" />
+<img alt="../_images/a99d912b2f79d87c14ae83a4d9878824502b50addfb64fcda1c795442e0e8155.png" src="../_images/a99d912b2f79d87c14ae83a4d9878824502b50addfb64fcda1c795442e0e8155.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -686,7 +690,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/0c8294da77791e0988389cc157d732516168085babf3c0a68960f6d9a37d69b4.png" src="../_images/0c8294da77791e0988389cc157d732516168085babf3c0a68960f6d9a37d69b4.png" />
+<img alt="../_images/0747d8f7117b53620eb89ee5060ab304dd3ac88ae25116fe8abe02626cfa67f4.png" src="../_images/0747d8f7117b53620eb89ee5060ab304dd3ac88ae25116fe8abe02626cfa67f4.png" />
 </div>
 </div>
 </section>
@@ -697,6 +701,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">categorical_surprise</span><span class="p">(</span><span class="n">omega_2</span><span class="p">,</span> <span class="n">hgf</span><span class="p">,</span> <span class="n">input_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the total surprise of a categorical HGF model.&quot;&quot;&quot;</span>
     <span class="c1"># replace with a new omega in the model</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">31</span><span class="p">):</span>
         <span class="n">hgf</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">omega_2</span>
@@ -727,6 +732,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">vjp_custom_op_jax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">gz</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the vector-Jacobian product of the custom op surprise function.&quot;&quot;&quot;</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">vjp_fn</span> <span class="o">=</span> <span class="n">vjp</span><span class="p">(</span><span class="n">surprise_fn</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">vjp_fn</span><span class="p">(</span><span class="n">gz</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -745,7 +751,10 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The CustomOp needs `make_node`, `perform` and `grad`.</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CustomOp</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom PyTensor Op wrapping a JAX function with its gradient.&quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">make_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a PyTensor node for the custom op.&quot;&quot;&quot;</span>
         <span class="c1"># Create a PyTensor node specifying the number and type of inputs and outputs</span>
 
         <span class="c1"># We convert the input into a PyTensor tensor variable</span>
@@ -755,6 +764,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
         <span class="k">return</span> <span class="n">Apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">perform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the computation of the custom op.&quot;&quot;&quot;</span>
         <span class="c1"># Evaluate the Op result for a specific numerical input</span>
 
         <span class="c1"># The inputs are always wrapped in a list</span>
@@ -766,6 +776,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
         <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">output_gradients</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the gradient computation for the custom op.&quot;&quot;&quot;</span>
         <span class="c1"># Create a PyTensor expression of the gradient</span>
         <span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">=</span> <span class="n">inputs</span>
         <span class="p">(</span><span class="n">gz</span><span class="p">,)</span> <span class="o">=</span> <span class="n">output_gradients</span>
@@ -775,7 +786,10 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">VJPCustomOp</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom PyTensor Op for the vector-Jacobian product of the custom op.&quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">make_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">gz</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a PyTensor node for the custom op.&quot;&quot;&quot;</span>
         <span class="c1"># Make sure the two inputs are tensor variables</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">(</span><span class="n">gz</span><span class="p">)]</span>
         <span class="c1"># Output has the shape type and shape as the first input</span>
@@ -783,6 +797,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
         <span class="k">return</span> <span class="n">Apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">perform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the computation of the custom op.&quot;&quot;&quot;</span>
         <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">gz</span><span class="p">)</span> <span class="o">=</span> <span class="n">inputs</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">jitted_vjp_custom_op_jax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">gz</span><span class="p">)</span>
         <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
@@ -796,31 +811,7 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </details>
 </div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># with pm.Model() as model:</span>
-<span class="c1">#    omega_2 = pm.Normal(&quot;omega_2&quot;, -2.0, 2)</span>
-<span class="c1">#    pm.Potential(&quot;hgf&quot;, custom_op(omega_2))</span>
-<span class="c1">#    categorical_idata = pm.sample(chains=2)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># az.plot_trace(categorical_idata)</span>
-</pre></div>
-</div>
-</div>
-</div>
 </section>
-</section>
-<section id="the-categorical-state-transition-node">
-<h2>The categorical state-transition node<a class="headerlink" href="#the-categorical-state-transition-node" title="Link to this heading">#</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This is work in progress.</p>
-</div>
 </section>
 </section>
 <section class="tex2jax_ignore mathjax_ignore" id="system-configuration">
@@ -833,26 +824,25 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-seaborn   : 0.13.2
-matplotlib: 3.10.7
-pyhgf     : 0.2.8
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+IPython   : 9.9.0
 jax       : 0.4.31
-IPython   : 9.7.0
+matplotlib: 3.10.8
+numpy     : 2.4.0
+pyhgf     : 0.2.8
 pytensor  : 2.35.1
-numpy     : 2.3.5
+seaborn   : 0.13.2
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -914,7 +904,6 @@ Watermark: 2.5.0
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-using-mcmc-sampling">Inference using MCMC sampling</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-categorical-state-transition-node">The categorical state-transition node</a></li>
 </ul>
 </li>
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
@@ -956,7 +945,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

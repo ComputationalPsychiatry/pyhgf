@@ -835,14 +835,12 @@ window.addEventListener("load", load);
     <span class="c1"># get the parameter (mean and variance) from the exponential state parent nodes</span>
     <span class="n">value_parent_idxs</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>
     <span class="k">if</span> <span class="n">value_parent_idxs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">parameters</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">(</span>
-                    <span class="n">xis</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span>
-                <span class="p">)</span>
-                <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">value_parent_idxs</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">Normal</span><span class="p">()</span><span class="o">.</span><span class="n">parameters_from_sufficient_statistics</span><span class="p">(</span>
+                <span class="n">xis</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">][</span><span class="s2">&quot;xis&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">value_parent_idxs</span>
+        <span class="p">])</span>
 
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_means&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_sigmas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">parameters</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
@@ -890,7 +888,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

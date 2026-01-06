@@ -63,7 +63,7 @@
     <link rel="icon" href="../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html" />
+    <link rel="next" title="Modelling win-frequency bias in the Iowa Gambling Task" href="Example_5_Iowa_Gambling_Task.html" />
     <link rel="prev" title="Example 3: A multi-armed bandit task with independent rewards and punishments" href="Example_3_Multi_armed_bandit.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -425,6 +425,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -529,11 +531,13 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">jit</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Edges</span>
 
@@ -628,7 +632,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/c62645460ae57c4238c7e957667102c946cadc0761da21c10c133f4c4bbad9e9.png" src="../_images/c62645460ae57c4238c7e957667102c946cadc0761da21c10c133f4c4bbad9e9.png" />
+<img alt="../_images/2cbe131c7ec6ade236d528a7f5efaba781a0b0d9c39731679a60d13adb95ec72.png" src="../_images/2cbe131c7ec6ade236d528a7f5efaba781a0b0d9c39731679a60d13adb95ec72.png" />
 </div>
 </div>
 </section>
@@ -677,7 +681,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/38146f1b05d8d5de4ce0a74d2ccc280bd25ddba9d2f4ac6214fa26b2587993a1.png" src="../_images/38146f1b05d8d5de4ce0a74d2ccc280bd25ddba9d2f4ac6214fa26b2587993a1.png" />
+<img alt="../_images/00ebcc7b4081cfe3543f3a84c8d1bf4e8f4fea10c607531edc1c7e616c2919c4.png" src="../_images/00ebcc7b4081cfe3543f3a84c8d1bf4e8f4fea10c607531edc1c7e616c2919c4.png" />
 </div>
 </div>
 </section>
@@ -829,6 +833,8 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a new adjacency variable for this case</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CausalAdjacencyLists</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Causal adjacency list with coupling functions.&quot;&quot;&quot;</span>
+
     <span class="n">node_type</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">value_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
     <span class="n">volatility_parents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span>
@@ -867,6 +873,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prediction_error</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Causal prediction error function.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">mu_2</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">mu_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">var_1</span> <span class="o">+</span> <span class="n">var_2</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -875,6 +882,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">find_alpha</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">mu_2</span><span class="p">,</span> <span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find optimal coupling strength alpha minimizing prediction error.&quot;&quot;&quot;</span>
     <span class="c1"># find root 1</span>
     <span class="n">alpha_hat_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mu_1</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">mu_2</span> <span class="o">-</span> <span class="n">u</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu_1</span><span class="p">)</span>
 
@@ -1017,7 +1025,7 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/dd6fe89cee7f5bc901e65e7c588fd6eeffce19a41cb634ce2981f701929c64bc.png" src="../_images/dd6fe89cee7f5bc901e65e7c588fd6eeffce19a41cb634ce2981f701929c64bc.png" />
+<img alt="../_images/960412ed376c28a2dd7791d1157787bf3b2825ae7970c31298282ac8716d865d.png" src="../_images/960412ed376c28a2dd7791d1157787bf3b2825ae7970c31298282ac8716d865d.png" />
 </div>
 </div>
 </section>
@@ -1031,25 +1039,24 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-seaborn   : 0.13.2
+IPython   : 9.9.0
 jax       : 0.4.31
-matplotlib: 3.10.7
+matplotlib: 3.10.8
+numpy     : 2.4.0
 pyhgf     : 0.2.8
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-IPython   : 9.7.0
-numpy     : 2.3.5
+seaborn   : 0.13.2
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1077,11 +1084,11 @@ Watermark: 2.5.0
       </div>
     </a>
     <a class="right-next"
-       href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html"
+       href="Example_5_Iowa_Gambling_Task.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</p>
+        <p class="prev-next-title">Modelling win-frequency bias in the Iowa Gambling Task</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1151,7 +1158,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

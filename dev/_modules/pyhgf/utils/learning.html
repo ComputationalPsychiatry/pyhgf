@@ -797,8 +797,9 @@ window.addEventListener("load", load);
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attributes</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">LearningSequence</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_predictors</span><span class="p">,</span> <span class="n">set_observation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_observation</span><span class="p">,</span> <span class="n">set_predictors</span>
 
 
 <div class="viewcode-block" id="learning">
@@ -896,11 +897,6 @@ window.addEventListener("load", load);
     <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">learning_sequence</span><span class="o">.</span><span class="n">update_steps</span><span class="p">:</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
 
-    <span class="c1"># 5. Learning sequence -------------------------------------------------------------</span>
-    <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">update_fn</span> <span class="ow">in</span> <span class="n">learning_sequence</span><span class="o">.</span><span class="n">learning_steps</span><span class="p">:</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">update_fn</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span>
         <span class="n">attributes</span><span class="p">,</span>
@@ -947,7 +943,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

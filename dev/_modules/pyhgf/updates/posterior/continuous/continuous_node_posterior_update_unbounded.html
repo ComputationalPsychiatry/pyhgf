@@ -794,9 +794,11 @@ window.addEventListener("load", load);
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Edges</span>
 
 
@@ -806,6 +808,48 @@ window.addEventListener("load", load);
 <span class="k">def</span><span class="w"> </span><span class="nf">continuous_node_posterior_update_unbounded</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the posterior of a continuous node with unbounded quadratic approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the node that needs to be updated. After continuous updates, the</span>
+<span class="sd">        parameters of value and volatility parents (if any) will be different.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as node number.</span>
+<span class="sd">        For each node, the index list value and volatility parents and children.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The updated attributes of the probabilistic nodes.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    continuous_node_posterior_update_ehgf</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">posterior_update_unbounded</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span>
+    <span class="p">)</span>
+
+    <span class="c1"># update the posterior mean and precision using the unbounded update step</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_precision</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_mean</span>
+
+    <span class="k">return</span> <span class="n">attributes</span></div>
+
+
+
+<div class="viewcode-block" id="posterior_update_unbounded">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded.html#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded">[docs]</a>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_unbounded</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the posterior of a continuous node with unbounded quadratic approximation.</span>
 
 <span class="sd">    Parameters</span>
@@ -960,11 +1004,7 @@ window.addEventListener("load", load);
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">weigthing</span><span class="p">)</span> <span class="o">*</span> <span class="n">pi_l1</span> <span class="o">+</span> <span class="n">weigthing</span> <span class="o">*</span> <span class="n">pi_l2</span>
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">weigthing</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_l1</span> <span class="o">+</span> <span class="n">weigthing</span> <span class="o">*</span> <span class="n">mu_l2</span>
 
-    <span class="c1"># update the posterior mean and precision using the unbounded update step</span>
-    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_precision</span>
-    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_mean</span>
-
-    <span class="k">return</span> <span class="n">attributes</span></div>
+    <span class="k">return</span> <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">posterior_mean</span></div>
 
 
 
@@ -1023,7 +1063,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

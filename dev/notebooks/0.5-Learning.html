@@ -420,6 +420,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -519,12 +521,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">PRNGKey</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">treescope</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.sample</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span><span class="p">,</span> <span class="n">Network</span>
 
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -533,6 +532,10 @@
 </pre></div>
 </div>
 </div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The features exposed here are still a work in progress.</p>
 </div>
 <p>The hierarchical Gaussian filter is built on top of a generative model that is governed by Gaussian random walks. As such, this model is mostly used to model the time-resolved evolution of beliefs in volatile environments. But the framework can easily extend to traditional applications of predictive coding, such as deep neural networks, where the variational message passing replaces the use of gradient descent during training.</p>
 <p>In this notebook, we start from the foundational application of predictive coding networks as a replacement for backpropagation <span id="id1">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span> based on <strong>prospective configuration</strong>, where the most likely neural activation is inferred before weight updates. We show that the variational updates that follow the prediction errors can replace prospective configuration based on gradient descent over the energy function of a predictive coding network, and validate this approach on the “bear example” from <span id="id2">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span>.</p>
@@ -547,23 +550,19 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># here x represents the visual input (River / No River)</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">120</span><span class="p">)</span>
 <span class="n">x</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
 
 <span class="c1"># y represents the auditory and olfactory stimuli</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="n">x</span><span class="p">,</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">20</span><span class="p">),</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">20</span><span class="p">),</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">20</span><span class="p">),</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-        <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="p">]</span>
-<span class="p">)</span><span class="o">.</span><span class="n">T</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="n">x</span><span class="p">,</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">40</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">40</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">40</span><span class="p">),</span>
+    <span class="p">])</span>
+    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span><span class="p">,</span>
+<span class="p">])</span><span class="o">.</span><span class="n">T</span>
 </pre></div>
 </div>
 </div>
@@ -575,8 +574,10 @@
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,))</span>
@@ -586,7 +587,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/abe323c8ea24c58292138e95aafc8b3fad3fff24c865093216a3d5387cffe7dd.svg" src="../_images/abe323c8ea24c58292138e95aafc8b3fad3fff24c865093216a3d5387cffe7dd.svg" />
+<img alt="../_images/071d38088da92cd0df86766e888c4279c215ce522f133366f3797926d6ec1788.svg" src="../_images/071d38088da92cd0df86766e888c4279c215ce522f133366f3797926d6ec1788.svg" />
 </div>
 </div>
 <p>Deep networks trained for classification purposes differ from other predictive coding networks as both roots and leaves should receive inputs (predictors and outcomes, respectively).</p>
@@ -615,7 +616,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/82adde80485a0f5d8124db0a38043c84a4dc089b12544ac2f3a75fb146ef608e.png" src="../_images/82adde80485a0f5d8124db0a38043c84a4dc089b12544ac2f3a75fb146ef608e.png" />
+<img alt="../_images/f137ab24516ff036312ed5ac3684ce6e4446fc7ec91c6ae68fd299f9140eb7be.png" src="../_images/f137ab24516ff036312ed5ac3684ce6e4446fc7ec91c6ae68fd299f9140eb7be.png" />
 </div>
 </div>
 <p>This example illustrates the effectiveness of the variational update to replace the prospective configuration step based on gradient descent. As new observations contradict the expected outcomes (i.e., observing the river without hearing the water, from trials 40 to 80 in the bottom panel), the network efficiently reorganizes without interfering with other predictions (i.e,. still expecting smelling the salmon while seeing the water, top panel, trials 40 to 80).</p>
@@ -627,6 +628,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">linear</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Linear activation function.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">x</span>
 </pre></div>
 </div>
@@ -645,29 +647,34 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We start by defining a simple network with two binary branches</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We start by defining two networks with varying precision </span>
+<span class="c1"># at the predictor and outcome levels</span>
 <span class="n">high_predictor_precision_network</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
@@ -675,34 +682,34 @@
         <span class="n">precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="p">)</span>
 
-<span class="c1"># We start by defining a simple network with two binary branches</span>
 <span class="n">high_outcome_precision_network</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">Network</span><span class="p">()</span>
+    <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
@@ -710,9 +717,6 @@
         <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -736,6 +740,16 @@
 <span class="p">);</span>
 </pre></div>
 </div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">high_outcome_precision_network</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/cca07d459e4d5bb7d14cfd7b9fab0c051c3236976a1408c15536bdd0fe6530b3.svg" src="../_images/cca07d459e4d5bb7d14cfd7b9fab0c051c3236976a1408c15536bdd0fe6530b3.svg" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -807,7 +821,94 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8cac1bc42e6b64621bdc0fdf96149756369946df73fd0d24bddd77c6f8fb59e9.png" src="../_images/8cac1bc42e6b64621bdc0fdf96149756369946df73fd0d24bddd77c6f8fb59e9.png" />
+<img alt="../_images/36c50e37349bd5868789e1ec86874ffc89e8c82de8dd95da3d5d55352bce1cab.png" src="../_images/36c50e37349bd5868789e1ec86874ffc89e8c82de8dd95da3d5d55352bce1cab.png" />
+</div>
+</div>
+</section>
+<section id="building-deep-network-structures-in-pyhgf">
+<h2>Building Deep-Network Structures in pyhgf<a class="headerlink" href="#building-deep-network-structures-in-pyhgf" title="Link to this heading">#</a></h2>
+<p>Here, we demonstrate two new high-level functions for constructing layered, fully connected value-parent structures in <code class="docutils literal notranslate"><span class="pre">pyhgf</span></code>:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">add_layer()</span></code></strong> – adds a <em>single</em> fully connected parent layer.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">add_layer_stack()</span></code></strong> – builds <em>multiple</em> layers at once, similar to <code class="docutils literal notranslate"><span class="pre">Sequential</span></code> in deep-learning frameworks.</p></li>
+</ul>
+<p>These functions allow HGF models to be composed in a deep-network style while remaining fully compatible with the probabilistic belief-update dynamics.</p>
+<section id="adding-connected-layers-with-add-layer">
+<h3>Adding Connected Layers with <code class="docutils literal notranslate"><span class="pre">add_layer</span></code><a class="headerlink" href="#adding-connected-layers-with-add-layer" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">add_layer</span></code> provides fine-grained control, letting you manually construct each layer.</p>
+<p>This is useful when each layer should have different hyperparameters (precision, tonic volatility, autoconnection strength, etc.). The function creates a fully connected parent layer, where all new parent nodes connect to all children below them.</p>
+<p>By default, <code class="docutils literal notranslate"><span class="pre">add_layer</span></code> automatically connects to all orphan nodes (nodes without value parents). You can also specify <code class="docutils literal notranslate"><span class="pre">value_children</span></code> explicitly to control which nodes the layer connects to.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Or chain them in a single expression (like Keras/PyTorch):</span>
+<span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">DeepNetwork</span><span class="p">(</span><span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,))</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Visualize the network structure</span>
+<span class="n">net</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/575d1d91a228e609779d91ba4703b7dba8803e9ee8e8c4e360bd2b93087c3345.svg" src="../_images/575d1d91a228e609779d91ba4703b7dba8803e9ee8e8c4e360bd2b93087c3345.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">net</span><span class="o">.</span><span class="n">plot_deep_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/89b87af8bd8c47bce7feddb44ebc0d8d5915af73de1a581010067e5741b0dd98.svg" src="../_images/89b87af8bd8c47bce7feddb44ebc0d8d5915af73de1a581010067e5741b0dd98.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Layer structure information is automatically tracked and can be accessed as needed:</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Layer structure:&quot;</span><span class="p">,</span> <span class="n">net</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Layer sizes:&quot;</span><span class="p">,</span> <span class="n">net</span><span class="o">.</span><span class="n">get_layer_sizes</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Layer structure: [[0, 1], [2, 3, 4, 5, 6], [7, 8, 9]]
+Layer sizes: [2, 5, 3]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="adding-multiple-layers-with-add-layer-stack">
+<h2>Adding Multiple Layers with <code class="docutils literal notranslate"><span class="pre">add_layer_stack</span></code><a class="headerlink" href="#adding-multiple-layers-with-add-layer-stack" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">add_layer_stack</span></code> provides a compact way to build several fully connected parent layers at once. Instead of adding each layer manually, you simply specify the desired layer sizes (e.g., [3, 16, 32]), and the function creates them sequentially. Each layer is fully connected to the one below, using the same hyperparameters for all layers you add (precision, tonic volatility, autoconnection strength, etc.).</p>
+<p>This is ideal when you want to quickly prototype deep hierarchical networks or mimic the “stacked layer” construction found in deep learning frameworks.</p>
+<p>Like <code class="docutils literal notranslate"><span class="pre">add_layer</span></code>, it also supports method chaining and auto-connects to orphan nodes by default.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add 3 fully connected parent layers (4→4→16→32) using method chaining</span>
+<span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">DeepNetwork</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer_stack</span><span class="p">(</span>
+        <span class="n">layer_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">],</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">net</span><span class="o">.</span><span class="n">plot_deep_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/66736dd9051f3b558e5084e13f4e7a1333ac5c999a19b6bdcd5c7a23a68de8de.svg" src="../_images/66736dd9051f3b558e5084e13f4e7a1333ac5c999a19b6bdcd5c7a23a68de8de.svg" />
 </div>
 </div>
 </section>
@@ -822,26 +923,25 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-matplotlib: 3.10.7
-seaborn   : 0.13.2
+IPython   : 9.9.0
 jax       : 0.4.31
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-IPython   : 9.7.0
-treescope : 0.1.10
-numpy     : 2.3.5
+matplotlib: 3.10.8
+numpy     : 2.4.0
 pyhgf     : 0.2.8
+seaborn   : 0.13.2
+treescope : 0.1.10
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -898,6 +998,11 @@ Watermark: 2.5.0
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Deep learning with Bayesian predictive coding</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prospective-configuration-avoids-interference-during-learning">Prospective configuration avoids interference during learning</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-the-depth-of-weight-updates-with-input-precision">Controlling the depth of weight updates with input precision</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-deep-network-structures-in-pyhgf">Building Deep-Network Structures in pyhgf</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-connected-layers-with-add-layer">Adding Connected Layers with <code class="docutils literal notranslate"><span class="pre">add_layer</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-multiple-layers-with-add-layer-stack">Adding Multiple Layers with <code class="docutils literal notranslate"><span class="pre">add_layer_stack</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
@@ -939,7 +1044,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

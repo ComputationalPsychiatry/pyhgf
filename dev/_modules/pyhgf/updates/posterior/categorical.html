@@ -842,20 +842,16 @@ window.addEventListener("load", load);
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># get the expected values before the update</span>
-    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-        <span class="p">[</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">value_parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore</span>
-        <span class="p">]</span>
-    <span class="p">)</span>
+    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">value_parent_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">value_parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore</span>
+    <span class="p">])</span>
 
     <span class="c1"># get the new values after the update from the continuous state</span>
-    <span class="n">updated_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-        <span class="p">[</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">edges</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore</span>
-        <span class="p">]</span>
-    <span class="p">)</span>
+    <span class="n">updated_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">edges</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore</span>
+    <span class="p">])</span>
     <span class="n">updated_mean</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">updated_mean</span><span class="p">))</span>  <span class="c1"># logit transform</span>
 
     <span class="c1"># compute the prediction error (observed - expected) at time K</span>
@@ -931,7 +927,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

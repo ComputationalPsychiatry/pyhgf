@@ -793,6 +793,8 @@ window.addEventListener("load", load);
   <h1>Source code for pyhgf.model.network</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
@@ -809,27 +811,28 @@ window.addEventListener("load", load);
     <span class="n">add_continuous_state</span><span class="p">,</span>
     <span class="n">add_dp_state</span><span class="p">,</span>
     <span class="n">add_ef_state</span><span class="p">,</span>
+    <span class="n">add_volatile_node</span><span class="p">,</span>
     <span class="n">get_couplings</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">matplotlib</span><span class="p">,</span> <span class="n">networkx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Attributes</span><span class="p">,</span>
-    <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">Edges</span><span class="p">,</span>
-    <span class="n">NetworkParameters</span><span class="p">,</span>
-    <span class="n">UpdateSequence</span><span class="p">,</span>
     <span class="n">LearningSequence</span><span class="p">,</span>
+    <span class="n">NetworkParameters</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">UpdateSequence</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights_dynamic</span><span class="p">,</span> <span class="n">learning_weights_fixed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_edges</span><span class="p">,</span>
     <span class="n">beliefs_propagation</span><span class="p">,</span>
     <span class="n">get_input_idxs</span><span class="p">,</span>
     <span class="n">get_update_sequence</span><span class="p">,</span>
-    <span class="n">to_pandas</span><span class="p">,</span>
-    <span class="n">sample</span><span class="p">,</span>
     <span class="n">learning</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">to_pandas</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights_fixed</span><span class="p">,</span> <span class="n">learning_weights_dynamic</span>
 
 
 <div class="viewcode-block" id="Network">
@@ -1016,34 +1019,37 @@ window.addEventListener("load", load);
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid lr value. Should be &#39;dynamic&#39; or a float value.&quot;</span><span class="p">)</span>
 
-        <span class="n">learning_steps</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learning_weights</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">node_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># do not update the last layer</span>
+        <span class="n">update_steps</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">step</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
         <span class="p">]</span>
 
-        <span class="c1"># do not update the last layer</span>
-        <span class="n">update_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">step</span>
-                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span>
-                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="c1"># interleave the weight updates after the prediction error</span>
+        <span class="c1"># and before the posterior updates</span>
+        <span class="n">inc</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># increment the index dynamically</span>
+        <span class="n">weight_update</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of weight update to perform at this layer</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">update_steps</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;prediction_error&quot;</span> <span class="ow">in</span> <span class="n">update</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+                <span class="n">weight_update</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">update</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">learning_weights</span><span class="p">))</span>
+            <span class="k">if</span> <span class="s2">&quot;posterior&quot;</span> <span class="ow">in</span> <span class="n">update</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">and</span> <span class="n">weight_update</span><span class="p">:</span>
+                <span class="n">update_steps</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">update_steps</span><span class="p">[:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">inc</span><span class="p">]</span> <span class="o">+</span> <span class="n">weight_update</span> <span class="o">+</span> <span class="n">update_steps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">inc</span> <span class="p">:]</span>
+                <span class="p">)</span>
+                <span class="n">inc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weight_update</span><span class="p">)</span>
+                <span class="n">weight_update</span> <span class="o">=</span> <span class="p">[]</span>
+
         <span class="c1"># do not predict on the last layer</span>
-        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">step</span>
-                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
-                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
+            <span class="n">step</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+        <span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_sequence</span> <span class="o">=</span> <span class="n">LearningSequence</span><span class="p">(</span>
             <span class="n">prediction_steps</span><span class="o">=</span><span class="n">prediction_steps</span><span class="p">,</span>
-            <span class="n">update_steps</span><span class="o">=</span><span class="n">update_steps</span><span class="p">,</span>
-            <span class="n">learning_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">learning_steps</span><span class="p">),</span>  <span class="c1"># type: ignore</span>
+            <span class="n">update_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">update_steps</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="c1"># create the learning propagation function</span>
@@ -1094,7 +1100,7 @@ window.addEventListener("load", load);
             <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
 
         <span class="c1"># generate the belief propagation function</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="n">overwrite</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="bp">self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_learning_propagation_fn</span><span class="p">(</span>
                 <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span> <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span>
             <span class="p">)</span>
@@ -1172,12 +1178,10 @@ window.addEventListener("load", load);
 
         <span class="c1"># observation mask</span>
         <span class="k">if</span> <span class="n">observed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
+            <span class="p">])</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">observed</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">observed</span><span class="p">,)</span>
@@ -1305,12 +1309,10 @@ window.addEventListener("load", load);
 
         <span class="c1"># observation mask</span>
         <span class="k">if</span> <span class="n">observed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
+            <span class="p">])</span>
 
         <span class="c1"># format input_data according to the input nodes dimension</span>
         <span class="n">split_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -1432,12 +1434,13 @@ window.addEventListener("load", load);
             <span class="s2">&quot;categorical-state&quot;</span><span class="p">,</span>
             <span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
             <span class="s2">&quot;binary-state&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="p">(</span>
                     <span class="s2">&quot;Invalid node type. Should be one of the following: &quot;</span>
                     <span class="s2">&quot;&#39;dp-state&#39;, &#39;continuous-state&#39;, &#39;binary-state&#39;, &quot;</span>
-                    <span class="s2">&quot;&#39;ef-state&#39;, or &#39;categorical-state&#39;&quot;</span>
+                    <span class="s2">&quot;&#39;ef-state&#39;, &#39;categorical-state&#39;, or &#39;volatile-node&#39;&quot;</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
@@ -1465,6 +1468,18 @@ window.addEventListener("load", load);
                 <span class="n">additional_parameters</span><span class="o">=</span><span class="n">additional_parameters</span><span class="p">,</span>
                 <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
             <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;volatile-node&quot;</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="n">add_volatile_node</span><span class="p">(</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
+                <span class="n">value_parents</span><span class="o">=</span><span class="n">value_parents</span><span class="p">,</span>
+                <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+                <span class="n">node_parameters</span><span class="o">=</span><span class="n">node_parameters</span><span class="p">,</span>
+                <span class="n">additional_parameters</span><span class="o">=</span><span class="n">additional_parameters</span><span class="p">,</span>
+                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;binary-state&quot;</span><span class="p">:</span>
             <span class="bp">self</span> <span class="o">=</span> <span class="n">add_binary_state</span><span class="p">(</span>
                 <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -1524,12 +1539,10 @@ window.addEventListener("load", load);
         <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;networkx&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">networkx</span><span class="o">.</span><span class="n">plot_network</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="s2">&quot;Invalid backend.&quot;</span>
-                    <span class="s2">&quot; Should be one of the following: &#39;graphviz&#39; or &#39;networkx&#39;&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span>
+                <span class="s2">&quot;Invalid backend.&quot;</span>
+                <span class="s2">&quot; Should be one of the following: &#39;graphviz&#39; or &#39;networkx&#39;&quot;</span><span class="p">,</span>
+            <span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Export the nodes trajectories and surprise as a Pandas data frame.</span>
@@ -1585,9 +1598,9 @@ window.addEventListener("load", load);
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_edges</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
-        <span class="n">parent_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
-        <span class="n">children_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">parent_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">children_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span>
         <span class="n">coupling_strengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
@@ -1595,12 +1608,12 @@ window.addEventListener("load", load);
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kind :</span>
-<span class="sd">            The kind of coupling, can be `&quot;value&quot;` or `&quot;volatility&quot;`.</span>
 <span class="sd">        parent_idxs :</span>
 <span class="sd">            The index(es) of the parent node(s).</span>
 <span class="sd">        children_idxs :</span>
 <span class="sd">            The index(es) of the children node(s).</span>
+<span class="sd">        kind :</span>
+<span class="sd">            The kind of coupling, can be `&quot;value&quot;` or `&quot;volatility&quot;`.</span>
 <span class="sd">        coupling_strengths :</span>
 <span class="sd">            The coupling strength betwen the parents and children.</span>
 <span class="sd">        coupling_fn :</span>
@@ -1687,7 +1700,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

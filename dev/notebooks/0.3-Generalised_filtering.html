@@ -422,6 +422,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -625,7 +627,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/3164d8675408a2bdd639c0ff1cfaa0871a547c3a52ac72d5935cf8d614206454.png" src="../_images/3164d8675408a2bdd639c0ff1cfaa0871a547c3a52ac72d5935cf8d614206454.png" />
+<img alt="../_images/21cb60801e283de2e27fb459218c7bc3e9291cf60fa7f36497f0c60ac7267cb0.png" src="../_images/21cb60801e283de2e27fb459218c7bc3e9291cf60fa7f36497f0c60ac7267cb0.png" />
 </div>
 </div>
 <p>The vizualisation of the predictive distribution over new observations require integrating the joint probability of the prior <span class="math notranslate nohighlight">\(g_{\xi, \nu}(\vartheta)\)</span> and the posterior <span class="math notranslate nohighlight">\(f_x(\vartheta)\)</span>. In the case of a univariate normal, the <em>Gaussian-predictive</em> distribution is given by:</p>
@@ -661,7 +663,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/3e4f6da8ec176614b10eb737ec87582d064cb364dea3d2622c59d23878b540f8.png" src="../_images/3e4f6da8ec176614b10eb737ec87582d064cb364dea3d2622c59d23878b540f8.png" />
+<img alt="../_images/0c5a565c6f0acacf543bc08173e1b00c6392eb100c6a28f80be592ec1f72c9f7.png" src="../_images/0c5a565c6f0acacf543bc08173e1b00c6392eb100c6a28f80be592ec1f72c9f7.png" />
 </div>
 </div>
 </section>
@@ -797,7 +799,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/d8c0005a0dcaefbd9c812cb756b26edac6e7ef131a8e4f0b65fd3383d15c4272.png" src="../_images/d8c0005a0dcaefbd9c812cb756b26edac6e7ef131a8e4f0b65fd3383d15c4272.png" />
+<img alt="../_images/01c185eb1916289192e746efb722179a6aff62bcb498b7ffe004c7c2ddfce887.png" src="../_images/01c185eb1916289192e746efb722179a6aff62bcb498b7ffe004c7c2ddfce887.png" />
 </div>
 </div>
 <p>We can see that larger values for <span class="math notranslate nohighlight">\(\nu\)</span> correspond to a lower learning rate, and therefore smoother transition between states.</p>
@@ -869,7 +871,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/12f0bd7281ff0e00c1985dd16342f5b1708a2366584f93c44dc24e39c3a8ffb8.png" src="../_images/12f0bd7281ff0e00c1985dd16342f5b1708a2366584f93c44dc24e39c3a8ffb8.png" />
+<img alt="../_images/fba8acf1fbbc49f51766580505a55e56ef206e1b82f82503e03aed17fd42d256.png" src="../_images/fba8acf1fbbc49f51766580505a55e56ef206e1b82f82503e03aed17fd42d256.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -1118,25 +1120,24 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
+IPython   : 9.9.0
 jax       : 0.4.31
+matplotlib: 3.10.8
+numpy     : 2.4.0
 pyhgf     : 0.2.8
-IPython   : 9.7.0
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
 seaborn   : 0.13.2
-matplotlib: 3.10.7
-numpy     : 2.3.5
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1247,7 +1248,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

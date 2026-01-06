@@ -364,18 +364,26 @@
    "outputs": [],
    "source": [
     "# create sequences of blocks for each arm/rewards\n",
-    "win_arm1 = np.concatenate(\n",
-    "    [stable_contingencies, chance_contingencies, volatile_contingencies]\n",
-    ")\n",
-    "loss_arm1 = np.concatenate(\n",
-    "    [volatile_contingencies, chance_contingencies, stable_contingencies]\n",
-    ")\n",
-    "win_arm2 = np.concatenate(\n",
-    "    [chance_contingencies, stable_contingencies, volatile_contingencies]\n",
-    ")\n",
-    "loss_arm2 = np.concatenate(\n",
-    "    [chance_contingencies, volatile_contingencies, stable_contingencies]\n",
-    ")"
+    "win_arm1 = np.concatenate([\n",
+    "    stable_contingencies,\n",
+    "    chance_contingencies,\n",
+    "    volatile_contingencies,\n",
+    "])\n",
+    "loss_arm1 = np.concatenate([\n",
+    "    volatile_contingencies,\n",
+    "    chance_contingencies,\n",
+    "    stable_contingencies,\n",
+    "])\n",
+    "win_arm2 = np.concatenate([\n",
+    "    chance_contingencies,\n",
+    "    stable_contingencies,\n",
+    "    volatile_contingencies,\n",
+    "])\n",
+    "loss_arm2 = np.concatenate([\n",
+    "    chance_contingencies,\n",
+    "    volatile_contingencies,\n",
+    "    stable_contingencies,\n",
+    "])"
    ]
   },
   {
@@ -607,7 +615,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": null,
    "id": "e99ef0fc-ddcc-4a6c-96a4-559181ff6942",
    "metadata": {
     "execution": {
@@ -627,6 +635,7 @@
     "\n",
     "\n",
     "def decision_rule(w_a, l_a, w_b, l_b, beta):\n",
+    "    \"\"\"Decision rule computing the probability of choosing arm A.\"\"\"\n",
     "    return jnp.exp(beta * (w_a - l_a)) / (\n",
     "        jnp.exp(beta * (w_a - l_a)) + jnp.exp(beta * (w_b - l_b))\n",
     "    )\n",
@@ -1163,7 +1172,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 22,
+   "execution_count": null,
    "id": "82a91555-d355-4553-a148-d291461798f5",
    "metadata": {
     "editable": true,
@@ -1181,6 +1190,7 @@
    "outputs": [],
    "source": [
     "def two_bandits_logp(tonic_volatility, hgf, input_data, responses, observed):\n",
+    "    \"\"\"Log-probability function for the two-armed bandit task.\"\"\"\n",
     "    # replace with a new omega in the model\n",
     "    hgf.attributes[4][\"tonic_volatility\"] = tonic_volatility\n",
     "    hgf.attributes[5][\"tonic_volatility\"] = tonic_volatility\n",
@@ -1367,7 +1377,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 27,
+   "execution_count": null,
    "id": "734bf103-32e0-424a-a74d-d75b82058aee",
    "metadata": {
     "editable": true,
@@ -1388,7 +1398,10 @@
    "source": [
     "# The CustomOp needs `make_node`, `perform` and `grad`.\n",
     "class CustomOp(Op):\n",
+    "    \"\"\"Custom PyTensor Op wrapping the JAX log-probability function.\"\"\"\n",
+    "\n",
     "    def make_node(self, x):\n",
+    "        \"\"\"Create a PyTensor node for the Op.\"\"\"\n",
     "        # Create a PyTensor node specifying the number and type of inputs and outputs\n",
     "\n",
     "        # We convert the input into a PyTensor tensor variable\n",
@@ -1398,6 +1411,7 @@
     "        return Apply(self, inputs, outputs)\n",
     "\n",
     "    def perform(self, node, inputs, outputs):\n",
+    "        \"\"\"Perform the computation of the Op.\"\"\"\n",
     "        # Evaluate the Op result for a specific numerical input\n",
     "\n",
     "        # The inputs are always wrapped in a list\n",
@@ -1408,6 +1422,7 @@
     "        outputs[0][0] = np.asarray(result, dtype=\"float64\")\n",
     "\n",
     "    def grad(self, inputs, output_gradients):\n",
+    "        \"\"\"Gradient computation for the Op.\"\"\"\n",
     "        # Create a PyTensor expression of the gradient\n",
     "        grad_volatility = grad_custom_op(*inputs)\n",
     "\n",
@@ -1418,7 +1433,10 @@
     "\n",
     "\n",
     "class GradCustomOp(Op):\n",
+    "    \"\"\"Custom PyTensor Op wrapping the JAX gradient of the log-probability function.\"\"\"\n",
+    "\n",
     "    def make_node(self, tonic_volatility):\n",
+    "        \"\"\"Create a PyTensor node for the Op.\"\"\"\n",
     "        # Make sure the two inputs are tensor variables\n",
     "        inputs = [pt.as_tensor_variable(tonic_volatility)]\n",
     "        # Output has the shape type and shape as the first input\n",
@@ -1426,6 +1444,7 @@
     "        return Apply(self, inputs, outputs)\n",
     "\n",
     "    def perform(self, node, inputs, outputs):\n",
+    "        \"\"\"Perform the computation of the Op.\"\"\"\n",
     "        grad_volatility = grad_logp_fn(*inputs)\n",
     "\n",
     "        outputs[0][0] = np.asarray(grad_volatility, dtype=node.outputs[0].dtype)\n",
@@ -1438,7 +1457,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 28,
+   "execution_count": null,
    "id": "f4125618",
    "metadata": {
     "execution": {
@@ -1451,6 +1470,7 @@
    "outputs": [],
    "source": [
     "def logp(value, tonic_volatility):\n",
+    "    \"\"\"Log-probability wrapper for PyTensor.\"\"\"\n",
     "    return custom_op(pt.squeeze(tonic_volatility))"
    ]
   },

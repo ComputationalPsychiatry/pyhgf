@@ -1,0 +1,6 @@
+﻿pyhgf.plots.graphviz.plot\_deep\_network
+========================================
+
+.. currentmodule:: pyhgf.plots.graphviz
+
+.. autofunction:: plot_deep_network

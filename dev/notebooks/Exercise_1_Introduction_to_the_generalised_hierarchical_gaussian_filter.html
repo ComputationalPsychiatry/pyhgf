@@ -61,7 +61,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Zurich CPC II: Application to reinforcement learning" href="Exercise_2_Bayesian_reinforcement_learning.html" />
-    <link rel="prev" title="Example 4: Causal discovery in a predictive coding network" href="Example_4_Causal_discovery.html" />
+    <link rel="prev" title="Modelling win-frequency bias in the Iowa Gambling Task" href="Example_5_Iowa_Gambling_Task.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -422,6 +422,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="current nav bd-sidenav">
@@ -503,6 +505,7 @@
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
 <span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -525,6 +528,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 </pre></div>
@@ -597,7 +601,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/1315123082475c68aa856962ce3f7c3c5c5fb39cb3265cee5c20254e3f64ad93.png" src="../_images/1315123082475c68aa856962ce3f7c3c5c5fb39cb3265cee5c20254e3f64ad93.png" />
+<img alt="../_images/b91d765a4232a39cb5fca09666bec4d510fb3fa3719f37b7b4bc60ebc274b86f.png" src="../_images/b91d765a4232a39cb5fca09666bec4d510fb3fa3719f37b7b4bc60ebc274b86f.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.2">
@@ -710,7 +714,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/fd7d0234528c0c926195a263daad2835f8fdfc0a31f95074c39ccd522633cdcb.png" src="../_images/fd7d0234528c0c926195a263daad2835f8fdfc0a31f95074c39ccd522633cdcb.png" />
+<img alt="../_images/5a0257eb07e5e31a230a3bd80fa0cd352628d4e07808c12e22454fa7a732f30a.png" src="../_images/5a0257eb07e5e31a230a3bd80fa0cd352628d4e07808c12e22454fa7a732f30a.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.4">
@@ -887,7 +891,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/afc0ebc781b4352c2b4f6fb58245160a96df8417d34fcb839b5c2c118a67602d.png" src="../_images/afc0ebc781b4352c2b4f6fb58245160a96df8417d34fcb839b5c2c118a67602d.png" />
+<img alt="../_images/4ac7643ce17350d0258dd1f47805860859ed453fe0e3682846c7d55a6e10d5e4.png" src="../_images/4ac7643ce17350d0258dd1f47805860859ed453fe0e3682846c7d55a6e10d5e4.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -1023,25 +1027,24 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-IPython   : 9.7.0
-pyhgf     : 0.2.8
-numpy     : 2.3.5
-seaborn   : 0.13.2
+IPython   : 9.9.0
+matplotlib: 3.10.8
+numpy     : 2.4.0
 pandas    : 2.3.3
-matplotlib: 3.10.7
+pyhgf     : 0.2.8
+seaborn   : 0.13.2
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1059,12 +1062,12 @@ Watermark: 2.5.0
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="Example_4_Causal_discovery.html"
+       href="Example_5_Iowa_Gambling_Task.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Example 4: Causal discovery in a predictive coding network</p>
+        <p class="prev-next-title">Modelling win-frequency bias in the Iowa Gambling Task</p>
       </div>
     </a>
     <a class="right-next"
@@ -1149,7 +1152,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

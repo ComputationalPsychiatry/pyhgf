@@ -865,6 +865,88 @@ window.addEventListener("load", load);
 
 
 
+<div class="viewcode-block" id="add_volatile_node">
+<a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.add_volatile_node.html#pyhgf.model.add_volatile_node">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_volatile_node</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">value_parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">value_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a continuous node with an implicit volatility parent.</span>
+
+<span class="sd">    This node type combines a continuous node with an implicit volatility parent. The</span>
+<span class="sd">    volatility parent modulates the child&#39;s precision, enabling dynamic learning rates</span>
+<span class="sd">    in predictive coding networks with fewer explicit nodes.</span>
+
+<span class="sd">    note::</span>
+<span class="sd">        Parameters relative to the volatility level (e.g., &quot;mean_vol&quot;,</span>
+<span class="sd">        &quot;expected_mean_vol&quot;, etc.) are included in the node&#39;s attributes using the</span>
+<span class="sd">        suffix &quot;_vol&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">node_type</span> <span class="o">=</span> <span class="mi">6</span>
+
+    <span class="c1"># Value-volatility nodes cannot have external volatility parents/children</span>
+    <span class="c1"># The volatility coupling is internal</span>
+    <span class="n">volatility_parents</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">volatility_children</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># Value level parameters (external facing)</span>
+        <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;expected_mean&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;expected_precision&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;tonic_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="s2">&quot;tonic_drift&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="c1"># Volatility level parameters (implicit internal)</span>
+        <span class="s2">&quot;mean_vol&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;precision_vol&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;tonic_volatility_vol&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="s2">&quot;tonic_drift_vol&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">&quot;autoconnection_strength_vol&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="c1"># Internal coupling</span>
+        <span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="c1"># External coupling (value only)</span>
+        <span class="s2">&quot;value_coupling_children&quot;</span><span class="p">:</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s2">&quot;value_coupling_parents&quot;</span><span class="p">:</span> <span class="n">value_parents</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="c1"># State</span>
+        <span class="s2">&quot;observed&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;temp&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;effective_precision&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;value_prediction_error&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;volatility_prediction_error&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;effective_precision_vol&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;current_variance&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="n">node_parameters</span> <span class="o">=</span> <span class="n">update_parameters</span><span class="p">(</span>
+        <span class="n">node_parameters</span><span class="p">,</span> <span class="n">default_parameters</span><span class="p">,</span> <span class="n">additional_parameters</span>
+    <span class="p">)</span>
+
+    <span class="n">network</span> <span class="o">=</span> <span class="n">insert_nodes</span><span class="p">(</span>
+        <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">,</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
+        <span class="n">node_type</span><span class="o">=</span><span class="n">node_type</span><span class="p">,</span>
+        <span class="n">node_parameters</span><span class="o">=</span><span class="n">node_parameters</span><span class="p">,</span>
+        <span class="n">value_parents</span><span class="o">=</span><span class="n">value_parents</span><span class="p">,</span>
+        <span class="n">volatility_parents</span><span class="o">=</span><span class="n">volatility_parents</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+        <span class="n">volatility_children</span><span class="o">=</span><span class="n">volatility_children</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">network</span></div>
+
+
+
 <div class="viewcode-block" id="add_binary_state">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.add_binary_state.html#pyhgf.model.add_binary_state">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_binary_state</span><span class="p">(</span>
@@ -1199,7 +1281,7 @@ window.addEventListener("load", load);
         <span class="c1"># for mutiple value children, set a default tuple with corresponding length</span>
 
         <span class="k">if</span> <span class="n">children_number</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">coupling_fn</span> <span class="o">==</span> <span class="p">(</span><span class="kc">None</span><span class="p">,):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">children_number</span> <span class="o">*</span> <span class="n">coupling_fn</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1304,7 +1386,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

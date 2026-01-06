@@ -1,0 +1,1710 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Modelling win-frequency bias in the Iowa Gambling Task &#8212; pyhgf 0.2.8 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=b01fafc3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"9e97882d9a6e48b782ebfd1f9c129de3": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "36c3c0b9f53442a18ab455fbae7719e6": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_9e97882d9a6e48b782ebfd1f9c129de3", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m \u001b[0m\u001b[1mProgress                       \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraws\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mTuning\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSteps out\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSteps in\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSampling Speed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaining\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000    False    0           1          1332.46 draws/s   0:00:01   0:00:00    \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000    False    1           3          937.17 draws/s    0:00:02   0:00:00    \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000    False    0           3          723.47 draws/s    0:00:02   0:00:00    \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000    False    0           1          588.68 draws/s    0:00:03   0:00:00    \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\"> Progress                        </span> <span style=\"font-weight: bold\"> Draws </span> <span style=\"font-weight: bold\"> Tuning </span> <span style=\"font-weight: bold\"> Steps out </span> <span style=\"font-weight: bold\"> Steps in </span> <span style=\"font-weight: bold\"> Sampling Speed  </span> <span style=\"font-weight: bold\"> Elapsed </span> <span style=\"font-weight: bold\"> Remaining </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000    False    0           1          1332.46 draws/s   0:00:01   0:00:00    \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000    False    1           3          937.17 draws/s    0:00:02   0:00:00    \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000    False    0           3          723.47 draws/s    0:00:02   0:00:00    \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000    False    0           1          588.68 draws/s    0:00:03   0:00:00    \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/Example_5_Iowa_Gambling_Task';</script>
+    <link rel="icon" href="../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html" />
+    <link rel="prev" title="Example 4: Causal discovery in a predictive coding network" href="Example_4_Causal_discovery.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Modelling win-frequency bias in the Iowa Gambling Task</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="modelling-win-frequency-bias-in-the-iowa-gambling-task">
+<span id="example-5"></span><h1>Modelling win-frequency bias in the Iowa Gambling Task<a class="headerlink" href="#modelling-win-frequency-bias-in-the-iowa-gambling-task" title="Link to this heading">#</a></h1>
+<p><a class="reference external" href="https://colab.research.google.com/github/ilabcode/pyhgf/blob/master/docs/source/notebooks/Example_5_Iowa_Gambling_Task_Long.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="tip admonition">
+<p class="admonition-title">Authors</p>
+<ul class="simple">
+<li><p>Aleksandrs Baskakovs, Aarhus University, Denmark (aleks&#64;mgmt.au.dk)</p></li>
+<li><p>Nicolas Legrand, Aarhus University, Denmark (<a class="reference external" href="mailto:nicolas&#46;legrand&#37;&#52;&#48;cas&#46;au&#46;dk">nicolas<span>&#46;</span>legrand<span>&#64;</span>cas<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
+</ul>
+</div>
+<p>This notebook provides a step-by-step implementation of an HGF-based computational cognitive model for the <strong>Iowa Gambling Task</strong>, with a specific focus on modelling the win-frequency bias.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span> <span class="k">as</span> <span class="n">Partial</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytensor.tensor</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">grad</span><span class="p">,</span> <span class="n">jit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">grad</span> <span class="k">as</span> <span class="n">jax_grad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">softmax</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytensor.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Apply</span><span class="p">,</span> <span class="n">Op</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytensor.graph.op</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">softmax</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_surprise</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">HGF</span><span class="p">,</span> <span class="n">Network</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">beliefs_propagation</span>
+
+<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;jax_enable_x64&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>  <span class="c1"># this is required for the softmax</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="simulating-data">
+<h2>Simulating data<a class="headerlink" href="#simulating-data" title="Link to this heading">#</a></h2>
+<p>Below we simulate the data for the four decks according to the reward dynamics described in <span id="id1">[<a class="reference internal" href="../references.html#id19" title="Woo-Young Ahn, Georgi Vasilev, Sung-Ha Lee, Jerome R Busemeyer, John K Kruschke, Antoine Bechara, and Jasmin Vassileva. Decision-making in stimulant and opiate addicts in protracted abstinence: evidence from computational modeling with pure users. Front. Psychol., 5:849, August 2014.">Ahn <em>et al.</em>, 2014</a>]</span>.</p>
+<section id="deck-1">
+<h3>Deck 1<a class="headerlink" href="#deck-1" title="Link to this heading">#</a></h3>
+<p>Deck 1, one of the disadvantageous decks, has a baseline reward of 100 but has a high likelihood (50%) of also containing a punishment of -150 to -350. This means that in 50% of the cases, the total reward will be 100 and in the other 50% of cases it will be 100 - (150 to 350).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_trials</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># set default value to 100.0</span>
+<span class="n">deck1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+<span class="c1"># 50% chance to add something between -150 and -350</span>
+<span class="n">deck1</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+    <span class="p">[</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="o">-</span><span class="mi">175</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">225</span><span class="p">,</span> <span class="o">-</span><span class="mi">250</span><span class="p">,</span> <span class="o">-</span><span class="mi">275</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">325</span><span class="p">,</span> <span class="o">-</span><span class="mi">350</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">num_trials</span>
+<span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 1: </span><span class="si">{</span><span class="n">deck1</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 1: 300.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="deck-2">
+<h3>Deck 2<a class="headerlink" href="#deck-2" title="Link to this heading">#</a></h3>
+<p>Deck 2, the other disadvantageous deck, has a baseline reward of 100 and a low likelihood (10%) of a high loss of -1250. This means that in 90% of the cases the total reward will be 100 and in 10% of the cases it will be 100 - 1250.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set default value to 100.0</span>
+<span class="n">deck2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+<span class="c1"># 50% chance to add something between -150 and -350</span>
+<span class="n">deck2</span> <span class="o">+=</span> <span class="o">-</span><span class="mf">1250.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 2: </span><span class="si">{</span><span class="n">deck2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 2: -11250.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="deck-3">
+<h3>Deck 3<a class="headerlink" href="#deck-3" title="Link to this heading">#</a></h3>
+<p>Deck 3 is one of the advantageous decks and has the same structure as Deck 1, but with a baseline reward of 50 and 50% likelihood of a punishment of -25 to -75. Even though its baseline reward is lower than that of Deck 1, it has a higher total value due to the lower punishment magnitude.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set default value to 100.0</span>
+<span class="n">deck3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">50.0</span>
+
+<span class="c1"># 50% chance to add something between -150 and -350</span>
+<span class="n">deck3</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="o">-</span><span class="mi">25</span><span class="p">,</span> <span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="o">-</span><span class="mi">75</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 3: </span><span class="si">{</span><span class="n">deck3</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 3: 2625.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="deck-4">
+<h3>Deck 4<a class="headerlink" href="#deck-4" title="Link to this heading">#</a></h3>
+<p>Deck 4 is the other advantageous deck, which mirrors the structure of Deck 2, but with a baseline reward of 50 and a 10% likelihood of a punishment of -250. Again, even though its baseline reward is lower than that of Deck 2, it has a higher total value due to the lower punishment magnitude.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set default value to 100.0</span>
+<span class="n">deck4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">50.0</span>
+
+<span class="c1"># 50% chance to add something between -150 and -350</span>
+<span class="n">deck4</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">250</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 4: </span><span class="si">{</span><span class="n">deck4</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 4: 2750.0
+</pre></div>
+</div>
+</div>
+</div>
+<p>Below, we combine the decks into a list, scale the values and plot the time series of the rewards for each deck.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Turning the above code into a single function</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_decks</span><span class="p">(</span><span class="n">num_trials</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a dataset.&quot;&quot;&quot;</span>
+    <span class="c1"># Set a random seed for reproducibility</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>
+
+    <span class="c1"># set default value to 100.0</span>
+    <span class="n">deck1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+    <span class="c1"># 50% chance to add a value between -150 and -350</span>
+    <span class="n">deck1</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+        <span class="p">[</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="o">-</span><span class="mi">175</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">225</span><span class="p">,</span> <span class="o">-</span><span class="mi">250</span><span class="p">,</span> <span class="o">-</span><span class="mi">275</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">325</span><span class="p">,</span> <span class="o">-</span><span class="mi">350</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">num_trials</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 1: </span><span class="si">{</span><span class="n">deck1</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># set default value to 100.0</span>
+    <span class="n">deck2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+    <span class="c1"># 10% chance to add -1250</span>
+    <span class="n">deck2</span> <span class="o">+=</span> <span class="o">-</span><span class="mf">1250.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 2: </span><span class="si">{</span><span class="n">deck2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># set default value to 100.0</span>
+    <span class="n">deck3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">50.0</span>
+
+    <span class="c1"># 50% chance to add a value between -25 and -75</span>
+    <span class="n">deck3</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="o">-</span><span class="mi">25</span><span class="p">,</span> <span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="o">-</span><span class="mi">75</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 3: </span><span class="si">{</span><span class="n">deck3</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># set default value to 100.0</span>
+    <span class="n">deck4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">50.0</span>
+
+    <span class="c1"># 50% chance to add -250</span>
+    <span class="n">deck4</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">250</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 4: </span><span class="si">{</span><span class="n">deck4</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">decks</span> <span class="o">=</span> <span class="p">[</span><span class="n">deck1</span><span class="p">,</span> <span class="n">deck2</span><span class="p">,</span> <span class="n">deck3</span><span class="p">,</span> <span class="n">deck4</span><span class="p">]</span>
+
+    <span class="c1"># Scale the decks down by 4</span>
+    <span class="n">decks</span> <span class="o">=</span> <span class="p">[</span><span class="n">deck</span> <span class="o">/</span> <span class="mi">100</span> <span class="k">for</span> <span class="n">deck</span> <span class="ow">in</span> <span class="n">decks</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">decks</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_trials</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">decks</span> <span class="o">=</span> <span class="n">generate_decks</span><span class="p">(</span><span class="n">num_trials</span><span class="o">=</span><span class="n">num_trials</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 1: -3875.0
+Total value of Deck 2: -2500.0
+Total value of Deck 3: 2350.0
+Total value of Deck 4: 1750.0
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize the decks</span>
+
+<span class="c1"># the HGF trials start at 1 - 0 being the prior</span>
+<span class="n">trials</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+    <span class="p">[</span><span class="n">decks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+    <span class="p">[</span><span class="s2">&quot;Deck1&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck2&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck3&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck4&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">],</span>
+<span class="p">):</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">trials</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span>
+    <span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trials</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
+<span class="c1"># Save the plot</span>
+<span class="c1"># plt.savefig(&quot;plots/decks.png&quot;)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/c9d371e834a6cac79efc6b8ee655536328788d6bfca27c9c5f4fde238a095bbd.png" src="../_images/c9d371e834a6cac79efc6b8ee655536328788d6bfca27c9c5f4fde238a095bbd.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="building-the-model">
+<h2>Building the model<a class="headerlink" href="#building-the-model" title="Link to this heading">#</a></h2>
+<p>Now we build a model with 4 HGFs, one for each deck. Every HGF will have the same structure - the <strong>continuous input</strong> nodes have a value parent - the <strong>x1</strong> node, which in turn has its own value parent - <strong>x2</strong> node. The <strong>x1</strong> nodes will have the <em>autoconnection_strength</em> parameter, which will model the agent’s bias towards decks with high reward frequency.</p>
+<section id="perceptual-model">
+<h3>Perceptual model<a class="headerlink" href="#perceptual-model" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">tonic_volatility</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+
+<span class="c1"># Continuous-state nodes that receive inputs</span>
+<span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+    <span class="p">)</span>  <span class="c1"># replaces &quot;continuous-input&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Value parents for each of the 4 lower nodes</span>
+<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">autoconnection_strength</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="c1"># Value parents for the value parents (stacked hierarchy)</span>
+<span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="c1"># Visualize network structure</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/9614a957dc83ed8d62d056df25b808854277c9cd5d0c4cfd6ded8750caeea62d.svg" src="../_images/9614a957dc83ed8d62d056df25b808854277c9cd5d0c4cfd6ded8750caeea62d.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make our input vector - time x branches</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">decks</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+<span class="c1"># Let&#39;s feed our hgf the data</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">autoconnection_strength</span> <span class="o">==</span> <span class="mf">0.1</span><span class="p">:</span>
+    <span class="n">autoconnection_strength_str</span> <span class="o">=</span> <span class="s2">&quot;low&quot;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">autoconnection_strength_str</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+    <span class="p">[</span><span class="n">decks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+    <span class="p">[</span><span class="s2">&quot;Deck 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 3&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 4&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">],</span>
+<span class="p">):</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">trials</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span>
+    <span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;lower right&quot;</span><span class="p">)</span>
+<span class="c1"># Save the plot</span>
+<span class="c1"># Add a title to the plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HGF for each deck with Lambda at </span><span class="si">{</span><span class="n">autoconnection_strength</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># plt.savefig(f&quot;plots/hgf_nodes_{autoconnection_strength_str}_lambda.png&quot;)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/13976d2f135e6ae1d11d67507fc28693e4b6b6f556c70b5f4a77bb92d60e2802.png" src="../_images/13976d2f135e6ae1d11d67507fc28693e4b6b6f556c70b5f4a77bb92d60e2802.png" />
+</div>
+</div>
+</section>
+<section id="response-model">
+<h3>Response model<a class="headerlink" href="#response-model" title="Link to this heading">#</a></h3>
+<p>This section simulates participant decisions in the Iowa Gambling Task (IGT) using the response model:</p>
+<ol class="arabic simple">
+<li><p><strong>Parameters</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">beta_1</span></code> and <code class="docutils literal notranslate"><span class="pre">beta_2</span></code> are inverse temperature parameters set to <code class="docutils literal notranslate"><span class="pre">1</span></code>, controlling the influence of expected values and precision on decisions.</p></li>
+</ul>
+</li>
+<li><p><strong>Extracting Beliefs</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">means</span></code>: Expected values for each deck.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">precisions</span></code>: Confidence in these beliefs, derived from the model’s precision.</p></li>
+</ul>
+</li>
+<li><p><strong>Decision Probabilities</strong>:</p>
+<ul class="simple">
+<li><p>A softmax function combines <code class="docutils literal notranslate"><span class="pre">means</span></code> and <code class="docutils literal notranslate"><span class="pre">precisions</span></code> to compute the probability of selecting each deck.</p></li>
+</ul>
+</li>
+<li><p><strong>Simulating Choices</strong>:</p>
+<ul class="simple">
+<li><p>Participant choices are simulated using <code class="docutils literal notranslate"><span class="pre">np.random.multinomial</span></code> based on the calculated probabilities.</p></li>
+</ul>
+</li>
+<li><p><strong>Observation Filtering</strong>:</p>
+<ul class="simple">
+<li><p>Only outcomes from the selected deck are observed and stored in <code class="docutils literal notranslate"><span class="pre">observed</span></code>.</p></li>
+</ul>
+</li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulating choices for the participant</span>
+<span class="n">beta_1</span><span class="p">,</span> <span class="n">beta_2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+
+<span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="p">])</span>
+<span class="n">precisions</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="mi">1</span> <span class="o">/</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">means</span> <span class="o">+</span> <span class="n">beta_2</span> <span class="o">*</span> <span class="n">precisions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">decisions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multinomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pvals</span><span class="o">=</span><span class="n">decision_probabilities</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">decision_probabilities</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="p">])</span><span class="o">.</span><span class="n">T</span>
+
+<span class="c1"># The participants can only see values from the branch they explored</span>
+<span class="n">observed</span> <span class="o">=</span> <span class="n">decisions</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="masking-non-selected-decks">
+<h3>Masking non-selected decks<a class="headerlink" href="#masking-non-selected-decks" title="Link to this heading">#</a></h3>
+<p>In the Iowa Gambling Task (IGT), participants only receive feedback on the selected deck. This section simulates that constraint:</p>
+<ul class="simple">
+<li><p><strong>Feedback Mechanism</strong>:</p>
+<ul>
+<li><p>During each trial, the model updates beliefs using feedback solely from the chosen deck.</p></li>
+<li><p>Inputs for non-selected decks are masked and remain hidden, simulating the real task conditions.</p></li>
+</ul>
+</li>
+<li><p><strong>Belief Updates</strong>:</p>
+<ul>
+<li><p>For the selected deck, the model processes the feedback to update beliefs.</p></li>
+<li><p>For non-selected decks, the Gaussian Random Walk continues in the background, but the precision of belief updates diminishes due to the lack of new observations.</p></li>
+</ul>
+</li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-initialize the model</span>
+<span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+    <span class="p">)</span>  <span class="c1"># replaces &quot;continuous-input&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Add value parents with relevant autoconnection strength</span>
+<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># same as before</span>
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">autoconnection_strength</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="c1"># Add value parents to the value parents</span>
+<span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># masking the unobserved values (this step is optional as we are already ignoring them in the observed mask)</span>
+<span class="c1"># using NaNs will cause intermediate updates to fail so we set the input to arbitrarily high values instead</span>
+<span class="n">u</span><span class="p">[</span><span class="o">~</span><span class="n">observed</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1e6</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># note that we are providing the mask as parameter of the input function</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span>
+    <span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">,</span>
+    <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+    <span class="p">[</span><span class="n">decks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+    <span class="p">[</span><span class="s2">&quot;Deck 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 3&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 4&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">],</span>
+<span class="p">):</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">trials</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span>
+    <span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;lower right&quot;</span><span class="p">)</span>
+<span class="c1"># Save the plot</span>
+<span class="c1"># Add a title to the plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HGF for each deck with unobserved values masked&quot;</span><span class="p">)</span>
+<span class="c1"># plt.savefig(f&quot;plots/hgf_nodes_masked.png&quot;)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/b04d668b9fff4da16521328ab8b11bf604919717fcf3712d221b3491f41b2b72.png" src="../_images/b04d668b9fff4da16521328ab8b11bf604919717fcf3712d221b3491f41b2b72.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="parameter-recovery">
+<h2>Parameter recovery<a class="headerlink" href="#parameter-recovery" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Regenerate the decks</span>
+<span class="n">num_trials</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">decks</span> <span class="o">=</span> <span class="n">generate_decks</span><span class="p">(</span><span class="n">num_trials</span><span class="o">=</span><span class="n">num_trials</span><span class="p">)</span>
+
+<span class="c1"># Create the u vector</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">decks</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 1: -3875.0
+Total value of Deck 2: -2500.0
+Total value of Deck 3: 2350.0
+Total value of Deck 4: 1750.0
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-initialize the model</span>
+<span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+<span class="p">)</span>
+
+<span class="c1"># Value parents for each of the 4 lower nodes</span>
+<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">autoconnection_strength</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="c1"># Parents of those parents (indices 4..7)</span>
+<span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">create_belief_propagation_fn</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/9614a957dc83ed8d62d056df25b808854277c9cd5d0c4cfd6ded8750caeea62d.svg" src="../_images/9614a957dc83ed8d62d056df25b808854277c9cd5d0c4cfd6ded8750caeea62d.svg" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">update_sequence</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">get_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Process the data sequentially, updating the model’s beliefs and parameters based on each decision:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">responses</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">means_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">variances_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># for each observation</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="c1"># the time elapsed between two trials - defaults to 1</span>
+    <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># the expectations about the outcomes</span>
+    <span class="n">mean_1</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">mean_2</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">mean_3</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">mean_4</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+
+    <span class="n">var_1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="n">var_2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="n">var_3</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="n">var_4</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+
+    <span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">mean_1</span><span class="p">,</span> <span class="n">mean_2</span><span class="p">,</span> <span class="n">mean_3</span><span class="p">,</span> <span class="n">mean_4</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">variances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">var_3</span><span class="p">,</span> <span class="n">var_4</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="n">means_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
+    <span class="n">variances_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variances</span><span class="p">)</span>
+
+    <span class="c1"># compute the softmax</span>
+    <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">means</span> <span class="o">+</span> <span class="n">beta_2</span> <span class="o">*</span> <span class="n">variances</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">decision_probabilities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multinomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pvals</span><span class="o">=</span><span class="n">decision_probabilities</span><span class="p">)</span>
+
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">response</span>
+
+    <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="c1"># update the probabilistic network</span>
+    <span class="n">attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">beliefs_propagation</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">observed</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">update_sequence</span><span class="o">=</span><span class="n">update_sequence</span><span class="p">,</span>
+        <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
+        <span class="n">input_idxs</span><span class="o">=</span><span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="n">responses</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">responses</span><span class="p">)</span>  <span class="c1"># vector of responses</span>
+<span class="n">observed</span> <span class="o">=</span> <span class="n">responses</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">means_list</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;deck1&quot;</span><span class="p">,</span> <span class="s2">&quot;deck2&quot;</span><span class="p">,</span> <span class="s2">&quot;deck3&quot;</span><span class="p">,</span> <span class="s2">&quot;deck4&quot;</span><span class="p">])</span>
+
+<span class="c1"># Use a seaborn color palette with softer colors</span>
+<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;pastel&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create a plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="c1"># Plot each deck as a separate line without markers and using the pastel palette</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck1&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 1&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck2&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 2&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck3&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 3&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck4&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 4&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add titles and labels</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Expected Values Across Trials for Each Deck&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Trial&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Expected Value&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show legend</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Deck&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/d9500da14745fe4a9804371a388edb462ae5a09998a61ccc81ba9164999f957f.png" src="../_images/d9500da14745fe4a9804371a388edb462ae5a09998a61ccc81ba9164999f957f.png" />
+</div>
+</div>
+<section id="bayesian-inference">
+<h3>Bayesian inference<a class="headerlink" href="#bayesian-inference" title="Link to this heading">#</a></h3>
+<p>Using the responses simulated above, we can try to recover the value of the autoconnection strength. First, we start by creating the response function we want to optimize.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">response_function</span><span class="p">(</span>
+    <span class="n">autoconnection_strength</span><span class="p">,</span>
+    <span class="n">input_data</span><span class="p">,</span>
+    <span class="n">decisions</span><span class="p">,</span>
+    <span class="n">observed</span><span class="p">,</span>
+    <span class="n">network</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log-probability function.&quot;&quot;&quot;</span>
+    <span class="c1"># update the autoconnection strengths at the first level</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">autoconnection_strength</span>
+
+    <span class="c1"># run the model forward</span>
+    <span class="n">network</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">)</span>
+
+    <span class="n">expected_means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+    <span class="n">expected_variances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">expected_means</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">expected_variances</span>  <span class="c1"># (T, 4)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># normalize per row (per trial)</span>
+    <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (T, 4)</span>
+
+    <span class="c1"># decisions expected as one-hot (K,T) or (T,K); adjust as needed</span>
+    <span class="c1"># here assuming decisions is (K, T) to match axis=0 above</span>
+    <span class="n">surprises</span> <span class="o">=</span> <span class="n">binary_surprise</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">decisions</span><span class="p">,</span> <span class="n">expected_mean</span><span class="o">=</span><span class="n">decision_probabilities</span><span class="p">)</span>
+
+    <span class="n">surprises</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">surprises</span> <span class="o">&gt;</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">,</span> <span class="n">surprises</span><span class="p">)</span>
+    <span class="n">surprise</span> <span class="o">=</span> <span class="n">surprises</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">surprise</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">surprise</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">surprise</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="o">-</span><span class="n">surprise</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Create a custom Op for sampling.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fix the value of observed parameters</span>
+<span class="n">logp_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+    <span class="n">response_function</span><span class="p">,</span>
+    <span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">,</span>
+    <span class="n">decisions</span><span class="o">=</span><span class="n">responses</span><span class="p">,</span>
+    <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span>
+    <span class="n">network</span><span class="o">=</span><span class="n">two_levels_continuous_hgf</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">jitted_custom_op_jax</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">logp_fn</span><span class="p">)</span>
+<span class="c1"># Return a single scalar, not a tuple:</span>
+<span class="n">jitted_grad_jax</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">jax_grad</span><span class="p">(</span><span class="n">logp_fn</span><span class="p">,</span> <span class="n">argnums</span><span class="o">=</span><span class="mi">0</span><span class="p">)(</span><span class="n">a</span><span class="p">))</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomOp</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom Op to wrap JAX function.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the node.&quot;&quot;&quot;</span>
+        <span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="n">autoconnection_strength</span><span class="p">],</span> <span class="p">[</span><span class="n">out</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">perform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the operation.&quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">jitted_custom_op_jax</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="c1"># coerce to 0-D float64</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(())</span>
+        <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GradCustomOp</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gradient of the Custom Op.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the node.&quot;&quot;&quot;</span>
+        <span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="n">autoconnection_strength</span><span class="p">],</span> <span class="p">[</span><span class="n">out</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">perform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the operation.&quot;&quot;&quot;</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">jitted_grad_jax</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="c1"># jax.grad may return DeviceArray scalar or 1-D array/tuple in some setups; normalize to 0-D</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">reshape</span><span class="p">(())</span>
+        <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span>
+
+
+<span class="c1"># Instantiate Ops</span>
+<span class="n">custom_op</span> <span class="o">=</span> <span class="n">CustomOp</span><span class="p">()</span>
+<span class="n">grad_custom_op</span> <span class="o">=</span> <span class="n">GradCustomOp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We are now ready to sample the model and estimate the value of autoconnection strength.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+    <span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span>
+        <span class="s2">&quot;hgf&quot;</span><span class="p">,</span>
+        <span class="n">custom_op</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">autoconnection_strength</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">77</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "36c3c0b9f53442a18ab455fbae7719e6"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 3 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">az</span><span class="o">.</span><span class="n">plot_trace</span><span class="p">(</span><span class="n">idata</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/dc797d930bf73437d6ae5f786be43f014fe3b49bd9d69c157d8b7df2133d218c.png" src="../_images/dc797d930bf73437d6ae5f786be43f014fe3b49bd9d69c157d8b7df2133d218c.png" />
+</div>
+</div>
+</section>
+<section id="paremeter-recovery-for-50-lambda-values">
+<h3>Paremeter recovery for 50 lambda values<a class="headerlink" href="#paremeter-recovery-for-50-lambda-values" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">autoconnection_strengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">posterior_means</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">autoconnection_strength</span> <span class="ow">in</span> <span class="n">autoconnection_strengths</span><span class="p">:</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+
+    <span class="c1"># build network (new API)</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+        <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+            <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
+            <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
+            <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+            <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">autoconnection_strength</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+            <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
+            <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># belief propagation function + network bits</span>
+    <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">create_belief_propagation_fn</span><span class="p">()</span>
+    <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">update_sequence</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">get_network</span><span class="p">()</span>
+
+    <span class="n">responses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">means_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">variances_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># expectations for the 4 parents (nodes 4..7)</span>
+        <span class="n">mean_1</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="n">mean_2</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="n">mean_3</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="n">mean_4</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+
+        <span class="n">var_1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+        <span class="n">var_2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+        <span class="n">var_3</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+        <span class="n">var_4</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+
+        <span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">mean_1</span><span class="p">,</span> <span class="n">mean_2</span><span class="p">,</span> <span class="n">mean_3</span><span class="p">,</span> <span class="n">mean_4</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">variances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">var_3</span><span class="p">,</span> <span class="n">var_4</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">means_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
+        <span class="n">variances_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variances</span><span class="p">)</span>
+
+        <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">means</span> <span class="o">+</span> <span class="n">beta_2</span> <span class="o">*</span> <span class="n">variances</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">decision_probabilities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multinomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pvals</span><span class="o">=</span><span class="n">decision_probabilities</span><span class="p">)</span>
+        <span class="n">observed</span> <span class="o">=</span> <span class="n">response</span>
+
+        <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="c1"># step the HGF forward one trial (your updated call)</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">beliefs_propagation</span><span class="p">(</span>
+            <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
+            <span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">observed</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">update_sequence</span><span class="o">=</span><span class="n">update_sequence</span><span class="p">,</span>
+            <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
+            <span class="n">input_idxs</span><span class="o">=</span><span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">responses</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">responses</span><span class="p">)</span>  <span class="c1"># (T, 4)</span>
+    <span class="n">observed</span> <span class="o">=</span> <span class="n">responses</span>
+
+    <span class="c1"># bind the current logp to this dataset/network</span>
+    <span class="n">logp_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+        <span class="n">response_function</span><span class="p">,</span>  <span class="c1"># the one you fixed earlier (stacks -&gt; (T,4), softmax axis=1)</span>
+        <span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">,</span>
+        <span class="n">decisions</span><span class="o">=</span><span class="n">responses</span><span class="p">,</span>
+        <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span>
+        <span class="n">network</span><span class="o">=</span><span class="n">two_levels_continuous_hgf</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># rebind global jitted functions so custom_op uses the current logp/grad</span>
+    <span class="k">global</span> <span class="n">jitted_custom_op_jax</span><span class="p">,</span> <span class="n">jitted_grad_jax</span>
+    <span class="n">jitted_custom_op_jax</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">logp_fn</span><span class="p">)</span>
+    <span class="n">jitted_grad_jax</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">jax_grad</span><span class="p">(</span><span class="n">logp_fn</span><span class="p">,</span> <span class="n">argnums</span><span class="o">=</span><span class="mi">0</span><span class="p">)(</span><span class="n">a</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+        <span class="n">autoconnection_strength_rv</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s2">&quot;hgf&quot;</span><span class="p">,</span> <span class="n">custom_op</span><span class="p">(</span><span class="n">autoconnection_strength_rv</span><span class="p">))</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">77</span><span class="p">)</span>
+
+    <span class="n">posterior_means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 3 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 3 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sequential sampling (4 chains in 1 job)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Slice: [autoconnection_strength]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 3 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Evaluate the recovery for 50 different lambda values via visual inspection and statistical analysis.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Convert lists to numpy arrays</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">autoconnection_strengths</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">posterior_means</span><span class="p">)</span>
+
+<span class="c1"># Plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="c1"># Scatter plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">autoconnection_strengths</span><span class="p">,</span> <span class="n">posterior_means</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#4c72b0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Observed Data&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Add a diagonal line (ideal recovery line)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">autoconnection_strengths</span><span class="p">)],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">autoconnection_strengths</span><span class="p">)],</span>
+    <span class="s2">&quot;k--&quot;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Ideal Recovery Line&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Add titles and labels</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Parameter Recovery Plot&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Autoconnection Strengths&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Posterior Means&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show legend</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4b82ee7ec45d802e0a70b3dbbf055652a08fa3faae0328f6807c0321870b36d8.png" src="../_images/4b82ee7ec45d802e0a70b3dbbf055652a08fa3faae0328f6807c0321870b36d8.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="system-configuration">
+<h1>System configuration<a class="headerlink" href="#system-configuration" title="Link to this heading">#</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> watermark
+<span class="o">%</span><span class="k">watermark</span> -n -u -v -iv -w -p pyhgf,jax,jaxlib
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
+
+Python implementation: CPython
+Python version       : 3.12.3
+IPython version      : 9.9.0
+
+pyhgf : 0.2.8
+jax   : 0.4.31
+jaxlib: 0.4.31
+
+arviz     : 0.23.0
+jax       : 0.4.31
+matplotlib: 3.10.8
+numpy     : 2.4.0
+pandas    : 2.3.3
+pyhgf     : 0.2.8
+pymc      : 5.26.1
+pytensor  : 2.35.1
+scipy     : 1.16.3
+seaborn   : 0.13.2
+
+Watermark: 2.6.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Example_4_Causal_discovery.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Example 4: Causal discovery in a predictive coding network</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Modelling win-frequency bias in the Iowa Gambling Task</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulating-data">Simulating data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deck-1">Deck 1</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deck-2">Deck 2</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deck-3">Deck 3</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deck-4">Deck 4</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-the-model">Building the model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#perceptual-model">Perceptual model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#response-model">Response model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masking-non-selected-decks">Masking non-selected decks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-recovery">Parameter recovery</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesian-inference">Bayesian inference</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#paremeter-recovery-for-50-lambda-values">Paremeter recovery for 50 lambda values</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/notebooks/Example_5_Iowa_Gambling_Task.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2026, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

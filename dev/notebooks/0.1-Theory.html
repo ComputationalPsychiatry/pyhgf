@@ -422,6 +422,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -500,6 +502,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
 <span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -569,7 +572,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/e95d9200e9fda2e6424a7824ba9bd5859c7764340f7cf2131a8bef2407d035aa.png" src="../_images/e95d9200e9fda2e6424a7824ba9bd5859c7764340f7cf2131a8bef2407d035aa.png" />
+<img alt="../_images/be39d5eeb68c1e3cfc3b9cb9309e98a825ba80c8d45757af487b9e5e8911f825.png" src="../_images/be39d5eeb68c1e3cfc3b9cb9309e98a825ba80c8d45757af487b9e5e8911f825.png" />
 </div>
 </div>
 <p>This simple process will be our first building block. Importantly here, the variability of the sensory input is constant across time: even if we don’t know exactly in which direction the time series is going to move in the future, we know that it is unlikely to make certain kinds of big jumps because it is controlled by a fixed parameter, the variance <span class="math notranslate nohighlight">\(\sigma^2\)</span>.</p>
@@ -606,7 +609,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \rho, \sigma^2)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/0625d2bb4ba8838f0edf94b81eccde3b98095281120e3dcd0814e1eb65a78abf.png" src="../_images/0625d2bb4ba8838f0edf94b81eccde3b98095281120e3dcd0814e1eb65a78abf.png" />
+<img alt="../_images/55842a26c8cda88fa637918ec818a8989b9bb8189312f15e152fb4b319f836ff.png" src="../_images/55842a26c8cda88fa637918ec818a8989b9bb8189312f15e152fb4b319f836ff.png" />
 </div>
 </div>
 </section>
@@ -663,7 +666,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \phi(m - x_1^{(k-1)}), \sigma^2)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/247c2afd1da687539fe742a3f7e1fcf990496bf84299a5d3cf46baf784cb52a8.png" src="../_images/247c2afd1da687539fe742a3f7e1fcf990496bf84299a5d3cf46baf784cb52a8.png" />
+<img alt="../_images/c662e7bf0aeaf0eac92ddf751ee2b405792a9e20dc9f1733f84f7c01682dba0f.png" src="../_images/c662e7bf0aeaf0eac92ddf751ee2b405792a9e20dc9f1733f84f7c01682dba0f.png" />
 </div>
 </div>
 <p>With the two examples above, we have seen that a <a class="reference internal" href="#term-Gaussian-Random-Walk"><span class="xref std std-term">Gaussian Random Walk</span></a> - the simple iterative sampling from a given Gaussian distribution at each time step - can be further influenced by two kinds of parameterizations:</p>
@@ -763,7 +766,7 @@ $<span class="math notranslate nohighlight">\(
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/0da6e8f3c1368b37360132076064c2e7c37f590a4c81421efb879ada6bd60856.png" src="../_images/0da6e8f3c1368b37360132076064c2e7c37f590a4c81421efb879ada6bd60856.png" />
+<img alt="../_images/af6b9c021efde17680f749d4be50147b2a61bc68b5d904cfb7dc6bc28301b53b.png" src="../_images/af6b9c021efde17680f749d4be50147b2a61bc68b5d904cfb7dc6bc28301b53b.png" />
 </div>
 </div>
 </section>
@@ -828,7 +831,7 @@ x_2^{(k)} \sim \mathcal{N}(x_2^{(k-1)}, \, \exp(\omega_2))
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/145bd07f40f328c574266ff584968e3386ac48718d620cce5abe803111f254a1.png" src="../_images/145bd07f40f328c574266ff584968e3386ac48718d620cce5abe803111f254a1.png" />
+<img alt="../_images/67f1bc73116f20a2ec380e2c0031290a9ac1fb24340fb0aa9d5e4168de0d3d9b.png" src="../_images/67f1bc73116f20a2ec380e2c0031290a9ac1fb24340fb0aa9d5e4168de0d3d9b.png" />
 </div>
 </div>
 <p>In this example, it becomes apparent that the volatility of the observation is not constant in time anymore, but depends on the values observed at the level above.</p>
@@ -928,23 +931,22 @@ Given the expectation from the prediction step</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-matplotlib: 3.10.7
+IPython   : 9.9.0
+matplotlib: 3.10.8
+numpy     : 2.4.0
 seaborn   : 0.13.2
-numpy     : 2.3.5
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-IPython   : 9.7.0
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1056,7 +1058,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

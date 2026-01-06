@@ -422,6 +422,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
 <ul class="nav bd-sidenav">
@@ -563,7 +565,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/78be659a2ac1856a60c9c209caf3c4abb6e640de9aef2fe1a2d72f0e34fa1b07.png" src="../_images/78be659a2ac1856a60c9c209caf3c4abb6e640de9aef2fe1a2d72f0e34fa1b07.png" />
+<img alt="../_images/bebc8931ae496cabefd09c5ba73e6b2185463d731860f3a4bb051b762c2c8d28.png" src="../_images/bebc8931ae496cabefd09c5ba73e6b2185463d731860f3a4bb051b762c2c8d28.png" />
 </div>
 </div>
 <p>Imagine that this behaviour constitutes a signal of a given underlying phenomenon. Now, we want to measure the same phenomenon with another instrument that above an arbitrary threshold <span class="math notranslate nohighlight">\(a\)</span> can track the signal <span class="math notranslate nohighlight">\(u_2\)</span>, but below that threshold just gives us some noise. This measurement <span class="math notranslate nohighlight">\(u_1\)</span> is supposed to be also noisier than the underlying signal.</p>
@@ -589,7 +591,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/f76b871c37562fc3430208b47f8481c02429ef563ec8df69eabefdc2a661b526.png" src="../_images/f76b871c37562fc3430208b47f8481c02429ef563ec8df69eabefdc2a661b526.png" />
+<img alt="../_images/8d021c693914e5ffa7b3c5a25fc858d13fc37d37cd6329a6cf05b4bcc2133bac.png" src="../_images/8d021c693914e5ffa7b3c5a25fc858d13fc37d37cd6329a6cf05b4bcc2133bac.png" />
 </div>
 </div>
 <p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Rectifier_(neural_networks)">ReLU (rectified linear unit) activation function</a> is commonly used in artificial neural networks and is defined as the non-negative part of its argument:</p>
@@ -648,6 +650,7 @@ x_1^{(k)} \sim Normal(g_{2,1}(x_2^{(k)})), \theta_1)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Creating the functions</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Non-linear observation function.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">lax</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">a</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -699,7 +702,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/d6f7e7bf53aa4dbb0509ab0e7993fdabe9306c7215f1e2590e9f61c77f334d57.png" src="../_images/d6f7e7bf53aa4dbb0509ab0e7993fdabe9306c7215f1e2590e9f61c77f334d57.png" />
+<img alt="../_images/107143de2edeaa357d19f01778064b977c2b55ff8c9516f5ab98905c2d8413c1.png" src="../_images/107143de2edeaa357d19f01778064b977c2b55ff8c9516f5ab98905c2d8413c1.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -716,7 +719,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/9f4e4ea6f26b15c2789e7f05c4ab84cc5eefc1066e7006dc06bee54140ab476a.png" src="../_images/9f4e4ea6f26b15c2789e7f05c4ab84cc5eefc1066e7006dc06bee54140ab476a.png" />
+<img alt="../_images/334d999e1ebcf1d8e698b675c805e687863befb5c590dc0e2bc50dc6bc425334.png" src="../_images/334d999e1ebcf1d8e698b675c805e687863befb5c590dc0e2bc50dc6bc425334.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -735,22 +738,20 @@ If the value parent, as in this case, possesses multiple children, all the funct
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$x$&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$f(x)$&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;Noisy signal, $u_2$&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="s2">&quot;Linear expected mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Linear expected std&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Non-linear expected mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Non-linear expected std&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Observation&quot;</span><span class="p">,</span>
-    <span class="p">]</span>
-<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span>
+    <span class="s2">&quot;Linear expected mean&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Linear expected std&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Non-linear expected mean&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Non-linear expected std&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Observation&quot;</span><span class="p">,</span>
+<span class="p">])</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/0404c35976555496aab4b248283e7f9c1002ada696ac12d7737dc6d1bf056541.png" src="../_images/0404c35976555496aab4b248283e7f9c1002ada696ac12d7737dc6d1bf056541.png" />
+<img alt="../_images/b8fcee67670f99bbb9a1856468c858252987e5b8303660d26b185707855461c3.png" src="../_images/b8fcee67670f99bbb9a1856468c858252987e5b8303660d26b185707855461c3.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -813,19 +814,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/149eed7b185d623efeae186d455fd6ff0ef82c3cf3ea145df4eea0687ba3bad6.png" src="../_images/149eed7b185d623efeae186d455fd6ff0ef82c3cf3ea145df4eea0687ba3bad6.png" />
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sinusoid_linear_hgf</span><span class="o">.</span><span class="n">input_idxs</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(0,)
-</pre></div>
-</div>
+<img alt="../_images/ffbd79b8ea5a6f46f911610b149944d7473e4de9f9c7302164471add662cbf70.png" src="../_images/ffbd79b8ea5a6f46f911610b149944d7473e4de9f9c7302164471add662cbf70.png" />
 </div>
 </div>
 <p>Notice how <span class="math notranslate nohighlight">\(\mu_1\)</span> is just drifting during the missing observation chuncks.</p>
@@ -848,7 +837,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/2a8608595579a77d2d0b7594718fe1f6f1f3df03a61ddd7245fc126f1e67be98.png" src="../_images/2a8608595579a77d2d0b7594718fe1f6f1f3df03a61ddd7245fc126f1e67be98.png" />
+<img alt="../_images/8a571b3609d74cd7f3b1f72317044a6162cabd7f9d2ffe4ae01e5014794e17e5.png" src="../_images/8a571b3609d74cd7f3b1f72317044a6162cabd7f9d2ffe4ae01e5014794e17e5.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -899,7 +888,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/38aa11de34bd090712ca5a050b2c8c30360897092644bd3fcb8877b60af9a8d1.png" src="../_images/38aa11de34bd090712ca5a050b2c8c30360897092644bd3fcb8877b60af9a8d1.png" />
+<img alt="../_images/db67b6ba78eec4c814c3c9c056672beb01a7a60712f61bce13cb0e4f13804fa2.png" src="../_images/db67b6ba78eec4c814c3c9c056672beb01a7a60712f61bce13cb0e4f13804fa2.png" />
 </div>
 </div>
 </section>
@@ -957,7 +946,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8a8dc2f9c2a5fb0d835228ff1c6609fb72c1c2324a57663af61b6bf8442523e5.png" src="../_images/8a8dc2f9c2a5fb0d835228ff1c6609fb72c1c2324a57663af61b6bf8442523e5.png" />
+<img alt="../_images/10ffbbbb3b3ff147dd5c1adc9e687b06cfdc2df666b646acbce7a9a0946cda1e.png" src="../_images/10ffbbbb3b3ff147dd5c1adc9e687b06cfdc2df666b646acbce7a9a0946cda1e.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>
@@ -972,25 +961,24 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Thu Nov 27 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 06 Jan 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.7.0
+IPython version      : 9.9.0
 
 pyhgf : 0.2.8
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-matplotlib: 3.10.7
-IPython   : 9.7.0
-numpy     : 2.3.5
-pyhgf     : 0.2.8
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+IPython   : 9.9.0
 jax       : 0.4.31
+matplotlib: 3.10.8
+numpy     : 2.4.0
+pyhgf     : 0.2.8
 seaborn   : 0.13.2
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1089,7 +1077,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>

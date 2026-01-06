@@ -824,28 +824,24 @@ window.addEventListener("load", load);
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">node_idxs</span><span class="p">:</span>
         <span class="c1"># add this node to the exclusion list</span>
         <span class="n">branch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
-        <span class="n">all_parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">i</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span>
-                    <span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span><span class="p">,</span>
-                    <span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">,</span>
-                <span class="p">]</span>
-                <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">all_parents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">i</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span><span class="p">,</span>
+                <span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">,</span>
             <span class="p">]</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">all_parents</span><span class="p">:</span>
             <span class="c1"># list the children for this node</span>
-            <span class="n">all_children</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">i</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span>
-                        <span class="n">edges</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>
-                        <span class="n">edges</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>
-                    <span class="p">]</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">all_children</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="n">i</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span>
+                    <span class="n">edges</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>
+                    <span class="n">edges</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>
                 <span class="p">]</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
             <span class="c1"># if this parent has only excluded children, add it to the exclusion list</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">i</span> <span class="ow">in</span> <span class="n">branch_list</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">all_children</span><span class="p">]):</span>
                 <span class="n">branch_list</span> <span class="o">=</span> <span class="n">list_branches</span><span class="p">(</span>
@@ -895,7 +891,7 @@ window.addEventListener("load", load);
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>
