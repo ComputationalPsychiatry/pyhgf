@@ -221,19 +221,27 @@ class Network:
         else:
             raise ValueError("Invalid lr value. Should be 'dynamic' or a float value.")
 
-        learning_steps = [
-            (node_idx, learning_weights)
-            for node_idx, _ in self.update_sequence.prediction_steps
-            if (node_idx not in inputs_x_idxs)
-            and (self.edges[node_idx].volatility_children is None)
-        ]
-
         # do not update the last layer
-        update_steps = tuple([
+        update_steps = [
             step
             for step in self.update_sequence.update_steps
             if step[0] not in inputs_x_idxs
-        ])
+        ]
+
+        # interleave the weight updates after the prediction error
+        # and before the posterior updates
+        inc = 0  # increment the index dynamically
+        weight_update = []  # list of weight update to perform at this layer
+        for i, update in enumerate(update_steps):
+            if "prediction_error" in update[1].__name__:
+                weight_update.append((update[0], learning_weights))
+            if "posterior" in update[1].__name__ and weight_update:
+                update_steps = (
+                    update_steps[: i + inc] + weight_update + update_steps[i + inc :]
+                )
+                inc = len(weight_update)
+                weight_update = []
+
         # do not predict on the last layer
         prediction_steps = tuple([
             step
@@ -243,8 +251,7 @@ class Network:
 
         self.learning_sequence = LearningSequence(
             prediction_steps=prediction_steps,
-            update_steps=update_steps,
-            learning_steps=tuple(learning_steps),  # type: ignore
+            update_steps=tuple(update_steps),
         )
 
         # create the learning propagation function

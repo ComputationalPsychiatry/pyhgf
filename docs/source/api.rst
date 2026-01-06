@@ -49,6 +49,7 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
 
     continuous_node_posterior_update_unbounded
+    posterior_update_unbounded
 
 .. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
 

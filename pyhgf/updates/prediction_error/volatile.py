@@ -6,9 +6,7 @@ from pyhgf.typing import Edges
 
 
 @partial(jit, static_argnames=("node_idx",))
-def value_volatility_node_value_prediction_error(
-    attributes: dict, node_idx: int
-) -> dict:
+def volatile_node_value_prediction_error(attributes: dict, node_idx: int) -> dict:
     """Compute the value prediction error of the value level.
 
     This is used by external value parents (if any).
@@ -28,9 +26,7 @@ def value_volatility_node_value_prediction_error(
 
 
 @partial(jit, static_argnames=("node_idx",))
-def value_volatility_node_volatility_prediction_error(
-    attributes: dict, node_idx: int
-) -> dict:
+def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -> dict:
     """Compute the volatility prediction error for the implicit volatility level.
 
     This is computed from the value level's precision surprise.
@@ -56,7 +52,7 @@ def value_volatility_node_volatility_prediction_error(
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def value_volatility_node_prediction_error(
+def volatile_node_prediction_error(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
     """Compute both value and volatility prediction errors.
@@ -65,9 +61,9 @@ def value_volatility_node_prediction_error(
     - Volatility PE: for the implicit internal volatility level
     """
     # Compute value prediction error
-    attributes = value_volatility_node_value_prediction_error(attributes, node_idx)
+    attributes = volatile_node_value_prediction_error(attributes, node_idx)
 
     # Compute volatility prediction error (internal)
-    attributes = value_volatility_node_volatility_prediction_error(attributes, node_idx)
+    attributes = volatile_node_volatility_prediction_error(attributes, node_idx)
 
     return attributes

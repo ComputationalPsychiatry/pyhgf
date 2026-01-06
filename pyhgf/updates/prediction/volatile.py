@@ -141,7 +141,7 @@ def predict_precision_value_level(
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def value_volatility_node_prediction(
+def volatile_node_prediction(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
     """Update the expected mean and expected precision of a value-volatility node.

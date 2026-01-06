@@ -50,11 +50,13 @@ class UpdateSequence(NamedTuple):
 
 
 class LearningSequence(NamedTuple):
-    """Set of update functions to apply to the network."""
+    """Set of update functions to update the weights of a deep network.
+
+    The `update_steps` mixes prediction errors, weights updates and posterior updates.
+    """
 
     prediction_steps: Sequence
     update_steps: Sequence
-    learning_steps: Sequence
 
 
 # a fully defined network

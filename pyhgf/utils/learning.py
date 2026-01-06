@@ -102,11 +102,6 @@ def learning(
     for node_idx, update_fn in learning_sequence.update_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
-    # 5. Learning sequence -------------------------------------------------------------
-    # ----------------------------------------------------------------------------------
-    for node_idx, update_fn in learning_sequence.learning_steps:
-        attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
-
     return (
         attributes,
         attributes,
