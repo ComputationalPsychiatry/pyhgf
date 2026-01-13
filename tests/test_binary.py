@@ -88,3 +88,33 @@ def test_binary_scan_loop():
         [-5.35091, -5.320357, 0.025971143, 0.024351958],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[2][idx][-1], val)
+
+
+def test_volatile_examples():
+    """Test extrem conditions to ensure numerical stability."""
+    # repeated identical observations
+    hgf = (
+        Network(update_type="unbounded")
+        .add_nodes(kind="binary-state")
+        .add_nodes(value_children=[0], tonic_volatility=5.0)
+    )
+
+    # simulate stable blocks of observations
+    input_data = [1.0] * 50
+    input_data.extend([0.0] * 50)
+
+    hgf.input_data(input_data=jnp.asarray(input_data))
+    assert not jnp.any(jnp.isnan(hgf.node_trajectories[0]["expected_mean"]))
+
+    # repeated identical observations
+    hgf = (
+        Network(update_type="unbounded")
+        .add_nodes(kind="binary-state")
+        .add_nodes(value_children=[0], tonic_volatility=5.0)
+    )
+
+    # simulate stable blocks of observations
+    input_data = [0.0, 1.0] * 50
+
+    hgf.input_data(input_data=jnp.asarray(input_data))
+    assert not jnp.any(jnp.isnan(hgf.node_trajectories[0]["expected_mean"]))

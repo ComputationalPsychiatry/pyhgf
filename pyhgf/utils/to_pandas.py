@@ -41,6 +41,19 @@ def to_pandas(network: "Network") -> pd.DataFrame:
     )
     trajectories_df = pd.concat([trajectories_df, df], axis=1)
 
+    # loop over volatile nodes and store sufficient statistics
+    # --------------------------------------------------------
+    states_indexes = [i for i in range(n_nodes) if network.edges[i].node_type == 6]
+    df = pd.DataFrame(
+        dict([
+            (f"x_{i}_{var}", network.node_trajectories[i][var])
+            for i in states_indexes
+            for var in network.node_trajectories[i].keys()
+            if (("mean" in var) or ("precision" in var) or ("observed" in var))
+        ])
+    )
+    trajectories_df = pd.concat([trajectories_df, df], axis=1)
+
     # loop over exponential family state nodes and store sufficient statistics
     # ------------------------------------------------------------------------
     ef_indexes = [i for i in range(n_nodes) if network.edges[i].node_type == 3]

@@ -2,6 +2,7 @@
 
 from functools import partial
 
+import jax.numpy as jnp
 from jax import jit
 from jax.nn import sigmoid
 
@@ -72,6 +73,9 @@ def binary_state_node_prediction(
     # Estimate the new expected mean using the sigmoid transform
     # eq. 80 in Weber et al., v2
     expected_mean = sigmoid(expected_mean)
+
+    # ensure that expected mean is within bounds for numerical stability
+    expected_mean = jnp.clip(expected_mean, 1e-6, 1 - 1e-6)
     attributes[node_idx]["expected_mean"] = expected_mean
 
     # Estimate the new expected precision from the new expected mean

@@ -269,8 +269,8 @@ class Network:
 
     def fit(
         self,
-        x: np.ndarray,
-        y: np.ndarray,
+        x: ArrayLike,
+        y: ArrayLike,
         inputs_x_idxs: tuple[int],
         inputs_y_idxs: tuple[int],
         lr: Union[str, float] = 0.2,
@@ -323,9 +323,9 @@ class Network:
 
     def input_data(
         self,
-        input_data: np.ndarray,
-        time_steps: Optional[np.ndarray] = None,
-        observed: Optional[tuple[np.ndarray, ...]] = None,
+        input_data: ArrayLike,
+        time_steps: Optional[ArrayLike] = None,
+        observed: Optional[tuple[ArrayLike, ...]] = None,
         input_idxs: Optional[tuple[int]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
     ):
