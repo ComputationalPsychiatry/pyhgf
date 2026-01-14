@@ -86,18 +86,17 @@ def posterior_update_unbounded(
     # ----------------------------------------------------------------------------------
     # First quadratic approximation L1 -------------------------------------------------
     # ----------------------------------------------------------------------------------
-    w_child = jnp.exp(
+
+    # Instead of computing exp(x) / (v + exp(x)) directly as in the equations, we use a
+    # numerically stable form with w = 1 / (1 + v * exp(-x)) = sigmoid(x - log(v))
+    x = (
         attributes[node_idx]["volatility_coupling_children"][0]
         * attributes[node_idx]["expected_mean"]
         + attributes[volatility_child_idx]["tonic_volatility"]
-    ) / (
-        previous_child_variance
-        + jnp.exp(
-            attributes[node_idx]["volatility_coupling_children"][0]
-            * attributes[node_idx]["expected_mean"]
-            + attributes[volatility_child_idx]["tonic_volatility"]
-        )
     )
+    previous_child_variance = jnp.maximum(previous_child_variance, 1e-128)
+    w_child = sigmoid(x - jnp.log(previous_child_variance))
+
     delta_child = (
         (1 / attributes[volatility_child_idx]["precision"])
         + (
@@ -105,14 +104,7 @@ def posterior_update_unbounded(
             - (attributes[volatility_child_idx]["expected_mean"])
         )
         ** 2
-    ) / (
-        previous_child_variance
-        + jnp.exp(
-            attributes[node_idx]["volatility_coupling_children"][0]
-            * attributes[node_idx]["expected_mean"]
-            + attributes[volatility_child_idx]["tonic_volatility"]
-        )
-    ) - 1.0
+    ) / (previous_child_variance + jnp.exp(jnp.clip(x, a_min=-80.0, a_max=80.0))) - 1.0
 
     pi_l1 = attributes[node_idx]["expected_precision"] + 0.5 * attributes[node_idx][
         "volatility_coupling_children"

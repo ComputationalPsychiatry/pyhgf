@@ -6,7 +6,7 @@ exclude: |
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.14.7
+  rev: v0.14.11
   hooks:
     # Run the linter.
     - id: ruff
@@ -15,7 +15,7 @@ repos:
     # Run the formatter.
     - id: ruff-format
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.17.1'
+    rev: 'v1.19.1'
     hooks:
     - id: mypy 
       files: ^pyhgf/
