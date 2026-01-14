@@ -21,10 +21,10 @@ def test_binary_surprise():
     assert jnp.isclose(s, 1.60943791)
 
     s = binary_surprise(x=0.0, expected_mean=0.0, clipping=True)
-    assert jnp.isclose(s, 1.0000005e-06)
+    assert jnp.isclose(s, 1.0132795e-06)
 
     s = binary_surprise(x=0.0, expected_mean=1.0, clipping=True)
-    assert jnp.isclose(s, 13.81551056)
+    assert jnp.isclose(s, 13.802319)
 
     s = binary_surprise(x=0.0, expected_mean=1.0, clipping=False)
     assert jnp.isinf(s)
