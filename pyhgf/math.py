@@ -194,7 +194,9 @@ def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Arr
 
 
 def binary_surprise(
-    x: Union[float, ArrayLike], expected_mean: Union[float, ArrayLike]
+    x: Union[float, ArrayLike],
+    expected_mean: Union[float, ArrayLike],
+    clipping: bool = True,
 ) -> Array:
     r"""Surprise at a binary outcome.
 
@@ -214,6 +216,9 @@ def binary_surprise(
         The outcome.
     expected_mean :
         The mean of the Bernoulli distribution.
+    clipping :
+        If `True` (default), the expected mean is clipped in a reasonable range to
+        avoid numerical instabilities.
 
     Returns
     -------
@@ -228,6 +233,9 @@ def binary_surprise(
     `Array(0.35667497, dtype=float32, weak_type=True)`
 
     """
+    if clipping:
+        expected_mean = jnp.clip(expected_mean, 1e-6, 1 - 1e-6)
+
     return jnp.where(
         x, -jnp.log(expected_mean), -jnp.log(jnp.array(1.0) - expected_mean)
     )

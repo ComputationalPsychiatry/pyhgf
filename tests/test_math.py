@@ -4,11 +4,33 @@ import jax.numpy as jnp
 from pyhgf.math import (
     MultivariateNormal,
     Normal,
+    binary_surprise,
     binary_surprise_finite_precision,
     gaussian_predictive_distribution,
     gaussian_surprise,
     sigmoid_inverse_temperature,
 )
+
+
+def test_binary_surprise():
+    """Test binary surprise."""
+    s = binary_surprise(x=1.0, expected_mean=0.8, clipping=True)
+    assert jnp.isclose(s, 0.22314355)
+
+    s = binary_surprise(x=0.0, expected_mean=0.8, clipping=True)
+    assert jnp.isclose(s, 1.60943791)
+
+    s = binary_surprise(x=0.0, expected_mean=0.0, clipping=True)
+    assert jnp.isclose(s, 1.0000005e-06)
+
+    s = binary_surprise(x=0.0, expected_mean=1.0, clipping=True)
+    assert jnp.isclose(s, 13.81551056)
+
+    s = binary_surprise(x=0.0, expected_mean=1.0, clipping=False)
+    assert jnp.isinf(s)
+
+    s = binary_surprise(x=0.0, expected_mean=1.0, clipping=False)
+    assert jnp.isinf(s)
 
 
 def test_gaussian_surprise():
