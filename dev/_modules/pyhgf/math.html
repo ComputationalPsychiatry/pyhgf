@@ -1071,7 +1071,9 @@ window.addEventListener("load", load);</script>
 <div class="viewcode-block" id="binary_surprise">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.binary_surprise.html#pyhgf.math.binary_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">binary_surprise</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span> <span class="n">expected_mean</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">expected_mean</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">clipping</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise at a binary outcome.</span>
 
@@ -1091,6 +1093,9 @@ window.addEventListener("load", load);</script>
 <span class="sd">        The outcome.</span>
 <span class="sd">    expected_mean :</span>
 <span class="sd">        The mean of the Bernoulli distribution.</span>
+<span class="sd">    clipping :</span>
+<span class="sd">        If `True` (default), the expected mean is clipped in a reasonable range to</span>
+<span class="sd">        avoid numerical instabilities.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1105,6 +1110,9 @@ window.addEventListener("load", load);</script>
 <span class="sd">    `Array(0.35667497, dtype=float32, weak_type=True)`</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">clipping</span><span class="p">:</span>
+        <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">),</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>
     <span class="p">)</span></div>

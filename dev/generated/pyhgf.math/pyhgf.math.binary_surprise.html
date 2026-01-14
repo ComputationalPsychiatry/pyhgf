@@ -579,7 +579,7 @@
 <h1>pyhgf.math.binary_surprise<a class="headerlink" href="#pyhgf-math-binary-surprise" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.math.binary_surprise">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.math.</span></span><span class="sig-name descname"><span class="pre">binary_surprise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_mean</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/math.html#binary_surprise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.math.binary_surprise" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.math.</span></span><span class="sig-name descname"><span class="pre">binary_surprise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clipping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/math.html#binary_surprise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.math.binary_surprise" title="Link to this definition">#</a></dt>
 <dd><p>Surprise at a binary outcome.</p>
 <p>The surprise ellicited by a binary observation <span class="math notranslate nohighlight">\(x\)</span> under the expected
 probability <span class="math notranslate nohighlight">\(\hat{\mu}\)</span> is given by:</p>
@@ -593,6 +593,8 @@ probability <span class="math notranslate nohighlight">\(\hat{\mu}\)</span> is g
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>) – The outcome.</p></li>
 <li><p><strong>expected_mean</strong> (<em>float</em><em> | </em><em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>complex</em>) – The mean of the Bernoulli distribution.</p></li>
+<li><p><strong>clipping</strong> (<em>bool</em>) – If <cite>True</cite> (default), the expected mean is clipped in a reasonable range to
+avoid numerical instabilities.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
