@@ -104,7 +104,9 @@ def predict_mean(
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
-def predict_precision(attributes: dict, edges: Edges, node_idx: int) -> Array:
+def predict_precision(
+    attributes: dict, edges: Edges, node_idx: int
+) -> tuple[Array, Array]:
     r"""Compute the expected precision of a continuous state node.
 
     The expected precision at time :math:`k` for a state node :math:`a` is given by
@@ -182,10 +184,10 @@ def predict_precision(attributes: dict, edges: Edges, node_idx: int) -> Array:
             )
 
     # compute the predicted_volatility from the total volatility
-    predicted_volatility = time_step * jnp.exp(total_volatility)
-    predicted_volatility = jnp.where(
-        predicted_volatility > 1e-128, predicted_volatility, jnp.nan
+    predicted_volatility = time_step * jnp.exp(
+        jnp.clip(total_volatility, a_min=-80.0, a_max=80.0)
     )
+    predicted_volatility = jnp.maximum(predicted_volatility, 1e-128)
 
     # Estimate the new expected precision for the node
     expected_precision = 1 / (
