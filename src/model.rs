@@ -73,8 +73,21 @@ impl Network {
     /// * `value_children` - The indexes of the node's value children.
     /// * `volatility_children` - The indexes of the node's volatility children.
     /// * `volatility_parents` - The indexes of the node's volatility parents.
-    #[pyo3(signature = (kind="continuous-state", value_parents=None, value_children=None, volatility_parents=None, volatility_children=None,))]
-    pub fn add_nodes(&mut self, kind: &str, value_parents: Option<Vec<usize>>, 
+    #[pyo3(signature = (
+        kind="continuous-state", 
+        value_parents=None, 
+        value_children=None, 
+        volatility_parents=None, 
+        volatility_children=None,
+        ef_dimension=None,
+        ef_distribution=None,
+        ef_learning=None,
+    )
+    )]
+    pub fn add_nodes(
+        &mut self, 
+        kind: &str, 
+        value_parents: Option<Vec<usize>>, 
         value_children: Option<Vec<usize>>,
         volatility_parents: Option<Vec<usize>>, volatility_children: Option<Vec<usize>>, )  {
 
@@ -86,6 +99,7 @@ impl Network {
             self.inputs.push(node_id);
         }
         
+        // Update the edges variable
         let edges = AdjacencyLists{
             node_type: String::from(kind),
             value_parents: value_parents,
@@ -93,6 +107,11 @@ impl Network {
             volatility_parents: volatility_parents,
             volatility_children: volatility_children,
         };
+
+        // Add emtpy adjacency lists in the new node
+        self.edges.insert(node_id, edges);
+
+        // TODO: Update the edges of parents and children accordingly
 
         // add edges and attributes
         if kind == "continuous-state" {
@@ -107,7 +126,6 @@ impl Network {
                 (String::from("autoconnection_strength"), 1.0)].into_iter().collect();
 
             self.attributes.floats.insert(node_id, attributes);
-            self.edges.insert(node_id, edges);
 
         } else if kind == "ef-state" {
 
@@ -123,6 +141,7 @@ impl Network {
 
         }
     }
+}
 
     pub fn set_update_sequence(&mut self) {
         self.update_sequence = set_update_sequence(self);
