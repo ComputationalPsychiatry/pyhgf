@@ -15,8 +15,9 @@ pub enum IntOrList {
     List(Vec<usize>),
 }
 
-impl<'py> FromPyObject<'py> for IntOrList {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'a, 'py> FromPyObject<'a, 'py> for IntOrList {
+    type Error = PyErr;
+    fn extract(ob: pyo3::Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
         if let Ok(val) = ob.extract::<usize>() {
             Ok(IntOrList::Single(val))
         } else {

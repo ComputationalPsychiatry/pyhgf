@@ -10,5 +10,5 @@ crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"    # The source file of the target.
 
 [dependencies]
-pyo3 = { version = "0.24.2", features = ["extension-module", "abi3-py37"] }
-numpy = "0.24"
+pyo3 = { version = "0.28.1", features = ["extension-module", "abi3-py37"] }
+numpy = "0.28"
