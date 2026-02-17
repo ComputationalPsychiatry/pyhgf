@@ -229,26 +229,26 @@ mod tests {
         let mut hgf_network = Network::new();
     
         // create a network
-        hgf_network.add_nodes_inner(
+        hgf_network.add_nodes(
             "continuous-state",
-            Some(vec![1]),
+            Some(vec![1].into()),
             None,
-            Some(vec![2]),
+            Some(vec![2].into()),
             None,
         );
-        hgf_network.add_nodes_inner(
+        hgf_network.add_nodes(
             "continuous-state",
             None,
-            Some(vec![0]),
+            Some(vec![0].into()),
             None,
             None,
         );
-        hgf_network.add_nodes_inner(
+        hgf_network.add_nodes(
             "continuous-state",
             None,
             None,
             None,
-            Some(vec![0]),
+            Some(vec![0].into()),
         );
         hgf_network.set_update_sequence();
 
@@ -263,7 +263,7 @@ mod tests {
 
         // initialize network
         let mut exp_network = Network::new();
-        exp_network.add_nodes_inner(
+        exp_network.add_nodes(
             "ef-state",
             None,
             None,
