@@ -46,7 +46,7 @@ fn test_one_node_hgf() {
 #[test]
 fn test_two_nodes_hgf() {
     // Three-node continuous HGF:
-    // Node 0: input (leaf)
+    // Node 0: input (root)
     // Node 1: value parent of node 0
     // Node 2: volatility parent of node 0
     let mut network = Network::new();
