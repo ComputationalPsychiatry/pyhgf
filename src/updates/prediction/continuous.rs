@@ -140,6 +140,10 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
         floats_mut.insert(String::from("expected_precision"), expected_precision);
     }
 
+    // Store the current variance (1/π) for use by the posterior update
+    let current_variance = 1.0 / floats_mut.get("precision").copied().unwrap_or(1.0);
+    floats_mut.insert(String::from("current_variance"), current_variance);
+
     floats_mut.insert(String::from("expected_mean"), expected_mean);
     floats_mut.insert(String::from("effective_precision"), effective_precision);
 }

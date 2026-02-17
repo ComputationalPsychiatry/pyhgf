@@ -7,6 +7,33 @@ use pyo3::types::PyTuple;
 use pyo3::{prelude::*, types::{PyList, PyDict}};
 use numpy::{PyArray1, PyArray};
 
+/// A helper type that accepts either a single int or a list of ints from Python.
+/// This allows the user to write `value_children=0` or `value_children=[0, 1]`.
+#[derive(Debug, Clone)]
+pub enum IntOrList {
+    Single(usize),
+    List(Vec<usize>),
+}
+
+impl<'py> FromPyObject<'py> for IntOrList {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+        if let Ok(val) = ob.extract::<usize>() {
+            Ok(IntOrList::Single(val))
+        } else {
+            Ok(IntOrList::List(ob.extract::<Vec<usize>>()?))
+        }
+    }
+}
+
+impl IntOrList {
+    fn into_vec(self) -> Vec<usize> {
+        match self {
+            IntOrList::Single(v) => vec![v],
+            IntOrList::List(v) => v,
+        }
+    }
+}
+
 #[derive(Debug)]
 #[pyclass]
 pub struct AdjacencyLists{
@@ -69,59 +96,24 @@ impl Network {
     /// 
     /// # Arguments
     /// * `kind` - The type of node that should be added.
-    /// * `value_parents` - The indexes of the node's value parents.
-    /// * `value_children` - The indexes of the node's value children.
-    /// * `volatility_children` - The indexes of the node's volatility children.
-    /// * `volatility_parents` - The indexes of the node's volatility parents.
+    /// * `value_parents` - The index(es) of the node's value parents (int or list).
+    /// * `value_children` - The index(es) of the node's value children (int or list).
+    /// * `volatility_parents` - The index(es) of the node's volatility parents (int or list).
+    /// * `volatility_children` - The index(es) of the node's volatility children (int or list).
     #[pyo3(signature = (kind="continuous-state", value_parents=None, value_children=None, volatility_parents=None, volatility_children=None,))]
-    pub fn add_nodes(&mut self, kind: &str, value_parents: Option<Vec<usize>>, 
-        value_children: Option<Vec<usize>>,
-        volatility_parents: Option<Vec<usize>>, volatility_children: Option<Vec<usize>>, )  {
+    pub fn add_nodes(&mut self, kind: &str, 
+        value_parents: Option<IntOrList>, 
+        value_children: Option<IntOrList>,
+        volatility_parents: Option<IntOrList>, 
+        volatility_children: Option<IntOrList>, )  {
 
-        // the node ID is equal to the number of nodes already in the network
-        let node_id: usize = self.edges.len();
-
-        // if this node has no children, this is an input node
-        if (value_children == None) & (volatility_children == None) {
-            self.inputs.push(node_id);
-        }
-        
-        let edges = AdjacencyLists{
-            node_type: String::from(kind),
-            value_parents: value_parents,
-            value_children: value_children, 
-            volatility_parents: volatility_parents,
-            volatility_children: volatility_children,
-        };
-
-        // add edges and attributes
-        if kind == "continuous-state" {
-
-            let attributes =  [
-                (String::from("mean"), 0.0), 
-                (String::from("expected_mean"), 0.0), 
-                (String::from("precision"), 1.0), 
-                (String::from("expected_precision"), 1.0), 
-                (String::from("tonic_volatility"), -4.0), 
-                (String::from("tonic_drift"), 0.0), 
-                (String::from("autoconnection_strength"), 1.0)].into_iter().collect();
-
-            self.attributes.floats.insert(node_id, attributes);
-            self.edges.insert(node_id, edges);
-
-        } else if kind == "ef-state" {
-
-            let floats_attributes =  [
-                (String::from("mean"), 0.0), 
-                (String::from("nus"), 3.0)].into_iter().collect();
-            let vector_attributes =  [
-                (String::from("xis"), vec![0.0, 1.0])].into_iter().collect();
-
-            self.attributes.floats.insert(node_id, floats_attributes);
-            self.attributes.vectors.insert(node_id, vector_attributes);
-            self.edges.insert(node_id, edges);
-
-        }
+        self.add_nodes_inner(
+            kind,
+            value_parents.map(|v| v.into_vec()),
+            value_children.map(|v| v.into_vec()),
+            volatility_parents.map(|v| v.into_vec()),
+            volatility_children.map(|v| v.into_vec()),
+        );
     }
 
     pub fn set_update_sequence(&mut self) {
@@ -178,9 +170,9 @@ impl Network {
             // iterate over the float hashmap
             for (new_node_idx, new_node) in &self.attributes.floats {
                 for (new_key, new_value) in new_node {
-                    // If the key exists in map1, append the vector from map2
                     let old_node = node_trajectories.floats.get_mut(&new_node_idx).expect("Old node not found.");
-                    let old_value = old_node.get_mut(new_key).expect("Old value not found");
+                    // lazily create the vector if this key was added during belief propagation
+                    let old_value = old_node.entry(new_key.clone()).or_insert_with(|| Vec::with_capacity(n_time));
                     old_value.push(*new_value);
                     }
                 }
@@ -188,9 +180,10 @@ impl Network {
             // iterate over the vector hashmap
             for (new_node_idx, new_node) in &self.attributes.vectors {
                 for (new_key, new_value) in new_node {
-                    // If the key exists in map1, append the vector from map2
-                    let old_node = node_trajectories.vectors.get_mut(&new_node_idx).expect("Old vector node not found.");
-                    let old_value = old_node.get_mut(new_key).expect("Old vector value not found.");
+                    let old_node = node_trajectories.vectors
+                        .entry(*new_node_idx)
+                        .or_insert_with(HashMap::new);
+                    let old_value = old_node.entry(new_key.clone()).or_insert_with(|| Vec::with_capacity(n_time));
                     old_value.push(new_value.clone());
                     }
                 }
@@ -201,27 +194,27 @@ impl Network {
     #[getter]
     pub fn get_node_trajectories<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
         let py_list = PyList::empty(py);
-        
-        
-        // Iterate over the float hashmap and insert key-value pairs into the list as PyDict
-        for (node_idx, node) in &self.node_trajectories.floats {
+
+        // Sort node indices so py_list[i] corresponds to node i
+        let mut sorted_keys: Vec<&usize> = self.node_trajectories.floats.keys().collect();
+        sorted_keys.sort();
+
+        for node_idx in sorted_keys {
+            let node = &self.node_trajectories.floats[node_idx];
             let py_dict = PyDict::new(py);
             for (key, value) in node {
-                // Create a new Python dictionary
                 py_dict.set_item(key, PyArray1::from_vec(py, value.clone()).to_owned()).expect("Failed to set item in PyDict");
             }
 
             // Iterate over the vector hashmap if any and insert key-value pairs into the list as PyDict
             if let Some(vector_node) = self.node_trajectories.vectors.get(node_idx) {
                 for (vector_key, vector_value) in vector_node {
-                    // Create a new Python dictionary
                     py_dict.set_item(vector_key, PyArray::from_vec2(py, &vector_value).unwrap()).expect("Failed to set item in PyDict");
                 }
             }
             py_list.append(py_dict)?;
         }
 
-        // Create a PyList from Vec<usize>
         Ok(py_list.into())
     }
 
@@ -289,6 +282,123 @@ impl Network {
     }
 }
 
+/// Non-PyO3 methods for internal Rust usage.
+impl Network {
+    /// Internal implementation of add_nodes that works with plain Vec<usize>.
+    /// Use this from Rust code; from Python, use `add_nodes` which accepts int or list.
+    pub fn add_nodes_inner(&mut self, kind: &str, 
+        value_parents: Option<Vec<usize>>, 
+        value_children: Option<Vec<usize>>,
+        volatility_parents: Option<Vec<usize>>, 
+        volatility_children: Option<Vec<usize>>, )  {
+
+        // the node ID is equal to the number of nodes already in the network
+        let node_id: usize = self.edges.len();
+
+        // determine if this is an input node (no children)
+        let is_input = value_children.is_none() && volatility_children.is_none();
+        if is_input {
+            self.inputs.push(node_id);
+        }
+        
+        let edges = AdjacencyLists{
+            node_type: String::from(kind),
+            value_parents: value_parents.clone(),
+            value_children: value_children.clone(), 
+            volatility_parents: volatility_parents.clone(),
+            volatility_children: volatility_children.clone(),
+        };
+
+        // add edges and attributes
+        if kind == "continuous-state" {
+
+            // input nodes have autoconnection_strength=0.0 and tonic_volatility=0.0
+            let (autoconnection, tonic_vol) = if is_input {
+                (0.0, 0.0)
+            } else {
+                (1.0, -4.0)
+            };
+
+            let attributes: HashMap<String, f64> = [
+                (String::from("mean"), 0.0), 
+                (String::from("expected_mean"), 0.0), 
+                (String::from("precision"), 1.0), 
+                (String::from("expected_precision"), 1.0), 
+                (String::from("tonic_volatility"), tonic_vol), 
+                (String::from("tonic_drift"), 0.0), 
+                (String::from("autoconnection_strength"), autoconnection),
+                (String::from("current_variance"), 1.0),
+            ].into_iter().collect();
+
+            self.attributes.floats.insert(node_id, attributes);
+            self.edges.insert(node_id, edges);
+
+            // Set coupling strength vectors and update reciprocal edges
+            let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+
+            if let Some(ref vp) = value_parents {
+                vec_attrs.insert(String::from("value_coupling_parents"), vec![1.0; vp.len()]);
+            }
+            if let Some(ref vc) = value_children {
+                vec_attrs.insert(String::from("value_coupling_children"), vec![1.0; vc.len()]);
+                // Update reciprocal edges: for each child, add this node as a value parent
+                for &child_idx in vc {
+                    if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        match &mut child_edges.value_parents {
+                            Some(parents) => parents.push(node_id),
+                            None => child_edges.value_parents = Some(vec![node_id]),
+                        }
+                    }
+                    // Add coupling strength to the child's value_coupling_parents
+                    let child_vecs = self.attributes.vectors.entry(child_idx).or_insert_with(HashMap::new);
+                    match child_vecs.get_mut("value_coupling_parents") {
+                        Some(cs) => cs.push(1.0),
+                        None => { child_vecs.insert(String::from("value_coupling_parents"), vec![1.0]); }
+                    }
+                }
+            }
+            if let Some(ref volp) = volatility_parents {
+                vec_attrs.insert(String::from("volatility_coupling_parents"), vec![1.0; volp.len()]);
+            }
+            if let Some(ref volc) = volatility_children {
+                vec_attrs.insert(String::from("volatility_coupling_children"), vec![1.0; volc.len()]);
+                // Update reciprocal edges: for each child, add this node as a volatility parent
+                for &child_idx in volc {
+                    if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        match &mut child_edges.volatility_parents {
+                            Some(parents) => parents.push(node_id),
+                            None => child_edges.volatility_parents = Some(vec![node_id]),
+                        }
+                    }
+                    // Add coupling strength to the child's volatility_coupling_parents
+                    let child_vecs = self.attributes.vectors.entry(child_idx).or_insert_with(HashMap::new);
+                    match child_vecs.get_mut("volatility_coupling_parents") {
+                        Some(cs) => cs.push(1.0),
+                        None => { child_vecs.insert(String::from("volatility_coupling_parents"), vec![1.0]); }
+                    }
+                }
+            }
+
+            if !vec_attrs.is_empty() {
+                self.attributes.vectors.insert(node_id, vec_attrs);
+            }
+
+        } else if kind == "ef-state" {
+
+            let floats_attributes =  [
+                (String::from("mean"), 0.0), 
+                (String::from("nus"), 3.0)].into_iter().collect();
+            let vector_attributes =  [
+                (String::from("xis"), vec![0.0, 1.0])].into_iter().collect();
+
+            self.attributes.floats.insert(node_id, floats_attributes);
+            self.attributes.vectors.insert(node_id, vector_attributes);
+            self.edges.insert(node_id, edges);
+
+        }
+    }
+}
+
 // Create a module to expose the class to Python
 #[pymodule]
 fn rshgf(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -296,36 +406,25 @@ fn rshgf(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-// Tests module for unit tests
-#[cfg(test)] // Only compile and include this module when running tests
+// Unit tests
+#[cfg(test)]
 mod tests {
-    use super::*; // Import the parent module's items to test them
-
+    use super::*;
 
     #[test]
     fn test_exponential_family_gaussian() {
-    
         // initialize network
         let mut network = Network::new();
-    
+
         // create a network with two exponential family state nodes
-        network.add_nodes(
-            "ef-state",
-            None,
-            None,
-            None,
-            None
-        );
-    
-        // println!("Graph before belief propagation: {:?}", network);
-    
+        network.add_nodes_inner("ef-state", None, None, None, None);
+
         // belief propagation
         let input_data = vec![1.0, 1.3, 1.5, 1.7];
         network.set_update_sequence();
-        network.input_data(input_data);
-        
+        network.input_data(input_data, None);
+
         println!("Update sequence: {:?}", network.update_sequence);
         println!("Node trajectories: {:?}", network.node_trajectories);
-    
     }
 }

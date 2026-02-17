@@ -17,6 +17,6 @@ fn main() {
     // belief propagation
     let input_data = vec![1.0, 1.3, 1.5, 1.7];
     network.set_update_sequence();
-    network.input_data(input_data);
+    network.input_data(input_data, None);
 
 }

@@ -1,4 +1,4 @@
-use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::posterior_update_continuous_state_node, prediction::continuous::prediction_continuous_state_node, prediction_error::{continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node}}};
+use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::{posterior_update_continuous_state_node, posterior_update_continuous_state_node_ehgf}, prediction::continuous::prediction_continuous_state_node, prediction_error::{continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node}}};
 use crate::utils::function_pointer::FnType;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {
@@ -186,8 +186,13 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
     
                 // add the node in the update list
                 match network.edges.get(&idx) {
-                    Some(AdjacencyLists {node_type, ..}) if node_type == "continuous-state" => {
-                        updates.push((idx, posterior_update_continuous_state_node));
+                    Some(AdjacencyLists {node_type, volatility_children, ..}) if node_type == "continuous-state" => {
+                        // Default: eHGF for nodes with volatility children, standard otherwise
+                        if volatility_children.is_some() {
+                            updates.push((idx, posterior_update_continuous_state_node_ehgf));
+                        } else {
+                            updates.push((idx, posterior_update_continuous_state_node));
+                        }
                     }
                     _ => ()
 
@@ -224,21 +229,21 @@ mod tests {
         let mut hgf_network = Network::new();
     
         // create a network
-        hgf_network.add_nodes(
+        hgf_network.add_nodes_inner(
             "continuous-state",
             Some(vec![1]),
             None,
             Some(vec![2]),
             None,
         );
-        hgf_network.add_nodes(
+        hgf_network.add_nodes_inner(
             "continuous-state",
             None,
             Some(vec![0]),
             None,
             None,
         );
-        hgf_network.add_nodes(
+        hgf_network.add_nodes_inner(
             "continuous-state",
             None,
             None,
@@ -258,7 +263,7 @@ mod tests {
 
         // initialize network
         let mut exp_network = Network::new();
-        exp_network.add_nodes(
+        exp_network.add_nodes_inner(
             "ef-state",
             None,
             None,
