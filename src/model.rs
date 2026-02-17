@@ -61,7 +61,7 @@ impl Network {
             edges: HashMap::new(),
             inputs: Vec::new(),
             update_sequence: UpdateSequence {predictions: Vec::new(), updates: Vec::new()},
-            node_trajectories: NodeTrajectories {floats: HashMap::new(), vectors: HashMap::new()}
+            node_trajectories: NodeTrajectories {floats: HashMap::new(), vectors: HashMap::new()},
         }
         }
 
@@ -131,11 +131,16 @@ impl Network {
     /// Add a sequence of observations.
     /// 
     /// # Arguments
-    /// * `input_data` - A vector of vectors. Each vector is a time series of observations
-    /// associated with one node.
-    pub fn input_data(&mut self, input_data: Vec<f64>) {
+    /// * `input_data` - A vector of observations. Each value is one observation per time step.
+    /// * `time_steps` - An optional vector of time steps of the same length as `input_data`.
+    ///   If `None`, defaults to a vector of ones.
+    #[pyo3(signature = (input_data, time_steps=None))]
+    pub fn input_data(&mut self, input_data: Vec<f64>, time_steps: Option<Vec<f64>>) {
 
         let n_time = input_data.len();
+
+        // Default to a vector of ones if no time steps are provided
+        let time_steps = time_steps.unwrap_or_else(|| vec![1.0; n_time]);
         let predictions = self.update_sequence.predictions.clone();
         let updates = self.update_sequence.updates.clone();
 
@@ -164,10 +169,10 @@ impl Network {
 
 
         // iterate over the observations
-        for observation in input_data {
+        for (t, observation) in input_data.iter().enumerate() {
 
             // 1. belief propagation for one time slice
-            belief_propagation(self, vec![observation], &predictions, &updates);
+            belief_propagation(self, vec![*observation], &predictions, &updates, time_steps[t]);
 
             // 2. append the new beliefs in the trajectories structure
             // iterate over the float hashmap

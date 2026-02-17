@@ -17,7 +17,7 @@ use crate::model::Network;
 ///
 /// # Returns
 /// * `network` - The network after message passing.
-pub fn prediction_error_continuous_state_node(network: &mut Network, node_idx: usize) {
+pub fn prediction_error_continuous_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
 
     // Get the number of value parents and volatility parents from the edges
     let n_value_parents = network.edges.get(&node_idx)

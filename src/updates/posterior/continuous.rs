@@ -8,6 +8,6 @@ use crate::model::Network;
 /// 
 /// # Returns
 /// * `network` - The network after message passing.
-pub fn posterior_update_continuous_state_node(network: &mut Network, node_idx: usize) {
-    let a = 1;
+pub fn posterior_update_continuous_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
+    let _a = 1;
 }

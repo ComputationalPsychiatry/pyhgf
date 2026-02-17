@@ -9,7 +9,7 @@ use crate::math::sufficient_statistics;
 /// 
 /// # Returns
 /// * `network` - The network after message passing.
-pub fn prediction_error_exponential_state_node(network: &mut Network, node_idx: usize) {
+pub fn prediction_error_exponential_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
 
     let floats_attributes = network.attributes.floats.get_mut(&node_idx).expect("No floats attributes");
     let vectors_attributes = network.attributes.vectors.get_mut(&node_idx).expect("No vector attributes");
