@@ -1,4 +1,4 @@
-use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::posterior_update_continuous_state_node, prediction::continuous::prediction_continuous_state_node, prediction_error::{continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node}}};
+use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::{posterior_update_continuous_state_node, posterior_update_continuous_state_node_ehgf}, prediction::continuous::prediction_continuous_state_node, prediction_error::{continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node}}};
 use crate::utils::function_pointer::FnType;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {
@@ -186,8 +186,13 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
     
                 // add the node in the update list
                 match network.edges.get(&idx) {
-                    Some(AdjacencyLists {node_type, ..}) if node_type == "continuous-state" => {
-                        updates.push((idx, posterior_update_continuous_state_node));
+                    Some(AdjacencyLists {node_type, volatility_children, ..}) if node_type == "continuous-state" => {
+                        // Default: eHGF for nodes with volatility children, standard otherwise
+                        if volatility_children.is_some() {
+                            updates.push((idx, posterior_update_continuous_state_node_ehgf));
+                        } else {
+                            updates.push((idx, posterior_update_continuous_state_node));
+                        }
                     }
                     _ => ()
 
@@ -226,24 +231,24 @@ mod tests {
         // create a network
         hgf_network.add_nodes(
             "continuous-state",
-            Some(vec![1]),
+            Some(vec![1].into()),
             None,
-            Some(vec![2]),
-            None,
-        );
-        hgf_network.add_nodes(
-            "continuous-state",
-            None,
-            Some(vec![0]),
-            None,
+            Some(vec![2].into()),
             None,
         );
         hgf_network.add_nodes(
             "continuous-state",
             None,
+            Some(vec![0].into()),
             None,
             None,
-            Some(vec![0]),
+        );
+        hgf_network.add_nodes(
+            "continuous-state",
+            None,
+            None,
+            None,
+            Some(vec![0].into()),
         );
         hgf_network.set_update_sequence();
 

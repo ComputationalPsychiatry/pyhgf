@@ -5,11 +5,11 @@ use crate::{utils::function_pointer::FnType, model::Network, updates::observatio
 /// # Arguments
 /// * `observations` - A vector of values, each value is one new observation associated
 /// with one node.
-pub fn belief_propagation(network: &mut Network, observations_set: Vec<f64>, predictions: & Vec<(usize, FnType)>, updates: & Vec<(usize, FnType)>) {
+pub fn belief_propagation(network: &mut Network, observations_set: Vec<f64>, predictions: & Vec<(usize, FnType)>, updates: & Vec<(usize, FnType)>, time_step: f64) {
 
     // 1. prediction steps
     for (idx, step) in predictions.iter() {
-        step(network, *idx);
+        step(network, *idx, time_step);
     }
     
     // 2. observation steps
@@ -20,6 +20,6 @@ pub fn belief_propagation(network: &mut Network, observations_set: Vec<f64>, pre
 
     // 3. update steps
     for (idx, step) in updates.iter() {
-        step(network, *idx);
+        step(network, *idx, time_step);
     }
 }

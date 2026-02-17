@@ -244,7 +244,7 @@ def plot_nodes(
         # plotting surprise
         # -----------------
         if show_surprise:
-            node_surprise = trajectories_df[f"x_{node_idx}_surprise"].to_numpy()
+            node_surprise = trajectories_df[f"x_{node_idx}_surprise"].to_numpy().copy()
 
             if not np.isnan(node_surprise).all():
                 surprise_ax = axs[i].twinx()
