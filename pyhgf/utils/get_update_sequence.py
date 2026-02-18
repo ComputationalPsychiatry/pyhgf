@@ -16,6 +16,8 @@ from pyhgf.updates.posterior.exponential import (
 )
 from pyhgf.updates.posterior.volatile import (
     volatile_node_posterior_update,
+    volatile_node_posterior_update_ehgf,
+    volatile_node_posterior_update_unbounded,
 )
 from pyhgf.updates.prediction.binary import binary_state_node_prediction
 from pyhgf.updates.prediction.continuous import continuous_node_prediction
@@ -172,7 +174,14 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
                     update_fn = None
 
                 elif network.edges[idx].node_type == 6:
-                    update_fn = volatile_node_posterior_update
+                    if update_type == "unbounded":
+                        update_fn = volatile_node_posterior_update_unbounded
+                    elif update_type == "eHGF":
+                        update_fn = volatile_node_posterior_update_ehgf
+                    elif update_type == "standard":
+                        update_fn = volatile_node_posterior_update
+                    else:
+                        raise ValueError("Invalid update type.")
 
                 update_sequence.append((idx, update_fn))
                 nodes_without_posterior_update.remove(idx)
