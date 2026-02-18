@@ -18,7 +18,7 @@ fn test_one_node_hgf() {
     // Two-node continuous HGF: one input node and one value parent
     // Node 0: input (leaf)
     // Node 1: value parent of node 0
-    let mut network = Network::new();
+    let mut network = Network::new("eHGF");
 
     // Node 0: input node (no parents or children specified)
     network.add_nodes("continuous-state", None, None, None, None);
@@ -49,7 +49,7 @@ fn test_two_nodes_hgf() {
     // Node 0: input (root)
     // Node 1: value parent of node 0
     // Node 2: volatility parent of node 0
-    let mut network = Network::new();
+    let mut network = Network::new("eHGF");
 
     // Node 0: input node
     network.add_nodes("continuous-state", None, None, None, None);

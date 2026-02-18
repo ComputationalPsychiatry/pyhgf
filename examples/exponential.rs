@@ -3,7 +3,7 @@ use rshgf::model::Network;
 fn main() {
 
     // initialize network
-    let mut network = Network::new();
+    let mut network = Network::new("eHGF");
 
     // create a network with two exponential family state nodes
     network.add_nodes(
