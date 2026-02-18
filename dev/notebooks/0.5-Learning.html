@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Deep learning with Bayesian predictive coding &#8212; pyhgf 0.2.8 documentation</title>
+    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.8 documentation</title>
   
   
   
@@ -390,7 +390,7 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Deep learning with Bayesian predictive coding</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Deep Bayesian predictive coding</a></li>
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
@@ -475,7 +475,7 @@
     
     <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Deep learning with Bayesian predictive coding</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Deep Bayesian predictive coding</span></li>
   </ul>
 </nav>
 </div>
@@ -492,8 +492,8 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="deep-learning-with-bayesian-predictive-coding">
-<span id="learning"></span><h1>Deep learning with Bayesian predictive coding<a class="headerlink" href="#deep-learning-with-bayesian-predictive-coding" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="deep-bayesian-predictive-coding">
+<span id="learning"></span><h1>Deep Bayesian predictive coding<a class="headerlink" href="#deep-bayesian-predictive-coding" title="Link to this heading">#</a></h1>
 <p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.5-Learning.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell tag_hide-cell docutils container">
 <details class="admonition hide above-input">
@@ -616,7 +616,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f137ab24516ff036312ed5ac3684ce6e4446fc7ec91c6ae68fd299f9140eb7be.png" src="../_images/f137ab24516ff036312ed5ac3684ce6e4446fc7ec91c6ae68fd299f9140eb7be.png" />
+<img alt="../_images/1ce9418a3200554d031d1f436af83d6646c72b90f0d29c800cb1d4caeb512104.png" src="../_images/1ce9418a3200554d031d1f436af83d6646c72b90f0d29c800cb1d4caeb512104.png" />
 </div>
 </div>
 <p>This example illustrates the effectiveness of the variational update to replace the prospective configuration step based on gradient descent. As new observations contradict the expected outcomes (i.e., observing the river without hearing the water, from trials 40 to 80 in the bottom panel), the network efficiently reorganizes without interfering with other predictions (i.e,. still expecting smelling the salmon while seeing the water, top panel, trials 40 to 80).</p>
@@ -647,11 +647,11 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We start by defining two networks with varying precision </span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We start by defining two networks with varying precision</span>
 <span class="c1"># at the predictor and outcome levels</span>
-<span class="n">high_predictor_precision_network</span> <span class="o">=</span> <span class="p">(</span>
+<span class="n">high_outcome_precision_network</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -679,14 +679,14 @@
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
 
-<span class="n">high_outcome_precision_network</span> <span class="o">=</span> <span class="p">(</span>
+<span class="n">high_predictor_precision_network</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -714,8 +714,8 @@
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
         <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
-        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span>
+        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -729,14 +729,14 @@
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
     <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">.05</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">high_outcome_precision_network</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
     <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
     <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">.05</span><span class="p">,</span>
 <span class="p">);</span>
 </pre></div>
 </div>
@@ -821,7 +821,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/36c50e37349bd5868789e1ec86874ffc89e8c82de8dd95da3d5d55352bce1cab.png" src="../_images/36c50e37349bd5868789e1ec86874ffc89e8c82de8dd95da3d5d55352bce1cab.png" />
+<img alt="../_images/24c7c602a0aa7bc609b604c165359e2da8237d3e62cdce7197dd1f4a408869ee.png" src="../_images/24c7c602a0aa7bc609b604c165359e2da8237d3e62cdce7197dd1f4a408869ee.png" />
 </div>
 </div>
 </section>
@@ -923,7 +923,7 @@ Layer sizes: [2, 5, 3]
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 17 Feb 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed, 18 Feb 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
@@ -995,7 +995,7 @@ Watermark: 2.6.0
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Deep learning with Bayesian predictive coding</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Deep Bayesian predictive coding</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prospective-configuration-avoids-interference-during-learning">Prospective configuration avoids interference during learning</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-the-depth-of-weight-updates-with-input-precision">Controlling the depth of weight updates with input precision</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-deep-network-structures-in-pyhgf">Building Deep-Network Structures in pyhgf</a><ul class="nav section-nav flex-column">
