@@ -110,7 +110,7 @@ def add_volatile_node(
         "expected_mean_vol": 0.0,
         "precision_vol": 1.0,
         "expected_precision_vol": 1.0,
-        "tonic_volatility_vol": -2.0,
+        "tonic_volatility_vol": -4.0,
         "tonic_drift_vol": 0.0,
         "autoconnection_strength_vol": 1.0,
         # Internal coupling

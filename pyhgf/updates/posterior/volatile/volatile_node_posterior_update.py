@@ -6,6 +6,7 @@ from functools import partial
 from jax import jit
 
 from pyhgf.typing import Edges
+from pyhgf.updates.prediction_error.volatile import volatile_node_prediction_error
 
 from .posterior_update_value_level import (
     posterior_update_mean_value_level,
@@ -23,7 +24,7 @@ def volatile_node_posterior_update(
     edges: Edges,
     node_idx: int,
 ) -> dict:
-    """Update both internal levels of the volatile_node.
+    """Update a volatile node and the implied volatility parent.
 
     1. Update value level using children's value prediction errors
     2. Recompute volatility prediction error using updated value level
@@ -46,21 +47,10 @@ def volatile_node_posterior_update(
     )
     attributes[node_idx]["mean"] = mean_value
 
-    # 2. RECOMPUTE VOLATILITY PREDICTION ERROR
-    # Now that value level has been updated, recompute the volatility PE
-    # This is the value prediction error for the value level (using updated mean)
-    value_prediction_error = mean_value - attributes[node_idx]["expected_mean"]
-
-    # Volatility PE from value level (same formula as in prediction_error step)
-    volatility_prediction_error = (
-        (attributes[node_idx]["expected_precision"] / precision_value)
-        + attributes[node_idx]["expected_precision"] * (value_prediction_error**2)
-        - 1
-    )
-
-    # Store the fresh volatility PE
-    attributes[node_idx]["temp"]["volatility_prediction_error"] = (
-        volatility_prediction_error
+    # 2. COMPUTE PREDICTION ERROR
+    # Now that value level has been updated, compute the value and volatility PE
+    attributes = volatile_node_prediction_error(
+        attributes=attributes, node_idx=node_idx, edges=edges
     )
 
     # 3. UPDATE VOLATILITY LEVEL (implicit internal)
