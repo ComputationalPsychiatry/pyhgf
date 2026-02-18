@@ -1,0 +1,6 @@
+﻿pyhgf.math.sigmoid\_inverse\_temperature
+========================================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: sigmoid_inverse_temperature

@@ -54,6 +54,8 @@
     <script src="_static/togglebutton.js?v=1ae7504c"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api';</script>
     <link rel="icon" href="_static/logo_small.svg"/>
     <link rel="index" title="Index" href="genindex.html" />
@@ -941,6 +943,15 @@ least the HGF instance as input after observation and returning surprise.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.binary_surprise_finite_precision.html#pyhgf.math.binary_surprise_finite_precision" title="pyhgf.math.binary_surprise_finite_precision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">binary_surprise_finite_precision</span></code></a>(value, ...)</p></td>
 <td><p>Compute the binary surprise with finite precision.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.sigmoid_inverse_temperature.html#pyhgf.math.sigmoid_inverse_temperature" title="pyhgf.math.sigmoid_inverse_temperature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sigmoid_inverse_temperature</span></code></a>(x, temperature)</p></td>
+<td><p>Compute the sigmoid response function with inverse temperature parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.parametrised_sigmoid.html#pyhgf.math.parametrised_sigmoid" title="pyhgf.math.parametrised_sigmoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parametrised_sigmoid</span></code></a>(x, theta, phi)</p></td>
+<td><p>Compute the sigmoid parametrised by <span class="math notranslate nohighlight">\(\phi\)</span> and <span class="math notranslate nohighlight">\(\theta\)</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.math/pyhgf.math.smoothed_rectangular.html#pyhgf.math.smoothed_rectangular" title="pyhgf.math.smoothed_rectangular"><code class="xref py py-obj docutils literal notranslate"><span class="pre">smoothed_rectangular</span></code></a>(x, theta_l[, phi_l, ...])</p></td>
+<td><p>Compute the smoothed rectangular weighting function <span class="math notranslate nohighlight">\(b\)</span>.</p></td>
 </tr>
 </tbody>
 </table>
