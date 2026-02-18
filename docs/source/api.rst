@@ -353,3 +353,6 @@ Math functions and probability densities.
     gaussian_surprise
     dirichlet_kullback_leibler
     binary_surprise_finite_precision
+    sigmoid_inverse_temperature
+    parametrised_sigmoid
+    smoothed_rectangular

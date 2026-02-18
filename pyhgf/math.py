@@ -4,6 +4,7 @@ from typing import Union
 
 import jax.numpy as jnp
 from jax import Array
+from jax.nn import sigmoid
 from jax.scipy.special import digamma, gamma, gammaln
 from jax.typing import ArrayLike
 
@@ -139,7 +140,7 @@ class Normal:
         return mean, variance
 
 
-def gaussian_predictive_distribution(x: float, xi: ArrayLike, nu: float) -> float:
+def gaussian_predictive_distribution(x: float, xi: ArrayLike, nu: float) -> Array:
     r"""Density of the Gaussian-predictive distribution.
 
     This distribution is parametrized by hyperparameters from the exponential family as:
@@ -367,3 +368,21 @@ def binary_surprise_finite_precision(
 def sigmoid_inverse_temperature(x: float, temperature: float) -> float:
     """Compute the sigmoid response function with inverse temperature parameter."""
     return (x**temperature) / (x**temperature + (1 - x) ** temperature)
+
+
+def parametrised_sigmoid(x: float, theta: float, phi: float):
+    r"""Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`."""
+    return sigmoid(phi * (x - theta))
+
+
+def smoothed_rectangular(
+    x: float,
+    theta_l: float,
+    phi_l: float = 8.0,
+    theta_r: float = 0.0,
+    phi_r: float = 1.0,
+):
+    """Compute the smoothed rectangular weighting function :math:`b`."""
+    return parametrised_sigmoid(x, theta_l, phi_l) * (
+        1 - parametrised_sigmoid(x, theta_r, phi_r)
+    )

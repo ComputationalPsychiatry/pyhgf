@@ -22,8 +22,10 @@ def test_volatile_node_matches_explicit_volatility_parent():
     timeseries = load_data("continuous")
 
     # Network A: volatile node ---------------------------------------------------------
+    # Use update_type="standard" so the volatile node's internal vol level uses
+    # the same precision-first update order as the explicit volatility parent.
     volatile_network = (
-        Network()
+        Network(update_type="standard")
         .add_nodes()  # node 0: input
         .add_nodes(kind="volatile-node", value_children=0)  # node 1: volatile parent
         .input_data(input_data=timeseries)
@@ -75,3 +77,95 @@ def test_volatile_node_matches_explicit_volatility_parent():
             volatile_network.node_trajectories[0][key],
             explicit_network.node_trajectories[0][key],
         ).all(), f"Input node key '{key}' mismatch"
+
+
+def test_volatile_node_ehgf_matches_explicit():
+    """Test volatile node with eHGF update matches explicit network with eHGF.
+
+    Both networks should use update_type="eHGF" and produce matching trajectories.
+    """
+    timeseries = load_data("continuous")
+
+    # Network A: volatile node with eHGF
+    volatile_network = (
+        Network(update_type="eHGF")
+        .add_nodes()
+        .add_nodes(kind="volatile-node", value_children=0)
+        .input_data(input_data=timeseries)
+    )
+
+    # Network B: explicit with eHGF
+    explicit_network = (
+        Network(update_type="eHGF")
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=1)
+        .input_data(input_data=timeseries)
+    )
+
+    # Compare value-level trajectories
+    for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+        assert np.isclose(
+            volatile_network.node_trajectories[1][key],
+            explicit_network.node_trajectories[1][key],
+        ).all(), f"eHGF: Value-level key '{key}' mismatch"
+
+    # Compare volatility-level trajectories
+    vol_key_map = {
+        "mean_vol": "mean",
+        "expected_mean_vol": "expected_mean",
+        "precision_vol": "precision",
+        "expected_precision_vol": "expected_precision",
+    }
+    for vol_key, explicit_key in vol_key_map.items():
+        assert np.isclose(
+            volatile_network.node_trajectories[1][vol_key],
+            explicit_network.node_trajectories[2][explicit_key],
+        ).all(), f"eHGF: Volatility-level key '{vol_key}' vs '{explicit_key}' mismatch"
+
+
+def test_volatile_node_unbounded_matches_explicit():
+    """Test volatile node with unbounded update matches explicit network.
+
+    Both networks should use update_type="unbounded" and produce matching trajectories.
+    """
+    timeseries = load_data("continuous")
+
+    # Network A: volatile node with unbounded
+    volatile_network = (
+        Network(update_type="unbounded")
+        .add_nodes()
+        .add_nodes(kind="volatile-node", value_children=0)
+        .input_data(input_data=timeseries)
+    )
+
+    # Network B: explicit with unbounded
+    explicit_network = (
+        Network(update_type="unbounded")
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=1)
+        .input_data(input_data=timeseries)
+    )
+
+    # Compare value-level trajectories
+    for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+        assert np.isclose(
+            volatile_network.node_trajectories[1][key],
+            explicit_network.node_trajectories[1][key],
+        ).all(), f"Unbounded: Value-level key '{key}' mismatch"
+
+    # Compare volatility-level trajectories
+    vol_key_map = {
+        "mean_vol": "mean",
+        "expected_mean_vol": "expected_mean",
+        "precision_vol": "precision",
+        "expected_precision_vol": "expected_precision",
+    }
+    for vol_key, explicit_key in vol_key_map.items():
+        assert np.isclose(
+            volatile_network.node_trajectories[1][vol_key],
+            explicit_network.node_trajectories[2][explicit_key],
+        ).all(), (
+            f"Unbounded: Volatility-level key '{vol_key}' vs '{explicit_key}' mismatch"
+        )

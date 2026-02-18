@@ -6,6 +6,7 @@ import jax.numpy as jnp
 from jax import jit
 from jax.nn import sigmoid
 
+from pyhgf.math import smoothed_rectangular
 from pyhgf.typing import Edges
 
 
@@ -187,7 +188,7 @@ def posterior_update_unbounded(
 
     # compute the weigthing of the two approximations
     # using the smoothed rectangular function b
-    weigthing = b(
+    weigthing = smoothed_rectangular(
         x=attributes[node_idx]["expected_mean"],
         theta_l=theta_l,
         phi_l=8.0,
@@ -199,19 +200,3 @@ def posterior_update_unbounded(
     posterior_mean = (1 - weigthing) * mu_l1 + weigthing * mu_l2
 
     return posterior_precision, posterior_mean
-
-
-def s(x: float, theta: float, phi: float):
-    r"""Compute the sigmoid parametrised by :math`\phi` and :math`\theta`."""
-    return sigmoid(phi * (x - theta))
-
-
-def b(
-    x: float,
-    theta_l: float,
-    phi_l: float = 8.0,
-    theta_r: float = 0.0,
-    phi_r: float = 1.0,
-):
-    """Compute the smoothed rectangular weigthing function :math`b`."""
-    return s(x, theta_l, phi_l) * (1 - s(x, theta_r, phi_r))
