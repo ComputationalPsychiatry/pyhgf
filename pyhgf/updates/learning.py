@@ -41,8 +41,6 @@ def learning_weights_fixed(
     """
     # 1. update the coupling strength between the child and value parent
     # ------------------------------------------------------------------
-    pe = jnp.array(attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"])
-    pe = jnp.where(pe == 0.0, 1e-8, pe)
     weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore
 
     for value_parent_idx, value_coupling in zip(
@@ -67,7 +65,9 @@ def learning_weights_fixed(
             coupling_fn(prospective_mean)
         )
         expected_coupling = jnp.where(
-            jnp.isnan(expected_coupling), 0.0, expected_coupling
+            jnp.isnan(expected_coupling) | jnp.isinf(expected_coupling),
+            value_coupling,
+            expected_coupling,
         )
         new_value_coupling = (
             value_coupling + (expected_coupling - value_coupling) * lr * weighting
@@ -117,8 +117,6 @@ def learning_weights_dynamic(
     """
     # 1. update the coupling strength between the child and value parent
     # ------------------------------------------------------------------
-    pe = jnp.array(attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"])
-    pe = jnp.where(pe == 0.0, 1e-8, pe)
     weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore
 
     for value_parent_idx, value_coupling in zip(
@@ -141,17 +139,27 @@ def learning_weights_dynamic(
 
         expected_coupling = attributes[node_idx]["mean"] / coupling_fn(prospective_mean)
         expected_coupling = jnp.where(
-            jnp.isnan(expected_coupling), 0.0, expected_coupling
+            jnp.isnan(expected_coupling) | jnp.isinf(expected_coupling),
+            value_coupling,
+            expected_coupling,
         )
 
-        precision_weighting = (
-            attributes[node_idx]["precision"]
-            / attributes[value_parent_idx]["precision"]
+        # use expected_precision (prediction-time) for both child and parent
+        # to avoid asymmetry from update ordering (child already posterior-updated,
+        # parent not yet)
+        precision_weighting = attributes[node_idx]["expected_precision"] / (
+            attributes[value_parent_idx]["expected_precision"]
+            + attributes[node_idx]["expected_precision"]
         )
 
         new_value_coupling = (
             value_coupling
             + (expected_coupling - value_coupling) * precision_weighting * weighting
+        )
+
+        # guard against inf coupling values
+        new_value_coupling = jnp.where(
+            jnp.isinf(new_value_coupling), value_coupling, new_value_coupling
         )
 
         # update the coupling strength in the attributes dictionary for both nodes
