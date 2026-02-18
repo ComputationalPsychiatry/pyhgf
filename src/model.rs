@@ -82,6 +82,7 @@ pub struct Network{
     pub attributes: Attributes,
     pub edges: HashMap<usize, AdjacencyLists>,
     pub inputs: Vec<usize>,
+    pub update_type: String,
     pub update_sequence: UpdateSequence,
     pub node_trajectories: NodeTrajectories,
 }
@@ -90,11 +91,13 @@ pub struct Network{
 impl Network {
 
     #[new]
-    pub fn new() -> Self {
+    #[pyo3(signature = (update_type="eHGF"))]
+    pub fn new(update_type: &str) -> Self {
         Network {
             attributes: Attributes { floats: HashMap::new(), vectors: HashMap::new() },
             edges: HashMap::new(),
             inputs: Vec::new(),
+            update_type: String::from(update_type),
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
             node_trajectories: NodeTrajectories { floats: HashMap::new(), vectors: HashMap::new() },
         }
@@ -208,6 +211,73 @@ impl Network {
                     ("xis".into(), vec![0.0, 1.0]),
                 ]));
                 self.edges.insert(node_id, edges);
+            }
+            "volatile-state" => {
+                // Volatile nodes have an implicit internal volatility parent.
+                // They do NOT accept external volatility parents/children.
+                let volatile_edges = AdjacencyLists {
+                    node_type: String::from(kind),
+                    value_parents: value_parents.clone(),
+                    value_children: value_children.clone(),
+                    volatility_parents: None,
+                    volatility_children: None,
+                };
+
+                self.attributes.floats.insert(node_id, HashMap::from([
+                    // Value level parameters (external facing)
+                    ("mean".into(), 0.0),
+                    ("expected_mean".into(), 0.0),
+                    ("precision".into(), 1.0),
+                    ("expected_precision".into(), 1.0),
+                    ("tonic_volatility".into(), -4.0),
+                    ("tonic_drift".into(), 0.0),
+                    ("autoconnection_strength".into(), 1.0),
+                    ("current_variance".into(), 1.0),
+                    // Volatility level parameters (implicit internal)
+                    ("mean_vol".into(), 0.0),
+                    ("expected_mean_vol".into(), 0.0),
+                    ("precision_vol".into(), 1.0),
+                    ("expected_precision_vol".into(), 1.0),
+                    ("tonic_volatility_vol".into(), -4.0),
+                    ("tonic_drift_vol".into(), 0.0),
+                    ("autoconnection_strength_vol".into(), 1.0),
+                    // Internal coupling
+                    ("volatility_coupling_internal".into(), 1.0),
+                    // State
+                    ("observed".into(), 1.0),
+                    // Temp variables
+                    ("effective_precision".into(), 0.0),
+                    ("value_prediction_error".into(), 0.0),
+                    ("volatility_prediction_error".into(), 0.0),
+                    ("effective_precision_vol".into(), 0.0),
+                ]));
+                self.edges.insert(node_id, volatile_edges);
+
+                // Coupling strength vectors and reciprocal edges (value only)
+                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+
+                if let Some(ref vp) = value_parents {
+                    vec_attrs.insert("value_coupling_parents".into(), vec![1.0; vp.len()]);
+                }
+                if let Some(ref vc) = value_children {
+                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    for &child_idx in vc {
+                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                            match &mut child_edges.value_parents {
+                                Some(parents) => parents.push(node_id),
+                                None => child_edges.value_parents = Some(vec![node_id]),
+                            }
+                        }
+                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
+                        child_vecs.entry("value_coupling_parents".into())
+                            .and_modify(|cs| cs.push(1.0))
+                            .or_insert_with(|| vec![1.0]);
+                    }
+                }
+
+                if !vec_attrs.is_empty() {
+                    self.attributes.vectors.insert(node_id, vec_attrs);
+                }
             }
             _ => {}
         }
@@ -357,18 +427,110 @@ mod tests {
 
     #[test]
     fn test_exponential_family_gaussian() {
-        // initialize network
-        let mut network = Network::new();
-
-        // create a network with two exponential family state nodes
+        let mut network = Network::new("eHGF");
         network.add_nodes("ef-state", None, None, None, None);
 
-        // belief propagation
         let input_data = vec![1.0, 1.3, 1.5, 1.7];
         network.set_update_sequence();
         network.input_data(input_data, None);
+    }
 
-        println!("Update sequence: {:?}", network.update_sequence);
-        println!("Node trajectories: {:?}", network.node_trajectories);
+    #[test]
+    fn test_volatile_node_ehgf_matches_explicit() {
+        // Both networks use eHGF (default)
+        let mut volatile_net = Network::new("eHGF");
+        volatile_net.add_nodes("continuous-state", None, None, None, None);
+        volatile_net.add_nodes("volatile-state", None, Some(0.into()), None, None);
+        volatile_net.set_update_sequence();
+
+        let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
+        volatile_net.input_data(input_data.clone(), None);
+
+        let mut explicit_net = Network::new("eHGF");
+        explicit_net.add_nodes("continuous-state", None, None, None, None);
+        explicit_net.add_nodes("continuous-state", None, Some(0.into()), None, None);
+        explicit_net.add_nodes("continuous-state", None, None, None, Some(1.into()));
+        explicit_net.set_update_sequence();
+        explicit_net.input_data(input_data, None);
+
+        assert_volatile_matches_explicit(&volatile_net, &explicit_net);
+    }
+
+    #[test]
+    fn test_volatile_node_standard_matches_explicit() {
+        let mut volatile_net = Network::new("standard");
+        volatile_net.add_nodes("continuous-state", None, None, None, None);
+        volatile_net.add_nodes("volatile-state", None, Some(0.into()), None, None);
+        volatile_net.set_update_sequence();
+
+        let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
+        volatile_net.input_data(input_data.clone(), None);
+
+        let mut explicit_net = Network::new("standard");
+        explicit_net.add_nodes("continuous-state", None, None, None, None);
+        explicit_net.add_nodes("continuous-state", None, Some(0.into()), None, None);
+        explicit_net.add_nodes("continuous-state", None, None, None, Some(1.into()));
+        explicit_net.set_update_sequence();
+        explicit_net.input_data(input_data, None);
+
+        assert_volatile_matches_explicit(&volatile_net, &explicit_net);
+    }
+
+    #[test]
+    fn test_volatile_node_unbounded_matches_explicit() {
+        let mut volatile_net = Network::new("unbounded");
+        volatile_net.add_nodes("continuous-state", None, None, None, None);
+        volatile_net.add_nodes("volatile-state", None, Some(0.into()), None, None);
+        volatile_net.set_update_sequence();
+
+        let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
+        volatile_net.input_data(input_data.clone(), None);
+
+        let mut explicit_net = Network::new("unbounded");
+        explicit_net.add_nodes("continuous-state", None, None, None, None);
+        explicit_net.add_nodes("continuous-state", None, Some(0.into()), None, None);
+        explicit_net.add_nodes("continuous-state", None, None, None, Some(1.into()));
+        explicit_net.set_update_sequence();
+        explicit_net.input_data(input_data, None);
+
+        assert_volatile_matches_explicit(&volatile_net, &explicit_net);
+    }
+
+    /// Helper: assert volatile node 1 trajectories match explicit nodes 1 & 2
+    fn assert_volatile_matches_explicit(volatile_net: &Network, explicit_net: &Network) {
+        let vol_floats = &volatile_net.node_trajectories.floats[&1];
+        let exp_floats = &explicit_net.node_trajectories.floats[&1];
+
+        for key in ["mean", "expected_mean", "precision", "expected_precision"] {
+            let vol = &vol_floats[key];
+            let exp = &exp_floats[key];
+            for (t, (v, e)) in vol.iter().zip(exp.iter()).enumerate() {
+                assert!(
+                    (v - e).abs() < 1e-6,
+                    "Value-level key '{}' mismatch at t={}: volatile={}, explicit={}",
+                    key, t, v, e
+                );
+            }
+        }
+
+        let exp2_floats = &explicit_net.node_trajectories.floats[&2];
+        let vol_key_map = [
+            ("mean_vol", "mean"),
+            ("expected_mean_vol", "expected_mean"),
+            ("precision_vol", "precision"),
+            ("expected_precision_vol", "expected_precision"),
+        ];
+
+        for (vol_key, exp_key) in vol_key_map {
+            let vol = &vol_floats[vol_key];
+            let exp = &exp2_floats[exp_key];
+            for (t, (v, e)) in vol.iter().zip(exp.iter()).enumerate() {
+                assert!(
+                    (v - e).abs() < 1e-6,
+                    "Vol-level key '{}' vs '{}' mismatch at t={}: volatile={}, explicit={}",
+                    vol_key, exp_key, t, v, e
+                );
+            }
+        }
     }
 }
