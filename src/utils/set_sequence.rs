@@ -251,6 +251,7 @@ mod tests {
         // create a network
         hgf_network.add_nodes(
             "continuous-state",
+            1,
             Some(vec![1].into()),
             None,
             Some(vec![2].into()),
@@ -258,6 +259,7 @@ mod tests {
         );
         hgf_network.add_nodes(
             "continuous-state",
+            1,
             None,
             Some(vec![0].into()),
             None,
@@ -265,6 +267,7 @@ mod tests {
         );
         hgf_network.add_nodes(
             "continuous-state",
+            1,
             None,
             None,
             None,
@@ -285,6 +288,7 @@ mod tests {
         let mut exp_network = Network::new("eHGF");
         exp_network.add_nodes(
             "ef-state",
+            1,
             None,
             None,
             None,
