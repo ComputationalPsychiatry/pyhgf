@@ -100,6 +100,11 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
             .get(&node_idx)
             .and_then(|v| v.get("value_coupling_parents").cloned());
 
+        // Read coupling function pointers (stored on the child side, one per parent)
+        let coupling_fns = network.attributes.fn_ptrs
+            .get(&node_idx)
+            .and_then(|fp| fp.get("value_coupling_fn_parents").cloned());
+
         for (i, &parent_idx) in vp_idxs.iter().enumerate() {
             let parent_expected_mean = *network.attributes.floats
                 .get(&parent_idx)
@@ -108,7 +113,12 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
                 .expect("expected_mean not found for value parent");
 
             let psi = coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
-            driftrate += psi * parent_expected_mean;
+            let fn_ptr = coupling_fns.as_ref()
+                .and_then(|fns| fns.get(i).copied())
+                .unwrap_or(crate::math::linear);
+            let parent_value = fn_ptr(parent_expected_mean);
+
+            driftrate += psi * parent_value;
         }
     }
 
