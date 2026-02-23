@@ -58,7 +58,7 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.model.add_volatile_node" href="pyhgf.model.add_volatile_node.html" />
+    <link rel="next" title="pyhgf.model.add_continuous_state" href="pyhgf.model.add_continuous_state.html" />
     <link rel="prev" title="pyhgf.model.Network" href="pyhgf.model.Network.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -459,7 +459,6 @@
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.HGF.html">pyhgf.model.HGF</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.Network.html">pyhgf.model.Network</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.model.DeepNetwork</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_volatile_node.html">pyhgf.model.add_volatile_node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_binary_state.html">pyhgf.model.add_binary_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_ef_state.html">pyhgf.model.add_ef_state</a></li>
@@ -580,7 +579,7 @@
 <h1>pyhgf.model.DeepNetwork<a class="headerlink" href="#pyhgf-model-deepnetwork" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.model.DeepNetwork">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">DeepNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'volatile-node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">DeepNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'volatile-state'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork" title="Link to this definition">#</a></dt>
 <dd><p>A deep network with fully connected layers for predictive coding.</p>
 <p>This class extends Network with automatic layer tracking and convenience methods
 for building, visualizing, and training deep hierarchical networks.</p>
@@ -620,7 +619,7 @@ as you add layers, providing simplified interfaces for plotting and fitting.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.model.DeepNetwork.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'volatile-node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'volatile-state'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork.__init__" title="Link to this definition">#</a></dt>
 <dd><p>Initialize a DeepNetwork with layer tracking.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -740,11 +739,11 @@ as you add layers, providing simplified interfaces for plotting and fitting.</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.model.add_volatile_node.html"
+       href="pyhgf.model.add_continuous_state.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.model.add_volatile_node</p>
+        <p class="prev-next-title">pyhgf.model.add_continuous_state</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

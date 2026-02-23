@@ -914,7 +914,7 @@ window.addEventListener("load", load);</script>
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,),</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a DeepNetwork with layer tracking.&quot;&quot;&quot;</span>
@@ -944,7 +944,7 @@ window.addEventListener("load", load);</script>
 <span class="sd">        size :</span>
 <span class="sd">            Number of parent nodes to create in this layer.</span>
 <span class="sd">        kind :</span>
-<span class="sd">            The type of nodes to add (e.g., &quot;continuous-state&quot;, &quot;volatile-node&quot;). If</span>
+<span class="sd">            The type of nodes to add (e.g., &quot;continuous-state&quot;, &quot;volatile-state&quot;). If</span>
 <span class="sd">            None, defaults to the type of node declared in the class.</span>
 <span class="sd">        value_children :</span>
 <span class="sd">            Index or list of indices for the child nodes below this layer.</span>
@@ -1032,7 +1032,7 @@ window.addEventListener("load", load);</script>
 <span class="sd">        layer_sizes :</span>
 <span class="sd">            Number of parent nodes to create in each new layer.</span>
 <span class="sd">        kind :</span>
-<span class="sd">            The type of nodes to add (e.g., &quot;continuous-state&quot;, &quot;volatile-node&quot;). If</span>
+<span class="sd">            The type of nodes to add (e.g., &quot;continuous-state&quot;, &quot;volatile-state&quot;). If</span>
 <span class="sd">            None, defaults to the type of node declared in the class.</span>
 <span class="sd">        value_children :</span>
 <span class="sd">            Index or list of indices for the bottom layer.</span>

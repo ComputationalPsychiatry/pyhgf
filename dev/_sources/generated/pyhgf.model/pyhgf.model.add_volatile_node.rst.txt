@@ -1,6 +1,0 @@
-﻿pyhgf.model.add\_volatile\_node
-===============================
-
-.. currentmodule:: pyhgf.model
-
-.. autofunction:: add_volatile_node

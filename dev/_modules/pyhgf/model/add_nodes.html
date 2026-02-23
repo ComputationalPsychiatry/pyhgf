@@ -935,9 +935,7 @@ window.addEventListener("load", load);</script>
 
 
 
-<div class="viewcode-block" id="add_volatile_node">
-<a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.add_volatile_node.html#pyhgf.model.add_volatile_node">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_volatile_node</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_volatile_state</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
     <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">value_parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
@@ -946,7 +944,7 @@ window.addEventListener("load", load);</script>
     <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a continuous node with an implicit volatility parent.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a continuous state node with an implicit continuous volatility parent.</span>
 
 <span class="sd">    This node type combines a continuous node with an implicit volatility parent. The</span>
 <span class="sd">    volatility parent modulates the child&#39;s precision, enabling dynamic learning rates</span>
@@ -1013,8 +1011,7 @@ window.addEventListener("load", load);</script>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">network</span></div>
-
+    <span class="k">return</span> <span class="n">network</span>
 
 
 <div class="viewcode-block" id="add_binary_state">

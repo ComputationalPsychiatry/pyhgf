@@ -881,7 +881,7 @@ window.addEventListener("load", load);</script>
     <span class="n">add_continuous_state</span><span class="p">,</span>
     <span class="n">add_dp_state</span><span class="p">,</span>
     <span class="n">add_ef_state</span><span class="p">,</span>
-    <span class="n">add_volatile_node</span><span class="p">,</span>
+    <span class="n">add_volatile_state</span><span class="p">,</span>
     <span class="n">get_couplings</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">matplotlib</span><span class="p">,</span> <span class="n">networkx</span>
@@ -1504,13 +1504,13 @@ window.addEventListener("load", load);</script>
             <span class="s2">&quot;categorical-state&quot;</span><span class="p">,</span>
             <span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
             <span class="s2">&quot;binary-state&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;volatile-node&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="p">(</span>
                     <span class="s2">&quot;Invalid node type. Should be one of the following: &quot;</span>
                     <span class="s2">&quot;&#39;dp-state&#39;, &#39;continuous-state&#39;, &#39;binary-state&#39;, &quot;</span>
-                    <span class="s2">&quot;&#39;ef-state&#39;, &#39;categorical-state&#39;, or &#39;volatile-node&#39;&quot;</span>
+                    <span class="s2">&quot;&#39;ef-state&#39;, &#39;categorical-state&#39;, or &#39;volatile-state&#39;&quot;</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
@@ -1539,8 +1539,8 @@ window.addEventListener("load", load);</script>
                 <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;volatile-node&quot;</span><span class="p">:</span>
-            <span class="bp">self</span> <span class="o">=</span> <span class="n">add_volatile_node</span><span class="p">(</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;volatile-state&quot;</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="n">add_volatile_state</span><span class="p">(</span>
                 <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                 <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
                 <span class="n">value_parents</span><span class="o">=</span><span class="n">value_parents</span><span class="p">,</span>
