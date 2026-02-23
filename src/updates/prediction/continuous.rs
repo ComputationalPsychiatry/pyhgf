@@ -70,8 +70,8 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
             let fn_ptr = coupling_fns.as_ref()
                 .and_then(|fns| fns.get(i).copied())
-                .unwrap_or(crate::math::linear);
-            let parent_value = fn_ptr(parent_expected_mean);
+                .unwrap_or(&crate::math::LINEAR);
+            let parent_value = (fn_ptr.f)(parent_expected_mean);
 
             driftrate += psi * parent_value;
         }

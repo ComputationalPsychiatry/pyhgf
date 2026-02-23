@@ -70,7 +70,7 @@ pub struct Attributes {
     pub vectors: HashMap<usize, HashMap<String, Vec<f64>>>,
     /// Per-node function-pointer attributes, e.g. `"value_coupling_fn_parents"`.
     /// Storing `fn(f64) -> f64` avoids repeated string dispatch at prediction time.
-    pub fn_ptrs: HashMap<usize, HashMap<String, Vec<fn(f64) -> f64>>>,
+    pub fn_ptrs: HashMap<usize, HashMap<String, Vec<&'static crate::math::CouplingFn>>>,
 }
 
 #[derive(Debug)]
@@ -125,16 +125,11 @@ impl Network {
         volatility_children: Option<IntOrList>,
         coupling_fn: Option<String>,
     ) {
-        // Resolve the coupling function name to a concrete fn pointer once,
-        // so prediction never has to do string matching.
-        let coupling_fn_ptr: fn(f64) -> f64 = match coupling_fn.as_deref().unwrap_or("linear") {
-            "relu"       => crate::math::relu,
-            "sigmoid"    => crate::math::sigmoid,
-            "tanh"       => crate::math::tanh,
-            "leaky_relu" => crate::math::leaky_relu,
-            "gelu"       => crate::math::gelu,
-            _            => crate::math::linear,
-        };
+        // Resolve the coupling function name to a &'static CouplingFn once,
+        // so prediction code can access .f, .df, and .d2f without any dispatch.
+        let coupling_fn_ptr = crate::math::resolve_coupling_fn(
+            coupling_fn.as_deref().unwrap_or("linear")
+        );
         let value_parents = value_parents.map(|v| v.into_vec());
         let value_children = value_children.map(|v| v.into_vec());
         let volatility_parents = volatility_parents.map(|v| v.into_vec());

@@ -25,13 +25,19 @@ fn b(x: f64, theta_l: f64, phi_l: f64, theta_r: f64, phi_r: f64) -> f64 {
 fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
     let mut precision_wpe = 0.0;
 
-    // --- Value coupling: Σ κ² · π̂_child ---
+    // --- Value coupling: Σ π̂_child · (κ² · g'(μ)² − g''(μ) · δ_child) ---
     if let Some(ref vc_idxs) = network.edges.get(&node_idx)
         .and_then(|e| e.value_children.clone())
     {
         let coupling_strengths = network.attributes.vectors
             .get(&node_idx)
             .and_then(|v| v.get("value_coupling_children").cloned());
+
+        // g'(μ) and g''(μ) are evaluated at the parent's current mean.
+        let parent_mean = *network.attributes.floats
+            .get(&node_idx)
+            .and_then(|f| f.get("mean"))
+            .unwrap_or(&0.0);
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_floats = network.attributes.floats.get(&child_idx)
@@ -40,8 +46,34 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
                 .expect("child expected_precision not found");
             let kappa = coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
-            // linear coupling: κ² · π̂_child
-            precision_wpe += kappa.powi(2) * child_expected_precision;
+            // Find the coupling function stored on the child (indexed by parent
+            // position in the child's value_parents list).
+            let parent_pos = network.edges.get(&child_idx)
+                .and_then(|e| e.value_parents.as_ref())
+                .and_then(|vp| vp.iter().position(|&p| p == node_idx));
+
+            let coupling_fn = parent_pos.and_then(|pos| {
+                network.attributes.fn_ptrs
+                    .get(&child_idx)
+                    .and_then(|fp| fp.get("value_coupling_fn_parents"))
+                    .and_then(|fns| fns.get(pos).copied())
+            });
+
+            // g'(μ)² and g''(μ)·δ — for linear coupling these are 1 and 0.
+            let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
+                Some(cf) => {
+                    let g_prime = (cf.df)(parent_mean);
+                    let g_second = (cf.d2f)(parent_mean);
+                    let child_vape = *child_floats.get("value_prediction_error")
+                        .unwrap_or(&0.0);
+                    (g_prime.powi(2), g_second * child_vape)
+                }
+                None => (1.0, 0.0),
+            };
+
+            // π̂_child · (κ² · g'(μ)² − g''(μ) · δ_child)
+            precision_wpe += child_expected_precision
+                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term);
         }
     }
 
@@ -90,6 +122,12 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
             .get(&node_idx)
             .and_then(|v| v.get("value_coupling_children").cloned());
 
+        // The derivative g'(μ_parent) is evaluated at the parent's *current* mean.
+        let parent_mean = *network.attributes.floats
+            .get(&node_idx)
+            .and_then(|f| f.get("mean"))
+            .unwrap_or(&0.0);
+
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_floats = network.attributes.floats.get(&child_idx)
                 .expect("No floats for value child");
@@ -99,8 +137,26 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
                 .expect("child value_prediction_error not found");
             let kappa = coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
-            // (κ · π̂_child / π_node) · δ_child
-            value_pwpe += (kappa * child_expected_precision / node_precision) * child_vape;
+            // Find the position of node_idx in this child's value_parents list so
+            // we can retrieve the correct coupling function stored on the child.
+            let parent_pos = network.edges.get(&child_idx)
+                .and_then(|e| e.value_parents.as_ref())
+                .and_then(|vp| vp.iter().position(|&p| p == node_idx));
+
+            // g'(μ_parent): derivative of the coupling function evaluated at the
+            // parent's mean.  Defaults to 1.0 (linear / identity).
+            let coupling_fn_prime = parent_pos
+                .and_then(|pos| {
+                    network.attributes.fn_ptrs
+                        .get(&child_idx)
+                        .and_then(|fp| fp.get("value_coupling_fn_parents"))
+                        .and_then(|fns| fns.get(pos).copied())
+                })
+                .map(|cf| (cf.df)(parent_mean))
+                .unwrap_or(1.0);
+
+            // (κ · g'(μ_parent) · π̂_child / π_node) · δ_child
+            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision) * child_vape;
         }
     }
 

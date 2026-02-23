@@ -1,81 +1,104 @@
 pub fn sufficient_statistics(x: &f64) -> Vec<f64> {
     vec![*x, x.powf(2.0)]
 }
+/// A coupling (activation) function together with its first and second derivatives.
+///
+/// Use the module-level constants ([`LINEAR`], [`RELU`], [`SIGMOID`], [`TANH`],
+/// [`LEAKY_RELU`], [`GELU`]) to obtain a `&'static CouplingFn`, or call
+/// [`resolve_coupling_fn`] to resolve from a string name at node-creation time.
+///
+/// # Example
+/// ```ignore
+/// let c = crate::math::resolve_coupling_fn("sigmoid");
+/// let y     = (c.f)(x);
+/// let dy    = (c.df)(x);
+/// let d2y   = (c.d2f)(x);
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct CouplingFn {
+    /// The activation function $f(x)$.
+    pub f:   fn(f64) -> f64,
+    /// The first derivative $f'(x)$.
+    pub df:  fn(f64) -> f64,
+    /// The second derivative $f''(x)$.
+    pub d2f: fn(f64) -> f64,
+}
 
 // ── Activation functions ──────────────────────────────────────────────────────
 
-/// Rectified Linear Unit (ReLU).
-///
-/// $$f(x) = \max(0, x)$$
-///
-/// Returns `x` for positive inputs and `0` otherwise.
-#[inline]
-pub fn relu(x: f64) -> f64 {
-    x.max(0.0)
-}
+// ─── Linear ──────────────────────────────────────────────────────────────────
 
-/// Sigmoid (logistic) function.
-///
-/// $$f(x) = \frac{1}{1 + e^{-x}}$$
-///
-/// Maps any real value to the open interval (0, 1).
-#[inline]
-pub fn sigmoid(x: f64) -> f64 {
-    1.0 / (1.0 + (-x).exp())
-}
+/// Linear (identity) activation: $f(x) = x$.
+pub fn linear(x: f64) -> f64 { x }
+/// First derivative of linear: $f'(x) = 1$.
+pub fn linear_d1(_x: f64) -> f64 { 1.0 }
+/// Second derivative of linear: $f''(x) = 0$.
+pub fn linear_d2(_x: f64) -> f64 { 0.0 }
+/// [`CouplingFn`] constant for the linear (identity) activation.
+pub const LINEAR: CouplingFn = CouplingFn { f: linear, df: linear_d1, d2f: linear_d2 };
 
-/// Hyperbolic tangent activation.
-///
-/// $$f(x) = \tanh(x) = \frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}$$
-///
-/// Maps any real value to the open interval (-1, 1).
-#[inline]
-pub fn tanh(x: f64) -> f64 {
-    x.tanh()
-}
+// ─── ReLU ────────────────────────────────────────────────────────────────────
 
-/// Leaky Rectified Linear Unit (Leaky ReLU).
-///
-/// $$f(x) = \begin{cases} x & \text{if } x \geq 0 \\ \alpha x & \text{otherwise} \end{cases}$$
-///
-/// Uses a fixed small slope `alpha = 0.01` for negative inputs, preventing
-/// the "dying ReLU" problem.
-#[inline]
-pub fn leaky_relu(x: f64) -> f64 {
-    const ALPHA: f64 = 0.01;
-    if x >= 0.0 { x } else { ALPHA * x }
-}
+/// Rectified Linear Unit: $f(x) = \max(0, x)$.
+pub fn relu(x: f64) -> f64 { x.max(0.0) }
+/// First derivative of ReLU: $f'(x) = 1$ if $x > 0$, else $0$ (zero at $x = 0$).
+pub fn relu_d1(x: f64) -> f64 { if x > 0.0 { 1.0 } else { 0.0 } }
+/// Second derivative of ReLU: $f''(x) = 0$ (almost everywhere).
+pub fn relu_d2(_x: f64) -> f64 { 0.0 }
+/// [`CouplingFn`] constant for the ReLU activation.
+pub const RELU: CouplingFn = CouplingFn { f: relu, df: relu_d1, d2f: relu_d2 };
 
-/// Parametric Rectified Linear Unit (PReLU).
-///
-/// $$f(x, \alpha) = \begin{cases} x & \text{if } x \geq 0 \\ \alpha x & \text{otherwise} \end{cases}$$
-///
-/// Generalises [`leaky_relu`] by exposing the negative-slope coefficient `alpha`
-/// as a learnable (or user-supplied) parameter.
-#[inline]
-pub fn prelu(x: f64, alpha: f64) -> f64 {
-    if x >= 0.0 { x } else { alpha * x }
-}
+// ─── Sigmoid ─────────────────────────────────────────────────────────────────
 
-/// Gaussian Error Linear Unit (GELU).
-///
-/// $$f(x) = x \cdot \Phi(x) = \frac{x}{2}\left[1 + \text{erf}\!\left(\frac{x}{\sqrt{2}}\right)\right]$$
-///
-/// where $\Phi$ is the standard-normal CDF. Uses the accurate series
-/// approximation via the complementary error function (`erfc`).
-///
-/// Implemented via the identity
-/// $\Phi(x) = \tfrac{1}{2}\,\mathrm{erfc}(-x / \sqrt{2})$.
-#[inline]
-pub fn gelu(x: f64) -> f64 {
-    // Φ(x) = 0.5 * erfc(-x / √2)
-    x * 0.5 * erfc(-x / std::f64::consts::SQRT_2)
-}
+/// Sigmoid: $f(x) = 1 / (1 + e^{-x})$.
+pub fn sigmoid(x: f64) -> f64 { 1.0 / (1.0 + (-x).exp()) }
+/// First derivative of sigmoid: $f'(x) = f(x)(1 - f(x))$.
+pub fn sigmoid_d1(x: f64) -> f64 { let s = sigmoid(x); s * (1.0 - s) }
+/// Second derivative of sigmoid: $f''(x) = f'(x)(1 - 2f(x))$.
+pub fn sigmoid_d2(x: f64) -> f64 { let s = sigmoid(x); sigmoid_d1(x) * (1.0 - 2.0 * s) }
+/// [`CouplingFn`] constant for the sigmoid activation.
+pub const SIGMOID: CouplingFn = CouplingFn { f: sigmoid, df: sigmoid_d1, d2f: sigmoid_d2 };
 
-/// Complementary error function used internally by [`gelu`].
+// ─── Tanh ─────────────────────────────────────────────────────────────────────
+
+/// Hyperbolic tangent: $f(x) = \tanh(x)$.
+pub fn tanh(x: f64) -> f64 { x.tanh() }
+/// First derivative of tanh: $f'(x) = 1 - \tanh^2(x)$.
+pub fn tanh_d1(x: f64) -> f64 { 1.0 - x.tanh().powi(2) }
+/// Second derivative of tanh: $f''(x) = -2\tanh(x)(1 - \tanh^2(x))$.
+pub fn tanh_d2(x: f64) -> f64 { let t = x.tanh(); -2.0 * t * (1.0 - t * t) }
+/// [`CouplingFn`] constant for the tanh activation.
+pub const TANH: CouplingFn = CouplingFn { f: tanh, df: tanh_d1, d2f: tanh_d2 };
+
+// ─── Leaky ReLU ──────────────────────────────────────────────────────────────
+
+/// Leaky ReLU with fixed slope $\alpha = 0.01$: $f(x) = x$ if $x \ge 0$, else $0.01x$.
+pub fn leaky_relu(x: f64) -> f64 { if x >= 0.0 { x } else { 0.01 * x } }
+/// First derivative of Leaky ReLU: $f'(x) = 1$ if $x \ge 0$, else $0.01$.
+pub fn leaky_relu_d1(x: f64) -> f64 { if x >= 0.0 { 1.0 } else { 0.01 } }
+/// Second derivative of Leaky ReLU: $f''(x) = 0$ (almost everywhere).
+pub fn leaky_relu_d2(_x: f64) -> f64 { 0.0 }
+/// [`CouplingFn`] constant for the Leaky ReLU activation.
+pub const LEAKY_RELU: CouplingFn = CouplingFn { f: leaky_relu, df: leaky_relu_d1, d2f: leaky_relu_d2 };
+
+// ─── PReLU ───────────────────────────────────────────────────────────────────
+
+/// Parametric ReLU: $f(x, \alpha) = x$ if $x \ge 0$, else $\alpha x$.
 ///
-/// Computed with the Horner-form rational approximation from Abramowitz &
-/// Stegun §7.1.26 (maximum error < 1.5 × 10⁻⁷).
+/// Note: PReLU requires a free `alpha` parameter, so it cannot be stored in a
+/// `CouplingFn` constant. Use [`leaky_relu`] (fixed $\alpha = 0.01$) or
+/// [`LEAKY_RELU`] as the bundled variant.
+pub fn prelu(x: f64, alpha: f64) -> f64 { if x >= 0.0 { x } else { alpha * x } }
+/// First derivative of PReLU.
+pub fn prelu_d1(x: f64, alpha: f64) -> f64 { if x >= 0.0 { 1.0 } else { alpha } }
+/// Second derivative of PReLU: $f''(x) = 0$ (almost everywhere).
+pub fn prelu_d2(_x: f64, _alpha: f64) -> f64 { 0.0 }
+
+// ─── GELU ────────────────────────────────────────────────────────────────────
+
+/// Complementary error function (internal helper for [`gelu`] and [`gelu_d1`]).
+///
+/// Abramowitz & Stegun §7.1.26 rational approximation; max error < 1.5 × 10⁻⁷.
 fn erfc(x: f64) -> f64 {
     let t = 1.0 / (1.0 + 0.3275911 * x.abs());
     let poly = t * (0.254829592
@@ -87,12 +110,51 @@ fn erfc(x: f64) -> f64 {
     if x >= 0.0 { approx } else { 2.0 - approx }
 }
 
-/// Identity (linear) coupling — passes the value through unchanged.
+/// GELU: $f(x) = x \cdot \Phi(x)$ where $\Phi$ is the standard-normal CDF.
+pub fn gelu(x: f64) -> f64 {
+    x * 0.5 * erfc(-x / std::f64::consts::SQRT_2)
+}
+/// First derivative of GELU: $f'(x) = \Phi(x) + x\,\phi(x)$.
+pub fn gelu_d1(x: f64) -> f64 {
+    let phi = 0.5 * (1.0 - erfc(x / std::f64::consts::SQRT_2));
+    let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
+    phi + x * pdf
+}
+/// Second derivative of GELU: $f''(x) = \phi(x)(2 - x^2)$.
+pub fn gelu_d2(x: f64) -> f64 {
+    let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
+    pdf * (2.0 - x * x)
+}
+/// [`CouplingFn`] constant for the GELU activation.
+pub const GELU: CouplingFn = CouplingFn { f: gelu, df: gelu_d1, d2f: gelu_d2 };
+
+// ─── Resolver ────────────────────────────────────────────────────────────────
+
+/// Resolve an activation name to its [`CouplingFn`] constant.
 ///
-/// This is the default coupling function used when no `coupling_fn` is
-/// specified in [`Network::add_nodes`].
-pub fn linear(x: f64) -> f64 {
-    x
+/// Called once at node-creation time in [`Network::add_nodes`]; the resulting
+/// `&'static CouplingFn` is stored directly in `Attributes::fn_ptrs` so that
+/// prediction code only needs to call `.f`, `.df`, or `.d2f`.
+///
+/// | Name | Constant |
+/// |------|----------|
+/// | `"linear"` | [`LINEAR`] |
+/// | `"relu"` | [`RELU`] |
+/// | `"sigmoid"` | [`SIGMOID`] |
+/// | `"tanh"` | [`TANH`] |
+/// | `"leaky_relu"` | [`LEAKY_RELU`] |
+/// | `"gelu"` | [`GELU`] |
+///
+/// Any unrecognised name falls back to [`LINEAR`].
+pub fn resolve_coupling_fn(name: &str) -> &'static CouplingFn {
+    match name {
+        "relu"       => &RELU,
+        "sigmoid"    => &SIGMOID,
+        "tanh"       => &TANH,
+        "leaky_relu" => &LEAKY_RELU,
+        "gelu"       => &GELU,
+        _            => &LINEAR,
+    }
 }
 
 #[cfg(test)]
