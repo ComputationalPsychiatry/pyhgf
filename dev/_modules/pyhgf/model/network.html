@@ -1110,6 +1110,11 @@ window.addEventListener("load", load);</script>
                 <span class="n">inc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weight_update</span><span class="p">)</span>
                 <span class="n">weight_update</span> <span class="o">=</span> <span class="p">[]</span>
 
+        <span class="c1"># flush any remaining weight updates at the end — this handles PEs whose</span>
+        <span class="c1"># parents&#39; posterior steps were filtered out (e.g. predictor nodes)</span>
+        <span class="k">if</span> <span class="n">weight_update</span><span class="p">:</span>
+            <span class="n">update_steps</span> <span class="o">=</span> <span class="n">update_steps</span> <span class="o">+</span> <span class="n">weight_update</span>
+
         <span class="c1"># do not predict on the last layer</span>
         <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
             <span class="n">step</span>
