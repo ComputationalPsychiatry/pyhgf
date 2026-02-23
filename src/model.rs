@@ -85,6 +85,7 @@ pub struct Network{
     pub update_type: String,
     pub update_sequence: UpdateSequence,
     pub node_trajectories: NodeTrajectories,
+    pub layers: Vec<Vec<usize>>,
 }
 
 // Core Rust methods (also callable from Python via chaining wrappers below)
@@ -98,6 +99,7 @@ impl Network {
             update_type: String::from(update_type),
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
             node_trajectories: NodeTrajectories { floats: HashMap::new(), vectors: HashMap::new() },
+            layers: Vec::new(),
         }
     }
 
@@ -105,6 +107,7 @@ impl Network {
     ///
     /// # Arguments
     /// * `kind` - The type of node (`"continuous-state"` or `"ef-state"`).
+    /// * `n_nodes` - The number of nodes to create.
     /// * `value_parents` - Index(es) of the node's value parents (int or list).
     /// * `value_children` - Index(es) of the node's value children (int or list).
     /// * `volatility_parents` - Index(es) of the node's volatility parents (int or list).
@@ -112,6 +115,7 @@ impl Network {
     pub fn add_nodes(
         &mut self,
         kind: &str,
+        n_nodes: usize,
         value_parents: Option<IntOrList>,
         value_children: Option<IntOrList>,
         volatility_parents: Option<IntOrList>,
@@ -122,6 +126,7 @@ impl Network {
         let volatility_parents = volatility_parents.map(|v| v.into_vec());
         let volatility_children = volatility_children.map(|v| v.into_vec());
 
+      for _ in 0..n_nodes {
         let node_id = self.edges.len();
 
         // Input nodes have no children
@@ -278,6 +283,7 @@ impl Network {
             }
             _ => {}
         }
+      } // end for n_nodes
     }
 
     pub fn set_update_sequence(&mut self) {
@@ -350,6 +356,96 @@ impl Network {
 
         self.node_trajectories = node_trajectories;
     }
+
+    /// Add a fully connected layer of parent nodes.
+    ///
+    /// Each new node connects to all specified children (or all orphan nodes if
+    /// none are given). This mirrors `DeepNetwork.add_layer` in Python.
+    ///
+    /// # Arguments
+    /// * `size` - Number of parent nodes to create.
+    /// * `kind` - Node kind (defaults to `"volatile-state"`).
+    /// * `value_children` - Children to connect to. If `None`, auto-detects orphan nodes.
+    /// * `coupling_strengths` - Coupling strength for each child connection (default 1.0).
+    pub fn add_layer(
+        &mut self,
+        size: usize,
+        kind: &str,
+        value_children: Option<Vec<usize>>,
+        coupling_strengths: f64,
+    ) {
+        let n_nodes_before = self.edges.len();
+
+        // Auto-detect orphan nodes if no children specified
+        let children: Vec<usize> = match value_children {
+            Some(vc) => vc,
+            None => {
+                let mut orphans = Vec::new();
+                for idx in 0..self.edges.len() {
+                    if self.edges[&idx].value_parents.is_none() {
+                        orphans.push(idx);
+                    }
+                }
+                orphans
+            }
+        };
+
+        // Add `size` parent nodes, each connecting to all children
+        for _ in 0..size {
+            let vc = IntOrList::List(children.clone());
+            self.add_nodes(kind, 1, None, Some(vc), None, None);
+
+            // Apply custom coupling strengths
+            let node_id = self.edges.len() - 1;
+            if let Some(ref mut vec_attrs) = self.attributes.vectors.get_mut(&node_id) {
+                if let Some(ref mut cs) = vec_attrs.get_mut("value_coupling_children") {
+                    for v in cs.iter_mut() {
+                        *v = coupling_strengths;
+                    }
+                }
+            }
+            // Also update the corresponding parent coupling strengths on the children
+            for &child_idx in &children {
+                if let Some(ref mut child_vecs) = self.attributes.vectors.get_mut(&child_idx) {
+                    if let Some(ref mut cs) = child_vecs.get_mut("value_coupling_parents") {
+                        if let Some(last) = cs.last_mut() {
+                            *last = coupling_strengths;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Record layer indices
+        let new_layer: Vec<usize> = (n_nodes_before..self.edges.len()).collect();
+        self.layers.push(new_layer);
+    }
+
+    /// Add multiple fully connected layers in sequence.
+    ///
+    /// The first layer connects to the specified children (or orphan nodes).
+    /// Subsequent layers auto-connect to all orphan nodes (i.e. the previous layer).
+    ///
+    /// # Arguments
+    /// * `layer_sizes` - Number of nodes in each layer.
+    /// * `kind` - Node kind (defaults to `"volatile-state"`).
+    /// * `value_children` - Children for the first layer. If `None`, auto-detect.
+    /// * `coupling_strengths` - Coupling strength for all connections (default 1.0).
+    pub fn add_layer_stack(
+        &mut self,
+        layer_sizes: Vec<usize>,
+        kind: &str,
+        value_children: Option<Vec<usize>>,
+        coupling_strengths: f64,
+    ) {
+        for (i, &size) in layer_sizes.iter().enumerate() {
+            if i == 0 {
+                self.add_layer(size, kind, value_children.clone(), coupling_strengths);
+            } else {
+                self.add_layer(size, kind, None, coupling_strengths);
+            }
+        }
+    }
 }
 
 // Python interface — wrappers that return self for method chaining
@@ -362,16 +458,17 @@ impl Network {
         Network::new(update_type)
     }
 
-    #[pyo3(name = "add_nodes", signature = (kind="continuous-state", value_parents=None, value_children=None, volatility_parents=None, volatility_children=None))]
+    #[pyo3(name = "add_nodes", signature = (kind="continuous-state", n_nodes=1, value_parents=None, value_children=None, volatility_parents=None, volatility_children=None))]
     fn py_add_nodes<'py>(
         mut slf: PyRefMut<'py, Self>,
         kind: &str,
+        n_nodes: usize,
         value_parents: Option<IntOrList>,
         value_children: Option<IntOrList>,
         volatility_parents: Option<IntOrList>,
         volatility_children: Option<IntOrList>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        slf.add_nodes(kind, value_parents, value_children, volatility_parents, volatility_children);
+        slf.add_nodes(kind, n_nodes, value_parents, value_children, volatility_parents, volatility_children);
         Ok(slf)
     }
 
@@ -458,6 +555,39 @@ impl Network {
 
         Ok(py_list.into())
     }
+
+    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0))]
+    fn py_add_layer<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        size: usize,
+        kind: &str,
+        value_children: Option<Vec<usize>>,
+        coupling_strengths: f64,
+    ) -> PyResult<PyRefMut<'py, Self>> {
+        slf.add_layer(size, kind, value_children, coupling_strengths);
+        Ok(slf)
+    }
+
+    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0))]
+    fn py_add_layer_stack<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        layer_sizes: Vec<usize>,
+        kind: &str,
+        value_children: Option<Vec<usize>>,
+        coupling_strengths: f64,
+    ) -> PyResult<PyRefMut<'py, Self>> {
+        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths);
+        Ok(slf)
+    }
+
+    #[getter]
+    pub fn get_layers<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
+        let py_list = PyList::empty(py);
+        for layer in &self.layers {
+            py_list.append(PyList::new(py, layer)?)?;
+        }
+        Ok(py_list.into())
+    }
 }
 
 // Create a module to expose the class to Python
@@ -475,7 +605,7 @@ mod tests {
     #[test]
     fn test_exponential_family_gaussian() {
         let mut network = Network::new("eHGF");
-        network.add_nodes("ef-state", None, None, None, None);
+        network.add_nodes("ef-state", 1, None, None, None, None);
 
         let input_data = vec![1.0, 1.3, 1.5, 1.7];
         network.set_update_sequence();
@@ -486,17 +616,17 @@ mod tests {
     fn test_volatile_node_ehgf_matches_explicit() {
         // Both networks use eHGF (default)
         let mut volatile_net = Network::new("eHGF");
-        volatile_net.add_nodes("continuous-state", None, None, None, None);
-        volatile_net.add_nodes("volatile-state", None, Some(0.into()), None, None);
+        volatile_net.add_nodes("continuous-state", 1, None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None);
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
         volatile_net.input_data(input_data.clone(), None);
 
         let mut explicit_net = Network::new("eHGF");
-        explicit_net.add_nodes("continuous-state", None, None, None, None);
-        explicit_net.add_nodes("continuous-state", None, Some(0.into()), None, None);
-        explicit_net.add_nodes("continuous-state", None, None, None, Some(1.into()));
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()));
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None);
 
@@ -506,17 +636,17 @@ mod tests {
     #[test]
     fn test_volatile_node_standard_matches_explicit() {
         let mut volatile_net = Network::new("standard");
-        volatile_net.add_nodes("continuous-state", None, None, None, None);
-        volatile_net.add_nodes("volatile-state", None, Some(0.into()), None, None);
+        volatile_net.add_nodes("continuous-state", 1, None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None);
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
         volatile_net.input_data(input_data.clone(), None);
 
         let mut explicit_net = Network::new("standard");
-        explicit_net.add_nodes("continuous-state", None, None, None, None);
-        explicit_net.add_nodes("continuous-state", None, Some(0.into()), None, None);
-        explicit_net.add_nodes("continuous-state", None, None, None, Some(1.into()));
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()));
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None);
 
@@ -526,17 +656,17 @@ mod tests {
     #[test]
     fn test_volatile_node_unbounded_matches_explicit() {
         let mut volatile_net = Network::new("unbounded");
-        volatile_net.add_nodes("continuous-state", None, None, None, None);
-        volatile_net.add_nodes("volatile-state", None, Some(0.into()), None, None);
+        volatile_net.add_nodes("continuous-state", 1, None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None);
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
         volatile_net.input_data(input_data.clone(), None);
 
         let mut explicit_net = Network::new("unbounded");
-        explicit_net.add_nodes("continuous-state", None, None, None, None);
-        explicit_net.add_nodes("continuous-state", None, Some(0.into()), None, None);
-        explicit_net.add_nodes("continuous-state", None, None, None, Some(1.into()));
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()));
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None);
 

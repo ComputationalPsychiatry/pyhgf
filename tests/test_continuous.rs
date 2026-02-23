@@ -21,9 +21,9 @@ fn test_one_node_hgf() {
     let mut network = Network::new("eHGF");
 
     // Node 0: input node (no parents or children specified)
-    network.add_nodes("continuous-state", None, None, None, None);
+    network.add_nodes("continuous-state", 1, None, None, None, None);
     // Node 1: value parent of node 0
-    network.add_nodes("continuous-state", None, Some(vec![0].into()), None, None);
+    network.add_nodes("continuous-state", 1, None, Some(vec![0].into()), None, None);
 
     network.set_update_sequence();
     network.input_data(vec![0.2], None);
@@ -52,11 +52,11 @@ fn test_two_nodes_hgf() {
     let mut network = Network::new("eHGF");
 
     // Node 0: input node
-    network.add_nodes("continuous-state", None, None, None, None);
+    network.add_nodes("continuous-state", 1, None, None, None, None);
     // Node 1: value parent of node 0
-    network.add_nodes("continuous-state", None, Some(vec![0].into()), None, None);
+    network.add_nodes("continuous-state", 1, None, Some(vec![0].into()), None, None);
     // Node 2: volatility parent of node 0
-    network.add_nodes("continuous-state", None, None, None, Some(vec![0].into()));
+    network.add_nodes("continuous-state", 1, None, None, None, Some(vec![0].into()));
 
     network.set_update_sequence();
     network.input_data(vec![0.2], None);
