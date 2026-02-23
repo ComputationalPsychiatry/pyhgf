@@ -254,11 +254,14 @@ def plot_nodes(
                     f"Surprise: {sp:.2f}",
                     loc="right",
                 )
+                observed_mask = np.asarray(
+                    network.node_trajectories[node_idx]["observed"]
+                )
                 surprise_ax.fill_between(
                     x=trajectories_df.time,
                     y1=node_surprise,
                     y2=node_surprise.min(),
-                    where=network.node_trajectories[node_idx]["observed"],
+                    where=observed_mask,
                     color="#7f7f7f",
                     alpha=0.1,
                     zorder=-1,
@@ -266,9 +269,7 @@ def plot_nodes(
                 )
 
                 # hide surprise if the input was not observed
-                node_surprise[network.node_trajectories[node_idx]["observed"] == 0] = (
-                    np.nan
-                )
+                node_surprise[observed_mask == 0] = np.nan
                 surprise_ax.plot(
                     trajectories_df.time,
                     node_surprise,
