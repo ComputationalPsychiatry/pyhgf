@@ -7,31 +7,29 @@ from pyhgf.rshgf import Network as RsNetwork
 from pyhgf import load_data
 from pyhgf.model import Network as PyNetwork
 
+NETWORK_CLASSES = [PyNetwork, RsNetwork]
+
 
 def test_gaussian():
     """Test the Gaussian node."""
     timeseries = load_data("continuous")
 
-    # Rust -----------------------------------------------------------------------------
-    rs_network = RsNetwork()
-    rs_network.add_nodes(kind="ef-state")
-    rs_network.set_update_sequence()
-    rs_network.input_data(timeseries)
+    results = {}
+    for cls in NETWORK_CLASSES:
+        results[cls.__name__] = (
+            cls().add_nodes(kind="ef-state").input_data(input_data=timeseries)
+        )
 
-    # Python ---------------------------------------------------------------------------
-    py_network = PyNetwork().add_nodes(kind="ef-state")
-    py_network.input_data(timeseries)
-
-    # Ensure identical results
-    assert np.isclose(
-        py_network.node_trajectories[0]["xis"], rs_network.node_trajectories[0]["xis"]
-    ).all()
-    assert np.isclose(
-        py_network.node_trajectories[0]["mean"], rs_network.node_trajectories[0]["mean"]
-    ).all()
-    assert np.isclose(
-        py_network.node_trajectories[0]["nus"], rs_network.node_trajectories[0]["nus"]
-    ).all()
+    # Ensure identical results across implementations
+    ref = results[NETWORK_CLASSES[0].__name__]
+    for name, net in results.items():
+        if net is ref:
+            continue
+        for key in ["xis", "mean", "nus"]:
+            assert np.isclose(
+                ref.node_trajectories[0][key],
+                net.node_trajectories[0][key],
+            ).all(), f"{name} key '{key}' mismatch"
 
 
 def test_multivariate_gaussian():
