@@ -87,11 +87,9 @@ pub struct Network{
     pub node_trajectories: NodeTrajectories,
 }
 
-#[pymethods]
+// Core Rust methods (also callable from Python via chaining wrappers below)
 impl Network {
 
-    #[new]
-    #[pyo3(signature = (update_type="eHGF"))]
     pub fn new(update_type: &str) -> Self {
         Network {
             attributes: Attributes { floats: HashMap::new(), vectors: HashMap::new() },
@@ -111,7 +109,6 @@ impl Network {
     /// * `value_children` - Index(es) of the node's value children (int or list).
     /// * `volatility_parents` - Index(es) of the node's volatility parents (int or list).
     /// * `volatility_children` - Index(es) of the node's volatility children (int or list).
-    #[pyo3(signature = (kind="continuous-state", value_parents=None, value_children=None, volatility_parents=None, volatility_children=None))]
     pub fn add_nodes(
         &mut self,
         kind: &str,
@@ -292,8 +289,12 @@ impl Network {
     /// # Arguments
     /// * `input_data` - A vector of observations (one per time step).
     /// * `time_steps` - Optional time steps (defaults to ones).
-    #[pyo3(signature = (input_data, time_steps=None))]
     pub fn input_data(&mut self, input_data: Vec<f64>, time_steps: Option<Vec<f64>>) {
+        // Automatically set the update sequence if not already done
+        if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
+            self.set_update_sequence();
+        }
+
         let n_time = input_data.len();
         let time_steps = time_steps.unwrap_or_else(|| vec![1.0; n_time]);
         let predictions = self.update_sequence.predictions.clone();
@@ -348,6 +349,52 @@ impl Network {
         }
 
         self.node_trajectories = node_trajectories;
+    }
+}
+
+// Python interface — wrappers that return self for method chaining
+#[pymethods]
+impl Network {
+
+    #[new]
+    #[pyo3(signature = (update_type="eHGF"))]
+    fn py_new(update_type: &str) -> Self {
+        Network::new(update_type)
+    }
+
+    #[pyo3(name = "add_nodes", signature = (kind="continuous-state", value_parents=None, value_children=None, volatility_parents=None, volatility_children=None))]
+    fn py_add_nodes<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        kind: &str,
+        value_parents: Option<IntOrList>,
+        value_children: Option<IntOrList>,
+        volatility_parents: Option<IntOrList>,
+        volatility_children: Option<IntOrList>,
+    ) -> PyResult<PyRefMut<'py, Self>> {
+        slf.add_nodes(kind, value_parents, value_children, volatility_parents, volatility_children);
+        Ok(slf)
+    }
+
+    #[pyo3(name = "set_update_sequence")]
+    fn py_set_update_sequence<'py>(mut slf: PyRefMut<'py, Self>) -> PyResult<PyRefMut<'py, Self>> {
+        slf.set_update_sequence();
+        Ok(slf)
+    }
+
+    #[pyo3(name = "input_data", signature = (input_data, time_steps=None))]
+    fn py_input_data<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        input_data: Bound<'py, PyAny>,
+        time_steps: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<PyRefMut<'py, Self>> {
+        // Accept both plain lists and numpy arrays
+        let data: Vec<f64> = input_data.extract()?;
+        let ts: Option<Vec<f64>> = match time_steps {
+            Some(ref obj) => Some(obj.extract()?),
+            None => None,
+        };
+        slf.input_data(data, ts);
+        Ok(slf)
     }
 
     // ---- Python getters --------------------------------------------------------

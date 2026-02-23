@@ -47,7 +47,7 @@ class DeepNetwork(Network):
 
     def __init__(
         self,
-        kind: str = "volatile-node",
+        kind: str = "volatile-state",
         coupling_fn: tuple[Optional[Callable], ...] = (jnp.tanh,),
     ):
         """Initialize a DeepNetwork with layer tracking."""
@@ -76,7 +76,7 @@ class DeepNetwork(Network):
         size :
             Number of parent nodes to create in this layer.
         kind :
-            The type of nodes to add (e.g., "continuous-state", "volatile-node"). If
+            The type of nodes to add (e.g., "continuous-state", "volatile-state"). If
             None, defaults to the type of node declared in the class.
         value_children :
             Index or list of indices for the child nodes below this layer.
@@ -164,7 +164,7 @@ class DeepNetwork(Network):
         layer_sizes :
             Number of parent nodes to create in each new layer.
         kind :
-            The type of nodes to add (e.g., "continuous-state", "volatile-node"). If
+            The type of nodes to add (e.g., "continuous-state", "volatile-state"). If
             None, defaults to the type of node declared in the class.
         value_children :
             Index or list of indices for the bottom layer.

@@ -69,7 +69,7 @@ def add_continuous_state(
     return network
 
 
-def add_volatile_node(
+def add_volatile_state(
     network: Network,
     n_nodes: int,
     value_parents: tuple,
@@ -78,7 +78,7 @@ def add_volatile_node(
     additional_parameters: dict,
     coupling_fn: tuple[Optional[Callable], ...],
 ):
-    """Add a continuous node with an implicit volatility parent.
+    """Add a continuous state node with an implicit continuous volatility parent.
 
     This node type combines a continuous node with an implicit volatility parent. The
     volatility parent modulates the child's precision, enabling dynamic learning rates
