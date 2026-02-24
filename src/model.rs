@@ -3,6 +3,9 @@ use crate::utils::function_pointer::FnType;
 use crate::utils::set_sequence::set_update_sequence;
 use crate::utils::beliefs_propagation::belief_propagation;
 use crate::utils::function_pointer::get_func_map;
+use crate::utils::learning::{learning_weights_fixed, learning_weights_dynamic};
+use crate::utils::set_learning_sequence::build_learning_sequence;
+use crate::updates::observations::{set_predictors, set_observation};
 use pyo3::types::PyTuple;
 use pyo3::{prelude::*, types::{PyList, PyDict}};
 use numpy::{PyArray1, PyArray};
@@ -463,6 +466,139 @@ impl Network {
             }
         }
     }
+
+    /// Fit the network using predictive-coding learning (prospective configuration).
+    ///
+    /// This implements the learning loop from Python `Network.fit` /
+    /// `DeepNetwork.fit`.  At each time step the method:
+    ///
+    /// 1. Sets predictor values (x) on the top-layer nodes (`inputs_x_idxs`).
+    /// 2. Runs the prediction sequence (top-down), excluding predictor nodes.
+    /// 3. Sets observation values (y) on the bottom-layer nodes (`inputs_y_idxs`).
+    /// 4. Runs the update sequence (bottom-up) with weight-update steps
+    ///    interleaved between prediction-error and posterior-update steps.
+    ///
+    /// The coupling strengths are updated after each time step so that the
+    /// network gradually learns to predict `y` from `x`.
+    ///
+    /// # Arguments
+    /// * `x` - Predictor values, shape `[n_time][n_x_inputs]`.
+    /// * `y` - Target values, shape `[n_time][n_y_inputs]`.
+    /// * `inputs_x_idxs` - Node indices receiving the predictors (top layer).
+    /// * `inputs_y_idxs` - Node indices receiving the targets (bottom layer).
+    /// * `lr` - Learning rate.  `Some(value)` for a fixed rate,
+    ///          `None` for precision-weighted dynamic learning.
+    pub fn fit(
+        &mut self,
+        x: &[Vec<f64>],
+        y: &[Vec<f64>],
+        inputs_x_idxs: &[usize],
+        inputs_y_idxs: &[usize],
+        lr: Option<f64>,
+    ) {
+        // Build update sequence if not already set
+        if self.update_sequence.predictions.is_empty()
+            && self.update_sequence.updates.is_empty()
+        {
+            self.set_update_sequence();
+        }
+
+        // Choose learning function and set lr attribute on relevant nodes
+        let learning_fn: FnType = match lr {
+            Some(lr_val) => {
+                // Store the learning rate on all non-predictor nodes
+                for (&node_idx, floats) in self.attributes.floats.iter_mut() {
+                    if !inputs_x_idxs.contains(&node_idx) {
+                        floats.insert("lr".into(), lr_val);
+                    }
+                }
+                learning_weights_fixed as FnType
+            }
+            None => learning_weights_dynamic as FnType,
+        };
+
+        // Build the interleaved learning sequence
+        let (predictions, updates) = build_learning_sequence(
+            &self.update_sequence.predictions,
+            &self.update_sequence.updates,
+            inputs_x_idxs,
+            learning_fn,
+        );
+
+        let n_time = x.len();
+        let time_step = 1.0;
+
+        // Preallocate trajectories
+        let mut node_trajectories = NodeTrajectories {
+            floats: HashMap::new(),
+            vectors: HashMap::new(),
+        };
+
+        for (node_idx, node) in &self.attributes.floats {
+            let mut map = HashMap::with_capacity(node.len());
+            for key in node.keys() {
+                map.insert(key.clone(), Vec::with_capacity(n_time));
+            }
+            node_trajectories.floats.insert(*node_idx, map);
+        }
+
+        for (node_idx, node) in &self.attributes.vectors {
+            let mut map = HashMap::with_capacity(node.len());
+            for key in node.keys() {
+                map.insert(key.clone(), Vec::with_capacity(n_time));
+            }
+            node_trajectories.vectors.insert(*node_idx, map);
+        }
+
+        // Main learning loop
+        for t in 0..n_time {
+            // 1. Set predictor states (x → expected_mean on top-layer nodes)
+            for (i, &node_idx) in inputs_x_idxs.iter().enumerate() {
+                set_predictors(self, node_idx, x[t][i]);
+            }
+
+            // 2. Prediction sequence (top-down, excluding predictor nodes)
+            for &(idx, step) in &predictions {
+                step(self, idx, time_step);
+            }
+
+            // 3. Set observations (y → mean + observed on bottom-layer nodes)
+            for (i, &node_idx) in inputs_y_idxs.iter().enumerate() {
+                set_observation(self, node_idx, y[t][i]);
+            }
+
+            // 4. Update sequence (prediction errors → weight updates → posterior)
+            for &(idx, step) in &updates {
+                step(self, idx, time_step);
+            }
+
+            // Record float trajectories
+            for (node_idx, node) in &self.attributes.floats {
+                let traj = node_trajectories.floats
+                    .entry(*node_idx)
+                    .or_default();
+                for (key, value) in node {
+                    traj.entry(key.clone())
+                        .or_insert_with(|| Vec::with_capacity(n_time))
+                        .push(*value);
+                }
+            }
+
+            // Record vector trajectories
+            for (node_idx, node) in &self.attributes.vectors {
+                let traj = node_trajectories.vectors
+                    .entry(*node_idx)
+                    .or_default();
+                for (key, value) in node {
+                    traj.entry(key.clone())
+                        .or_insert_with(|| Vec::with_capacity(n_time))
+                        .push(value.clone());
+                }
+            }
+        }
+
+        self.node_trajectories = node_trajectories;
+    }
 }
 
 // Python interface — wrappers that return self for method chaining
@@ -595,6 +731,80 @@ impl Network {
         coupling_strengths: f64,
     ) -> PyResult<PyRefMut<'py, Self>> {
         slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths);
+        Ok(slf)
+    }
+
+    /// Fit the network using predictive-coding learning.
+    ///
+    /// Parameters
+    /// ----------
+    /// x : array-like, shape (n_time, n_x_inputs)
+    ///     Predictor values (input features) for the top layer.
+    /// y : array-like, shape (n_time, n_y_inputs)
+    ///     Target values (observations) for the bottom layer.
+    /// inputs_x_idxs : list[int], optional
+    ///     Node indices receiving predictors.  Defaults to the last
+    ///     (top) layer if ``None``.
+    /// inputs_y_idxs : list[int], optional
+    ///     Node indices receiving targets.  Defaults to the first
+    ///     (bottom) layer if ``None``.
+    /// lr : float or str, optional
+    ///     Learning rate.  Pass a float for a fixed rate, ``"dynamic"``
+    ///     for precision-weighted adaptive learning.  Defaults to ``0.2``.
+    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None))]
+    fn py_fit<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        x: Bound<'py, PyAny>,
+        y: Bound<'py, PyAny>,
+        inputs_x_idxs: Option<Vec<usize>>,
+        inputs_y_idxs: Option<Vec<usize>>,
+        lr: Option<Bound<'py, PyAny>>,
+    ) -> PyResult<PyRefMut<'py, Self>> {
+        // --- Resolve learning rate -------------------------------------------
+        let lr_option: Option<f64> = match lr {
+            Some(ref obj) => {
+                if let Ok(s) = obj.extract::<String>() {
+                    if s == "dynamic" {
+                        None // dynamic learning
+                    } else {
+                        return Err(pyo3::exceptions::PyValueError::new_err(
+                            format!("Invalid lr string '{}'. Use 'dynamic' or a float.", s),
+                        ));
+                    }
+                } else {
+                    Some(obj.extract::<f64>()?)
+                }
+            }
+            None => Some(0.2), // default fixed lr
+        };
+
+        // --- Resolve input/output indices ------------------------------------
+        let x_idxs = match inputs_x_idxs {
+            Some(v) => v,
+            None => slf.layers.last().cloned().unwrap_or_default(),
+        };
+        let y_idxs = match inputs_y_idxs {
+            Some(v) => v,
+            None => slf.layers.first().cloned().unwrap_or_default(),
+        };
+
+        // --- Parse x and y as Vec<Vec<f64>> ----------------------------------
+        let x_data: Vec<Vec<f64>> = if let Ok(outer) = x.extract::<Vec<Vec<f64>>>() {
+            outer
+        } else {
+            // 1-D array: wrap each element as a single-element inner vec
+            let flat: Vec<f64> = x.extract()?;
+            flat.into_iter().map(|v| vec![v]).collect()
+        };
+
+        let y_data: Vec<Vec<f64>> = if let Ok(outer) = y.extract::<Vec<Vec<f64>>>() {
+            outer
+        } else {
+            let flat: Vec<f64> = y.extract()?;
+            flat.into_iter().map(|v| vec![v]).collect()
+        };
+
+        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option);
         Ok(slf)
     }
 

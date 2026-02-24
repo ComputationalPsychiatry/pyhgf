@@ -242,6 +242,11 @@ class Network:
                 inc = len(weight_update)
                 weight_update = []
 
+        # flush any remaining weight updates at the end — this handles PEs whose
+        # parents' posterior steps were filtered out (e.g. predictor nodes)
+        if weight_update:
+            update_steps = update_steps + weight_update
+
         # do not predict on the last layer
         prediction_steps = tuple([
             step

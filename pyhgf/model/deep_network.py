@@ -48,7 +48,7 @@ class DeepNetwork(Network):
     def __init__(
         self,
         kind: str = "volatile-state",
-        coupling_fn: tuple[Optional[Callable], ...] = (jnp.tanh,),
+        coupling_fn: tuple[Optional[Callable], ...] = (None,),
     ):
         """Initialize a DeepNetwork with layer tracking."""
         super().__init__()
