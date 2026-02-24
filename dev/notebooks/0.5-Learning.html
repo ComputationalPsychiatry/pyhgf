@@ -572,15 +572,25 @@
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We start by defining a simple network with two binary branches</span>
 <span class="n">network</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+        <span class="n">precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> 
+        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">2.0</span>
+    <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">tonic_volatility</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">8.0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,))</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,),</span> 
+        <span class="n">precision</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> 
+        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">2.0</span>
+    <span class="p">)</span>
 <span class="p">)</span>
 <span class="n">network</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
 </pre></div>
@@ -598,7 +608,7 @@
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
     <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">.2</span><span class="p">,</span>
 <span class="p">);</span>
 </pre></div>
 </div>
@@ -606,7 +616,7 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">network</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">show_surprise</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">network</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">show_surprise</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -616,7 +626,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a76bd96acfe304121573c5e4c6d8c03e811739493183299c72f85bf2a22318bd.png" src="../_images/a76bd96acfe304121573c5e4c6d8c03e811739493183299c72f85bf2a22318bd.png" />
+<img alt="../_images/e1a59e871d9118d3f43ef27e2f310334732c68400100f1af1831a6313cd76e2b.png" src="../_images/e1a59e871d9118d3f43ef27e2f310334732c68400100f1af1831a6313cd76e2b.png" />
 </div>
 </div>
 <p>This example illustrates the effectiveness of the variational update to replace the prospective configuration step based on gradient descent. As new observations contradict the expected outcomes (i.e., observing the river without hearing the water, from trials 40 to 80 in the bottom panel), the network efficiently reorganizes without interfering with other predictions (i.e,. still expecting smelling the salmon while seeing the water, top panel, trials 40 to 80).</p>
@@ -636,11 +646,11 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">300</span><span class="p">)</span>
-<span class="n">x</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">200</span><span class="p">)</span>
+<span class="c1">#x += np.random.normal(size=x.shape) / 100</span>
 
-<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">300</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">200</span><span class="p">)</span>
+<span class="c1">#y += np.random.normal(size=y.shape) / 100</span>
 </pre></div>
 </div>
 </div>
@@ -651,33 +661,40 @@
 <span class="c1"># at the predictor and outcome levels</span>
 <span class="n">high_outcome_precision_network</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">(</span><span class="n">update_type</span><span class="o">=</span><span class="s2">&quot;unbounded&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
@@ -691,31 +708,38 @@
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
-        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span>
-        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">linear</span><span class="p">,),</span>
+        <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">6.0</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
+        <span class="n">expected_precision</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
@@ -727,16 +751,16 @@
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">high_predictor_precision_network</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
     <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-    <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,),</span>
+    <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">high_outcome_precision_network</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
     <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-    <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,),</span>
+    <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
 <span class="p">);</span>
 </pre></div>
 </div>
@@ -749,7 +773,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/cca07d459e4d5bb7d14cfd7b9fab0c051c3236976a1408c15536bdd0fe6530b3.svg" src="../_images/cca07d459e4d5bb7d14cfd7b9fab0c051c3236976a1408c15536bdd0fe6530b3.svg" />
+<img alt="../_images/4ec0a9666c2c9b8e12322e7a8b180061ddf2f88da64d8f8d9a12117a890d7de8.svg" src="../_images/4ec0a9666c2c9b8e12322e7a8b180061ddf2f88da64d8f8d9a12117a890d7de8.svg" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -760,15 +784,15 @@
 <span class="c1"># -------------------------</span>
 <span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;mako&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">60</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]):</span>
     <span class="n">expected_means</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">high_predictor_precision_network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">][</span>
             <span class="n">time_step</span>
         <span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">scatterplot</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
         <span class="n">expected_means</span><span class="p">,</span>
         <span class="n">s</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
         <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
@@ -777,7 +801,7 @@
     <span class="p">)</span>
     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scatterplot</span><span class="p">)</span>
     <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step = </span><span class="si">{</span><span class="n">time_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">expected_means</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">expected_means</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="n">first_legend</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
     <span class="n">handles</span><span class="o">=</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Precise predictor&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">)</span>
@@ -788,13 +812,13 @@
 <span class="c1"># ----------------------</span>
 <span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;rocket&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]):</span>
     <span class="n">expected_means</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">high_outcome_precision_network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">][</span><span class="n">time_step</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">scatterplot</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
         <span class="n">expected_means</span><span class="p">,</span>
         <span class="n">s</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
         <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
@@ -803,13 +827,13 @@
     <span class="p">)</span>
     <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scatterplot</span><span class="p">)</span>
     <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step = </span><span class="si">{</span><span class="n">time_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">expected_means</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">expected_means</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">second_legend</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
     <span class="n">handles</span><span class="o">=</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Precise outcome&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span>
-    <span class="n">ticks</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Predictor&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 3&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Outcome&quot;</span><span class="p">]</span>
+    <span class="n">ticks</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Predictor&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 4&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 3&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Outcome&quot;</span><span class="p">]</span>
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
     <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Activation level&quot;</span><span class="p">,</span>
@@ -821,7 +845,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/b88d077278375a32957dd4d349da3f48593c605a97aea16a1037c2c1cf8e2b35.png" src="../_images/b88d077278375a32957dd4d349da3f48593c605a97aea16a1037c2c1cf8e2b35.png" />
+<img alt="../_images/78c115dae9127de634f6d07c00c113f615d77dadccf87aaa167897931fddc851.png" src="../_images/78c115dae9127de634f6d07c00c113f615d77dadccf87aaa167897931fddc851.png" />
 </div>
 </div>
 </section>
@@ -923,7 +947,7 @@ Layer sizes: [2, 5, 3]
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon, 23 Feb 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 24 Feb 2026
 
 Python implementation: CPython
 Python version       : 3.12.3

@@ -964,7 +964,7 @@ window.addEventListener("load", load);</script>
 
         <span class="c1"># for all nodes that should apply prediction update ----------------------------</span>
         <span class="c1"># verify that all children have computed the prediction error</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">nodes_without_prediction</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes_without_prediction</span><span class="p">):</span>
             <span class="n">all_parents</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">i</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="p">[</span>
@@ -1005,7 +1005,7 @@ window.addEventListener("load", load);</script>
         <span class="c1"># for all nodes that should apply posterior update -----------------------------</span>
         <span class="c1"># verify that all children have computed the prediction error</span>
         <span class="n">update_fn</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">nodes_without_posterior_update</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes_without_posterior_update</span><span class="p">):</span>
             <span class="n">all_children</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">i</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="p">[</span>
@@ -1054,7 +1054,7 @@ window.addEventListener("load", load);</script>
         <span class="c1"># for all nodes that should apply prediction error------------------------------</span>
         <span class="c1"># verify that all children have been updated</span>
         <span class="n">update_fn</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">nodes_without_prediction_error</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes_without_prediction_error</span><span class="p">):</span>
             <span class="n">all_parents</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">i</span>
                 <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="p">[</span>
