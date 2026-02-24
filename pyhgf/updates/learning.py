@@ -61,9 +61,13 @@ def learning_weights_fixed(
             edges[value_parent_idx].value_children.index(node_idx)
         ]
 
-        expected_coupling = attributes[node_idx]["mean"] / (
-            coupling_fn(prospective_mean)
-        )
+        # g(prospective_mean) — None means linear (identity)
+        if coupling_fn is None:
+            g_value = prospective_mean
+        else:
+            g_value = coupling_fn(prospective_mean)
+
+        expected_coupling = attributes[node_idx]["mean"] / g_value
         expected_coupling = jnp.where(
             jnp.isnan(expected_coupling) | jnp.isinf(expected_coupling),
             value_coupling,
@@ -137,7 +141,13 @@ def learning_weights_dynamic(
             edges[value_parent_idx].value_children.index(node_idx)
         ]
 
-        expected_coupling = attributes[node_idx]["mean"] / coupling_fn(prospective_mean)
+        # g(prospective_mean) — None means linear (identity)
+        if coupling_fn is None:
+            g_value = prospective_mean
+        else:
+            g_value = coupling_fn(prospective_mean)
+
+        expected_coupling = attributes[node_idx]["mean"] / g_value
         expected_coupling = jnp.where(
             jnp.isnan(expected_coupling) | jnp.isinf(expected_coupling),
             value_coupling,

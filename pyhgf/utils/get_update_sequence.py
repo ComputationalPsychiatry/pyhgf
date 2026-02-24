@@ -99,7 +99,7 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
         # for all nodes that should apply prediction update ----------------------------
         # verify that all children have computed the prediction error
-        for idx in nodes_without_prediction:
+        for idx in list(nodes_without_prediction):
             all_parents = [
                 i
                 for idx in [
@@ -140,7 +140,7 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
         # for all nodes that should apply posterior update -----------------------------
         # verify that all children have computed the prediction error
         update_fn = None
-        for idx in nodes_without_posterior_update:
+        for idx in list(nodes_without_posterior_update):
             all_children = [
                 i
                 for idx in [
@@ -189,7 +189,7 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
         # for all nodes that should apply prediction error------------------------------
         # verify that all children have been updated
         update_fn = None
-        for idx in nodes_without_prediction_error:
+        for idx in list(nodes_without_prediction_error):
             all_parents = [
                 i
                 for idx in [

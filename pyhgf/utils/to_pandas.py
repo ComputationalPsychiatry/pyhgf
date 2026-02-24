@@ -96,7 +96,9 @@ def to_pandas(network: "Network") -> pd.DataFrame:
         trajectories_df[f"x_{bin_idx}_surprise"] = surprise
 
     # add surprise from continuous state nodes
-    continuous_indexes = [i for i in range(n_nodes) if network.edges[i].node_type == 2]
+    continuous_indexes = [
+        i for i in range(n_nodes) if network.edges[i].node_type in [2, 6]
+    ]
     for con_idx in continuous_indexes:
         surprise = gaussian_surprise(
             x=network.node_trajectories[con_idx]["mean"],

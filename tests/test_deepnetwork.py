@@ -1,35 +1,84 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 import numpy as np
+from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf.model import DeepNetwork
 
+NETWORK_CLASSES = [DeepNetwork, RsNetwork]
+
 
 def test_fit():
-    """Test the fit function on a deep network."""
-    # test fixed learning rate
-    fixed_learning_net = (
-        DeepNetwork()
-        .add_nodes(kind="continuous-state", n_nodes=2, precision=5.0)
-        .add_layer(size=3, precision=1.0, tonic_volatility=-1.0)
-        .add_layer(
-            kind="continuous-state", size=4, precision=0.5, tonic_volatility=-2.0
-        )
-    )
+    """Test that Python and Rust backends produce identical fit results.
 
-    fixed_learning_net.fit(x=np.ones((4, 2)), y=np.ones((4, 4)), lr=0.001)
+    Network: 2 targets → 3 hidden (volatile-state) → 4 predictors (volatile-state).
+    Linear coupling at all levels.  Both fixed and dynamic learning rates.
+    """
+    n_targets, n_hidden, n_predictors = 2, 3, 4
+    n_nodes = n_targets + n_hidden + n_predictors
 
-    # test dynamic learning rate
-    dynamic_learning_net = (
-        DeepNetwork()
-        .add_nodes(kind="continuous-state", n_nodes=2, precision=5.0)
-        .add_layer(size=3, precision=1.0, tonic_volatility=-1.0)
-        .add_layer(
-            kind="continuous-state", size=4, precision=0.5, tonic_volatility=-2.0
-        )
-    )
+    targets = list(range(n_targets))
+    hidden = list(range(n_targets, n_targets + n_hidden))
+    predictors = list(range(n_targets + n_hidden, n_nodes))
 
-    dynamic_learning_net.fit(x=np.ones((4, 2)), y=np.ones((4, 4)), lr="dynamic")
+    np.random.seed(42)
+    x = np.random.randn(5, n_predictors)
+    y = np.random.randn(5, n_targets)
+
+    for lr in [0.1, "dynamic"]:
+        lr_label = f"lr={lr}"
+
+        fitted = []
+        for Network in NETWORK_CLASSES:
+            net = (
+                Network()
+                .add_nodes(kind="continuous-state", n_nodes=n_targets)
+                .add_layer(size=n_hidden)
+                .add_layer(size=n_predictors)
+            )
+            net.fit(
+                x=x,
+                y=y,
+                inputs_x_idxs=tuple(predictors),
+                inputs_y_idxs=tuple(targets),
+                lr=lr,
+            )
+            fitted.append(net)
+
+        py_net, rs_net = fitted
+
+        # ----- Compare mean and precision at every node -----
+        for node_idx in range(n_nodes):
+            for key in ["mean", "precision"]:
+                py_val = np.asarray(py_net.node_trajectories[node_idx][key])
+                rs_val = np.asarray(rs_net.node_trajectories[node_idx][key])
+                assert np.allclose(py_val, rs_val, atol=1e-3), (
+                    f"{lr_label}: node {node_idx} '{key}' mismatch\n"
+                    f"  Py={py_val}\n  Rs={rs_val}"
+                )
+
+        # ----- Compare volatile-level mean/precision on hidden & predictor nodes -----
+        for node_idx in hidden + predictors:
+            for key in ["mean_vol", "precision_vol"]:
+                py_val = np.asarray(py_net.node_trajectories[node_idx][key])
+                rs_val = np.asarray(rs_net.node_trajectories[node_idx][key])
+                assert np.allclose(py_val, rs_val, atol=1e-3), (
+                    f"{lr_label}: node {node_idx} '{key}' mismatch\n"
+                    f"  Py={py_val}\n  Rs={rs_val}"
+                )
+
+        # ----- Compare coupling weights (value_coupling_children) -----
+        for node_idx in hidden + predictors:
+            py_w = np.asarray(
+                py_net.node_trajectories[node_idx]["value_coupling_children"]
+            )
+            rs_w = np.asarray(
+                rs_net.node_trajectories[node_idx]["value_coupling_children"]
+            )
+            assert np.allclose(py_w, rs_w, atol=1e-3), (
+                f"{lr_label}: node {node_idx} 'value_coupling_children' mismatch\n"
+                f"  Py={py_w}\n  Rs={rs_w}"
+            )
 
 
 def test_deepnetwork_add_value_parent_layer():
