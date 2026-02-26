@@ -89,8 +89,8 @@ fn assert_vol_level_match(
 /// Build a volatile network: input (node 0) + volatile-state value parent (node 1).
 fn build_volatile_network(update_type: &str, data: &[f64]) -> Network {
     let mut net = Network::new(update_type);
-    net.add_nodes("continuous-state", 1, None, None, None, None, None);
-    net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None);
+    net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+    net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
     net.set_update_sequence();
     net.input_data(data.to_vec(), None);
     net
@@ -100,9 +100,9 @@ fn build_volatile_network(update_type: &str, data: &[f64]) -> Network {
 /// parent of node 1 (node 2).
 fn build_explicit_network(update_type: &str, data: &[f64]) -> Network {
     let mut net = Network::new(update_type);
-    net.add_nodes("continuous-state", 1, None, None, None, None, None);
-    net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None);
-    net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None);
+    net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+    net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
+    net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
     net.set_update_sequence();
     net.input_data(data.to_vec(), None);
     net

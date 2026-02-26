@@ -112,6 +112,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         );
         // parent 2
         net.add_nodes(
@@ -119,6 +120,7 @@ mod tests {
             1,
             None,
             Some(vec![].into()),
+            None,
             None,
             None,
             None,

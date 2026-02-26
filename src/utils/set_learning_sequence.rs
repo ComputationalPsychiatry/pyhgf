@@ -249,7 +249,7 @@ mod tests {
     fn test_from_real_network_2layer() {
         // Build a real 2-layer network and verify the learning sequence
         let mut net = Network::new("eHGF");
-        net.add_nodes("continuous-state", 2, None, None, None, None, None);
+        net.add_nodes("continuous-state", 2, None, None, None, None, None, None);
         net.add_layer(2, "continuous-state", Some(vec![0, 1]), 1.0);
         net.set_update_sequence();
 
