@@ -118,6 +118,11 @@ impl Network {
     /// * `value_children` - Index(es) of the node's value children (int or list).
     /// * `volatility_parents` - Index(es) of the node's volatility parents (int or list).
     /// * `volatility_children` - Index(es) of the node's volatility children (int or list).
+    /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
+    /// * `additional_parameters` - Extra key-value pairs that override default
+    ///   float attributes for the newly created node(s).  Keys that don't match
+    ///   an existing default attribute are silently ignored (use
+    ///   `node_parameters` in Python for truly new keys).
     pub fn add_nodes(
         &mut self,
         kind: &str,
@@ -127,6 +132,7 @@ impl Network {
         volatility_parents: Option<IntOrList>,
         volatility_children: Option<IntOrList>,
         coupling_fn: Option<String>,
+        additional_parameters: Option<HashMap<String, f64>>,
     ) {
         // Resolve the coupling function name to a &'static CouplingFn once,
         // so prediction code can access .f, .df, and .d2f without any dispatch.
@@ -303,6 +309,17 @@ impl Network {
             }
             _ => {}
         }
+
+        // Apply additional_parameters overrides to the newly created node
+        if let Some(ref overrides) = additional_parameters {
+            if let Some(floats) = self.attributes.floats.get_mut(&node_id) {
+                for (key, value) in overrides {
+                    if floats.contains_key(key) {
+                        floats.insert(key.clone(), *value);
+                    }
+                }
+            }
+        }
       } // end for n_nodes
     }
 
@@ -413,7 +430,7 @@ impl Network {
         // Add `size` parent nodes, each connecting to all children
         for _ in 0..size {
             let vc = IntOrList::List(children.clone());
-            self.add_nodes(kind, 1, None, Some(vc), None, None, None);
+            self.add_nodes(kind, 1, None, Some(vc), None, None, None, None);
 
             // Apply custom coupling strengths
             let node_id = self.edges.len() - 1;
@@ -611,7 +628,7 @@ impl Network {
         Network::new(update_type)
     }
 
-    #[pyo3(name = "add_nodes", signature = (kind="continuous-state", n_nodes=1, value_parents=None, value_children=None, volatility_parents=None, volatility_children=None, coupling_fn=None))]
+    #[pyo3(name = "add_nodes", signature = (kind="continuous-state", n_nodes=1, value_parents=None, value_children=None, volatility_parents=None, volatility_children=None, coupling_fn=None, **kwargs))]
     fn py_add_nodes<'py>(
         mut slf: PyRefMut<'py, Self>,
         kind: &str,
@@ -621,8 +638,24 @@ impl Network {
         volatility_parents: Option<IntOrList>,
         volatility_children: Option<IntOrList>,
         coupling_fn: Option<String>,
+        kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        slf.add_nodes(kind, n_nodes, value_parents, value_children, volatility_parents, volatility_children, coupling_fn);
+        // Convert Python **kwargs into a HashMap<String, f64>
+        let additional_parameters = match kwargs {
+            Some(dict) => {
+                let mut map = HashMap::new();
+                for (key, value) in dict.iter() {
+                    let key_str: String = key.extract()?;
+                    if let Ok(val) = value.extract::<f64>() {
+                        map.insert(key_str, val);
+                    }
+                    // non-float kwargs are silently skipped for now
+                }
+                if map.is_empty() { None } else { Some(map) }
+            }
+            None => None,
+        };
+        slf.add_nodes(kind, n_nodes, value_parents, value_children, volatility_parents, volatility_children, coupling_fn, additional_parameters);
         Ok(slf)
     }
 
@@ -833,7 +866,7 @@ mod tests {
     #[test]
     fn test_exponential_family_gaussian() {
         let mut network = Network::new("eHGF");
-        network.add_nodes("ef-state", 1, None, None, None, None, None);
+        network.add_nodes("ef-state", 1, None, None, None, None, None, None);
 
         let input_data = vec![1.0, 1.3, 1.5, 1.7];
         network.set_update_sequence();
@@ -844,17 +877,17 @@ mod tests {
     fn test_volatile_node_ehgf_matches_explicit() {
         // Both networks use eHGF (default)
         let mut volatile_net = Network::new("eHGF");
-        volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None);
+        volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
         volatile_net.input_data(input_data.clone(), None);
 
         let mut explicit_net = Network::new("eHGF");
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None);
 
@@ -864,17 +897,17 @@ mod tests {
     #[test]
     fn test_volatile_node_standard_matches_explicit() {
         let mut volatile_net = Network::new("standard");
-        volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None);
+        volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
         volatile_net.input_data(input_data.clone(), None);
 
         let mut explicit_net = Network::new("standard");
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None);
 
@@ -884,17 +917,17 @@ mod tests {
     #[test]
     fn test_volatile_node_unbounded_matches_explicit() {
         let mut volatile_net = Network::new("unbounded");
-        volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None);
+        volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
         volatile_net.input_data(input_data.clone(), None);
 
         let mut explicit_net = Network::new("unbounded");
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
+        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None);
 

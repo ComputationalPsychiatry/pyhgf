@@ -239,6 +239,7 @@ mod tests {
             Some(vec![2].into()),
             None,
             None,
+            None,
         );
         hgf_network.add_nodes(
             "continuous-state",
@@ -248,6 +249,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         );
         hgf_network.add_nodes(
             "continuous-state",
@@ -256,6 +258,7 @@ mod tests {
             None,
             None,
             Some(vec![0].into()),
+            None,
             None,
         );
         hgf_network.set_update_sequence();
@@ -274,6 +277,7 @@ mod tests {
         exp_network.add_nodes(
             "ef-state",
             1,
+            None,
             None,
             None,
             None,
