@@ -163,82 +163,103 @@ def test_deepnetwork_add_layer_stack():
 
 
 def test_predict():
-    """Test that predict returns correct-shape outputs and is consistent with fit.
+    """Test predict() on both Python (JAX) and Rust backends.
 
-    Build a small network (2 targets → 3 hidden → 4 predictors), train it,
-    then verify that predict() produces the same expected_mean values as a
-    zero-learning-rate fit() pass on the same inputs.
+    For each backend:
+    1. Build a small network (2 targets → 3 hidden → 4 predictors) and train it.
+    2. Verify predict() output shape, finiteness, and determinism.
+    3. Verify that predictions differ between a trained and an untrained network.
     """
     n_targets, n_hidden, n_predictors = 2, 3, 4
 
-    targets = tuple(range(n_targets))
-    predictors = tuple(range(n_targets + n_hidden, n_targets + n_hidden + n_predictors))
+    targets = list(range(n_targets))
+    predictors = list(range(n_targets + n_hidden, n_targets + n_hidden + n_predictors))
 
     np.random.seed(42)
     x_train = np.random.randn(5, n_predictors)
     y_train = np.random.randn(5, n_targets)
     x_test = np.random.randn(3, n_predictors)
 
-    # Build and train the network
-    net = (
-        DeepNetwork()
-        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-        .add_layer(size=n_hidden)
-        .add_layer(size=n_predictors)
-    )
-    net.fit(
-        x=x_train,
-        y=y_train,
-        inputs_x_idxs=predictors,
-        inputs_y_idxs=targets,
-        lr=0.1,
-    )
+    for Network in NETWORK_CLASSES:
+        label = Network.__name__
 
-    # Run predict on new data
-    predictions = net.predict(
-        x=jnp.array(x_test),
-        inputs_x_idxs=predictors,
-        inputs_y_idxs=targets,
-    )
+        # --- Build and train ---
+        net = (
+            Network()
+            .add_nodes(kind="continuous-state", n_nodes=n_targets)
+            .add_layer(size=n_hidden)
+            .add_layer(size=n_predictors)
+        )
 
-    # Check output shape: (n_samples, n_targets)
-    assert predictions.shape == (3, n_targets), (
-        f"Expected shape (3, {n_targets}), got {predictions.shape}"
-    )
+        # Prepare data: JAX arrays for Python backend, plain lists for Rust
+        if Network is DeepNetwork:
+            x_fit, y_fit = x_train, y_train
+            x_pred = jnp.array(x_test)
+        else:
+            x_fit = x_train.tolist()
+            y_fit = y_train.tolist()
+            x_pred = x_test.tolist()
 
-    # All predictions should be finite (no NaN or Inf)
-    assert np.all(np.isfinite(predictions)), "Predictions contain NaN or Inf"
+        net.fit(
+            x=x_fit,
+            y=y_fit,
+            inputs_x_idxs=tuple(predictors),
+            inputs_y_idxs=tuple(targets),
+            lr=0.1,
+        )
 
-    # Predictions should be deterministic: calling predict twice gives same result
-    predictions2 = net.predict(
-        x=jnp.array(x_test),
-        inputs_x_idxs=predictors,
-        inputs_y_idxs=targets,
-    )
-    assert np.allclose(predictions, predictions2, atol=1e-6), (
-        "predict() is not deterministic across calls"
-    )
+        # --- Predict on new data ---
+        predictions = net.predict(
+            x=x_pred,
+            inputs_x_idxs=tuple(predictors),
+            inputs_y_idxs=tuple(targets),
+        )
 
-    # Predictions after training should differ from an untrained network
-    net_untrained = (
-        DeepNetwork()
-        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-        .add_layer(size=n_hidden)
-        .add_layer(size=n_predictors)
-    )
-    # Need to create update_sequence before calling predict
-    net_untrained.fit(
-        x=x_train[:1],
-        y=y_train[:1],
-        inputs_x_idxs=predictors,
-        inputs_y_idxs=targets,
-        lr=0.0,
-    )
-    preds_untrained = net_untrained.predict(
-        x=jnp.array(x_test),
-        inputs_x_idxs=predictors,
-        inputs_y_idxs=targets,
-    )
-    assert not np.allclose(predictions, preds_untrained, atol=1e-3), (
-        "Trained and untrained networks produce identical predictions"
-    )
+        # Shape check
+        assert predictions.shape == (3, n_targets), (
+            f"{label}: expected shape (3, {n_targets}), got {predictions.shape}"
+        )
+
+        # Finiteness
+        assert np.all(np.isfinite(predictions)), (
+            f"{label}: predictions contain NaN or Inf"
+        )
+
+        # Determinism
+        predictions2 = net.predict(
+            x=x_pred,
+            inputs_x_idxs=tuple(predictors),
+            inputs_y_idxs=tuple(targets),
+        )
+        assert np.allclose(predictions, predictions2, atol=1e-6), (
+            f"{label}: predict() is not deterministic across calls"
+        )
+
+        # --- Untrained network should give different predictions ---
+        net_untrained = (
+            Network()
+            .add_nodes(kind="continuous-state", n_nodes=n_targets)
+            .add_layer(size=n_hidden)
+            .add_layer(size=n_predictors)
+        )
+        if Network is DeepNetwork:
+            x_fit_1, y_fit_1 = x_train[:1], y_train[:1]
+        else:
+            x_fit_1 = [x_train[0].tolist()]
+            y_fit_1 = [y_train[0].tolist()]
+
+        net_untrained.fit(
+            x=x_fit_1,
+            y=y_fit_1,
+            inputs_x_idxs=tuple(predictors),
+            inputs_y_idxs=tuple(targets),
+            lr=0.0,
+        )
+        preds_untrained = net_untrained.predict(
+            x=x_pred,
+            inputs_x_idxs=tuple(predictors),
+            inputs_y_idxs=tuple(targets),
+        )
+        assert not np.allclose(predictions, preds_untrained, atol=1e-3), (
+            f"{label}: trained and untrained networks produce identical predictions"
+        )
