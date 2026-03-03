@@ -261,8 +261,8 @@ class DeepNetwork(Network):
         self,
         x: np.ndarray,
         y: np.ndarray,
-        inputs_x_idxs: Optional[tuple[int]] = None,
-        inputs_y_idxs: Optional[tuple[int]] = None,
+        inputs_x_idxs: Optional[tuple[int, ...]] = None,
+        inputs_y_idxs: Optional[tuple[int, ...]] = None,
         lr: Union[str, float] = 0.2,
         overwrite: bool = True,
     ):

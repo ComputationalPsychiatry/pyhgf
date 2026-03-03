@@ -8,7 +8,7 @@ use crate::utils::set_learning_sequence::build_learning_sequence;
 use crate::updates::observations::{set_predictors, set_observation};
 use pyo3::types::PyTuple;
 use pyo3::{prelude::*, types::{PyList, PyDict}};
-use numpy::{PyArray1, PyArray};
+use numpy::{PyArray1, PyArray, PyArrayMethods};
 
 /// Accepts either a single int or a list of ints from Python.
 /// Allows `value_children=0` or `value_children=[0, 1]`.
@@ -46,8 +46,8 @@ impl IntOrList {
     }
 }
 
-#[derive(Debug)]
-#[pyclass]
+#[derive(Debug, Clone)]
+#[pyclass(skip_from_py_object)]
 pub struct AdjacencyLists{
     #[pyo3(get, set)]
     pub node_type: String,
@@ -67,7 +67,7 @@ pub struct UpdateSequence {
     pub updates: Vec<(usize, FnType)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Attributes {
     pub floats: HashMap<usize, HashMap<String, f64>>,
     pub vectors: HashMap<usize, HashMap<String, Vec<f64>>>,
@@ -616,6 +616,86 @@ impl Network {
 
         self.node_trajectories = node_trajectories;
     }
+
+    /// Generate predictions from the network using only the prediction steps.
+    ///
+    /// For each sample, this method clones the current attributes into an
+    /// independent workspace, sets the predictor values on the top-layer nodes,
+    /// runs the prediction sequence top-down (excluding predictor nodes), and
+    /// collects the `expected_mean` from the target (bottom-layer) nodes.
+    ///
+    /// Samples are processed independently — no state is carried between them
+    /// — so this is conceptually equivalent to a `vmap` in JAX.
+    ///
+    /// # Arguments
+    /// * `x` - Predictor values, shape `[n_samples][n_x_inputs]`.
+    /// * `inputs_x_idxs` - Node indices receiving the predictors (top layer).
+    /// * `inputs_y_idxs` - Node indices whose `expected_mean` is returned
+    ///   (bottom layer).
+    ///
+    /// # Returns
+    /// A `Vec<Vec<f64>>` of shape `[n_samples][n_y_outputs]`.
+    pub fn predict(
+        &self,
+        x: &[Vec<f64>],
+        inputs_x_idxs: &[usize],
+        inputs_y_idxs: &[usize],
+    ) -> Vec<Vec<f64>> {
+        let time_step = 1.0;
+
+        // Filter prediction steps: exclude predictor input nodes
+        let prediction_steps: Vec<(usize, FnType)> = self
+            .update_sequence
+            .predictions
+            .iter()
+            .filter(|(idx, _)| !inputs_x_idxs.contains(idx))
+            .cloned()
+            .collect();
+
+        x.iter()
+            .map(|x_row| {
+                // Create a lightweight mutable workspace with cloned attributes
+                let mut temp = Network {
+                    attributes: self.attributes.clone(),
+                    edges: self.edges.clone(),
+                    inputs: Vec::new(),
+                    update_type: String::new(),
+                    update_sequence: UpdateSequence {
+                        predictions: Vec::new(),
+                        updates: Vec::new(),
+                    },
+                    node_trajectories: NodeTrajectories {
+                        floats: HashMap::new(),
+                        vectors: HashMap::new(),
+                    },
+                    layers: Vec::new(),
+                };
+
+                // Set predictor values on top-layer nodes
+                for (i, &node_idx) in inputs_x_idxs.iter().enumerate() {
+                    set_predictors(&mut temp, node_idx, x_row[i]);
+                }
+
+                // Run prediction steps (top-down)
+                for &(idx, step) in &prediction_steps {
+                    step(&mut temp, idx, time_step);
+                }
+
+                // Collect expected_mean from target (bottom) nodes
+                inputs_y_idxs
+                    .iter()
+                    .map(|&idx| {
+                        *temp
+                            .attributes
+                            .floats
+                            .get(&idx)
+                            .and_then(|m| m.get("expected_mean"))
+                            .unwrap_or(&0.0)
+                    })
+                    .collect()
+            })
+            .collect()
+    }
 }
 
 // Python interface — wrappers that return self for method chaining
@@ -839,6 +919,59 @@ impl Network {
 
         slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option);
         Ok(slf)
+    }
+
+    /// Generate predictions using only the forward (prediction) pass.
+    ///
+    /// Parameters
+    /// ----------
+    /// x : array-like, shape (n_samples, n_x_inputs)
+    ///     Predictor values for the top layer.
+    /// inputs_x_idxs : list[int], optional
+    ///     Node indices receiving predictors.  Defaults to the last
+    ///     (top) layer if ``None``.
+    /// inputs_y_idxs : list[int], optional
+    ///     Node indices whose ``expected_mean`` is returned.  Defaults
+    ///     to the first (bottom) layer if ``None``.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray, shape (n_samples, n_y_outputs)
+    #[pyo3(name = "predict", signature = (x, inputs_x_idxs=None, inputs_y_idxs=None))]
+    fn py_predict<'py>(
+        &self,
+        py: Python<'py>,
+        x: Bound<'py, PyAny>,
+        inputs_x_idxs: Option<Vec<usize>>,
+        inputs_y_idxs: Option<Vec<usize>>,
+    ) -> PyResult<Py<numpy::PyArray2<f64>>> {
+        // Resolve input/output indices
+        let x_idxs = match inputs_x_idxs {
+            Some(v) => v,
+            None => self.layers.last().cloned().unwrap_or_default(),
+        };
+        let y_idxs = match inputs_y_idxs {
+            Some(v) => v,
+            None => self.layers.first().cloned().unwrap_or_default(),
+        };
+
+        // Parse x as Vec<Vec<f64>>
+        let x_data: Vec<Vec<f64>> = if let Ok(outer) = x.extract::<Vec<Vec<f64>>>() {
+            outer
+        } else {
+            let flat: Vec<f64> = x.extract()?;
+            flat.into_iter().map(|v| vec![v]).collect()
+        };
+
+        let predictions = self.predict(&x_data, &x_idxs, &y_idxs);
+
+        // Convert Vec<Vec<f64>> → 2-D numpy array
+        let n_samples = predictions.len();
+        let n_outputs = if n_samples > 0 { predictions[0].len() } else { 0 };
+        let flat: Vec<f64> = predictions.into_iter().flatten().collect();
+        let array = numpy::PyArray1::from_vec(py, flat)
+            .reshape([n_samples, n_outputs])?;
+        Ok(array.into())
     }
 
     #[getter]
