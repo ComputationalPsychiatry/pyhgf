@@ -6,6 +6,7 @@ from .get_input_idxs import get_input_idxs
 from .get_update_sequence import get_update_sequence
 from .learning import learning
 from .list_branches import list_branches
+from .predict import predict_step
 from .remove_node import remove_node
 from .sample import sample
 from .sample_node_distribution import sample_node_distribution
@@ -25,5 +26,6 @@ __all__ = [
     "sample_node_distribution",
     "sample",
     "learning",
+    "predict_step",
     "set_coupling",
 ]

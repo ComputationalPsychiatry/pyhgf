@@ -7,7 +7,7 @@ from typing import Callable, Optional, Union
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from jax import random
+from jax import random, vmap
 from jax.lax import scan, switch
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
@@ -37,6 +37,7 @@ from pyhgf.utils import (
     get_input_idxs,
     get_update_sequence,
     learning,
+    predict_step,
     sample,
     to_pandas,
 )
@@ -179,8 +180,8 @@ class Network:
 
     def create_learning_propagation_fn(
         self,
-        inputs_x_idxs: tuple[int],
-        inputs_y_idxs: tuple[int],
+        inputs_x_idxs: tuple[int, ...],
+        inputs_y_idxs: tuple[int, ...],
         overwrite: bool = True,
         lr: Union[str, float] = 0.2,
     ) -> "Network":
@@ -276,8 +277,8 @@ class Network:
         self,
         x: ArrayLike,
         y: ArrayLike,
-        inputs_x_idxs: tuple[int],
-        inputs_y_idxs: tuple[int],
+        inputs_x_idxs: tuple[int, ...],
+        inputs_y_idxs: tuple[int, ...],
         lr: Union[str, float] = 0.2,
         overwrite: bool = True,
     ):
@@ -325,6 +326,74 @@ class Network:
         self.last_attributes = last_attributes
 
         return self
+
+    def predict(
+        self,
+        x: ArrayLike,
+        inputs_x_idxs: tuple[int, ...],
+        inputs_y_idxs: tuple[int, ...],
+    ) -> ArrayLike:
+        """Generate predictions from the network using only the prediction steps.
+
+        This method sets the predictor values on the top-layer nodes and runs the
+        prediction sequence (top-down) without any observation, posterior update, or
+        weight learning step. It returns the ``expected_mean`` of the bottom-layer
+        (target) nodes, which correspond to the network's predictions.
+
+        Parameters
+        ----------
+        x :
+            An array of predictor values with shape ``(n_samples, n_x_inputs)``.
+            Each row is fed to the nodes specified by ``inputs_x_idxs``.
+        inputs_x_idxs :
+            The indexes of the nodes receiving the predictors (top layer).
+        inputs_y_idxs :
+            The indexes of the target nodes whose ``expected_mean`` is returned
+            (bottom layer).
+
+        Returns
+        -------
+        predictions :
+            An array of shape ``(n_samples, len(inputs_y_idxs))`` containing the
+            ``expected_mean`` of each target node at every time step.
+
+        """
+        if x.ndim == 1:
+            x = x[:, jnp.newaxis]
+
+        # ensure the update sequence exists
+        if self.update_sequence is None:
+            self.update_sequence = get_update_sequence(
+                network=self, update_type=self.update_type
+            )
+
+        # keep only prediction steps that are not on the predictor nodes
+        prediction_steps = tuple(
+            step
+            for step in self.update_sequence.prediction_steps
+            if step[0] not in inputs_x_idxs
+        )
+
+        # build a per-sample function that only predicts
+        predict_fn = Partial(
+            predict_step,
+            prediction_steps=prediction_steps,
+            edges=self.edges,
+            inputs_x_idxs=inputs_x_idxs,
+            inputs_y_idxs=inputs_y_idxs,
+        )
+
+        # use last_attributes (post-training state) when available
+        init_attributes = (
+            self.last_attributes
+            if self.last_attributes is not None
+            else self.attributes
+        )
+
+        # vmap over x rows; attributes are shared (not batched)
+        predictions = vmap(predict_fn, in_axes=(None, 0))(init_attributes, x)
+
+        return predictions
 
     def input_data(
         self,
