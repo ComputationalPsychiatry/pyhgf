@@ -33,6 +33,7 @@
       ~DeepNetwork.plot_nodes
       ~DeepNetwork.plot_samples
       ~DeepNetwork.plot_trajectories
+      ~DeepNetwork.predict
       ~DeepNetwork.sample
       ~DeepNetwork.surprise
       ~DeepNetwork.to_pandas

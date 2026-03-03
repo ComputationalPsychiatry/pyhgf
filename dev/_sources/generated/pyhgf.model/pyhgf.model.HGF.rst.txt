@@ -28,6 +28,7 @@
       ~HGF.plot_nodes
       ~HGF.plot_samples
       ~HGF.plot_trajectories
+      ~HGF.predict
       ~HGF.sample
       ~HGF.surprise
       ~HGF.to_pandas

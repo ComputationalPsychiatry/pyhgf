@@ -31,7 +31,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
@@ -870,7 +870,7 @@ window.addEventListener("load", load);</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span><span class="p">,</span> <span class="n">vmap</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.lax</span><span class="w"> </span><span class="kn">import</span> <span class="n">scan</span><span class="p">,</span> <span class="n">switch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Partial</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
@@ -900,6 +900,7 @@ window.addEventListener("load", load);</script>
     <span class="n">get_input_idxs</span><span class="p">,</span>
     <span class="n">get_update_sequence</span><span class="p">,</span>
     <span class="n">learning</span><span class="p">,</span>
+    <span class="n">predict_step</span><span class="p">,</span>
     <span class="n">sample</span><span class="p">,</span>
     <span class="n">to_pandas</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1047,8 +1048,8 @@ window.addEventListener("load", load);</script>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">create_learning_propagation_fn</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
@@ -1144,8 +1145,8 @@ window.addEventListener("load", load);</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
         <span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
@@ -1193,6 +1194,74 @@ window.addEventListener("load", load);</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="o">=</span> <span class="n">last_attributes</span>
 
         <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate predictions from the network using only the prediction steps.</span>
+
+<span class="sd">        This method sets the predictor values on the top-layer nodes and runs the</span>
+<span class="sd">        prediction sequence (top-down) without any observation, posterior update, or</span>
+<span class="sd">        weight learning step. It returns the ``expected_mean`` of the bottom-layer</span>
+<span class="sd">        (target) nodes, which correspond to the network&#39;s predictions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            An array of predictor values with shape ``(n_samples, n_x_inputs)``.</span>
+<span class="sd">            Each row is fed to the nodes specified by ``inputs_x_idxs``.</span>
+<span class="sd">        inputs_x_idxs :</span>
+<span class="sd">            The indexes of the nodes receiving the predictors (top layer).</span>
+<span class="sd">        inputs_y_idxs :</span>
+<span class="sd">            The indexes of the target nodes whose ``expected_mean`` is returned</span>
+<span class="sd">            (bottom layer).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        predictions :</span>
+<span class="sd">            An array of shape ``(n_samples, len(inputs_y_idxs))`` containing the</span>
+<span class="sd">            ``expected_mean`` of each target node at every time step.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="c1"># ensure the update sequence exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+            <span class="p">)</span>
+
+        <span class="c1"># keep only prediction steps that are not on the predictor nodes</span>
+        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">step</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+        <span class="p">)</span>
+
+        <span class="c1"># build a per-sample function that only predicts</span>
+        <span class="n">predict_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+            <span class="n">predict_step</span><span class="p">,</span>
+            <span class="n">prediction_steps</span><span class="o">=</span><span class="n">prediction_steps</span><span class="p">,</span>
+            <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+            <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
+            <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># use last_attributes (post-training state) when available</span>
+        <span class="n">init_attributes</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span>
+        <span class="p">)</span>
+
+        <span class="c1"># vmap over x rows; attributes are shared (not batched)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">predict_fn</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">))(</span><span class="n">init_attributes</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">predictions</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">input_data</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
