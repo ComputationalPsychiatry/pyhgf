@@ -1,4 +1,4 @@
-use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::{posterior_update_continuous_state_node, posterior_update_continuous_state_node_ehgf, posterior_update_continuous_state_node_unbounded}, posterior::volatile::{posterior_update_volatile_state_node, posterior_update_volatile_state_node_ehgf, posterior_update_volatile_state_node_unbounded}, prediction::continuous::prediction_continuous_state_node, prediction::volatile::prediction_volatile_state_node, prediction_error::{continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node, volatile::prediction_error_volatile_state_node}}};
+use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::{posterior_update_continuous_state_node, posterior_update_continuous_state_node_ehgf, posterior_update_continuous_state_node_unbounded}, posterior::volatile::{posterior_update_volatile_state_node, posterior_update_volatile_state_node_ehgf, posterior_update_volatile_state_node_unbounded}, prediction::binary::prediction_binary_state_node, prediction::continuous::prediction_continuous_state_node, prediction::volatile::prediction_volatile_state_node, prediction_error::{binary::prediction_error_binary_state_node, continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node, volatile::prediction_error_volatile_state_node}}};
 use crate::utils::function_pointer::FnType;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {
@@ -68,6 +68,9 @@ pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, FnType)> {
                     }
                     Some(AdjacencyLists {node_type, ..}) if node_type == "volatile-state" => {
                         predictions.push((idx, prediction_volatile_state_node));
+                    }
+                    Some(AdjacencyLists {node_type, ..}) if node_type == "binary-state" => {
+                        predictions.push((idx, prediction_binary_state_node));
                     }
                     _ => ()
 
@@ -188,6 +191,12 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
                     if node_type == "ef-state" =>
                 {
                     updates.push((*idx, prediction_error_exponential_state_node));
+                    has_update = true;
+                }
+                (Some(AdjacencyLists { node_type, .. }), true)
+                    if node_type == "binary-state" =>
+                {
+                    updates.push((*idx, prediction_error_binary_state_node));
                     has_update = true;
                 }
                 _ => (),
