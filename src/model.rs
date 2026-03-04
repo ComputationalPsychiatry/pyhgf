@@ -307,6 +307,49 @@ impl Network {
                     self.attributes.vectors.insert(node_id, vec_attrs);
                 }
             }
+            "binary-state" => {
+                // Binary state nodes are input nodes (no children).
+                // Default attributes mirror the Python `add_binary_state` function.
+                self.attributes.floats.insert(node_id, HashMap::from([
+                    ("observed".into(), 1.0),
+                    ("mean".into(), 0.0),
+                    ("expected_mean".into(), 0.5),
+                    ("precision".into(), 1.0),
+                    ("expected_precision".into(), 1.0),
+                    ("value_prediction_error".into(), 0.0),
+                ]));
+                self.edges.insert(node_id, edges);
+
+                // Value coupling vectors and reciprocal parent→child edges
+                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+
+                if let Some(ref vp) = value_parents {
+                    vec_attrs.insert("value_coupling_parents".into(), vec![1.0; vp.len()]);
+                }
+                if let Some(ref vc) = value_children {
+                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    for &child_idx in vc {
+                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                            match &mut child_edges.value_parents {
+                                Some(parents) => parents.push(node_id),
+                                None => child_edges.value_parents = Some(vec![node_id]),
+                            }
+                        }
+                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
+                        child_vecs.entry("value_coupling_parents".into())
+                            .and_modify(|cs| cs.push(1.0))
+                            .or_insert_with(|| vec![1.0]);
+                        let child_fns = self.attributes.fn_ptrs.entry(child_idx).or_default();
+                        child_fns.entry("value_coupling_fn_parents".into())
+                            .and_modify(|cs| cs.push(coupling_fn_ptr))
+                            .or_insert_with(|| vec![coupling_fn_ptr]);
+                    }
+                }
+
+                if !vec_attrs.is_empty() {
+                    self.attributes.vectors.insert(node_id, vec_attrs);
+                }
+            }
             _ => {}
         }
 
