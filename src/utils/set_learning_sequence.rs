@@ -250,7 +250,7 @@ mod tests {
         // Build a real 2-layer network and verify the learning sequence
         let mut net = Network::new("eHGF");
         net.add_nodes("continuous-state", 2, None, None, None, None, None, None);
-        net.add_layer(2, "continuous-state", Some(vec![0, 1]), 1.0, None);
+        net.add_layer(2, "continuous-state", Some(vec![0, 1]), 1.0, None, None);
         net.set_update_sequence();
 
         let learn_fn = learning_weights_fixed as FnType;

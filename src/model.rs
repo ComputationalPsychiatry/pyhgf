@@ -454,6 +454,8 @@ impl Network {
     /// * `value_children` - Children to connect to. If `None`, auto-detects orphan nodes.
     /// * `coupling_strengths` - Coupling strength for each child connection (default 1.0).
     /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
+    /// * `additional_parameters` - Extra key-value pairs that override default
+    ///   node attributes (e.g. `autoconnection_strength`).
     pub fn add_layer(
         &mut self,
         size: usize,
@@ -461,6 +463,7 @@ impl Network {
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
         coupling_fn: Option<String>,
+        additional_parameters: Option<HashMap<String, f64>>,
     ) {
         let n_nodes_before = self.edges.len();
 
@@ -481,7 +484,7 @@ impl Network {
         // Add `size` parent nodes, each connecting to all children
         for _ in 0..size {
             let vc = IntOrList::List(children.clone());
-            self.add_nodes(kind, 1, None, Some(vc), None, None, coupling_fn.clone(), None);
+            self.add_nodes(kind, 1, None, Some(vc), None, None, coupling_fn.clone(), additional_parameters.clone());
 
             // Apply custom coupling strengths
             let node_id = self.edges.len() - 1;
@@ -520,6 +523,8 @@ impl Network {
     /// * `value_children` - Children for the first layer. If `None`, auto-detect.
     /// * `coupling_strengths` - Coupling strength for all connections (default 1.0).
     /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
+    /// * `additional_parameters` - Extra key-value pairs that override default
+    ///   node attributes (e.g. `autoconnection_strength`).
     pub fn add_layer_stack(
         &mut self,
         layer_sizes: Vec<usize>,
@@ -527,12 +532,13 @@ impl Network {
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
         coupling_fn: Option<String>,
+        additional_parameters: Option<HashMap<String, f64>>,
     ) {
         for (i, &size) in layer_sizes.iter().enumerate() {
             if i == 0 {
-                self.add_layer(size, kind, value_children.clone(), coupling_strengths, coupling_fn.clone());
+                self.add_layer(size, kind, value_children.clone(), coupling_strengths, coupling_fn.clone(), additional_parameters.clone());
             } else {
-                self.add_layer(size, kind, None, coupling_strengths, coupling_fn.clone());
+                self.add_layer(size, kind, None, coupling_strengths, coupling_fn.clone(), additional_parameters.clone());
             }
         }
     }
@@ -883,7 +889,7 @@ impl Network {
         Ok(py_list.into())
     }
 
-    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None))]
+    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None, **kwargs))]
     fn py_add_layer<'py>(
         mut slf: PyRefMut<'py, Self>,
         size: usize,
@@ -891,12 +897,26 @@ impl Network {
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
         coupling_fn: Option<String>,
+        kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        slf.add_layer(size, kind, value_children, coupling_strengths, coupling_fn);
+        let additional_parameters = match kwargs {
+            Some(dict) => {
+                let mut map = HashMap::new();
+                for (key, value) in dict.iter() {
+                    let key_str: String = key.extract()?;
+                    if let Ok(val) = value.extract::<f64>() {
+                        map.insert(key_str, val);
+                    }
+                }
+                if map.is_empty() { None } else { Some(map) }
+            }
+            None => None,
+        };
+        slf.add_layer(size, kind, value_children, coupling_strengths, coupling_fn, additional_parameters);
         Ok(slf)
     }
 
-    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None))]
+    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None, **kwargs))]
     fn py_add_layer_stack<'py>(
         mut slf: PyRefMut<'py, Self>,
         layer_sizes: Vec<usize>,
@@ -904,8 +924,22 @@ impl Network {
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
         coupling_fn: Option<String>,
+        kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths, coupling_fn);
+        let additional_parameters = match kwargs {
+            Some(dict) => {
+                let mut map = HashMap::new();
+                for (key, value) in dict.iter() {
+                    let key_str: String = key.extract()?;
+                    if let Ok(val) = value.extract::<f64>() {
+                        map.insert(key_str, val);
+                    }
+                }
+                if map.is_empty() { None } else { Some(map) }
+            }
+            None => None,
+        };
+        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths, coupling_fn, additional_parameters);
         Ok(slf)
     }
 
