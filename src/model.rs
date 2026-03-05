@@ -375,7 +375,7 @@ impl Network {
     /// # Arguments
     /// * `input_data` - A vector of observations (one per time step).
     /// * `time_steps` - Optional time steps (defaults to ones).
-    pub fn input_data(&mut self, input_data: Vec<f64>, time_steps: Option<Vec<f64>>) {
+    pub fn input_data(&mut self, input_data: Vec<f64>, time_steps: Option<Vec<f64>>, record_trajectories: bool) {
         // Automatically set the update sequence if not already done
         if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
             self.set_update_sequence();
@@ -391,50 +391,56 @@ impl Network {
             vectors: HashMap::new(),
         };
 
-        // Preallocate float trajectories
-        for (node_idx, node) in &self.attributes.floats {
-            let mut map = HashMap::with_capacity(node.len());
-            for key in node.keys() {
-                map.insert(key.clone(), Vec::with_capacity(n_time));
+        if record_trajectories {
+            // Preallocate float trajectories
+            for (node_idx, node) in &self.attributes.floats {
+                let mut map = HashMap::with_capacity(node.len());
+                for key in node.keys() {
+                    map.insert(key.clone(), Vec::with_capacity(n_time));
+                }
+                node_trajectories.floats.insert(*node_idx, map);
             }
-            node_trajectories.floats.insert(*node_idx, map);
-        }
 
-        // Preallocate vector trajectories
-        for (node_idx, node) in &self.attributes.vectors {
-            let mut map = HashMap::with_capacity(node.len());
-            for key in node.keys() {
-                map.insert(key.clone(), Vec::with_capacity(n_time));
+            // Preallocate vector trajectories
+            for (node_idx, node) in &self.attributes.vectors {
+                let mut map = HashMap::with_capacity(node.len());
+                for key in node.keys() {
+                    map.insert(key.clone(), Vec::with_capacity(n_time));
+                }
+                node_trajectories.vectors.insert(*node_idx, map);
             }
-            node_trajectories.vectors.insert(*node_idx, map);
         }
 
         // Iterate over observations
         for (t, observation) in input_data.iter().enumerate() {
             belief_propagation(self, vec![*observation], &predictions, &updates, time_steps[t]);
 
-            // Record float trajectories
-            for (node_idx, node) in &self.attributes.floats {
-                let traj = node_trajectories.floats.get_mut(node_idx).expect("node not found");
-                for (key, value) in node {
-                    traj.entry(key.clone())
-                        .or_insert_with(|| Vec::with_capacity(n_time))
-                        .push(*value);
+            if record_trajectories {
+                // Record float trajectories
+                for (node_idx, node) in &self.attributes.floats {
+                    let traj = node_trajectories.floats.get_mut(node_idx).expect("node not found");
+                    for (key, value) in node {
+                        traj.entry(key.clone())
+                            .or_insert_with(|| Vec::with_capacity(n_time))
+                            .push(*value);
+                    }
                 }
-            }
 
-            // Record vector trajectories
-            for (node_idx, node) in &self.attributes.vectors {
-                let traj = node_trajectories.vectors.entry(*node_idx).or_default();
-                for (key, value) in node {
-                    traj.entry(key.clone())
-                        .or_insert_with(|| Vec::with_capacity(n_time))
-                        .push(value.clone());
+                // Record vector trajectories
+                for (node_idx, node) in &self.attributes.vectors {
+                    let traj = node_trajectories.vectors.entry(*node_idx).or_default();
+                    for (key, value) in node {
+                        traj.entry(key.clone())
+                            .or_insert_with(|| Vec::with_capacity(n_time))
+                            .push(value.clone());
+                    }
                 }
             }
         }
 
-        self.node_trajectories = node_trajectories;
+        if record_trajectories {
+            self.node_trajectories = node_trajectories;
+        }
     }
 
     /// Add a fully connected layer of parent nodes.
@@ -447,12 +453,14 @@ impl Network {
     /// * `kind` - Node kind (defaults to `"volatile-state"`).
     /// * `value_children` - Children to connect to. If `None`, auto-detects orphan nodes.
     /// * `coupling_strengths` - Coupling strength for each child connection (default 1.0).
+    /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
     pub fn add_layer(
         &mut self,
         size: usize,
         kind: &str,
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
+        coupling_fn: Option<String>,
     ) {
         let n_nodes_before = self.edges.len();
 
@@ -473,7 +481,7 @@ impl Network {
         // Add `size` parent nodes, each connecting to all children
         for _ in 0..size {
             let vc = IntOrList::List(children.clone());
-            self.add_nodes(kind, 1, None, Some(vc), None, None, None, None);
+            self.add_nodes(kind, 1, None, Some(vc), None, None, coupling_fn.clone(), None);
 
             // Apply custom coupling strengths
             let node_id = self.edges.len() - 1;
@@ -511,18 +519,20 @@ impl Network {
     /// * `kind` - Node kind (defaults to `"volatile-state"`).
     /// * `value_children` - Children for the first layer. If `None`, auto-detect.
     /// * `coupling_strengths` - Coupling strength for all connections (default 1.0).
+    /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
     pub fn add_layer_stack(
         &mut self,
         layer_sizes: Vec<usize>,
         kind: &str,
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
+        coupling_fn: Option<String>,
     ) {
         for (i, &size) in layer_sizes.iter().enumerate() {
             if i == 0 {
-                self.add_layer(size, kind, value_children.clone(), coupling_strengths);
+                self.add_layer(size, kind, value_children.clone(), coupling_strengths, coupling_fn.clone());
             } else {
-                self.add_layer(size, kind, None, coupling_strengths);
+                self.add_layer(size, kind, None, coupling_strengths, coupling_fn.clone());
             }
         }
     }
@@ -555,6 +565,7 @@ impl Network {
         inputs_x_idxs: &[usize],
         inputs_y_idxs: &[usize],
         lr: Option<f64>,
+        record_trajectories: bool,
     ) {
         // Build update sequence if not already set
         if self.update_sequence.predictions.is_empty()
@@ -588,26 +599,28 @@ impl Network {
         let n_time = x.len();
         let time_step = 1.0;
 
-        // Preallocate trajectories
+        // Preallocate trajectories (only when recording)
         let mut node_trajectories = NodeTrajectories {
             floats: HashMap::new(),
             vectors: HashMap::new(),
         };
 
-        for (node_idx, node) in &self.attributes.floats {
-            let mut map = HashMap::with_capacity(node.len());
-            for key in node.keys() {
-                map.insert(key.clone(), Vec::with_capacity(n_time));
+        if record_trajectories {
+            for (node_idx, node) in &self.attributes.floats {
+                let mut map = HashMap::with_capacity(node.len());
+                for key in node.keys() {
+                    map.insert(key.clone(), Vec::with_capacity(n_time));
+                }
+                node_trajectories.floats.insert(*node_idx, map);
             }
-            node_trajectories.floats.insert(*node_idx, map);
-        }
 
-        for (node_idx, node) in &self.attributes.vectors {
-            let mut map = HashMap::with_capacity(node.len());
-            for key in node.keys() {
-                map.insert(key.clone(), Vec::with_capacity(n_time));
+            for (node_idx, node) in &self.attributes.vectors {
+                let mut map = HashMap::with_capacity(node.len());
+                for key in node.keys() {
+                    map.insert(key.clone(), Vec::with_capacity(n_time));
+                }
+                node_trajectories.vectors.insert(*node_idx, map);
             }
-            node_trajectories.vectors.insert(*node_idx, map);
         }
 
         // Main learning loop
@@ -632,32 +645,35 @@ impl Network {
                 step(self, idx, time_step);
             }
 
-            // Record float trajectories
-            for (node_idx, node) in &self.attributes.floats {
-                let traj = node_trajectories.floats
-                    .entry(*node_idx)
-                    .or_default();
-                for (key, value) in node {
-                    traj.entry(key.clone())
-                        .or_insert_with(|| Vec::with_capacity(n_time))
-                        .push(*value);
+            // Record trajectories (skip when disabled for performance)
+            if record_trajectories {
+                for (node_idx, node) in &self.attributes.floats {
+                    let traj = node_trajectories.floats
+                        .entry(*node_idx)
+                        .or_default();
+                    for (key, value) in node {
+                        traj.entry(key.clone())
+                            .or_insert_with(|| Vec::with_capacity(n_time))
+                            .push(*value);
+                    }
                 }
-            }
 
-            // Record vector trajectories
-            for (node_idx, node) in &self.attributes.vectors {
-                let traj = node_trajectories.vectors
-                    .entry(*node_idx)
-                    .or_default();
-                for (key, value) in node {
-                    traj.entry(key.clone())
-                        .or_insert_with(|| Vec::with_capacity(n_time))
-                        .push(value.clone());
+                for (node_idx, node) in &self.attributes.vectors {
+                    let traj = node_trajectories.vectors
+                        .entry(*node_idx)
+                        .or_default();
+                    for (key, value) in node {
+                        traj.entry(key.clone())
+                            .or_insert_with(|| Vec::with_capacity(n_time))
+                            .push(value.clone());
+                    }
                 }
             }
         }
 
-        self.node_trajectories = node_trajectories;
+        if record_trajectories {
+            self.node_trajectories = node_trajectories;
+        }
     }
 
     /// Generate predictions from the network using only the prediction steps.
@@ -788,11 +804,12 @@ impl Network {
         Ok(slf)
     }
 
-    #[pyo3(name = "input_data", signature = (input_data, time_steps=None))]
+    #[pyo3(name = "input_data", signature = (input_data, time_steps=None, record_trajectories=true))]
     fn py_input_data<'py>(
         mut slf: PyRefMut<'py, Self>,
         input_data: Bound<'py, PyAny>,
         time_steps: Option<Bound<'py, PyAny>>,
+        record_trajectories: bool,
     ) -> PyResult<PyRefMut<'py, Self>> {
         // Accept both plain lists and numpy arrays
         let data: Vec<f64> = input_data.extract()?;
@@ -800,7 +817,7 @@ impl Network {
             Some(ref obj) => Some(obj.extract()?),
             None => None,
         };
-        slf.input_data(data, ts);
+        slf.input_data(data, ts, record_trajectories);
         Ok(slf)
     }
 
@@ -866,27 +883,29 @@ impl Network {
         Ok(py_list.into())
     }
 
-    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0))]
+    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None))]
     fn py_add_layer<'py>(
         mut slf: PyRefMut<'py, Self>,
         size: usize,
         kind: &str,
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
+        coupling_fn: Option<String>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        slf.add_layer(size, kind, value_children, coupling_strengths);
+        slf.add_layer(size, kind, value_children, coupling_strengths, coupling_fn);
         Ok(slf)
     }
 
-    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0))]
+    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None))]
     fn py_add_layer_stack<'py>(
         mut slf: PyRefMut<'py, Self>,
         layer_sizes: Vec<usize>,
         kind: &str,
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
+        coupling_fn: Option<String>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths);
+        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths, coupling_fn);
         Ok(slf)
     }
 
@@ -907,7 +926,7 @@ impl Network {
     /// lr : float or str, optional
     ///     Learning rate.  Pass a float for a fixed rate, ``"dynamic"``
     ///     for precision-weighted adaptive learning.  Defaults to ``0.2``.
-    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None))]
+    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true))]
     fn py_fit<'py>(
         mut slf: PyRefMut<'py, Self>,
         x: Bound<'py, PyAny>,
@@ -915,6 +934,7 @@ impl Network {
         inputs_x_idxs: Option<Vec<usize>>,
         inputs_y_idxs: Option<Vec<usize>>,
         lr: Option<Bound<'py, PyAny>>,
+        record_trajectories: bool,
     ) -> PyResult<PyRefMut<'py, Self>> {
         // --- Resolve learning rate -------------------------------------------
         let lr_option: Option<f64> = match lr {
@@ -960,7 +980,7 @@ impl Network {
             flat.into_iter().map(|v| vec![v]).collect()
         };
 
-        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option);
+        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories);
         Ok(slf)
     }
 
@@ -1046,7 +1066,7 @@ mod tests {
 
         let input_data = vec![1.0, 1.3, 1.5, 1.7];
         network.set_update_sequence();
-        network.input_data(input_data, None);
+        network.input_data(input_data, None, true);
     }
 
     #[test]
@@ -1058,14 +1078,14 @@ mod tests {
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
-        volatile_net.input_data(input_data.clone(), None);
+        volatile_net.input_data(input_data.clone(), None, true);
 
         let mut explicit_net = Network::new("eHGF");
         explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
         explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
         explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
         explicit_net.set_update_sequence();
-        explicit_net.input_data(input_data, None);
+        explicit_net.input_data(input_data, None, true);
 
         assert_volatile_matches_explicit(&volatile_net, &explicit_net);
     }
@@ -1078,14 +1098,14 @@ mod tests {
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
-        volatile_net.input_data(input_data.clone(), None);
+        volatile_net.input_data(input_data.clone(), None, true);
 
         let mut explicit_net = Network::new("standard");
         explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
         explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
         explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
         explicit_net.set_update_sequence();
-        explicit_net.input_data(input_data, None);
+        explicit_net.input_data(input_data, None, true);
 
         assert_volatile_matches_explicit(&volatile_net, &explicit_net);
     }
@@ -1098,14 +1118,14 @@ mod tests {
         volatile_net.set_update_sequence();
 
         let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
-        volatile_net.input_data(input_data.clone(), None);
+        volatile_net.input_data(input_data.clone(), None, true);
 
         let mut explicit_net = Network::new("unbounded");
         explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
         explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
         explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
         explicit_net.set_update_sequence();
-        explicit_net.input_data(input_data, None);
+        explicit_net.input_data(input_data, None, true);
 
         assert_volatile_matches_explicit(&volatile_net, &explicit_net);
     }

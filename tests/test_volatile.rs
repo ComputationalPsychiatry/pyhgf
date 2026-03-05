@@ -92,7 +92,7 @@ fn build_volatile_network(update_type: &str, data: &[f64]) -> Network {
     net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
     net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
     net.set_update_sequence();
-    net.input_data(data.to_vec(), None);
+    net.input_data(data.to_vec(), None, true);
     net
 }
 
@@ -104,7 +104,7 @@ fn build_explicit_network(update_type: &str, data: &[f64]) -> Network {
     net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
     net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
     net.set_update_sequence();
-    net.input_data(data.to_vec(), None);
+    net.input_data(data.to_vec(), None, true);
     net
 }
 
