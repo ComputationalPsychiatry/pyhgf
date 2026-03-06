@@ -1057,7 +1057,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the belief propagation function.</span>
 
 <span class="sd">        .. note:</span>
-<span class="sd">           This step is called by default when using py:meth:`input_data`.</span>
+<span class="sd">           This step is called by default when using py:meth:`fit`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1098,24 +1098,12 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
         <span class="p">]</span>
 
-        <span class="c1"># interleave the weight updates after the prediction error</span>
-        <span class="c1"># and before the posterior updates</span>
-        <span class="n">inc</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># increment the index dynamically</span>
-        <span class="n">weight_update</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of weight update to perform at this layer</span>
+        <span class="c1"># the learning steps should apply weight learning</span>
+        <span class="c1"># in the same order than the prediction errors occure</span>
+        <span class="n">learning_steps</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of weight update to perform at this layer</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">update_steps</span><span class="p">):</span>
             <span class="k">if</span> <span class="s2">&quot;prediction_error&quot;</span> <span class="ow">in</span> <span class="n">update</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
-                <span class="n">weight_update</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">update</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">learning_weights</span><span class="p">))</span>
-            <span class="k">if</span> <span class="s2">&quot;posterior&quot;</span> <span class="ow">in</span> <span class="n">update</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">and</span> <span class="n">weight_update</span><span class="p">:</span>
-                <span class="n">update_steps</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">update_steps</span><span class="p">[:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">inc</span><span class="p">]</span> <span class="o">+</span> <span class="n">weight_update</span> <span class="o">+</span> <span class="n">update_steps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">inc</span> <span class="p">:]</span>
-                <span class="p">)</span>
-                <span class="n">inc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weight_update</span><span class="p">)</span>
-                <span class="n">weight_update</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># flush any remaining weight updates at the end — this handles PEs whose</span>
-        <span class="c1"># parents&#39; posterior steps were filtered out (e.g. predictor nodes)</span>
-        <span class="k">if</span> <span class="n">weight_update</span><span class="p">:</span>
-            <span class="n">update_steps</span> <span class="o">=</span> <span class="n">update_steps</span> <span class="o">+</span> <span class="n">weight_update</span>
+                <span class="n">learning_steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">update</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">learning_weights</span><span class="p">))</span>
 
         <span class="c1"># do not predict on the last layer</span>
         <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
@@ -1127,6 +1115,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_sequence</span> <span class="o">=</span> <span class="n">LearningSequence</span><span class="p">(</span>
             <span class="n">prediction_steps</span><span class="o">=</span><span class="n">prediction_steps</span><span class="p">,</span>
             <span class="n">update_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">update_steps</span><span class="p">),</span>
+            <span class="n">learning_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">learning_steps</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="c1"># create the learning propagation function</span>
