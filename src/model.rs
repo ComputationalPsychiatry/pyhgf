@@ -5,6 +5,7 @@ use crate::utils::beliefs_propagation::belief_propagation;
 use crate::utils::function_pointer::get_func_map;
 use crate::utils::learning::{learning_weights_fixed, learning_weights_dynamic};
 use crate::utils::set_learning_sequence::build_learning_sequence;
+use crate::utils::weight_initialisation::weight_init_by_name;
 use crate::updates::observations::{set_predictors, set_observation};
 use pyo3::types::PyTuple;
 use pyo3::{prelude::*, types::{PyList, PyDict}};
@@ -761,6 +762,49 @@ impl Network {
             })
             .collect()
     }
+
+    /// Initialise coupling weights for every layer except the input (top) layer.
+    ///
+    /// For each targeted layer the method generates a weight matrix whose
+    /// dimensions are `(n_parents, n_current)` — the number of parent nodes in
+    /// the layer above and the number of nodes in the current layer — then
+    /// applies them via [`set_coupling`].
+    pub fn weight_initialisation(
+        &mut self,
+        strategy: &str,
+        seed: Option<u64>,
+    ) -> Result<(), String> {
+        if self.layers.len() < 2 {
+            return Err(format!(
+                "weight_initialisation requires at least 2 tracked layers. \
+                 The network currently has {} layer(s).",
+                self.layers.len()
+            ));
+        }
+
+        // All layers except the top/input layer (layers.last()).
+        // layers[0] = output, layers[last] = input.
+        // For layer at `layer_idx`, parents are at `layer_idx + 1`.
+        for layer_idx in 0..self.layers.len() - 1 {
+            let current_nodes = self.layers[layer_idx].clone();
+            let parent_nodes = self.layers[layer_idx + 1].clone();
+
+            let n_parents = parent_nodes.len();
+            let n_current = current_nodes.len();
+
+            let weights = weight_init_by_name(strategy, n_parents, n_current, seed)?;
+
+            for (p_local, &parent_idx) in parent_nodes.iter().enumerate() {
+                for (c_local, &child_idx) in current_nodes.iter().enumerate() {
+                    let w = weights[p_local * n_current + c_local];
+                    crate::utils::set_coupling::set_coupling(
+                        self, parent_idx, child_idx, w,
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 // Python interface — wrappers that return self for method chaining
@@ -1069,6 +1113,17 @@ impl Network {
         let array = numpy::PyArray1::from_vec(py, flat)
             .reshape([n_samples, n_outputs])?;
         Ok(array.into())
+    }
+
+    #[pyo3(name = "weight_initialisation", signature = (strategy, seed=None))]
+    fn py_weight_initialisation<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        strategy: &str,
+        seed: Option<u64>,
+    ) -> PyResult<PyRefMut<'py, Self>> {
+        slf.weight_initialisation(strategy, seed)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?;
+        Ok(slf)
     }
 
     #[getter]
