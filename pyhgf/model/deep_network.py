@@ -4,10 +4,16 @@ from __future__ import annotations
 
 from typing import Callable, Optional, Union
 
-import jax.numpy as jnp
 import numpy as np
 
 from pyhgf.model.network import Network
+from pyhgf.utils import set_coupling
+from pyhgf.utils.weight_initialisation import (
+    he_init,
+    orthogonal_init,
+    sparse_init,
+    xavier_init,
+)
 
 
 class DeepNetwork(Network):
@@ -49,12 +55,28 @@ class DeepNetwork(Network):
         self,
         kind: str = "volatile-state",
         coupling_fn: tuple[Optional[Callable], ...] = (None,),
+        weight_init: Optional[str] = None,
     ):
-        """Initialize a DeepNetwork with layer tracking."""
+        """Initialize a DeepNetwork with layer tracking.
+
+        Parameters
+        ----------
+        kind :
+            The default node type for hidden layers.
+        coupling_fn :
+            Default coupling function(s) for hidden layers.
+        weight_init :
+            Weight initialisation strategy applied to hidden layers when
+            :meth:`weight_initialisation` is called.  Must be one of
+            ``"xavier"``, ``"he"``, ``"orthogonal"``, ``"sparse"``, or
+            *None* (no automatic initialisation).
+
+        """
         super().__init__()
         self.layers: list = []  # Track layer structure: list of lists of node indices
         self.kind = kind
         self.coupling_fn = coupling_fn
+        self.weight_init = weight_init
 
     def add_layer(
         self,
@@ -321,6 +343,96 @@ class DeepNetwork(Network):
             lr=lr,
             overwrite=overwrite,
         )
+
+    def weight_initialisation(
+        self,
+        strategy: Optional[str] = None,
+        seed: Optional[int] = None,
+        **kwargs,
+    ) -> DeepNetwork:
+        """Initialise coupling weights for every layer except the input layer.
+
+        For each targeted layer the method generates a weight matrix whose dimensions
+        are ``(n_parents, n_current)`` — the number of parent nodes in the layer above
+        and the number of nodes in the current layer, and applies the values via
+        :func:`pyhgf.utils.set_coupling`.
+
+        The input (top) layer is skipped because it has no parents to
+        initialise.
+
+        Parameters
+        ----------
+        strategy :
+            Initialisation strategy.  One of ``"xavier"``, ``"he"``, ``"orthogonal"``,
+            or ``"sparse"``.  If *None*, falls back to ``self.weight_init`` set during
+            construction.
+        seed :
+            Optional random seed passed to the initialisation function.
+        **kwargs
+            Extra keyword arguments forwarded to the initialisation function (e.g.
+            ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).
+
+        Returns
+        -------
+        self :
+            The network with updated coupling weights (for method chaining).
+
+        Raises
+        ------
+        ValueError
+            If no strategy is provided (neither as argument nor at init time), or if the
+            network has fewer than 2 tracked layers.
+
+        """
+        # If strategy is not provided here, use the default values from the constructor
+        if strategy is None:
+            return self
+        elif strategy not in ["xavier", "he", "orthogonal", "sparse"]:
+            raise ValueError(
+                "Invalid weight initialisation strategy. Pass strategy='xavier' (or "
+                "'he', 'orthogonal', 'sparse') in the DeepNetwork constructor."
+            )
+
+        _init_fns: dict[str, Callable[..., np.ndarray]] = {
+            "xavier": xavier_init,
+            "he": he_init,
+            "orthogonal": orthogonal_init,
+            "sparse": sparse_init,
+        }
+        init_fn: Callable[..., np.ndarray] = _init_fns[strategy]
+
+        if len(self.layers) < 2:
+            raise ValueError(
+                "weight_initialisation requires at least 2 tracked layers. "
+                f"The network currently has {len(self.layers)} layer(s)."
+            )
+
+        # All layers except the top/input layer (layers[-1]).
+        # For each layer at index `layer_idx`, the parents live in the layer
+        # above at `layer_idx + 1`.
+        for layer_idx in range(0, len(self.layers) - 1):
+            current_nodes = self.layers[layer_idx]
+            parent_nodes = self.layers[layer_idx + 1]
+
+            n_parents = len(parent_nodes)
+            n_current = len(current_nodes)
+
+            # Generate weight matrix (flat, row-major: parent × current)
+            weights = init_fn(n_parents, n_current, seed=seed, **kwargs)
+
+            # Apply weights to each parent→current-node connection
+            for p_local, parent_idx in enumerate(parent_nodes):
+                for c_local, child_idx in enumerate(current_nodes):
+                    w = float(weights[p_local * n_current + c_local])
+                    self.attributes = set_coupling(
+                        attributes=self.attributes,
+                        edges=self.edges,
+                        parent_idx=parent_idx,
+                        child_idx=child_idx,
+                        coupling=w,
+                    )
+
+        return self
 
     def get_layer_sizes(self) -> list[int]:
         """Get the size of each tracked layer.

@@ -12,6 +12,7 @@ from .sample import sample
 from .sample_node_distribution import sample_node_distribution
 from .set_coupling import set_coupling
 from .to_pandas import to_pandas
+from .weight_initialisation import he_init, orthogonal_init, sparse_init, xavier_init
 
 __all__ = [
     "add_edges",
