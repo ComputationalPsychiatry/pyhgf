@@ -97,7 +97,6 @@ def test_deepnetwork_add_value_parent_layer():
         value_children=bottom,
         precision=1.0,
         tonic_volatility=-1.0,
-        autoconnection_strength=0.2,
     )
 
     # Expect exactly 3 new nodes
@@ -131,7 +130,6 @@ def test_deepnetwork_add_layer_stack():
         layer_sizes=[3, 2, 1],
         precision=1.0,
         tonic_volatility=-1.0,
-        autoconnection_strength=0.3,
     )
 
     # Check total nodes added (3 + 2 + 1 = 6)

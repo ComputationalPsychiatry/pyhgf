@@ -6,10 +6,6 @@ import jax.numpy as jnp
 from jax import jit
 
 from pyhgf.typing import Attributes, Edges
-from pyhgf.updates.posterior.volatile.volatile_node_posterior_update import (
-    posterior_update_mean_value_level,
-    posterior_update_precision_value_level,
-)
 from pyhgf.utils import set_coupling
 
 
@@ -39,49 +35,71 @@ def learning_weights_fixed(
         The attributes of the probabilistic network.
 
     """
-    # 1. update the coupling strength between the child and value parent
-    # ------------------------------------------------------------------
-    weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore
+    # 1. get the prospective activation vector from the upper layer with coupling
+    # ---------------------------------------------------------------------------
+    means = [
+        attributes[parent_idx]["mean"]
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+    expected_means = [
+        attributes[parent_idx]["expected_mean"]
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+    couplings = attributes[node_idx]["value_coupling_parents"]
 
-    for value_parent_idx, value_coupling in zip(
-        edges[node_idx].value_parents,  # type: ignore
-        attributes[node_idx]["value_coupling_parents"],
-    ):
-        # prospective reconfiguration step:
-        # infer the latent state that explain the outcome
-        prospective_precision = posterior_update_precision_value_level(
-            attributes, edges, value_parent_idx
-        )
-        prospective_mean = posterior_update_mean_value_level(
-            attributes, edges, value_parent_idx, prospective_precision
-        )
-
-        # find the coupling function for this node
-        coupling_fn = edges[value_parent_idx].coupling_fn[
-            edges[value_parent_idx].value_children.index(node_idx)
+    # 2. find the coupling function for each parent → child pair
+    # -----------------------------------------------------------
+    # coupling_fn is stored on the *parent* node, indexed by the child's
+    # position in the parent's value_children list
+    coupling_fns = [
+        edges[parent_idx].coupling_fn[  # type: ignore[index]
+            edges[parent_idx].value_children.index(node_idx)  # type: ignore[union-attr]
         ]
+        if edges[parent_idx].coupling_fn is not None
+        else None
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
 
-        # g(prospective_mean) — None means linear (identity)
-        if coupling_fn is None:
-            g_value = prospective_mean
-        else:
-            g_value = coupling_fn(prospective_mean)
+    # 3. compute the expected activation for the current node
+    # -------------------------------------------------------
+    prospective_activation = jnp.array([
+        fn(mean) if fn is not None else mean for mean, fn in zip(means, coupling_fns)
+    ])
+    current_activation = jnp.array([
+        fn(mean) if fn is not None else mean
+        for mean, fn in zip(expected_means, coupling_fns)
+    ])
 
-        expected_coupling = attributes[node_idx]["mean"] / g_value
-        expected_coupling = jnp.where(
-            jnp.isnan(expected_coupling) | jnp.isinf(expected_coupling),
-            value_coupling,
-            expected_coupling,
-        )
-        new_value_coupling = (
-            value_coupling + (expected_coupling - value_coupling) * lr * weighting
-        )
+    # target coupling per parent: solve for w_i given all other parents' contributions
+    # (child_mean - contribution_of_others) / g_i(parent_mean)
+    expected_couplings = (
+        attributes[node_idx]["mean"]
+        - (attributes[node_idx]["expected_mean"] - current_activation * couplings)
+    ) / prospective_activation
 
-        # add a check to avoid inf coupling values
-        new_value_coupling = jnp.where(
-            jnp.isinf(new_value_coupling), value_coupling, new_value_coupling
-        )
+    # guard against NaN/inf when activation ≈ 0
+    expected_couplings = jnp.where(
+        jnp.isnan(expected_couplings) | jnp.isinf(expected_couplings),
+        couplings,
+        expected_couplings,
+    )
 
+    # 4. update the coupling strength between this node and its value parents
+    # -----------------------------------------------------------------------
+    weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore[operator,arg-type]
+    new_value_couplings = couplings + (expected_couplings - couplings) * lr * weighting
+
+    # guard against inf/nan coupling values
+    new_value_couplings = jnp.where(
+        jnp.isinf(new_value_couplings) | jnp.isnan(new_value_couplings),
+        couplings,
+        new_value_couplings,
+    )
+
+    for value_parent_idx, new_value_coupling in zip(
+        edges[node_idx].value_parents,  # type: ignore[arg-type]
+        new_value_couplings,
+    ):
         # update the coupling strength in the attributes dictionary for both nodes
         attributes = set_coupling(
             parent_idx=value_parent_idx,
@@ -119,59 +137,81 @@ def learning_weights_dynamic(
         The attributes of the probabilistic network.
 
     """
-    # 1. update the coupling strength between the child and value parent
-    # ------------------------------------------------------------------
-    weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore
+    # 1. get the prospective activation vector from the upper layer with coupling
+    # ---------------------------------------------------------------------------
+    means = [
+        attributes[parent_idx]["mean"]
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+    precisions = [
+        attributes[parent_idx]["precision"]
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+    expected_means = [
+        attributes[parent_idx]["expected_mean"]
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+    couplings = attributes[node_idx]["value_coupling_parents"]
 
-    for value_parent_idx, value_coupling in zip(
-        edges[node_idx].value_parents,  # type: ignore
-        attributes[node_idx]["value_coupling_parents"],
-    ):
-        # prospective reconfiguration step:
-        # infer the latent state that explain the outcome
-        prospective_precision = posterior_update_precision_value_level(
-            attributes, edges, value_parent_idx
-        )
-        prospective_mean = posterior_update_mean_value_level(
-            attributes, edges, value_parent_idx, prospective_precision
-        )
-
-        # find the coupling function for this node
-        coupling_fn = edges[value_parent_idx].coupling_fn[
-            edges[value_parent_idx].value_children.index(node_idx)
+    # 2. find the coupling function for each parent → child pair
+    # -----------------------------------------------------------
+    coupling_fns = [
+        edges[parent_idx].coupling_fn[  # type: ignore[index]
+            edges[parent_idx].value_children.index(node_idx)  # type: ignore[union-attr]
         ]
+        if edges[parent_idx].coupling_fn is not None
+        else None
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
 
-        # g(prospective_mean) — None means linear (identity)
-        if coupling_fn is None:
-            g_value = prospective_mean
-        else:
-            g_value = coupling_fn(prospective_mean)
+    # 3. compute the expected activation for the current node
+    # -------------------------------------------------------
+    prospective_activation = jnp.array([
+        fn(mean) if fn is not None else mean for mean, fn in zip(means, coupling_fns)
+    ])
+    current_activation = jnp.array([
+        fn(mean) if fn is not None else mean
+        for mean, fn in zip(expected_means, coupling_fns)
+    ])
 
-        expected_coupling = attributes[node_idx]["mean"] / g_value
-        expected_coupling = jnp.where(
-            jnp.isnan(expected_coupling) | jnp.isinf(expected_coupling),
-            value_coupling,
-            expected_coupling,
-        )
+    # target coupling per parent: solve for w_i given all other parents' contributions
+    # (child_mean - contribution_of_others) / g_i(parent_mean)
+    expected_couplings = (
+        attributes[node_idx]["mean"]
+        - (attributes[node_idx]["expected_mean"] - current_activation * couplings)
+    ) / prospective_activation
 
-        # use expected_precision (prediction-time) for both child and parent
-        # to avoid asymmetry from update ordering (child already posterior-updated,
-        # parent not yet)
-        precision_weighting = attributes[node_idx]["expected_precision"] / (
-            attributes[value_parent_idx]["expected_precision"]
-            + attributes[node_idx]["expected_precision"]
-        )
+    # guard against NaN/inf when activation ≈ 0
+    expected_couplings = jnp.where(
+        jnp.isnan(expected_couplings) | jnp.isinf(expected_couplings),
+        couplings,
+        expected_couplings,
+    )
 
-        new_value_coupling = (
-            value_coupling
-            + (expected_coupling - value_coupling) * precision_weighting * weighting
-        )
+    # 4. update the coupling strength between this node and its value parents
+    # -----------------------------------------------------------------------
 
-        # guard against inf coupling values
-        new_value_coupling = jnp.where(
-            jnp.isinf(new_value_coupling), value_coupling, new_value_coupling
-        )
+    # use precision (posterior) for both child and parent
+    precision_weighting = attributes[node_idx]["precision"] / (
+        jnp.array(precisions) + attributes[node_idx]["precision"]
+    )
 
+    weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore[operator,arg-type]
+    new_value_couplings = (
+        couplings + (expected_couplings - couplings) * precision_weighting * weighting
+    )
+
+    # guard against inf/nan coupling values
+    new_value_couplings = jnp.where(
+        jnp.isinf(new_value_couplings) | jnp.isnan(new_value_couplings),
+        couplings,
+        new_value_couplings,
+    )
+
+    for value_parent_idx, new_value_coupling in zip(
+        edges[node_idx].value_parents,  # type: ignore[arg-type]
+        new_value_couplings,
+    ):
         # update the coupling strength in the attributes dictionary for both nodes
         attributes = set_coupling(
             parent_idx=value_parent_idx,

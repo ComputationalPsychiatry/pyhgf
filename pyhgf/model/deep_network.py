@@ -150,6 +150,7 @@ class DeepNetwork(Network):
         # Add node parameters that shouldn't be overridden
         node_params = {
             "coupling_fn": coupling_fn,
+            "autoconnection_strength": 0.0,
             **node_parameters,
         }
 
