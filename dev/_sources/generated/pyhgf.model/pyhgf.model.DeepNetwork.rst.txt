@@ -37,6 +37,7 @@
       ~DeepNetwork.sample
       ~DeepNetwork.surprise
       ~DeepNetwork.to_pandas
+      ~DeepNetwork.weight_initialisation
    
    
 

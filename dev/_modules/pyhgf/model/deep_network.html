@@ -868,10 +868,16 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_coupling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.weight_initialisation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">he_init</span><span class="p">,</span>
+    <span class="n">orthogonal_init</span><span class="p">,</span>
+    <span class="n">sparse_init</span><span class="p">,</span>
+    <span class="n">xavier_init</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="DeepNetwork">
@@ -917,12 +923,28 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
+        <span class="n">weight_init</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a DeepNetwork with layer tracking.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a DeepNetwork with layer tracking.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kind :</span>
+<span class="sd">            The default node type for hidden layers.</span>
+<span class="sd">        coupling_fn :</span>
+<span class="sd">            Default coupling function(s) for hidden layers.</span>
+<span class="sd">        weight_init :</span>
+<span class="sd">            Weight initialisation strategy applied to hidden layers when</span>
+<span class="sd">            :meth:`weight_initialisation` is called.  Must be one of</span>
+<span class="sd">            ``&quot;xavier&quot;``, ``&quot;he&quot;``, ``&quot;orthogonal&quot;``, ``&quot;sparse&quot;``, or</span>
+<span class="sd">            *None* (no automatic initialisation).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Track layer structure: list of lists of node indices</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="n">kind</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_init</span> <span class="o">=</span> <span class="n">weight_init</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer</span><span class="p">(</span>
@@ -1190,6 +1212,96 @@ window.runMermaid = runMermaid;</script>
             <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
         <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight_initialisation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise coupling weights for every layer except the input layer.</span>
+
+<span class="sd">        For each targeted layer the method generates a weight matrix whose dimensions</span>
+<span class="sd">        are ``(n_parents, n_current)`` — the number of parent nodes in the layer above</span>
+<span class="sd">        and the number of nodes in the current layer, and applies the values via</span>
+<span class="sd">        :func:`pyhgf.utils.set_coupling`.</span>
+
+<span class="sd">        The input (top) layer is skipped because it has no parents to</span>
+<span class="sd">        initialise.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strategy :</span>
+<span class="sd">            Initialisation strategy.  One of ``&quot;xavier&quot;``, ``&quot;he&quot;``, ``&quot;orthogonal&quot;``,</span>
+<span class="sd">            or ``&quot;sparse&quot;``.  If *None*, falls back to ``self.weight_init`` set during</span>
+<span class="sd">            construction.</span>
+<span class="sd">        seed :</span>
+<span class="sd">            Optional random seed passed to the initialisation function.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Extra keyword arguments forwarded to the initialisation function (e.g.</span>
+<span class="sd">            ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self :</span>
+<span class="sd">            The network with updated coupling weights (for method chaining).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If no strategy is provided (neither as argument nor at init time), or if the</span>
+<span class="sd">            network has fewer than 2 tracked layers.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If strategy is not provided here, use the default values from the constructor</span>
+        <span class="k">if</span> <span class="n">strategy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">elif</span> <span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xavier&quot;</span><span class="p">,</span> <span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="s2">&quot;orthogonal&quot;</span><span class="p">,</span> <span class="s2">&quot;sparse&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid weight initialisation strategy. Pass strategy=&#39;xavier&#39; (or &quot;</span>
+                <span class="s2">&quot;&#39;he&#39;, &#39;orthogonal&#39;, &#39;sparse&#39;) in the DeepNetwork constructor.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">_init_fns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;xavier&quot;</span><span class="p">:</span> <span class="n">xavier_init</span><span class="p">,</span>
+            <span class="s2">&quot;he&quot;</span><span class="p">:</span> <span class="n">he_init</span><span class="p">,</span>
+            <span class="s2">&quot;orthogonal&quot;</span><span class="p">:</span> <span class="n">orthogonal_init</span><span class="p">,</span>
+            <span class="s2">&quot;sparse&quot;</span><span class="p">:</span> <span class="n">sparse_init</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">init_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">_init_fns</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;weight_initialisation requires at least 2 tracked layers. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;The network currently has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span><span class="si">}</span><span class="s2"> layer(s).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># All layers except the top/input layer (layers[-1]).</span>
+        <span class="c1"># For each layer at index `layer_idx`, the parents live in the layer</span>
+        <span class="c1"># above at `layer_idx + 1`.</span>
+        <span class="k">for</span> <span class="n">layer_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">current_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_idx</span><span class="p">]</span>
+            <span class="n">parent_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">n_parents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent_nodes</span><span class="p">)</span>
+            <span class="n">n_current</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_nodes</span><span class="p">)</span>
+
+            <span class="c1"># Generate weight matrix (flat, row-major: parent × current)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_current</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="c1"># Apply weights to each parent→current-node connection</span>
+            <span class="k">for</span> <span class="n">p_local</span><span class="p">,</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parent_nodes</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">c_local</span><span class="p">,</span> <span class="n">child_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">current_nodes</span><span class="p">):</span>
+                    <span class="n">w</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">p_local</span> <span class="o">*</span> <span class="n">n_current</span> <span class="o">+</span> <span class="n">c_local</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">set_coupling</span><span class="p">(</span>
+                        <span class="n">attributes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
+                        <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+                        <span class="n">parent_idx</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
+                        <span class="n">child_idx</span><span class="o">=</span><span class="n">child_idx</span><span class="p">,</span>
+                        <span class="n">coupling</span><span class="o">=</span><span class="n">w</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_layer_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the size of each tracked layer.</span>
