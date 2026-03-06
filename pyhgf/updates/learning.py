@@ -47,15 +47,27 @@ def learning_weights_fixed(
     ]
     couplings = attributes[node_idx]["value_coupling_parents"]
 
-    # 2. compute the expected activation for the current node
+    # 2. find the coupling function for each parent → child pair
+    # -----------------------------------------------------------
+    # coupling_fn is stored on the *parent* node, indexed by the child's
+    # position in the parent's value_children list
+    coupling_fns = [
+        edges[parent_idx].coupling_fn[  # type: ignore[index]
+            edges[parent_idx].value_children.index(node_idx)  # type: ignore[union-attr]
+        ]
+        if edges[parent_idx].coupling_fn is not None
+        else None
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+
+    # 3. compute the expected activation for the current node
     # -------------------------------------------------------
     prospective_activation = jnp.array([
-        coupling_fn(mean) if coupling_fn is not None else mean
-        for mean, coupling_fn in zip(means, edges[node_idx].coupling_fn)  # type: ignore[union-attr]
+        fn(mean) if fn is not None else mean for mean, fn in zip(means, coupling_fns)
     ])
     current_activation = jnp.array([
-        coupling_fn(mean) if coupling_fn is not None else mean
-        for mean, coupling_fn in zip(expected_means, edges[node_idx].coupling_fn)  # type: ignore[union-attr]
+        fn(mean) if fn is not None else mean
+        for mean, fn in zip(expected_means, coupling_fns)
     ])
 
     # target coupling per parent: solve for w_i given all other parents' contributions
@@ -72,7 +84,7 @@ def learning_weights_fixed(
         expected_couplings,
     )
 
-    # 3. update the coupling strength between this node and its value parents
+    # 4. update the coupling strength between this node and its value parents
     # -----------------------------------------------------------------------
     weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore[operator,arg-type]
     new_value_couplings = couplings + (expected_couplings - couplings) * lr * weighting
@@ -141,15 +153,25 @@ def learning_weights_dynamic(
     ]
     couplings = attributes[node_idx]["value_coupling_parents"]
 
-    # 2. compute the expected activation for the current node
+    # 2. find the coupling function for each parent → child pair
+    # -----------------------------------------------------------
+    coupling_fns = [
+        edges[parent_idx].coupling_fn[  # type: ignore[index]
+            edges[parent_idx].value_children.index(node_idx)  # type: ignore[union-attr]
+        ]
+        if edges[parent_idx].coupling_fn is not None
+        else None
+        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
+    ]
+
+    # 3. compute the expected activation for the current node
     # -------------------------------------------------------
     prospective_activation = jnp.array([
-        coupling_fn(mean) if coupling_fn is not None else mean
-        for mean, coupling_fn in zip(means, edges[node_idx].coupling_fn)  # type: ignore[union-attr]
+        fn(mean) if fn is not None else mean for mean, fn in zip(means, coupling_fns)
     ])
     current_activation = jnp.array([
-        coupling_fn(mean) if coupling_fn is not None else mean
-        for mean, coupling_fn in zip(expected_means, edges[node_idx].coupling_fn)  # type: ignore[union-attr]
+        fn(mean) if fn is not None else mean
+        for mean, fn in zip(expected_means, coupling_fns)
     ])
 
     # target coupling per parent: solve for w_i given all other parents' contributions
@@ -166,14 +188,12 @@ def learning_weights_dynamic(
         expected_couplings,
     )
 
-    # 3. update the coupling strength between this node and its value parents
+    # 4. update the coupling strength between this node and its value parents
     # -----------------------------------------------------------------------
 
-    # use expected_precision (prediction-time) for both child and parent
-    # to avoid asymmetry from update ordering (child already posterior-updated,
-    # parent not yet)
+    # use precision (posterior) for both child and parent
     precision_weighting = attributes[node_idx]["precision"] / (
-        precisions + attributes[node_idx]["precision"]
+        jnp.array(precisions) + attributes[node_idx]["precision"]
     )
 
     weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore[operator,arg-type]

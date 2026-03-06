@@ -83,7 +83,7 @@ class DeepNetwork(Network):
         size: int = 1,
         kind: Optional[str] = None,
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
-        coupling_strengths: Union[float, list[float], tuple[float, ...]] = 0.0,
+        coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
         **node_parameters,
     ) -> DeepNetwork:
@@ -150,6 +150,7 @@ class DeepNetwork(Network):
         # Add node parameters that shouldn't be overridden
         node_params = {
             "coupling_fn": coupling_fn,
+            "autoconnection_strength": 0.0,
             **node_parameters,
         }
 
