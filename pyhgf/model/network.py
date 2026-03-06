@@ -188,7 +188,7 @@ class Network:
         """Create the belief propagation function.
 
         .. note:
-           This step is called by default when using py:meth:`input_data`.
+           This step is called by default when using py:meth:`fit`.
 
         Parameters
         ----------
@@ -229,24 +229,12 @@ class Network:
             if step[0] not in inputs_x_idxs
         ]
 
-        # interleave the weight updates after the prediction error
-        # and before the posterior updates
-        inc = 0  # increment the index dynamically
-        weight_update = []  # list of weight update to perform at this layer
+        # the learning steps should apply weight learning
+        # in the same order than the prediction errors occure
+        learning_steps = []  # list of weight update to perform at this layer
         for i, update in enumerate(update_steps):
             if "prediction_error" in update[1].__name__:
-                weight_update.append((update[0], learning_weights))
-            if "posterior" in update[1].__name__ and weight_update:
-                update_steps = (
-                    update_steps[: i + inc] + weight_update + update_steps[i + inc :]
-                )
-                inc = len(weight_update)
-                weight_update = []
-
-        # flush any remaining weight updates at the end — this handles PEs whose
-        # parents' posterior steps were filtered out (e.g. predictor nodes)
-        if weight_update:
-            update_steps = update_steps + weight_update
+                learning_steps.append((update[0], learning_weights))
 
         # do not predict on the last layer
         prediction_steps = tuple([
@@ -258,6 +246,7 @@ class Network:
         self.learning_sequence = LearningSequence(
             prediction_steps=prediction_steps,
             update_steps=tuple(update_steps),
+            learning_steps=tuple(learning_steps),
         )
 
         # create the learning propagation function
