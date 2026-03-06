@@ -482,6 +482,13 @@ impl Network {
             }
         };
 
+        // Default autoconnection_strength to 0.0 unless the caller specified it
+        let additional_parameters = {
+            let mut params = additional_parameters.unwrap_or_default();
+            params.entry("autoconnection_strength".into()).or_insert(0.0);
+            Some(params)
+        };
+
         // Add `size` parent nodes, each connecting to all children
         for _ in 0..size {
             let vc = IntOrList::List(children.clone());
@@ -595,8 +602,8 @@ impl Network {
             None => learning_weights_dynamic as FnType,
         };
 
-        // Build the interleaved learning sequence
-        let (predictions, updates) = build_learning_sequence(
+        // Build the learning sequence (prediction, update, learning steps)
+        let learning_seq = build_learning_sequence(
             &self.update_sequence.predictions,
             &self.update_sequence.updates,
             inputs_x_idxs,
@@ -638,7 +645,7 @@ impl Network {
             }
 
             // 2. Prediction sequence (top-down, excluding predictor nodes)
-            for &(idx, step) in &predictions {
+            for &(idx, step) in &learning_seq.prediction_steps {
                 step(self, idx, time_step);
             }
 
@@ -647,8 +654,13 @@ impl Network {
                 set_observation(self, node_idx, y[t][i]);
             }
 
-            // 4. Update sequence (prediction errors → weight updates → posterior)
-            for &(idx, step) in &updates {
+            // 4. Update sequence (prediction errors → posterior updates)
+            for &(idx, step) in &learning_seq.update_steps {
+                step(self, idx, time_step);
+            }
+
+            // 5. Learning step (weight updates, same order as prediction errors)
+            for &(idx, step) in &learning_seq.learning_steps {
                 step(self, idx, time_step);
             }
 
