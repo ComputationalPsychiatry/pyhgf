@@ -1100,10 +1100,18 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># the learning steps should apply weight learning</span>
         <span class="c1"># in the same order than the prediction errors occure</span>
+        <span class="c1"># only continuous-state (node_type 2) and volatile-state (node_type 6) nodes</span>
+        <span class="c1"># are eligible; binary-state nodes use sigmoid(Σ parent_expected_mean) which</span>
+        <span class="c1"># does not involve coupling weights, so the linear learning rule would be wrong.</span>
         <span class="n">learning_steps</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of weight update to perform at this layer</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">update_steps</span><span class="p">):</span>
             <span class="k">if</span> <span class="s2">&quot;prediction_error&quot;</span> <span class="ow">in</span> <span class="n">update</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
-                <span class="n">learning_steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">update</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">learning_weights</span><span class="p">))</span>
+                <span class="n">node_idx</span> <span class="o">=</span> <span class="n">update</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="ow">in</span> <span class="p">{</span>
+                    <span class="mi">2</span><span class="p">,</span>
+                    <span class="mi">6</span><span class="p">,</span>
+                <span class="p">}:</span>  <span class="c1"># continuous-state, volatile-state</span>
+                    <span class="n">learning_steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learning_weights</span><span class="p">))</span>
 
         <span class="c1"># do not predict on the last layer</span>
         <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
