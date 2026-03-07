@@ -608,6 +608,7 @@ impl Network {
             &self.update_sequence.updates,
             inputs_x_idxs,
             learning_fn,
+            &self.edges,
         );
 
         let n_time = x.len();
@@ -800,6 +801,16 @@ impl Network {
         for layer_idx in 0..self.layers.len() - 1 {
             let current_nodes = self.layers[layer_idx].clone();
             let parent_nodes = self.layers[layer_idx + 1].clone();
+
+            // Only initialise weights between layers of continuous or volatile nodes
+            let all_learnable = current_nodes.iter().chain(parent_nodes.iter()).all(|idx| {
+                self.edges.get(idx)
+                    .map(|e| e.node_type == "continuous-state" || e.node_type == "volatile-state")
+                    .unwrap_or(false)
+            });
+            if !all_learnable {
+                continue;
+            }
 
             let n_parents = parent_nodes.len();
             let n_current = current_nodes.len();

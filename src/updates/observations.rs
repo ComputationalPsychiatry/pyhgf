@@ -21,11 +21,16 @@ pub fn observation_update(network: &mut Network, node_idx: usize, observations: 
 
 /// Set predictor values on top-layer nodes.
 ///
-/// Writes the given value into the node's `"expected_mean"` attribute.
-/// This mirrors Python `set_predictors` — predictor nodes have their
-/// expected means clamped to the input features before the prediction pass.
+/// Writes the given value into the node's `"mean"` and `"expected_mean"`
+/// attributes.  Both must be set because:
+/// - `expected_mean` drives the top-down prediction pass.
+/// - `mean` (the posterior) is read by the learning rule's
+///   `g(parent_mean)` denominator.  Without it, predictor nodes keep
+///   `mean = 0`, the activation is zero, and the first layer's
+///   couplings never update.
 pub fn set_predictors(network: &mut Network, node_idx: usize, value: f64) {
     if let Some(node) = network.attributes.floats.get_mut(&node_idx) {
+        node.insert("mean".into(), value);
         node.insert("expected_mean".into(), value);
     }
 }

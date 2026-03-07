@@ -34,10 +34,12 @@ fn precision_update_value_level(network: &Network, node_idx: usize) -> f64 {
             .get(&node_idx)
             .and_then(|v| v.get("value_coupling_children").cloned());
 
-        // g'(μ) and g''(μ) are evaluated at the parent's current mean.
-        let parent_mean = *network.attributes.floats
+        // g'(μ̂) and g''(μ̂) are evaluated at the parent's expected mean
+        // (the prediction for the current sample), not the stale posterior
+        // from the previous sample.
+        let parent_expected_mean = *network.attributes.floats
             .get(&node_idx)
-            .and_then(|f| f.get("mean"))
+            .and_then(|f| f.get("expected_mean"))
             .unwrap_or(&0.0);
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
@@ -62,8 +64,8 @@ fn precision_update_value_level(network: &Network, node_idx: usize) -> f64 {
             // g'(μ)² and g''(μ)·δ — for linear these are 1 and 0.
             let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
                 Some(cf) => {
-                    let g_prime = (cf.df)(parent_mean);
-                    let g_second = (cf.d2f)(parent_mean);
+                    let g_prime = (cf.df)(parent_expected_mean);
+                    let g_second = (cf.d2f)(parent_expected_mean);
                     let child_vape = *child_floats.get("value_prediction_error")
                         .unwrap_or(&0.0);
                     (g_prime.powi(2), g_second * child_vape)
@@ -95,10 +97,12 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
             .get(&node_idx)
             .and_then(|v| v.get("value_coupling_children").cloned());
 
-        // g'(μ_parent) is evaluated at the parent's *current* mean.
-        let parent_mean = *network.attributes.floats
+        // g'(μ̂_parent) is evaluated at the parent's expected mean
+        // (the prediction for the current sample), not the stale posterior
+        // from the previous sample.
+        let parent_expected_mean = *network.attributes.floats
             .get(&node_idx)
-            .and_then(|f| f.get("mean"))
+            .and_then(|f| f.get("expected_mean"))
             .unwrap_or(&0.0);
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
@@ -124,7 +128,7 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
                         .and_then(|fp| fp.get("value_coupling_fn_parents"))
                         .and_then(|fns| fns.get(pos).copied())
                 })
-                .map(|cf| (cf.df)(parent_mean))
+                .map(|cf| (cf.df)(parent_expected_mean))
                 .unwrap_or(1.0);
 
             value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision) * child_vape;
