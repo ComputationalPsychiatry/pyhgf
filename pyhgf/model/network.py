@@ -231,10 +231,18 @@ class Network:
 
         # the learning steps should apply weight learning
         # in the same order than the prediction errors occure
+        # only continuous-state (node_type 2) and volatile-state (node_type 6) nodes
+        # are eligible; binary-state nodes use sigmoid(Σ parent_expected_mean) which
+        # does not involve coupling weights, so the linear learning rule would be wrong.
         learning_steps = []  # list of weight update to perform at this layer
         for i, update in enumerate(update_steps):
             if "prediction_error" in update[1].__name__:
-                learning_steps.append((update[0], learning_weights))
+                node_idx = update[0]
+                if self.edges[node_idx].node_type in {
+                    2,
+                    6,
+                }:  # continuous-state, volatile-state
+                    learning_steps.append((node_idx, learning_weights))
 
         # do not predict on the last layer
         prediction_steps = tuple([
