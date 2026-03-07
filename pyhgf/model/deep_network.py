@@ -408,12 +408,22 @@ class DeepNetwork(Network):
                 f"The network currently has {len(self.layers)} layer(s)."
             )
 
+        # Learnable node types: continuous-state (2) and volatile-state (6).
+        learnable_types = {2, 6}
+
         # All layers except the top/input layer (layers[-1]).
         # For each layer at index `layer_idx`, the parents live in the layer
         # above at `layer_idx + 1`.
         for layer_idx in range(0, len(self.layers) - 1):
             current_nodes = self.layers[layer_idx]
             parent_nodes = self.layers[layer_idx + 1]
+
+            # Only initialise weights between layers of continuous or volatile nodes
+            if not all(
+                self.edges[idx].node_type in learnable_types
+                for idx in current_nodes + parent_nodes
+            ):
+                continue
 
             n_parents = len(parent_nodes)
             n_current = len(current_nodes)

@@ -63,5 +63,6 @@ def set_predictors(
 
     """
     attributes[node_idx]["expected_mean"] = values
+    attributes[node_idx]["mean"] = values
 
     return attributes
