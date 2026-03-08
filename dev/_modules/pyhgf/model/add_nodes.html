@@ -1015,6 +1015,45 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">network</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">add_constant_state</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">value_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">volatility_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add constant-state (bias) node(s) to a network.</span>
+
+<span class="sd">    Constant-state nodes hold a fixed mean of 1.0 and have no prediction or update</span>
+<span class="sd">    steps. They can only have children, never parents.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">node_type</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;expected_mean&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;value_coupling_children&quot;</span><span class="p">:</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="c1"># allow caller overrides</span>
+    <span class="n">default_parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">node_parameters</span><span class="p">)</span>
+
+    <span class="n">network</span> <span class="o">=</span> <span class="n">insert_nodes</span><span class="p">(</span>
+        <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">,</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
+        <span class="n">node_type</span><span class="o">=</span><span class="n">node_type</span><span class="p">,</span>
+        <span class="n">node_parameters</span><span class="o">=</span><span class="n">default_parameters</span><span class="p">,</span>
+        <span class="n">value_parents</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">volatility_parents</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+        <span class="n">volatility_children</span><span class="o">=</span><span class="n">volatility_children</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">network</span>
+
+
 <div class="viewcode-block" id="add_binary_state">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.add_binary_state.html#pyhgf.model.add_binary_state">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_binary_state</span><span class="p">(</span>
