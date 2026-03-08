@@ -30,6 +30,12 @@ def volatile_node_posterior_update_ehgf(
     precision as an approximation, and then updates the precision. This often reduces
     errors associated with impossible parameter spaces and improves sampling.
 
+    Unlike the standard continuous-state posterior updates elsewhere in the
+    toolbox, the volatile-state updates use the *expected* mean (i.e. the
+    prediction) as the reference point rather than the posterior mean. This
+    choice is made to better suit deep learning networks where the prediction
+    serves as the natural reference for computing updates.
+
     1. Update value level using children's value prediction errors (standard order)
     2. Recompute volatility prediction error using updated value level
     3. Update volatility level mean first (using expected precision), then precision

@@ -20,6 +20,12 @@ fn b_func(x: f64, theta_l: f64, phi_l: f64, theta_r: f64, phi_r: f64) -> f64 {
 // =============================================================================
 
 /// Update the precision of the value level using value children's PEs.
+///
+/// Unlike the standard continuous-state posterior updates elsewhere in the
+/// toolbox, the volatile-state updates evaluate coupling function derivatives at
+/// the *expected* mean (i.e. the prediction) rather than the posterior mean.
+/// This choice is made to better suit deep learning networks where the prediction
+/// serves as the natural reference point for computing updates.
 fn precision_update_value_level(network: &Network, node_idx: usize) -> f64 {
     let expected_precision = *network.attributes.floats.get(&node_idx).unwrap()
         .get("expected_precision").expect("expected_precision not found");
@@ -83,6 +89,12 @@ fn precision_update_value_level(network: &Network, node_idx: usize) -> f64 {
 }
 
 /// Update the mean of the value level using value children's PEs.
+///
+/// Unlike the standard continuous-state posterior updates elsewhere in the
+/// toolbox, the volatile-state updates evaluate coupling function derivatives at
+/// the *expected* mean (i.e. the prediction) rather than the posterior mean.
+/// This choice is made to better suit deep learning networks where the prediction
+/// serves as the natural reference point for computing updates.
 fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f64) -> f64 {
     let expected_mean = *network.attributes.floats.get(&node_idx).unwrap()
         .get("expected_mean").expect("expected_mean not found");
@@ -227,6 +239,12 @@ fn recompute_prediction_errors(network: &mut Network, node_idx: usize) {
 
 /// Standard posterior update for a volatile state node.
 ///
+/// Unlike the standard continuous-state posterior updates elsewhere in the
+/// toolbox, the volatile-state updates use the *expected* mean (i.e. the
+/// prediction) as the reference point rather than the posterior mean. This
+/// choice is made to better suit deep learning networks where the prediction
+/// serves as the natural reference for computing updates.
+///
 /// 1. Update value level: precision first, then mean (standard order)
 /// 2. Recompute prediction errors
 /// 3. Update volatility level: precision first, then mean (standard order)
@@ -263,6 +281,12 @@ pub fn posterior_update_volatile_state_node(network: &mut Network, node_idx: usi
 // =============================================================================
 
 /// eHGF posterior update for a volatile state node.
+///
+/// Unlike the standard continuous-state posterior updates elsewhere in the
+/// toolbox, the volatile-state updates use the *expected* mean (i.e. the
+/// prediction) as the reference point rather than the posterior mean. This
+/// choice is made to better suit deep learning networks where the prediction
+/// serves as the natural reference for computing updates.
 ///
 /// 1. Update value level: precision first, then mean (standard order)
 /// 2. Recompute prediction errors

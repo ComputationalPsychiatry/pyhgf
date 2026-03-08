@@ -17,6 +17,14 @@ def posterior_update_precision_value_level(
     """Update the precision of the value level using value children's PEs.
 
     This is similar to continuous node value coupling precision update.
+
+    .. note::
+
+        Unlike the standard continuous-state posterior updates elsewhere in the
+        toolbox, the volatile-state updates evaluate coupling function derivatives
+        at the *expected* mean (i.e. the prediction) rather than the posterior
+        mean. This choice is made to better suit deep learning networks where the
+        prediction serves as the natural reference point for computing updates.
     """
     # Start with expected precision
     posterior_precision = attributes[node_idx]["expected_precision"]
@@ -62,6 +70,14 @@ def posterior_update_mean_value_level(
     """Update the mean of the value level using value children's PEs.
 
     This is similar to continuous node value coupling mean update.
+
+    .. note::
+
+        Unlike the standard continuous-state posterior updates elsewhere in the
+        toolbox, the volatile-state updates evaluate coupling function derivatives
+        at the *expected* mean (i.e. the prediction) rather than the posterior
+        mean. This choice is made to better suit deep learning networks where the
+        prediction serves as the natural reference point for computing updates.
     """
     # Start with expected mean
     posterior_mean = attributes[node_idx]["expected_mean"]
