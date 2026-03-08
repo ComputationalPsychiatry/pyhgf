@@ -85,7 +85,7 @@ class DeepNetwork(Network):
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
-        add_constant_input: bool = False,
+        add_constant_input: bool = True,
         **node_parameters,
     ) -> DeepNetwork:
         """Add a fully connected layer and track it.
@@ -197,7 +197,7 @@ class DeepNetwork(Network):
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
-        add_constant_input: bool = False,
+        add_constant_input: bool = True,
         **node_parameters,
     ) -> DeepNetwork:
         """Add multiple fully connected layers and track them.

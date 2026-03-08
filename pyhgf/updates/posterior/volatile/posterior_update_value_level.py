@@ -36,9 +36,11 @@ def posterior_update_precision_value_level(
                 posterior_precision += (value_coupling**2) * child_expected_precision
             else:
                 # Non-linear coupling (with gradient)
-                coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
+                coupling_fn_prime = grad(coupling_fn)(
+                    attributes[node_idx]["expected_mean"]
+                )
                 coupling_fn_second = grad(grad(coupling_fn))(
-                    attributes[node_idx]["mean"]
+                    attributes[node_idx]["expected_mean"]
                 )
                 value_pe = attributes[value_child_idx]["temp"]["value_prediction_error"]
 
@@ -83,7 +85,9 @@ def posterior_update_mean_value_level(
             if coupling_fn is None:
                 coupling_fn_prime = 1
             else:
-                coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
+                coupling_fn_prime = grad(coupling_fn)(
+                    attributes[node_idx]["expected_mean"]
+                )
 
             # Expected precision from child
             child_expected_precision = attributes[value_child_idx]["expected_precision"]

@@ -112,6 +112,8 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
                 .expect("child expected_precision not found");
             let child_vape = *child_floats.get("value_prediction_error")
                 .expect("child value_prediction_error not found");
+            let observed = *child_floats.get("observed").unwrap_or(&1.0);
+            let child_vape = child_vape * observed;
             let kappa = coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
             // Find the position of node_idx in this child's value_parents list.
