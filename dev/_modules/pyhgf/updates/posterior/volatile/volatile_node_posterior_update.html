@@ -892,6 +892,12 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update a volatile node and the implied volatility parent.</span>
 
+<span class="sd">    Unlike the standard continuous-state posterior updates elsewhere in the</span>
+<span class="sd">    toolbox, the volatile-state updates use the *expected* mean (i.e. the</span>
+<span class="sd">    prediction) as the reference point rather than the posterior mean. This</span>
+<span class="sd">    choice is made to better suit deep learning networks where the prediction</span>
+<span class="sd">    serves as the natural reference for computing updates.</span>
+
 <span class="sd">    1. Update value level using children&#39;s value prediction errors</span>
 <span class="sd">    2. Recompute volatility prediction error using updated value level</span>
 <span class="sd">    3. Update volatility level using the fresh volatility prediction error</span>

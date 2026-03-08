@@ -883,6 +883,14 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the precision of the value level using value children&#39;s PEs.</span>
 
 <span class="sd">    This is similar to continuous node value coupling precision update.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        Unlike the standard continuous-state posterior updates elsewhere in the</span>
+<span class="sd">        toolbox, the volatile-state updates evaluate coupling function derivatives</span>
+<span class="sd">        at the *expected* mean (i.e. the prediction) rather than the posterior</span>
+<span class="sd">        mean. This choice is made to better suit deep learning networks where the</span>
+<span class="sd">        prediction serves as the natural reference point for computing updates.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Start with expected precision</span>
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
@@ -902,9 +910,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="p">(</span><span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">child_expected_precision</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Non-linear coupling (with gradient)</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span>
+                    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
                 <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span>
-                    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+                    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
                 <span class="p">)</span>
                 <span class="n">value_pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;value_prediction_error&quot;</span><span class="p">]</span>
 
@@ -929,6 +939,14 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the mean of the value level using value children&#39;s PEs.</span>
 
 <span class="sd">    This is similar to continuous node value coupling mean update.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        Unlike the standard continuous-state posterior updates elsewhere in the</span>
+<span class="sd">        toolbox, the volatile-state updates evaluate coupling function derivatives</span>
+<span class="sd">        at the *expected* mean (i.e. the prediction) rather than the posterior</span>
+<span class="sd">        mean. This choice is made to better suit deep learning networks where the</span>
+<span class="sd">        prediction serves as the natural reference point for computing updates.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Start with expected mean</span>
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
@@ -952,7 +970,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span>
+                    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
 
             <span class="c1"># Expected precision from child</span>
             <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>

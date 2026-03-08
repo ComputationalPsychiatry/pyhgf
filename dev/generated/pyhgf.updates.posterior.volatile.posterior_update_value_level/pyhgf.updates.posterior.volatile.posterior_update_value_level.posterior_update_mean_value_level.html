@@ -582,6 +582,14 @@
 <span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.volatile.posterior_update_value_level.</span></span><span class="sig-name descname"><span class="pre">posterior_update_mean_value_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_precision</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/volatile/posterior_update_value_level.html#posterior_update_mean_value_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level" title="Link to this definition">#</a></dt>
 <dd><p>Update the mean of the value level using value children’s PEs.</p>
 <p>This is similar to continuous node value coupling mean update.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unlike the standard continuous-state posterior updates elsewhere in the
+toolbox, the volatile-state updates evaluate coupling function derivatives
+at the <em>expected</em> mean (i.e. the prediction) rather than the posterior
+mean. This choice is made to better suit deep learning networks where the
+prediction serves as the natural reference point for computing updates.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
