@@ -15,6 +15,7 @@ from jax.typing import ArrayLike
 from pyhgf.model import (
     add_binary_state,
     add_categorical_state,
+    add_constant_state,
     add_continuous_state,
     add_dp_state,
     add_ef_state,
@@ -236,7 +237,7 @@ class Network:
         # does not involve coupling weights, so the linear learning rule would be wrong.
         learning_steps = []  # list of weight update to perform at this layer
         for i, update in enumerate(update_steps):
-            if "prediction_error" in update[1].__name__:
+            if update[1] is not None and "prediction_error" in update[1].__name__:
                 node_idx = update[0]
                 if self.edges[node_idx].node_type in {
                     2,
@@ -708,12 +709,14 @@ class Network:
             "continuous-state",
             "binary-state",
             "volatile-state",
+            "constant-state",
         ]:
             raise ValueError(
                 (
                     "Invalid node type. Should be one of the following: "
                     "'dp-state', 'continuous-state', 'binary-state', "
-                    "'ef-state', 'categorical-state', or 'volatile-state'"
+                    "'ef-state', 'categorical-state', 'volatile-state', "
+                    "or 'constant-state'"
                 )
             )
 
@@ -785,6 +788,15 @@ class Network:
                 n_nodes=n_nodes,
                 node_parameters=node_parameters,
                 additional_parameters=additional_parameters,
+            )
+        elif kind == "constant-state":
+            self = add_constant_state(
+                network=self,
+                n_nodes=n_nodes,
+                value_children=value_children,
+                volatility_children=volatility_children,
+                node_parameters=node_parameters,
+                coupling_fn=coupling_fn,
             )
 
         return self

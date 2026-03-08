@@ -106,6 +106,13 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
     // Remove the input nodes from posterior updates (they have no children)
     po_nodes_idxs.retain(|x| !network.inputs.contains(x));
 
+    // Remove constant-state nodes — they hold a fixed mean and have no update step
+    po_nodes_idxs.retain(|x| {
+        network.edges.get(x)
+            .map(|e| e.node_type != "constant-state")
+            .unwrap_or(true)
+    });
+
     // Iteratively resolve the topological order:
     //   1. Find ALL nodes eligible for posterior update (all children have sent PEs).
     //   2. Find ALL nodes eligible for prediction error (already have a posterior).

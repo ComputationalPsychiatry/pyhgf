@@ -351,6 +351,58 @@ impl Network {
                     self.attributes.vectors.insert(node_id, vec_attrs);
                 }
             }
+            "constant-state" => {
+                // Constant-state nodes hold a fixed mean of 1.0.
+                // No prediction or update step is applied to them.
+                // They cannot have value or volatility parents.
+                self.attributes.floats.insert(node_id, HashMap::from([
+                    ("mean".into(), 1.0),
+                    ("expected_mean".into(), 1.0),
+                ]));
+                self.edges.insert(node_id, edges);
+
+                // Coupling strength vectors and reciprocal edges (children only)
+                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+
+                if let Some(ref vc) = value_children {
+                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    for &child_idx in vc {
+                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                            match &mut child_edges.value_parents {
+                                Some(parents) => parents.push(node_id),
+                                None => child_edges.value_parents = Some(vec![node_id]),
+                            }
+                        }
+                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
+                        child_vecs.entry("value_coupling_parents".into())
+                            .and_modify(|cs| cs.push(1.0))
+                            .or_insert_with(|| vec![1.0]);
+                        let child_fns = self.attributes.fn_ptrs.entry(child_idx).or_default();
+                        child_fns.entry("value_coupling_fn_parents".into())
+                            .and_modify(|cs| cs.push(coupling_fn_ptr))
+                            .or_insert_with(|| vec![coupling_fn_ptr]);
+                    }
+                }
+                if let Some(ref volc) = volatility_children {
+                    vec_attrs.insert("volatility_coupling_children".into(), vec![1.0; volc.len()]);
+                    for &child_idx in volc {
+                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                            match &mut child_edges.volatility_parents {
+                                Some(parents) => parents.push(node_id),
+                                None => child_edges.volatility_parents = Some(vec![node_id]),
+                            }
+                        }
+                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
+                        child_vecs.entry("volatility_coupling_parents".into())
+                            .and_modify(|cs| cs.push(1.0))
+                            .or_insert_with(|| vec![1.0]);
+                    }
+                }
+
+                if !vec_attrs.is_empty() {
+                    self.attributes.vectors.insert(node_id, vec_attrs);
+                }
+            }
             _ => {}
         }
 
@@ -457,6 +509,8 @@ impl Network {
     /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
     /// * `additional_parameters` - Extra key-value pairs that override default
     ///   node attributes (e.g. `autoconnection_strength`).
+    /// * `add_constant_input` - When `true` (default), automatically add a
+    ///   `constant-state` bias node connected to all non-constant children.
     pub fn add_layer(
         &mut self,
         size: usize,
@@ -465,10 +519,12 @@ impl Network {
         coupling_strengths: f64,
         coupling_fn: Option<String>,
         additional_parameters: Option<HashMap<String, f64>>,
+        add_constant_input: bool,
     ) {
         let n_nodes_before = self.edges.len();
 
-        // Auto-detect orphan nodes if no children specified
+        // Auto-detect orphan nodes if no children specified,
+        // always excluding constant-state nodes (they are not learnable targets).
         let children: Vec<usize> = match value_children {
             Some(vc) => vc,
             None => {
@@ -480,7 +536,13 @@ impl Network {
                 }
                 orphans
             }
-        };
+        }.into_iter()
+            .filter(|idx| {
+                self.edges.get(idx)
+                    .map(|e| e.node_type != "constant-state")
+                    .unwrap_or(true)
+            })
+            .collect();
 
         // Default autoconnection_strength to 0.0 unless the caller specified it
         let additional_parameters = {
@@ -515,6 +577,24 @@ impl Network {
             }
         }
 
+        // Optionally add a constant-state bias node
+        if add_constant_input {
+            // Connect to all children that are not constant-state nodes
+            let non_constant_children: Vec<usize> = children.iter()
+                .filter(|&&idx| {
+                    self.edges.get(&idx)
+                        .map(|e| e.node_type != "constant-state")
+                        .unwrap_or(true)
+                })
+                .copied()
+                .collect();
+
+            if !non_constant_children.is_empty() {
+                let vc = IntOrList::List(non_constant_children);
+                self.add_nodes("constant-state", 1, None, Some(vc), None, None, coupling_fn.clone(), None);
+            }
+        }
+
         // Record layer indices
         let new_layer: Vec<usize> = (n_nodes_before..self.edges.len()).collect();
         self.layers.push(new_layer);
@@ -533,6 +613,7 @@ impl Network {
     /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
     /// * `additional_parameters` - Extra key-value pairs that override default
     ///   node attributes (e.g. `autoconnection_strength`).
+    /// * `add_constant_input` - When `true`, add a constant-state bias node per layer.
     pub fn add_layer_stack(
         &mut self,
         layer_sizes: Vec<usize>,
@@ -541,12 +622,13 @@ impl Network {
         coupling_strengths: f64,
         coupling_fn: Option<String>,
         additional_parameters: Option<HashMap<String, f64>>,
+        add_constant_input: bool,
     ) {
         for (i, &size) in layer_sizes.iter().enumerate() {
             if i == 0 {
-                self.add_layer(size, kind, value_children.clone(), coupling_strengths, coupling_fn.clone(), additional_parameters.clone());
+                self.add_layer(size, kind, value_children.clone(), coupling_strengths, coupling_fn.clone(), additional_parameters.clone(), add_constant_input);
             } else {
-                self.add_layer(size, kind, None, coupling_strengths, coupling_fn.clone(), additional_parameters.clone());
+                self.add_layer(size, kind, None, coupling_strengths, coupling_fn.clone(), additional_parameters.clone(), add_constant_input);
             }
         }
     }
@@ -802,13 +884,19 @@ impl Network {
             let current_nodes = self.layers[layer_idx].clone();
             let parent_nodes = self.layers[layer_idx + 1].clone();
 
-            // Only initialise weights between layers of continuous or volatile nodes
-            let all_learnable = current_nodes.iter().chain(parent_nodes.iter()).all(|idx| {
+            // Only initialise weights between eligible layers.
+            // Children must be continuous-state or volatile-state; parents can
+            // additionally be constant-state (bias) nodes.
+            let all_eligible = current_nodes.iter().chain(parent_nodes.iter()).all(|idx| {
                 self.edges.get(idx)
-                    .map(|e| e.node_type == "continuous-state" || e.node_type == "volatile-state")
+                    .map(|e| {
+                        e.node_type == "continuous-state"
+                            || e.node_type == "volatile-state"
+                            || e.node_type == "constant-state"
+                    })
                     .unwrap_or(false)
             });
-            if !all_learnable {
+            if !all_eligible {
                 continue;
             }
 
@@ -956,7 +1044,7 @@ impl Network {
         Ok(py_list.into())
     }
 
-    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None, **kwargs))]
+    #[pyo3(name = "add_layer", signature = (size=1, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None, add_constant_input=true, **kwargs))]
     fn py_add_layer<'py>(
         mut slf: PyRefMut<'py, Self>,
         size: usize,
@@ -964,6 +1052,7 @@ impl Network {
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
         coupling_fn: Option<String>,
+        add_constant_input: bool,
         kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
         let additional_parameters = match kwargs {
@@ -979,11 +1068,11 @@ impl Network {
             }
             None => None,
         };
-        slf.add_layer(size, kind, value_children, coupling_strengths, coupling_fn, additional_parameters);
+        slf.add_layer(size, kind, value_children, coupling_strengths, coupling_fn, additional_parameters, add_constant_input);
         Ok(slf)
     }
 
-    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None, **kwargs))]
+    #[pyo3(name = "add_layer_stack", signature = (layer_sizes, kind="volatile-state", value_children=None, coupling_strengths=1.0, coupling_fn=None, add_constant_input=true, **kwargs))]
     fn py_add_layer_stack<'py>(
         mut slf: PyRefMut<'py, Self>,
         layer_sizes: Vec<usize>,
@@ -991,6 +1080,7 @@ impl Network {
         value_children: Option<Vec<usize>>,
         coupling_strengths: f64,
         coupling_fn: Option<String>,
+        add_constant_input: bool,
         kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
         let additional_parameters = match kwargs {
@@ -1006,7 +1096,7 @@ impl Network {
             }
             None => None,
         };
-        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths, coupling_fn, additional_parameters);
+        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths, coupling_fn, additional_parameters, add_constant_input);
         Ok(slf)
     }
 

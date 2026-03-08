@@ -1,6 +1,7 @@
 from .add_nodes import (
     add_binary_state,
     add_categorical_state,
+    add_constant_state,
     add_continuous_state,
     add_dp_state,
     add_ef_state,
@@ -19,6 +20,7 @@ __all__ = [
     "Network",
     "DeepNetwork",
     "add_nodes",
+    "add_constant_state",
     "add_continuous_state",
     "add_volatile_state",
     "add_binary_state",
