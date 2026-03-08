@@ -41,10 +41,6 @@ def learning_weights_fixed(
         attributes[parent_idx]["mean"]
         for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
     ]
-    expected_means = [
-        attributes[parent_idx]["expected_mean"]
-        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
-    ]
     couplings = attributes[node_idx]["value_coupling_parents"]
 
     # 2. find the coupling function for each parent → child pair
@@ -60,34 +56,19 @@ def learning_weights_fixed(
         for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
     ]
 
-    # 3. compute the expected activation for the current node
+    # 3. compute the prospective activation for each parent
     # -------------------------------------------------------
     prospective_activation = jnp.array([
         fn(mean) if fn is not None else mean for mean, fn in zip(means, coupling_fns)
     ])
-    current_activation = jnp.array([
-        fn(mean) if fn is not None else mean
-        for mean, fn in zip(expected_means, coupling_fns)
-    ])
-
-    # target coupling per parent: solve for w_i given all other parents' contributions
-    # (child_mean - contribution_of_others) / g_i(parent_mean)
-    expected_couplings = (
-        attributes[node_idx]["mean"]
-        - (attributes[node_idx]["expected_mean"] - current_activation * couplings)
-    ) / prospective_activation
-
-    # guard against NaN/inf when activation ≈ 0
-    expected_couplings = jnp.where(
-        jnp.isnan(expected_couplings) | jnp.isinf(expected_couplings),
-        couplings,
-        expected_couplings,
-    )
 
     # 4. update the coupling strength between this node and its value parents
     # -----------------------------------------------------------------------
-    weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore[operator,arg-type]
-    new_value_couplings = couplings + (expected_couplings - couplings) * lr * weighting
+    # Backprop-style delta rule: Δw_i = lr · PE · g(parent_i)
+    # Each weight is updated proportionally to the parent's activation,
+    # matching the gradient of 0.5·PE² w.r.t. w_i.
+    pe = attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
+    new_value_couplings = couplings + lr * pe * prospective_activation
 
     # guard against inf/nan coupling values
     new_value_couplings = jnp.where(
@@ -143,12 +124,11 @@ def learning_weights_dynamic(
         attributes[parent_idx]["mean"]
         for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
     ]
+    # constant-state parents (node_type 0) have no "precision" attribute;
+    # use the same default as regular nodes (1.0) so that precision-weighted
+    # learning treats them identically.
     precisions = [
-        attributes[parent_idx]["precision"]
-        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
-    ]
-    expected_means = [
-        attributes[parent_idx]["expected_mean"]
+        attributes[parent_idx].get("precision", 1.0)
         for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
     ]
     couplings = attributes[node_idx]["value_coupling_parents"]
@@ -164,42 +144,21 @@ def learning_weights_dynamic(
         for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
     ]
 
-    # 3. compute the expected activation for the current node
+    # 3. compute the prospective activation for each parent
     # -------------------------------------------------------
     prospective_activation = jnp.array([
         fn(mean) if fn is not None else mean for mean, fn in zip(means, coupling_fns)
     ])
-    current_activation = jnp.array([
-        fn(mean) if fn is not None else mean
-        for mean, fn in zip(expected_means, coupling_fns)
-    ])
-
-    # target coupling per parent: solve for w_i given all other parents' contributions
-    # (child_mean - contribution_of_others) / g_i(parent_mean)
-    expected_couplings = (
-        attributes[node_idx]["mean"]
-        - (attributes[node_idx]["expected_mean"] - current_activation * couplings)
-    ) / prospective_activation
-
-    # guard against NaN/inf when activation ≈ 0
-    expected_couplings = jnp.where(
-        jnp.isnan(expected_couplings) | jnp.isinf(expected_couplings),
-        couplings,
-        expected_couplings,
-    )
 
     # 4. update the coupling strength between this node and its value parents
     # -----------------------------------------------------------------------
-
-    # use precision (posterior) for both child and parent
+    # Backprop-style delta rule with precision-based learning rate:
+    # Δw_i = precision_weight_i · PE · g(parent_i)
     precision_weighting = attributes[node_idx]["precision"] / (
         jnp.array(precisions) + attributes[node_idx]["precision"]
     )
-
-    weighting = 1.0 / len(edges[node_idx].value_parents)  # type: ignore[operator,arg-type]
-    new_value_couplings = (
-        couplings + (expected_couplings - couplings) * precision_weighting * weighting
-    )
+    pe = attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
+    new_value_couplings = couplings + precision_weighting * pe * prospective_activation
 
     # guard against inf/nan coupling values
     new_value_couplings = jnp.where(

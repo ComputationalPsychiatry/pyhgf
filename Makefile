@@ -2,9 +2,8 @@ setup-uv:
 	curl -LsSf https://astral.sh/uv/install.sh | sh
 	source .venv/bin/activate
 
-install-dev:
-	uv sync --dev
-	uv run maturin develop
+install:
+	uv run maturin develop --release
 
 test:
 	uv run pytest --cov --cov-report=term-missing

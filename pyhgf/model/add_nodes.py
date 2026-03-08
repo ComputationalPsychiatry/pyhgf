@@ -148,6 +148,45 @@ def add_volatile_state(
     return network
 
 
+def add_constant_state(
+    network: Network,
+    n_nodes: int,
+    value_children: tuple,
+    volatility_children: tuple,
+    node_parameters: dict,
+    coupling_fn: tuple[Optional[Callable], ...],
+):
+    """Add constant-state (bias) node(s) to a network.
+
+    Constant-state nodes hold a fixed mean of 1.0 and have no prediction or update
+    steps. They can only have children, never parents.
+    """
+    node_type = 0
+
+    default_parameters = {
+        "mean": 1.0,
+        "expected_mean": 1.0,
+        "value_coupling_children": value_children[1],
+    }
+
+    # allow caller overrides
+    default_parameters.update(node_parameters)
+
+    network = insert_nodes(
+        network=network,
+        n_nodes=n_nodes,
+        node_type=node_type,
+        node_parameters=default_parameters,
+        value_parents=(None, None),
+        volatility_parents=(None, None),
+        value_children=value_children,
+        volatility_children=volatility_children,
+        coupling_fn=coupling_fn,
+    )
+
+    return network
+
+
 def add_binary_state(
     network: Network,
     n_nodes: int,

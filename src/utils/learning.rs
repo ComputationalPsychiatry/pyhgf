@@ -52,22 +52,14 @@ pub fn learning_weights_fixed(
         .unwrap_or(&0.01);
 
     let n_parents = value_parents.len();
-    let weighting = 1.0 / n_parents as f64;
 
-    // 1. Compute prospective_activation (g(posterior mean)) and
-    //    current_activation (g(expected mean)) for each parent
+    // 1. Compute prospective_activation g(posterior mean) for each parent
     let mut prospective_activation = Vec::with_capacity(n_parents);
-    let mut current_activation = Vec::with_capacity(n_parents);
 
     for (i, &parent_idx) in value_parents.iter().enumerate() {
         let parent_mean = *network.attributes.floats
             .get(&parent_idx)
             .and_then(|f| f.get("mean"))
-            .unwrap_or(&0.0);
-
-        let parent_expected_mean = *network.attributes.floats
-            .get(&parent_idx)
-            .and_then(|f| f.get("expected_mean"))
             .unwrap_or(&0.0);
 
         // Find the coupling function for this parent–child pair
@@ -80,38 +72,18 @@ pub fn learning_weights_fixed(
             Some(cf) => (cf.f)(parent_mean),
             None => parent_mean,
         };
-        let curr_act = match coupling_fn {
-            Some(cf) => (cf.f)(parent_expected_mean),
-            None => parent_expected_mean,
-        };
 
         prospective_activation.push(prosp_act);
-        current_activation.push(curr_act);
     }
 
-    // 2. Compute expected couplings and update
+    // 2. Backprop-style delta rule: Δw_i = lr · PE · g(parent_i)
+    let pe = child_mean - child_expected_mean;
+
     for (i, &parent_idx) in value_parents.iter().enumerate() {
         let coupling = value_couplings[i];
         let prosp_act = prospective_activation[i];
-        let curr_act = current_activation[i];
 
-        // target coupling: (child_mean - (child_expected_mean - g_expected_i * w_i)) / g_posterior_i
-        let expected_coupling = if prosp_act.abs() < 1e-128 {
-            coupling
-        } else {
-            (child_mean - (child_expected_mean - curr_act * coupling)) / prosp_act
-        };
-
-        // Guard against NaN / Inf
-        let expected_coupling = if expected_coupling.is_nan() || expected_coupling.is_infinite() {
-            coupling
-        } else {
-            expected_coupling
-        };
-
-        // Move the coupling towards the target
-        let new_value_coupling =
-            coupling + (expected_coupling - coupling) * lr * weighting;
+        let new_value_coupling = coupling + lr * pe * prosp_act;
 
         // Guard against Inf/NaN
         let new_value_coupling = if new_value_coupling.is_infinite() || new_value_coupling.is_nan() {
@@ -120,7 +92,6 @@ pub fn learning_weights_fixed(
             new_value_coupling
         };
 
-        // Write back to both parent and child attribute vectors
         set_coupling(network, parent_idx, node_idx, new_value_coupling);
     }
 }
@@ -169,22 +140,15 @@ pub fn learning_weights_dynamic(
         .unwrap_or(&1.0);
 
     let n_parents = value_parents.len();
-    let weighting = 1.0 / n_parents as f64;
 
-    // 1. Compute prospective_activation and current_activation for each parent
+    // 1. Compute prospective_activation and parent_precisions for each parent
     let mut prospective_activation = Vec::with_capacity(n_parents);
-    let mut current_activation = Vec::with_capacity(n_parents);
     let mut parent_precisions = Vec::with_capacity(n_parents);
 
     for (i, &parent_idx) in value_parents.iter().enumerate() {
         let parent_mean = *network.attributes.floats
             .get(&parent_idx)
             .and_then(|f| f.get("mean"))
-            .unwrap_or(&0.0);
-
-        let parent_expected_mean = *network.attributes.floats
-            .get(&parent_idx)
-            .and_then(|f| f.get("expected_mean"))
             .unwrap_or(&0.0);
 
         let parent_precision = *network.attributes.floats
@@ -202,42 +166,23 @@ pub fn learning_weights_dynamic(
             Some(cf) => (cf.f)(parent_mean),
             None => parent_mean,
         };
-        let curr_act = match coupling_fn {
-            Some(cf) => (cf.f)(parent_expected_mean),
-            None => parent_expected_mean,
-        };
 
         prospective_activation.push(prosp_act);
-        current_activation.push(curr_act);
         parent_precisions.push(parent_precision);
     }
 
-    // 2. Compute expected couplings and update
+    // 2. Backprop-style delta rule: Δw_i = precision_weight_i · PE · g(parent_i)
+    let pe = child_mean - child_expected_mean;
+
     for (i, &parent_idx) in value_parents.iter().enumerate() {
         let coupling = value_couplings[i];
         let prosp_act = prospective_activation[i];
-        let curr_act = current_activation[i];
-
-        // target coupling: (child_mean - (child_expected_mean - g_expected_i * w_i)) / g_posterior_i
-        let expected_coupling = if prosp_act.abs() < 1e-128 {
-            coupling
-        } else {
-            (child_mean - (child_expected_mean - curr_act * coupling)) / prosp_act
-        };
-
-        // Guard against NaN / Inf
-        let expected_coupling = if expected_coupling.is_nan() || expected_coupling.is_infinite() {
-            coupling
-        } else {
-            expected_coupling
-        };
 
         // Precision weighting: π_child / (π_parent + π_child)
         let precision_weighting = child_precision
             / (parent_precisions[i] + child_precision);
 
-        let new_value_coupling = coupling
-            + (expected_coupling - coupling) * precision_weighting * weighting;
+        let new_value_coupling = coupling + precision_weighting * pe * prosp_act;
 
         // Guard against Inf/NaN
         let new_value_coupling = if new_value_coupling.is_infinite() || new_value_coupling.is_nan() {

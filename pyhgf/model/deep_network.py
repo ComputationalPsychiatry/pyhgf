@@ -85,6 +85,7 @@ class DeepNetwork(Network):
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
+        add_constant_input: bool = True,
         **node_parameters,
     ) -> DeepNetwork:
         """Add a fully connected layer and track it.
@@ -108,6 +109,9 @@ class DeepNetwork(Network):
             (applied to all connections) or a list/tuple of floats.
         coupling_fn :
             Coupling function(s) between the new nodes and their value children.
+        add_constant_input :
+            If ``True``, add a constant-state bias node connected to all children
+            in this layer.  The bias node is included in the layer indices.
         **node_parameters
             Additional keyword parameters for node configuration (e.g., precision,
             mean, tonic_volatility, etc...). These will be passed to add_nodes.
@@ -133,8 +137,11 @@ class DeepNetwork(Network):
         if value_children is None:
             children = []
             for idx in range(len(self.edges)):
-                # A node is orphan if it has no value parents
-                if self.edges[idx].value_parents is None:
+                # A node is orphan if it has no value parents and is not constant-state
+                if (
+                    self.edges[idx].value_parents is None
+                    and self.edges[idx].node_type != 0
+                ):
                     children.append(idx)
             if not children:
                 raise ValueError(
@@ -162,6 +169,21 @@ class DeepNetwork(Network):
                 **node_params,
             )
 
+        # Optionally add a constant-state bias node
+        if add_constant_input:
+            non_constant_children = [
+                idx for idx in children if self.edges[idx].node_type != 0
+            ]
+            if non_constant_children:
+                self.add_nodes(
+                    kind="constant-state",
+                    value_children=(
+                        non_constant_children,
+                        [coupling_strengths] * len(non_constant_children),
+                    ),
+                    coupling_fn=coupling_fn if coupling_fn is not None else (None,),
+                )
+
         # Record the new layer indices
         new_layer_idxs = list(range(n_nodes_before, self.n_nodes))
         self.layers.append(new_layer_idxs)
@@ -175,6 +197,7 @@ class DeepNetwork(Network):
         value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
         coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
         coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
+        add_constant_input: bool = True,
         **node_parameters,
     ) -> DeepNetwork:
         """Add multiple fully connected layers and track them.
@@ -223,6 +246,7 @@ class DeepNetwork(Network):
                     value_children=value_children,
                     coupling_strengths=coupling_strengths,
                     coupling_fn=coupling_fn,
+                    add_constant_input=add_constant_input,
                     **node_parameters,
                 )
             else:
@@ -231,6 +255,7 @@ class DeepNetwork(Network):
                     value_children=None,  # Auto-detect orphans
                     coupling_strengths=coupling_strengths,
                     coupling_fn=coupling_fn,
+                    add_constant_input=add_constant_input,
                     **node_parameters,
                 )
 
@@ -408,8 +433,10 @@ class DeepNetwork(Network):
                 f"The network currently has {len(self.layers)} layer(s)."
             )
 
-        # Learnable node types: continuous-state (2) and volatile-state (6).
-        learnable_types = {2, 6}
+        # Learnable node types whose children can receive initialised
+        # couplings: continuous-state (2), volatile-state (6), and
+        # constant-state (0) bias nodes.
+        learnable_types = {0, 2, 6}
 
         # All layers except the top/input layer (layers[-1]).
         # For each layer at index `layer_idx`, the parents live in the layer
@@ -418,23 +445,32 @@ class DeepNetwork(Network):
             current_nodes = self.layers[layer_idx]
             parent_nodes = self.layers[layer_idx + 1]
 
-            # Only initialise weights between layers of continuous or volatile nodes
+            # All child nodes must be continuous or volatile; parent nodes
+            # can additionally be constant-state bias nodes.
             if not all(
                 self.edges[idx].node_type in learnable_types
                 for idx in current_nodes + parent_nodes
             ):
                 continue
 
+            # Only non-constant children receive weights from parents;
+            # constant nodes are bias-only and have no parents.
+            child_nodes = [
+                idx for idx in current_nodes if self.edges[idx].node_type != 0
+            ]
+            if not child_nodes:
+                continue
+
             n_parents = len(parent_nodes)
-            n_current = len(current_nodes)
+            n_children = len(child_nodes)
 
-            # Generate weight matrix (flat, row-major: parent × current)
-            weights = init_fn(n_parents, n_current, seed=seed, **kwargs)
+            # Generate weight matrix (flat, row-major: parent × child)
+            weights = init_fn(n_parents, n_children, seed=seed, **kwargs)
 
-            # Apply weights to each parent→current-node connection
+            # Apply weights to each parent→child connection
             for p_local, parent_idx in enumerate(parent_nodes):
-                for c_local, child_idx in enumerate(current_nodes):
-                    w = float(weights[p_local * n_current + c_local])
+                for c_local, child_idx in enumerate(child_nodes):
+                    w = float(weights[p_local * n_children + c_local])
                     self.attributes = set_coupling(
                         attributes=self.attributes,
                         edges=self.edges,

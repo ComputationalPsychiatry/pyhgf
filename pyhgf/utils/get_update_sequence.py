@@ -85,6 +85,7 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
             (network.edges[i].value_children is None)
             & (network.edges[i].volatility_children is None)
         )
+        and network.edges[i].node_type != 0  # constant-state: no update
     ]
 
     # do not update continuous nodes that are parents of an ef state node

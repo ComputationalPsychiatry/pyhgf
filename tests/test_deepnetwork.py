@@ -12,15 +12,10 @@ NETWORK_CLASSES = [DeepNetwork, RsNetwork]
 def test_fit():
     """Test that Python and Rust backends produce identical fit results.
 
-    Network: 2 targets → 3 hidden (volatile-state) → 4 predictors (volatile-state).
+    Network: 2 targets → 3+1 hidden (volatile-state + bias) → 4+1 predictors.
     Linear coupling at all levels.  Both fixed and dynamic learning rates.
     """
     n_targets, n_hidden, n_predictors = 2, 3, 4
-    n_nodes = n_targets + n_hidden + n_predictors
-
-    targets = list(range(n_targets))
-    hidden = list(range(n_targets, n_targets + n_hidden))
-    predictors = list(range(n_targets + n_hidden, n_nodes))
 
     np.random.seed(42)
     x = np.random.randn(5, n_predictors)
@@ -37,11 +32,13 @@ def test_fit():
                 .add_layer(size=n_hidden)
                 .add_layer(size=n_predictors)
             )
+            # Derive predictor indices from the last layer (exclude bias node)
+            predictors = tuple(net.layers[-1][:n_predictors])
             net.fit(
                 x=x,
                 y=y,
-                inputs_x_idxs=tuple(predictors),
-                inputs_y_idxs=tuple(targets),
+                inputs_x_idxs=predictors,
+                inputs_y_idxs=tuple(range(n_targets)),
                 lr=lr,
             )
             fitted.append(net)
@@ -49,27 +46,63 @@ def test_fit():
         py_net, rs_net = fitted
 
         # ----- Compare mean and precision at every node -----
-        for node_idx in range(n_nodes):
+        # Iterate over node indices present in both backends; constant-state
+        # (bias) nodes may not have all keys.
+        py_keys = set(py_net.node_trajectories.keys())
+        rs_keys = (
+            set(rs_net.node_trajectories.keys())
+            if isinstance(rs_net.node_trajectories, dict)
+            else set(range(len(rs_net.node_trajectories)))
+        )
+        common_nodes = sorted(py_keys & rs_keys)
+        for node_idx in common_nodes:
             for key in ["mean", "precision"]:
-                py_val = np.asarray(py_net.node_trajectories[node_idx][key])
-                rs_val = np.asarray(rs_net.node_trajectories[node_idx][key])
+                py_traj = py_net.node_trajectories[node_idx]
+                rs_traj = rs_net.node_trajectories[node_idx]
+                if key not in py_traj or key not in rs_traj:
+                    continue
+                py_val = np.asarray(py_traj[key])
+                rs_val = np.asarray(rs_traj[key])
                 assert np.allclose(py_val, rs_val, atol=1e-3), (
                     f"{lr_label}: node {node_idx} '{key}' mismatch\n"
                     f"  Py={py_val}\n  Rs={rs_val}"
                 )
 
         # ----- Compare volatile-level mean/precision on hidden & predictor nodes -----
-        for node_idx in hidden + predictors:
+        # Use the non-bias volatile-state nodes from each layer.
+        volatile_nodes = [
+            nid
+            for nid in common_nodes
+            if "mean_vol" in py_net.node_trajectories.get(nid, {})
+        ]
+        for node_idx in volatile_nodes:
             for key in ["mean_vol", "precision_vol"]:
-                py_val = np.asarray(py_net.node_trajectories[node_idx][key])
-                rs_val = np.asarray(rs_net.node_trajectories[node_idx][key])
+                py_traj = py_net.node_trajectories[node_idx]
+                rs_traj = rs_net.node_trajectories[node_idx]
+                if key not in py_traj or key not in rs_traj:
+                    continue
+                py_val = np.asarray(py_traj[key])
+                rs_val = np.asarray(rs_traj[key])
                 assert np.allclose(py_val, rs_val, atol=1e-3), (
                     f"{lr_label}: node {node_idx} '{key}' mismatch\n"
                     f"  Py={py_val}\n  Rs={rs_val}"
                 )
 
         # ----- Compare coupling weights (value_coupling_children) -----
-        for node_idx in hidden + predictors:
+        weight_nodes = [
+            nid
+            for nid in common_nodes
+            if "value_coupling_children" in py_net.node_trajectories.get(nid, {})
+            and "value_coupling_children"
+            in (
+                rs_net.node_trajectories[nid]
+                if isinstance(rs_net.node_trajectories, dict)
+                else rs_net.node_trajectories[nid]
+                if nid < len(rs_net.node_trajectories)
+                else {}
+            )
+        ]
+        for node_idx in weight_nodes:
             py_w = np.asarray(
                 py_net.node_trajectories[node_idx]["value_coupling_children"]
             )
@@ -99,20 +132,20 @@ def test_deepnetwork_add_value_parent_layer():
         tonic_volatility=-1.0,
     )
 
-    # Expect exactly 3 new nodes
-    assert net.n_nodes == n_nodes_before + 3
+    # Expect 3 volatile + 1 constant (bias) = 4 new nodes
+    assert net.n_nodes == n_nodes_before + 4
 
-    # Get the indices of the newly added parents
-    parents = list(range(n_nodes_before, net.n_nodes))
+    # Get the indices of the newly added parents (excluding the bias node)
+    parents = list(range(n_nodes_before, n_nodes_before + 3))
 
     # For each parent, check fully-connected structure
     for p in parents:
         assert net.edges[p].value_children == tuple(bottom)
         assert len(net.attributes[p]["value_coupling_children"]) == len(bottom)
 
-    # Check that layer was tracked
+    # Check that layer was tracked (includes bias node)
     assert len(net.layers) == 2  # base layer + added layer
-    assert net.layers[1] == parents
+    assert parents == net.layers[1][:3]
 
 
 def test_deepnetwork_add_layer_stack():
@@ -132,8 +165,8 @@ def test_deepnetwork_add_layer_stack():
         tonic_volatility=-1.0,
     )
 
-    # Check total nodes added (3 + 2 + 1 = 6)
-    assert net.n_nodes == n_nodes_before + 6
+    # Check total nodes added (3+1 + 2+1 + 1+1 = 9)
+    assert net.n_nodes == n_nodes_before + 9
 
     # Check that layers were tracked automatically
     assert len(net.layers) == 4  # base + 3 added layers
@@ -141,23 +174,25 @@ def test_deepnetwork_add_layer_stack():
     # Get tracked layers (excluding base layer at index 0)
     layers = net.layers[1:]  # Skip base layer
 
-    # Check layer sizes
-    assert len(layers[0]) == 3
-    assert len(layers[1]) == 2
-    assert len(layers[2]) == 1
+    # Check layer sizes (volatile nodes + 1 bias each)
+    assert len(layers[0]) == 4  # 3 + 1 bias
+    assert len(layers[1]) == 3  # 2 + 1 bias
+    assert len(layers[2]) == 2  # 1 + 1 bias
 
     # Check connections are fully dense
-    # Layer 0 → bottom
+    # Layer 0 → bottom (all nodes including bias connect to bottom)
     for p in layers[0]:
         assert net.edges[p].value_children == tuple(bottom)
 
-    # Layer 1 → layer 0
+    # Layer 1 → layer 0's non-bias nodes (bias node has children so is not an orphan)
+    layer0_non_bias = layers[0][:3]  # first 3 are volatile, last is bias
     for p in layers[1]:
-        assert net.edges[p].value_children == tuple(layers[0])
+        assert net.edges[p].value_children == tuple(layer0_non_bias)
 
-    # Layer 2 → layer 1
+    # Layer 2 → layer 1's non-bias nodes
+    layer1_non_bias = layers[1][:2]
     for p in layers[2]:
-        assert net.edges[p].value_children == tuple(layers[1])
+        assert net.edges[p].value_children == tuple(layer1_non_bias)
 
 
 def test_predict():
@@ -169,9 +204,6 @@ def test_predict():
     3. Verify that predictions differ between a trained and an untrained network.
     """
     n_targets, n_hidden, n_predictors = 2, 3, 4
-
-    targets = list(range(n_targets))
-    predictors = list(range(n_targets + n_hidden, n_targets + n_hidden + n_predictors))
 
     np.random.seed(42)
     x_train = np.random.randn(5, n_predictors)
@@ -188,6 +220,10 @@ def test_predict():
             .add_layer(size=n_hidden)
             .add_layer(size=n_predictors)
         )
+
+        targets = list(range(n_targets))
+        # Non-bias predictor nodes: first n_predictors of the last layer
+        predictors = list(net.layers[-1][:n_predictors])
 
         # Prepare data: JAX arrays for Python backend, plain lists for Rust
         if Network is DeepNetwork:
@@ -365,8 +401,10 @@ def test_weight_initialisation_skips_input_layer():
             # After init, the input layer's children couplings should have been
             # modified (since hidden layer IS initialised and set_coupling updates
             # both sides), but the input layer itself has no parents to init.
-            # Verify hidden layer DID change
+            # Verify hidden layer DID change (skip bias nodes that lack the key)
             for h_idx in hidden_nodes:
+                if "value_coupling_parents" not in net.attributes[h_idx]:
+                    continue
                 w = np.asarray(net.attributes[h_idx]["value_coupling_parents"])
                 assert not np.all(w == 1.0), (
                     f"{label}: hidden node {h_idx} couplings unchanged"

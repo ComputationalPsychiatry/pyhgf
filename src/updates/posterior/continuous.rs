@@ -44,6 +44,7 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
                 .expect("No floats for value child");
             let child_expected_precision = *child_floats.get("expected_precision")
                 .expect("child expected_precision not found");
+            let observed = *child_floats.get("observed").unwrap_or(&1.0);
             let kappa = coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
             // Find the coupling function stored on the child (indexed by parent
@@ -71,9 +72,9 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
                 None => (1.0, 0.0),
             };
 
-            // π̂_child · (κ² · g'(μ)² − g''(μ) · δ_child)
-            precision_wpe += child_expected_precision
-                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term);
+            // π̂_child · (κ² · g'(μ)² − g''(μ) · δ_child) · observed
+            precision_wpe += (child_expected_precision
+                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term)) * observed;
         }
     }
 
@@ -92,12 +93,14 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
                 .expect("child effective_precision not found");
             let volatility_pe = *child_floats.get("volatility_prediction_error")
                 .expect("child volatility_prediction_error not found");
+            let observed = *child_floats.get("observed").unwrap_or(&1.0);
             let kappa = vol_coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
-            precision_wpe +=
+            precision_wpe += (
                 0.5 * (kappa * effective_precision).powi(2)
                 + (kappa * effective_precision).powi(2) * volatility_pe
-                - 0.5 * kappa.powi(2) * effective_precision * volatility_pe;
+                - 0.5 * kappa.powi(2) * effective_precision * volatility_pe
+            ) * observed;
         }
     }
 
@@ -135,6 +138,8 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
                 .expect("child expected_precision not found");
             let child_vape = *child_floats.get("value_prediction_error")
                 .expect("child value_prediction_error not found");
+            let observed = *child_floats.get("observed").unwrap_or(&1.0);
+            let child_vape = child_vape * observed;
             let kappa = coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
             // Find the position of node_idx in this child's value_parents list so
@@ -175,10 +180,11 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
                 .expect("child effective_precision not found");
             let volatility_pe = *child_floats.get("volatility_prediction_error")
                 .expect("child volatility_prediction_error not found");
+            let observed = *child_floats.get("observed").unwrap_or(&1.0);
             let kappa = vol_coupling_strengths.as_ref().map(|cs| cs[i]).unwrap_or(1.0);
 
             volatility_pwpe +=
-                (kappa * effective_precision * volatility_pe) / (2.0 * node_precision);
+                (kappa * effective_precision * volatility_pe) / (2.0 * node_precision) * observed;
         }
     }
 
