@@ -11,7 +11,7 @@ use crate::utils::set_coupling::set_coupling;
 /// - **Fixed** (`lr` present): uses a fixed learning rate.
 ///   Δw_i = lr · (PE · π_child) · g(parent_i)
 /// - **Dynamic** (`lr` absent): uses precision-based learning rate (Kalman gain).
-///   K_i = π_parent_i / (π_parent_i + π_child), then gradient clipping ±`max_delta`.
+///   K_i = π_parent_i / (π_parent_i + π_child).
 ///
 /// Matches Python `pyhgf.updates.learning.learning_weights`.
 pub fn learning_weights(
@@ -53,16 +53,6 @@ pub fn learning_weights(
         .get(&node_idx)
         .and_then(|f| f.get("precision"))
         .unwrap_or(&1.0);
-
-    // Gradient clipping bound (dynamic path only).
-    let max_delta = if fixed_lr.is_none() {
-        *network.attributes.floats
-            .get(&node_idx)
-            .and_then(|f| f.get("max_delta"))
-            .unwrap_or(&1.0)
-    } else {
-        0.0 // unused
-    };
 
     let n_parents = value_parents.len();
 
@@ -109,12 +99,11 @@ pub fn learning_weights(
         let new_value_coupling = match fixed_lr {
             // Fixed learning rate: Δw_i = lr · (PE · π_child) · g(parent_i)
             Some(lr) => coupling + lr * pe * child_precision * prosp_act,
-            // Dynamic (precision-weighted) with gradient clipping
+            // Dynamic (precision-weighted)
             None => {
                 let precision_weighting = parent_precisions[i]
                     / (parent_precisions[i] + child_precision);
-                let raw_delta = precision_weighting * pe * prosp_act;
-                coupling + raw_delta.clamp(-max_delta, max_delta)
+                coupling + precision_weighting * pe * prosp_act
             }
         };
 
