@@ -15,7 +15,7 @@
 <ellipse fill="none" stroke="black" cx="96.87" cy="-154.61" rx="96.75" ry="37.45"/>
 <text text-anchor="middle" x="96.87" y="-165.91" font-family="Times,serif" font-size="14.00">tonic_volatility_2</text>
 <text text-anchor="middle" x="96.87" y="-150.91" font-family="Times,serif" font-size="14.00">~</text>
-<text text-anchor="middle" x="96.87" y="-135.91" font-family="Times,serif" font-size="14.00">Normal</text>
+<text text-anchor="middle" x="96.87" y="-135.91" font-family="Times,serif" font-size="14.00">Uniform</text>
 </g>
 <!-- hgf_loglike -->
 <g id="node2" class="node">
