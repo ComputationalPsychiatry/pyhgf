@@ -895,7 +895,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">UpdateSequence</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights_dynamic</span><span class="p">,</span> <span class="n">learning_weights_fixed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_edges</span><span class="p">,</span>
     <span class="n">beliefs_propagation</span><span class="p">,</span>
@@ -1086,9 +1086,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># create the learning sequence</span>
         <span class="c1"># all nodes except the prediction nodes should update their coupling strengths</span>
         <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
-            <span class="n">learning_weights</span> <span class="o">=</span> <span class="n">learning_weights_dynamic</span>
+            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">learning_weights</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-            <span class="n">learning_weights</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span><span class="n">learning_weights_fixed</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span><span class="n">learning_weights</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid lr value. Should be &#39;dynamic&#39; or a float value.&quot;</span><span class="p">)</span>
 
@@ -1112,7 +1112,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="mi">2</span><span class="p">,</span>
                     <span class="mi">6</span><span class="p">,</span>
                 <span class="p">}:</span>  <span class="c1"># continuous-state, volatile-state</span>
-                    <span class="n">learning_steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learning_weights</span><span class="p">))</span>
+                    <span class="n">learning_steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learn_fn</span><span class="p">))</span>
 
         <span class="c1"># do not predict on the last layer</span>
         <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
