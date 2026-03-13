@@ -31,7 +31,7 @@ from pyhgf.typing import (
     Sequence,
     UpdateSequence,
 )
-from pyhgf.updates.learning import learning_weights_dynamic, learning_weights_fixed
+from pyhgf.updates.learning import learning_weights
 from pyhgf.utils import (
     add_edges,
     beliefs_propagation,
@@ -217,9 +217,9 @@ class Network:
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
         if lr == "dynamic":
-            learning_weights = learning_weights_dynamic
+            learn_fn = learning_weights
         elif isinstance(lr, float):
-            learning_weights = Partial(learning_weights_fixed, lr=lr)
+            learn_fn = Partial(learning_weights, lr=lr)
         else:
             raise ValueError("Invalid lr value. Should be 'dynamic' or a float value.")
 
@@ -243,7 +243,7 @@ class Network:
                     2,
                     6,
                 }:  # continuous-state, volatile-state
-                    learning_steps.append((node_idx, learning_weights))
+                    learning_steps.append((node_idx, learn_fn))
 
         # do not predict on the last layer
         prediction_steps = tuple([
