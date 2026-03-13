@@ -93,7 +93,7 @@ mod tests {
     use crate::updates::prediction::continuous::prediction_continuous_state_node;
     use crate::updates::prediction_error::continuous::prediction_error_continuous_state_node;
     use crate::updates::posterior::continuous::posterior_update_continuous_state_node;
-    use crate::utils::learning::learning_weights_fixed;
+    use crate::updates::learning::learning_weights;
 
     /// Helper: a dummy function with the right signature, used as learning_fn.
     fn dummy_learning(_net: &mut Network, _idx: usize, _ts: f64) {}
@@ -156,7 +156,7 @@ mod tests {
         // Expected learning_steps: learn(0), learn(1)
         let pe_fn = prediction_error_continuous_state_node as FnType;
         let po_fn = posterior_update_continuous_state_node as FnType;
-        let learn_fn = learning_weights_fixed as FnType;
+        let learn_fn = learning_weights as FnType;
         let edges = make_edges(&[0, 1, 2]);
 
         let updates = vec![(0, pe_fn), (1, pe_fn), (2, po_fn)];
@@ -182,7 +182,7 @@ mod tests {
         // Expected learning_steps: learn(0), learn(1)
         let pe_fn = prediction_error_continuous_state_node as FnType;
         let po_fn = posterior_update_continuous_state_node as FnType;
-        let learn_fn = learning_weights_fixed as FnType;
+        let learn_fn = learning_weights as FnType;
         let edges = make_edges(&[0, 1, 2, 3]);
 
         let updates = vec![(0, pe_fn), (2, po_fn), (1, pe_fn), (3, po_fn)];
@@ -202,7 +202,7 @@ mod tests {
     fn test_learning_step_for_trailing_pe() {
         // PE(0) with no following posterior — learning step should still appear
         let pe_fn = prediction_error_continuous_state_node as FnType;
-        let learn_fn = learning_weights_fixed as FnType;
+        let learn_fn = learning_weights as FnType;
         let edges = make_edges(&[0]);
 
         let updates = vec![(0, pe_fn)];
@@ -265,7 +265,7 @@ mod tests {
         use crate::updates::prediction_error::binary::prediction_error_binary_state_node;
         let pe_binary = prediction_error_binary_state_node as FnType;
         let pe_cont = prediction_error_continuous_state_node as FnType;
-        let learn_fn = learning_weights_fixed as FnType;
+        let learn_fn = learning_weights as FnType;
 
         let mut edges = make_edges(&[1]);
         edges.insert(0, AdjacencyLists {
@@ -292,7 +292,7 @@ mod tests {
         net.add_layer(2, "continuous-state", Some(vec![0, 1]), 1.0, None, None, true);
         net.set_update_sequence();
 
-        let learn_fn = learning_weights_fixed as FnType;
+        let learn_fn = learning_weights as FnType;
         let inputs_x = [2_usize, 3];
 
         let seq = build_learning_sequence(

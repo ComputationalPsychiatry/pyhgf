@@ -3,7 +3,7 @@ use crate::utils::function_pointer::FnType;
 use crate::utils::set_sequence::set_update_sequence;
 use crate::utils::beliefs_propagation::belief_propagation;
 use crate::utils::function_pointer::get_func_map;
-use crate::utils::learning::{learning_weights_fixed, learning_weights_dynamic};
+use crate::updates::learning::learning_weights;
 use crate::utils::set_learning_sequence::build_learning_sequence;
 use crate::utils::weight_initialisation::weight_init_by_name;
 use crate::updates::observations::{set_predictors, set_observation};
@@ -671,18 +671,15 @@ impl Network {
         }
 
         // Choose learning function and set lr attribute on relevant nodes
-        let learning_fn: FnType = match lr {
-            Some(lr_val) => {
-                // Store the learning rate on all non-predictor nodes
-                for (&node_idx, floats) in self.attributes.floats.iter_mut() {
-                    if !inputs_x_idxs.contains(&node_idx) {
-                        floats.insert("lr".into(), lr_val);
-                    }
+        // Store the learning rate on relevant nodes when provided
+        if let Some(lr_val) = lr {
+            for (&node_idx, floats) in self.attributes.floats.iter_mut() {
+                if !inputs_x_idxs.contains(&node_idx) {
+                    floats.insert("lr".into(), lr_val);
                 }
-                learning_weights_fixed as FnType
             }
-            None => learning_weights_dynamic as FnType,
-        };
+        }
+        let learning_fn: FnType = learning_weights as FnType;
 
         // Build the learning sequence (prediction, update, learning steps)
         let learning_seq = build_learning_sequence(
