@@ -20,20 +20,17 @@ fn assert_value_level_match(
     node_b: usize,
     label: &str,
 ) {
-    let floats_a = net_a
-        .node_trajectories
-        .floats
-        .get(&node_a)
-        .unwrap_or_else(|| panic!("{}: no trajectories for node {}", label, node_a));
-    let floats_b = net_b
-        .node_trajectories
-        .floats
-        .get(&node_b)
-        .unwrap_or_else(|| panic!("{}: no trajectories for node {}", label, node_b));
+    let traj_a = &net_a.node_trajectories.nodes[node_a];
+    let traj_b = &net_b.node_trajectories.nodes[node_b];
 
-    for key in ["mean", "expected_mean", "precision", "expected_precision"] {
-        let a = &floats_a[key];
-        let b = &floats_b[key];
+    let fields: Vec<(&str, &Vec<f64>, &Vec<f64>)> = vec![
+        ("mean", &traj_a.mean, &traj_b.mean),
+        ("expected_mean", &traj_a.expected_mean, &traj_b.expected_mean),
+        ("precision", &traj_a.precision, &traj_b.precision),
+        ("expected_precision", &traj_a.expected_precision, &traj_b.expected_precision),
+    ];
+
+    for (key, a, b) in &fields {
         for (t, (va, vb)) in a.iter().zip(b.iter()).enumerate() {
             assert_close(
                 *va,
@@ -54,27 +51,17 @@ fn assert_vol_level_match(
     exp_node: usize,
     label: &str,
 ) {
-    let vol_floats = volatile_net
-        .node_trajectories
-        .floats
-        .get(&vol_node)
-        .unwrap_or_else(|| panic!("{}: no trajectories for volatile node {}", label, vol_node));
-    let exp_floats = explicit_net
-        .node_trajectories
-        .floats
-        .get(&exp_node)
-        .unwrap_or_else(|| panic!("{}: no trajectories for explicit node {}", label, exp_node));
+    let vol_traj = &volatile_net.node_trajectories.nodes[vol_node];
+    let exp_traj = &explicit_net.node_trajectories.nodes[exp_node];
 
-    let key_map = [
-        ("mean_vol", "mean"),
-        ("expected_mean_vol", "expected_mean"),
-        ("precision_vol", "precision"),
-        ("expected_precision_vol", "expected_precision"),
+    let fields: Vec<(&str, &Vec<f64>, &str, &Vec<f64>)> = vec![
+        ("mean_vol", &vol_traj.mean_vol, "mean", &exp_traj.mean),
+        ("expected_mean_vol", &vol_traj.expected_mean_vol, "expected_mean", &exp_traj.expected_mean),
+        ("precision_vol", &vol_traj.precision_vol, "precision", &exp_traj.precision),
+        ("expected_precision_vol", &vol_traj.expected_precision_vol, "expected_precision", &exp_traj.expected_precision),
     ];
 
-    for (vol_key, exp_key) in key_map {
-        let a = &vol_floats[vol_key];
-        let b = &exp_floats[exp_key];
+    for (vol_key, a, exp_key, b) in &fields {
         for (t, (va, vb)) in a.iter().zip(b.iter()).enumerate() {
             assert_close(
                 *va,

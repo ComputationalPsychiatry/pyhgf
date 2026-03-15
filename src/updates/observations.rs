@@ -1,48 +1,20 @@
 use crate::model::Network;
 
-
 /// Inject new observations into an input node
-/// 
-/// # Arguments
-/// * `network` - The main network containing the node.
-/// * `node_idx` - The input node index.
-/// * `observations` - The new observations.
-/// 
-/// # Returns
-/// * `network` - The network after message passing.
 pub fn observation_update(network: &mut Network, node_idx: usize, observations: f64) {
-
-    if let Some(node) = network.attributes.floats.get_mut(&node_idx) {
-        if let Some(mean) = node.get_mut("mean") {
-            *mean = observations;
-        }
-    }
+    network.attributes.states[node_idx].mean = observations;
 }
 
 /// Set predictor values on top-layer nodes.
-///
-/// Writes the given value into the node's `"mean"` and `"expected_mean"`
-/// attributes.  Both must be set because:
-/// - `expected_mean` drives the top-down prediction pass.
-/// - `mean` (the posterior) is read by the learning rule's
-///   `g(parent_mean)` denominator.  Without it, predictor nodes keep
-///   `mean = 0`, the activation is zero, and the first layer's
-///   couplings never update.
 pub fn set_predictors(network: &mut Network, node_idx: usize, value: f64) {
-    if let Some(node) = network.attributes.floats.get_mut(&node_idx) {
-        node.insert("mean".into(), value);
-        node.insert("expected_mean".into(), value);
-    }
+    let state = &mut network.attributes.states[node_idx];
+    state.mean = value;
+    state.expected_mean = value;
 }
 
 /// Set observation values on bottom-layer (target) nodes.
-///
-/// Writes the given value into the node's `"mean"` attribute and marks
-/// the node as observed (`"observed" = 1.0`).
-/// This mirrors Python `set_observation`.
 pub fn set_observation(network: &mut Network, node_idx: usize, value: f64) {
-    if let Some(node) = network.attributes.floats.get_mut(&node_idx) {
-        node.insert("mean".into(), value);
-        node.insert("observed".into(), 1.0);
-    }
+    let state = &mut network.attributes.states[node_idx];
+    state.mean = value;
+    state.observed = 1.0;
 }
