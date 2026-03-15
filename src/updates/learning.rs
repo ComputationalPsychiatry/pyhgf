@@ -27,7 +27,7 @@ pub fn learning_weights(
     let mut prospective_activation = Vec::with_capacity(n_parents);
     let mut parent_precisions = Vec::with_capacity(n_parents);
 
-    for (i, &parent_idx) in value_parents.iter().enumerate() {
+    for &parent_idx in value_parents.iter() {
         let parent_mean = network.attributes.states[parent_idx].mean;
 
         if fixed_lr.is_none() {
@@ -35,8 +35,7 @@ pub fn learning_weights(
             parent_precisions.push(parent_precision);
         }
 
-        let coupling_fn = network.attributes.fn_ptrs[node_idx]
-            .value_coupling_fn_parents.get(i).copied();
+        let coupling_fn = network.attributes.fn_ptrs[parent_idx].coupling_fn;
 
         let prosp_act = match coupling_fn {
             Some(cf) => (cf.f)(parent_mean),

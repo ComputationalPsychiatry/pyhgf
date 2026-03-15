@@ -42,13 +42,14 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
 
     if let Some(ref vp_idxs) = network.edges[node_idx].value_parents {
         let couplings = &network.attributes.vectors[node_idx].value_coupling_parents;
-        let coupling_fns = &network.attributes.fn_ptrs[node_idx].value_coupling_fn_parents;
 
         for (i, &parent_idx) in vp_idxs.iter().enumerate() {
             let parent_expected_mean = network.attributes.states[parent_idx].expected_mean;
             let psi = couplings.get(i).copied().unwrap_or(1.0);
-            let fn_ptr = coupling_fns.get(i).copied().unwrap_or(&crate::math::LINEAR);
-            let parent_value = (fn_ptr.f)(parent_expected_mean);
+            let parent_value = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
+                Some(cf) => (cf.f)(parent_expected_mean),
+                None => parent_expected_mean,
+            };
             driftrate += psi * parent_value;
         }
     }

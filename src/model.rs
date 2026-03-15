@@ -1,9 +1,7 @@
 use std::collections::HashMap;
-use crate::utils::function_pointer::FnType;
+use crate::utils::function_pointer::UpdateStep;
 use crate::utils::set_sequence::set_update_sequence;
 use crate::utils::beliefs_propagation::belief_propagation;
-use crate::utils::function_pointer::get_func_map;
-use crate::updates::learning::learning_weights;
 use crate::utils::set_learning_sequence::build_learning_sequence;
 use crate::utils::weight_initialisation::weight_init_by_name;
 use crate::updates::observations::{set_predictors, set_observation};
@@ -64,8 +62,8 @@ pub struct AdjacencyLists{
 
 #[derive(Debug)]
 pub struct UpdateSequence {
-    pub predictions: Vec<(usize, FnType)>,
-    pub updates: Vec<(usize, FnType)>,
+    pub predictions: Vec<(usize, UpdateStep)>,
+    pub updates: Vec<(usize, UpdateStep)>,
 }
 
 // =============================================================================
@@ -145,14 +143,18 @@ pub struct NodeVectors {
 }
 
 /// Per-node function pointer attributes.
-#[derive(Debug, Clone)]
+///
+/// The coupling function is defined on the **parent** node and applies to all
+/// its value children.  `None` means linear coupling (the default) and avoids
+/// any function-pointer call overhead at runtime.
+#[derive(Debug, Clone, Copy)]
 pub struct NodeFnPtrs {
-    pub value_coupling_fn_parents: Vec<&'static crate::math::CouplingFn>,
+    pub coupling_fn: Option<&'static crate::math::CouplingFn>,
 }
 
 impl Default for NodeFnPtrs {
     fn default() -> Self {
-        NodeFnPtrs { value_coupling_fn_parents: Vec::new() }
+        NodeFnPtrs { coupling_fn: None }
     }
 }
 
@@ -359,9 +361,10 @@ impl Network {
         coupling_fn: Option<String>,
         additional_parameters: Option<HashMap<String, f64>>,
     ) {
-        let coupling_fn_ptr = crate::math::resolve_coupling_fn(
-            coupling_fn.as_deref().unwrap_or("linear")
-        );
+        let coupling_fn_opt: Option<&'static crate::math::CouplingFn> = match coupling_fn.as_deref().unwrap_or("linear") {
+            "linear" => None,
+            name => Some(crate::math::resolve_coupling_fn(name)),
+        };
         let value_parents = value_parents.map(|v| v.into_vec());
         let value_children = value_children.map(|v| v.into_vec());
         let volatility_parents = volatility_parents.map(|v| v.into_vec());
@@ -408,7 +411,7 @@ impl Network {
                 self.edges.push(edges);
 
                 let mut vecs = NodeVectors::default();
-                let fns = NodeFnPtrs::default();
+                let fns = NodeFnPtrs { coupling_fn: coupling_fn_opt };
 
                 if let Some(ref vp) = value_parents {
                     vecs.value_coupling_parents = vec![1.0; vp.len()];
@@ -424,9 +427,6 @@ impl Network {
                         }
                         if child_idx < self.attributes.vectors.len() {
                             self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
-                        }
-                        if child_idx < self.attributes.fn_ptrs.len() {
-                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
                         }
                     }
                 }
@@ -524,14 +524,11 @@ impl Network {
                         if child_idx < self.attributes.vectors.len() {
                             self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
                         }
-                        if child_idx < self.attributes.fn_ptrs.len() {
-                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
-                        }
                     }
                 }
 
                 self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
+                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
             }
             "binary-state" => {
                 let state = NodeState {
@@ -563,14 +560,11 @@ impl Network {
                         if child_idx < self.attributes.vectors.len() {
                             self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
                         }
-                        if child_idx < self.attributes.fn_ptrs.len() {
-                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
-                        }
                     }
                 }
 
                 self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
+                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
             }
             "constant-state" => {
                 let state = NodeState {
@@ -595,9 +589,6 @@ impl Network {
                         if child_idx < self.attributes.vectors.len() {
                             self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
                         }
-                        if child_idx < self.attributes.fn_ptrs.len() {
-                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
-                        }
                     }
                 }
                 if let Some(ref volc) = volatility_children {
@@ -616,7 +607,7 @@ impl Network {
                 }
 
                 self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
+                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
             }
             _ => {}
         }
@@ -627,7 +618,7 @@ impl Network {
         self.update_sequence = set_update_sequence(self);
     }
 
-    pub fn input_data(&mut self, input_data: Vec<f64>, time_steps: Option<Vec<f64>>, record_trajectories: bool) {
+    pub fn input_data(&mut self, input_data: Vec<Vec<f64>>, time_steps: Option<Vec<f64>>, record_trajectories: bool) {
         if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
             self.set_update_sequence();
         }
@@ -645,8 +636,8 @@ impl Network {
             }
         }
 
-        for (t, observation) in input_data.iter().enumerate() {
-            belief_propagation(self, &[*observation], &predictions, &updates, time_steps[t]);
+        for (t, observations) in input_data.iter().enumerate() {
+            belief_propagation(self, observations, &predictions, &updates, time_steps[t]);
 
             if record_trajectories {
                 for (i, state) in self.attributes.states.iter().enumerate() {
@@ -766,13 +757,10 @@ impl Network {
                 }
             }
         }
-        let learning_fn: FnType = learning_weights as FnType;
-
         let learning_seq = build_learning_sequence(
             &self.update_sequence.predictions,
             &self.update_sequence.updates,
             inputs_x_idxs,
-            learning_fn,
             &self.edges,
         );
 
@@ -793,7 +781,7 @@ impl Network {
             }
 
             for &(idx, step) in &learning_seq.prediction_steps {
-                step(self, idx, time_step);
+                step.call(self, idx, time_step);
             }
 
             for (i, &node_idx) in inputs_y_idxs.iter().enumerate() {
@@ -801,11 +789,11 @@ impl Network {
             }
 
             for &(idx, step) in &learning_seq.update_steps {
-                step(self, idx, time_step);
+                step.call(self, idx, time_step);
             }
 
             for &(idx, step) in &learning_seq.learning_steps {
-                step(self, idx, time_step);
+                step.call(self, idx, time_step);
             }
 
             if record_trajectories {
@@ -829,7 +817,7 @@ impl Network {
     ) -> Vec<Vec<f64>> {
         let time_step = 1.0;
 
-        let prediction_steps: Vec<(usize, FnType)> = self
+        let prediction_steps: Vec<(usize, UpdateStep)> = self
             .update_sequence
             .predictions
             .iter()
@@ -857,7 +845,7 @@ impl Network {
                 }
 
                 for &(idx, step) in &prediction_steps {
-                    step(&mut temp, idx, time_step);
+                    step.call(&mut temp, idx, time_step);
                 }
 
                 inputs_y_idxs
@@ -998,7 +986,12 @@ impl Network {
         time_steps: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        let data: Vec<f64> = input_data.extract()?;
+        // Accept both 1D (Vec<f64>) and 2D (Vec<Vec<f64>>) input
+        let data: Vec<Vec<f64>> = if let Ok(flat) = input_data.extract::<Vec<f64>>() {
+            flat.into_iter().map(|v| vec![v]).collect()
+        } else {
+            input_data.extract::<Vec<Vec<f64>>>()?
+        };
         let ts: Option<Vec<f64>> = match time_steps {
             Some(ref obj) => Some(obj.extract()?),
             None => None,
@@ -1055,12 +1048,11 @@ impl Network {
 
     #[getter]
     pub fn get_update_sequence<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
-        let func_map = get_func_map();
         let py_list = PyList::empty(py);
 
         for sequence in [&self.update_sequence.predictions, &self.update_sequence.updates] {
-            for &(num, func) in sequence {
-                let py_func_name = func_map.get(&func).unwrap_or(&"unknown")
+            for &(num, step) in sequence {
+                let py_func_name = step.name()
                     .into_pyobject(py)?.into_any().unbind();
                 let py_num = num.into_pyobject(py)?.into_any().unbind();
                 py_list.append(PyTuple::new(py, &[py_num, py_func_name])?)?;
@@ -1252,7 +1244,7 @@ mod tests {
         let mut network = Network::new("eHGF");
         network.add_nodes("ef-state", 1, None, None, None, None, None, None);
 
-        let input_data = vec![1.0, 1.3, 1.5, 1.7];
+        let input_data: Vec<Vec<f64>> = vec![vec![1.0], vec![1.3], vec![1.5], vec![1.7]];
         network.set_update_sequence();
         network.input_data(input_data, None, true);
     }
@@ -1264,7 +1256,7 @@ mod tests {
         volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
         volatile_net.set_update_sequence();
 
-        let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
+        let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
         volatile_net.input_data(input_data.clone(), None, true);
 
         let mut explicit_net = Network::new("eHGF");
@@ -1284,7 +1276,7 @@ mod tests {
         volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
         volatile_net.set_update_sequence();
 
-        let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
+        let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
         volatile_net.input_data(input_data.clone(), None, true);
 
         let mut explicit_net = Network::new("standard");
@@ -1304,7 +1296,7 @@ mod tests {
         volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
         volatile_net.set_update_sequence();
 
-        let input_data: Vec<f64> = (0..20).map(|i| (i as f64) * 0.1).collect();
+        let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
         volatile_net.input_data(input_data.clone(), None, true);
 
         let mut explicit_net = Network::new("unbounded");
