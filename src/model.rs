@@ -68,26 +68,204 @@ pub struct UpdateSequence {
     pub updates: Vec<(usize, FnType)>,
 }
 
+// =============================================================================
+// Flat struct types — replacing HashMap<String, f64>
+// =============================================================================
+
+/// Flat struct for all node scalar attributes.
+/// Unused fields default to 0.0 (or NaN for optional fields like `lr`).
+#[derive(Debug, Clone, Copy)]
+pub struct NodeState {
+    pub mean: f64,
+    pub expected_mean: f64,
+    pub precision: f64,
+    pub expected_precision: f64,
+    pub observed: f64,
+    pub tonic_volatility: f64,
+    pub tonic_drift: f64,
+    pub autoconnection_strength: f64,
+    pub current_variance: f64,
+    pub effective_precision: f64,
+    pub value_prediction_error: f64,
+    pub volatility_prediction_error: f64,
+    // Volatile-state internal volatility level
+    pub mean_vol: f64,
+    pub expected_mean_vol: f64,
+    pub precision_vol: f64,
+    pub expected_precision_vol: f64,
+    pub tonic_volatility_vol: f64,
+    pub tonic_drift_vol: f64,
+    pub autoconnection_strength_vol: f64,
+    pub volatility_coupling_internal: f64,
+    pub effective_precision_vol: f64,
+    // EF-state
+    pub nus: f64,
+    // Learning
+    pub lr: f64,
+}
+
+impl Default for NodeState {
+    fn default() -> Self {
+        NodeState {
+            mean: 0.0,
+            expected_mean: 0.0,
+            precision: 1.0,
+            expected_precision: 1.0,
+            observed: 1.0,
+            tonic_volatility: 0.0,
+            tonic_drift: 0.0,
+            autoconnection_strength: 0.0,
+            current_variance: 1.0,
+            effective_precision: 0.0,
+            value_prediction_error: 0.0,
+            volatility_prediction_error: 0.0,
+            mean_vol: 0.0,
+            expected_mean_vol: 0.0,
+            precision_vol: 1.0,
+            expected_precision_vol: 1.0,
+            tonic_volatility_vol: 0.0,
+            tonic_drift_vol: 0.0,
+            autoconnection_strength_vol: 0.0,
+            volatility_coupling_internal: 0.0,
+            effective_precision_vol: 0.0,
+            nus: 0.0,
+            lr: f64::NAN,
+        }
+    }
+}
+
+/// Per-node variable-length vector attributes.
+#[derive(Debug, Clone, Default)]
+pub struct NodeVectors {
+    pub value_coupling_parents: Vec<f64>,
+    pub value_coupling_children: Vec<f64>,
+    pub volatility_coupling_parents: Vec<f64>,
+    pub volatility_coupling_children: Vec<f64>,
+    pub xis: Vec<f64>,
+}
+
+/// Per-node function pointer attributes.
+#[derive(Debug, Clone)]
+pub struct NodeFnPtrs {
+    pub value_coupling_fn_parents: Vec<&'static crate::math::CouplingFn>,
+}
+
+impl Default for NodeFnPtrs {
+    fn default() -> Self {
+        NodeFnPtrs { value_coupling_fn_parents: Vec::new() }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Attributes {
-    pub floats: HashMap<usize, HashMap<String, f64>>,
-    pub vectors: HashMap<usize, HashMap<String, Vec<f64>>>,
-    /// Per-node function-pointer attributes, e.g. `"value_coupling_fn_parents"`.
-    /// Storing `fn(f64) -> f64` avoids repeated string dispatch at prediction time.
-    pub fn_ptrs: HashMap<usize, HashMap<String, Vec<&'static crate::math::CouplingFn>>>,
+    pub states: Vec<NodeState>,
+    pub vectors: Vec<NodeVectors>,
+    pub fn_ptrs: Vec<NodeFnPtrs>,
+}
+
+/// Trajectory recording for a single node.
+#[derive(Debug)]
+pub struct NodeTrajectory {
+    pub mean: Vec<f64>,
+    pub expected_mean: Vec<f64>,
+    pub precision: Vec<f64>,
+    pub expected_precision: Vec<f64>,
+    pub observed: Vec<f64>,
+    pub tonic_volatility: Vec<f64>,
+    pub tonic_drift: Vec<f64>,
+    pub autoconnection_strength: Vec<f64>,
+    pub current_variance: Vec<f64>,
+    pub effective_precision: Vec<f64>,
+    pub value_prediction_error: Vec<f64>,
+    pub volatility_prediction_error: Vec<f64>,
+    pub mean_vol: Vec<f64>,
+    pub expected_mean_vol: Vec<f64>,
+    pub precision_vol: Vec<f64>,
+    pub expected_precision_vol: Vec<f64>,
+    pub tonic_volatility_vol: Vec<f64>,
+    pub tonic_drift_vol: Vec<f64>,
+    pub autoconnection_strength_vol: Vec<f64>,
+    pub volatility_coupling_internal: Vec<f64>,
+    pub effective_precision_vol: Vec<f64>,
+    pub nus: Vec<f64>,
+    pub lr: Vec<f64>,
+    // Vector trajectory
+    pub xis: Vec<Vec<f64>>,
+}
+
+impl NodeTrajectory {
+    pub fn with_capacity(n: usize) -> Self {
+        NodeTrajectory {
+            mean: Vec::with_capacity(n),
+            expected_mean: Vec::with_capacity(n),
+            precision: Vec::with_capacity(n),
+            expected_precision: Vec::with_capacity(n),
+            observed: Vec::with_capacity(n),
+            tonic_volatility: Vec::with_capacity(n),
+            tonic_drift: Vec::with_capacity(n),
+            autoconnection_strength: Vec::with_capacity(n),
+            current_variance: Vec::with_capacity(n),
+            effective_precision: Vec::with_capacity(n),
+            value_prediction_error: Vec::with_capacity(n),
+            volatility_prediction_error: Vec::with_capacity(n),
+            mean_vol: Vec::with_capacity(n),
+            expected_mean_vol: Vec::with_capacity(n),
+            precision_vol: Vec::with_capacity(n),
+            expected_precision_vol: Vec::with_capacity(n),
+            tonic_volatility_vol: Vec::with_capacity(n),
+            tonic_drift_vol: Vec::with_capacity(n),
+            autoconnection_strength_vol: Vec::with_capacity(n),
+            volatility_coupling_internal: Vec::with_capacity(n),
+            effective_precision_vol: Vec::with_capacity(n),
+            nus: Vec::with_capacity(n),
+            lr: Vec::with_capacity(n),
+            xis: Vec::with_capacity(n),
+        }
+    }
+
+    pub fn push_state(&mut self, s: &NodeState) {
+        self.mean.push(s.mean);
+        self.expected_mean.push(s.expected_mean);
+        self.precision.push(s.precision);
+        self.expected_precision.push(s.expected_precision);
+        self.observed.push(s.observed);
+        self.tonic_volatility.push(s.tonic_volatility);
+        self.tonic_drift.push(s.tonic_drift);
+        self.autoconnection_strength.push(s.autoconnection_strength);
+        self.current_variance.push(s.current_variance);
+        self.effective_precision.push(s.effective_precision);
+        self.value_prediction_error.push(s.value_prediction_error);
+        self.volatility_prediction_error.push(s.volatility_prediction_error);
+        self.mean_vol.push(s.mean_vol);
+        self.expected_mean_vol.push(s.expected_mean_vol);
+        self.precision_vol.push(s.precision_vol);
+        self.expected_precision_vol.push(s.expected_precision_vol);
+        self.tonic_volatility_vol.push(s.tonic_volatility_vol);
+        self.tonic_drift_vol.push(s.tonic_drift_vol);
+        self.autoconnection_strength_vol.push(s.autoconnection_strength_vol);
+        self.volatility_coupling_internal.push(s.volatility_coupling_internal);
+        self.effective_precision_vol.push(s.effective_precision_vol);
+        self.nus.push(s.nus);
+        self.lr.push(s.lr);
+    }
+
+    pub fn push_vectors(&mut self, v: &NodeVectors) {
+        if !v.xis.is_empty() {
+            self.xis.push(v.xis.clone());
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct NodeTrajectories {
-    pub floats: HashMap<usize, HashMap<String, Vec<f64>>>,
-    pub vectors: HashMap<usize, HashMap<String, Vec<Vec<f64>>>>,
+    pub nodes: Vec<NodeTrajectory>,
 }
 
 #[derive(Debug)]
 #[pyclass]
 pub struct Network{
     pub attributes: Attributes,
-    pub edges: HashMap<usize, AdjacencyLists>,
+    pub edges: Vec<AdjacencyLists>,
     pub inputs: Vec<usize>,
     pub update_type: String,
     pub update_sequence: UpdateSequence,
@@ -95,35 +273,81 @@ pub struct Network{
     pub layers: Vec<Vec<usize>>,
 }
 
+/// Helper: get the list of trajectory field names to export for a given node type.
+fn trajectory_fields_for_type(node_type: &str) -> &'static [&'static str] {
+    match node_type {
+        "binary-state" => &[
+            "observed", "mean", "expected_mean", "precision",
+            "expected_precision", "value_prediction_error",
+        ],
+        "continuous-state" => &[
+            "mean", "expected_mean", "precision", "expected_precision",
+            "tonic_volatility", "tonic_drift", "autoconnection_strength",
+            "current_variance", "effective_precision",
+            "value_prediction_error", "volatility_prediction_error",
+        ],
+        "volatile-state" => &[
+            "mean", "expected_mean", "precision", "expected_precision",
+            "tonic_volatility", "tonic_drift", "autoconnection_strength",
+            "current_variance", "effective_precision",
+            "value_prediction_error", "volatility_prediction_error",
+            "mean_vol", "expected_mean_vol", "precision_vol",
+            "expected_precision_vol", "tonic_volatility_vol",
+            "tonic_drift_vol", "autoconnection_strength_vol",
+            "volatility_coupling_internal", "effective_precision_vol",
+            "observed",
+        ],
+        "ef-state" => &["mean", "nus"],
+        "constant-state" => &["mean", "expected_mean"],
+        _ => &[],
+    }
+}
+
+/// Helper: get a reference to the trajectory Vec<f64> for a given field name.
+fn trajectory_field_ref<'a>(traj: &'a NodeTrajectory, field: &str) -> &'a Vec<f64> {
+    match field {
+        "mean" => &traj.mean,
+        "expected_mean" => &traj.expected_mean,
+        "precision" => &traj.precision,
+        "expected_precision" => &traj.expected_precision,
+        "observed" => &traj.observed,
+        "tonic_volatility" => &traj.tonic_volatility,
+        "tonic_drift" => &traj.tonic_drift,
+        "autoconnection_strength" => &traj.autoconnection_strength,
+        "current_variance" => &traj.current_variance,
+        "effective_precision" => &traj.effective_precision,
+        "value_prediction_error" => &traj.value_prediction_error,
+        "volatility_prediction_error" => &traj.volatility_prediction_error,
+        "mean_vol" => &traj.mean_vol,
+        "expected_mean_vol" => &traj.expected_mean_vol,
+        "precision_vol" => &traj.precision_vol,
+        "expected_precision_vol" => &traj.expected_precision_vol,
+        "tonic_volatility_vol" => &traj.tonic_volatility_vol,
+        "tonic_drift_vol" => &traj.tonic_drift_vol,
+        "autoconnection_strength_vol" => &traj.autoconnection_strength_vol,
+        "volatility_coupling_internal" => &traj.volatility_coupling_internal,
+        "effective_precision_vol" => &traj.effective_precision_vol,
+        "nus" => &traj.nus,
+        "lr" => &traj.lr,
+        _ => &traj.mean, // fallback
+    }
+}
+
 // Core Rust methods (also callable from Python via chaining wrappers below)
 impl Network {
 
     pub fn new(update_type: &str) -> Self {
         Network {
-            attributes: Attributes { floats: HashMap::new(), vectors: HashMap::new(), fn_ptrs: HashMap::new() },
-            edges: HashMap::new(),
+            attributes: Attributes { states: Vec::new(), vectors: Vec::new(), fn_ptrs: Vec::new() },
+            edges: Vec::new(),
             inputs: Vec::new(),
             update_type: String::from(update_type),
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
-            node_trajectories: NodeTrajectories { floats: HashMap::new(), vectors: HashMap::new() },
+            node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
         }
     }
 
-    /// Add nodes to the network.
-    ///
-    /// # Arguments
-    /// * `kind` - The type of node (`"continuous-state"` or `"ef-state"`).
-    /// * `n_nodes` - The number of nodes to create.
-    /// * `value_parents` - Index(es) of the node's value parents (int or list).
-    /// * `value_children` - Index(es) of the node's value children (int or list).
-    /// * `volatility_parents` - Index(es) of the node's volatility parents (int or list).
-    /// * `volatility_children` - Index(es) of the node's volatility children (int or list).
-    /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
-    /// * `additional_parameters` - Extra key-value pairs that override default
-    ///   float attributes for the newly created node(s).  Keys that don't match
-    ///   an existing default attribute are silently ignored (use
-    ///   `node_parameters` in Python for truly new keys).
     pub fn add_nodes(
         &mut self,
         kind: &str,
@@ -135,8 +359,6 @@ impl Network {
         coupling_fn: Option<String>,
         additional_parameters: Option<HashMap<String, f64>>,
     ) {
-        // Resolve the coupling function name to a &'static CouplingFn once,
-        // so prediction code can access .f, .df, and .d2f without any dispatch.
         let coupling_fn_ptr = crate::math::resolve_coupling_fn(
             coupling_fn.as_deref().unwrap_or("linear")
         );
@@ -148,7 +370,6 @@ impl Network {
       for _ in 0..n_nodes {
         let node_id = self.edges.len();
 
-        // Input nodes have no children
         let is_input = value_children.is_none() && volatility_children.is_none();
         if is_input {
             self.inputs.push(node_id);
@@ -164,82 +385,88 @@ impl Network {
 
         match kind {
             "continuous-state" => {
-                // Input nodes: no autoconnection, no tonic volatility
                 let (autoconnection, tonic_vol) = if is_input { (0.0, 0.0) } else { (1.0, -4.0) };
 
-                self.attributes.floats.insert(node_id, HashMap::from([
-                    ("mean".into(), 0.0),
-                    ("expected_mean".into(), 0.0),
-                    ("precision".into(), 1.0),
-                    ("expected_precision".into(), 1.0),
-                    ("tonic_volatility".into(), tonic_vol),
-                    ("tonic_drift".into(), 0.0),
-                    ("autoconnection_strength".into(), autoconnection),
-                    ("current_variance".into(), 1.0),
-                ]));
-                self.edges.insert(node_id, edges);
+                let mut state = NodeState {
+                    mean: 0.0,
+                    expected_mean: 0.0,
+                    precision: 1.0,
+                    expected_precision: 1.0,
+                    tonic_volatility: tonic_vol,
+                    tonic_drift: 0.0,
+                    autoconnection_strength: autoconnection,
+                    current_variance: 1.0,
+                    ..Default::default()
+                };
 
-                // Coupling strength vectors and reciprocal edges
-                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+                // Apply additional_parameters overrides
+                if let Some(ref overrides) = additional_parameters {
+                    apply_overrides_continuous(&mut state, overrides);
+                }
+
+                self.attributes.states.push(state);
+                self.edges.push(edges);
+
+                let mut vecs = NodeVectors::default();
+                let fns = NodeFnPtrs::default();
 
                 if let Some(ref vp) = value_parents {
-                    vec_attrs.insert("value_coupling_parents".into(), vec![1.0; vp.len()]);
+                    vecs.value_coupling_parents = vec![1.0; vp.len()];
                 }
                 if let Some(ref vc) = value_children {
-                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    vecs.value_coupling_children = vec![1.0; vc.len()];
                     for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
                             match &mut child_edges.value_parents {
                                 Some(parents) => parents.push(node_id),
                                 None => child_edges.value_parents = Some(vec![node_id]),
                             }
                         }
-                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
-                        child_vecs.entry("value_coupling_parents".into())
-                            .and_modify(|cs| cs.push(1.0))
-                            .or_insert_with(|| vec![1.0]);
-                        let child_fns = self.attributes.fn_ptrs.entry(child_idx).or_default();
-                        child_fns.entry("value_coupling_fn_parents".into())
-                            .and_modify(|cs| cs.push(coupling_fn_ptr))
-                            .or_insert_with(|| vec![coupling_fn_ptr]);
+                        if child_idx < self.attributes.vectors.len() {
+                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
+                        }
+                        if child_idx < self.attributes.fn_ptrs.len() {
+                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
+                        }
                     }
                 }
                 if let Some(ref volp) = volatility_parents {
-                    vec_attrs.insert("volatility_coupling_parents".into(), vec![1.0; volp.len()]);
+                    vecs.volatility_coupling_parents = vec![1.0; volp.len()];
                 }
                 if let Some(ref volc) = volatility_children {
-                    vec_attrs.insert("volatility_coupling_children".into(), vec![1.0; volc.len()]);
+                    vecs.volatility_coupling_children = vec![1.0; volc.len()];
                     for &child_idx in volc {
-                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
                             match &mut child_edges.volatility_parents {
                                 Some(parents) => parents.push(node_id),
                                 None => child_edges.volatility_parents = Some(vec![node_id]),
                             }
                         }
-                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
-                        child_vecs.entry("volatility_coupling_parents".into())
-                            .and_modify(|cs| cs.push(1.0))
-                            .or_insert_with(|| vec![1.0]);
+                        if child_idx < self.attributes.vectors.len() {
+                            self.attributes.vectors[child_idx].volatility_coupling_parents.push(1.0);
+                        }
                     }
                 }
 
-                if !vec_attrs.is_empty() {
-                    self.attributes.vectors.insert(node_id, vec_attrs);
-                }
+                self.attributes.vectors.push(vecs);
+                self.attributes.fn_ptrs.push(fns);
             }
             "ef-state" => {
-                self.attributes.floats.insert(node_id, HashMap::from([
-                    ("mean".into(), 0.0),
-                    ("nus".into(), 3.0),
-                ]));
-                self.attributes.vectors.insert(node_id, HashMap::from([
-                    ("xis".into(), vec![0.0, 1.0]),
-                ]));
-                self.edges.insert(node_id, edges);
+                let state = NodeState {
+                    mean: 0.0,
+                    nus: 3.0,
+                    ..Default::default()
+                };
+                self.attributes.states.push(state);
+                self.edges.push(edges);
+                let vecs = NodeVectors {
+                    xis: vec![0.0, 1.0],
+                    ..Default::default()
+                };
+                self.attributes.vectors.push(vecs);
+                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
             }
             "volatile-state" => {
-                // Volatile nodes have an implicit internal volatility parent.
-                // They do NOT accept external volatility parents/children.
                 let volatile_edges = AdjacencyLists {
                     node_type: String::from(kind),
                     value_parents: value_parents.clone(),
@@ -248,173 +475,150 @@ impl Network {
                     volatility_children: None,
                 };
 
-                self.attributes.floats.insert(node_id, HashMap::from([
-                    // Value level parameters (external facing)
-                    ("mean".into(), 0.0),
-                    ("expected_mean".into(), 0.0),
-                    ("precision".into(), 1.0),
-                    ("expected_precision".into(), 1.0),
-                    ("tonic_volatility".into(), -4.0),
-                    ("tonic_drift".into(), 0.0),
-                    ("autoconnection_strength".into(), 1.0),
-                    ("current_variance".into(), 1.0),
-                    // Volatility level parameters (implicit internal)
-                    ("mean_vol".into(), 0.0),
-                    ("expected_mean_vol".into(), 0.0),
-                    ("precision_vol".into(), 1.0),
-                    ("expected_precision_vol".into(), 1.0),
-                    ("tonic_volatility_vol".into(), -4.0),
-                    ("tonic_drift_vol".into(), 0.0),
-                    ("autoconnection_strength_vol".into(), 1.0),
-                    // Internal coupling
-                    ("volatility_coupling_internal".into(), 1.0),
-                    // State
-                    ("observed".into(), 1.0),
-                    // Temp variables
-                    ("effective_precision".into(), 0.0),
-                    ("value_prediction_error".into(), 0.0),
-                    ("volatility_prediction_error".into(), 0.0),
-                    ("effective_precision_vol".into(), 0.0),
-                ]));
-                self.edges.insert(node_id, volatile_edges);
+                let mut state = NodeState {
+                    mean: 0.0,
+                    expected_mean: 0.0,
+                    precision: 1.0,
+                    expected_precision: 1.0,
+                    tonic_volatility: -4.0,
+                    tonic_drift: 0.0,
+                    autoconnection_strength: 1.0,
+                    current_variance: 1.0,
+                    mean_vol: 0.0,
+                    expected_mean_vol: 0.0,
+                    precision_vol: 1.0,
+                    expected_precision_vol: 1.0,
+                    tonic_volatility_vol: -4.0,
+                    tonic_drift_vol: 0.0,
+                    autoconnection_strength_vol: 1.0,
+                    volatility_coupling_internal: 1.0,
+                    observed: 1.0,
+                    effective_precision: 0.0,
+                    value_prediction_error: 0.0,
+                    volatility_prediction_error: 0.0,
+                    effective_precision_vol: 0.0,
+                    ..Default::default()
+                };
 
-                // Coupling strength vectors and reciprocal edges (value only)
-                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+                if let Some(ref overrides) = additional_parameters {
+                    apply_overrides_volatile(&mut state, overrides);
+                }
+
+                self.attributes.states.push(state);
+                self.edges.push(volatile_edges);
+
+                let mut vecs = NodeVectors::default();
 
                 if let Some(ref vp) = value_parents {
-                    vec_attrs.insert("value_coupling_parents".into(), vec![1.0; vp.len()]);
+                    vecs.value_coupling_parents = vec![1.0; vp.len()];
                 }
                 if let Some(ref vc) = value_children {
-                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    vecs.value_coupling_children = vec![1.0; vc.len()];
                     for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
                             match &mut child_edges.value_parents {
                                 Some(parents) => parents.push(node_id),
                                 None => child_edges.value_parents = Some(vec![node_id]),
                             }
                         }
-                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
-                        child_vecs.entry("value_coupling_parents".into())
-                            .and_modify(|cs| cs.push(1.0))
-                            .or_insert_with(|| vec![1.0]);
-                        let child_fns = self.attributes.fn_ptrs.entry(child_idx).or_default();
-                        child_fns.entry("value_coupling_fn_parents".into())
-                            .and_modify(|cs| cs.push(coupling_fn_ptr))
-                            .or_insert_with(|| vec![coupling_fn_ptr]);
+                        if child_idx < self.attributes.vectors.len() {
+                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
+                        }
+                        if child_idx < self.attributes.fn_ptrs.len() {
+                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
+                        }
                     }
                 }
 
-                if !vec_attrs.is_empty() {
-                    self.attributes.vectors.insert(node_id, vec_attrs);
-                }
+                self.attributes.vectors.push(vecs);
+                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
             }
             "binary-state" => {
-                // Binary state nodes are input nodes (no children).
-                // Default attributes mirror the Python `add_binary_state` function.
-                self.attributes.floats.insert(node_id, HashMap::from([
-                    ("observed".into(), 1.0),
-                    ("mean".into(), 0.0),
-                    ("expected_mean".into(), 0.5),
-                    ("precision".into(), 1.0),
-                    ("expected_precision".into(), 1.0),
-                    ("value_prediction_error".into(), 0.0),
-                ]));
-                self.edges.insert(node_id, edges);
+                let state = NodeState {
+                    observed: 1.0,
+                    mean: 0.0,
+                    expected_mean: 0.5,
+                    precision: 1.0,
+                    expected_precision: 1.0,
+                    value_prediction_error: 0.0,
+                    ..Default::default()
+                };
+                self.attributes.states.push(state);
+                self.edges.push(edges);
 
-                // Value coupling vectors and reciprocal parent→child edges
-                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+                let mut vecs = NodeVectors::default();
 
                 if let Some(ref vp) = value_parents {
-                    vec_attrs.insert("value_coupling_parents".into(), vec![1.0; vp.len()]);
+                    vecs.value_coupling_parents = vec![1.0; vp.len()];
                 }
                 if let Some(ref vc) = value_children {
-                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    vecs.value_coupling_children = vec![1.0; vc.len()];
                     for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
                             match &mut child_edges.value_parents {
                                 Some(parents) => parents.push(node_id),
                                 None => child_edges.value_parents = Some(vec![node_id]),
                             }
                         }
-                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
-                        child_vecs.entry("value_coupling_parents".into())
-                            .and_modify(|cs| cs.push(1.0))
-                            .or_insert_with(|| vec![1.0]);
-                        let child_fns = self.attributes.fn_ptrs.entry(child_idx).or_default();
-                        child_fns.entry("value_coupling_fn_parents".into())
-                            .and_modify(|cs| cs.push(coupling_fn_ptr))
-                            .or_insert_with(|| vec![coupling_fn_ptr]);
+                        if child_idx < self.attributes.vectors.len() {
+                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
+                        }
+                        if child_idx < self.attributes.fn_ptrs.len() {
+                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
+                        }
                     }
                 }
 
-                if !vec_attrs.is_empty() {
-                    self.attributes.vectors.insert(node_id, vec_attrs);
-                }
+                self.attributes.vectors.push(vecs);
+                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
             }
             "constant-state" => {
-                // Constant-state nodes hold a fixed mean of 1.0.
-                // No prediction or update step is applied to them.
-                // They cannot have value or volatility parents.
-                self.attributes.floats.insert(node_id, HashMap::from([
-                    ("mean".into(), 1.0),
-                    ("expected_mean".into(), 1.0),
-                ]));
-                self.edges.insert(node_id, edges);
+                let state = NodeState {
+                    mean: 1.0,
+                    expected_mean: 1.0,
+                    ..Default::default()
+                };
+                self.attributes.states.push(state);
+                self.edges.push(edges);
 
-                // Coupling strength vectors and reciprocal edges (children only)
-                let mut vec_attrs: HashMap<String, Vec<f64>> = HashMap::new();
+                let mut vecs = NodeVectors::default();
 
                 if let Some(ref vc) = value_children {
-                    vec_attrs.insert("value_coupling_children".into(), vec![1.0; vc.len()]);
+                    vecs.value_coupling_children = vec![1.0; vc.len()];
                     for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
                             match &mut child_edges.value_parents {
                                 Some(parents) => parents.push(node_id),
                                 None => child_edges.value_parents = Some(vec![node_id]),
                             }
                         }
-                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
-                        child_vecs.entry("value_coupling_parents".into())
-                            .and_modify(|cs| cs.push(1.0))
-                            .or_insert_with(|| vec![1.0]);
-                        let child_fns = self.attributes.fn_ptrs.entry(child_idx).or_default();
-                        child_fns.entry("value_coupling_fn_parents".into())
-                            .and_modify(|cs| cs.push(coupling_fn_ptr))
-                            .or_insert_with(|| vec![coupling_fn_ptr]);
+                        if child_idx < self.attributes.vectors.len() {
+                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
+                        }
+                        if child_idx < self.attributes.fn_ptrs.len() {
+                            self.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.push(coupling_fn_ptr);
+                        }
                     }
                 }
                 if let Some(ref volc) = volatility_children {
-                    vec_attrs.insert("volatility_coupling_children".into(), vec![1.0; volc.len()]);
+                    vecs.volatility_coupling_children = vec![1.0; volc.len()];
                     for &child_idx in volc {
-                        if let Some(child_edges) = self.edges.get_mut(&child_idx) {
+                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
                             match &mut child_edges.volatility_parents {
                                 Some(parents) => parents.push(node_id),
                                 None => child_edges.volatility_parents = Some(vec![node_id]),
                             }
                         }
-                        let child_vecs = self.attributes.vectors.entry(child_idx).or_default();
-                        child_vecs.entry("volatility_coupling_parents".into())
-                            .and_modify(|cs| cs.push(1.0))
-                            .or_insert_with(|| vec![1.0]);
+                        if child_idx < self.attributes.vectors.len() {
+                            self.attributes.vectors[child_idx].volatility_coupling_parents.push(1.0);
+                        }
                     }
                 }
 
-                if !vec_attrs.is_empty() {
-                    self.attributes.vectors.insert(node_id, vec_attrs);
-                }
+                self.attributes.vectors.push(vecs);
+                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
             }
             _ => {}
-        }
-
-        // Apply additional_parameters overrides to the newly created node
-        if let Some(ref overrides) = additional_parameters {
-            if let Some(floats) = self.attributes.floats.get_mut(&node_id) {
-                for (key, value) in overrides {
-                    if floats.contains_key(key) {
-                        floats.insert(key.clone(), *value);
-                    }
-                }
-            }
         }
       } // end for n_nodes
     }
@@ -423,13 +627,7 @@ impl Network {
         self.update_sequence = set_update_sequence(self);
     }
 
-    /// Add a sequence of observations.
-    ///
-    /// # Arguments
-    /// * `input_data` - A vector of observations (one per time step).
-    /// * `time_steps` - Optional time steps (defaults to ones).
     pub fn input_data(&mut self, input_data: Vec<f64>, time_steps: Option<Vec<f64>>, record_trajectories: bool) {
-        // Automatically set the update sequence if not already done
         if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
             self.set_update_sequence();
         }
@@ -439,54 +637,21 @@ impl Network {
         let predictions = self.update_sequence.predictions.clone();
         let updates = self.update_sequence.updates.clone();
 
-        let mut node_trajectories = NodeTrajectories {
-            floats: HashMap::new(),
-            vectors: HashMap::new(),
-        };
+        let mut node_trajectories = NodeTrajectories { nodes: Vec::new() };
 
         if record_trajectories {
-            // Preallocate float trajectories
-            for (node_idx, node) in &self.attributes.floats {
-                let mut map = HashMap::with_capacity(node.len());
-                for key in node.keys() {
-                    map.insert(key.clone(), Vec::with_capacity(n_time));
-                }
-                node_trajectories.floats.insert(*node_idx, map);
-            }
-
-            // Preallocate vector trajectories
-            for (node_idx, node) in &self.attributes.vectors {
-                let mut map = HashMap::with_capacity(node.len());
-                for key in node.keys() {
-                    map.insert(key.clone(), Vec::with_capacity(n_time));
-                }
-                node_trajectories.vectors.insert(*node_idx, map);
+            for _ in 0..self.attributes.states.len() {
+                node_trajectories.nodes.push(NodeTrajectory::with_capacity(n_time));
             }
         }
 
-        // Iterate over observations
         for (t, observation) in input_data.iter().enumerate() {
-            belief_propagation(self, vec![*observation], &predictions, &updates, time_steps[t]);
+            belief_propagation(self, &[*observation], &predictions, &updates, time_steps[t]);
 
             if record_trajectories {
-                // Record float trajectories
-                for (node_idx, node) in &self.attributes.floats {
-                    let traj = node_trajectories.floats.get_mut(node_idx).expect("node not found");
-                    for (key, value) in node {
-                        traj.entry(key.clone())
-                            .or_insert_with(|| Vec::with_capacity(n_time))
-                            .push(*value);
-                    }
-                }
-
-                // Record vector trajectories
-                for (node_idx, node) in &self.attributes.vectors {
-                    let traj = node_trajectories.vectors.entry(*node_idx).or_default();
-                    for (key, value) in node {
-                        traj.entry(key.clone())
-                            .or_insert_with(|| Vec::with_capacity(n_time))
-                            .push(value.clone());
-                    }
+                for (i, state) in self.attributes.states.iter().enumerate() {
+                    node_trajectories.nodes[i].push_state(state);
+                    node_trajectories.nodes[i].push_vectors(&self.attributes.vectors[i]);
                 }
             }
         }
@@ -496,21 +661,6 @@ impl Network {
         }
     }
 
-    /// Add a fully connected layer of parent nodes.
-    ///
-    /// Each new node connects to all specified children (or all orphan nodes if
-    /// none are given). This mirrors `DeepNetwork.add_layer` in Python.
-    ///
-    /// # Arguments
-    /// * `size` - Number of parent nodes to create.
-    /// * `kind` - Node kind (defaults to `"volatile-state"`).
-    /// * `value_children` - Children to connect to. If `None`, auto-detects orphan nodes.
-    /// * `coupling_strengths` - Coupling strength for each child connection (default 1.0).
-    /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
-    /// * `additional_parameters` - Extra key-value pairs that override default
-    ///   node attributes (e.g. `autoconnection_strength`).
-    /// * `add_constant_input` - When `true` (default), automatically add a
-    ///   `constant-state` bias node connected to all non-constant children.
     pub fn add_layer(
         &mut self,
         size: usize,
@@ -523,69 +673,45 @@ impl Network {
     ) {
         let n_nodes_before = self.edges.len();
 
-        // Auto-detect orphan nodes if no children specified,
-        // always excluding constant-state nodes (they are not learnable targets).
         let children: Vec<usize> = match value_children {
             Some(vc) => vc,
             None => {
                 let mut orphans = Vec::new();
                 for idx in 0..self.edges.len() {
-                    if self.edges[&idx].value_parents.is_none() {
+                    if self.edges[idx].value_parents.is_none() {
                         orphans.push(idx);
                     }
                 }
                 orphans
             }
         }.into_iter()
-            .filter(|idx| {
-                self.edges.get(idx)
-                    .map(|e| e.node_type != "constant-state")
-                    .unwrap_or(true)
-            })
+            .filter(|&idx| self.edges[idx].node_type != "constant-state")
             .collect();
 
-        // Default autoconnection_strength to 0.0 unless the caller specified it
         let additional_parameters = {
             let mut params = additional_parameters.unwrap_or_default();
             params.entry("autoconnection_strength".into()).or_insert(0.0);
             Some(params)
         };
 
-        // Add `size` parent nodes, each connecting to all children
         for _ in 0..size {
             let vc = IntOrList::List(children.clone());
             self.add_nodes(kind, 1, None, Some(vc), None, None, coupling_fn.clone(), additional_parameters.clone());
 
-            // Apply custom coupling strengths
             let node_id = self.edges.len() - 1;
-            if let Some(ref mut vec_attrs) = self.attributes.vectors.get_mut(&node_id) {
-                if let Some(ref mut cs) = vec_attrs.get_mut("value_coupling_children") {
-                    for v in cs.iter_mut() {
-                        *v = coupling_strengths;
-                    }
-                }
+            for v in self.attributes.vectors[node_id].value_coupling_children.iter_mut() {
+                *v = coupling_strengths;
             }
-            // Also update the corresponding parent coupling strengths on the children
             for &child_idx in &children {
-                if let Some(ref mut child_vecs) = self.attributes.vectors.get_mut(&child_idx) {
-                    if let Some(ref mut cs) = child_vecs.get_mut("value_coupling_parents") {
-                        if let Some(last) = cs.last_mut() {
-                            *last = coupling_strengths;
-                        }
-                    }
+                if let Some(last) = self.attributes.vectors[child_idx].value_coupling_parents.last_mut() {
+                    *last = coupling_strengths;
                 }
             }
         }
 
-        // Optionally add a constant-state bias node
         if add_constant_input {
-            // Connect to all children that are not constant-state nodes
             let non_constant_children: Vec<usize> = children.iter()
-                .filter(|&&idx| {
-                    self.edges.get(&idx)
-                        .map(|e| e.node_type != "constant-state")
-                        .unwrap_or(true)
-                })
+                .filter(|&&idx| self.edges[idx].node_type != "constant-state")
                 .copied()
                 .collect();
 
@@ -595,25 +721,10 @@ impl Network {
             }
         }
 
-        // Record layer indices
         let new_layer: Vec<usize> = (n_nodes_before..self.edges.len()).collect();
         self.layers.push(new_layer);
     }
 
-    /// Add multiple fully connected layers in sequence.
-    ///
-    /// The first layer connects to the specified children (or orphan nodes).
-    /// Subsequent layers auto-connect to all orphan nodes (i.e. the previous layer).
-    ///
-    /// # Arguments
-    /// * `layer_sizes` - Number of nodes in each layer.
-    /// * `kind` - Node kind (defaults to `"volatile-state"`).
-    /// * `value_children` - Children for the first layer. If `None`, auto-detect.
-    /// * `coupling_strengths` - Coupling strength for all connections (default 1.0).
-    /// * `coupling_fn` - Name of the coupling function (default `"linear"`).
-    /// * `additional_parameters` - Extra key-value pairs that override default
-    ///   node attributes (e.g. `autoconnection_strength`).
-    /// * `add_constant_input` - When `true`, add a constant-state bias node per layer.
     pub fn add_layer_stack(
         &mut self,
         layer_sizes: Vec<usize>,
@@ -633,27 +744,6 @@ impl Network {
         }
     }
 
-    /// Fit the network using predictive-coding learning (prospective configuration).
-    ///
-    /// This implements the learning loop from Python `Network.fit` /
-    /// `DeepNetwork.fit`.  At each time step the method:
-    ///
-    /// 1. Sets predictor values (x) on the top-layer nodes (`inputs_x_idxs`).
-    /// 2. Runs the prediction sequence (top-down), excluding predictor nodes.
-    /// 3. Sets observation values (y) on the bottom-layer nodes (`inputs_y_idxs`).
-    /// 4. Runs the update sequence (bottom-up) with weight-update steps
-    ///    interleaved between prediction-error and posterior-update steps.
-    ///
-    /// The coupling strengths are updated after each time step so that the
-    /// network gradually learns to predict `y` from `x`.
-    ///
-    /// # Arguments
-    /// * `x` - Predictor values, shape `[n_time][n_x_inputs]`.
-    /// * `y` - Target values, shape `[n_time][n_y_inputs]`.
-    /// * `inputs_x_idxs` - Node indices receiving the predictors (top layer).
-    /// * `inputs_y_idxs` - Node indices receiving the targets (bottom layer).
-    /// * `lr` - Learning rate.  `Some(value)` for a fixed rate,
-    ///          `None` for precision-weighted dynamic learning.
     pub fn fit(
         &mut self,
         x: &[Vec<f64>],
@@ -663,25 +753,21 @@ impl Network {
         lr: Option<f64>,
         record_trajectories: bool,
     ) {
-        // Build update sequence if not already set
         if self.update_sequence.predictions.is_empty()
             && self.update_sequence.updates.is_empty()
         {
             self.set_update_sequence();
         }
 
-        // Choose learning function and set lr attribute on relevant nodes
-        // Store the learning rate on relevant nodes when provided
         if let Some(lr_val) = lr {
-            for (&node_idx, floats) in self.attributes.floats.iter_mut() {
+            for (node_idx, state) in self.attributes.states.iter_mut().enumerate() {
                 if !inputs_x_idxs.contains(&node_idx) {
-                    floats.insert("lr".into(), lr_val);
+                    state.lr = lr_val;
                 }
             }
         }
         let learning_fn: FnType = learning_weights as FnType;
 
-        // Build the learning sequence (prediction, update, learning steps)
         let learning_seq = build_learning_sequence(
             &self.update_sequence.predictions,
             &self.update_sequence.updates,
@@ -693,79 +779,39 @@ impl Network {
         let n_time = x.len();
         let time_step = 1.0;
 
-        // Preallocate trajectories (only when recording)
-        let mut node_trajectories = NodeTrajectories {
-            floats: HashMap::new(),
-            vectors: HashMap::new(),
-        };
+        let mut node_trajectories = NodeTrajectories { nodes: Vec::new() };
 
         if record_trajectories {
-            for (node_idx, node) in &self.attributes.floats {
-                let mut map = HashMap::with_capacity(node.len());
-                for key in node.keys() {
-                    map.insert(key.clone(), Vec::with_capacity(n_time));
-                }
-                node_trajectories.floats.insert(*node_idx, map);
-            }
-
-            for (node_idx, node) in &self.attributes.vectors {
-                let mut map = HashMap::with_capacity(node.len());
-                for key in node.keys() {
-                    map.insert(key.clone(), Vec::with_capacity(n_time));
-                }
-                node_trajectories.vectors.insert(*node_idx, map);
+            for _ in 0..self.attributes.states.len() {
+                node_trajectories.nodes.push(NodeTrajectory::with_capacity(n_time));
             }
         }
 
-        // Main learning loop
         for t in 0..n_time {
-            // 1. Set predictor states (x → expected_mean on top-layer nodes)
             for (i, &node_idx) in inputs_x_idxs.iter().enumerate() {
                 set_predictors(self, node_idx, x[t][i]);
             }
 
-            // 2. Prediction sequence (top-down, excluding predictor nodes)
             for &(idx, step) in &learning_seq.prediction_steps {
                 step(self, idx, time_step);
             }
 
-            // 3. Set observations (y → mean + observed on bottom-layer nodes)
             for (i, &node_idx) in inputs_y_idxs.iter().enumerate() {
                 set_observation(self, node_idx, y[t][i]);
             }
 
-            // 4. Update sequence (prediction errors → posterior updates)
             for &(idx, step) in &learning_seq.update_steps {
                 step(self, idx, time_step);
             }
 
-            // 5. Learning step (weight updates, same order as prediction errors)
             for &(idx, step) in &learning_seq.learning_steps {
                 step(self, idx, time_step);
             }
 
-            // Record trajectories (skip when disabled for performance)
             if record_trajectories {
-                for (node_idx, node) in &self.attributes.floats {
-                    let traj = node_trajectories.floats
-                        .entry(*node_idx)
-                        .or_default();
-                    for (key, value) in node {
-                        traj.entry(key.clone())
-                            .or_insert_with(|| Vec::with_capacity(n_time))
-                            .push(*value);
-                    }
-                }
-
-                for (node_idx, node) in &self.attributes.vectors {
-                    let traj = node_trajectories.vectors
-                        .entry(*node_idx)
-                        .or_default();
-                    for (key, value) in node {
-                        traj.entry(key.clone())
-                            .or_insert_with(|| Vec::with_capacity(n_time))
-                            .push(value.clone());
-                    }
+                for (i, state) in self.attributes.states.iter().enumerate() {
+                    node_trajectories.nodes[i].push_state(state);
+                    node_trajectories.nodes[i].push_vectors(&self.attributes.vectors[i]);
                 }
             }
         }
@@ -775,24 +821,6 @@ impl Network {
         }
     }
 
-    /// Generate predictions from the network using only the prediction steps.
-    ///
-    /// For each sample, this method clones the current attributes into an
-    /// independent workspace, sets the predictor values on the top-layer nodes,
-    /// runs the prediction sequence top-down (excluding predictor nodes), and
-    /// collects the `expected_mean` from the target (bottom-layer) nodes.
-    ///
-    /// Samples are processed independently — no state is carried between them
-    /// — so this is conceptually equivalent to a `vmap` in JAX.
-    ///
-    /// # Arguments
-    /// * `x` - Predictor values, shape `[n_samples][n_x_inputs]`.
-    /// * `inputs_x_idxs` - Node indices receiving the predictors (top layer).
-    /// * `inputs_y_idxs` - Node indices whose `expected_mean` is returned
-    ///   (bottom layer).
-    ///
-    /// # Returns
-    /// A `Vec<Vec<f64>>` of shape `[n_samples][n_y_outputs]`.
     pub fn predict(
         &self,
         x: &[Vec<f64>],
@@ -801,7 +829,6 @@ impl Network {
     ) -> Vec<Vec<f64>> {
         let time_step = 1.0;
 
-        // Filter prediction steps: exclude predictor input nodes
         let prediction_steps: Vec<(usize, FnType)> = self
             .update_sequence
             .predictions
@@ -812,7 +839,6 @@ impl Network {
 
         x.iter()
             .map(|x_row| {
-                // Create a lightweight mutable workspace with cloned attributes
                 let mut temp = Network {
                     attributes: self.attributes.clone(),
                     edges: self.edges.clone(),
@@ -822,45 +848,26 @@ impl Network {
                         predictions: Vec::new(),
                         updates: Vec::new(),
                     },
-                    node_trajectories: NodeTrajectories {
-                        floats: HashMap::new(),
-                        vectors: HashMap::new(),
-                    },
+                    node_trajectories: NodeTrajectories { nodes: Vec::new() },
                     layers: Vec::new(),
                 };
 
-                // Set predictor values on top-layer nodes
                 for (i, &node_idx) in inputs_x_idxs.iter().enumerate() {
                     set_predictors(&mut temp, node_idx, x_row[i]);
                 }
 
-                // Run prediction steps (top-down)
                 for &(idx, step) in &prediction_steps {
                     step(&mut temp, idx, time_step);
                 }
 
-                // Collect expected_mean from target (bottom) nodes
                 inputs_y_idxs
                     .iter()
-                    .map(|&idx| {
-                        *temp
-                            .attributes
-                            .floats
-                            .get(&idx)
-                            .and_then(|m| m.get("expected_mean"))
-                            .unwrap_or(&0.0)
-                    })
+                    .map(|&idx| temp.attributes.states[idx].expected_mean)
                     .collect()
             })
             .collect()
     }
 
-    /// Initialise coupling weights for every layer except the input (top) layer.
-    ///
-    /// For each targeted layer the method generates a weight matrix whose
-    /// dimensions are `(n_parents, n_current)` — the number of parent nodes in
-    /// the layer above and the number of nodes in the current layer — then
-    /// applies them via [`set_coupling`].
     pub fn weight_initialisation(
         &mut self,
         strategy: &str,
@@ -874,24 +881,13 @@ impl Network {
             ));
         }
 
-        // All layers except the top/input layer (layers.last()).
-        // layers[0] = output, layers[last] = input.
-        // For layer at `layer_idx`, parents are at `layer_idx + 1`.
         for layer_idx in 0..self.layers.len() - 1 {
             let current_nodes = self.layers[layer_idx].clone();
             let parent_nodes = self.layers[layer_idx + 1].clone();
 
-            // Only initialise weights between eligible layers.
-            // Children must be continuous-state or volatile-state; parents can
-            // additionally be constant-state (bias) nodes.
-            let all_eligible = current_nodes.iter().chain(parent_nodes.iter()).all(|idx| {
-                self.edges.get(idx)
-                    .map(|e| {
-                        e.node_type == "continuous-state"
-                            || e.node_type == "volatile-state"
-                            || e.node_type == "constant-state"
-                    })
-                    .unwrap_or(false)
+            let all_eligible = current_nodes.iter().chain(parent_nodes.iter()).all(|&idx| {
+                let nt = &self.edges[idx].node_type;
+                nt == "continuous-state" || nt == "volatile-state" || nt == "constant-state"
             });
             if !all_eligible {
                 continue;
@@ -915,7 +911,42 @@ impl Network {
     }
 }
 
-// Python interface — wrappers that return self for method chaining
+/// Apply parameter overrides for continuous-state nodes
+fn apply_overrides_continuous(state: &mut NodeState, overrides: &HashMap<String, f64>) {
+    for (key, &value) in overrides {
+        match key.as_str() {
+            "mean" => state.mean = value,
+            "expected_mean" => state.expected_mean = value,
+            "precision" => state.precision = value,
+            "expected_precision" => state.expected_precision = value,
+            "tonic_volatility" => state.tonic_volatility = value,
+            "tonic_drift" => state.tonic_drift = value,
+            "autoconnection_strength" => state.autoconnection_strength = value,
+            "current_variance" => state.current_variance = value,
+            _ => {}
+        }
+    }
+}
+
+/// Apply parameter overrides for volatile-state nodes
+fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f64>) {
+    apply_overrides_continuous(state, overrides);
+    for (key, &value) in overrides {
+        match key.as_str() {
+            "mean_vol" => state.mean_vol = value,
+            "expected_mean_vol" => state.expected_mean_vol = value,
+            "precision_vol" => state.precision_vol = value,
+            "expected_precision_vol" => state.expected_precision_vol = value,
+            "tonic_volatility_vol" => state.tonic_volatility_vol = value,
+            "tonic_drift_vol" => state.tonic_drift_vol = value,
+            "autoconnection_strength_vol" => state.autoconnection_strength_vol = value,
+            "volatility_coupling_internal" => state.volatility_coupling_internal = value,
+            _ => {}
+        }
+    }
+}
+
+// Python interface
 #[pymethods]
 impl Network {
 
@@ -937,7 +968,6 @@ impl Network {
         coupling_fn: Option<String>,
         kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        // Convert Python **kwargs into a HashMap<String, f64>
         let additional_parameters = match kwargs {
             Some(dict) => {
                 let mut map = HashMap::new();
@@ -946,7 +976,6 @@ impl Network {
                     if let Ok(val) = value.extract::<f64>() {
                         map.insert(key_str, val);
                     }
-                    // non-float kwargs are silently skipped for now
                 }
                 if map.is_empty() { None } else { Some(map) }
             }
@@ -969,7 +998,6 @@ impl Network {
         time_steps: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        // Accept both plain lists and numpy arrays
         let data: Vec<f64> = input_data.extract()?;
         let ts: Option<Vec<f64>> = match time_steps {
             Some(ref obj) => Some(obj.extract()?),
@@ -979,26 +1007,27 @@ impl Network {
         Ok(slf)
     }
 
-    // ---- Python getters --------------------------------------------------------
-
     #[getter]
     pub fn get_node_trajectories<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
         let py_list = PyList::empty(py);
 
-        let mut sorted_keys: Vec<&usize> = self.node_trajectories.floats.keys().collect();
-        sorted_keys.sort();
-
-        for node_idx in sorted_keys {
+        for (i, traj) in self.node_trajectories.nodes.iter().enumerate() {
             let py_dict = PyDict::new(py);
+            let node_type = &self.edges[i].node_type;
+            let fields = trajectory_fields_for_type(node_type);
 
-            for (key, value) in &self.node_trajectories.floats[node_idx] {
-                py_dict.set_item(key, PyArray1::from_vec(py, value.clone()).to_owned())?;
-            }
-            if let Some(vector_node) = self.node_trajectories.vectors.get(node_idx) {
-                for (key, value) in vector_node {
-                    py_dict.set_item(key, PyArray::from_vec2(py, value).unwrap())?;
+            for &field in fields {
+                let data = trajectory_field_ref(traj, field);
+                if !data.is_empty() {
+                    py_dict.set_item(field, PyArray1::from_vec(py, data.clone()).to_owned())?;
                 }
             }
+
+            // Vector trajectories
+            if !traj.xis.is_empty() {
+                py_dict.set_item("xis", PyArray::from_vec2(py, &traj.xis).unwrap())?;
+            }
+
             py_list.append(py_dict)?;
         }
 
@@ -1013,12 +1042,12 @@ impl Network {
     #[getter]
     pub fn get_edges<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
         let py_list = PyList::empty(py);
-        for i in 0..self.edges.len() {
+        for edge in &self.edges {
             let py_dict = PyDict::new(py);
-            py_dict.set_item("value_parents", &self.edges[&i].value_parents)?;
-            py_dict.set_item("value_children", &self.edges[&i].value_children)?;
-            py_dict.set_item("volatility_parents", &self.edges[&i].volatility_parents)?;
-            py_dict.set_item("volatility_children", &self.edges[&i].volatility_children)?;
+            py_dict.set_item("value_parents", &edge.value_parents)?;
+            py_dict.set_item("value_children", &edge.value_children)?;
+            py_dict.set_item("volatility_parents", &edge.volatility_parents)?;
+            py_dict.set_item("volatility_children", &edge.volatility_children)?;
             py_list.append(py_dict)?;
         }
         Ok(py_list.into())
@@ -1097,23 +1126,6 @@ impl Network {
         Ok(slf)
     }
 
-    /// Fit the network using predictive-coding learning.
-    ///
-    /// Parameters
-    /// ----------
-    /// x : array-like, shape (n_time, n_x_inputs)
-    ///     Predictor values (input features) for the top layer.
-    /// y : array-like, shape (n_time, n_y_inputs)
-    ///     Target values (observations) for the bottom layer.
-    /// inputs_x_idxs : list[int], optional
-    ///     Node indices receiving predictors.  Defaults to the last
-    ///     (top) layer if ``None``.
-    /// inputs_y_idxs : list[int], optional
-    ///     Node indices receiving targets.  Defaults to the first
-    ///     (bottom) layer if ``None``.
-    /// lr : float or str, optional
-    ///     Learning rate.  Pass a float for a fixed rate, ``"dynamic"``
-    ///     for precision-weighted adaptive learning.  Defaults to ``0.2``.
     #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true))]
     fn py_fit<'py>(
         mut slf: PyRefMut<'py, Self>,
@@ -1124,12 +1136,11 @@ impl Network {
         lr: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        // --- Resolve learning rate -------------------------------------------
         let lr_option: Option<f64> = match lr {
             Some(ref obj) => {
                 if let Ok(s) = obj.extract::<String>() {
                     if s == "dynamic" {
-                        None // dynamic learning
+                        None
                     } else {
                         return Err(pyo3::exceptions::PyValueError::new_err(
                             format!("Invalid lr string '{}'. Use 'dynamic' or a float.", s),
@@ -1139,10 +1150,9 @@ impl Network {
                     Some(obj.extract::<f64>()?)
                 }
             }
-            None => Some(0.2), // default fixed lr
+            None => Some(0.2),
         };
 
-        // --- Resolve input/output indices ------------------------------------
         let x_idxs = match inputs_x_idxs {
             Some(v) => v,
             None => slf.layers.last().cloned().unwrap_or_default(),
@@ -1152,11 +1162,9 @@ impl Network {
             None => slf.layers.first().cloned().unwrap_or_default(),
         };
 
-        // --- Parse x and y as Vec<Vec<f64>> ----------------------------------
         let x_data: Vec<Vec<f64>> = if let Ok(outer) = x.extract::<Vec<Vec<f64>>>() {
             outer
         } else {
-            // 1-D array: wrap each element as a single-element inner vec
             let flat: Vec<f64> = x.extract()?;
             flat.into_iter().map(|v| vec![v]).collect()
         };
@@ -1172,22 +1180,6 @@ impl Network {
         Ok(slf)
     }
 
-    /// Generate predictions using only the forward (prediction) pass.
-    ///
-    /// Parameters
-    /// ----------
-    /// x : array-like, shape (n_samples, n_x_inputs)
-    ///     Predictor values for the top layer.
-    /// inputs_x_idxs : list[int], optional
-    ///     Node indices receiving predictors.  Defaults to the last
-    ///     (top) layer if ``None``.
-    /// inputs_y_idxs : list[int], optional
-    ///     Node indices whose ``expected_mean`` is returned.  Defaults
-    ///     to the first (bottom) layer if ``None``.
-    ///
-    /// Returns
-    /// -------
-    /// numpy.ndarray, shape (n_samples, n_y_outputs)
     #[pyo3(name = "predict", signature = (x, inputs_x_idxs=None, inputs_y_idxs=None))]
     fn py_predict<'py>(
         &self,
@@ -1196,7 +1188,6 @@ impl Network {
         inputs_x_idxs: Option<Vec<usize>>,
         inputs_y_idxs: Option<Vec<usize>>,
     ) -> PyResult<Py<numpy::PyArray2<f64>>> {
-        // Resolve input/output indices
         let x_idxs = match inputs_x_idxs {
             Some(v) => v,
             None => self.layers.last().cloned().unwrap_or_default(),
@@ -1206,7 +1197,6 @@ impl Network {
             None => self.layers.first().cloned().unwrap_or_default(),
         };
 
-        // Parse x as Vec<Vec<f64>>
         let x_data: Vec<Vec<f64>> = if let Ok(outer) = x.extract::<Vec<Vec<f64>>>() {
             outer
         } else {
@@ -1216,7 +1206,6 @@ impl Network {
 
         let predictions = self.predict(&x_data, &x_idxs, &y_idxs);
 
-        // Convert Vec<Vec<f64>> → 2-D numpy array
         let n_samples = predictions.len();
         let n_outputs = if n_samples > 0 { predictions[0].len() } else { 0 };
         let flat: Vec<f64> = predictions.into_iter().flatten().collect();
@@ -1270,7 +1259,6 @@ mod tests {
 
     #[test]
     fn test_volatile_node_ehgf_matches_explicit() {
-        // Both networks use eHGF (default)
         let mut volatile_net = Network::new("eHGF");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
         volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
@@ -1331,12 +1319,24 @@ mod tests {
 
     /// Helper: assert volatile node 1 trajectories match explicit nodes 1 & 2
     fn assert_volatile_matches_explicit(volatile_net: &Network, explicit_net: &Network) {
-        let vol_floats = &volatile_net.node_trajectories.floats[&1];
-        let exp_floats = &explicit_net.node_trajectories.floats[&1];
+        let vol_traj = &volatile_net.node_trajectories.nodes[1];
+        let exp_traj = &explicit_net.node_trajectories.nodes[1];
 
-        for key in ["mean", "expected_mean", "precision", "expected_precision"] {
-            let vol = &vol_floats[key];
-            let exp = &exp_floats[key];
+        // Value-level keys
+        let vol_fields: Vec<(&Vec<f64>, &str)> = vec![
+            (&vol_traj.mean, "mean"),
+            (&vol_traj.expected_mean, "expected_mean"),
+            (&vol_traj.precision, "precision"),
+            (&vol_traj.expected_precision, "expected_precision"),
+        ];
+        let exp_fields: Vec<(&Vec<f64>, &str)> = vec![
+            (&exp_traj.mean, "mean"),
+            (&exp_traj.expected_mean, "expected_mean"),
+            (&exp_traj.precision, "precision"),
+            (&exp_traj.expected_precision, "expected_precision"),
+        ];
+
+        for ((vol, key), (exp, _)) in vol_fields.iter().zip(exp_fields.iter()) {
             for (t, (v, e)) in vol.iter().zip(exp.iter()).enumerate() {
                 assert!(
                     (v - e).abs() < 1e-6,
@@ -1346,17 +1346,15 @@ mod tests {
             }
         }
 
-        let exp2_floats = &explicit_net.node_trajectories.floats[&2];
-        let vol_key_map = [
-            ("mean_vol", "mean"),
-            ("expected_mean_vol", "expected_mean"),
-            ("precision_vol", "precision"),
-            ("expected_precision_vol", "expected_precision"),
+        let exp2_traj = &explicit_net.node_trajectories.nodes[2];
+        let vol_key_map: Vec<(&Vec<f64>, &Vec<f64>, &str, &str)> = vec![
+            (&vol_traj.mean_vol, &exp2_traj.mean, "mean_vol", "mean"),
+            (&vol_traj.expected_mean_vol, &exp2_traj.expected_mean, "expected_mean_vol", "expected_mean"),
+            (&vol_traj.precision_vol, &exp2_traj.precision, "precision_vol", "precision"),
+            (&vol_traj.expected_precision_vol, &exp2_traj.expected_precision, "expected_precision_vol", "expected_precision"),
         ];
 
-        for (vol_key, exp_key) in vol_key_map {
-            let vol = &vol_floats[vol_key];
-            let exp = &exp2_floats[exp_key];
+        for (vol, exp, vol_key, exp_key) in vol_key_map {
             for (t, (v, e)) in vol.iter().zip(exp.iter()).enumerate() {
                 assert!(
                     (v - e).abs() < 1e-6,
