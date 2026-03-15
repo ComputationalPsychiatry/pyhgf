@@ -26,7 +26,7 @@ fn test_one_node_hgf() {
     network.add_nodes("continuous-state", 1, None, Some(vec![0].into()), None, None, None, None);
 
     network.set_update_sequence();
-    network.input_data(vec![0.2], None, true);
+    network.input_data(vec![vec![0.2]], None, true);
 
     // Check node 0 trajectories
     let node0 = &network.node_trajectories.nodes[0];
@@ -59,7 +59,7 @@ fn test_two_nodes_hgf() {
     network.add_nodes("continuous-state", 1, None, None, None, Some(vec![0].into()), None, None);
 
     network.set_update_sequence();
-    network.input_data(vec![0.2], None, true);
+    network.input_data(vec![vec![0.2]], None, true);
 
     // Check node 0 trajectories
     let node0 = &network.node_trajectories.nodes[0];

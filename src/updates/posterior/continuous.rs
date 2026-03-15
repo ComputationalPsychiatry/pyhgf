@@ -27,19 +27,13 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
     if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
         let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
         let parent_mean = network.attributes.states[node_idx].mean;
+        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let child_expected_precision = child_state.expected_precision;
             let observed = child_state.observed;
             let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let parent_pos = network.edges[child_idx].value_parents.as_ref()
-                .and_then(|vp| vp.iter().position(|&p| p == node_idx));
-
-            let coupling_fn = parent_pos.and_then(|pos| {
-                network.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.get(pos).copied()
-            });
 
             let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
                 Some(cf) => {
@@ -87,6 +81,7 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
     if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
         let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
         let parent_mean = network.attributes.states[node_idx].mean;
+        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
@@ -94,15 +89,10 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
             let child_vape = child_state.value_prediction_error * child_state.observed;
             let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
 
-            let parent_pos = network.edges[child_idx].value_parents.as_ref()
-                .and_then(|vp| vp.iter().position(|&p| p == node_idx));
-
-            let coupling_fn_prime = parent_pos
-                .and_then(|pos| {
-                    network.attributes.fn_ptrs[child_idx].value_coupling_fn_parents.get(pos).copied()
-                })
-                .map(|cf| (cf.df)(parent_mean))
-                .unwrap_or(1.0);
+            let coupling_fn_prime = match coupling_fn {
+                Some(cf) => (cf.df)(parent_mean),
+                None => 1.0,
+            };
 
             value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision) * child_vape;
         }

@@ -1,5 +1,5 @@
-use crate::{model::{AdjacencyLists, Network, UpdateSequence}, updates::{posterior::continuous::{posterior_update_continuous_state_node, posterior_update_continuous_state_node_ehgf, posterior_update_continuous_state_node_unbounded}, posterior::volatile::{posterior_update_volatile_state_node, posterior_update_volatile_state_node_ehgf, posterior_update_volatile_state_node_unbounded}, prediction::binary::prediction_binary_state_node, prediction::continuous::prediction_continuous_state_node, prediction::volatile::prediction_volatile_state_node, prediction_error::{binary::prediction_error_binary_state_node, continuous::prediction_error_continuous_state_node, exponential::prediction_error_exponential_state_node, volatile::prediction_error_volatile_state_node}}};
-use crate::utils::function_pointer::FnType;
+use crate::{model::{AdjacencyLists, Network, UpdateSequence}};
+use crate::utils::function_pointer::UpdateStep;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {
     let predictions = get_predictions_sequence(network);
@@ -7,8 +7,8 @@ pub fn set_update_sequence(network: &Network) -> UpdateSequence {
     UpdateSequence { predictions, updates }
 }
 
-pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, FnType)> {
-    let mut predictions: Vec<(usize, FnType)> = Vec::new();
+pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
+    let mut predictions: Vec<(usize, UpdateStep)> = Vec::new();
 
     let mut nodes_idxs: Vec<usize> = (0..network.edges.len()).collect();
     let mut n_remaining = nodes_idxs.len();
@@ -35,9 +35,9 @@ pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, FnType)> {
 
             if !contains_common {
                 match edge.node_type.as_str() {
-                    "continuous-state" => predictions.push((idx, prediction_continuous_state_node)),
-                    "volatile-state" => predictions.push((idx, prediction_volatile_state_node)),
-                    "binary-state" => predictions.push((idx, prediction_binary_state_node)),
+                    "continuous-state" => predictions.push((idx, UpdateStep::PredictionContinuous)),
+                    "volatile-state" => predictions.push((idx, UpdateStep::PredictionVolatile)),
+                    "binary-state" => predictions.push((idx, UpdateStep::PredictionBinary)),
                     _ => ()
                 }
 
@@ -55,8 +55,8 @@ pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, FnType)> {
     predictions
 }
 
-pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
-    let mut updates: Vec<(usize, FnType)> = Vec::new();
+pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
+    let mut updates: Vec<(usize, UpdateStep)> = Vec::new();
 
     let mut pe_nodes_idxs: Vec<usize> = (0..network.edges.len()).collect();
     let mut po_nodes_idxs: Vec<usize> = (0..network.edges.len()).collect();
@@ -83,19 +83,19 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
                 "continuous-state" => {
                     if edge.volatility_children.is_some() {
                         match network.update_type.as_str() {
-                            "eHGF" => updates.push((idx, posterior_update_continuous_state_node_ehgf)),
-                            "unbounded" => updates.push((idx, posterior_update_continuous_state_node_unbounded)),
-                            _ => updates.push((idx, posterior_update_continuous_state_node)),
+                            "eHGF" => updates.push((idx, UpdateStep::PosteriorContinuousEhgf)),
+                            "unbounded" => updates.push((idx, UpdateStep::PosteriorContinuousUnbounded)),
+                            _ => updates.push((idx, UpdateStep::PosteriorContinuous)),
                         }
                     } else {
-                        updates.push((idx, posterior_update_continuous_state_node));
+                        updates.push((idx, UpdateStep::PosteriorContinuous));
                     }
                 }
                 "volatile-state" => {
                     match network.update_type.as_str() {
-                        "eHGF" => updates.push((idx, posterior_update_volatile_state_node_ehgf)),
-                        "unbounded" => updates.push((idx, posterior_update_volatile_state_node_unbounded)),
-                        _ => updates.push((idx, posterior_update_volatile_state_node)),
+                        "eHGF" => updates.push((idx, UpdateStep::PosteriorVolatileEhgf)),
+                        "unbounded" => updates.push((idx, UpdateStep::PosteriorVolatileUnbounded)),
+                        _ => updates.push((idx, UpdateStep::PosteriorVolatile)),
                     }
                 }
                 _ => (),
@@ -117,19 +117,19 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, FnType)> {
 
             match (edge.node_type.as_str(), has_parents) {
                 ("continuous-state", true) => {
-                    updates.push((idx, prediction_error_continuous_state_node));
+                    updates.push((idx, UpdateStep::PredictionErrorContinuous));
                     has_update = true;
                 }
                 ("volatile-state", true) => {
-                    updates.push((idx, prediction_error_volatile_state_node));
+                    updates.push((idx, UpdateStep::PredictionErrorVolatile));
                     has_update = true;
                 }
                 ("ef-state", _) => {
-                    updates.push((idx, prediction_error_exponential_state_node));
+                    updates.push((idx, UpdateStep::PredictionErrorExponential));
                     has_update = true;
                 }
                 ("binary-state", true) => {
-                    updates.push((idx, prediction_error_binary_state_node));
+                    updates.push((idx, UpdateStep::PredictionErrorBinary));
                     has_update = true;
                 }
                 _ => (),
@@ -158,13 +158,10 @@ fn get_all_children(adj: &AdjacencyLists) -> Vec<usize> {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::function_pointer::get_func_map;
     use super::*;
 
     #[test]
     fn test_get_update_order() {
-        let func_map = get_func_map();
-
         let mut hgf_network = Network::new("eHGF");
         hgf_network.add_nodes("continuous-state", 1, Some(vec![1].into()), None, Some(vec![2].into()), None, None, None);
         hgf_network.add_nodes("continuous-state", 1, None, Some(vec![0].into()), None, None, None, None);
@@ -172,17 +169,17 @@ mod tests {
         hgf_network.set_update_sequence();
 
         println!("Prediction sequence ----------");
-        for (_i, &(node, func)) in hgf_network.update_sequence.predictions.iter().enumerate() {
-            println!("Node: {} - Function name: {}", node, func_map.get(&func).unwrap_or(&"unknown"));
+        for &(node, step) in hgf_network.update_sequence.predictions.iter() {
+            println!("Node: {} - Function name: {}", node, step.name());
         }
         println!("Update sequence ----------");
-        for &(node, func) in &hgf_network.update_sequence.updates {
-            println!("Node: {} - Function name: {}", node, func_map.get(&func).unwrap_or(&"unknown"));
+        for &(node, step) in &hgf_network.update_sequence.updates {
+            println!("Node: {} - Function name: {}", node, step.name());
         }
 
         let mut exp_network = Network::new("eHGF");
         exp_network.add_nodes("ef-state", 1, None, None, None, None, None, None);
         exp_network.set_update_sequence();
-        println!("Node: {} - Function name: {}", &exp_network.update_sequence.updates[0].0, func_map.get(&exp_network.update_sequence.updates[0].1).unwrap_or(&"unknown"));
+        println!("Node: {} - Function name: {}", &exp_network.update_sequence.updates[0].0, exp_network.update_sequence.updates[0].1.name());
     }
 }

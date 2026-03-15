@@ -27,7 +27,7 @@ fn test_binary_2_levels_single_obs() {
         Some([("mean".into(), 1.0), ("tonic_volatility".into(), 1.0)].into()),
     );
     network.set_update_sequence();
-    network.input_data(vec![1.0], None, true);
+    network.input_data(vec![vec![1.0]], None, true);
 
     // Node 0 — binary state
     let n0 = &network.node_trajectories.nodes[0];
@@ -68,7 +68,7 @@ fn test_binary_3_levels_single_obs() {
         Some([("mean".into(), 1.0), ("tonic_volatility".into(), 1.0)].into()),
     );
     network.set_update_sequence();
-    network.input_data(vec![1.0], None, true);
+    network.input_data(vec![vec![1.0]], None, true);
 
     // Node 0 — binary state
     let n0 = &network.node_trajectories.nodes[0];
@@ -108,7 +108,7 @@ fn test_binary_3_levels_two_obs() {
         Some([("mean".into(), 1.0), ("tonic_volatility".into(), 1.0)].into()),
     );
     network.set_update_sequence();
-    network.input_data(vec![1.0, 0.0], None, true);
+    network.input_data(vec![vec![1.0], vec![0.0]], None, true);
 
     // ---- Step 0 (observation = 1.0) ----
 
