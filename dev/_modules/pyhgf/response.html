@@ -867,6 +867,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_surprise</span><span class="p">,</span> <span class="n">gaussian_surprise</span>
@@ -879,7 +880,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../generated/pyhgf.response/pyhgf.response.first_level_gaussian_surprise.html#pyhgf.response.first_level_gaussian_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">first_level_gaussian_surprise</span><span class="p">(</span>
     <span class="n">hgf</span><span class="p">:</span> <span class="s2">&quot;HGF&quot;</span><span class="p">,</span> <span class="n">response_function_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_function_parameters</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian surprise at the first level of a probabilistic network.</span>
 
 <span class="sd">    .. note::</span>
@@ -892,14 +893,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    hgf :</span>
 <span class="sd">        An instance of the HGF model.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        The inputs to the response functions, not required here.</span>
+<span class="sd">        The inputs to the response functions are not required here.</span>
 <span class="sd">    response_function_parameters :</span>
-<span class="sd">        Additionnal parameters for the response function, not required here.</span>
+<span class="sd">        Additional parameters for the response function are not required here.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
-<span class="sd">        The model&#39;s surprise given the input data.</span>
+<span class="sd">        The model&#39;s surprise, given the input data.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># compute the sum of Gaussian surprise at the first level</span>
@@ -919,7 +920,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../generated/pyhgf.response/pyhgf.response.total_gaussian_surprise.html#pyhgf.response.total_gaussian_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">total_gaussian_surprise</span><span class="p">(</span>
     <span class="n">hgf</span><span class="p">:</span> <span class="s2">&quot;HGF&quot;</span><span class="p">,</span> <span class="n">response_function_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_function_parameters</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of the Gaussian surprise across the probabilistic network.</span>
 
 <span class="sd">    .. note::</span>
@@ -930,14 +931,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    hgf :</span>
 <span class="sd">        An instance of the HGF model.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        The inputs to the response functions, not required here.</span>
+<span class="sd">        The inputs to the response functions are not required here.</span>
 <span class="sd">    response_function_parameters :</span>
-<span class="sd">        Additionnal parameters for the response function, not required here.</span>
+<span class="sd">        Additional parameters for the response function are not required here.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
-<span class="sd">        The model&#39;s surprise given the input data.</span>
+<span class="sd">        The model&#39;s surprise, given the input data.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># compute the sum of Gaussian surprise across every node</span>
@@ -964,12 +965,12 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../generated/pyhgf.response/pyhgf.response.first_level_binary_surprise.html#pyhgf.response.first_level_binary_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">first_level_binary_surprise</span><span class="p">(</span>
     <span class="n">hgf</span><span class="p">:</span> <span class="s2">&quot;HGF&quot;</span><span class="p">,</span> <span class="n">response_function_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_function_parameters</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Time series of binary surprises for all binary state nodes.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">      The binary surprise is the default method to compute surprise when</span>
-<span class="sd">      `model_type==&quot;binary&quot;`, therefore this method will only return the valid time</span>
+<span class="sd">      `model_type==&quot;binary&quot;`, therefore, this method will only return the valid time</span>
 <span class="sd">      points, and `jnp.inf` if the model could not fit.</span>
 
 <span class="sd">    Parameters</span>
@@ -977,9 +978,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    hgf :</span>
 <span class="sd">        An instance of the HGF model.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        The inputs to the response functions, not required here.</span>
+<span class="sd">        The inputs to the response functions are not required here.</span>
 <span class="sd">    response_function_parameters :</span>
-<span class="sd">        Additionnal parameters for the response function, not required here.</span>
+<span class="sd">        Additional parameters for the response function are not required here.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1011,23 +1012,23 @@ window.runMermaid = runMermaid;</script>
     <span class="n">hgf</span><span class="p">:</span> <span class="s2">&quot;HGF&quot;</span><span class="p">,</span>
     <span class="n">response_function_inputs</span><span class="o">=</span><span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">response_function_parameters</span><span class="o">=</span><span class="n">ArrayLike</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Surprise under the binary sofmax model.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Surprise under the binary softmax model.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    hgf :</span>
 <span class="sd">        An instance of the HGF model.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        The inputs to the response functions, here containing the decision from the</span>
-<span class="sd">        paraticipant at time *k* [0 or 1].</span>
+<span class="sd">        The inputs to the response functions, here, contain the decision from the</span>
+<span class="sd">        participant at time *k* [0 or 1].</span>
 <span class="sd">    response_function_parameters :</span>
-<span class="sd">        Additionnal parameters for the response function, not required here.</span>
+<span class="sd">        Additional parameters for the response function are not required here.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
-<span class="sd">        The surprise under the binary sofmax model.</span>
+<span class="sd">        The surprise under the binary softmax model.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># the expected values at the first level of the HGF</span>
@@ -1049,16 +1050,16 @@ window.runMermaid = runMermaid;</script>
     <span class="n">hgf</span><span class="p">:</span> <span class="s2">&quot;HGF&quot;</span><span class="p">,</span>
     <span class="n">response_function_inputs</span><span class="o">=</span><span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">response_function_parameters</span><span class="o">=</span><span class="n">ArrayLike</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise from a binary sofmax parametrized by the inverse temperature.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise from a binary softmax parametrized by the inverse temperature.</span>
 
-<span class="sd">    The probability of chosing A is given by:</span>
+<span class="sd">    The probability of choosing A is given by:</span>
 
 <span class="sd">    .. math::</span>
 
 <span class="sd">       P(A|\hat{\mu}^{(k)_{1}, t) = \frac{1}{1+e^{-t\hat{\mu}^{(k)_{1}}}</span>
 
-<span class="sd">    Where :math:`\hat{mu}^{(k)_{1}` is the expected probability of A at the firt level,</span>
+<span class="sd">    Where :math:`\hat{mu}^{(k)_{1}` is the expected probability of A at the first level,</span>
 <span class="sd">    and :math:`t` is the temperature parameter.</span>
 
 <span class="sd">    Parameters</span>
@@ -1066,16 +1067,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    hgf :</span>
 <span class="sd">        An instance of the HGF model.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        The inputs to the response functions, here containing the decision from the</span>
-<span class="sd">        paraticipant at time *k* [0 or 1].</span>
+<span class="sd">        The inputs to the response functions, here, contain the decision from the</span>
+<span class="sd">        participant at time *k* [0 or 1].</span>
 <span class="sd">    response_function_parameters :</span>
-<span class="sd">        Additionnal parameters for the response function (optional). Here, the inverse</span>
-<span class="sd">        temperature  is provided.</span>
+<span class="sd">        Additional parameters for the response function (optional). Here, the inverse</span>
+<span class="sd">        temperature is provided.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
-<span class="sd">        The surprise under the binary sofmax model.</span>
+<span class="sd">        The surprise under the binary softmax model.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># the expected values at the first level of the HGF</span>

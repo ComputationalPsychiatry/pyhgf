@@ -608,14 +608,14 @@ vector starting at <cite>0</cite>. A different time_steps vector can be passed t
 the <cite>time_steps</cite> argument.</p></li>
 <li><p><strong>time_steps</strong> (<em>ndarray</em><em> | </em><em>Array</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>None</em>) – List of 1d Numpy arrays containing the time_steps vectors for each input
 time series. If one of the list items is <cite>None</cite>, or if <cite>None</cite> is provided
-instead, the time vector will default to an integers vector starting at 0.</p></li>
+instead, the time vector will default to an integer vector starting at 0.</p></li>
 <li><p><strong>model_type</strong> (<em>str</em>) – The model type to use (can be “continuous” or “binary”).</p></li>
 <li><p><strong>n_levels</strong> (<em>int</em>) – The number of hierarchies in the perceptual model (can be <cite>2</cite> or <cite>3</cite>). If
-<cite>None</cite>, the nodes hierarchy is not created and might be provided afterwards
+<cite>None</cite>, the node hierarchy is not created and might be provided afterwards
 using <cite>add_nodes()</cite>.</p></li>
 <li><p><strong>response_function</strong> (<em>Callable</em><em> | </em><em>None</em>) – The response function to use to compute the model surprise.</p></li>
 <li><p><strong>response_function_inputs</strong> (<em>ndarray</em><em> | </em><em>Array</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>None</em>) – A list of tuples with the same length as the number of models. Each tuple
-contains additional data and parameters that can be accessible to the
+contains additional data and parameters that can be accessed by the
 response functions.</p></li>
 </ul>
 </dd>

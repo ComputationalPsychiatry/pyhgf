@@ -582,24 +582,24 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.response.binary_softmax_inverse_temperature">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.response.</span></span><span class="sig-name descname"><span class="pre">binary_softmax_inverse_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hgf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_function_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">typing.Union[jax.Array,</span> <span class="pre">numpy.ndarray,</span> <span class="pre">numpy.bool,</span> <span class="pre">numpy.number,</span> <span class="pre">bool,</span> <span class="pre">int,</span> <span class="pre">float,</span> <span class="pre">complex]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/response.html#binary_softmax_inverse_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.response.binary_softmax_inverse_temperature" title="Link to this definition">#</a></dt>
-<dd><p>Surprise from a binary sofmax parametrized by the inverse temperature.</p>
-<p>The probability of chosing A is given by:</p>
+<dd><p>Surprise from a binary softmax parametrized by the inverse temperature.</p>
+<p>The probability of choosing A is given by:</p>
 <div class="math notranslate nohighlight">
 \[P(A|\hat{\mu}^{(k)_{1}, t) = \frac{1}{1+e^{-t\hat{\mu}^{(k)_{1}}}\]</div>
-<p>Where <span class="math notranslate nohighlight">\(\hat{mu}^{(k)_{1}\)</span> is the expected probability of A at the firt level,
+<p>Where <span class="math notranslate nohighlight">\(\hat{mu}^{(k)_{1}\)</span> is the expected probability of A at the first level,
 and <span class="math notranslate nohighlight">\(t\)</span> is the temperature parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hgf</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html#pyhgf.model.HGF" title="pyhgf.model.HGF"><em>HGF</em></a>) – An instance of the HGF model.</p></li>
-<li><p><strong>response_function_inputs</strong> – The inputs to the response functions, here containing the decision from the
-paraticipant at time <em>k</em> [0 or 1].</p></li>
-<li><p><strong>response_function_parameters</strong> – Additionnal parameters for the response function (optional). Here, the inverse
-temperature  is provided.</p></li>
+<li><p><strong>response_function_inputs</strong> – The inputs to the response functions, here, contain the decision from the
+participant at time <em>k</em> [0 or 1].</p></li>
+<li><p><strong>response_function_parameters</strong> – Additional parameters for the response function (optional). Here, the inverse
+temperature is provided.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The surprise under the binary sofmax model.</p>
+<dd class="field-even"><p>The surprise under the binary softmax model.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>surprise</p>

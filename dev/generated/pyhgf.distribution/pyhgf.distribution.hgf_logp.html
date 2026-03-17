@@ -630,11 +630,11 @@ on the model type. The default is <cite>np.inf</cite>.</p></li>
 function. This can include values over which inference is performed in a PyMC
 model (e.g. the inverse temperature of a binary softmax).</p></li>
 <li><p><strong>vectorized_logp</strong> (<em>Callable</em>) – A vectorized log probability function for a two or three-layered HGF.</p></li>
-<li><p><strong>input_data</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of input time series where the first dimension is the number of models
+<li><p><strong>input_data</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of input time series, where the first dimension is the number of models
 to fit in parallel.</p></li>
-<li><p><strong>response_function_inputs</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of behavioural input passed to the response function where the first
+<li><p><strong>response_function_inputs</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of behavioural input is passed to the response function, where the first
 dimension is the number of models to fit in parallel.</p></li>
-<li><p><strong>time_steps</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of input time steps where the first dimension is the number of models
+<li><p><strong>time_steps</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of input time steps, where the first dimension is the number of models
 to fit in parallel.</p></li>
 </ul>
 </dd>

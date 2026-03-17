@@ -908,7 +908,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-probability of a decision model under belief trajectories.</span>
 
 <span class="sd">    This function returns the evidence of a single Hierarchical Gaussian Filter given</span>
-<span class="sd">    network parameters, input data and behaviours under a decision model.</span>
+<span class="sd">    network parameters, input data, and behaviours under a decision model.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -980,14 +980,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    input_data :</span>
 <span class="sd">        An array of input time series. The first dimension is the number of time steps</span>
 <span class="sd">        and the second dimension is the number of features. The number of features is</span>
-<span class="sd">        the number of input nodes time the input dimensions.</span>
+<span class="sd">        the number of input nodes times the input dimensions.</span>
 <span class="sd">    time_steps :</span>
-<span class="sd">        An array of input time steps where the first dimension is the number of models</span>
+<span class="sd">        An array of input time steps, where the first dimension is the number of models</span>
 <span class="sd">        to fit in parallel.</span>
 <span class="sd">    hgf :</span>
 <span class="sd">        An instance of a two or three-level Hierarchical Gaussian Filter.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        An array of behavioural inputs passed to the response function where the first</span>
+<span class="sd">        An array of behavioural inputs is passed to the response function, where the first</span>
 <span class="sd">        dimension is the number of models to fit in parallel.</span>
 <span class="sd">    response_function :</span>
 <span class="sd">        The response function that is used by the decision model.</span>
@@ -1147,13 +1147,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    vectorized_logp :</span>
 <span class="sd">        A vectorized log probability function for a two or three-layered HGF.</span>
 <span class="sd">    input_data :</span>
-<span class="sd">        An array of input time series where the first dimension is the number of models</span>
+<span class="sd">        An array of input time series, where the first dimension is the number of models</span>
 <span class="sd">        to fit in parallel.</span>
 <span class="sd">    response_function_inputs :</span>
-<span class="sd">        An array of behavioural input passed to the response function where the first</span>
+<span class="sd">        An array of behavioural input is passed to the response function, where the first</span>
 <span class="sd">        dimension is the number of models to fit in parallel.</span>
 <span class="sd">    time_steps :</span>
-<span class="sd">        An array of input time steps where the first dimension is the number of models</span>
+<span class="sd">        An array of input time steps, where the first dimension is the number of models</span>
 <span class="sd">        to fit in parallel.</span>
 
 <span class="sd">    Returns</span>
@@ -1269,11 +1269,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        update_type :</span>
 <span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
 <span class="sd">            (defaults), `&quot;eHGF&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
-<span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
+<span class="sd">            recently introduced to avoid negative precision updates, which greatly</span>
 <span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
 <span class="sd">            alternative to the original definition in that it starts by updating the</span>
 <span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
-<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+<span class="sd">            errors associated with impossible parameter spaces and improves sampling.</span>
 
 <span class="sd">            .. note:</span>
 <span class="sd">              The different update steps only apply to nodes having at least one</span>
@@ -1281,13 +1281,13 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        n_levels :</span>
 <span class="sd">            The number of hierarchies in the perceptual model (can be `2` or `3`). If</span>
-<span class="sd">            `None`, the nodes hierarchy is not created and might be provided afterwards</span>
+<span class="sd">            `None`, the node hierarchy is not created and might be provided afterwards</span>
 <span class="sd">            using `add_nodes()`.</span>
 <span class="sd">        response_function :</span>
 <span class="sd">            The response function to use to compute the model surprise.</span>
 <span class="sd">        response_function_inputs :</span>
 <span class="sd">            A list of tuples with the same length as the number of models. Each tuple</span>
-<span class="sd">            contains additional data and parameters that can be accessible to the</span>
+<span class="sd">            contains additional data and parameters that can be accessed by the</span>
 <span class="sd">            response functions.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1483,7 +1483,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                ),</span>
 <span class="sd">            )</span>
 
-<span class="sd">    Sample the model - Using 2 chains, 1 cores and 1000 warmups.</span>
+<span class="sd">    Sample the model - Using 2 chains, 1 core, and 1000 warmups.</span>
 
 <span class="sd">    .. code-block:: python</span>
 
@@ -1526,25 +1526,25 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        time_steps :</span>
 <span class="sd">            List of 1d Numpy arrays containing the time_steps vectors for each input</span>
 <span class="sd">            time series. If one of the list items is `None`, or if `None` is provided</span>
-<span class="sd">            instead, the time vector will default to an integers vector starting at 0.</span>
+<span class="sd">            instead, the time vector will default to an integer vector starting at 0.</span>
 <span class="sd">        model_type :</span>
 <span class="sd">            The model type to use (can be &quot;continuous&quot; or &quot;binary&quot;).</span>
 <span class="sd">        update_type :</span>
 <span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
 <span class="sd">            (defaults), `&quot;eHGF&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
-<span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
+<span class="sd">            recently introduced to avoid negative precision updates, which greatly</span>
 <span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
 <span class="sd">            alternative to the original definition in that it starts by updating the</span>
 <span class="sd">            mean and then the precision of the parent node, which generally reduces the</span>
-<span class="sd">            errors associated with impossible parameter space and improves sampling.</span>
+<span class="sd">            errors associated with impossible parameter spaces and improves sampling.</span>
 
 <span class="sd">            .. note:</span>
 <span class="sd">              The different update steps only apply to nodes having at least one</span>
-<span class="sd">              volatility parents. In other cases, the regular HGF updates are applied.</span>
+<span class="sd">              volatility parent. In other cases, the regular HGF updates are applied.</span>
 
 <span class="sd">        n_levels :</span>
 <span class="sd">            The number of hierarchies in the perceptual model (can be `2` or `3`). If</span>
-<span class="sd">            `None`, the nodes hierarchy is not created and might be provided afterwards</span>
+<span class="sd">            `None`, the node hierarchy is not created and might be provided afterwards</span>
 <span class="sd">            using `add_nodes()`.</span>
 <span class="sd">        response_function :</span>
 <span class="sd">            The response function to use to compute the model surprise.</span>
@@ -1725,18 +1725,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        time_steps :</span>
 <span class="sd">            List of 1d Numpy arrays containing the time_steps vectors for each input</span>
 <span class="sd">            time series. If one of the list items is `None`, or if `None` is provided</span>
-<span class="sd">            instead, the time vector will default to an integers vector starting at 0.</span>
+<span class="sd">            instead, the time vector will default to an integer vector starting at 0.</span>
 <span class="sd">        model_type :</span>
 <span class="sd">            The model type to use (can be &quot;continuous&quot; or &quot;binary&quot;).</span>
 <span class="sd">        n_levels :</span>
 <span class="sd">            The number of hierarchies in the perceptual model (can be `2` or `3`). If</span>
-<span class="sd">            `None`, the nodes hierarchy is not created and might be provided afterwards</span>
+<span class="sd">            `None`, the node hierarchy is not created and might be provided afterwards</span>
 <span class="sd">            using `add_nodes()`.</span>
 <span class="sd">        response_function :</span>
 <span class="sd">            The response function to use to compute the model surprise.</span>
 <span class="sd">        response_function_inputs :</span>
 <span class="sd">            A list of tuples with the same length as the number of models. Each tuple</span>
-<span class="sd">            contains additional data and parameters that can be accessible to the</span>
+<span class="sd">            contains additional data and parameters that can be accessed by the</span>
 <span class="sd">            response functions.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>

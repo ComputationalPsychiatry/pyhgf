@@ -893,7 +893,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_statistics_from_parameters</span><span class="p">(</span>
         <span class="n">mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">covariance</span><span class="p">:</span> <span class="n">ArrayLike</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the expected sufficient statistics from distribution parameter.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the expected sufficient statistics from the distribution parameter.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -966,7 +966,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_statistics_from_parameters</span><span class="p">(</span><span class="n">mean</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the expected sufficient statistics from distribution parameter.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the expected sufficient statistics from the distribution parameter.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -984,12 +984,12 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="n">mean</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">variance</span><span class="p">])</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">base_measure</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">base_measure</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the base measure of the univariate normal.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">parameters_from_sufficient_statistics</span><span class="p">(</span><span class="n">xis</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parameters_from_sufficient_statistics</span><span class="p">(</span><span class="n">xis</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the distribution parameters from the sufficient statistics.</span>
 
 <span class="sd">        Parameters</span>
@@ -1036,7 +1036,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    xi :</span>
 <span class="sd">        Hyperparameter updated by the sufficient statistics of the observed variables.</span>
 <span class="sd">    nu :</span>
-<span class="sd">        Hyperparameter over the number of valid observation (pseudo-counts).</span>
+<span class="sd">        Hyperparameter over the number of valid observations (pseudo-counts).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1073,13 +1073,13 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="binary_surprise">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.binary_surprise.html#pyhgf.math.binary_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">binary_surprise</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">expected_mean</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
     <span class="n">clipping</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise at a binary outcome.</span>
 
-<span class="sd">    The surprise ellicited by a binary observation :math:`x` under the expected</span>
+<span class="sd">    The surprise elicited by a binary observation :math:`x` under the expected</span>
 <span class="sd">    probability :math:`\hat{\mu}` is given by:</span>
 
 <span class="sd">    .. math::</span>
