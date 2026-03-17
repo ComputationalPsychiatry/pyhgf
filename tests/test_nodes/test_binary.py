@@ -1,7 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 import numpy as np
-import pytest
 from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf import load_data
