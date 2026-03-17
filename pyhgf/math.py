@@ -27,7 +27,7 @@ class MultivariateNormal:
     def sufficient_statistics_from_parameters(
         mean: ArrayLike, covariance: ArrayLike
     ) -> Array:
-        """Compute the expected sufficient statistics from distribution parameter.
+        """Compute the expected sufficient statistics from the distribution parameter.
 
         Parameters
         ----------
@@ -97,7 +97,7 @@ class Normal:
 
     @staticmethod
     def sufficient_statistics_from_parameters(mean: float, variance: float) -> Array:
-        """Compute the expected sufficient statistics from distribution parameter.
+        """Compute the expected sufficient statistics from the distribution parameter.
 
         Parameters
         ----------
@@ -115,12 +115,12 @@ class Normal:
         return jnp.array([mean, mean**2 + variance])
 
     @staticmethod
-    def base_measure() -> float:
+    def base_measure() -> Array:
         """Compute the base measure of the univariate normal."""
         return 1 / (jnp.sqrt(2 * jnp.pi))
 
     @staticmethod
-    def parameters_from_sufficient_statistics(xis: ArrayLike) -> tuple[float, float]:
+    def parameters_from_sufficient_statistics(xis: ArrayLike) -> tuple[Array, Array]:
         """Compute the distribution parameters from the sufficient statistics.
 
         Parameters
@@ -164,7 +164,7 @@ def gaussian_predictive_distribution(x: float, xi: ArrayLike, nu: float) -> Arra
     xi :
         Hyperparameter updated by the sufficient statistics of the observed variables.
     nu :
-        Hyperparameter over the number of valid observation (pseudo-counts).
+        Hyperparameter over the number of valid observations (pseudo-counts).
 
     Returns
     -------
@@ -195,13 +195,13 @@ def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Arr
 
 
 def binary_surprise(
-    x: Union[float, ArrayLike],
+    x: ArrayLike,
     expected_mean: Union[float, ArrayLike],
     clipping: bool = True,
 ) -> Array:
     r"""Surprise at a binary outcome.
 
-    The surprise ellicited by a binary observation :math:`x` under the expected
+    The surprise elicited by a binary observation :math:`x` under the expected
     probability :math:`\hat{\mu}` is given by:
 
     .. math::

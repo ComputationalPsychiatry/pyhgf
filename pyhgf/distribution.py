@@ -42,7 +42,7 @@ def logp(
     """Compute the log-probability of a decision model under belief trajectories.
 
     This function returns the evidence of a single Hierarchical Gaussian Filter given
-    network parameters, input data and behaviours under a decision model.
+    network parameters, input data, and behaviours under a decision model.
 
     Parameters
     ----------
@@ -114,14 +114,14 @@ def logp(
     input_data :
         An array of input time series. The first dimension is the number of time steps
         and the second dimension is the number of features. The number of features is
-        the number of input nodes time the input dimensions.
+        the number of input nodes times the input dimensions.
     time_steps :
-        An array of input time steps where the first dimension is the number of models
+        An array of input time steps, where the first dimension is the number of models
         to fit in parallel.
     hgf :
         An instance of a two or three-level Hierarchical Gaussian Filter.
     response_function_inputs :
-        An array of behavioural inputs passed to the response function where the first
+        An array of behavioural inputs is passed to the response function, where the first
         dimension is the number of models to fit in parallel.
     response_function :
         The response function that is used by the decision model.
@@ -278,13 +278,13 @@ def hgf_logp(
     vectorized_logp :
         A vectorized log probability function for a two or three-layered HGF.
     input_data :
-        An array of input time series where the first dimension is the number of models
+        An array of input time series, where the first dimension is the number of models
         to fit in parallel.
     response_function_inputs :
-        An array of behavioural input passed to the response function where the first
+        An array of behavioural input is passed to the response function, where the first
         dimension is the number of models to fit in parallel.
     time_steps :
-        An array of input time steps where the first dimension is the number of models
+        An array of input time steps, where the first dimension is the number of models
         to fit in parallel.
 
     Returns
@@ -395,11 +395,11 @@ class HGFLogpGradOp(Op):
         update_type :
             The type of update to perform for volatility coupling. Can be `"unbounded"`
             (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
-            recently introduced to avoid negative precisions updates, which greatly
+            recently introduced to avoid negative precision updates, which greatly
             improve sampling performance. The eHGF update step was proposed as an
             alternative to the original definition in that it starts by updating the
             mean and then the precision of the parent node, which generally reduces the
-            errors associated with impossible parameter space and improves sampling.
+            errors associated with impossible parameter spaces and improves sampling.
 
             .. note:
               The different update steps only apply to nodes having at least one
@@ -407,13 +407,13 @@ class HGFLogpGradOp(Op):
 
         n_levels :
             The number of hierarchies in the perceptual model (can be `2` or `3`). If
-            `None`, the nodes hierarchy is not created and might be provided afterwards
+            `None`, the node hierarchy is not created and might be provided afterwards
             using `add_nodes()`.
         response_function :
             The response function to use to compute the model surprise.
         response_function_inputs :
             A list of tuples with the same length as the number of models. Each tuple
-            contains additional data and parameters that can be accessible to the
+            contains additional data and parameters that can be accessed by the
             response functions.
 
         """
@@ -605,7 +605,7 @@ class HGFDistribution(Op):
                 ),
             )
 
-    Sample the model - Using 2 chains, 1 cores and 1000 warmups.
+    Sample the model - Using 2 chains, 1 core, and 1000 warmups.
 
     .. code-block:: python
 
@@ -646,25 +646,25 @@ class HGFDistribution(Op):
         time_steps :
             List of 1d Numpy arrays containing the time_steps vectors for each input
             time series. If one of the list items is `None`, or if `None` is provided
-            instead, the time vector will default to an integers vector starting at 0.
+            instead, the time vector will default to an integer vector starting at 0.
         model_type :
             The model type to use (can be "continuous" or "binary").
         update_type :
             The type of update to perform for volatility coupling. Can be `"unbounded"`
             (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
-            recently introduced to avoid negative precisions updates, which greatly
+            recently introduced to avoid negative precision updates, which greatly
             improve sampling performance. The eHGF update step was proposed as an
             alternative to the original definition in that it starts by updating the
             mean and then the precision of the parent node, which generally reduces the
-            errors associated with impossible parameter space and improves sampling.
+            errors associated with impossible parameter spaces and improves sampling.
 
             .. note:
               The different update steps only apply to nodes having at least one
-              volatility parents. In other cases, the regular HGF updates are applied.
+              volatility parent. In other cases, the regular HGF updates are applied.
 
         n_levels :
             The number of hierarchies in the perceptual model (can be `2` or `3`). If
-            `None`, the nodes hierarchy is not created and might be provided afterwards
+            `None`, the node hierarchy is not created and might be provided afterwards
             using `add_nodes()`.
         response_function :
             The response function to use to compute the model surprise.
@@ -839,18 +839,18 @@ class HGFPointwise(Op):
         time_steps :
             List of 1d Numpy arrays containing the time_steps vectors for each input
             time series. If one of the list items is `None`, or if `None` is provided
-            instead, the time vector will default to an integers vector starting at 0.
+            instead, the time vector will default to an integer vector starting at 0.
         model_type :
             The model type to use (can be "continuous" or "binary").
         n_levels :
             The number of hierarchies in the perceptual model (can be `2` or `3`). If
-            `None`, the nodes hierarchy is not created and might be provided afterwards
+            `None`, the node hierarchy is not created and might be provided afterwards
             using `add_nodes()`.
         response_function :
             The response function to use to compute the model surprise.
         response_function_inputs :
             A list of tuples with the same length as the number of models. Each tuple
-            contains additional data and parameters that can be accessible to the
+            contains additional data and parameters that can be accessed by the
             response functions.
 
         """
