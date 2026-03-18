@@ -12,6 +12,8 @@ from .add_nodes import (
 )
 from .deep_network import DeepNetwork
 from .network import Network
+from .vectorized_deep_network import VectorizedDeepNetwork
+from .vectorized_types import LayerParams, LayerState, NetworkState
 
 from .hgf import HGF  # isort: skip
 
@@ -19,6 +21,10 @@ __all__ = [
     "HGF",
     "Network",
     "DeepNetwork",
+    "VectorizedDeepNetwork",
+    "LayerState",
+    "LayerParams",
+    "NetworkState",
     "add_nodes",
     "add_constant_state",
     "add_continuous_state",
