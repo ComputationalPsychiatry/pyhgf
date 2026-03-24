@@ -93,6 +93,7 @@ mod tests {
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
+            adam_state: None,
         }
     }
 

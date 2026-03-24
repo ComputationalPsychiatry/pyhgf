@@ -5,6 +5,7 @@ use crate::utils::beliefs_propagation::belief_propagation;
 use crate::utils::set_learning_sequence::build_learning_sequence;
 use crate::utils::weight_initialisation::weight_init_by_name;
 use crate::updates::observations::{set_predictors, set_observation};
+use crate::optimiser::AdamState;
 use pyo3::types::PyTuple;
 use pyo3::{prelude::*, types::{PyList, PyDict}};
 use numpy::{PyArray1, PyArray, PyArrayMethods};
@@ -273,6 +274,8 @@ pub struct Network{
     pub update_sequence: UpdateSequence,
     pub node_trajectories: NodeTrajectories,
     pub layers: Vec<Vec<usize>>,
+    /// Optional Adam optimiser state, initialised when `fit()` is called with `optimizer="adam"`.
+    pub adam_state: Option<AdamState>,
 }
 
 /// Helper: get the list of trajectory field names to export for a given node type.
@@ -347,6 +350,7 @@ impl Network {
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
+            adam_state: None,
         }
     }
 
@@ -743,6 +747,8 @@ impl Network {
         inputs_y_idxs: &[usize],
         lr: Option<f64>,
         record_trajectories: bool,
+        optimizer: Option<&str>,
+        params: Option<&HashMap<String, f64>>,
     ) {
         if self.update_sequence.predictions.is_empty()
             && self.update_sequence.updates.is_empty()
@@ -757,6 +763,25 @@ impl Network {
                 }
             }
         }
+        // Initialise Adam optimiser state if requested
+        if let Some("adam") = optimizer {
+            let coupling_sizes: Vec<usize> = self
+                .attributes
+                .vectors
+                .iter()
+                .map(|v| v.value_coupling_parents.len())
+                .collect();
+            let beta1 = params.and_then(|p| p.get("beta1").copied()).unwrap_or(0.9);
+            let beta2 = params.and_then(|p| p.get("beta2").copied()).unwrap_or(0.999);
+            let epsilon = params.and_then(|p| p.get("epsilon").copied()).unwrap_or(1e-8);
+            let adam_lr = params.and_then(|p| p.get("lr").copied());
+            let mut adam = AdamState::new(&coupling_sizes, beta1, beta2, epsilon);
+            adam.lr = adam_lr;
+            self.adam_state = Some(adam);
+        } else {
+            self.adam_state = None;
+        }
+
         let learning_seq = build_learning_sequence(
             &self.update_sequence.predictions,
             &self.update_sequence.updates,
@@ -790,6 +815,11 @@ impl Network {
 
             for &(idx, step) in &learning_seq.update_steps {
                 step.call(self, idx, time_step);
+            }
+
+            // Increment Adam timestep once per iteration (before learning steps)
+            if let Some(ref mut adam) = self.adam_state {
+                adam.increment_timestep();
             }
 
             for &(idx, step) in &learning_seq.learning_steps {
@@ -838,6 +868,7 @@ impl Network {
                     },
                     node_trajectories: NodeTrajectories { nodes: Vec::new() },
                     layers: Vec::new(),
+                    adam_state: None,
                 };
 
                 for (i, &node_idx) in inputs_x_idxs.iter().enumerate() {
@@ -1118,7 +1149,7 @@ impl Network {
         Ok(slf)
     }
 
-    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true))]
+    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true, optimizer=None, params=None))]
     fn py_fit<'py>(
         mut slf: PyRefMut<'py, Self>,
         x: Bound<'py, PyAny>,
@@ -1127,6 +1158,8 @@ impl Network {
         inputs_y_idxs: Option<Vec<usize>>,
         lr: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
+        optimizer: Option<String>,
+        params: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
         let lr_option: Option<f64> = match lr {
             Some(ref obj) => {
@@ -1168,7 +1201,21 @@ impl Network {
             flat.into_iter().map(|v| vec![v]).collect()
         };
 
-        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories);
+        let params_map: Option<HashMap<String, f64>> = match params {
+            Some(dict) => {
+                let mut map = HashMap::new();
+                for (key, value) in dict.iter() {
+                    let key_str: String = key.extract()?;
+                    if let Ok(val) = value.extract::<f64>() {
+                        map.insert(key_str, val);
+                    }
+                }
+                if map.is_empty() { None } else { Some(map) }
+            }
+            None => None,
+        };
+
+        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories, optimizer.as_deref(), params_map.as_ref());
         Ok(slf)
     }
 

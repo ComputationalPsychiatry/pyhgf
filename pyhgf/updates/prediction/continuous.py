@@ -122,7 +122,7 @@ def predict_precision(
     .. math::
 
         \Omega_a^{(k)} = t^{(k)}
-        \exp{ \left( \omega_a + \sum_{j=1}^{N_{vopa}} \kappa_j \mu_a^{(k-1)} \right) }
+        \exp{ \left( \omega_a + \sum_{j=1}^{N_{vopa}} \kappa_j \hat{\mu}_a^{(k-1)} \right) }
 
 
     with :math:`\kappa_j` the volatility coupling strength with the volatility parent
@@ -180,7 +180,8 @@ def predict_precision(
             attributes[node_idx]["volatility_coupling_parents"],
         ):
             total_volatility += (
-                volatility_coupling * attributes[volatility_parents_idx]["mean"]
+                volatility_coupling
+                * attributes[volatility_parents_idx]["expected_mean"]
             )
 
     # compute the predicted_volatility from the total volatility
