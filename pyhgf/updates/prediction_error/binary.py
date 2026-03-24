@@ -8,9 +8,9 @@ from jax import Array, jit
 from pyhgf.typing import Edges
 
 
-@partial(jit, static_argnames=("node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx"))
 def binary_state_node_prediction_error(
-    attributes: dict, node_idx: int, **args
+    attributes: dict, node_idx: int, edges: Edges, **args
 ) -> Array:
     """Compute the value prediction errors and predicted precision of a binary node.
 

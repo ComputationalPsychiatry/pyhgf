@@ -298,6 +298,8 @@ class Network:
             The indexes of the nodes receiving the predictions (y).
         lr :
             The kind of learning to use for the coupling strengths.
+        overwrite :
+            If `True`, create a new belief propagation function.
 
         """
         if x.ndim == 1:
