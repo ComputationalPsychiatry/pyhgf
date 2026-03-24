@@ -53,7 +53,18 @@ pub fn learning_weights(
         let prosp_act = prospective_activation[i];
 
         let new_value_coupling = match fixed_lr {
-            Some(lr) => coupling + lr * pe * child_precision * prosp_act,
+            Some(lr) => {
+                let gradient = pe * child_precision * prosp_act;
+
+                // If Adam state is available, filter the gradient through Adam
+                if let Some(ref mut adam) = network.adam_state {
+                    let effective_lr = adam.lr.unwrap_or(lr);
+                    let adam_update = adam.step(node_idx, i, gradient, effective_lr);
+                    coupling + adam_update
+                } else {
+                    coupling + lr * gradient
+                }
+            }
             None => {
                 let precision_weighting = parent_precisions[i]
                     / (parent_precisions[i] + child_precision);
