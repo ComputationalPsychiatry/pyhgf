@@ -874,9 +874,9 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="binary_state_node_prediction_error">
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error.html#pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">binary_state_node_prediction_error</span><span class="p">(</span>
-    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the value prediction errors and predicted precision of a binary node.</span>
 

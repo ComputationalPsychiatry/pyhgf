@@ -991,7 +991,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    .. math::</span>
 
 <span class="sd">        \Omega_a^{(k)} = t^{(k)}</span>
-<span class="sd">        \exp{ \left( \omega_a + \sum_{j=1}^{N_{vopa}} \kappa_j \mu_a^{(k-1)} \right) }</span>
+<span class="sd">        \exp{ \left( \omega_a + \sum_{j=1}^{N_{vopa}} \kappa_j \hat{\mu}_a^{(k-1)} \right) }</span>
 
 
 <span class="sd">    with :math:`\kappa_j` the volatility coupling strength with the volatility parent</span>
@@ -1049,7 +1049,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_parents&quot;</span><span class="p">],</span>
         <span class="p">):</span>
             <span class="n">total_volatility</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_parents_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+                <span class="n">volatility_coupling</span>
+                <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_parents_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
             <span class="p">)</span>
 
     <span class="c1"># compute the predicted_volatility from the total volatility</span>
