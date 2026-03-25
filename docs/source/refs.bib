@@ -1,0 +1,291 @@
+
+@article{2011:mathys,
+abstract = {Computational learning models are critical for understanding mechanisms of adaptive behavior. However, the two major current frameworks, reinforcement learning (RL) and Bayesian learning, both have certain limitations. For example, many Bayesian models are agnostic of inter-individual variability and involve complicated integrals, making online learning difficult. Here, we introduce a generic hierarchical Bayesian framework for individual learning under multiple forms of uncertainty (e.g., environmental volatility and perceptual uncertainty). The model assumes Gaussian random walks of states at all but the first level, with the step size determined by the next highest level. The coupling between levels is controlled by parameters that shape the influence of uncertainty on learning in a subject-specific fashion. Using variational Bayes under a mean-field approximation and a novel approximation to the posterior energy function, we derive trial-by-trial update equations which (i) are analytical and extremely efficient, enabling real-time learning, (ii) have a natural interpretation in terms of RL, and (iii) contain parameters representing processes which play a key role in current theories of learning, e.g., precision-weighting of prediction error. These parameters allow for the expression of individual differences in learning and may relate to specific neuromodulatory mechanisms in the brain. Our model is very general: it can deal with both discrete and continuous states and equally accounts for deterministic and probabilistic relations between environmental events and perceptual states (i.e., situations with and without perceptual uncertainty). These properties are illustrated by simulations and analyses of empirical time series. Overall, our framework provides a novel foundation for understanding normal and pathological learning that contextualizes RL within a generic Bayesian scheme and thus connects it to principles of optimality from probability theory.},
+author = {Mathys, Christoph D.},
+doi = {10.3389/fnhum.2011.00039},
+file = {:home/laew/lit/pdf/Mathys - 2011 - A Bayesian foundation for individual learning under uncertainty.pdf:pdf},
+isbn = {1662-5161 (Electronic){\$}\backslash{\$}n1662-5161 (Linking)},
+issn = {16625161},
+journal = {Frontiers in Human Neuroscience},
+keywords = {acetylcholine,decision-,dopamine,hierarchical models,neuromodul,neuromodulation,serotonin,variational Bayes,variational bayes},
+number = {May},
+pages = {1--20},
+pmid = {21629826},
+title = {{A Bayesian foundation for individual learning under uncertainty}},
+url = {http://journal.frontiersin.org/article/10.3389/fnhum.2011.00039/abstract},
+volume = {5},
+year = {2011}
+}
+
+@ARTICLE{2014:mathys,
+AUTHOR={Mathys, Christoph D. and Lomakina, Ekaterina I. and Daunizeau, Jean and Iglesias, Sandra and Brodersen, Kay H. and Friston, Karl J. and Stephan, Klaas E.},
+TITLE={Uncertainty in perception and the Hierarchical Gaussian Filter},
+JOURNAL={Frontiers in Human Neuroscience},
+VOLUME={8},
+YEAR={2014},
+URL={https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825},
+DOI={10.3389/fnhum.2014.00825},
+ISSN={1662-5161},
+ABSTRACT={In its full sense, perception rests on an agent's model of how its sensory input comes about and the inferences it draws based on this model. These inferences are necessarily uncertain. Here, we illustrate how the Hierarchical Gaussian Filter (HGF) offers a principled and generic way to deal with the several forms that uncertainty in perception takes. The HGF is a recent derivation of one-step update equations from Bayesian principles that rests on a hierarchical generative model of the environment and its (in)stability. It is computationally highly efficient, allows for online estimates of hidden states, and has found numerous applications to experimental data from human subjects. In this paper, we generalize previous descriptions of the HGF and its account of perceptual uncertainty. First, we explicitly formulate the extension of the HGF's hierarchy to any number of levels; second, we discuss how various forms of uncertainty are accommodated by the minimization of variational free energy as encoded in the update equations; third, we combine the HGF with decision models and demonstrate the inversion of this combination; finally, we report a simulation study that compared four optimization methods for inverting the HGF/decision model combination at different noise levels. These four methods (Nelder–Mead simplex algorithm, Gaussian process-based global optimization, variational Bayes and Markov chain Monte Carlo sampling) all performed well even under considerable noise, with variational Bayes offering the best combination of efficiency and informativeness of inference. Our results demonstrate that the HGF provides a principled, flexible, and efficient—but at the same time intuitive—framework for the resolution of perceptual uncertainty in behaving agents.}
+}
+
+@article{2016:shipp,
+abstract = {Predictive coding theories of sensory brain function interpret the hierarchical construction of the cerebral cortex as a Bayesian, generative model capable of predicting the sensory data consistent with any given percept. Predictions are fed backwards in the hierarchy and reciprocated by prediction error in the forward direction, acting to modify the representation of the outside world at increasing levels of abstraction, and so to optimize the nature of perception over a series of iterations. This accounts for many ‘illusory' instances of perception where what is seen (heard, etc) is unduly influenced by what is expected, based on past experience. This simple conception, the hierarchical exchange of prediction and prediction error, confronts a rich cortical microcircuitry that is yet to be fully documented. This article presents the view that, in the current state of theory and practice, it is profitable to begin a two-way exchange: that predictive coding theory can support an understanding of cortical microcircuit function, and prompt particular aspects of future investigation, whilst existing knowledge of microcircuitry can, in return, influence theoretical development. As an example, a neural inference arising from the earliest formulations of predictive coding is that the source populations of forwards and backwards pathways should be completely separate, given their functional distinction; this aspect of circuitry – that neurons with extrinsically bifurcating axons do not project in both directions – has only recently been confirmed. Here, the computational architecture prescribed by a generalized (free-energy) formulation of predictive coding is combined with the classic ‘canonical microcircuit' and the laminar architecture of hierarchical extrinsic connectivity to produce a template schematic, that is further examined in the light of (a) updates in the microcircuitry of primate visual cortex, and (b) rapid technical advances made possible by transgenic neural engineering in the mouse. The exercise highlights a number of recurring themes, amongst them the consideration of interneuron diversity as a spur to theoretical development and the potential for specifying a pyramidal neuron's function by its individual ‘connectome', combining its extrinsic projection (forward, backward or subcortical) with evaluation of its intrinsic network (e.g. unidirectional versus bidirectional connections with other pyramidal neurons).},
+archivePrefix = {arXiv},
+arxivId = {arXiv:1011.1669v3},
+author = {Shipp, Stewart},
+doi = {10.3389/fpsyg.2016.01792},
+eprint = {arXiv:1011.1669v3},
+file = {:home/laew/lit/pdf/Shipp - 2016 - Neural elements for predictive coding(2).pdf:pdf},
+isbn = {0030-8870},
+issn = {16641078},
+journal = {Frontiers in Psychology},
+keywords = {Canonical microcircuit,Feedback inhibition,Forward pathway,Generative model,Hierarchy,Interneuron function,Precision,Prediction error},
+number = {NOV},
+pages = {1--21},
+pmid = {27917138},
+title = {{Neural elements for predictive coding}},
+volume = {7},
+year = {2016}
+}
+
+@article{2017:bogacz,
+abstract = {This paper provides an easy to follow tutorial on the free-energy framework for modelling perception developed by Friston, which extends the predictive coding model of Rao and Ballard. These models assume that the sensory cortex infers the most likely values of attributes or features of sensory stimuli from the noisy inputs encoding the stimuli. Remarkably, these models describe how this inference could be implemented in a network of very simple computational elements, suggesting that this inference could be performed by biological networks of neurons. Furthermore, learning about the parameters describing the features and their uncertainty is implemented in these models by simple rules of synaptic plasticity based on Hebbian learning. This tutorial introduces the free-energy framework using very simple examples, and provides step-by-step derivations of the model. It also discusses in more detail how the model could be implemented in biological neural circuits. In particular, it presents an extended version of the model in which the neurons only sum their inputs, and synaptic plasticity only depends on activity of pre-synaptic and post-synaptic neurons.},
+author = {Bogacz, Rafal},
+doi = {10.1016/j.jmp.2015.11.003},
+file = {:home/laew/lit/pdf/Bogacz - 2017 - A tutorial on the free-energy framework for modelling perception and learning.pdf:pdf},
+issn = {10960880},
+journal = {Journal of Mathematical Psychology},
+pages = {198--211},
+pmid = {28298703},
+publisher = {Elsevier Inc.},
+title = {{A tutorial on the free-energy framework for modelling perception and learning}},
+url = {http://dx.doi.org/10.1016/j.jmp.2015.11.003},
+volume = {76},
+year = {2017}
+}
+
+@article{2015:kanai,
+abstract = {This paper considers neuronal architectures from a computational perspective and asks what aspects of neuroanatomyand neurophysiology can be disclosed by the nature of neuronal computations? In particular, we extend current formulationsof the brainas anorganof inference—baseduponhierarchical pre- dictive coding—and consider how these inferences are orchestrated. In other words,whatwould the brain require to dynamically coordinate and contextua- lize its message passing to optimize its computational goals? The answer that emerges rests onthe delicate(modulatory) gain control of neuronal populations that select and coordinate (prediction error) signals that ascend cortical hierar- chies. This is important because it speaks to a hierarchical anatomyof extrinsic (between region) connections that form two distinct classes, namely a class of driving (first-order) connections that are concerned with encoding the content of neuronal representations and a class of modulatory (second-order) connec- tions that establish context—in the formof the salience or precision ascribed to content.We explore the implications of this distinction from a formal perspec- tive (using simulations of feature–ground segregation) and consider the neurobiological substrates of the ensuing precision-engineered dynamics, with a special focus on the pulvinar and attention. 1.},
+author = {Kanai, R. and Komura, Y. and Shipp, S. and Friston, Karl J.},
+doi = {10.1098/rstb.2014.0169},
+file = {:home/laew/lit/pdf/Kanai et al. - 2015 - Cerebral hierarchies predictive processing, precision and the pulvinar.pdf:pdf},
+isbn = {1471-2970 (Electronic)$\backslash$r0962-8436 (Linking)},
+issn = {0962-8436},
+journal = {Philosophical Transactions of the Royal Society B: Biological Sciences},
+keywords = {neuroscience,theoretical biology},
+number = {1668},
+pages = {20140169--20140169},
+pmid = {25823866},
+title = {{Cerebral hierarchies: predictive processing, precision and the pulvinar}},
+url = {http://rstb.royalsocietypublishing.org/cgi/doi/10.1098/rstb.2014.0169},
+volume = {370},
+year = {2015}
+}
+
+@article{Iglesias2021,
+  doi = {10.1016/j.neuroimage.2020.117590},
+  url = {https://doi.org/10.1016/j.neuroimage.2020.117590},
+  year = {2021},
+  month = feb,
+  publisher = {Elsevier {BV}},
+  volume = {226},
+  pages = {117590},
+  author = {Sandra Iglesias and Lars Kasper and Samuel J. Harrison and Robert Manka and Christoph Mathys and Klaas E. Stephan},
+  title = {Cholinergic and dopaminergic effects on prediction error and uncertainty responses during sensory associative learning},
+  journal = {{NeuroImage}}
+}
+
+@book{2014:lee,
+  doi = {10.1017/cbo9781139087759},
+  url = {https://doi.org/10.1017/cbo9781139087759},
+  year = {2014},
+  month = apr,
+  publisher = {Cambridge University Press},
+  author = {Michael D. Lee and Eric-Jan Wagenmakers},
+  title = {Bayesian Cognitive Modeling}
+}
+
+@article{neal:2003,
+  doi = {10.1214/aos/1056562461},
+  url = {https://doi.org/10.1214/aos/1056562461},
+  year = {2003},
+  month = jun,
+  publisher = {Institute of Mathematical Statistics},
+  volume = {31},
+  number = {3},
+  author = {Radford M. Neal},
+  title = {Slice sampling},
+  journal = {The Annals of Statistics}
+}
+
+@article{frassle:2021,
+  doi = {10.3389/fpsyt.2021.680811},
+  url = {https://doi.org/10.3389/fpsyt.2021.680811},
+  year = {2021},
+  month = jun,
+  publisher = {Frontiers Media {SA}},
+  volume = {12},
+  author = {Stefan Fr\"{a}ssle and Eduardo A. Aponte and Saskia Bollmann and Kay H. Brodersen and Cao T. Do and Olivia K. Harrison and Samuel J. Harrison and Jakob Heinzle and Sandra Iglesias and Lars Kasper and Ekaterina I. Lomakina and Christoph Mathys and Matthias M\"{u}ller-Schrader and In{\^{e}}s Pereira and Frederike H. Petzschner and Sudhir Raman and Dario Sch\"{o}bi and Birte Toussaint and Lilian A. Weber and Yu Yao and Klaas E. Stephan},
+  title = {{TAPAS}: An Open-Source Software Package for Translational Neuromodeling and Computational Psychiatry},
+  journal = {Frontiers in Psychiatry}
+}
+
+@article{pfenninger:2016,
+  doi = {10.1016/j.energy.2016.08.060},
+  url = {https://doi.org/10.1016/j.energy.2016.08.060},
+  year = {2016},
+  month = nov,
+  publisher = {Elsevier {BV}},
+  volume = {114},
+  pages = {1251--1265},
+  author = {Stefan Pfenninger and Iain Staffell},
+  title = {Long-term patterns of European {PV} output using 30 years of validated hourly reanalysis and satellite data},
+  journal = {Energy}
+}
+
+@article{staffell:2016,
+  doi = {10.1016/j.energy.2016.08.068},
+  url = {https://doi.org/10.1016/j.energy.2016.08.068},
+  year = {2016},
+  month = nov,
+  publisher = {Elsevier {BV}},
+  volume = {114},
+  pages = {1224--1239},
+  author = {Iain Staffell and Stefan Pfenninger},
+  title = {Using bias-corrected reanalysis to simulate current and future wind power output},
+  journal = {Energy}
+}
+
+@misc{weber:2023,
+      title={The generalized Hierarchical Gaussian Filter}, 
+      author={Lilian Aline Weber and Peter Thestrup Waade and Nicolas Legrand and Anna Hedvig Møller and Klaas Enno Stephan and Christoph Mathys},
+      year={2023},
+      eprint={2305.10937},
+      archivePrefix={arXiv},
+      primaryClass={cs.NE}
+}
+
+@article{Pulcu2017,
+  title = {Affective bias as a rational response to the statistics of rewards and punishments},
+  volume = {6},
+  ISSN = {2050-084X},
+  url = {http://dx.doi.org/10.7554/eLife.27879},
+  DOI = {10.7554/elife.27879},
+  journal = {eLife},
+  publisher = {eLife Sciences Publications,  Ltd},
+  author = {Pulcu,  Erdem and Browning,  Michael},
+  year = {2017},
+  month = oct 
+}
+
+@article {RobertCollins2019,
+article_type = {journal},
+title = {Ten simple rules for the computational modeling of behavioral data},
+author = {Wilson, Robert C and Collins, Anne GE},
+editor = {Behrens, Timothy E},
+volume = 8,
+year = 2019,
+month = {nov},
+pub_date = {2019-11-26},
+pages = {e49547},
+citation = {eLife 2019;8:e49547},
+doi = {10.7554/eLife.49547},
+url = {https://doi.org/10.7554/eLife.49547},
+abstract = {Computational modeling of behavior has revolutionized psychology and neuroscience. By fitting models to experimental data we can probe the algorithms underlying behavior, find neural correlates of computational variables and better understand the effects of drugs, illness and interventions. But with great power comes great responsibility. Here, we offer ten simple rules to ensure that computational modeling is used with care and yields meaningful insights. In particular, we present a beginner-friendly, pragmatic and details-oriented introduction on how to relate models to data. What, exactly, can a model tell us about the mind? To answer this, we apply our rules to the simplest modeling techniques most accessible to beginning modelers and illustrate them with examples and code available online. However, most rules apply to more advanced techniques. Our hope is that by following our guidelines, researchers will avoid many pitfalls and unleash the power of computational modeling on their own data.},
+keywords = {computational modeling, model fitting, validation, reproducibility},
+journal = {eLife},
+issn = {2050-084X},
+publisher = {eLife Sciences Publications, Ltd},
+}
+
+@InProceedings{mathys:2020,
+author="Mathys, Christoph and Weber, Lilian",
+editor="Verbelen, Tim and Lanillos, Pablo and Buckley, Christopher L. and De Boom, Cedric",
+title="Hierarchical Gaussian Filtering of Sufficient Statistic Time Series for Active Inference",
+booktitle="Active Inference",
+year="2020",
+publisher="Springer International Publishing",
+address="Cham",
+pages="52--58",
+abstract="Active inference relies on state-space models to describe the environments that agents sample with their actions. These actions lead to state changes intended to minimize future surprise. We show that surprise minimization relying on Bayesian inference can be achieved by filtering of the sufficient statistic time series of exponential family input distributions, and we propose the hierarchical Gaussian filter (HGF) as an appropriate, efficient, and scalable tool for active inference agents to achieve this.",
+isbn="978-3-030-64919-7"
+}
+
+@article{Vehtari:2015,
+   title={Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC},
+   volume={27},
+   ISSN={1573-1375},
+   url={http://dx.doi.org/10.1007/s11222-016-9696-4},
+   DOI={10.1007/s11222-016-9696-4},
+   number={5},
+   journal={Statistics and Computing},
+   publisher={Springer Science and Business Media LLC},
+   author={Vehtari, Aki and Gelman, Andrew and Gabry, Jonah},
+   year={2016},
+   month=aug, pages={1413–1432} }
+
+@article{Song2024,
+  title = {Inferring neural activity before plasticity as a foundation for learning beyond backpropagation},
+  volume = {27},
+  ISSN = {1546-1726},
+  url = {http://dx.doi.org/10.1038/s41593-023-01514-1},
+  DOI = {10.1038/s41593-023-01514-1},
+  number = {2},
+  journal = {Nature Neuroscience},
+  publisher = {Springer Science and Business Media LLC},
+  author = {Song,  Yuhang and Millidge,  Beren and Salvatori,  Tommaso and Lukasiewicz,  Thomas and Xu,  Zhenghua and Bogacz,  Rafal},
+  year = {2024},
+  month = jan,
+  pages = {348–358}
+}
+
+@ARTICLE{Ahn2014,
+  title     = "Decision-making in stimulant and opiate addicts in protracted
+               abstinence: evidence from computational modeling with pure users",
+  author    = "Ahn, Woo-Young and Vasilev, Georgi and Lee, Sung-Ha and
+               Busemeyer, Jerome R and Kruschke, John K and Bechara, Antoine
+               and Vassileva, Jasmin",
+  abstract  = "Substance dependent individuals (SDI) often exhibit
+               decision-making deficits; however, it remains unclear whether
+               the nature of the underlying decision-making processes is the
+               same in users of different classes of drugs and whether these
+               deficits persist after discontinuation of drug use. We used
+               computational modeling to address these questions in a unique
+               sample of relatively ``pure'' amphetamine-dependent (N = 38) and
+               heroin-dependent individuals (N = 43) who were currently in
+               protracted abstinence, and in 48 healthy controls (HC). A
+               Bayesian model comparison technique, a simulation method, and
+               parameter recovery tests were used to compare three cognitive
+               models: (1) Prospect Valence Learning with decay reinforcement
+               learning rule (PVL-DecayRI), (2) PVL with delta learning rule
+               (PVL-Delta), and (3) Value-Plus-Perseverance (VPP) model based
+               on Win-Stay-Lose-Switch (WSLS) strategy. The model comparison
+               results indicated that the VPP model, a hybrid model of
+               reinforcement learning (RL) and a heuristic strategy of
+               perseverance had the best post-hoc model fit, but the two PVL
+               models showed better simulation and parameter recovery
+               performance. Computational modeling results suggested that
+               overall all three groups relied more on RL than on a WSLS
+               strategy. Heroin users displayed reduced loss aversion relative
+               to HC across all three models, which suggests that their
+               decision-making deficits are longstanding (or pre-existing) and
+               may be driven by reduced sensitivity to loss. In contrast,
+               amphetamine users showed comparable cognitive functions to HC
+               with the VPP model, whereas the second best-fitting model with
+               relatively good simulation performance (PVL-DecayRI) revealed
+               increased reward sensitivity relative to HC. These results
+               suggest that some decision-making deficits persist in protracted
+               abstinence and may be mediated by different mechanisms in opiate
+               and stimulant users.",
+  journal   = "Front. Psychol.",
+  publisher = "Frontiers Media SA",
+  volume    =  5,
+  pages     = "849",
+  month     =  aug,
+  year      =  2014,
+  keywords  = "Bayesian data analysis; Widely Applicable Information Criterion
+               (WAIC); addiction; amphetamine; computational modeling;
+               decision-making; heroin; protracted abstinence",
+  language  = "en"
+}

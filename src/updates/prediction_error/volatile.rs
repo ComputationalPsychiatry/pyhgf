@@ -1,0 +1,27 @@
+use crate::model::Network;
+
+/// Prediction error from a volatile state node
+pub fn prediction_error_volatile_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
+    let n_value_parents = network.edges[node_idx].value_parents.as_ref().map(|vp| vp.len());
+
+    let mean = network.attributes.states[node_idx].mean;
+    let expected_mean = network.attributes.states[node_idx].expected_mean;
+    let precision = network.attributes.states[node_idx].precision;
+    let expected_precision = network.attributes.states[node_idx].expected_precision;
+
+    // Value prediction error: δ = μ - μ̂
+    let mut value_prediction_error = mean - expected_mean;
+    if let Some(n) = n_value_parents {
+        value_prediction_error /= n as f64;
+    }
+
+    // Volatility prediction error (internal coupling, no division)
+    let volatility_prediction_error =
+        (expected_precision / precision)
+        + expected_precision * value_prediction_error.powi(2)
+        - 1.0;
+
+    let state = &mut network.attributes.states[node_idx];
+    state.value_prediction_error = value_prediction_error;
+    state.volatility_prediction_error = volatility_prediction_error;
+}

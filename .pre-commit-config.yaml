@@ -1,0 +1,22 @@
+exclude: |
+    (?x)^(
+        docs/.*|
+    )$
+    
+repos:
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.15.1
+  hooks:
+    # Run the linter.
+    - id: ruff
+      args: ["--fix", "--extend-select=I"]  # Ensure isort rules are active
+      additional_dependencies: ["nbformat"]  # Needed to handle .ipynb
+    # Run the formatter.
+    - id: ruff-format
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.19.1'
+    hooks:
+    - id: mypy 
+      files: ^pyhgf/
+      args: [--ignore-missing-imports]
