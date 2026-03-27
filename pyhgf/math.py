@@ -91,12 +91,14 @@ class Normal:
     """
 
     @staticmethod
-    def sufficient_statistics_from_observations(x: float) -> Array:
+    def sufficient_statistics_from_observations(x: ArrayLike) -> Array:
         """Compute the expected sufficient statistics from a single observation."""
         return jnp.array([x, x**2])
 
     @staticmethod
-    def sufficient_statistics_from_parameters(mean: float, variance: float) -> Array:
+    def sufficient_statistics_from_parameters(
+        mean: ArrayLike, variance: ArrayLike
+    ) -> Array:
         """Compute the expected sufficient statistics from the distribution parameter.
 
         Parameters
@@ -140,7 +142,9 @@ class Normal:
         return mean, variance
 
 
-def gaussian_predictive_distribution(x: float, xi: ArrayLike, nu: float) -> Array:
+def gaussian_predictive_distribution(
+    x: ArrayLike, xi: ArrayLike, nu: ArrayLike
+) -> Array:
     r"""Density of the Gaussian-predictive distribution.
 
     This distribution is parametrized by hyperparameters from the exponential family as:
@@ -196,7 +200,7 @@ def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Arr
 
 def binary_surprise(
     x: ArrayLike,
-    expected_mean: Union[float, ArrayLike],
+    expected_mean: ArrayLike,
     clipping: bool = True,
 ) -> Array:
     r"""Surprise at a binary outcome.
@@ -243,9 +247,9 @@ def binary_surprise(
 
 
 def gaussian_surprise(
-    x: Union[float, ArrayLike],
-    expected_mean: Union[float, ArrayLike],
-    expected_precision: Union[float, ArrayLike],
+    x: ArrayLike,
+    expected_mean: ArrayLike,
+    expected_precision: ArrayLike,
 ) -> Array:
     r"""Surprise at an outcome under a Gaussian prediction.
 
@@ -365,22 +369,22 @@ def binary_surprise_finite_precision(
     )
 
 
-def sigmoid_inverse_temperature(x: float, temperature: float) -> float:
+def sigmoid_inverse_temperature(x: ArrayLike, temperature: ArrayLike) -> Array:
     """Compute the sigmoid response function with inverse temperature parameter."""
     return (x**temperature) / (x**temperature + (1 - x) ** temperature)
 
 
-def parametrised_sigmoid(x: float, theta: float, phi: float):
+def parametrised_sigmoid(x: ArrayLike, theta: ArrayLike, phi: ArrayLike) -> Array:
     r"""Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`."""
     return sigmoid(phi * (x - theta))
 
 
 def smoothed_rectangular(
-    x: float,
-    theta_l: float,
-    phi_l: float = 8.0,
-    theta_r: float = 0.0,
-    phi_r: float = 1.0,
+    x: ArrayLike,
+    theta_l: ArrayLike,
+    phi_l: ArrayLike = 8.0,
+    theta_r: ArrayLike = 0.0,
+    phi_r: ArrayLike = 1.0,
 ):
     """Compute the smoothed rectangular weighting function :math:`b`."""
     return parametrised_sigmoid(x, theta_l, phi_l) * (

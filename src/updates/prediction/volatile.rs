@@ -5,24 +5,19 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     // Copy own scalar state
     let precision = network.attributes.states[node_idx].precision;
     let mean = network.attributes.states[node_idx].mean;
-    let tonic_drift = network.attributes.states[node_idx].tonic_drift;
     let autoconnection_strength = network.attributes.states[node_idx].autoconnection_strength;
     let tonic_volatility = network.attributes.states[node_idx].tonic_volatility;
     let mean_vol = network.attributes.states[node_idx].mean_vol;
     let precision_vol = network.attributes.states[node_idx].precision_vol;
-    let tonic_drift_vol = network.attributes.states[node_idx].tonic_drift_vol;
-    let autoconnection_strength_vol = network.attributes.states[node_idx].autoconnection_strength_vol;
     let tonic_volatility_vol = network.attributes.states[node_idx].tonic_volatility_vol;
     let volatility_coupling_internal = network.attributes.states[node_idx].volatility_coupling_internal;
 
-    // Store current variance for potential unbounded updates
+    // Store current variance for unbounded updates
     let current_variance = 1.0 / precision;
 
     // ===================================================================
     // 1. PREDICT VOLATILITY LEVEL (implicit internal state)
-    // ===================================================================
-    let expected_mean_vol = autoconnection_strength_vol * mean_vol + time_step * tonic_drift_vol;
-
+    // ===================================================================    
     let predicted_volatility_vol = (time_step * tonic_volatility_vol.clamp(-80.0, 80.0).exp()).max(1e-128);
     let expected_precision_vol = 1.0 / ((1.0 / precision_vol) + predicted_volatility_vol);
     let effective_precision_vol = predicted_volatility_vol * expected_precision_vol;
@@ -32,25 +27,24 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     // ===================================================================
 
     // --- 2a. Predict precision (depends on volatility level) ---
-    let total_volatility = tonic_volatility + volatility_coupling_internal * expected_mean_vol;
+    let total_volatility = tonic_volatility + volatility_coupling_internal * mean_vol;
     let predicted_volatility = (time_step * total_volatility.clamp(-80.0, 80.0).exp()).max(1e-128);
     let expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
 
     // --- 2b. Predict mean (including value parents if any) ---
-    let mut driftrate = tonic_drift;
-
+    let mut driftrate = 0.0;
     if let Some(ref vp_idxs) = network.edges[node_idx].value_parents {
         let couplings = &network.attributes.vectors[node_idx].value_coupling_parents;
 
         for (i, &parent_idx) in vp_idxs.iter().enumerate() {
             let parent_expected_mean = network.attributes.states[parent_idx].expected_mean;
-            let psi = couplings.get(i).copied().unwrap_or(1.0);
+            let value_coupling_parent = couplings.get(i).copied().unwrap_or(1.0);
             let parent_value = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
                 Some(cf) => (cf.f)(parent_expected_mean),
                 None => parent_expected_mean,
             };
-            driftrate += psi * parent_value;
+            driftrate += value_coupling_parent * parent_value;
         }
     }
 
@@ -59,7 +53,7 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     // Store all results
     let state = &mut network.attributes.states[node_idx];
     state.current_variance = current_variance;
-    state.expected_mean_vol = expected_mean_vol;
+    state.expected_mean_vol = mean_vol;
     state.expected_precision_vol = expected_precision_vol;
     state.effective_precision_vol = effective_precision_vol;
     state.expected_mean = expected_mean;

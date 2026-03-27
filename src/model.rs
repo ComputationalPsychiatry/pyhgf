@@ -122,10 +122,10 @@ impl Default for NodeState {
             expected_mean_vol: 0.0,
             precision_vol: 1.0,
             expected_precision_vol: 1.0,
-            tonic_volatility_vol: 0.0,
+            tonic_volatility_vol: -4.0,
             tonic_drift_vol: 0.0,
-            autoconnection_strength_vol: 0.0,
-            volatility_coupling_internal: 0.0,
+            autoconnection_strength_vol: 1.0,
+            volatility_coupling_internal: 1.0,
             effective_precision_vol: 0.0,
             nus: 0.0,
             lr: f64::NAN,
@@ -194,6 +194,10 @@ pub struct NodeTrajectory {
     pub lr: Vec<f64>,
     // Vector trajectory
     pub xis: Vec<Vec<f64>>,
+    pub value_coupling_parents: Vec<Vec<f64>>,
+    pub value_coupling_children: Vec<Vec<f64>>,
+    pub volatility_coupling_parents: Vec<Vec<f64>>,
+    pub volatility_coupling_children: Vec<Vec<f64>>,
 }
 
 impl NodeTrajectory {
@@ -223,6 +227,10 @@ impl NodeTrajectory {
             nus: Vec::with_capacity(n),
             lr: Vec::with_capacity(n),
             xis: Vec::with_capacity(n),
+            value_coupling_parents: Vec::with_capacity(n),
+            value_coupling_children: Vec::with_capacity(n),
+            volatility_coupling_parents: Vec::with_capacity(n),
+            volatility_coupling_children: Vec::with_capacity(n),
         }
     }
 
@@ -256,6 +264,18 @@ impl NodeTrajectory {
         if !v.xis.is_empty() {
             self.xis.push(v.xis.clone());
         }
+        if !v.value_coupling_parents.is_empty() {
+            self.value_coupling_parents.push(v.value_coupling_parents.clone());
+        }
+        if !v.value_coupling_children.is_empty() {
+            self.value_coupling_children.push(v.value_coupling_children.clone());
+        }
+        if !v.volatility_coupling_parents.is_empty() {
+            self.volatility_coupling_parents.push(v.volatility_coupling_parents.clone());
+        }
+        if !v.volatility_coupling_children.is_empty() {
+            self.volatility_coupling_children.push(v.volatility_coupling_children.clone());
+        }
     }
 }
 
@@ -276,6 +296,10 @@ pub struct Network{
     pub layers: Vec<Vec<usize>>,
     /// Optional Adam optimiser state, initialised when `fit()` is called with `optimizer="adam"`.
     pub adam_state: Option<AdamState>,
+    /// Root nodes: nodes that have no children (neither value nor volatility).
+    pub roots: Vec<usize>,
+    /// Leaf nodes: nodes that have no parents (neither value nor volatility).
+    pub leafs: Vec<usize>,
 }
 
 /// Helper: get the list of trajectory field names to export for a given node type.
@@ -351,6 +375,8 @@ impl Network {
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
             adam_state: None,
+            roots: Vec::new(),
+            leafs: Vec::new(),
         }
     }
 
@@ -377,9 +403,42 @@ impl Network {
       for _ in 0..n_nodes {
         let node_id = self.edges.len();
 
-        let is_input = value_children.is_none() && volatility_children.is_none();
+        let has_children = value_children.is_some() || volatility_children.is_some();
+        let has_parents = value_parents.is_some() || volatility_parents.is_some();
+
+        let is_input = !has_children;
         if is_input {
             self.inputs.push(node_id);
+        }
+
+        // Update roots/leafs tracking
+        if !has_children {
+            self.roots.push(node_id);
+        }
+        if !has_parents && kind != "constant-state" {
+            self.leafs.push(node_id);
+        }
+        // Children that gain this node as a parent are no longer leafs
+        if let Some(ref vc) = value_children {
+            for &child_idx in vc {
+                self.leafs.retain(|&x| x != child_idx);
+            }
+        }
+        if let Some(ref volc) = volatility_children {
+            for &child_idx in volc {
+                self.leafs.retain(|&x| x != child_idx);
+            }
+        }
+        // Parents that gain this node as a child are no longer roots
+        if let Some(ref vp) = value_parents {
+            for &parent_idx in vp {
+                self.roots.retain(|&x| x != parent_idx);
+            }
+        }
+        if let Some(ref volp) = volatility_parents {
+            for &parent_idx in volp {
+                self.roots.retain(|&x| x != parent_idx);
+            }
         }
 
         let edges = AdjacencyLists {
@@ -496,7 +555,6 @@ impl Network {
                     tonic_drift_vol: 0.0,
                     autoconnection_strength_vol: 1.0,
                     volatility_coupling_internal: 1.0,
-                    observed: 1.0,
                     effective_precision: 0.0,
                     value_prediction_error: 0.0,
                     volatility_prediction_error: 0.0,
@@ -615,6 +673,61 @@ impl Network {
             }
             _ => {}
         }
+
+        // Reciprocal updates: when value_parents or volatility_parents are
+        // specified, update each parent's children list so the parent knows
+        // about this new child.  (The reverse direction — value_children
+        // updating the child's parents — is already handled above.)
+        let vp_clone = self.edges[node_id].value_parents.clone();
+        let volp_clone = self.edges[node_id].volatility_parents.clone();
+
+        if let Some(ref vp) = vp_clone {
+            for &parent_idx in vp {
+                // Skip if the parent node hasn't been created yet (it will
+                // perform the reciprocal update via its own value_children).
+                if parent_idx >= self.edges.len() { continue; }
+                match &mut self.edges[parent_idx].value_children {
+                    Some(children) => {
+                        if !children.contains(&node_id) {
+                            children.push(node_id);
+                        }
+                    }
+                    None => self.edges[parent_idx].value_children = Some(vec![node_id]),
+                }
+                // Add coupling strength on the parent side only if not already
+                // present (the value_children branch in each node-type arm
+                // already handles couplings for the child→parent direction).
+                let parent_n_children = self.edges[parent_idx]
+                    .value_children.as_ref().map(|c| c.len()).unwrap_or(0);
+                let parent_coupling_len = self.attributes.vectors[parent_idx]
+                    .value_coupling_children.len();
+                if parent_coupling_len < parent_n_children {
+                    self.attributes.vectors[parent_idx]
+                        .value_coupling_children.push(1.0);
+                }
+            }
+        }
+        if let Some(ref volp) = volp_clone {
+            for &parent_idx in volp {
+                if parent_idx >= self.edges.len() { continue; }
+                match &mut self.edges[parent_idx].volatility_children {
+                    Some(children) => {
+                        if !children.contains(&node_id) {
+                            children.push(node_id);
+                        }
+                    }
+                    None => self.edges[parent_idx].volatility_children = Some(vec![node_id]),
+                }
+                let parent_n_children = self.edges[parent_idx]
+                    .volatility_children.as_ref().map(|c| c.len()).unwrap_or(0);
+                let parent_coupling_len = self.attributes.vectors[parent_idx]
+                    .volatility_coupling_children.len();
+                if parent_coupling_len < parent_n_children {
+                    self.attributes.vectors[parent_idx]
+                        .volatility_coupling_children.push(1.0);
+                }
+            }
+        }
       } // end for n_nodes
     }
 
@@ -671,13 +784,13 @@ impl Network {
         let children: Vec<usize> = match value_children {
             Some(vc) => vc,
             None => {
-                let mut orphans = Vec::new();
-                for idx in 0..self.edges.len() {
-                    if self.edges[idx].value_parents.is_none() {
-                        orphans.push(idx);
-                    }
+                // If layers exist, connect to the last layer's nodes;
+                // otherwise connect to all leaf nodes (nodes without parents).
+                if let Some(last_layer) = self.layers.last() {
+                    last_layer.clone()
+                } else {
+                    self.leafs.clone()
                 }
-                orphans
             }
         }.into_iter()
             .filter(|&idx| self.edges[idx].node_type != "constant-state")
@@ -739,6 +852,26 @@ impl Network {
         }
     }
 
+    /// Train the network on input/output pairs.
+    ///
+    /// # Arguments
+    /// * `x` - Input data, one row per time step.
+    /// * `y` - Target data, one row per time step.
+    /// * `inputs_x_idxs` - Node indices that receive input observations. Defaults
+    ///   to the leaf nodes (nodes without parents) when not provided from Python.
+    /// * `inputs_y_idxs` - Node indices that receive target observations. Defaults
+    ///   to the root nodes (nodes without children) when not provided from Python.
+    /// * `lr` - Learning rate applied to all non-input nodes. Defaults to `0.2`
+    ///   from Python. Pass `"dynamic"` (Python only) to skip setting a fixed rate
+    ///   and let each node use its own `lr` field.
+    /// * `record_trajectories` - When `true`, stores the full state history for
+    ///   every node at each time step, accessible via `node_trajectories`.
+    /// * `optimizer` - Optional optimizer name. Currently supports `"adam"`, which
+    ///   initialises an Adam state for filtering coupling weight updates. When
+    ///   `None`, plain gradient updates are used.
+    /// * `params` - Optional dictionary of optimizer hyper-parameters. For Adam:
+    ///   `beta1` (default 0.9), `beta2` (default 0.999), `epsilon` (default 1e-8),
+    ///   and `lr` (optional override for the Adam step size).
     pub fn fit(
         &mut self,
         x: &[Vec<f64>],
@@ -855,21 +988,28 @@ impl Network {
             .cloned()
             .collect();
 
+        // Clone unchanging parts once (edges, vectors, fn_ptrs don't change
+        // during prediction-only passes).
+        let mut temp = Network {
+            attributes: self.attributes.clone(),
+            edges: self.edges.clone(),
+            inputs: Vec::new(),
+            update_type: String::new(),
+            update_sequence: UpdateSequence {
+                predictions: Vec::new(),
+                updates: Vec::new(),
+            },
+            node_trajectories: NodeTrajectories { nodes: Vec::new() },
+            layers: Vec::new(),
+            adam_state: None,
+            roots: Vec::new(),
+            leafs: Vec::new(),
+        };
+
         x.iter()
             .map(|x_row| {
-                let mut temp = Network {
-                    attributes: self.attributes.clone(),
-                    edges: self.edges.clone(),
-                    inputs: Vec::new(),
-                    update_type: String::new(),
-                    update_sequence: UpdateSequence {
-                        predictions: Vec::new(),
-                        updates: Vec::new(),
-                    },
-                    node_trajectories: NodeTrajectories { nodes: Vec::new() },
-                    layers: Vec::new(),
-                    adam_state: None,
-                };
+                // Only reset states per sample (plain f64 fields, no allocation).
+                temp.attributes.states.clone_from(&self.attributes.states);
 
                 for (i, &node_idx) in inputs_x_idxs.iter().enumerate() {
                     set_predictors(&mut temp, node_idx, x_row[i]);
@@ -898,6 +1038,55 @@ impl Network {
                  The network currently has {} layer(s).",
                 self.layers.len()
             ));
+        }
+
+        // Collect the children of the first tracked layer that are NOT in any
+        // tracked layer themselves (e.g. output nodes created via add_nodes).
+        // These form an implicit "layer -1" whose weights also need initialisation.
+        {
+            let first_layer = &self.layers[0];
+            let all_layer_nodes: std::collections::HashSet<usize> = self
+                .layers
+                .iter()
+                .flat_map(|l| l.iter().copied())
+                .collect();
+
+            let mut pre_layer: Vec<usize> = Vec::new();
+            for &node_idx in first_layer {
+                if let Some(ref vc) = self.edges[node_idx].value_children {
+                    for &child_idx in vc {
+                        if !all_layer_nodes.contains(&child_idx)
+                            && !pre_layer.contains(&child_idx)
+                        {
+                            let nt = &self.edges[child_idx].node_type;
+                            if nt == "continuous-state"
+                                || nt == "volatile-state"
+                                || nt == "binary-state"
+                                || nt == "constant-state"
+                            {
+                                pre_layer.push(child_idx);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !pre_layer.is_empty() {
+                let parent_nodes = first_layer.clone();
+                let n_parents = parent_nodes.len();
+                let n_children = pre_layer.len();
+
+                if let Ok(weights) = weight_init_by_name(strategy, n_parents, n_children, seed) {
+                    for (p_local, &parent_idx) in parent_nodes.iter().enumerate() {
+                        for (c_local, &child_idx) in pre_layer.iter().enumerate() {
+                            let w = weights[p_local * n_children + c_local];
+                            crate::utils::set_coupling::set_coupling(
+                                self, parent_idx, child_idx, w,
+                            );
+                        }
+                    }
+                }
+            }
         }
 
         for layer_idx in 0..self.layers.len() - 1 {
@@ -1051,6 +1240,18 @@ impl Network {
             if !traj.xis.is_empty() {
                 py_dict.set_item("xis", PyArray::from_vec2(py, &traj.xis).unwrap())?;
             }
+            if !traj.value_coupling_parents.is_empty() {
+                py_dict.set_item("value_coupling_parents", PyArray::from_vec2(py, &traj.value_coupling_parents).unwrap())?;
+            }
+            if !traj.value_coupling_children.is_empty() {
+                py_dict.set_item("value_coupling_children", PyArray::from_vec2(py, &traj.value_coupling_children).unwrap())?;
+            }
+            if !traj.volatility_coupling_parents.is_empty() {
+                py_dict.set_item("volatility_coupling_parents", PyArray::from_vec2(py, &traj.volatility_coupling_parents).unwrap())?;
+            }
+            if !traj.volatility_coupling_children.is_empty() {
+                py_dict.set_item("volatility_coupling_children", PyArray::from_vec2(py, &traj.volatility_coupling_children).unwrap())?;
+            }
 
             py_list.append(py_dict)?;
         }
@@ -1180,11 +1381,11 @@ impl Network {
 
         let x_idxs = match inputs_x_idxs {
             Some(v) => v,
-            None => slf.layers.last().cloned().unwrap_or_default(),
+            None => slf.leafs.clone(),
         };
         let y_idxs = match inputs_y_idxs {
             Some(v) => v,
-            None => slf.layers.first().cloned().unwrap_or_default(),
+            None => slf.roots.clone(),
         };
 
         let x_data: Vec<Vec<f64>> = if let Ok(outer) = x.extract::<Vec<Vec<f64>>>() {
@@ -1221,19 +1422,25 @@ impl Network {
 
     #[pyo3(name = "predict", signature = (x, inputs_x_idxs=None, inputs_y_idxs=None))]
     fn py_predict<'py>(
-        &self,
+        mut slf: PyRefMut<'py, Self>,
         py: Python<'py>,
         x: Bound<'py, PyAny>,
         inputs_x_idxs: Option<Vec<usize>>,
         inputs_y_idxs: Option<Vec<usize>>,
     ) -> PyResult<Py<numpy::PyArray2<f64>>> {
+        if slf.update_sequence.predictions.is_empty()
+            && slf.update_sequence.updates.is_empty()
+        {
+            slf.set_update_sequence();
+        }
+
         let x_idxs = match inputs_x_idxs {
             Some(v) => v,
-            None => self.layers.last().cloned().unwrap_or_default(),
+            None => slf.leafs.clone(),
         };
         let y_idxs = match inputs_y_idxs {
             Some(v) => v,
-            None => self.layers.first().cloned().unwrap_or_default(),
+            None => slf.roots.clone(),
         };
 
         let x_data: Vec<Vec<f64>> = if let Ok(outer) = x.extract::<Vec<Vec<f64>>>() {
@@ -1243,7 +1450,7 @@ impl Network {
             flat.into_iter().map(|v| vec![v]).collect()
         };
 
-        let predictions = self.predict(&x_data, &x_idxs, &y_idxs);
+        let predictions = slf.predict(&x_data, &x_idxs, &y_idxs);
 
         let n_samples = predictions.len();
         let n_outputs = if n_samples > 0 { predictions[0].len() } else { 0 };
@@ -1271,6 +1478,16 @@ impl Network {
             py_list.append(PyList::new(py, layer)?)?;
         }
         Ok(py_list.into())
+    }
+
+    #[getter]
+    pub fn get_roots<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, &self.roots)?.into())
+    }
+
+    #[getter]
+    pub fn get_leafs<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
+        Ok(PyList::new(py, &self.leafs)?.into())
     }
 }
 

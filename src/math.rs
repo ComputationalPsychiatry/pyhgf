@@ -116,7 +116,7 @@ pub fn gelu(x: f64) -> f64 {
 }
 /// First derivative of GELU: $f'(x) = \Phi(x) + x\,\phi(x)$.
 pub fn gelu_d1(x: f64) -> f64 {
-    let phi = 0.5 * (1.0 - erfc(x / std::f64::consts::SQRT_2));
+    let phi = 0.5 * erfc(-x / std::f64::consts::SQRT_2);
     let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
     phi + x * pdf
 }
