@@ -1,5 +1,8 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+from functools import partial
+
+import jax.nn
 import jax.numpy as jnp
 import numpy as np
 from pyhgf.rshgf import Network as RsNetwork
@@ -8,111 +11,135 @@ from pyhgf.model import DeepNetwork
 
 NETWORK_CLASSES = [DeepNetwork, RsNetwork]
 
+# Mapping from Rust coupling-function name to Python (JAX) callable.
+# None means linear (identity) coupling — the default.
+COUPLING_FNS: dict[str | None, tuple | None] = {
+    None: None,
+    "relu": (jax.nn.relu,),
+    "sigmoid": (jax.nn.sigmoid,),
+    "tanh": (jnp.tanh,),
+    "leaky_relu": (partial(jax.nn.leaky_relu, negative_slope=0.01),),
+    "gelu": (partial(jax.nn.gelu, approximate=False),),
+}
+
+
+def _compare_trajectories(
+    py_net, rs_net, label: str, atol: float = 1e-3, rtol: float = 0.0
+) -> None:
+    """Assert that node trajectories match between Python and Rust backends."""
+    py_keys = set(py_net.node_trajectories.keys())
+    rs_keys = (
+        set(rs_net.node_trajectories.keys())
+        if isinstance(rs_net.node_trajectories, dict)
+        else set(range(len(rs_net.node_trajectories)))
+    )
+    common_nodes = sorted(py_keys & rs_keys)
+
+    # ----- Compare mean and precision at every node -----
+    for node_idx in common_nodes:
+        for key in ["mean", "precision"]:
+            py_traj = py_net.node_trajectories[node_idx]
+            rs_traj = rs_net.node_trajectories[node_idx]
+            if key not in py_traj or key not in rs_traj:
+                continue
+            py_val = np.asarray(py_traj[key])
+            rs_val = np.asarray(rs_traj[key])
+            assert np.allclose(py_val, rs_val, atol=atol, rtol=rtol), (
+                f"{label}: node {node_idx} '{key}' mismatch\n"
+                f"  Py={py_val}\n  Rs={rs_val}"
+            )
+
+    # ----- Compare volatile-level mean/precision -----
+    volatile_nodes = [
+        nid
+        for nid in common_nodes
+        if "mean_vol" in py_net.node_trajectories.get(nid, {})
+    ]
+    for node_idx in volatile_nodes:
+        for key in ["mean_vol", "precision_vol"]:
+            py_traj = py_net.node_trajectories[node_idx]
+            rs_traj = rs_net.node_trajectories[node_idx]
+            if key not in py_traj or key not in rs_traj:
+                continue
+            py_val = np.asarray(py_traj[key])
+            rs_val = np.asarray(rs_traj[key])
+            assert np.allclose(py_val, rs_val, atol=atol, rtol=rtol), (
+                f"{label}: node {node_idx} '{key}' mismatch\n"
+                f"  Py={py_val}\n  Rs={rs_val}"
+            )
+
+    # ----- Compare coupling weights (value_coupling_children) -----
+    weight_nodes = [
+        nid
+        for nid in common_nodes
+        if "value_coupling_children" in py_net.node_trajectories.get(nid, {})
+        and "value_coupling_children"
+        in (
+            rs_net.node_trajectories[nid]
+            if isinstance(rs_net.node_trajectories, dict)
+            else rs_net.node_trajectories[nid]
+            if nid < len(rs_net.node_trajectories)
+            else {}
+        )
+    ]
+    for node_idx in weight_nodes:
+        py_w = np.asarray(py_net.node_trajectories[node_idx]["value_coupling_children"])
+        rs_w = np.asarray(rs_net.node_trajectories[node_idx]["value_coupling_children"])
+        assert np.allclose(py_w, rs_w, atol=atol, rtol=rtol), (
+            f"{label}: node {node_idx} 'value_coupling_children' mismatch\n"
+            f"  Py={py_w}\n  Rs={rs_w}"
+        )
+
 
 def test_fit():
     """Test that Python and Rust backends produce identical fit results.
 
-    Network: 2 targets → 3+1 hidden (volatile-state + bias) → 4+1 predictors.
-    Linear coupling at all levels.  Both fixed and dynamic learning rates.
+    Network: 2 targets → 2+1 hidden₁ → 2+1 hidden₂ → 1+1 input.
+    Tested with every available coupling function and both fixed and dynamic
+    learning rates.  No weight initialisation so default couplings (1.0) are
+    used, making the two backends directly comparable.
     """
-    n_targets, n_hidden, n_predictors = 2, 3, 4
+    n_targets, n_h1, n_h2, n_input = 2, 2, 2, 1
 
     np.random.seed(42)
-    x = np.random.randn(5, n_predictors)
+    x = np.random.randn(5, n_input)
     y = np.random.randn(5, n_targets)
 
-    for lr in [0.1, "dynamic"]:
-        lr_label = f"lr={lr}"
+    for coupling_name, py_coupling_fn in COUPLING_FNS.items():
+        for lr in [0.1, "dynamic"]:
+            label = f"coupling={coupling_name}, lr={lr}"
 
-        fitted = []
-        for Network in NETWORK_CLASSES:
-            net = (
-                Network()
-                .add_nodes(kind="continuous-state", n_nodes=n_targets)
-                .add_layer(size=n_hidden)
-                .add_layer(size=n_predictors)
-            )
-            # Derive predictor indices from the last layer (exclude bias node)
-            predictors = tuple(net.layers[-1][:n_predictors])
-            net.fit(
-                x=x,
-                y=y,
-                inputs_x_idxs=predictors,
-                inputs_y_idxs=tuple(range(n_targets)),
-                lr=lr,
-            )
-            fitted.append(net)
+            fitted = []
+            for Network in NETWORK_CLASSES:
+                if Network is DeepNetwork:
+                    net = (
+                        Network()
+                        .add_nodes(kind="continuous-state", n_nodes=n_targets)
+                        .add_layer(size=n_h1, coupling_fn=py_coupling_fn)
+                        .add_layer(size=n_h2, coupling_fn=py_coupling_fn)
+                        .add_layer(size=n_input, coupling_fn=py_coupling_fn)
+                    )
+                else:
+                    net = (
+                        Network()
+                        .add_nodes(kind="continuous-state", n_nodes=n_targets)
+                        .add_layer(size=n_h1, coupling_fn=coupling_name)
+                        .add_layer(size=n_h2, coupling_fn=coupling_name)
+                        .add_layer(size=n_input, coupling_fn=coupling_name)
+                    )
 
-        py_net, rs_net = fitted
-
-        # ----- Compare mean and precision at every node -----
-        # Iterate over node indices present in both backends; constant-state
-        # (bias) nodes may not have all keys.
-        py_keys = set(py_net.node_trajectories.keys())
-        rs_keys = (
-            set(rs_net.node_trajectories.keys())
-            if isinstance(rs_net.node_trajectories, dict)
-            else set(range(len(rs_net.node_trajectories)))
-        )
-        common_nodes = sorted(py_keys & rs_keys)
-        for node_idx in common_nodes:
-            for key in ["mean", "precision"]:
-                py_traj = py_net.node_trajectories[node_idx]
-                rs_traj = rs_net.node_trajectories[node_idx]
-                if key not in py_traj or key not in rs_traj:
-                    continue
-                py_val = np.asarray(py_traj[key])
-                rs_val = np.asarray(rs_traj[key])
-                assert np.allclose(py_val, rs_val, atol=1e-3), (
-                    f"{lr_label}: node {node_idx} '{key}' mismatch\n"
-                    f"  Py={py_val}\n  Rs={rs_val}"
+                predictors = tuple(net.layers[-1][:n_input])
+                net.fit(
+                    x=x,
+                    y=y,
+                    inputs_x_idxs=predictors,
+                    inputs_y_idxs=tuple(range(n_targets)),
+                    lr=lr,
                 )
+                fitted.append(net)
 
-        # ----- Compare volatile-level mean/precision on hidden & predictor nodes -----
-        # Use the non-bias volatile-state nodes from each layer.
-        volatile_nodes = [
-            nid
-            for nid in common_nodes
-            if "mean_vol" in py_net.node_trajectories.get(nid, {})
-        ]
-        for node_idx in volatile_nodes:
-            for key in ["mean_vol", "precision_vol"]:
-                py_traj = py_net.node_trajectories[node_idx]
-                rs_traj = rs_net.node_trajectories[node_idx]
-                if key not in py_traj or key not in rs_traj:
-                    continue
-                py_val = np.asarray(py_traj[key])
-                rs_val = np.asarray(rs_traj[key])
-                assert np.allclose(py_val, rs_val, atol=1e-3), (
-                    f"{lr_label}: node {node_idx} '{key}' mismatch\n"
-                    f"  Py={py_val}\n  Rs={rs_val}"
-                )
-
-        # ----- Compare coupling weights (value_coupling_children) -----
-        weight_nodes = [
-            nid
-            for nid in common_nodes
-            if "value_coupling_children" in py_net.node_trajectories.get(nid, {})
-            and "value_coupling_children"
-            in (
-                rs_net.node_trajectories[nid]
-                if isinstance(rs_net.node_trajectories, dict)
-                else rs_net.node_trajectories[nid]
-                if nid < len(rs_net.node_trajectories)
-                else {}
-            )
-        ]
-        for node_idx in weight_nodes:
-            py_w = np.asarray(
-                py_net.node_trajectories[node_idx]["value_coupling_children"]
-            )
-            rs_w = np.asarray(
-                rs_net.node_trajectories[node_idx]["value_coupling_children"]
-            )
-            assert np.allclose(py_w, rs_w, atol=1e-3), (
-                f"{lr_label}: node {node_idx} 'value_coupling_children' mismatch\n"
-                f"  Py={py_w}\n  Rs={rs_w}"
-            )
+            py_net, rs_net = fitted
+            _compare_trajectories(py_net, rs_net, label)
 
 
 def test_deepnetwork_add_value_parent_layer():

@@ -94,9 +94,6 @@ def posterior_update_mean_value_level(
             # Get the value prediction error
             value_pe = attributes[value_child_idx]["temp"]["value_prediction_error"]
 
-            # Cancel if child not observed
-            value_pe *= attributes[value_child_idx]["observed"]
-
             # Get coupling function derivative
             if coupling_fn is None:
                 coupling_fn_prime = 1

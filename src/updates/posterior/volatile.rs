@@ -48,7 +48,6 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let child_expected_precision = child_state.expected_precision;
-            let child_vape = child_state.value_prediction_error * child_state.observed;
             let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
 
             let coupling_fn_prime = match coupling_fn {
@@ -56,7 +55,7 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
                 None => 1.0,
             };
 
-            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision) * child_vape;
+            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision) * child_state.value_prediction_error;
         }
     }
 
