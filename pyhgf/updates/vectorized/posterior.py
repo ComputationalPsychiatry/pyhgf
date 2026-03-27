@@ -52,17 +52,20 @@ def vectorized_layer_posterior_update(
     coupling_second = vmap(jgrad(coupling_fn_grad))(parent_state.expected_mean)
 
     # First-order term: weights.T shape (n_parents, n_children)
-    precision_contrib_1 = jnp.matmul(
-        weights.T**2, child_state.expected_precision
-    ) * (coupling_prime**2)
+    precision_contrib_1 = jnp.matmul(weights.T**2, child_state.expected_precision) * (
+        coupling_prime**2
+    )
 
     # Second-order correction: matches posterior_update_precision_value_level
     # -f''(m_j) * sum_i(pi_i * vpe_i) — note: no weight factor in sum (mirrors standard code)
-    sum_pi_vpe = jnp.dot(child_state.expected_precision, child_state.value_prediction_error)
+    sum_pi_vpe = jnp.dot(
+        child_state.expected_precision, child_state.value_prediction_error
+    )
     precision_contrib_2 = -coupling_second * sum_pi_vpe
 
     posterior_precision = jnp.clip(
-        parent_state.expected_precision + precision_contrib_1 + precision_contrib_2, a_max=1e8
+        parent_state.expected_precision + precision_contrib_1 + precision_contrib_2,
+        a_max=1e8,
     )
 
     # === STEP 2: Update value level mean ===

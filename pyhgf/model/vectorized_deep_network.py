@@ -84,8 +84,8 @@ class VectorizedDeepNetwork:
         self.use_biases: list[bool] = []
         self.coupling_fns: list[Callable] = []  # per-layer coupling functions
         self.state: Optional[NetworkState] = None
-        self._propagation_fn = None
-        self._prediction_fn = None
+        self._propagation_fn: Optional[Callable] = None
+        self._prediction_fn: Optional[Callable] = None
 
     def add_nodes(
         self,
@@ -119,7 +119,9 @@ class VectorizedDeepNetwork:
         self.tonic_volatilities_vol.append(tonic_volatility_vol)
         self.volatility_couplings.append(volatility_coupling)
         self.use_biases.append(use_bias)
-        self.coupling_fns.append(coupling_fn if coupling_fn is not None else self.coupling_fn)
+        self.coupling_fns.append(
+            coupling_fn if coupling_fn is not None else self.coupling_fn
+        )
         return self
 
     def add_layer(
@@ -152,7 +154,9 @@ class VectorizedDeepNetwork:
         self.tonic_volatilities_vol.append(tonic_volatility_vol)
         self.volatility_couplings.append(volatility_coupling)
         self.use_biases.append(use_bias)
-        self.coupling_fns.append(coupling_fn if coupling_fn is not None else self.coupling_fn)
+        self.coupling_fns.append(
+            coupling_fn if coupling_fn is not None else self.coupling_fn
+        )
         return self
 
     def add_layer_stack(
@@ -199,9 +203,8 @@ class VectorizedDeepNetwork:
         Used between fit() calls in epoch-based training to prevent
         precision accumulation and hidden state carryover.
         """
-        fresh_layers = tuple(
-            LayerState.create(size) for size in self.layer_sizes
-        )
+        assert self.state is not None, "State must be initialized before reset."
+        fresh_layers = tuple(LayerState.create(size) for size in self.layer_sizes)
         self.state = NetworkState(
             layers=fresh_layers,
             weights=self.state.weights,
@@ -333,9 +336,12 @@ class VectorizedDeepNetwork:
             # Must set both expected_mean AND mean for proper learning
             if input_precision != 1.0:
                 layers[-1] = layers[-1]._replace(
-                    expected_mean=x, mean=x,
+                    expected_mean=x,
+                    mean=x,
                     precision=jnp.full_like(layers[-1].precision, input_precision),
-                    expected_precision=jnp.full_like(layers[-1].expected_precision, input_precision),
+                    expected_precision=jnp.full_like(
+                        layers[-1].expected_precision, input_precision
+                    ),
                 )
             else:
                 layers[-1] = layers[-1]._replace(expected_mean=x, mean=x)
@@ -346,7 +352,9 @@ class VectorizedDeepNetwork:
                     mean=y,
                     observed=jnp.ones_like(y, dtype=jnp.int32),
                     precision=jnp.full_like(layers[0].precision, output_precision),
-                    expected_precision=jnp.full_like(layers[0].expected_precision, output_precision),
+                    expected_precision=jnp.full_like(
+                        layers[0].expected_precision, output_precision
+                    ),
                 )
             else:
                 layers[0] = layers[0]._replace(
@@ -568,7 +576,8 @@ class VectorizedDeepNetwork:
         # Create propagation function
         sqrt_norm = pe_normalization == "sqrt_n_parents"
         self._propagation_fn = self._create_propagation_fn(
-            lr, T,
+            lr,
+            T,
             sqrt_normalization=sqrt_norm,
             input_precision=input_precision,
             output_precision=output_precision,
@@ -582,6 +591,7 @@ class VectorizedDeepNetwork:
         y = jnp.asarray(y)
 
         # Run scan over data
+        assert self._propagation_fn is not None
         self.state, (self.trajectories, self.predictions) = jax.lax.scan(
             self._propagation_fn, self.state, (x, y)
         )
@@ -610,14 +620,15 @@ class VectorizedDeepNetwork:
         if self._prediction_fn is None:
             self._prediction_fn = self._create_prediction_fn()
 
+        prediction_fn = self._prediction_fn
         x = jnp.asarray(x)
 
         # Handle single sample vs batch
         if x.ndim == 1:
-            return self._prediction_fn(self.state, x)
+            return prediction_fn(self.state, x)
         else:
             # Vectorize over samples
-            return jax.vmap(lambda xi: self._prediction_fn(self.state, xi))(x)
+            return jax.vmap(lambda xi: prediction_fn(self.state, xi))(x)
 
     def get_layer_sizes(self) -> list[int]:
         """Get the size of each layer.
@@ -641,7 +652,9 @@ class VectorizedDeepNetwork:
             raise ValueError("Network must be initialized first.")
         return self.state.weights
 
-    def reset(self, key: Optional[jax.random.PRNGKey] = None) -> "VectorizedDeepNetwork":
+    def reset(
+        self, key: Optional[jax.random.PRNGKey] = None
+    ) -> "VectorizedDeepNetwork":
         """Reset the network state.
 
         Parameters

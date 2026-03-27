@@ -100,11 +100,7 @@ class TestVectorizedDeepNetwork:
 
     def test_repr(self):
         """Test string representation."""
-        net = (
-            VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)
-            .add_layer(size=5)
-        )
+        net = VectorizedDeepNetwork().add_nodes(n_nodes=10).add_layer(size=5)
 
         assert "VectorizedDeepNetwork" in repr(net)
         assert "nodes=15" in repr(net)
@@ -141,8 +137,8 @@ class TestVectorizedDeepNetwork:
         net = (
             VectorizedDeepNetwork()
             .add_nodes(n_nodes=3)  # Output
-            .add_layer(size=5)    # Hidden
-            .add_layer(size=4)    # Input
+            .add_layer(size=5)  # Hidden
+            .add_layer(size=4)  # Input
         )
 
         # Create simple data
@@ -227,11 +223,7 @@ class TestVectorizedDeepNetwork:
 
     def test_reset(self):
         """Test resetting the network."""
-        net = (
-            VectorizedDeepNetwork()
-            .add_nodes(n_nodes=2)
-            .add_layer(size=3)
-        )
+        net = VectorizedDeepNetwork().add_nodes(n_nodes=2).add_layer(size=3)
 
         x = np.random.randn(10, 3)
         y = np.random.randn(10, 2)
@@ -356,9 +348,9 @@ class TestScaling:
         net = (
             VectorizedDeepNetwork()
             .add_nodes(n_nodes=10)  # Output
-            .add_layer(size=32)    # Hidden 1
-            .add_layer(size=32)    # Hidden 2
-            .add_layer(size=20)    # Input
+            .add_layer(size=32)  # Hidden 1
+            .add_layer(size=32)  # Hidden 2
+            .add_layer(size=20)  # Input
         )
 
         # Total: 10 + 32 + 32 + 20 = 94 nodes
@@ -378,11 +370,11 @@ class TestScaling:
         """Test a larger network (like FashionMNIST scale)."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)   # Output (labels)
-            .add_layer(size=32)      # Hidden
-            .add_layer(size=32)      # Hidden
-            .add_layer(size=32)      # Hidden
-            .add_layer(size=784)     # Input (image)
+            .add_nodes(n_nodes=10)  # Output (labels)
+            .add_layer(size=32)  # Hidden
+            .add_layer(size=32)  # Hidden
+            .add_layer(size=32)  # Hidden
+            .add_layer(size=784)  # Input (image)
         )
 
         # Total: 10 + 32*3 + 784 = 890 nodes
