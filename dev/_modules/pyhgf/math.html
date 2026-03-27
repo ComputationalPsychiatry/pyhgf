@@ -960,12 +960,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_statistics_from_observations</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_statistics_from_observations</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the expected sufficient statistics from a single observation.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">])</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_statistics_from_parameters</span><span class="p">(</span><span class="n">mean</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_statistics_from_parameters</span><span class="p">(</span>
+        <span class="n">mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the expected sufficient statistics from the distribution parameter.</span>
 
 <span class="sd">        Parameters</span>
@@ -1012,7 +1014,9 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="gaussian_predictive_distribution">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.gaussian_predictive_distribution.html#pyhgf.math.gaussian_predictive_distribution">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gaussian_predictive_distribution</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">nu</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gaussian_predictive_distribution</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">nu</span><span class="p">:</span> <span class="n">ArrayLike</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Density of the Gaussian-predictive distribution.</span>
 
 <span class="sd">    This distribution is parametrized by hyperparameters from the exponential family as:</span>
@@ -1074,7 +1078,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.binary_surprise.html#pyhgf.math.binary_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">binary_surprise</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-    <span class="n">expected_mean</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">expected_mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">clipping</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise at a binary outcome.</span>
@@ -1124,9 +1128,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="gaussian_surprise">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.gaussian_surprise.html#pyhgf.math.gaussian_surprise">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">gaussian_surprise</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
-    <span class="n">expected_mean</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
-    <span class="n">expected_precision</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">expected_mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">expected_precision</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Surprise at an outcome under a Gaussian prediction.</span>
 
@@ -1255,7 +1259,7 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="sigmoid_inverse_temperature">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.sigmoid_inverse_temperature.html#pyhgf.math.sigmoid_inverse_temperature">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">sigmoid_inverse_temperature</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sigmoid_inverse_temperature</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the sigmoid response function with inverse temperature parameter.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="n">temperature</span><span class="p">)</span></div>
 
@@ -1263,7 +1267,7 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="parametrised_sigmoid">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.parametrised_sigmoid.html#pyhgf.math.parametrised_sigmoid">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">phi</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">phi</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">theta</span><span class="p">))</span></div>
 
@@ -1272,11 +1276,11 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="smoothed_rectangular">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.smoothed_rectangular.html#pyhgf.math.smoothed_rectangular">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">smoothed_rectangular</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">theta_l</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">phi_l</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">8.0</span><span class="p">,</span>
-    <span class="n">theta_r</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">phi_r</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">theta_l</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">phi_l</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">8.0</span><span class="p">,</span>
+    <span class="n">theta_r</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">phi_r</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the smoothed rectangular weighting function :math:`b`.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">theta_l</span><span class="p">,</span> <span class="n">phi_l</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>

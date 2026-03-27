@@ -922,16 +922,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">effective_precision_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;effective_precision&quot;</span><span class="p">]</span>
     <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Check if value level was observed</span>
-    <span class="n">observed</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
-
     <span class="c1"># Update mean using volatility coupling formula</span>
     <span class="n">precision_weighted_pe</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision_value</span> <span class="o">*</span> <span class="n">volatility_pe</span>
     <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">node_precision</span><span class="p">)</span>
-
-    <span class="c1"># Cancel if not observed</span>
-    <span class="n">precision_weighted_pe</span> <span class="o">*=</span> <span class="n">observed</span>
 
     <span class="n">posterior_mean</span> <span class="o">+=</span> <span class="n">precision_weighted_pe</span>
 

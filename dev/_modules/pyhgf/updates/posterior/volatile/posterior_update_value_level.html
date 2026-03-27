@@ -963,9 +963,6 @@ window.runMermaid = runMermaid;</script>
             <span class="c1"># Get the value prediction error</span>
             <span class="n">value_pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;value_prediction_error&quot;</span><span class="p">]</span>
 
-            <span class="c1"># Cancel if child not observed</span>
-            <span class="n">value_pe</span> <span class="o">*=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
-
             <span class="c1"># Get coupling function derivative</span>
             <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="mi">1</span>
