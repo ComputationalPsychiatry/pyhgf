@@ -53,16 +53,10 @@ def posterior_update_mean_volatility_level(
     effective_precision_value = attributes[node_idx]["temp"]["effective_precision"]
     volatility_coupling = attributes[node_idx]["volatility_coupling_internal"]
 
-    # Check if value level was observed
-    observed = attributes[node_idx]["observed"]
-
     # Update mean using volatility coupling formula
     precision_weighted_pe = (
         volatility_coupling * effective_precision_value * volatility_pe
     ) / (2 * node_precision)
-
-    # Cancel if not observed
-    precision_weighted_pe *= observed
 
     posterior_mean += precision_weighted_pe
 

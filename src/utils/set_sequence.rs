@@ -92,11 +92,7 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
                     }
                 }
                 "volatile-state" => {
-                    match network.update_type.as_str() {
-                        "eHGF" => updates.push((idx, UpdateStep::PosteriorVolatileEhgf)),
-                        "unbounded" => updates.push((idx, UpdateStep::PosteriorVolatileUnbounded)),
-                        _ => updates.push((idx, UpdateStep::PosteriorVolatile)),
-                    }
+                    updates.push((idx, UpdateStep::PosteriorVolatile));
                 }
                 _ => (),
             }
@@ -120,8 +116,12 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
                     updates.push((idx, UpdateStep::PredictionErrorContinuous));
                     has_update = true;
                 }
-                ("volatile-state", true) => {
-                    updates.push((idx, UpdateStep::PredictionErrorVolatile));
+                ("volatile-state", _) => {
+                    match network.update_type.as_str() {
+                        "eHGF" => updates.push((idx, UpdateStep::PredictionErrorVolatileEhgf)),
+                        "unbounded" => updates.push((idx, UpdateStep::PredictionErrorVolatileUnbounded)),
+                        _ => updates.push((idx, UpdateStep::PredictionErrorVolatile)),
+                    }
                     has_update = true;
                 }
                 ("ef-state", _) => {

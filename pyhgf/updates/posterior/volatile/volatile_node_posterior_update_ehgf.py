@@ -5,12 +5,7 @@ from functools import partial
 from jax import jit
 
 from pyhgf.typing import Edges
-from pyhgf.updates.prediction_error.volatile import volatile_node_prediction_error
 
-from .posterior_update_value_level import (
-    posterior_update_mean_value_level,
-    posterior_update_precision_value_level,
-)
 from .posterior_update_volatility_level import (
     posterior_update_mean_volatility_level,
     posterior_update_precision_volatility_level,
@@ -30,15 +25,11 @@ def volatile_node_posterior_update_ehgf(
     precision as an approximation, and then updates the precision. This often reduces
     errors associated with impossible parameter spaces and improves sampling.
 
-    Unlike the standard continuous-state posterior updates elsewhere in the
-    toolbox, the volatile-state updates use the *expected* mean (i.e. the
-    prediction) as the reference point rather than the posterior mean. This
-    choice is made to better suit deep learning networks where the prediction
-    serves as the natural reference for computing updates.
-
-    1. Update value level using children's value prediction errors (standard order)
-    2. Recompute volatility prediction error using updated value level
-    3. Update volatility level mean first (using expected precision), then precision
+    Unlike the standard continuous-state posterior updates elsewhere in the toolbox, the
+    volatile-state updates use the *expected* mean (i.e. the prediction) as the
+    reference point rather than the posterior mean. This choice is made to better suit
+    deep learning networks where the prediction serves as the natural reference for
+    computing updates.
 
     Parameters
     ----------
@@ -60,26 +51,9 @@ def volatile_node_posterior_update_ehgf(
     volatile_node_posterior_update, volatile_node_posterior_update_unbounded
 
     """
-    # 1. UPDATE VALUE LEVEL (external facing) - standard order
-    # Update precision first
-    precision_value = posterior_update_precision_value_level(
-        attributes, edges, node_idx
-    )
-    attributes[node_idx]["precision"] = precision_value
+    # UPDATE VOLATILITY LEVEL (eHGF: mean first, then precision) -----------------------
+    # ----------------------------------------------------------------------------------
 
-    # Update mean using new precision
-    mean_value = posterior_update_mean_value_level(
-        attributes, edges, node_idx, precision_value
-    )
-    attributes[node_idx]["mean"] = mean_value
-
-    # 2. COMPUTE PREDICTION ERROR
-    # Now that value level has been updated, compute the value and volatility PE
-    attributes = volatile_node_prediction_error(
-        attributes=attributes, node_idx=node_idx, edges=edges
-    )
-
-    # 3. UPDATE VOLATILITY LEVEL (eHGF: mean first, then precision)
     # Update mean first using expected precision as approximation
     mean_vol = posterior_update_mean_volatility_level(
         attributes, node_idx, attributes[node_idx]["expected_precision_vol"]
