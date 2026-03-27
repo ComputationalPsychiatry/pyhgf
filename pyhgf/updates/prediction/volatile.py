@@ -7,28 +7,6 @@ from pyhgf.typing import Edges
 
 
 @partial(jit, static_argnames=("node_idx",))
-def predict_mean_volatility_level(
-    attributes: dict,
-    node_idx: int,
-) -> Array:
-    """Predict the mean of the implicit volatility level.
-
-    This is analogous to predicting a volatility parent node.
-    """
-    time_step = attributes[-1]["time_step"]
-
-    # Get volatility level parameters
-    autoconnection = attributes[node_idx]["autoconnection_strength_vol"]
-    mean_vol = attributes[node_idx]["mean_vol"]
-    drift_vol = attributes[node_idx]["tonic_drift_vol"]
-
-    # Predict volatility level mean (simple random walk)
-    expected_mean_vol = (autoconnection * mean_vol) + (time_step * drift_vol)
-
-    return expected_mean_vol
-
-
-@partial(jit, static_argnames=("node_idx",))
 def predict_precision_volatility_level(
     attributes: dict,
     node_idx: int,
@@ -71,11 +49,11 @@ def predict_mean_value_level(
     value_parents_idxs = edges[node_idx].value_parents
 
     # Get the drift rate from the node
-    driftrate = attributes[node_idx]["tonic_drift"]
+    driftrate = 0.0
 
     # Look at the (optional) value parents for this node
     if value_parents_idxs is not None:
-        for value_parent_idx, psi in zip(
+        for value_parent_idx, value_coupling_parent in zip(
             value_parents_idxs,
             attributes[node_idx]["value_coupling_parents"],
         ):
@@ -89,7 +67,7 @@ def predict_mean_value_level(
                     attributes[value_parent_idx]["expected_mean"]
                 )
 
-            driftrate += psi * parent_value
+            driftrate += value_coupling_parent * parent_value
 
     # The new expected mean from the previous value
     expected_mean = (
@@ -158,12 +136,11 @@ def volatile_node_prediction(
     )
 
     # 1. PREDICT VOLATILITY LEVEL (implicit internal state)
-    expected_mean_vol = predict_mean_volatility_level(attributes, node_idx)
     expected_precision_vol, effective_precision_vol = (
         predict_precision_volatility_level(attributes, node_idx)
     )
 
-    attributes[node_idx]["expected_mean_vol"] = expected_mean_vol
+    attributes[node_idx]["expected_mean_vol"] = attributes[node_idx]["mean_vol"]
     attributes[node_idx]["expected_precision_vol"] = expected_precision_vol
     attributes[node_idx]["temp"]["effective_precision_vol"] = effective_precision_vol
 

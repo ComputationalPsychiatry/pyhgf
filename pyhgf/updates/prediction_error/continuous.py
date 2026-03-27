@@ -104,7 +104,7 @@ def continuous_node_volatility_prediction_error(
     volatility_prediction_error = (
         (attributes[node_idx]["expected_precision"] / attributes[node_idx]["precision"])
         + attributes[node_idx]["expected_precision"]
-        * (attributes[node_idx]["temp"]["value_prediction_error"]) ** 2
+        * (attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]) ** 2
         - 1
     )
 

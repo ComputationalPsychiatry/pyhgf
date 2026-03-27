@@ -237,7 +237,11 @@ class Network:
         # does not involve coupling weights, so the linear learning rule would be wrong.
         learning_steps = []  # list of weight update to perform at this layer
         for i, update in enumerate(update_steps):
-            if update[1] is not None and "prediction_error" in update[1].__name__:
+            fn = update[1]
+            fn_name: str = getattr(fn, "__name__", "") or getattr(
+                getattr(fn, "func", None), "__name__", ""
+            )
+            if fn is not None and "prediction_error" in fn_name:
                 node_idx = update[0]
                 if self.edges[node_idx].node_type in {
                     2,

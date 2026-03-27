@@ -3,6 +3,11 @@ from functools import partial
 from jax import jit
 
 from pyhgf.typing import Edges
+from pyhgf.updates.posterior.volatile import (
+    volatile_node_posterior_update,
+    volatile_node_posterior_update_ehgf,
+    volatile_node_posterior_update_unbounded,
+)
 
 
 @partial(jit, static_argnames=("node_idx",))
@@ -34,11 +39,13 @@ def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -
     # Get value level parameters
     expected_precision = attributes[node_idx]["expected_precision"]
     precision = attributes[node_idx]["precision"]
-    value_pe = attributes[node_idx]["temp"]["value_prediction_error"]
 
     # Volatility PE from value level
     volatility_prediction_error = (
-        (expected_precision / precision) + expected_precision * (value_pe**2) - 1
+        (expected_precision / precision)
+        + expected_precision
+        * ((attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]) ** 2)
+        - 1
     )
 
     # This is internal coupling (always 1 volatility "parent")
@@ -51,19 +58,37 @@ def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -
     return attributes
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "update_type"))
 def volatile_node_prediction_error(
-    attributes: dict, node_idx: int, edges: Edges, **args
+    attributes: dict, node_idx: int, edges: Edges, update_type: str, **args
 ) -> dict:
-    """Compute both value and volatility prediction errors.
+    """Apply prediction errors and posterior updates to the volatility parent.
 
     - Value PE: for external value parents (if any)
     - Volatility PE: for the implicit internal volatility level
     """
-    # Compute value prediction error
+    # 1. Prediction errors -------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
+
+    # value prediction error
     attributes = volatile_node_value_prediction_error(attributes, node_idx)
 
-    # Compute volatility prediction error (internal)
+    # volatility prediction error
     attributes = volatile_node_volatility_prediction_error(attributes, node_idx)
+
+    # 2. Posterior updates for the volatility parent -----------------------------------
+    # ----------------------------------------------------------------------------------
+    if update_type == "unbounded":
+        attributes = volatile_node_posterior_update_unbounded(
+            attributes=attributes, node_idx=node_idx
+        )
+    elif update_type == "eHGF":
+        attributes = volatile_node_posterior_update_ehgf(
+            attributes=attributes, edges=edges, node_idx=node_idx
+        )
+    elif update_type == "standard":
+        attributes = volatile_node_posterior_update(
+            attributes=attributes, edges=edges, node_idx=node_idx
+        )
 
     return attributes
