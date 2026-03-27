@@ -19,7 +19,7 @@ pub fn prediction_error_continuous_state_node(network: &mut Network, node_idx: u
     // Volatility prediction error: Δ = (π̂ / π) + π̂ · δ² - 1
     let mut volatility_prediction_error =
         (expected_precision / precision)
-        + expected_precision * value_prediction_error.powi(2)
+        + expected_precision * (mean - expected_mean).powi(2)
         - 1.0;
     if let Some(n) = n_volatility_parents {
         volatility_prediction_error /= n as f64;

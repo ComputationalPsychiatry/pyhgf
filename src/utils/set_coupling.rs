@@ -94,6 +94,8 @@ mod tests {
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
             adam_state: None,
+            roots: vec![1],
+            leafs: vec![0],
         }
     }
 
