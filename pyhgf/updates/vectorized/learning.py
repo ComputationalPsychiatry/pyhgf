@@ -17,10 +17,9 @@ def vectorized_weight_update(
     coupling_fn: Callable,
     lr: float,
 ) -> jnp.ndarray:
-    """Update weights using prospective configuration.
+    """Update weights using fixed learning rate with precision weighting.
 
-    This computes the weight update based on the prediction error and
-    the coupled parent activation: delta = pe * coupling_fn(parent_mean).
+    Δw = lr · PE · π_child · g(parent)
 
     Parameters
     ----------
@@ -49,15 +48,15 @@ def vectorized_weight_update(
     # parent_state.mean shape: (n_parents,)
     coupled_parent = coupling_fn(parent_state.mean)
 
-    # Weight delta: pe * coupling_fn(parent_mean)
+    # Weight delta: lr · PE · π_child · g(parent)
     # Broadcast: (n_children, 1) * (1, n_parents) -> (n_children, n_parents)
-    coupling_delta = pe[:, None] * coupled_parent[None, :]
+    coupling_delta = pe[:, None] * coupled_parent[None, :] * child_state.precision[:, None]
 
     # Handle NaN and inf
     coupling_delta = jnp.where(jnp.isnan(coupling_delta), 0.0, coupling_delta)
     coupling_delta = jnp.where(jnp.isinf(coupling_delta), 0.0, coupling_delta)
 
-    # Update with learning rate (no weighting by number of parents)
+    # Update with learning rate
     new_weights = weights + coupling_delta * lr
 
     # Handle inf values in result
@@ -72,10 +71,9 @@ def vectorized_weight_update_dynamic(
     weights: jnp.ndarray,
     coupling_fn: Callable,
 ) -> jnp.ndarray:
-    """Update weights using dynamic (precision-weighted) learning rate.
+    """Update weights using Kalman-gain learning rate.
 
-    This uses the precision ratio between child and parent as a
-    natural learning rate.
+    Δw = K · PE · g(parent),  K = π_parent / (π_parent + π_child)
 
     Parameters
     ----------
@@ -104,14 +102,14 @@ def vectorized_weight_update_dynamic(
     coupling_delta = jnp.where(jnp.isnan(coupling_delta), 0.0, coupling_delta)
     coupling_delta = jnp.where(jnp.isinf(coupling_delta), 0.0, coupling_delta)
 
-    # Dynamic learning rate: precision weighting
-    # (n_children, 1) / (1, n_parents) -> (n_children, n_parents)
-    precision_weighting = (
-        child_state.precision[:, None] / parent_state.precision[None, :]
+    # Kalman gain: K = π_parent / (π_parent + π_child)
+    # Bounded in (0, 1): large when parent is precise relative to child.
+    # Broadcast: (1, n_parents) / ((1, n_parents) + (n_children, 1))
+    kalman_gain = parent_state.precision[None, :] / (
+        parent_state.precision[None, :] + child_state.precision[:, None]
     )
 
-    # No weighting by number of parents
-    new_weights = weights + coupling_delta * precision_weighting
+    new_weights = weights + coupling_delta * kalman_gain
 
     new_weights = jnp.where(jnp.isinf(new_weights), weights, new_weights)
 
