@@ -12,6 +12,7 @@ def vectorized_layer_prediction_error(
     state: LayerState,
     n_parents: int,
     sqrt_normalization: bool = False,
+    no_normalization: bool = False,
 ) -> LayerState:
     """Compute prediction errors for all nodes in a layer.
 
@@ -26,8 +27,10 @@ def vectorized_layer_prediction_error(
         Number of value parents for this layer (for normalization).
     sqrt_normalization :
         If True, normalize value PE by ``sqrt(n_parents)`` instead of
-        ``n_parents``. The sqrt variant can improve gradient flow in deep
-        networks. Default is False (divide by n_parents).
+        ``n_parents``. Ignored when ``no_normalization=True``.
+    no_normalization :
+        If True, use the raw PE with no division. Overrides
+        ``sqrt_normalization``. Default is False.
 
     Returns
     -------
@@ -36,7 +39,9 @@ def vectorized_layer_prediction_error(
     """
     # Value prediction error
     raw_pe = state.mean - state.expected_mean
-    if sqrt_normalization:
+    if no_normalization:
+        value_pe = raw_pe
+    elif sqrt_normalization:
         value_pe = raw_pe / jnp.sqrt(n_parents)
     else:
         value_pe = raw_pe / n_parents
@@ -59,6 +64,7 @@ def vectorized_output_layer_prediction_error(
     state: LayerState,
     n_parents: int,
     sqrt_normalization: bool = False,
+    no_normalization: bool = False,
 ) -> LayerState:
     """Compute prediction errors for the output layer.
 
@@ -73,10 +79,14 @@ def vectorized_output_layer_prediction_error(
         Number of value parents.
     sqrt_normalization :
         Passed through to vectorized_layer_prediction_error.
+    no_normalization :
+        Passed through to vectorized_layer_prediction_error.
 
     Returns
     -------
     LayerState
         Updated layer state with prediction errors.
     """
-    return vectorized_layer_prediction_error(state, n_parents, sqrt_normalization)
+    return vectorized_layer_prediction_error(
+        state, n_parents, sqrt_normalization, no_normalization
+    )

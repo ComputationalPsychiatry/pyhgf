@@ -267,6 +267,7 @@ class VectorizedDeepNetwork:
         lr: float,
         T: int = 1,
         sqrt_normalization: bool = False,
+        no_normalization: bool = False,
         input_precision: float = 1.0,
         output_precision: float = 1.0,
         reset_hidden: bool = False,
@@ -400,6 +401,7 @@ class VectorizedDeepNetwork:
                     state=layers[0],
                     n_parents=weights[0].shape[1],
                     sqrt_normalization=sqrt_normalization,
+                    no_normalization=no_normalization,
                 )
 
                 # Step 4b: per hidden layer — posterior then PE (interleaved)
@@ -419,6 +421,7 @@ class VectorizedDeepNetwork:
                         state=layers[i],
                         n_parents=weights[i].shape[1],
                         sqrt_normalization=sqrt_normalization,
+                        no_normalization=no_normalization,
                     )
 
                 # Step 4c: optional posterior update for input layer
@@ -544,6 +547,7 @@ class VectorizedDeepNetwork:
             ``"n_parents"`` (default) — divide by n_parents (upstream baseline).
             ``"sqrt_n_parents"`` — divide by sqrt(n_parents), which can improve
             gradient flow in wide networks.
+            ``"none"`` — no division, use raw PE.
         input_precision :
             Precision to pin the input layer to at each step. Default 1.0
             (unpinned). High values (e.g. 1000.0) fix the input layer beliefs
@@ -575,10 +579,12 @@ class VectorizedDeepNetwork:
 
         # Create propagation function
         sqrt_norm = pe_normalization == "sqrt_n_parents"
+        no_norm   = pe_normalization == "none"
         self._propagation_fn = self._create_propagation_fn(
             lr,
             T,
             sqrt_normalization=sqrt_norm,
+            no_normalization=no_norm,
             input_precision=input_precision,
             output_precision=output_precision,
             reset_hidden=reset_state,
