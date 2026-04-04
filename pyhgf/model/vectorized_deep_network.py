@@ -21,6 +21,7 @@ from pyhgf.updates.vectorized import (
     vectorized_layer_prediction,
     vectorized_layer_prediction_error,
     vectorized_weight_update,
+    vectorized_weight_update_dynamic,
 )
 
 
@@ -273,6 +274,7 @@ class VectorizedDeepNetwork:
         reset_hidden: bool = False,
         update_input_layer: bool = False,
         normalize_vol_pe: bool = True,
+        dynamic_lr: bool = False,
     ):
         """Create the jitted propagation function.
 
@@ -303,6 +305,12 @@ class VectorizedDeepNetwork:
             computing the volatility PE, matching the upstream HGF derivation.
             If False, use n_value_parents=1 for all layers, allowing the
             volatility level to update more aggressively.
+        dynamic_lr :
+            If True, use the Kalman-gain weight update rule:
+            ``Δw = K · PE · g(parent)``, where
+            ``K = π_parent / (π_parent + π_child)`` is bounded in (0, 1).
+            If False (default), use the fixed-LR rule:
+            ``Δw = lr · PE · π_child · g(parent)``.
 
         Returns
         -------
@@ -439,13 +447,21 @@ class VectorizedDeepNetwork:
             # ========== LEARNING PHASE (after inference converges) ==========
             # Update weights once using converged activities
             for i in range(1, n_layers):
-                weights[i - 1] = vectorized_weight_update(
-                    parent_state=layers[i],
-                    child_state=layers[i - 1],
-                    weights=weights[i - 1],
-                    coupling_fn=coupling_fns[i],  # parent i's coupling fn
-                    lr=lr,
-                )
+                if dynamic_lr:
+                    weights[i - 1] = vectorized_weight_update_dynamic(
+                        parent_state=layers[i],
+                        child_state=layers[i - 1],
+                        weights=weights[i - 1],
+                        coupling_fn=coupling_fns[i],
+                    )
+                else:
+                    weights[i - 1] = vectorized_weight_update(
+                        parent_state=layers[i],
+                        child_state=layers[i - 1],
+                        weights=weights[i - 1],
+                        coupling_fn=coupling_fns[i],
+                        lr=lr,
+                    )
                 # Bias update: delta_b = lr * pe (bias = weight with constant input 1)
                 # Only update layers where use_bias=True
                 if use_biases[i - 1]:
@@ -518,6 +534,7 @@ class VectorizedDeepNetwork:
         output_precision: float = 1.0,
         update_input_layer: bool = False,
         normalize_vol_pe: bool = True,
+        dynamic_lr: bool = False,
     ) -> "VectorizedDeepNetwork":
         """Fit network to data.
 
@@ -562,6 +579,10 @@ class VectorizedDeepNetwork:
         normalize_vol_pe :
             If True (default), normalize fresh_value_pe by n_value_parents.
             If False, use n_value_parents=1 (more aggressive volatility updates).
+        dynamic_lr :
+            If True, use the Kalman-gain weight update rule (no explicit lr
+            needed — the gain is bounded in (0, 1) by the precision ratio).
+            If False (default), use the fixed-LR rule scaled by lr.
 
         Returns
         -------
@@ -590,6 +611,7 @@ class VectorizedDeepNetwork:
             reset_hidden=reset_state,
             update_input_layer=update_input_layer,
             normalize_vol_pe=normalize_vol_pe,
+            dynamic_lr=dynamic_lr,
         )
 
         # Convert to JAX arrays
