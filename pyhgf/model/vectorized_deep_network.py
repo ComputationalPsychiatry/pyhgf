@@ -272,6 +272,7 @@ class VectorizedDeepNetwork:
         input_precision: float = 1.0,
         output_precision: float = 1.0,
         reset_hidden: bool = False,
+        selective_reset: bool = False,
         update_input_layer: bool = False,
         normalize_vol_pe: bool = True,
         dynamic_lr: bool = False,
@@ -293,9 +294,15 @@ class VectorizedDeepNetwork:
         output_precision :
             Precision to pin the output layer to each step (1.0 = unpinned).
         reset_hidden :
-            If True, reset hidden layer states (means, precisions) to defaults
+            If True, reset hidden layer states (means and precisions) to defaults
             at the start of each sample. Prevents precision accumulation across
             unrelated samples (recommended for i.i.d. data like MNIST).
+        selective_reset :
+            If True, reset hidden layer means and errors to zero at the start of
+            each sample but preserve precision values. Allows precision to
+            accumulate across samples as a meta-signal of representational
+            stability, while still performing fresh inference per sample.
+            Ignored when reset_hidden=True.
         update_input_layer :
             If True, include the input layer in the posterior update loop,
             allowing it to accumulate a learned volatility state. Default False
@@ -334,12 +341,30 @@ class VectorizedDeepNetwork:
 
             n_layers = len(layers)
 
-            # Per-sample hidden state reset (layers 1 to n_layers-2)
-            # Resets means and precisions to defaults, preserving weights/params.
-            # Prevents hidden precision from accumulating across unrelated samples.
+            # Per-sample hidden state reset (layers 1 to n_layers-2).
+            # Preserves weights and params in all cases.
             if reset_hidden:
+                # Full reset: means and precisions → defaults.
                 for i in range(1, n_layers - 1):
                     layers[i] = LayerState.create(layer_sizes[i])
+            elif selective_reset:
+                # Partial reset: zero means/errors, keep precision.
+                # Precision accumulates across samples as a representational
+                # stability signal; inference still starts from a neutral mean.
+                for i in range(1, n_layers - 1):
+                    old = layers[i]
+                    layers[i] = old._replace(
+                        mean=jnp.zeros_like(old.mean),
+                        expected_mean=jnp.zeros_like(old.expected_mean),
+                        value_prediction_error=jnp.zeros_like(
+                            old.value_prediction_error
+                        ),
+                        mean_vol=jnp.zeros_like(old.mean_vol),
+                        expected_mean_vol=jnp.zeros_like(old.expected_mean_vol),
+                        volatility_prediction_error=jnp.zeros_like(
+                            old.volatility_prediction_error
+                        ),
+                    )
 
             # 1. Set predictors (top layer = input)
             # Must set both expected_mean AND mean for proper learning
@@ -535,6 +560,7 @@ class VectorizedDeepNetwork:
         update_input_layer: bool = False,
         normalize_vol_pe: bool = True,
         dynamic_lr: bool = False,
+        selective_reset: bool = False,
     ) -> "VectorizedDeepNetwork":
         """Fit network to data.
 
@@ -583,6 +609,11 @@ class VectorizedDeepNetwork:
             If True, use the Kalman-gain weight update rule (no explicit lr
             needed — the gain is bounded in (0, 1) by the precision ratio).
             If False (default), use the fixed-LR rule scaled by lr.
+        selective_reset :
+            If True, reset hidden layer means and errors to zero at the start of
+            each sample but preserve precision values. Use with reset_state=False
+            so precision also accumulates across epochs. Ignored when
+            reset_state=True (full reset takes precedence).
 
         Returns
         -------
@@ -609,6 +640,7 @@ class VectorizedDeepNetwork:
             input_precision=input_precision,
             output_precision=output_precision,
             reset_hidden=reset_state,
+            selective_reset=selective_reset,
             update_input_layer=update_input_layer,
             normalize_vol_pe=normalize_vol_pe,
             dynamic_lr=dynamic_lr,
