@@ -125,8 +125,8 @@ class TestVectorizedDeepNetwork:
         assert state.layers[2].mean.shape == (4,)
 
         # Check weight shapes
-        assert state.weights[0].shape == (10, 8)
-        assert state.weights[1].shape == (8, 4)
+        assert state.weights[0].shape == (10, 9)
+        assert state.weights[1].shape == (8, 5)
 
     def test_fit_simple(self):
         """Test fitting on simple synthetic data."""
@@ -215,8 +215,8 @@ class TestVectorizedDeepNetwork:
         weights = net.state.weights
 
         assert len(weights) == 2
-        assert weights[0].shape == (2, 4)
-        assert weights[1].shape == (4, 3)
+        assert weights[0].shape == (2, 5)
+        assert weights[1].shape == (4, 4)
 
     def test_reset(self):
         """Test resetting the network."""

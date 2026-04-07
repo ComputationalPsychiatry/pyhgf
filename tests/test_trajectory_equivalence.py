@@ -64,9 +64,24 @@ def _build_vanilla_network():
 def _build_vdn():
     vdn = (
         VectorizedDeepNetwork(coupling_fn=jnp.tanh)
-        .add_layer(size=2, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
-        .add_layer(size=4, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
-        .add_layer(size=2, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
+        .add_layer(
+            size=2,
+            tonic_volatility=TONIC_VOL,
+            volatility_coupling=1.0,
+            add_constant_input=False,
+        )
+        .add_layer(
+            size=4,
+            tonic_volatility=TONIC_VOL,
+            volatility_coupling=1.0,
+            add_constant_input=False,
+        )
+        .add_layer(
+            size=2,
+            tonic_volatility=TONIC_VOL,
+            volatility_coupling=1.0,
+            add_constant_input=False,
+        )
     )
     state = vdn._init_state()
     state = state._replace(

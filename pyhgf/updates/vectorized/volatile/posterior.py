@@ -6,8 +6,7 @@
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import grad as jgrad
-from jax import vmap
+from jax import grad, vmap
 
 from pyhgf.typing import LayerParams, LayerState
 
@@ -60,7 +59,7 @@ def vectorized_layer_posterior_update(
 
     # === STEP 1: Update value level precision ===
     # Coupling second derivative at parent means (for second-order EKF correction)
-    coupling_second = vmap(jgrad(coupling_fn_grad))(layer.expected_mean)
+    coupling_second = vmap(grad(coupling_fn_grad))(layer.expected_mean)
 
     # First-order term: weights.T shape (n_parents, n_children)
     precision_contrib_1 = jnp.matmul(weights.T**2, child.expected_precision) * (

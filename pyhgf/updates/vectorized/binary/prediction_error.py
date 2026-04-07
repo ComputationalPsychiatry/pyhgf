@@ -3,8 +3,6 @@
 
 """Vectorized prediction error for binary state node layers."""
 
-import jax.numpy as jnp
-
 from pyhgf.typing import LayerState
 
 

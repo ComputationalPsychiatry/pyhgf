@@ -92,6 +92,7 @@ class VectorizedDeepNetwork:
         self.trajectories: Optional[NetworkState] = None
         self.predictions: Optional[jnp.ndarray] = None
         self._propagation_fn: Optional[Callable] = None
+        self._propagation_lr: Optional[Union[float, str]] = None
         self._prediction_fn: Optional[Callable] = None
 
     def add_layer(
@@ -101,7 +102,7 @@ class VectorizedDeepNetwork:
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
         volatility_coupling: float = 1.0,
-        add_constant_input: bool = False,
+        add_constant_input: bool = True,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
     ) -> "VectorizedDeepNetwork":
@@ -190,7 +191,7 @@ class VectorizedDeepNetwork:
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
         volatility_coupling: float = 1.0,
-        add_constant_input: bool = False,
+        add_constant_input: bool = True,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
     ) -> "VectorizedDeepNetwork":
@@ -465,16 +466,16 @@ class VectorizedDeepNetwork:
         if self.state is None:
             self.state = self._init_state()
 
-        self._propagation_fn = self._create_propagation_fn(
-            lr,
-        )
+        # Only recreate (and retrace) the propagation fn when lr changes
+        if self._propagation_fn is None or self._propagation_lr != lr:
+            self._propagation_fn = self._create_propagation_fn(lr)
+            self._propagation_lr = lr
 
         # Convert to JAX arrays
         x = jnp.asarray(x)
         y = jnp.asarray(y)
 
         # Run scan over data
-        assert self._propagation_fn is not None
         self.state, (self.trajectories, self.predictions) = jax.lax.scan(
             self._propagation_fn, self.state, (x, y)
         )
@@ -523,6 +524,7 @@ class VectorizedDeepNetwork:
         """
         self.state = self._init_state()
         self._propagation_fn = None
+        self._propagation_lr = None
         self._prediction_fn = None
         return self
 
