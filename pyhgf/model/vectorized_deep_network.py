@@ -3,8 +3,8 @@
 
 """Vectorized deep predictive coding network.
 
-This module provides a vectorized implementation of deep HGF networks
-that uses layer-wise matrix operations instead of per-node updates.
+This module provides a vectorized implementation of deep HGF networks that uses
+layer-wise matrix operations instead of per-node updates.
 """
 
 from __future__ import annotations
@@ -15,35 +15,38 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pyhgf.model.vectorized_types import LayerParams, LayerState, NetworkState
-from pyhgf.updates.vectorized import (
-    vectorized_layer_posterior_update,
+from pyhgf.typing import LayerParams, LayerState, NetworkState
+from pyhgf.updates.vectorized.volatile import (
     vectorized_layer_prediction,
-    vectorized_layer_prediction_error,
-    vectorized_weight_update,
-    vectorized_weight_update_dynamic,
+)
+from pyhgf.utils.vectorized_belief_propagation import propagation_step
+from pyhgf.utils.weight_initialisation import (
+    he_init,
+    orthogonal_init,
+    sparse_init,
+    xavier_init,
 )
 
 
 class VectorizedDeepNetwork:
     """Deep predictive coding network with vectorized operations.
 
-    This class implements a deep hierarchical Gaussian filter using
-    layer-wise vectorized operations for efficient scaling to large networks.
+    This class implements a deep hierarchical Gaussian filter using layer-wise
+    vectorized operations for efficient scaling to large networks.
 
-    Unlike the standard DeepNetwork which uses per-node updates with
-    Python loops, this implementation uses JAX matrix operations
-    to update all nodes in a layer simultaneously.
+    Unlike the standard DeepNetwork which uses per-node updates with Python loops, this
+    implementation uses JAX matrix operations to update all nodes in a layer
+    simultaneously.
 
     Examples
     --------
     >>> # Build a network with method chaining
     >>> net = (
     ...     VectorizedDeepNetwork()
-    ...     .add_nodes(n_nodes=10)  # Output layer
-    ...     .add_layer(size=8)      # Hidden layer 1
-    ...     .add_layer(size=6)      # Hidden layer 2
-    ...     .add_layer(size=4)      # Input layer
+    ...     .add_layer(size=10)  # Output layer
+    ...     .add_layer(size=8)   # Hidden layer 1
+    ...     .add_layer(size=6)   # Hidden layer 2
+    ...     .add_layer(size=4)   # Input layer
     ... )
     >>>
     >>> # Fit to data
@@ -72,66 +75,29 @@ class VectorizedDeepNetwork:
         Parameters
         ----------
         coupling_fn :
-            Coupling function applied between layers. Default is tanh.
-            This function is applied to parent means before the weighted
-            sum to predict child means.
+            Coupling function applied between layers. Default is tanh. This function is
+            applied to parent means before the weighted sum to predict child means.
         """
         self.coupling_fn = coupling_fn
-        self.coupling_fn_grad = jax.grad(lambda x: coupling_fn(x))
         self.layer_sizes: list[int] = []
         self.tonic_volatilities: list[float] = []
         self.tonic_volatilities_vol: list[float] = []
         self.volatility_couplings: list[float] = []
-        self.use_biases: list[bool] = []
+        self.add_constant_inputs: list[bool] = []
         self.coupling_fns: list[Callable] = []  # per-layer coupling functions
         self.state: Optional[NetworkState] = None
+        self.trajectories: Optional[NetworkState] = None
+        self.predictions: Optional[jnp.ndarray] = None
         self._propagation_fn: Optional[Callable] = None
         self._prediction_fn: Optional[Callable] = None
-
-    def add_nodes(
-        self,
-        n_nodes: int,
-        tonic_volatility: float = -4.0,
-        tonic_volatility_vol: float = -4.0,
-        volatility_coupling: float = 0.0,
-        use_bias: bool = False,
-        coupling_fn: Optional[Callable] = None,
-    ) -> "VectorizedDeepNetwork":
-        """Add input/output layer nodes.
-
-        This is typically used to add the first (output) layer.
-
-        Parameters
-        ----------
-        n_nodes :
-            Number of nodes in the layer.
-        tonic_volatility :
-            Tonic volatility for the value level (log scale).
-        tonic_volatility_vol :
-            Tonic volatility for the volatility level (log scale).
-
-        Returns
-        -------
-        VectorizedDeepNetwork
-            Self for method chaining.
-        """
-        self.layer_sizes.append(n_nodes)
-        self.tonic_volatilities.append(tonic_volatility)
-        self.tonic_volatilities_vol.append(tonic_volatility_vol)
-        self.volatility_couplings.append(volatility_coupling)
-        self.use_biases.append(use_bias)
-        self.coupling_fns.append(
-            coupling_fn if coupling_fn is not None else self.coupling_fn
-        )
-        return self
 
     def add_layer(
         self,
         size: int,
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
-        volatility_coupling: float = 0.0,
-        use_bias: bool = False,
+        volatility_coupling: float = 1.0,
+        add_constant_input: bool = False,
         coupling_fn: Optional[Callable] = None,
     ) -> "VectorizedDeepNetwork":
         """Add a fully-connected hidden layer.
@@ -144,6 +110,13 @@ class VectorizedDeepNetwork:
             Tonic volatility for the value level (log scale).
         tonic_volatility_vol :
             Tonic volatility for the volatility level (log scale).
+        volatility_coupling :
+            Coupling strength between the value and volatility levels.
+        add_constant_input :
+            If True, add a bias term to the layer's predictions.
+        coupling_fn :
+            Coupling function for this layer. If None, uses the network-level coupling
+            function.
 
         Returns
         -------
@@ -154,7 +127,7 @@ class VectorizedDeepNetwork:
         self.tonic_volatilities.append(tonic_volatility)
         self.tonic_volatilities_vol.append(tonic_volatility_vol)
         self.volatility_couplings.append(volatility_coupling)
-        self.use_biases.append(use_bias)
+        self.add_constant_inputs.append(add_constant_input)
         self.coupling_fns.append(
             coupling_fn if coupling_fn is not None else self.coupling_fn
         )
@@ -165,8 +138,8 @@ class VectorizedDeepNetwork:
         layer_sizes: list[int],
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
-        volatility_coupling: float = 0.0,
-        use_bias: bool = False,
+        volatility_coupling: float = 1.0,
+        add_constant_input: bool = False,
         coupling_fn: Optional[Callable] = None,
     ) -> "VectorizedDeepNetwork":
         """Add multiple hidden layers at once.
@@ -176,9 +149,16 @@ class VectorizedDeepNetwork:
         layer_sizes :
             List of layer sizes.
         tonic_volatility :
-            Tonic volatility for all layers (value level).
+            Tonic volatility for all layers (value level, log scale).
         tonic_volatility_vol :
-            Tonic volatility for all layers (volatility level).
+            Tonic volatility for all layers (volatility level, log scale).
+        volatility_coupling :
+            Coupling strength between the value and volatility levels for all layers.
+        add_constant_input :
+            If True, add a bias term to each layer's predictions.
+        coupling_fn :
+            Coupling function for all layers. If None, uses the network-level coupling
+            function.
 
         Returns
         -------
@@ -191,43 +171,23 @@ class VectorizedDeepNetwork:
                 tonic_volatility=tonic_volatility,
                 tonic_volatility_vol=tonic_volatility_vol,
                 volatility_coupling=volatility_coupling,
-                use_bias=use_bias,
+                add_constant_input=add_constant_input,
                 coupling_fn=coupling_fn,
             )
         return self
 
-    def _reset_layer_states(self) -> None:
-        """Reset all layer states to defaults while preserving learned weights.
+    def _init_state(self) -> NetworkState:
+        """Initialize network state with uniform weights.
 
-        This resets means to zero, precisions to one, and errors to zero
-        for all layers. Weight matrices and parameters are kept unchanged.
-        Used between fit() calls in epoch-based training to prevent
-        precision accumulation and hidden state carryover.
-        """
-        assert self.state is not None, "State must be initialized before reset."
-        fresh_layers = tuple(LayerState.create(size) for size in self.layer_sizes)
-        self.state = NetworkState(
-            layers=fresh_layers,
-            weights=self.state.weights,
-            params=self.state.params,
-            time_step=self.state.time_step,
-        )
-
-    def _init_state(self, key: jax.random.PRNGKey) -> NetworkState:
-        """Initialize network state with random weights.
-
-        Parameters
-        ----------
-        key :
-            JAX random key for weight initialization.
+        All inter-layer weights are set to ``1.0``, matching the DeepNetwork and
+        Rust backends.  Use :meth:`weight_initialisation` after construction to
+        apply Xavier, He, orthogonal, or sparse initialisation.
 
         Returns
         -------
         NetworkState
             Initialized network state.
         """
-        init_key = key
-
         layers = []
         weights = []
         params = []
@@ -250,11 +210,7 @@ class VectorizedDeepNetwork:
             # weights[i] connects layer[i] to layer[i+1]
             if i > 0:
                 prev_size = self.layer_sizes[i - 1]
-                # Xavier initialization
-                scale = jnp.sqrt(2.0 / (prev_size + size))
-                init_key, subkey = jax.random.split(init_key)
-                w = jax.random.normal(subkey, (prev_size, size)) * scale
-                weights.append(w)
+                weights.append(jnp.ones((prev_size, size)))
 
         return NetworkState(
             layers=tuple(layers),
@@ -263,19 +219,78 @@ class VectorizedDeepNetwork:
             time_step=1.0,
         )
 
+    def weight_initialisation(
+        self,
+        strategy: Optional[str] = None,
+        seed: Optional[int] = None,
+        **kwargs,
+    ) -> "VectorizedDeepNetwork":
+        """Initialise inter-layer weight matrices.
+
+        Parameters
+        ----------
+        strategy :
+            Initialisation strategy.  One of ``"xavier"``, ``"he"``,
+            ``"orthogonal"``, or ``"sparse"``.  If *None*, weights are left
+            unchanged (all ``1.0``).
+        seed :
+            Optional random seed passed to the initialisation function.
+        **kwargs
+            Extra keyword arguments forwarded to the initialisation function
+            (e.g. ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).
+
+        Returns
+        -------
+        VectorizedDeepNetwork
+            Self for method chaining.
+
+        Raises
+        ------
+        ValueError
+            If the strategy name is not recognised or the state has not been
+            initialised yet.
+        """
+        if strategy is None:
+            return self
+
+        valid = {"xavier", "he", "orthogonal", "sparse"}
+        if strategy not in valid:
+            raise ValueError(
+                f"Invalid weight initialisation strategy '{strategy}'. "
+                f"Choose from {sorted(valid)}."
+            )
+
+        if self.state is None:
+            raise ValueError(
+                "State must be initialised before calling weight_initialisation. "
+                "Call fit() first or initialise the state manually."
+            )
+
+        _init_fns: dict[str, Callable[..., np.ndarray]] = {
+            "xavier": xavier_init,
+            "he": he_init,
+            "orthogonal": orthogonal_init,
+            "sparse": sparse_init,
+        }
+        init_fn = _init_fns[strategy]
+
+        new_weights = list(self.state.weights)
+        for i, w in enumerate(new_weights):
+            n_children, n_parents = w.shape  # (prev_size, size)
+            flat = init_fn(n_parents, n_children, seed=seed, **kwargs)
+            new_weights[i] = jnp.array(flat.reshape(w.shape))
+
+        self.state = NetworkState(
+            layers=self.state.layers,
+            weights=tuple(new_weights),
+            params=self.state.params,
+            time_step=self.state.time_step,
+        )
+        return self
+
     def _create_propagation_fn(
         self,
-        lr: float,
-        T: int = 1,
-        sqrt_normalization: bool = False,
-        no_normalization: bool = False,
-        input_precision: float = 1.0,
-        output_precision: float = 1.0,
-        reset_hidden: bool = False,
-        selective_reset: bool = False,
-        update_input_layer: bool = False,
-        normalize_vol_pe: bool = True,
-        dynamic_lr: bool = False,
+        lr: Union[float, str],
     ):
         """Create the jitted propagation function.
 
@@ -283,41 +298,6 @@ class VectorizedDeepNetwork:
         ----------
         lr :
             Learning rate for weight updates.
-        T :
-            Number of inference iterations before weight update.
-            T=1 is the original single-pass behavior.
-            T>1 enables PC-style iterative inference.
-        sqrt_normalization :
-            If True, normalize value PE by sqrt(n_parents) instead of n_parents.
-        input_precision :
-            Precision to pin the input layer to each step (1.0 = unpinned).
-        output_precision :
-            Precision to pin the output layer to each step (1.0 = unpinned).
-        reset_hidden :
-            If True, reset hidden layer states (means and precisions) to defaults
-            at the start of each sample. Prevents precision accumulation across
-            unrelated samples (recommended for i.i.d. data like MNIST).
-        selective_reset :
-            If True, reset hidden layer means and errors to zero at the start of
-            each sample but preserve precision values. Allows precision to
-            accumulate across samples as a meta-signal of representational
-            stability, while still performing fresh inference per sample.
-            Ignored when reset_hidden=True.
-        update_input_layer :
-            If True, include the input layer in the posterior update loop,
-            allowing it to accumulate a learned volatility state. Default False
-            (input layer is a pure data source).
-        normalize_vol_pe :
-            If True (default), divide fresh_value_pe by n_value_parents when
-            computing the volatility PE, matching the upstream HGF derivation.
-            If False, use n_value_parents=1 for all layers, allowing the
-            volatility level to update more aggressively.
-        dynamic_lr :
-            If True, use the Kalman-gain weight update rule:
-            ``Δw = K · PE · g(parent)``, where
-            ``K = π_parent / (π_parent + π_child)`` is bounded in (0, 1).
-            If False (default), use the fixed-LR rule:
-            ``Δw = lr · PE · π_child · g(parent)``.
 
         Returns
         -------
@@ -329,184 +309,19 @@ class VectorizedDeepNetwork:
         # acts as a parent (i.e. when predicting layer[i-1]).
         coupling_fns = self.coupling_fns
         coupling_fn_grads = [jax.grad(lambda x, fn=fn: fn(x)) for fn in coupling_fns]
-        use_biases = self.use_biases  # captured for bias updates
-        layer_sizes = self.layer_sizes  # captured for per-sample reset
+        add_constant_inputs = self.add_constant_inputs  # captured for bias updates
 
-        def propagation_step(state: NetworkState, inputs):
-            """Single propagation step through the network."""
-            x, y = inputs
-            layers = list(state.layers)
-            weights = list(state.weights)
-            params = list(state.params)
-
-            n_layers = len(layers)
-
-            # Per-sample hidden state reset (layers 1 to n_layers-2).
-            # Preserves weights and params in all cases.
-            if reset_hidden:
-                # Full reset: means and precisions → defaults.
-                for i in range(1, n_layers - 1):
-                    layers[i] = LayerState.create(layer_sizes[i])
-            elif selective_reset:
-                # Partial reset: zero means/errors, keep precision.
-                # Precision accumulates across samples as a representational
-                # stability signal; inference still starts from a neutral mean.
-                for i in range(1, n_layers - 1):
-                    old = layers[i]
-                    layers[i] = old._replace(
-                        mean=jnp.zeros_like(old.mean),
-                        expected_mean=jnp.zeros_like(old.expected_mean),
-                        value_prediction_error=jnp.zeros_like(
-                            old.value_prediction_error
-                        ),
-                        mean_vol=jnp.zeros_like(old.mean_vol),
-                        expected_mean_vol=jnp.zeros_like(old.expected_mean_vol),
-                        volatility_prediction_error=jnp.zeros_like(
-                            old.volatility_prediction_error
-                        ),
-                    )
-
-            # 1. Set predictors (top layer = input)
-            # Must set both expected_mean AND mean for proper learning
-            if input_precision != 1.0:
-                layers[-1] = layers[-1]._replace(
-                    expected_mean=x,
-                    mean=x,
-                    precision=jnp.full_like(layers[-1].precision, input_precision),
-                    expected_precision=jnp.full_like(
-                        layers[-1].expected_precision, input_precision
-                    ),
-                )
-            else:
-                layers[-1] = layers[-1]._replace(expected_mean=x, mean=x)
-
-            # 2. Set observations (bottom layer = output)
-            if output_precision != 1.0:
-                layers[0] = layers[0]._replace(
-                    mean=y,
-                    observed=jnp.ones_like(y, dtype=jnp.int32),
-                    precision=jnp.full_like(layers[0].precision, output_precision),
-                    expected_precision=jnp.full_like(
-                        layers[0].expected_precision, output_precision
-                    ),
-                )
-            else:
-                layers[0] = layers[0]._replace(
-                    mean=y,
-                    observed=jnp.ones_like(y, dtype=jnp.int32),
-                )
-
-            # ========== INFERENCE PHASE (T iterations) ==========
-            # Let prediction errors propagate through the network
-            # by iteratively updating node activities (posteriors)
-            for _t in range(T):
-                # 3. Prediction: top-down (using current parent means)
-                for i in range(n_layers - 1, 0, -1):
-                    layers[i - 1] = vectorized_layer_prediction(
-                        child_state=layers[i - 1],
-                        parent_state=layers[i],
-                        weights=weights[i - 1],
-                        params=params[i - 1],
-                        time_step=state.time_step,
-                        coupling_fn=coupling_fns[i],  # parent i's coupling fn
-                        add_bias=use_biases[i - 1],
-                    )
-
-                # 4. Interleaved PE → posterior (matches standard Network ripple order).
-                #
-                # Standard Network enforces: a node computes its PE only AFTER its
-                # own posterior has been updated; the updated posterior mean is what
-                # propagates upward as the prediction error signal.
-                #
-                # Previous wave-based implementation (all PEs then all posteriors)
-                # computed PE(hidden) from the PRE-posterior mean, which is incorrect.
-                #
-                # Correct order for an N-layer network:
-                #   PE(layer 0)                  ← mean is pinned to y, always correct
-                #   posterior(layer 1)           ← uses layer 0 PE
-                #   PE(layer 1)                  ← uses UPDATED layer 1 mean
-                #   posterior(layer 2)           ← uses layer 1 updated PE
-                #   ...
-                #   [optional] posterior(input)  ← controlled by update_input_layer
-
-                # Step 4a: PE for output layer (mean = y, observation-pinned)
-                layers[0] = vectorized_layer_prediction_error(
-                    state=layers[0],
-                    n_parents=weights[0].shape[1],
-                    sqrt_normalization=sqrt_normalization,
-                    no_normalization=no_normalization,
-                )
-
-                # Step 4b: per hidden layer — posterior then PE (interleaved)
-                for i in range(1, n_layers - 1):
-                    n_vp = weights[i].shape[1] if normalize_vol_pe else 1
-                    layers[i] = vectorized_layer_posterior_update(
-                        parent_state=layers[i],
-                        child_state=layers[i - 1],
-                        weights=weights[i - 1],
-                        params=params[i],
-                        coupling_fn_grad=coupling_fn_grads[i],  # parent i's grad
-                        n_value_parents=n_vp,
-                    )
-                    # Recompute PE using updated posterior mean so the layer
-                    # above receives the correct (post-posterior) error signal.
-                    layers[i] = vectorized_layer_prediction_error(
-                        state=layers[i],
-                        n_parents=weights[i].shape[1],
-                        sqrt_normalization=sqrt_normalization,
-                        no_normalization=no_normalization,
-                    )
-
-                # Step 4c: optional posterior update for input layer
-                if update_input_layer:
-                    n_vp = 1  # input layer has no parents above it
-                    layers[-1] = vectorized_layer_posterior_update(
-                        parent_state=layers[-1],
-                        child_state=layers[-2],
-                        weights=weights[-1],
-                        params=params[-1],
-                        coupling_fn_grad=coupling_fn_grads[-1],  # input layer's grad
-                        n_value_parents=n_vp,
-                    )
-
-            # ========== LEARNING PHASE (after inference converges) ==========
-            # Update weights once using converged activities
-            for i in range(1, n_layers):
-                if dynamic_lr:
-                    weights[i - 1] = vectorized_weight_update_dynamic(
-                        parent_state=layers[i],
-                        child_state=layers[i - 1],
-                        weights=weights[i - 1],
-                        coupling_fn=coupling_fns[i],
-                    )
-                else:
-                    weights[i - 1] = vectorized_weight_update(
-                        parent_state=layers[i],
-                        child_state=layers[i - 1],
-                        weights=weights[i - 1],
-                        coupling_fn=coupling_fns[i],
-                        lr=lr,
-                    )
-                # Bias update: delta_b = lr * pe (bias = weight with constant input 1)
-                # Only update layers where use_bias=True
-                if use_biases[i - 1]:
-                    pe = layers[i - 1].mean - layers[i - 1].expected_mean
-                    new_bias = params[i - 1].bias + lr * pe
-                    params[i - 1] = params[i - 1]._replace(bias=new_bias)
-
-            new_state = NetworkState(
-                layers=tuple(layers),
-                weights=tuple(weights),
-                params=tuple(params),
-                time_step=state.time_step,
+        def _step(state: NetworkState, inputs):
+            return propagation_step(
+                state,
+                inputs,
+                coupling_fns,
+                coupling_fn_grads,
+                add_constant_inputs,
+                lr,
             )
 
-            # Return output prediction for monitoring
-            output_pred = layers[0].expected_mean
-
-            return new_state, (new_state, output_pred)
-
-        return jax.jit(propagation_step)
+        return jax.jit(_step)
 
     def _create_prediction_fn(self):
         """Create the jitted prediction function (forward pass only).
@@ -517,7 +332,7 @@ class VectorizedDeepNetwork:
             JIT-compiled prediction function.
         """
         coupling_fns = self.coupling_fns
-        use_biases = self.use_biases
+        add_constant_inputs = self.add_constant_inputs
 
         def prediction_step(state: NetworkState, x):
             """Forward prediction without learning."""
@@ -538,7 +353,6 @@ class VectorizedDeepNetwork:
                     params=params[i - 1],
                     time_step=state.time_step,
                     coupling_fn=coupling_fns[i],  # parent i's coupling fn
-                    add_bias=use_biases[i - 1],
                 )
 
             # Return output layer expected mean
@@ -550,17 +364,7 @@ class VectorizedDeepNetwork:
         self,
         x: Union[np.ndarray, jnp.ndarray],
         y: Union[np.ndarray, jnp.ndarray],
-        lr: float = 0.2,
-        T: int = 1,
-        key: Optional[jax.random.PRNGKey] = None,
-        reset_state: bool = True,
-        pe_normalization: str = "n_parents",
-        input_precision: float = 1.0,
-        output_precision: float = 1.0,
-        update_input_layer: bool = False,
-        normalize_vol_pe: bool = True,
-        dynamic_lr: bool = False,
-        selective_reset: bool = False,
+        lr: Union[float, str] = 0.2,
     ) -> "VectorizedDeepNetwork":
         """Fit network to data.
 
@@ -571,79 +375,20 @@ class VectorizedDeepNetwork:
         y :
             Target data, shape (n_samples, n_output_features).
         lr :
-            Learning rate for weight updates.
-        T :
-            Number of inference iterations per sample before weight update.
-            T=1 is single-pass (original behavior).
-            T>1 enables PC-style iterative inference where errors propagate
-            through the network before weights are updated.
-        key :
-            JAX random key for initialization. If None, uses PRNGKey(0).
-        reset_state :
-            If True (default), reset layer states (means, precisions) to
-            defaults before fitting, while preserving learned weights.
-            This prevents precision accumulation and hidden state carryover
-            between fit() calls, enabling stable epoch-based training.
-            Set to False to preserve full state between calls.
-        pe_normalization :
-            How to normalize the value prediction error. One of:
-            ``"n_parents"`` (default) — divide by n_parents (upstream baseline).
-            ``"sqrt_n_parents"`` — divide by sqrt(n_parents), which can improve
-            gradient flow in wide networks.
-            ``"none"`` — no division, use raw PE.
-        input_precision :
-            Precision to pin the input layer to at each step. Default 1.0
-            (unpinned). High values (e.g. 1000.0) fix the input layer beliefs
-            to the data, concentrating weight updates in lower layers.
-        output_precision :
-            Precision to pin the output layer to at each step. Default 1.0
-            (unpinned). High values (e.g. 100.0) fix the output layer beliefs,
-            concentrating weight updates in upper layers.
-        update_input_layer :
-            If True, include the input layer in the posterior update loop.
-            Default False.
-        normalize_vol_pe :
-            If True (default), normalize fresh_value_pe by n_value_parents.
-            If False, use n_value_parents=1 (more aggressive volatility updates).
-        dynamic_lr :
-            If True, use the Kalman-gain weight update rule (no explicit lr
-            needed — the gain is bounded in (0, 1) by the precision ratio).
-            If False (default), use the fixed-LR rule scaled by lr.
-        selective_reset :
-            If True, reset hidden layer means and errors to zero at the start of
-            each sample but preserve precision values. Use with reset_state=False
-            so precision also accumulates across epochs. Ignored when
-            reset_state=True (full reset takes precedence).
+            Learning rate for weight updates, or ``"dynamic"`` for
+            Kalman-gain updates.
 
         Returns
         -------
         VectorizedDeepNetwork
             Self with updated state.
         """
-        if key is None:
-            key = jax.random.PRNGKey(0)
-
         # Initialize state if needed
         if self.state is None:
-            self.state = self._init_state(key)
-        elif reset_state:
-            self._reset_layer_states()
+            self.state = self._init_state()
 
-        # Create propagation function
-        sqrt_norm = pe_normalization == "sqrt_n_parents"
-        no_norm   = pe_normalization == "none"
         self._propagation_fn = self._create_propagation_fn(
             lr,
-            T,
-            sqrt_normalization=sqrt_norm,
-            no_normalization=no_norm,
-            input_precision=input_precision,
-            output_precision=output_precision,
-            reset_hidden=reset_state,
-            selective_reset=selective_reset,
-            update_input_layer=update_input_layer,
-            normalize_vol_pe=normalize_vol_pe,
-            dynamic_lr=dynamic_lr,
         )
 
         # Convert to JAX arrays
@@ -690,46 +435,15 @@ class VectorizedDeepNetwork:
             # Vectorize over samples
             return jax.vmap(lambda xi: prediction_fn(self.state, xi))(x)
 
-    def get_layer_sizes(self) -> list[int]:
-        """Get the size of each layer.
-
-        Returns
-        -------
-        list[int]
-            List of layer sizes.
-        """
-        return self.layer_sizes.copy()
-
-    def get_weights(self) -> tuple:
-        """Get the current weight matrices.
-
-        Returns
-        -------
-        tuple
-            Tuple of weight matrices.
-        """
-        if self.state is None:
-            raise ValueError("Network must be initialized first.")
-        return self.state.weights
-
-    def reset(
-        self, key: Optional[jax.random.PRNGKey] = None
-    ) -> "VectorizedDeepNetwork":
+    def reset(self) -> "VectorizedDeepNetwork":
         """Reset the network state.
-
-        Parameters
-        ----------
-        key :
-            JAX random key for reinitialization.
 
         Returns
         -------
         VectorizedDeepNetwork
             Self with reset state.
         """
-        if key is None:
-            key = jax.random.PRNGKey(0)
-        self.state = self._init_state(key)
+        self.state = self._init_state()
         self._propagation_fn = None
         self._prediction_fn = None
         return self

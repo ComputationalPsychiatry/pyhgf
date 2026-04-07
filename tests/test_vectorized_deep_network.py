@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from pyhgf.model import VectorizedDeepNetwork
-from pyhgf.model.vectorized_types import LayerParams, LayerState, NetworkState
+from pyhgf.typing import LayerParams, LayerState, NetworkState
 
 
 class TestLayerState:
@@ -22,12 +22,10 @@ class TestLayerState:
         assert state.mean.shape == (10,)
         assert state.precision.shape == (10,)
         assert state.mean_vol.shape == (10,)
-        assert state.observed.shape == (10,)
 
         # Check default values
         assert jnp.allclose(state.mean, 0.0)
         assert jnp.allclose(state.precision, 1.0)
-        assert jnp.allclose(state.observed, 1)
 
 
 class TestLayerParams:
@@ -39,7 +37,7 @@ class TestLayerParams:
 
         assert params.tonic_volatility.shape == (10,)
         assert jnp.allclose(params.tonic_volatility, -4.0)
-        assert jnp.allclose(params.tonic_volatility_vol, -2.0)
+        assert jnp.allclose(params.tonic_volatility_vol, -4.0)
         assert jnp.allclose(params.volatility_coupling, 1.0)
 
     def test_create_custom(self):
@@ -69,7 +67,7 @@ class TestVectorizedDeepNetwork:
 
     def test_add_nodes(self):
         """Test adding output layer nodes."""
-        net = VectorizedDeepNetwork().add_nodes(n_nodes=10)
+        net = VectorizedDeepNetwork().add_layer(size=10)
 
         assert net.layer_sizes == [10]
         assert len(net.tonic_volatilities) == 1
@@ -78,7 +76,7 @@ class TestVectorizedDeepNetwork:
         """Test adding hidden layers."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)
+            .add_layer(size=10)
             .add_layer(size=8)
             .add_layer(size=4)
         )
@@ -91,7 +89,7 @@ class TestVectorizedDeepNetwork:
         """Test adding multiple layers at once."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)
+            .add_layer(size=10)
             .add_layer_stack(layer_sizes=[8, 6, 4])
         )
 
@@ -100,7 +98,7 @@ class TestVectorizedDeepNetwork:
 
     def test_repr(self):
         """Test string representation."""
-        net = VectorizedDeepNetwork().add_nodes(n_nodes=10).add_layer(size=5)
+        net = VectorizedDeepNetwork().add_layer(size=10).add_layer(size=5)
 
         assert "VectorizedDeepNetwork" in repr(net)
         assert "nodes=15" in repr(net)
@@ -109,13 +107,12 @@ class TestVectorizedDeepNetwork:
         """Test state initialization."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)
+            .add_layer(size=10)
             .add_layer(size=8)
             .add_layer(size=4)
         )
 
-        key = jax.random.PRNGKey(42)
-        state = net._init_state(key)
+        state = net._init_state()
 
         assert isinstance(state, NetworkState)
         assert len(state.layers) == 3
@@ -136,7 +133,7 @@ class TestVectorizedDeepNetwork:
         # Create a simple network
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=3)  # Output
+            .add_layer(size=3)  # Output
             .add_layer(size=5)  # Hidden
             .add_layer(size=4)  # Input
         )
@@ -160,7 +157,7 @@ class TestVectorizedDeepNetwork:
         """Test prediction after fitting."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=2)
+            .add_layer(size=2)
             .add_layer(size=4)
             .add_layer(size=3)
         )
@@ -180,7 +177,7 @@ class TestVectorizedDeepNetwork:
         """Test prediction on a single sample."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=2)
+            .add_layer(size=2)
             .add_layer(size=4)
             .add_layer(size=3)
         )
@@ -197,7 +194,7 @@ class TestVectorizedDeepNetwork:
 
     def test_predict_before_fit_raises(self):
         """Test that predicting before fit raises an error."""
-        net = VectorizedDeepNetwork().add_nodes(n_nodes=2).add_layer(size=3)
+        net = VectorizedDeepNetwork().add_layer(size=2).add_layer(size=3)
 
         with pytest.raises(ValueError, match="must be fit"):
             net.predict(np.random.randn(5, 3))
@@ -206,7 +203,7 @@ class TestVectorizedDeepNetwork:
         """Test getting weights after fit."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=2)
+            .add_layer(size=2)
             .add_layer(size=4)
             .add_layer(size=3)
         )
@@ -215,7 +212,7 @@ class TestVectorizedDeepNetwork:
         y = np.random.randn(10, 2)
         net.fit(x, y, lr=0.1)
 
-        weights = net.get_weights()
+        weights = net.state.weights
 
         assert len(weights) == 2
         assert weights[0].shape == (2, 4)
@@ -223,27 +220,27 @@ class TestVectorizedDeepNetwork:
 
     def test_reset(self):
         """Test resetting the network."""
-        net = VectorizedDeepNetwork().add_nodes(n_nodes=2).add_layer(size=3)
+        net = VectorizedDeepNetwork().add_layer(size=2).add_layer(size=3)
 
         x = np.random.randn(10, 3)
         y = np.random.randn(10, 2)
         net.fit(x, y, lr=0.1)
 
         # Store old weights
-        old_weights = net.get_weights()
+        old_weights = net.state.weights
 
         # Reset
-        net.reset(key=jax.random.PRNGKey(123))
+        net.reset()
 
-        # Weights should be different
-        new_weights = net.get_weights()
-        assert not jnp.allclose(old_weights[0], new_weights[0])
+        # Weights should be all ones after reset
+        new_weights = net.state.weights
+        assert jnp.allclose(new_weights[0], jnp.ones_like(new_weights[0]))
 
     def test_custom_coupling_fn(self):
         """Test network with custom coupling function."""
         net = VectorizedDeepNetwork(coupling_fn=jax.nn.sigmoid)
 
-        net.add_nodes(n_nodes=2).add_layer(size=3)
+        net.add_layer(size=2).add_layer(size=3)
 
         x = np.random.randn(10, 3)
         y = np.random.randn(10, 2)
@@ -259,7 +256,7 @@ class TestVectorizedUpdates:
 
     def test_prediction_shapes(self):
         """Test that prediction preserves shapes."""
-        from pyhgf.updates.vectorized import vectorized_layer_prediction
+        from pyhgf.updates.vectorized.volatile import vectorized_layer_prediction
 
         child_state = LayerState.create(10)
         parent_state = LayerState.create(8)
@@ -276,7 +273,7 @@ class TestVectorizedUpdates:
 
     def test_prediction_error_shapes(self):
         """Test that prediction error preserves shapes."""
-        from pyhgf.updates.vectorized import vectorized_layer_prediction_error
+        from pyhgf.updates.vectorized.volatile import vectorized_layer_prediction_error
 
         state = LayerState.create(10)
         # Set some values so we get non-trivial errors
@@ -292,7 +289,7 @@ class TestVectorizedUpdates:
 
     def test_posterior_update_shapes(self):
         """Test that posterior update preserves shapes."""
-        from pyhgf.updates.vectorized import vectorized_layer_posterior_update
+        from pyhgf.updates.vectorized.volatile import vectorized_layer_posterior_update
 
         parent_state = LayerState.create(8)
         child_state = LayerState.create(10)
@@ -322,7 +319,7 @@ class TestVectorizedUpdates:
 
     def test_weight_update_shapes(self):
         """Test that weight update preserves shapes."""
-        from pyhgf.updates.vectorized import vectorized_weight_update
+        from pyhgf.updates.vectorized.learning import vectorized_weight_update
 
         parent_state = LayerState.create(8)
         child_state = LayerState.create(10)
@@ -347,7 +344,7 @@ class TestScaling:
         """Test a medium-sized network compiles and runs."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)  # Output
+            .add_layer(size=10)  # Output
             .add_layer(size=32)  # Hidden 1
             .add_layer(size=32)  # Hidden 2
             .add_layer(size=20)  # Input
@@ -370,7 +367,7 @@ class TestScaling:
         """Test a larger network (like FashionMNIST scale)."""
         net = (
             VectorizedDeepNetwork()
-            .add_nodes(n_nodes=10)  # Output (labels)
+            .add_layer(size=10)  # Output (labels)
             .add_layer(size=32)  # Hidden
             .add_layer(size=32)  # Hidden
             .add_layer(size=32)  # Hidden

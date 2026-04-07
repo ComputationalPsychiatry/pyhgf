@@ -1,3 +1,4 @@
+# Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
 """Test that VDN produces identical node trajectories to a hand-wired vanilla Network.
@@ -6,12 +7,11 @@ A 2->4->2 network is built two ways:
   1. Vanilla Network  — hand-wired nodes, ground truth
   2. VectorizedDeepNetwork (VDN) — layer-wise matrix ops
 
-Both start from identical coupling weights and node parameters, are fed the
-same data sequence, and should produce matching posterior means, precisions,
-and implicit volatility states at every time step.
+Both start from identical coupling weights and node parameters, are fed the same data
+sequence, and should produce matching posterior means, precisions, and implicit
+volatility states at every time step.
 """
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -64,11 +64,11 @@ def _build_vanilla_network():
 def _build_vdn():
     vdn = (
         VectorizedDeepNetwork(coupling_fn=jnp.tanh)
-        .add_nodes(n_nodes=2, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
+        .add_layer(size=2, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
         .add_layer(size=4, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
         .add_layer(size=2, tonic_volatility=TONIC_VOL, volatility_coupling=1.0)
     )
-    state = vdn._init_state(jax.random.PRNGKey(0))
+    state = vdn._init_state()
     state = state._replace(
         weights=tuple(jnp.full_like(w, COUPLING) for w in state.weights)
     )

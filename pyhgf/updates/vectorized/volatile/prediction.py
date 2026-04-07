@@ -7,7 +7,7 @@ from typing import Callable
 
 import jax.numpy as jnp
 
-from pyhgf.model.vectorized_types import LayerParams, LayerState
+from pyhgf.typing import LayerParams, LayerState
 
 
 def vectorized_layer_prediction(
@@ -17,7 +17,6 @@ def vectorized_layer_prediction(
     params: LayerParams,
     time_step: float,
     coupling_fn: Callable = jnp.tanh,
-    add_bias: bool = False,
 ) -> LayerState:
     """Predict expected mean/precision for all nodes in child layer (volatile node).
 
@@ -89,73 +88,9 @@ def vectorized_layer_prediction(
     # Expected mean for value level
     # Note: autoconnection_strength = 0 for i.i.d. classification
     # (the previous observation should not bias the next prediction)
-    if add_bias:
-        expected_mean = time_step * drift + params.bias
-    else:
-        expected_mean = time_step * drift
+    expected_mean = time_step * drift
 
     return child_state._replace(
-        expected_mean=expected_mean,
-        expected_precision=expected_precision,
-        effective_precision=effective_precision,
-        expected_mean_vol=expected_mean_vol,
-        expected_precision_vol=expected_precision_vol,
-        effective_precision_vol=effective_precision_vol,
-    )
-
-
-def vectorized_input_layer_prediction(
-    state: LayerState,
-    params: LayerParams,
-    time_step: float,
-) -> LayerState:
-    """Predict expected mean/precision for the input layer (no parents).
-
-    This is a simplified prediction for the top layer that has no value parents.
-
-    Parameters
-    ----------
-    state :
-        Current state of the input layer.
-    params :
-        Layer parameters.
-    time_step :
-        Time step for the prediction.
-
-    Returns
-    -------
-    LayerState
-        Updated layer state with expected values.
-    """
-    # 1. VOLATILITY LEVEL PREDICTION (internal)
-    expected_mean_vol = state.mean_vol
-
-    predicted_volatility_vol = time_step * jnp.exp(
-        jnp.clip(params.tonic_volatility_vol, a_min=-80.0, a_max=80.0)
-    )
-    predicted_volatility_vol = jnp.maximum(predicted_volatility_vol, 1e-128)
-
-    expected_precision_vol = 1.0 / (
-        1.0 / state.precision_vol + predicted_volatility_vol
-    )
-    effective_precision_vol = predicted_volatility_vol * expected_precision_vol
-
-    # 2. VALUE LEVEL PREDICTION (external)
-    total_volatility = (
-        params.tonic_volatility + params.volatility_coupling * expected_mean_vol
-    )
-    predicted_volatility = time_step * jnp.exp(
-        jnp.clip(total_volatility, a_min=-80.0, a_max=80.0)
-    )
-    predicted_volatility = jnp.maximum(predicted_volatility, 1e-128)
-
-    expected_precision = 1.0 / (1.0 / state.precision + predicted_volatility)
-    effective_precision = predicted_volatility * expected_precision
-
-    # No parents, so expected mean is just the current mean (no drift)
-    expected_mean = state.mean
-
-    return state._replace(
         expected_mean=expected_mean,
         expected_precision=expected_precision,
         effective_precision=effective_precision,
