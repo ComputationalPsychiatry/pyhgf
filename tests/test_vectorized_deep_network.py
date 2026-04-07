@@ -309,7 +309,12 @@ class TestVectorizedUpdates:
         coupling_fn_grad = jax.grad(lambda x: jnp.tanh(x))
 
         result = vectorized_layer_posterior_update(
-            parent_state, child_state, weights, params, coupling_fn_grad
+            parent_state,
+            child_state,
+            weights,
+            params,
+            coupling_fn_grad,
+            n_value_parents=8,
         )
 
         assert result.mean.shape == (8,)

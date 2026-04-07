@@ -17,6 +17,7 @@ def vectorized_layer_prediction(
     params: LayerParams,
     time_step: float,
     coupling_fn: Callable = jnp.tanh,
+    parent_has_constant: bool = False,
 ) -> LayerState:
     """Predict expected mean/precision for all nodes in child layer (volatile node).
 
@@ -30,13 +31,19 @@ def vectorized_layer_prediction(
     parent_state :
         Current state of the parent layer (predictor).
     weights :
-        Weight matrix connecting child to parent, shape (n_children, n_parents).
+        Weight matrix connecting child to parent, shape
+        ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``
+        when the parent layer includes a constant input node.
     params :
         Layer parameters for the child layer.
     time_step :
         Time step for the prediction.
     coupling_fn :
         Coupling function applied to parent means (default: tanh).
+    parent_has_constant :
+        If True, the parent layer has a constant input node (mean = 1.0)
+        appended to its activations.  The last column of *weights*
+        carries the bias connections.
 
     Returns
     -------
@@ -80,9 +87,13 @@ def vectorized_layer_prediction(
     effective_precision = predicted_volatility * expected_precision
 
     # Mean prediction via matrix multiply
-    # weights shape: (n_children, n_parents)
+    # weights shape: (n_children, n_parents) or (n_children, n_parents + 1)
     # parent_state.expected_mean shape: (n_parents,)
-    coupled_parents = coupling_fn(parent_state.expected_mean)
+    parent_mean = parent_state.expected_mean
+    if parent_has_constant:
+        # Append constant 1.0 for bias node before applying coupling_fn
+        parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
+    coupled_parents = coupling_fn(parent_mean)
     drift = jnp.matmul(weights, coupled_parents)
 
     # Expected mean for value level

@@ -18,7 +18,8 @@ def vectorized_layer_posterior_update(
     weights: jnp.ndarray,
     params: LayerParams,
     coupling_fn_grad: Callable,
-    n_value_parents: int = 1,
+    n_value_parents: int,
+    parent_has_constant: bool = False,
 ) -> LayerState:
     """Update posterior for all nodes in parent layer (volatile node - 5 steps).
 
@@ -32,17 +33,27 @@ def vectorized_layer_posterior_update(
     child :
         Current state of the child layer (providing prediction errors).
     weights :
-        Weight matrix connecting child to parent, shape (n_children, n_parents).
+        Weight matrix connecting child to parent, shape
+        ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``
+        when the parent layer includes a constant input node.
     params :
         Layer parameters for the parent layer.
     coupling_fn_grad :
         Gradient of the coupling function.
+    n_value_parents :
+        Number of value parents for this layer.
+    parent_has_constant :
+        If True, the last column of *weights* corresponds to the constant
+        input node and is stripped before computing the posterior update.
 
     Returns
     -------
     LayerState
         Updated parent layer state with posterior mean and precision.
     """
+    # Strip the bias column if the parent has a constant input node
+    if parent_has_constant:
+        weights = weights[:, :-1]
     # Coupling derivatives at parent means
     # vmap the gradient function over parent means
     coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)

@@ -16,6 +16,7 @@ def vectorized_weight_update(
     weights: jnp.ndarray,
     coupling_fn: Callable,
     lr: Optional[float] = None,
+    parent_has_constant: bool = False,
 ) -> jnp.ndarray:
     r"""Unified weight update for vectorized layers.
 
@@ -35,12 +36,18 @@ def vectorized_weight_update(
     child_state :
         Current state of the child layer (with observations).
     weights :
-        Current weight matrix, shape (n_children, n_parents).
+        Current weight matrix, shape ``(n_children, n_parents)`` or
+        ``(n_children, n_parents + 1)`` when the parent layer includes
+        a constant input node.
     coupling_fn :
         Coupling function applied to parent means.
     lr :
         Fixed learning rate.  When ``None`` (default) the dynamic
         precision-weighted Kalman-gain rule is used instead.
+    parent_has_constant :
+        If True, the parent layer has a constant input node.  The parent
+        mean is augmented with 1.0 and the precision with the parent
+        precision mean so the bias column of *weights* is updated.
 
     Returns
     -------
@@ -51,7 +58,17 @@ def vectorized_weight_update(
     pe = child_state.mean - child_state.expected_mean
 
     # Coupled parent activation
-    coupled_parent = coupling_fn(parent_state.mean)
+    parent_mean = parent_state.mean
+    parent_precision = parent_state.precision
+    if parent_has_constant:
+        # Append constant 1.0 for bias node; use parent mean precision
+        # for the bias entry so the Kalman gain remains well-defined.
+        parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
+        parent_precision = jnp.concatenate([
+            parent_precision,
+            jnp.array([jnp.mean(parent_precision)]),
+        ])
+    coupled_parent = coupling_fn(parent_mean)
 
     # Base outer product: PE ⊗ g(parent)
     # Broadcast: (n_children, 1) * (1, n_parents) -> (n_children, n_parents)
@@ -62,8 +79,8 @@ def vectorized_weight_update(
         coupling_delta = coupling_delta * child_state.precision[:, None] * lr
     else:
         # Dynamic: scale by Kalman gain K = π_parent / (π_parent + π_child)
-        kalman_gain = parent_state.precision[None, :] / (
-            parent_state.precision[None, :] + child_state.precision[:, None]
+        kalman_gain = parent_precision[None, :] / (
+            parent_precision[None, :] + child_state.precision[:, None]
         )
         coupling_delta = coupling_delta * kalman_gain
 

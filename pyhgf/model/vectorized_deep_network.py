@@ -207,10 +207,13 @@ class VectorizedDeepNetwork:
             )
 
             # Create weights connecting to next layer (if not first layer)
-            # weights[i] connects layer[i] to layer[i+1]
+            # weights[i-1] connects layer[i-1] (child) to layer[i] (parent)
+            # If the parent layer has add_constant_input=True, an extra column
+            # is appended for the bias node (constant mean = 1.0).
             if i > 0:
                 prev_size = self.layer_sizes[i - 1]
-                weights.append(jnp.ones((prev_size, size)))
+                n_parent_cols = size + (1 if self.add_constant_inputs[i] else 0)
+                weights.append(jnp.ones((prev_size, n_parent_cols)))
 
         return NetworkState(
             layers=tuple(layers),
@@ -353,6 +356,7 @@ class VectorizedDeepNetwork:
                     params=params[i - 1],
                     time_step=state.time_step,
                     coupling_fn=coupling_fns[i],  # parent i's coupling fn
+                    parent_has_constant=add_constant_inputs[i],
                 )
 
             # Return output layer expected mean
