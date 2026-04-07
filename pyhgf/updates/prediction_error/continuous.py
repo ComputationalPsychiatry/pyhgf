@@ -7,10 +7,11 @@ from jax import jit
 from pyhgf.typing import Edges
 
 
-@partial(jit, static_argnames=("node_idx"))
+@partial(jit, static_argnames=("node_idx", "edges"))
 def continuous_node_value_prediction_error(
     attributes: dict,
     node_idx: int,
+    edges: Edges = (),
 ) -> dict:
     r"""Compute the value prediction error of a state node.
 
@@ -29,6 +30,10 @@ def continuous_node_value_prediction_error(
         The attributes of the probabilistic nodes.
     node_idx :
         Pointer to the value parent node that will be updated.
+    edges :
+        The edges of the probabilistic nodes.  When provided, constant-state
+        parents (``node_type == 0``) are excluded from the value-parent count
+        used to normalise the prediction error.
 
     Returns
     -------
@@ -51,9 +56,15 @@ def continuous_node_value_prediction_error(
         attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
     )
 
-    # divide by the number of value parents
+    # divide by the number of (non-constant) value parents
     if attributes[node_idx]["value_coupling_parents"] is not None:
-        value_prediction_error /= len(attributes[node_idx]["value_coupling_parents"])
+        vp = edges[node_idx].value_parents if edges else None
+        if vp is not None:
+            n_value_parents = len([p for p in vp if edges[p].node_type != 0])
+        else:
+            n_value_parents = len(attributes[node_idx]["value_coupling_parents"])
+        if n_value_parents > 0:
+            value_prediction_error /= n_value_parents
 
     # send to the value parent node for later use in the update step
     attributes[node_idx]["temp"]["value_prediction_error"] = value_prediction_error
@@ -165,7 +176,7 @@ def continuous_node_prediction_error(
     # Store value prediction errors
     # -----------------------------
     attributes = continuous_node_value_prediction_error(
-        attributes=attributes, node_idx=node_idx
+        attributes=attributes, node_idx=node_idx, edges=edges
     )
 
     # Store volatility prediction errors

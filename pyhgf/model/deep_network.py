@@ -111,7 +111,7 @@ class DeepNetwork(Network):
             Coupling function(s) between the new nodes and their value children.
         add_constant_input :
             If ``True``, add a constant-state bias node connected to all children
-            in this layer.  The bias node is included in the layer indices.
+            in this layer. The bias node is included in the layer indices.
         **node_parameters
             Additional keyword parameters for node configuration (e.g., precision,
             mean, tonic_volatility, etc...). These will be passed to add_nodes.
