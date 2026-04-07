@@ -342,6 +342,273 @@ class TestVectorizedUpdates:
         assert result.shape == (10, 8)
 
 
+class TestAddLayerValidation:
+    """Tests for add_layer input validation."""
+
+    def test_invalid_kind_raises(self):
+        """Invalid layer kind raises ValueError."""
+        net = VectorizedDeepNetwork()
+        with pytest.raises(ValueError, match="Invalid layer kind"):
+            net.add_layer(size=5, kind="unknown")
+
+    def test_one_to_one_with_bias_raises(self):
+        """fully_connected=False with add_constant_input=True raises."""
+        net = VectorizedDeepNetwork().add_layer(size=5, add_constant_input=False)
+        with pytest.raises(ValueError, match="One-to-one layers"):
+            net.add_layer(size=5, fully_connected=False, add_constant_input=True)
+
+    def test_one_to_one_size_mismatch_raises(self):
+        """fully_connected=False with different child size raises."""
+        net = VectorizedDeepNetwork().add_layer(size=5, add_constant_input=False)
+        with pytest.raises(ValueError, match="same size"):
+            net.add_layer(size=8, fully_connected=False, add_constant_input=False)
+
+    def test_one_to_one_valid(self):
+        """fully_connected=False with matching sizes succeeds."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=4, add_constant_input=False)
+            .add_layer(size=4, fully_connected=False, add_constant_input=False)
+        )
+        state = net._init_state()
+        # One-to-one weight should be an identity matrix
+        assert state.weights[0].shape == (4, 4)
+        np.testing.assert_allclose(state.weights[0], jnp.eye(4))
+
+
+class TestAddConstantInput:
+    """Tests for bias (add_constant_input) behaviour."""
+
+    def test_bias_adds_extra_column(self):
+        """add_constant_input=True adds an extra weight column for bias."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=3, add_constant_input=False)
+            .add_layer(size=5, add_constant_input=True)
+        )
+        state = net._init_state()
+        # 5 parent nodes + 1 bias = 6 columns
+        assert state.weights[0].shape == (3, 6)
+
+    def test_no_bias_no_extra_column(self):
+        """add_constant_input=False gives exact parent-count columns."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=3, add_constant_input=False)
+            .add_layer(size=5, add_constant_input=False)
+        )
+        state = net._init_state()
+        assert state.weights[0].shape == (3, 5)
+
+    def test_fit_with_no_bias(self):
+        """Network with add_constant_input=False fits and predicts."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=4, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(10, 3).astype(np.float32)
+        y = np.random.randn(10, 2).astype(np.float32)
+        net.fit(x, y, lr=0.1)
+        preds = net.predict(x[:3])
+        assert preds.shape == (3, 2)
+
+
+class TestBinaryLayer:
+    """Tests for binary layer support."""
+
+    def test_add_binary_layer(self):
+        """Can add a binary output layer."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=1, kind="binary")
+            .add_layer(size=4)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        assert net.layer_kinds[0] == "binary"
+        assert net.n_layers == 3
+
+    def test_binary_fit_and_predict(self):
+        """Binary output layer fits and produces sigmoid-range predictions."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=1, kind="binary")
+            .add_layer(size=4)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(15, 3).astype(np.float32)
+        y = np.random.choice([0.0, 1.0], size=(15, 1)).astype(np.float32)
+        net.fit(x, y, lr=0.1)
+        preds = net.predict(x[:5])
+        assert preds.shape == (5, 1)
+        # Binary output should be in (0, 1)
+        assert np.all(np.array(preds) > 0.0)
+        assert np.all(np.array(preds) < 1.0)
+
+
+class TestWeightInitialisation:
+    """Tests for weight_initialisation method."""
+
+    def _make_network(self):
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=3, add_constant_input=False)
+            .add_layer(size=5, add_constant_input=False)
+            .add_layer(size=4, add_constant_input=False)
+        )
+        net.state = net._init_state()
+        return net
+
+    def test_none_strategy_is_noop(self):
+        """strategy=None leaves weights unchanged."""
+        net = self._make_network()
+        old_w0 = net.state.weights[0].copy()
+        net.weight_initialisation(strategy=None)
+        np.testing.assert_array_equal(net.state.weights[0], old_w0)
+
+    def test_xavier(self):
+        """Xavier initialisation changes weights and is reproducible."""
+        net1 = self._make_network()
+        net2 = self._make_network()
+        net1.weight_initialisation("xavier", seed=0)
+        net2.weight_initialisation("xavier", seed=0)
+        np.testing.assert_array_equal(net1.state.weights[0], net2.state.weights[0])
+        # Weights should no longer be all ones
+        assert not jnp.allclose(net1.state.weights[0], 1.0)
+
+    def test_he(self):
+        """He initialisation produces non-trivial weights."""
+        net = self._make_network()
+        net.weight_initialisation("he", seed=42)
+        assert not jnp.allclose(net.state.weights[0], 1.0)
+
+    def test_orthogonal(self):
+        """Orthogonal initialisation produces non-trivial weights."""
+        net = self._make_network()
+        net.weight_initialisation("orthogonal", seed=42)
+        assert not jnp.allclose(net.state.weights[0], 1.0)
+
+    def test_sparse(self):
+        """Sparse initialisation produces non-trivial weights."""
+        net = self._make_network()
+        net.weight_initialisation("sparse", seed=42)
+        assert not jnp.allclose(net.state.weights[0], 1.0)
+
+    def test_invalid_strategy_raises(self):
+        """Unknown strategy raises ValueError."""
+        net = self._make_network()
+        with pytest.raises(ValueError, match="Invalid weight initialisation"):
+            net.weight_initialisation("unknown")
+
+    def test_no_state_raises(self):
+        """Calling weight_initialisation before state init raises."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=3, add_constant_input=False)
+            .add_layer(size=4, add_constant_input=False)
+        )
+        with pytest.raises(ValueError, match="State must be initialised"):
+            net.weight_initialisation("xavier")
+
+
+class TestPerLayerCouplingFn:
+    """Tests for per-layer coupling function overrides."""
+
+    def test_per_layer_fn_stored(self):
+        """Per-layer coupling_fn is stored correctly."""
+        net = (
+            VectorizedDeepNetwork(coupling_fn=jnp.tanh)
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=4, coupling_fn=jax.nn.relu, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        # Layer 0 and 2 should use network default (tanh)
+        assert net.coupling_fns[0] is jnp.tanh
+        assert net.coupling_fns[2] is jnp.tanh
+        # Layer 1 should use the override
+        assert net.coupling_fns[1] is jax.nn.relu
+
+    def test_per_layer_fn_fit_predict(self):
+        """Network with mixed coupling functions fits and predicts."""
+        net = (
+            VectorizedDeepNetwork(coupling_fn=jnp.tanh)
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=4, coupling_fn=jax.nn.relu, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(10, 3).astype(np.float32)
+        y = np.random.randn(10, 2).astype(np.float32)
+        net.fit(x, y, lr=0.1)
+        preds = net.predict(x[:3])
+        assert preds.shape == (3, 2)
+
+
+class TestDynamicLearningRate:
+    """Tests for lr='dynamic' (Kalman-gain) mode."""
+
+    def test_dynamic_lr_fit(self):
+        """fit(lr='dynamic') runs without error."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=4, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(10, 3).astype(np.float32)
+        y = np.random.randn(10, 2).astype(np.float32)
+        net.fit(x, y, lr="dynamic")
+        assert net.predictions.shape == (10, 2)
+
+
+class TestPropagationFnCaching:
+    """Tests for JIT-compiled propagation function caching."""
+
+    def test_same_lr_reuses_fn(self):
+        """Calling fit twice with same lr reuses the compiled function."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(5, 3).astype(np.float32)
+        y = np.random.randn(5, 2).astype(np.float32)
+        net.fit(x, y, lr=0.1)
+        fn_after_first = net._propagation_fn
+        net.fit(x, y, lr=0.1)
+        assert net._propagation_fn is fn_after_first
+
+    def test_different_lr_recreates_fn(self):
+        """Changing lr triggers recompilation."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(5, 3).astype(np.float32)
+        y = np.random.randn(5, 2).astype(np.float32)
+        net.fit(x, y, lr=0.1)
+        fn_first = net._propagation_fn
+        net.fit(x, y, lr=0.2)
+        assert net._propagation_fn is not fn_first
+
+    def test_reset_clears_cache(self):
+        """reset() clears the cached propagation function."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=3, add_constant_input=False)
+        )
+        x = np.random.randn(5, 3).astype(np.float32)
+        y = np.random.randn(5, 2).astype(np.float32)
+        net.fit(x, y, lr=0.1)
+        assert net._propagation_fn is not None
+        net.reset()
+        assert net._propagation_fn is None
+        assert net._propagation_lr is None
+        assert net._prediction_fn is None
+
+
 class TestScaling:
     """Tests for network scaling behavior."""
 
