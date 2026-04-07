@@ -16,6 +16,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from pyhgf.typing import LayerParams, LayerState, NetworkState
+from pyhgf.updates.vectorized.binary import vectorized_binary_prediction
 from pyhgf.updates.vectorized.volatile import (
     vectorized_layer_prediction,
 )
@@ -80,10 +81,12 @@ class VectorizedDeepNetwork:
         """
         self.coupling_fn = coupling_fn
         self.layer_sizes: list[int] = []
+        self.layer_kinds: list[str] = []
         self.tonic_volatilities: list[float] = []
         self.tonic_volatilities_vol: list[float] = []
         self.volatility_couplings: list[float] = []
         self.add_constant_inputs: list[bool] = []
+        self.fully_connected: list[bool] = []
         self.coupling_fns: list[Callable] = []  # per-layer coupling functions
         self.state: Optional[NetworkState] = None
         self.trajectories: Optional[NetworkState] = None
@@ -94,26 +97,43 @@ class VectorizedDeepNetwork:
     def add_layer(
         self,
         size: int,
+        kind: str = "volatile",
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
         volatility_coupling: float = 1.0,
         add_constant_input: bool = False,
+        fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
     ) -> "VectorizedDeepNetwork":
-        """Add a fully-connected hidden layer.
+        """Add a layer of nodes.
 
         Parameters
         ----------
         size :
             Number of nodes in the layer.
+        kind :
+            Type of nodes in this layer.  ``"volatile"`` (default) uses
+            continuous volatile nodes with value and volatility levels.
+            ``"binary"`` uses binary state nodes whose expected mean is the
+            sigmoid of the parent prediction and whose expected precision is
+            ``μ̂(1 − μ̂)``.
         tonic_volatility :
             Tonic volatility for the value level (log scale).
+            Only used for ``"volatile"`` layers.
         tonic_volatility_vol :
             Tonic volatility for the volatility level (log scale).
+            Only used for ``"volatile"`` layers.
         volatility_coupling :
             Coupling strength between the value and volatility levels.
+            Only used for ``"volatile"`` layers.
         add_constant_input :
             If True, add a bias term to the layer's predictions.
+        fully_connected :
+            If True (default), each node in this layer connects to every node
+            in the child layer (dense weight matrix).  If False, nodes connect
+            one-to-one with the child layer (diagonal weight matrix).  This
+            requires both layers to have the same size and
+            ``add_constant_input=False``.
         coupling_fn :
             Coupling function for this layer. If None, uses the network-level coupling
             function.
@@ -122,12 +142,42 @@ class VectorizedDeepNetwork:
         -------
         VectorizedDeepNetwork
             Self for method chaining.
+
+        Raises
+        ------
+        ValueError
+            If *kind* is not ``"volatile"`` or ``"binary"``.
+        ValueError
+            If *fully_connected* is False with ``add_constant_input=True``.
+        ValueError
+            If *fully_connected* is False and this layer's size differs from
+            the preceding child layer.
         """
+        valid_kinds = {"volatile", "binary"}
+        if kind not in valid_kinds:
+            raise ValueError(
+                f"Invalid layer kind '{kind}'. Choose from {sorted(valid_kinds)}."
+            )
+
+        if not fully_connected:
+            if add_constant_input:
+                raise ValueError(
+                    "One-to-one layers (fully_connected=False) cannot use "
+                    "add_constant_input=True."
+                )
+            if self.layer_sizes and self.layer_sizes[-1] != size:
+                raise ValueError(
+                    f"One-to-one layers require the same size as the child "
+                    f"layer ({self.layer_sizes[-1]}), got {size}."
+                )
+
         self.layer_sizes.append(size)
+        self.layer_kinds.append(kind)
         self.tonic_volatilities.append(tonic_volatility)
         self.tonic_volatilities_vol.append(tonic_volatility_vol)
         self.volatility_couplings.append(volatility_coupling)
         self.add_constant_inputs.append(add_constant_input)
+        self.fully_connected.append(fully_connected)
         self.coupling_fns.append(
             coupling_fn if coupling_fn is not None else self.coupling_fn
         )
@@ -136,10 +186,12 @@ class VectorizedDeepNetwork:
     def add_layer_stack(
         self,
         layer_sizes: list[int],
+        kind: str = "volatile",
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
         volatility_coupling: float = 1.0,
         add_constant_input: bool = False,
+        fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
     ) -> "VectorizedDeepNetwork":
         """Add multiple hidden layers at once.
@@ -148,6 +200,8 @@ class VectorizedDeepNetwork:
         ----------
         layer_sizes :
             List of layer sizes.
+        kind :
+            Type of nodes for all layers (``"volatile"`` or ``"binary"``).
         tonic_volatility :
             Tonic volatility for all layers (value level, log scale).
         tonic_volatility_vol :
@@ -156,6 +210,9 @@ class VectorizedDeepNetwork:
             Coupling strength between the value and volatility levels for all layers.
         add_constant_input :
             If True, add a bias term to each layer's predictions.
+        fully_connected :
+            If True (default), layers are fully connected. If False, layers use
+            one-to-one connections (requires equal sizes).
         coupling_fn :
             Coupling function for all layers. If None, uses the network-level coupling
             function.
@@ -168,10 +225,12 @@ class VectorizedDeepNetwork:
         for size in layer_sizes:
             self.add_layer(
                 size=size,
+                kind=kind,
                 tonic_volatility=tonic_volatility,
                 tonic_volatility_vol=tonic_volatility_vol,
                 volatility_coupling=volatility_coupling,
                 add_constant_input=add_constant_input,
+                fully_connected=fully_connected,
                 coupling_fn=coupling_fn,
             )
         return self
@@ -213,7 +272,10 @@ class VectorizedDeepNetwork:
             if i > 0:
                 prev_size = self.layer_sizes[i - 1]
                 n_parent_cols = size + (1 if self.add_constant_inputs[i] else 0)
-                weights.append(jnp.ones((prev_size, n_parent_cols)))
+                if self.fully_connected[i]:
+                    weights.append(jnp.ones((prev_size, n_parent_cols)))
+                else:
+                    weights.append(jnp.eye(prev_size, n_parent_cols))
 
         return NetworkState(
             layers=tuple(layers),
@@ -313,6 +375,7 @@ class VectorizedDeepNetwork:
         coupling_fns = self.coupling_fns
         coupling_fn_grads = [jax.grad(lambda x, fn=fn: fn(x)) for fn in coupling_fns]
         add_constant_inputs = self.add_constant_inputs  # captured for bias updates
+        layer_kinds = self.layer_kinds
 
         def _step(state: NetworkState, inputs):
             return propagation_step(
@@ -322,6 +385,7 @@ class VectorizedDeepNetwork:
                 coupling_fn_grads,
                 add_constant_inputs,
                 lr,
+                layer_kinds,
             )
 
         return jax.jit(_step)
@@ -336,6 +400,7 @@ class VectorizedDeepNetwork:
         """
         coupling_fns = self.coupling_fns
         add_constant_inputs = self.add_constant_inputs
+        layer_kinds = self.layer_kinds
 
         def prediction_step(state: NetworkState, x):
             """Forward prediction without learning."""
@@ -349,15 +414,24 @@ class VectorizedDeepNetwork:
 
             # Top-down prediction
             for i in range(n_layers - 1, 0, -1):
-                layers[i - 1] = vectorized_layer_prediction(
-                    child_state=layers[i - 1],
-                    parent_state=layers[i],
-                    weights=state.weights[i - 1],
-                    params=params[i - 1],
-                    time_step=state.time_step,
-                    coupling_fn=coupling_fns[i],  # parent i's coupling fn
-                    parent_has_constant=add_constant_inputs[i],
-                )
+                if layer_kinds[i - 1] == "binary":
+                    layers[i - 1] = vectorized_binary_prediction(
+                        child_state=layers[i - 1],
+                        parent_state=layers[i],
+                        weights=state.weights[i - 1],
+                        coupling_fn=coupling_fns[i],
+                        parent_has_constant=add_constant_inputs[i],
+                    )
+                else:
+                    layers[i - 1] = vectorized_layer_prediction(
+                        child_state=layers[i - 1],
+                        parent_state=layers[i],
+                        weights=state.weights[i - 1],
+                        params=params[i - 1],
+                        time_step=state.time_step,
+                        coupling_fn=coupling_fns[i],
+                        parent_has_constant=add_constant_inputs[i],
+                    )
 
             # Return output layer expected mean
             return layers[0].expected_mean

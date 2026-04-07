@@ -10,6 +10,10 @@ from typing import Callable, Optional, Union
 import jax.numpy as jnp
 
 from pyhgf.typing import NetworkState
+from pyhgf.updates.vectorized.binary import (
+    vectorized_binary_prediction,
+    vectorized_binary_prediction_error,
+)
 from pyhgf.updates.vectorized.learning import vectorized_weight_update
 from pyhgf.updates.vectorized.volatile import (
     vectorized_layer_posterior_update,
@@ -25,6 +29,7 @@ def propagation_step(
     coupling_fn_grads: list[Callable],
     add_constant_inputs: list[bool],
     lr: Union[float, str],
+    layer_kinds: Optional[list[str]] = None,
 ) -> tuple[NetworkState, tuple[NetworkState, jnp.ndarray]]:
     """Single propagation step through the network.
 
@@ -46,6 +51,9 @@ def propagation_step(
         Per-layer flags indicating whether a bias term is added.
     lr :
         Learning rate (float) or ``"dynamic"`` for Kalman-gain updates.
+    layer_kinds :
+        Per-layer node type (``"volatile"`` or ``"binary"``).  Defaults to
+        all ``"volatile"`` when *None*.
 
     Returns
     -------
@@ -61,6 +69,10 @@ def propagation_step(
 
     n_layers = len(layers)
 
+    # Default: all volatile layers
+    if layer_kinds is None:
+        layer_kinds = ["volatile"] * n_layers
+
     # 1. Set predictors (top layer = input)
     layers[-1] = layers[-1]._replace(expected_mean=x, mean=x)
 
@@ -69,23 +81,35 @@ def propagation_step(
 
     # 3. Prediction: top-down (using current parent means)
     for i in range(n_layers - 1, 0, -1):
-        layers[i - 1] = vectorized_layer_prediction(
-            child_state=layers[i - 1],
-            parent_state=layers[i],
-            weights=weights[i - 1],
-            params=params[i - 1],
-            time_step=state.time_step,
-            coupling_fn=coupling_fns[i],  # parent i's coupling fn
-            parent_has_constant=add_constant_inputs[i],
-        )
+        if layer_kinds[i - 1] == "binary":
+            layers[i - 1] = vectorized_binary_prediction(
+                child_state=layers[i - 1],
+                parent_state=layers[i],
+                weights=weights[i - 1],
+                coupling_fn=coupling_fns[i],
+                parent_has_constant=add_constant_inputs[i],
+            )
+        else:
+            layers[i - 1] = vectorized_layer_prediction(
+                child_state=layers[i - 1],
+                parent_state=layers[i],
+                weights=weights[i - 1],
+                params=params[i - 1],
+                time_step=state.time_step,
+                coupling_fn=coupling_fns[i],
+                parent_has_constant=add_constant_inputs[i],
+            )
 
     # Step 4a: PE for output layer (mean = y, observation-pinned)
     # Exclude the bias column (if any) from the parent count.
     n_parents_0 = weights[0].shape[1] - (1 if add_constant_inputs[1] else 0)
-    layers[0] = vectorized_layer_prediction_error(
-        layer=layers[0],
-        n_parents=n_parents_0,
-    )
+    if layer_kinds[0] == "binary":
+        layers[0] = vectorized_binary_prediction_error(layer=layers[0])
+    else:
+        layers[0] = vectorized_layer_prediction_error(
+            layer=layers[0],
+            n_parents=n_parents_0,
+        )
 
     # Step 4b: per hidden layer — posterior then PE (interleaved)
     for i in range(1, n_layers - 1):
@@ -102,10 +126,13 @@ def propagation_step(
         )
         # Recompute PE using updated posterior mean so the layer
         # above receives the correct (post-posterior) error signal.
-        layers[i] = vectorized_layer_prediction_error(
-            layer=layers[i],
-            n_parents=n_vp,
-        )
+        if layer_kinds[i] == "binary":
+            layers[i] = vectorized_binary_prediction_error(layer=layers[i])
+        else:
+            layers[i] = vectorized_layer_prediction_error(
+                layer=layers[i],
+                n_parents=n_vp,
+            )
 
     # ========== LEARNING PHASE (after inference converges) ==========
     # Update weights once using converged activities
