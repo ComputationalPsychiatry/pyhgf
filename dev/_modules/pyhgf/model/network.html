@@ -1280,6 +1280,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">rng_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new observations.</span>
 
@@ -1309,6 +1310,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        rng_keys :</span>
 <span class="sd">            Optional. A random key for the random number generator. This is only used</span>
 <span class="sd">            when an action function is provided.</span>
+<span class="sd">        record_trajectories :</span>
+<span class="sd">            If True (default), record the full node trajectories at every time</span>
+<span class="sd">            step (accessible via ``self.node_trajectories``).  If False, only</span>
+<span class="sd">            the final state is kept, which significantly reduces memory usage</span>
+<span class="sd">            and speeds up training.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">rng_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1352,10 +1358,20 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># this is where the model loops over the whole input time series</span>
         <span class="c1"># at each time point, the node structure is traversed and beliefs are updated</span>
         <span class="c1"># using precision-weighted prediction errors</span>
-        <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
+            <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+        <span class="k">else</span><span class="p">:</span>
 
-        <span class="c1"># belief trajectories</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_no_traj_step</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+                <span class="n">new_attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_attributes</span><span class="p">,</span> <span class="kc">None</span>
+
+            <span class="n">last_attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="n">_no_traj_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="o">=</span> <span class="n">last_attributes</span>
 
         <span class="k">return</span> <span class="bp">self</span>
