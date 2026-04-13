@@ -30,6 +30,7 @@ def propagation_step(
     add_constant_inputs: list[bool],
     lr: Union[float, str],
     layer_kinds: Optional[list[str]] = None,
+    adam_params: Optional[tuple[float, float, float, Optional[float]]] = None,
 ) -> tuple[NetworkState, tuple[NetworkState, jnp.ndarray]]:
     """Single propagation step through the network.
 
@@ -54,6 +55,10 @@ def propagation_step(
     layer_kinds :
         Per-layer node type (``"volatile"`` or ``"binary"``).  Defaults to
         all ``"volatile"`` when *None*.
+    adam_params :
+        Tuple ``(beta1, beta2, epsilon, lr_override)`` for Adam optimiser.
+        ``lr_override`` is an optional Adam-specific learning rate that overrides the
+        main *lr* argument.  When *None*, Adam is not used.
 
     Returns
     -------
@@ -137,21 +142,46 @@ def propagation_step(
     # ========== LEARNING PHASE (after inference converges) ==========
     # Update weights once using converged activities
     lr_value: Optional[float] = None if lr == "dynamic" else float(lr)
+
+    adam_m_list = list(state.adam_m)
+    adam_v_list = list(state.adam_v)
+    use_adam = adam_params is not None
+    adam_t = state.adam_t + 1 if use_adam else state.adam_t
+    if adam_params is not None:
+        beta1, beta2, epsilon, adam_lr_override = adam_params
+        # Adam lr override takes precedence (matches Rust behaviour)
+        if adam_lr_override is not None:
+            lr_value = adam_lr_override
+    else:
+        beta1, beta2, epsilon = 0.9, 0.999, 1e-8
+
     for i in range(1, n_layers):
-        weights[i - 1] = vectorized_weight_update(
+        weights[i - 1], new_m, new_v = vectorized_weight_update(
             parent_state=layers[i],
             child_state=layers[i - 1],
             weights=weights[i - 1],
             coupling_fn=coupling_fns[i],
             lr=lr_value,
             parent_has_constant=add_constant_inputs[i],
+            adam_m=adam_m_list[i - 1] if use_adam else None,
+            adam_v=adam_v_list[i - 1] if use_adam else None,
+            adam_t=adam_t,
+            adam_beta1=beta1,
+            adam_beta2=beta2,
+            adam_epsilon=epsilon,
         )
+        if use_adam and new_m is not None:
+            adam_m_list[i - 1] = new_m
+            adam_v_list[i - 1] = new_v
 
     new_state = NetworkState(
         layers=tuple(layers),
         weights=tuple(weights),
         params=tuple(params),
         time_step=state.time_step,
+        adam_m=tuple(adam_m_list),
+        adam_v=tuple(adam_v_list),
+        adam_t=adam_t,
     )
 
     # Return output prediction for monitoring

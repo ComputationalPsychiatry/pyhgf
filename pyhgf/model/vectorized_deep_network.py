@@ -93,6 +93,7 @@ class VectorizedDeepNetwork:
         self.predictions: Optional[jnp.ndarray] = None
         self._propagation_fn: Optional[Callable] = None
         self._propagation_lr: Optional[Union[float, str]] = None
+        self._propagation_optimizer: Optional[str] = None
         self._prediction_fn: Optional[Callable] = None
 
     def add_layer(
@@ -147,13 +148,20 @@ class VectorizedDeepNetwork:
         Raises
         ------
         ValueError
-            If *kind* is not ``"volatile"`` or ``"binary"``.
+            If *kind* is not a recognised node type.
         ValueError
             If *fully_connected* is False with ``add_constant_input=True``.
         ValueError
             If *fully_connected* is False and this layer's size differs from
             the preceding child layer.
         """
+        # Normalise Rust-style kind names to short form
+        _kind_aliases = {
+            "volatile-state": "volatile",
+            "binary-state": "binary",
+        }
+        kind = _kind_aliases.get(kind, kind)
+
         valid_kinds = {"volatile", "binary"}
         if kind not in valid_kinds:
             raise ValueError(
@@ -278,11 +286,18 @@ class VectorizedDeepNetwork:
                 else:
                     weights.append(jnp.eye(prev_size, n_parent_cols))
 
+        # Adam moment buffers (zeros, same shapes as weights)
+        adam_m = tuple(jnp.zeros_like(w) for w in weights)
+        adam_v = tuple(jnp.zeros_like(w) for w in weights)
+
         return NetworkState(
             layers=tuple(layers),
             weights=tuple(weights),
             params=tuple(params),
             time_step=1.0,
+            adam_m=adam_m,
+            adam_v=adam_v,
+            adam_t=0,
         )
 
     def weight_initialisation(
@@ -351,12 +366,17 @@ class VectorizedDeepNetwork:
             weights=tuple(new_weights),
             params=self.state.params,
             time_step=self.state.time_step,
+            adam_m=self.state.adam_m,
+            adam_v=self.state.adam_v,
+            adam_t=self.state.adam_t,
         )
         return self
 
     def _create_propagation_fn(
         self,
         lr: Union[float, str],
+        optimizer: Optional[str] = None,
+        params: Optional[dict] = None,
     ):
         """Create the jitted propagation function.
 
@@ -364,6 +384,12 @@ class VectorizedDeepNetwork:
         ----------
         lr :
             Learning rate for weight updates.
+        optimizer :
+            Optimizer name.  ``"adam"`` enables Adam filtering of weight
+            gradients.  *None* uses plain gradient updates.
+        params :
+            Hyper-parameters for the optimizer (e.g. ``beta1``, ``beta2``,
+            ``epsilon``, and ``lr`` for Adam).  See :meth:`fit` for defaults.
 
         Returns
         -------
@@ -378,6 +404,19 @@ class VectorizedDeepNetwork:
         add_constant_inputs = self.add_constant_inputs  # captured for bias updates
         layer_kinds = self.layer_kinds
 
+        # Build Adam parameters tuple (or None)
+        # Format: (beta1, beta2, epsilon, adam_lr_override)
+        if optimizer == "adam":
+            p = params or {}
+            adam_params: Optional[tuple[float, float, float, Optional[float]]] = (
+                p.get("beta1", 0.9),
+                p.get("beta2", 0.999),
+                p.get("epsilon", 1e-8),
+                p.get("lr", 1e-3),
+            )
+        else:
+            adam_params = None
+
         def _step(state: NetworkState, inputs):
             return propagation_step(
                 state,
@@ -387,6 +426,7 @@ class VectorizedDeepNetwork:
                 add_constant_inputs,
                 lr,
                 layer_kinds,
+                adam_params,
             )
 
         return jax.jit(_step)
@@ -444,6 +484,8 @@ class VectorizedDeepNetwork:
         x: Union[np.ndarray, jnp.ndarray],
         y: Union[np.ndarray, jnp.ndarray],
         lr: Union[float, str] = 0.2,
+        optimizer: Optional[str] = "adam",
+        params: Optional[dict] = None,
     ) -> "VectorizedDeepNetwork":
         """Fit network to data.
 
@@ -456,26 +498,52 @@ class VectorizedDeepNetwork:
         lr :
             Learning rate for weight updates, or ``"dynamic"`` for
             Kalman-gain updates.
+        optimizer :
+            Optimizer name.  ``"adam"`` (default) filters weight gradients
+            through the Adam algorithm (Kingma & Ba, 2015).  *None* uses
+            plain gradient or Kalman-gain updates.
+        params :
+            Dictionary of optimizer hyper-parameters.  For Adam:
+            ``beta1`` (default 0.9), ``beta2`` (default 0.999),
+            ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3,
+            the Adam step size).
 
         Returns
         -------
         VectorizedDeepNetwork
             Self with updated state.
+
+        Raises
+        ------
+        ValueError
+            If *optimizer* is not ``None`` or ``"adam"``.
         """
+        if optimizer is not None and optimizer != "adam":
+            raise ValueError(
+                f"Unknown optimizer '{optimizer}'. Supported: 'adam' or None."
+            )
+
         # Initialize state if needed
         if self.state is None:
             self.state = self._init_state()
 
-        # Only recreate (and retrace) the propagation fn when lr changes
-        if self._propagation_fn is None or self._propagation_lr != lr:
-            self._propagation_fn = self._create_propagation_fn(lr)
+        # Recreate (and retrace) the propagation fn when settings change
+        needs_retrace = (
+            self._propagation_fn is None
+            or self._propagation_lr != lr
+            or self._propagation_optimizer != optimizer
+        )
+        if needs_retrace:
+            self._propagation_fn = self._create_propagation_fn(lr, optimizer, params)
             self._propagation_lr = lr
+            self._propagation_optimizer = optimizer
 
         # Convert to JAX arrays
         x = jnp.asarray(x)
         y = jnp.asarray(y)
 
         # Run scan over data
+        assert self._propagation_fn is not None
         self.state, (self.trajectories, self.predictions) = jax.lax.scan(
             self._propagation_fn, self.state, (x, y)
         )
@@ -525,6 +593,7 @@ class VectorizedDeepNetwork:
         self.state = self._init_state()
         self._propagation_fn = None
         self._propagation_lr = None
+        self._propagation_optimizer = None
         self._prediction_fn = None
         return self
 

@@ -907,9 +907,9 @@ impl Network {
             let beta1 = params.and_then(|p| p.get("beta1").copied()).unwrap_or(0.9);
             let beta2 = params.and_then(|p| p.get("beta2").copied()).unwrap_or(0.999);
             let epsilon = params.and_then(|p| p.get("epsilon").copied()).unwrap_or(1e-8);
-            let adam_lr = params.and_then(|p| p.get("lr").copied());
+            let adam_lr = params.and_then(|p| p.get("lr").copied()).unwrap_or(1e-3);
             let mut adam = AdamState::new(&coupling_sizes, beta1, beta2, epsilon);
-            adam.lr = adam_lr;
+            adam.lr = Some(adam_lr);
             self.adam_state = Some(adam);
         } else {
             self.adam_state = None;
@@ -1350,7 +1350,7 @@ impl Network {
         Ok(slf)
     }
 
-    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true, optimizer=None, params=None))]
+    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true, optimizer="adam", params=None))]
     fn py_fit<'py>(
         mut slf: PyRefMut<'py, Self>,
         x: Bound<'py, PyAny>,
@@ -1359,7 +1359,7 @@ impl Network {
         inputs_y_idxs: Option<Vec<usize>>,
         lr: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
-        optimizer: Option<String>,
+        optimizer: Option<&str>,
         params: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
         let lr_option: Option<f64> = match lr {
@@ -1416,7 +1416,7 @@ impl Network {
             None => None,
         };
 
-        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories, optimizer.as_deref(), params_map.as_ref());
+        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories, optimizer, params_map.as_ref());
         Ok(slf)
     }
 
