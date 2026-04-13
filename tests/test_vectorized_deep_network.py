@@ -147,7 +147,7 @@ class TestVectorizedDeepNetwork:
         net.fit(x, y, lr=0.1)
 
         assert net.state is not None
-        assert net.trajectories is not None
+        assert net.trajectories is None  # not recorded by default
         assert net.predictions is not None
 
         # Check predictions shape

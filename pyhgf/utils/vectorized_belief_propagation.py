@@ -31,7 +31,7 @@ def propagation_step(
     lr: Union[float, str],
     layer_kinds: Optional[list[str]] = None,
     adam_params: Optional[tuple[float, float, float, Optional[float]]] = None,
-) -> tuple[NetworkState, tuple[NetworkState, jnp.ndarray]]:
+) -> tuple[NetworkState, jnp.ndarray]:
     """Single propagation step through the network.
 
     This performs a full inference-then-learning cycle for one data sample:
@@ -64,8 +64,8 @@ def propagation_step(
     -------
     new_state :
         Updated network state.
-    (new_state, output_pred) :
-        Carry-along tuple for ``jax.lax.scan`` compatibility.
+    output_pred :
+        Output layer prediction (expected mean).
     """
     x, y = inputs
     layers = list(state.layers)
@@ -187,4 +187,4 @@ def propagation_step(
     # Return output prediction for monitoring
     output_pred = layers[0].expected_mean
 
-    return new_state, (new_state, output_pred)
+    return new_state, output_pred

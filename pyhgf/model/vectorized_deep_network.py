@@ -94,6 +94,7 @@ class VectorizedDeepNetwork:
         self._propagation_fn: Optional[Callable] = None
         self._propagation_lr: Optional[Union[float, str]] = None
         self._propagation_optimizer: Optional[str] = None
+        self._record_trajectories: bool = False
         self._prediction_fn: Optional[Callable] = None
 
     def add_layer(
@@ -377,6 +378,7 @@ class VectorizedDeepNetwork:
         lr: Union[float, str],
         optimizer: Optional[str] = None,
         params: Optional[dict] = None,
+        record_trajectories: bool = False,
     ):
         """Create the jitted propagation function.
 
@@ -390,6 +392,10 @@ class VectorizedDeepNetwork:
         params :
             Hyper-parameters for the optimizer (e.g. ``beta1``, ``beta2``,
             ``epsilon``, and ``lr`` for Adam).  See :meth:`fit` for defaults.
+        record_trajectories :
+            If True, the scan output includes the full ``NetworkState`` at
+            every time step (useful for inspection but significantly slower).
+            If False (default), only predictions are accumulated.
 
         Returns
         -------
@@ -417,17 +423,34 @@ class VectorizedDeepNetwork:
         else:
             adam_params = None
 
-        def _step(state: NetworkState, inputs):
-            return propagation_step(
-                state,
-                inputs,
-                coupling_fns,
-                coupling_fn_grads,
-                add_constant_inputs,
-                lr,
-                layer_kinds,
-                adam_params,
-            )
+        if record_trajectories:
+
+            def _step(state: NetworkState, inputs):
+                new_state, output_pred = propagation_step(
+                    state,
+                    inputs,
+                    coupling_fns,
+                    coupling_fn_grads,
+                    add_constant_inputs,
+                    lr,
+                    layer_kinds,
+                    adam_params,
+                )
+                return new_state, (new_state, output_pred)
+
+        else:
+
+            def _step(state: NetworkState, inputs):
+                return propagation_step(
+                    state,
+                    inputs,
+                    coupling_fns,
+                    coupling_fn_grads,
+                    add_constant_inputs,
+                    lr,
+                    layer_kinds,
+                    adam_params,
+                )
 
         return jax.jit(_step)
 
@@ -486,6 +509,7 @@ class VectorizedDeepNetwork:
         lr: Union[float, str] = 0.2,
         optimizer: Optional[str] = "adam",
         params: Optional[dict] = None,
+        record_trajectories: bool = False,
     ) -> "VectorizedDeepNetwork":
         """Fit network to data.
 
@@ -499,14 +523,17 @@ class VectorizedDeepNetwork:
             Learning rate for weight updates, or ``"dynamic"`` for
             Kalman-gain updates.
         optimizer :
-            Optimizer name.  ``"adam"`` (default) filters weight gradients
-            through the Adam algorithm (Kingma & Ba, 2015).  *None* uses
-            plain gradient or Kalman-gain updates.
+            Optimizer name.  ``"adam"`` (default) filters weight gradients through the
+            Adam algorithm (Kingma & Ba, 2015).  *None* uses plain gradient or
+            Kalman-gain updates.
         params :
-            Dictionary of optimizer hyper-parameters.  For Adam:
-            ``beta1`` (default 0.9), ``beta2`` (default 0.999),
-            ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3,
-            the Adam step size).
+            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default
+            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
+            (default 1e-3, the Adam step size).
+        record_trajectories :
+            If True, record the full ``NetworkState`` at every time step (accessible
+            via ``self.trajectories``).  This is useful for inspection but significantly
+            increases memory usage and slows training. Default is False.
 
         Returns
         -------
@@ -532,11 +559,15 @@ class VectorizedDeepNetwork:
             self._propagation_fn is None
             or self._propagation_lr != lr
             or self._propagation_optimizer != optimizer
+            or self._record_trajectories != record_trajectories
         )
         if needs_retrace:
-            self._propagation_fn = self._create_propagation_fn(lr, optimizer, params)
+            self._propagation_fn = self._create_propagation_fn(
+                lr, optimizer, params, record_trajectories
+            )
             self._propagation_lr = lr
             self._propagation_optimizer = optimizer
+            self._record_trajectories = record_trajectories
 
         # Convert to JAX arrays
         x = jnp.asarray(x)
@@ -544,9 +575,15 @@ class VectorizedDeepNetwork:
 
         # Run scan over data
         assert self._propagation_fn is not None
-        self.state, (self.trajectories, self.predictions) = jax.lax.scan(
-            self._propagation_fn, self.state, (x, y)
-        )
+        if record_trajectories:
+            self.state, (self.trajectories, self.predictions) = jax.lax.scan(
+                self._propagation_fn, self.state, (x, y)
+            )
+        else:
+            self.trajectories = None
+            self.state, self.predictions = jax.lax.scan(
+                self._propagation_fn, self.state, (x, y)
+            )
 
         return self
 
@@ -594,6 +631,7 @@ class VectorizedDeepNetwork:
         self._propagation_fn = None
         self._propagation_lr = None
         self._propagation_optimizer = None
+        self._record_trajectories = False
         self._prediction_fn = None
         return self
 
