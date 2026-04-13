@@ -406,6 +406,7 @@ class Network:
         observed: Optional[tuple[ArrayLike, ...]] = None,
         input_idxs: Optional[tuple[int]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
+        record_trajectories: bool = True,
     ):
         """Add new observations.
 
@@ -435,6 +436,11 @@ class Network:
         rng_keys :
             Optional. A random key for the random number generator. This is only used
             when an action function is provided.
+        record_trajectories :
+            If True (default), record the full node trajectories at every time
+            step (accessible via ``self.node_trajectories``).  If False, only
+            the final state is kept, which significantly reduces memory usage
+            and speeds up training.
 
         """
         if rng_keys is not None:
@@ -478,10 +484,20 @@ class Network:
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
         # using precision-weighted prediction errors
-        last_attributes, node_trajectories = scan(self.scan_fn, self.attributes, inputs)
+        if record_trajectories:
+            last_attributes, node_trajectories = scan(
+                self.scan_fn, self.attributes, inputs
+            )
+            self.node_trajectories = node_trajectories
+        else:
 
-        # belief trajectories
-        self.node_trajectories = node_trajectories
+            def _no_traj_step(attributes, inputs):
+                new_attributes, _ = self.scan_fn(attributes, inputs)
+                return new_attributes, None
+
+            last_attributes, _ = scan(_no_traj_step, self.attributes, inputs)
+            self.node_trajectories = None  # type: ignore[assignment]
+
         self.last_attributes = last_attributes
 
         return self

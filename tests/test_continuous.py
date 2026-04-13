@@ -127,3 +127,37 @@ def test_continuous_scan_loop():
         [0.25191233, 0.25114372, -3.5367591, -3.5352085],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[2][idx][-1], val)
+
+
+def test_record_trajectories():
+    """Test input_data with record_trajectories=True and False."""
+    timeserie = load_data("continuous")
+
+    # record_trajectories=True (default) should store full trajectories
+    net_with = (
+        Network()
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .input_data(input_data=timeserie, record_trajectories=True)
+    )
+    assert net_with.node_trajectories is not None
+    assert len(net_with.node_trajectories[0]["mean"]) == len(timeserie)
+    assert net_with.last_attributes is not None
+
+    # record_trajectories=False should skip trajectories but keep last state
+    net_without = (
+        Network()
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .input_data(input_data=timeserie, record_trajectories=False)
+    )
+    assert net_without.node_trajectories is None
+    assert net_without.last_attributes is not None
+
+    # final state should be the same regardless of recording
+    for node_idx in [0, 1]:
+        for key in ["mean", "precision"]:
+            assert jnp.isclose(
+                net_with.last_attributes[node_idx][key],
+                net_without.last_attributes[node_idx][key],
+            )
