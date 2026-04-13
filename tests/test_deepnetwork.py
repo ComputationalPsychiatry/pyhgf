@@ -129,13 +129,17 @@ def test_fit():
                     )
 
                 predictors = tuple(net.layers[-1][:n_input])
-                net.fit(
+                fit_kwargs = dict(
                     x=x,
                     y=y,
                     inputs_x_idxs=predictors,
                     inputs_y_idxs=tuple(range(n_targets)),
                     lr=lr,
                 )
+                # Rust defaults to Adam; override to plain updates for parity
+                if Network is RsNetwork:
+                    fit_kwargs["optimizer"] = None
+                net.fit(**fit_kwargs)
                 fitted.append(net)
 
             py_net, rs_net = fitted

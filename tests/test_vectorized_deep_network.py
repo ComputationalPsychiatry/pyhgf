@@ -339,7 +339,9 @@ class TestVectorizedUpdates:
             parent_state, child_state, weights, jnp.tanh, lr=0.1
         )
 
-        assert result.shape == (10, 8)
+        assert result[0].shape == (10, 8)
+        assert result[1] is None  # no Adam
+        assert result[2] is None
 
 
 class TestAddLayerValidation:

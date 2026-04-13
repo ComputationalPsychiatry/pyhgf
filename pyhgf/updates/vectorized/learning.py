@@ -17,7 +17,13 @@ def vectorized_weight_update(
     coupling_fn: Callable,
     lr: Optional[float] = None,
     parent_has_constant: bool = False,
-) -> jnp.ndarray:
+    adam_m: Optional[jnp.ndarray] = None,
+    adam_v: Optional[jnp.ndarray] = None,
+    adam_t: int = 0,
+    adam_beta1: float = 0.9,
+    adam_beta2: float = 0.999,
+    adam_epsilon: float = 1e-8,
+) -> tuple[jnp.ndarray, Optional[jnp.ndarray], Optional[jnp.ndarray]]:
     r"""Unified weight update for vectorized layers.
 
     Branches on the ``lr`` parameter:
@@ -28,6 +34,9 @@ def vectorized_weight_update(
     - **Dynamic** (``lr is None``): Kalman-gain rule.
       :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`
       :math:`\Delta w = K \cdot \text{PE} \cdot g(\text{parent})`
+
+    When ``adam_m`` and ``adam_v`` are provided (not *None*), the fixed-LR gradient is
+    filtered through Adam before being applied.
 
     Parameters
     ----------
@@ -48,11 +57,28 @@ def vectorized_weight_update(
         If True, the parent layer has a constant input node.  The parent
         mean is augmented with 1.0 and the precision with the parent
         precision mean so the bias column of *weights* is updated.
+    adam_m :
+        First moment estimate for Adam, same shape as *weights*.
+        Pass ``None`` to disable Adam.
+    adam_v :
+        Second moment estimate for Adam, same shape as *weights*.
+    adam_t :
+        Global Adam timestep (already incremented for this step).
+    adam_beta1 :
+        Exponential decay rate for the first moment.
+    adam_beta2 :
+        Exponential decay rate for the second moment.
+    adam_epsilon :
+        Small constant for numerical stability.
 
     Returns
     -------
-    jnp.ndarray
+    new_weights :
         Updated weight matrix.
+    new_adam_m :
+        Updated first moment (or *None* when Adam is not used).
+    new_adam_v :
+        Updated second moment (or *None* when Adam is not used).
     """
     # Prediction error at child layer
     pe = child_state.mean - child_state.expected_mean
@@ -61,8 +87,6 @@ def vectorized_weight_update(
     parent_mean = parent_state.mean
     parent_precision = parent_state.precision
     if parent_has_constant:
-        # Append constant 1.0 for bias node; use parent mean precision
-        # for the bias entry so the Kalman gain remains well-defined.
         parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
         parent_precision = jnp.concatenate([
             parent_precision,
@@ -71,18 +95,31 @@ def vectorized_weight_update(
     coupled_parent = coupling_fn(parent_mean)
 
     # Base outer product: PE ⊗ g(parent)
-    # Broadcast: (n_children, 1) * (1, n_parents) -> (n_children, n_parents)
     coupling_delta = pe[:, None] * coupled_parent[None, :]
 
     if lr is not None:
-        # Fixed LR: scale by lr · π_child
-        coupling_delta = coupling_delta * child_state.precision[:, None] * lr
+        # Raw gradient (before LR scaling)
+        gradient = coupling_delta * child_state.precision[:, None]
+
+        if adam_m is not None and adam_v is not None:
+            # Adam-filtered update
+            new_m = adam_beta1 * adam_m + (1.0 - adam_beta1) * gradient
+            new_v = adam_beta2 * adam_v + (1.0 - adam_beta2) * gradient**2
+            m_hat = new_m / (1.0 - adam_beta1**adam_t)
+            v_hat = new_v / (1.0 - adam_beta2**adam_t)
+            coupling_delta = lr * m_hat / (jnp.sqrt(v_hat) + adam_epsilon)
+        else:
+            coupling_delta = gradient * lr
+            new_m = None
+            new_v = None
     else:
-        # Dynamic: scale by Kalman gain K = π_parent / (π_parent + π_child)
+        # Dynamic: Kalman gain (Adam not applicable)
         kalman_gain = parent_precision[None, :] / (
             parent_precision[None, :] + child_state.precision[:, None]
         )
         coupling_delta = coupling_delta * kalman_gain
+        new_m = None
+        new_v = None
 
     # Guard against NaN / inf
     coupling_delta = jnp.where(
@@ -92,4 +129,4 @@ def vectorized_weight_update(
     new_weights = weights + coupling_delta
     new_weights = jnp.where(jnp.isinf(new_weights), weights, new_weights)
 
-    return new_weights
+    return new_weights, new_m, new_v

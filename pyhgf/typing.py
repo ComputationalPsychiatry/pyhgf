@@ -174,6 +174,9 @@ class NetworkState(NamedTuple):
     weights: tuple  # tuple[Array, ...] - weights[i] connects layer[i] to layer[i+1]
     params: tuple  # tuple[LayerParams, ...] - params[i] for layer[i]
     time_step: float
+    adam_m: tuple  # tuple[Array, ...] - first moment estimates (same shapes as weights)
+    adam_v: tuple  # tuple[Array, ...] - second moment estimates
+    adam_t: int  # global timestep counter
 
     @property
     def n_layers(self) -> int:
