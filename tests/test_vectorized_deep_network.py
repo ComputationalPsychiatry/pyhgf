@@ -153,6 +153,37 @@ class TestVectorizedDeepNetwork:
         # Check predictions shape
         assert net.predictions.shape == (n_samples, 3)
 
+    def test_fit_record_trajectories(self):
+        """Test fit with record_trajectories=True and False."""
+        net = (
+            VectorizedDeepNetwork()
+            .add_layer(size=3)
+            .add_layer(size=5)
+            .add_layer(size=4)
+        )
+
+        n_samples = 10
+        x = np.random.randn(n_samples, 4)
+        y = np.random.randn(n_samples, 3)
+
+        # record_trajectories=False (default)
+        net.fit(x, y, lr=0.1, record_trajectories=False)
+        assert net.trajectories is None
+        assert net.predictions is not None
+        assert net.predictions.shape == (n_samples, 3)
+        state_no_traj = net.state
+
+        # reset and fit with record_trajectories=True
+        net.reset()
+        net.fit(x, y, lr=0.1, record_trajectories=True)
+        assert net.trajectories is not None
+        assert net.predictions is not None
+        assert net.predictions.shape == (n_samples, 3)
+
+        # final states should match
+        for w_a, w_b in zip(state_no_traj.weights, net.state.weights):
+            assert np.allclose(w_a, w_b, atol=1e-5)
+
     def test_predict(self):
         """Test prediction after fitting."""
         net = (
