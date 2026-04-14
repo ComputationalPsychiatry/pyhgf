@@ -186,3 +186,21 @@ def test_deep_network_plotting():
 
     # Visualize the network structure
     plot_deep_network(net, view=False)
+
+
+def test_networkx_volatile_state_nodes():
+    """Test that NetworkX backend renders volatile-state (type 6) nodes."""
+    # Build a network with volatile-state nodes
+    net = (
+        Network()
+        .add_nodes(kind="continuous-state", n_nodes=2)
+        .add_nodes(
+            kind="volatile-state",
+            n_nodes=2,
+            value_children=[0, 1],
+        )
+    )
+    net.input_data(input_data=np.random.randn(5, 2))
+
+    # This should hit the vv_nodes (node_type 6) rendering path
+    net.plot_network(backend="networkx")

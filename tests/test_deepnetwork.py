@@ -415,3 +415,70 @@ def test_cross_backend_binary_volatile():
         assert np.allclose(
             np.asarray(preds_rs), np.asarray(preds_dn), rtol=rtol, atol=atol
         ), f"{label}: predictions: Rust={preds_rs} vs DeepNetwork={preds_dn}"
+
+
+def test_add_layer_invalid_kind():
+    """Invalid layer kind raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid layer kind"):
+        DeepNetwork().add_layer(size=3, kind="invalid")
+
+
+def test_add_layer_one_to_one_constant_input():
+    """One-to-one layers cannot use add_constant_input."""
+    with pytest.raises(ValueError, match="One-to-one layers.*cannot use"):
+        (
+            DeepNetwork()
+            .add_layer(size=3)
+            .add_layer(size=3, fully_connected=False, add_constant_input=True)
+        )
+
+
+def test_add_layer_one_to_one_size_mismatch():
+    """One-to-one layers require matching sizes."""
+    with pytest.raises(ValueError, match="One-to-one layers require the same size"):
+        (
+            DeepNetwork()
+            .add_layer(size=3)
+            .add_layer(size=4, fully_connected=False, add_constant_input=False)
+        )
+
+
+def test_fit_invalid_optimizer():
+    """Unknown optimizer raises ValueError."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    with pytest.raises(ValueError, match="Unknown optimizer"):
+        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), optimizer="sgd")
+
+
+def test_fit_record_trajectories():
+    """fit(record_trajectories=True) stores trajectories."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    x = np.random.randn(5, 3)
+    y = np.random.randn(5, 2)
+    dn.fit(x=x, y=y, lr=0.1, record_trajectories=True)
+    assert dn.trajectories is not None
+
+
+def test_predict_before_fit():
+    """predict() before fit() raises ValueError."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    with pytest.raises(ValueError, match="must be fit"):
+        dn.predict(np.zeros((5, 3)))
+
+
+def test_predict_1d_input():
+    """predict() with 1d input returns 1d output."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), lr=0.1)
+    pred = dn.predict(np.array([0.1, 0.2, 0.3]))
+    assert pred.ndim == 1
+    assert pred.shape == (2,)
+
+
+def test_repr():
+    """__repr__ contains expected info."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    r = repr(dn)
+    assert "VectorizedDeepNetwork" in r
+    assert "nodes=5" in r
+    assert "[2, 3]" in r
