@@ -21,7 +21,6 @@ __all__ = [
     "HGF",
     "Network",
     "DeepNetwork",
-    "DeepNetwork",
     "LayerState",
     "LayerParams",
     "NetworkState",
