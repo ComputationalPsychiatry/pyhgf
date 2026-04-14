@@ -336,8 +336,7 @@ class DeepNetwork:
         Raises
         ------
         ValueError
-            If the strategy name is not recognised or the state has not been
-            initialised yet.
+            If the strategy name is not recognised.
         """
         if strategy is None:
             return self
@@ -350,10 +349,7 @@ class DeepNetwork:
             )
 
         if self.state is None:
-            raise ValueError(
-                "State must be initialised before calling weight_initialisation. "
-                "Call fit() first or initialise the state manually."
-            )
+            self.state = self._init_state()
 
         _init_fns: dict[str, Callable[..., np.ndarray]] = {
             "xavier": xavier_init,

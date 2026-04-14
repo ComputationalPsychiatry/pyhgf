@@ -189,11 +189,12 @@ def test_weight_initialisation_invalid_strategy():
         dn.weight_initialisation("nonexistent", seed=0)
 
 
-def test_weight_initialisation_too_few_layers():
-    """State not initialised raises ValueError."""
+def test_weight_initialisation_single_layer():
+    """Weight init on a single-layer network is a no-op."""
     dn = DeepNetwork().add_layer(size=3)
-    with pytest.raises(ValueError):
-        dn.weight_initialisation("xavier", seed=0)
+    dn.weight_initialisation("xavier", seed=0)
+    assert dn.state is not None
+    assert len(dn.state.weights) == 0
 
 
 def test_reset():

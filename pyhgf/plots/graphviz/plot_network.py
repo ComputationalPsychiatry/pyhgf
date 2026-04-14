@@ -203,9 +203,17 @@ def plot_deep_network(
 
     # Draw downward arrows between layers
     for i in range(len(layer_names) - 1):
-        graphviz_structure.edge(
-            layer_names[i], layer_names[i + 1], xlabel="fully connected"
-        )
+        # layer_names[i] is the top-most visual layer; true_idx counts from
+        # the bottom (0 = outcome).  coupling_fns[j] is applied to layer j's
+        # output, so the edge from parent layer to child layer j uses
+        # coupling_fns[j].
+        child_true_idx = num_layers - 1 - (i + 1)
+        fn = deep_network.coupling_fns[child_true_idx]
+        fn_name = getattr(fn, "__name__", None) or type(fn).__name__
+        # Replace the anonymous identity with a readable label
+        if fn_name == "<lambda>":
+            fn_name = "linear"
+        graphviz_structure.edge(layer_names[i], layer_names[i + 1], xlabel=fn_name)
 
     if filename is not None:
         graphviz_structure.render(filename, view=view, format="pdf")

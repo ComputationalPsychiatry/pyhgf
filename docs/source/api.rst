@@ -243,7 +243,7 @@ and creates a standard node structure for these models.
    HGF
    Network
    DeepNetwork
-   add_volatile_node
+   add_volatile_state
    add_continuous_state
    add_binary_state
    add_ef_state
