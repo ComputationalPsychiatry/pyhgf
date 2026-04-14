@@ -868,15 +868,28 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for pyhgf.model.deep_network</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
+<span class="c1"># Author: Aleksandrs Baskakovs &lt;aleks@cas.au.dk&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;Vectorized deep predictive coding network.</span>
+
+<span class="sd">This module provides a vectorized implementation of deep HGF networks that uses</span>
+<span class="sd">layer-wise matrix operations instead of per-node updates.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_coupling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span><span class="p">,</span> <span class="n">NetworkState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.binary</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorized_binary_prediction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.volatile</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">vectorized_layer_prediction</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="n">propagation_step</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.weight_initialisation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">he_init</span><span class="p">,</span>
     <span class="n">orthogonal_init</span><span class="p">,</span>
@@ -887,361 +900,286 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="DeepNetwork">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">DeepNetwork</span><span class="p">(</span><span class="n">Network</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A deep network with fully connected layers for predictive coding.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepNetwork</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deep predictive coding network with vectorized operations.</span>
 
-<span class="sd">    This class extends Network with automatic layer tracking and convenience methods</span>
-<span class="sd">    for building, visualizing, and training deep hierarchical networks.</span>
+<span class="sd">    This class implements a deep hierarchical Gaussian filter using layer-wise</span>
+<span class="sd">    vectorized operations for efficient scaling to large networks.</span>
 
-<span class="sd">    Unlike the base Network class, DeepNetwork automatically tracks layer structure</span>
-<span class="sd">    as you add layers, providing simplified interfaces for plotting and fitting.</span>
+<span class="sd">    Unlike the standard DeepNetwork which uses per-node updates with Python loops, this</span>
+<span class="sd">    implementation uses JAX matrix operations to update all nodes in a layer</span>
+<span class="sd">    simultaneously.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; # Build a deep network with method chaining</span>
+<span class="sd">    &gt;&gt;&gt; # Build a network with method chaining</span>
 <span class="sd">    &gt;&gt;&gt; net = (</span>
-<span class="sd">    ...     DeepNetwork()</span>
-<span class="sd">    ...     .add_nodes(kind=&quot;continuous-state&quot;, n_nodes=10)</span>
-<span class="sd">    ...     .add_layer(size=8, precision=1.0)</span>
-<span class="sd">    ...     .add_layer(size=6, precision=1.0)</span>
-<span class="sd">    ...     .add_layer(size=4, precision=1.0)</span>
+<span class="sd">    ...     VectorizedDeepNetwork()</span>
+<span class="sd">    ...     .add_layer(size=10)  # Output layer</span>
+<span class="sd">    ...     .add_layer(size=8)   # Hidden layer 1</span>
+<span class="sd">    ...     .add_layer(size=6)   # Hidden layer 2</span>
+<span class="sd">    ...     .add_layer(size=4)   # Input layer</span>
 <span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; # Or use add_layer_stack for multiple layers at once</span>
-<span class="sd">    &gt;&gt;&gt; net = (</span>
-<span class="sd">    ...     DeepNetwork()</span>
-<span class="sd">    ...     .add_nodes(kind=&quot;continuous-state&quot;, n_nodes=10)</span>
-<span class="sd">    ...     .add_layer_stack(layer_sizes=[8, 6, 4], precision=1.0)</span>
-<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; # Fit to data</span>
+<span class="sd">    &gt;&gt;&gt; net.fit(x_train, y_train, lr=0.2)</span>
 <span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; # Plot without specifying layer indices</span>
-<span class="sd">    &gt;&gt;&gt; net.plot_layers()</span>
-<span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; # Fit with automatic input/output detection</span>
-<span class="sd">    &gt;&gt;&gt; net.fit(x_train, y_train)</span>
+<span class="sd">    &gt;&gt;&gt; # Make predictions</span>
+<span class="sd">    &gt;&gt;&gt; predictions = net.predict(x_test)</span>
 
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The network uses volatile nodes internally, which have two levels:</span>
+<span class="sd">    - Value level (external): represents the node&#39;s belief about its value</span>
+<span class="sd">    - Volatility level (internal): represents uncertainty about the value level</span>
+
+<span class="sd">    Layer indexing follows the convention:</span>
+<span class="sd">    - Layer 0 is the output layer (receives observations)</span>
+<span class="sd">    - Layer N is the input layer (receives predictors)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="DeepNetwork.__init__">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
-        <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
-        <span class="n">weight_init</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a DeepNetwork with layer tracking.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kind :</span>
-<span class="sd">            The default node type for hidden layers.</span>
 <span class="sd">        coupling_fn :</span>
-<span class="sd">            Default coupling function(s) for hidden layers.</span>
-<span class="sd">        weight_init :</span>
-<span class="sd">            Weight initialisation strategy applied to hidden layers when</span>
-<span class="sd">            :meth:`weight_initialisation` is called.  Must be one of</span>
-<span class="sd">            ``&quot;xavier&quot;``, ``&quot;he&quot;``, ``&quot;orthogonal&quot;``, ``&quot;sparse&quot;``, or</span>
-<span class="sd">            *None* (no automatic initialisation).</span>
-
+<span class="sd">            Coupling function applied between layers. Default is linear (identity),</span>
+<span class="sd">            matching the Rust backend and the Network class. This function is</span>
+<span class="sd">            applied to parent means before the weighted sum to predict child means.</span>
+<span class="sd">        update_type :</span>
+<span class="sd">            The type of volatility-level posterior update. Can be ``&quot;eHGF&quot;``</span>
+<span class="sd">            (default), ``&quot;standard&quot;`` or ``&quot;unbounded&quot;``. Matches the Network</span>
+<span class="sd">            class and Rust backend.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Track layer structure: list of lists of node indices</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="n">kind</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_init</span> <span class="o">=</span> <span class="n">weight_init</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tonic_volatilities</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tonic_volatilities_vol</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_couplings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># per-layer coupling functions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NetworkState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NetworkState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">coupling_strengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile&quot;</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">node_parameters</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a fully connected layer and track it.</span>
-
-<span class="sd">        Each new parent connects to all nodes in the provided list of children,</span>
-<span class="sd">        analogous to a dense layer in deep learning. By default, connects to all</span>
-<span class="sd">        orphan nodes (nodes without value parents).</span>
+        <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a layer of nodes.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        size :</span>
-<span class="sd">            Number of parent nodes to create in this layer.</span>
+<span class="sd">            Number of nodes in the layer.</span>
 <span class="sd">        kind :</span>
-<span class="sd">            The type of nodes to add (e.g., &quot;continuous-state&quot;, &quot;volatile-state&quot;). If</span>
-<span class="sd">            None, defaults to the type of node declared in the class.</span>
-<span class="sd">        value_children :</span>
-<span class="sd">            Index or list of indices for the child nodes below this layer.</span>
-<span class="sd">            If None, automatically connects to all orphan nodes in the network.</span>
-<span class="sd">        coupling_strengths :</span>
-<span class="sd">            Coupling strength(s) to the child nodes. Can be a single float</span>
-<span class="sd">            (applied to all connections) or a list/tuple of floats.</span>
-<span class="sd">        coupling_fn :</span>
-<span class="sd">            Coupling function(s) between the new nodes and their value children.</span>
+<span class="sd">            Type of nodes in this layer.  ``&quot;volatile&quot;`` (default) uses</span>
+<span class="sd">            continuous volatile nodes with value and volatility levels.</span>
+<span class="sd">            ``&quot;binary&quot;`` uses binary state nodes whose expected mean is the</span>
+<span class="sd">            sigmoid of the parent prediction and whose expected precision is</span>
+<span class="sd">            ``μ̂(1 − μ̂)``.</span>
+<span class="sd">        tonic_volatility :</span>
+<span class="sd">            Tonic volatility for the value level (log scale).</span>
+<span class="sd">            Only used for ``&quot;volatile&quot;`` layers.</span>
+<span class="sd">        tonic_volatility_vol :</span>
+<span class="sd">            Tonic volatility for the volatility level (log scale).</span>
+<span class="sd">            Only used for ``&quot;volatile&quot;`` layers.</span>
+<span class="sd">        volatility_coupling :</span>
+<span class="sd">            Coupling strength between the value and volatility levels.</span>
+<span class="sd">            Only used for ``&quot;volatile&quot;`` layers.</span>
 <span class="sd">        add_constant_input :</span>
-<span class="sd">            If ``True``, add a constant-state bias node connected to all children</span>
-<span class="sd">            in this layer. The bias node is included in the layer indices.</span>
-<span class="sd">        **node_parameters</span>
-<span class="sd">            Additional keyword parameters for node configuration (e.g., precision,</span>
-<span class="sd">            mean, tonic_volatility, etc...). These will be passed to add_nodes.</span>
+<span class="sd">            If True, add a bias term to the layer&#39;s predictions.</span>
+<span class="sd">        fully_connected :</span>
+<span class="sd">            If True (default), each node in this layer connects to every node</span>
+<span class="sd">            in the child layer (dense weight matrix).  If False, nodes connect</span>
+<span class="sd">            one-to-one with the child layer (diagonal weight matrix).  This</span>
+<span class="sd">            requires both layers to have the same size and</span>
+<span class="sd">            ``add_constant_input=False``.</span>
+<span class="sd">        coupling_fn :</span>
+<span class="sd">            Coupling function for this layer. If None, uses the network-level coupling</span>
+<span class="sd">            function.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        self :</span>
-<span class="sd">            The updated network for method chaining.</span>
+<span class="sd">        VectorizedDeepNetwork</span>
+<span class="sd">            Self for method chaining.</span>
 
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If *kind* is not a recognised node type.</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If *fully_connected* is False with ``add_constant_input=True``.</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If *fully_connected* is False and this layer&#39;s size differs from</span>
+<span class="sd">            the preceding child layer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Track the number of nodes before adding</span>
-        <span class="n">n_nodes_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span>
-
-        <span class="c1"># define the type of node to use in the hidden layers</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span>
-
-        <span class="c1"># define the coupling functions to use in the hidden layers</span>
-        <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">coupling_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span>
-
-        <span class="c1"># Auto-detect orphan nodes if no children specified</span>
-        <span class="k">if</span> <span class="n">value_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">)):</span>
-                <span class="c1"># A node is orphan if it has no value parents and is not constant-state</span>
-                <span class="k">if</span> <span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span> <span class="ow">is</span> <span class="kc">None</span>
-                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">!=</span> <span class="mi">0</span>
-                <span class="p">):</span>
-                    <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">children</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;No orphan nodes found. Please specify value_children explicitly.&quot;</span>
-                <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Normalize children to list</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value_children</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-                <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">value_children</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">children</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value_children</span><span class="p">)</span>
-
-        <span class="c1"># Add node parameters that shouldn&#39;t be overridden</span>
-        <span class="n">node_params</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;coupling_fn&quot;</span><span class="p">:</span> <span class="n">coupling_fn</span><span class="p">,</span>
-            <span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">node_parameters</span><span class="p">,</span>
+        <span class="c1"># Normalise Rust-style kind names to short form</span>
+        <span class="n">_kind_aliases</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;volatile-state&quot;</span><span class="p">:</span> <span class="s2">&quot;volatile&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;binary-state&quot;</span><span class="p">:</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span>
         <span class="p">}</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="n">_kind_aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
 
-        <span class="c1"># Add all parent nodes (one per unit in the new layer)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-                <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
-                <span class="n">value_children</span><span class="o">=</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="p">[</span><span class="n">coupling_strengths</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)),</span>
-                <span class="o">**</span><span class="n">node_params</span><span class="p">,</span>
+        <span class="n">valid_kinds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;volatile&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_kinds</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid layer kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
-        <span class="c1"># Optionally add a constant-state bias node</span>
-        <span class="k">if</span> <span class="n">add_constant_input</span><span class="p">:</span>
-            <span class="n">non_constant_children</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">children</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">!=</span> <span class="mi">0</span>
-            <span class="p">]</span>
-            <span class="k">if</span> <span class="n">non_constant_children</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;constant-state&quot;</span><span class="p">,</span>
-                    <span class="n">value_children</span><span class="o">=</span><span class="p">(</span>
-                        <span class="n">non_constant_children</span><span class="p">,</span>
-                        <span class="p">[</span><span class="n">coupling_strengths</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_constant_children</span><span class="p">),</span>
-                    <span class="p">),</span>
-                    <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span> <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fully_connected</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">add_constant_input</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;One-to-one layers (fully_connected=False) cannot use &quot;</span>
+                    <span class="s2">&quot;add_constant_input=True.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">size</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;One-to-one layers require the same size as the child &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;layer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
-        <span class="c1"># Record the new layer indices</span>
-        <span class="n">new_layer_idxs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_nodes_before</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_layer_idxs</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tonic_volatilities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tonic_volatility</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tonic_volatilities_vol</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tonic_volatility_vol</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_couplings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">volatility_coupling</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">add_constant_input</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fully_connected</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">coupling_fn</span> <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer_stack</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-        <span class="n">kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">coupling_strengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile&quot;</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">node_parameters</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple fully connected layers and track them.</span>
-
-<span class="sd">        Builds multiple layers sequentially, with each layer automatically tracking</span>
-<span class="sd">        its node indices.</span>
+        <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple hidden layers at once.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        layer_sizes :</span>
-<span class="sd">            Number of parent nodes to create in each new layer.</span>
+<span class="sd">            List of layer sizes.</span>
 <span class="sd">        kind :</span>
-<span class="sd">            The type of nodes to add (e.g., &quot;continuous-state&quot;, &quot;volatile-state&quot;). If</span>
-<span class="sd">            None, defaults to the type of node declared in the class.</span>
-<span class="sd">        value_children :</span>
-<span class="sd">            Index or list of indices for the bottom layer.</span>
-<span class="sd">            If None, automatically connects to all orphan nodes for the first layer.</span>
-<span class="sd">        coupling_strengths :</span>
-<span class="sd">            Coupling strength(s) to apply across all layers.</span>
+<span class="sd">            Type of nodes for all layers (``&quot;volatile&quot;`` or ``&quot;binary&quot;``).</span>
+<span class="sd">        tonic_volatility :</span>
+<span class="sd">            Tonic volatility for all layers (value level, log scale).</span>
+<span class="sd">        tonic_volatility_vol :</span>
+<span class="sd">            Tonic volatility for all layers (volatility level, log scale).</span>
+<span class="sd">        volatility_coupling :</span>
+<span class="sd">            Coupling strength between the value and volatility levels for all layers.</span>
+<span class="sd">        add_constant_input :</span>
+<span class="sd">            If True, add a bias term to each layer&#39;s predictions.</span>
+<span class="sd">        fully_connected :</span>
+<span class="sd">            If True (default), layers are fully connected. If False, layers use</span>
+<span class="sd">            one-to-one connections (requires equal sizes).</span>
 <span class="sd">        coupling_fn :</span>
-<span class="sd">            Coupling function(s) to apply across all layers.</span>
-<span class="sd">        **node_parameters</span>
-<span class="sd">            Additional keyword parameters for node configuration.</span>
+<span class="sd">            Coupling function for all layers. If None, uses the network-level coupling</span>
+<span class="sd">            function.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        self :</span>
-<span class="sd">            The updated network for method chaining.</span>
-
+<span class="sd">        VectorizedDeepNetwork</span>
+<span class="sd">            Self for method chaining.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># define the type of node to use in the hidden layers</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span>
-
-        <span class="c1"># define the coupling functions to use in the hidden layers</span>
-        <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">coupling_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span>
-
-        <span class="c1"># Build layer by layer using the overridden add_layer</span>
-        <span class="c1"># which automatically tracks each layer</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
-                    <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-                    <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
-                    <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
-                    <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">coupling_strengths</span><span class="p">,</span>
-                    <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
-                    <span class="n">add_constant_input</span><span class="o">=</span><span class="n">add_constant_input</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">node_parameters</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
-                    <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
-                    <span class="n">value_children</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Auto-detect orphans</span>
-                    <span class="n">coupling_strengths</span><span class="o">=</span><span class="n">coupling_strengths</span><span class="p">,</span>
-                    <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
-                    <span class="n">add_constant_input</span><span class="o">=</span><span class="n">add_constant_input</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">node_parameters</span><span class="p">,</span>
-                <span class="p">)</span>
-
+        <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">layer_sizes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
+                <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
+                <span class="n">tonic_volatility_vol</span><span class="o">=</span><span class="n">tonic_volatility_vol</span><span class="p">,</span>
+                <span class="n">volatility_coupling</span><span class="o">=</span><span class="n">volatility_coupling</span><span class="p">,</span>
+                <span class="n">add_constant_input</span><span class="o">=</span><span class="n">add_constant_input</span><span class="p">,</span>
+                <span class="n">fully_connected</span><span class="o">=</span><span class="n">fully_connected</span><span class="p">,</span>
+                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add nodes and track as a layer if they form the base.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NetworkState</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize network state with uniform weights.</span>
 
-<span class="sd">        This overrides Network.add_nodes to track base/input layers.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">n_nodes_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span>
-
-        <span class="c1"># Call parent class method</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="c1"># If this is creating multiple nodes at once, track as a layer</span>
-        <span class="n">n_nodes</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_nodes&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">n_nodes</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">new_layer_idxs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_nodes_before</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">))</span>
-            <span class="c1"># Only add to layers if this is the first layer (base layer)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_layer_idxs</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">plot_deep_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;graphviz&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the network in a deep-learning style (layer-by-layer).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        backend :</span>
-<span class="sd">            The plotting backend to use. Only &#39;graphviz&#39; is supported.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Additional arguments passed to the plotting function.</span>
+<span class="sd">        All inter-layer weights are set to ``1.0``, matching the DeepNetwork and</span>
+<span class="sd">        Rust backends.  Use :meth:`weight_initialisation` after construction to</span>
+<span class="sd">        apply Xavier, He, orthogonal, or sparse initialisation.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        The plot object (depends on backend).</span>
-
+<span class="sd">        NetworkState</span>
+<span class="sd">            Initialized network state.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;graphviz&quot;</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
 
-            <span class="k">return</span> <span class="n">graphviz</span><span class="o">.</span><span class="n">plot_deep_network</span><span class="p">(</span><span class="n">deep_network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Invalid backend. Currently supports only backend=&#39;graphviz&#39;.&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">):</span>
+            <span class="c1"># Create layer state</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+
+            <span class="c1"># Create layer parameters</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">LayerParams</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                    <span class="n">n_nodes</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+                    <span class="n">tonic_volatility</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tonic_volatilities</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">tonic_volatility_vol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tonic_volatilities_vol</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">volatility_coupling</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="p">)</span>
             <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the deep network to predictors (X, top layer) and outcomes (Y, bottom).</span>
+            <span class="c1"># Create weights connecting to next layer (if not first layer)</span>
+            <span class="c1"># weights[i-1] connects layer[i-1] (child) to layer[i] (parent)</span>
+            <span class="c1"># If the parent layer has add_constant_input=True, an extra column</span>
+            <span class="c1"># is appended for the bias node (constant mean = 1.0).</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prev_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">n_parent_cols</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">))</span>
 
-<span class="sd">        If inputs_x_idxs and inputs_y_idxs are not provided, this method automatically</span>
-<span class="sd">        detects them based on the tracked layer structure:</span>
-<span class="sd">        - inputs_x_idxs: the first (top) layer</span>
-<span class="sd">        - inputs_y_idxs: the last (bottom) layer</span>
+        <span class="c1"># Adam moment buffers (zeros, same shapes as weights)</span>
+        <span class="n">adam_m</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="n">adam_v</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">)</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x :</span>
-<span class="sd">            Predictor values (input features).</span>
-<span class="sd">        y :</span>
-<span class="sd">            Target values (predictions/labels).</span>
-<span class="sd">        inputs_x_idxs :</span>
-<span class="sd">            Node indices receiving the predictors. If None, uses the top layer.</span>
-<span class="sd">        inputs_y_idxs :</span>
-<span class="sd">            Node indices receiving the predictions. If None, uses the bottom layer.</span>
-<span class="sd">        lr :</span>
-<span class="sd">            Learning rate for coupling strength updates. Either &quot;dynamic&quot; or a float.</span>
-<span class="sd">            If a float is provided, the value will be used as learning rate.</span>
-<span class="sd">        overwrite</span>
-<span class="sd">            Whether to recreate the propagation function if it already exists.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        self :</span>
-<span class="sd">            The network with updated parameters.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Auto-detect input/output layers if not specified</span>
-        <span class="k">if</span> <span class="n">inputs_x_idxs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;No layers tracked. Either provide inputs_x_idxs explicitly &quot;</span>
-                    <span class="s2">&quot;or use add_layer() to build the network.&quot;</span>
-                <span class="p">)</span>
-            <span class="n">inputs_x_idxs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># First layer</span>
-
-        <span class="k">if</span> <span class="n">inputs_y_idxs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;No layers tracked. Either provide inputs_y_idxs explicitly &quot;</span>
-                    <span class="s2">&quot;or use add_layer() to build the network.&quot;</span>
-                <span class="p">)</span>
-            <span class="n">inputs_y_idxs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># Last layer</span>
-
-        <span class="c1"># Call parent fit method</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-            <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
-            <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
-            <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
-            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">NetworkState</span><span class="p">(</span>
+            <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">layers</span><span class="p">),</span>
+            <span class="n">weights</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">weights</span><span class="p">),</span>
+            <span class="n">params</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">adam_m</span><span class="o">=</span><span class="n">adam_m</span><span class="p">,</span>
+            <span class="n">adam_v</span><span class="o">=</span><span class="n">adam_v</span><span class="p">,</span>
+            <span class="n">adam_t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_initialisation</span><span class="p">(</span>
@@ -1249,49 +1187,43 @@ window.runMermaid = runMermaid;</script>
         <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise coupling weights for every layer except the input layer.</span>
-
-<span class="sd">        For each targeted layer the method generates a weight matrix whose dimensions</span>
-<span class="sd">        are ``(n_parents, n_current)`` — the number of parent nodes in the layer above</span>
-<span class="sd">        and the number of nodes in the current layer, and applies the values via</span>
-<span class="sd">        :func:`pyhgf.utils.set_coupling`.</span>
-
-<span class="sd">        The input (top) layer is skipped because it has no parents to</span>
-<span class="sd">        initialise.</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise inter-layer weight matrices.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        strategy :</span>
-<span class="sd">            Initialisation strategy.  One of ``&quot;xavier&quot;``, ``&quot;he&quot;``, ``&quot;orthogonal&quot;``,</span>
-<span class="sd">            or ``&quot;sparse&quot;``.  If *None*, falls back to ``self.weight_init`` set during</span>
-<span class="sd">            construction.</span>
+<span class="sd">            Initialisation strategy.  One of ``&quot;xavier&quot;``, ``&quot;he&quot;``,</span>
+<span class="sd">            ``&quot;orthogonal&quot;``, or ``&quot;sparse&quot;``.  If *None*, weights are left</span>
+<span class="sd">            unchanged (all ``1.0``).</span>
 <span class="sd">        seed :</span>
 <span class="sd">            Optional random seed passed to the initialisation function.</span>
 <span class="sd">        **kwargs</span>
-<span class="sd">            Extra keyword arguments forwarded to the initialisation function (e.g.</span>
-<span class="sd">            ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).</span>
+<span class="sd">            Extra keyword arguments forwarded to the initialisation function</span>
+<span class="sd">            (e.g. ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        self :</span>
-<span class="sd">            The network with updated coupling weights (for method chaining).</span>
+<span class="sd">        VectorizedDeepNetwork</span>
+<span class="sd">            Self for method chaining.</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If no strategy is provided (neither as argument nor at init time), or if the</span>
-<span class="sd">            network has fewer than 2 tracked layers.</span>
-
+<span class="sd">            If the strategy name is not recognised.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># If strategy is not provided here, use the default values from the constructor</span>
         <span class="k">if</span> <span class="n">strategy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
-        <span class="k">elif</span> <span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xavier&quot;</span><span class="p">,</span> <span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="s2">&quot;orthogonal&quot;</span><span class="p">,</span> <span class="s2">&quot;sparse&quot;</span><span class="p">]:</span>
+
+        <span class="n">valid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xavier&quot;</span><span class="p">,</span> <span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="s2">&quot;orthogonal&quot;</span><span class="p">,</span> <span class="s2">&quot;sparse&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Invalid weight initialisation strategy. Pass strategy=&#39;xavier&#39; (or &quot;</span>
-                <span class="s2">&quot;&#39;he&#39;, &#39;orthogonal&#39;, &#39;sparse&#39;) in the DeepNetwork constructor.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid weight initialisation strategy &#39;</span><span class="si">{</span><span class="n">strategy</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
 
         <span class="n">_init_fns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;xavier&quot;</span><span class="p">:</span> <span class="n">xavier_init</span><span class="p">,</span>
@@ -1299,103 +1231,303 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">&quot;orthogonal&quot;</span><span class="p">:</span> <span class="n">orthogonal_init</span><span class="p">,</span>
             <span class="s2">&quot;sparse&quot;</span><span class="p">:</span> <span class="n">sparse_init</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="n">init_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">_init_fns</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span>
+        <span class="n">init_fn</span> <span class="o">=</span> <span class="n">_init_fns</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;weight_initialisation requires at least 2 tracked layers. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;The network currently has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span><span class="si">}</span><span class="s2"> layer(s).&quot;</span>
-            <span class="p">)</span>
+        <span class="n">new_weights</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_weights</span><span class="p">):</span>
+            <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># (prev_size, size)</span>
+            <span class="n">flat</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">new_weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
 
-        <span class="c1"># Learnable node types whose children can receive initialised</span>
-        <span class="c1"># couplings: continuous-state (2), volatile-state (6), and</span>
-        <span class="c1"># constant-state (0) bias nodes.</span>
-        <span class="n">learnable_types</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">}</span>
-
-        <span class="c1"># All layers except the top/input layer (layers[-1]).</span>
-        <span class="c1"># For each layer at index `layer_idx`, the parents live in the layer</span>
-        <span class="c1"># above at `layer_idx + 1`.</span>
-        <span class="k">for</span> <span class="n">layer_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">current_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_idx</span><span class="p">]</span>
-            <span class="n">parent_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
-
-            <span class="c1"># All child nodes must be continuous or volatile; parent nodes</span>
-            <span class="c1"># can additionally be constant-state bias nodes.</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="ow">in</span> <span class="n">learnable_types</span>
-                <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">current_nodes</span> <span class="o">+</span> <span class="n">parent_nodes</span>
-            <span class="p">):</span>
-                <span class="k">continue</span>
-
-            <span class="c1"># Only non-constant children receive weights from parents;</span>
-            <span class="c1"># constant nodes are bias-only and have no parents.</span>
-            <span class="n">child_nodes</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">current_nodes</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">!=</span> <span class="mi">0</span>
-            <span class="p">]</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">child_nodes</span><span class="p">:</span>
-                <span class="k">continue</span>
-
-            <span class="n">n_parents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent_nodes</span><span class="p">)</span>
-            <span class="n">n_children</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">child_nodes</span><span class="p">)</span>
-
-            <span class="c1"># Generate weight matrix (flat, row-major: parent × child)</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-            <span class="c1"># Apply weights to each parent→child connection</span>
-            <span class="k">for</span> <span class="n">p_local</span><span class="p">,</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parent_nodes</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">c_local</span><span class="p">,</span> <span class="n">child_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">child_nodes</span><span class="p">):</span>
-                    <span class="n">w</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">p_local</span> <span class="o">*</span> <span class="n">n_children</span> <span class="o">+</span> <span class="n">c_local</span><span class="p">])</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">set_coupling</span><span class="p">(</span>
-                        <span class="n">attributes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
-                        <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
-                        <span class="n">parent_idx</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
-                        <span class="n">child_idx</span><span class="o">=</span><span class="n">child_idx</span><span class="p">,</span>
-                        <span class="n">coupling</span><span class="o">=</span><span class="n">w</span><span class="p">,</span>
-                    <span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">NetworkState</span><span class="p">(</span>
+            <span class="n">layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_weights</span><span class="p">),</span>
+            <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">adam_m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">adam_m</span><span class="p">,</span>
+            <span class="n">adam_v</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">adam_v</span><span class="p">,</span>
+            <span class="n">adam_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">adam_t</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_layer_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the size of each tracked layer.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        layer_sizes :</span>
-<span class="sd">            List of integers representing the number of nodes in each layer.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the node indices for a specific layer.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_propagation_fn</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the jitted propagation function.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        layer_idx :</span>
-<span class="sd">            The index of the layer (0 = first/bottom layer).</span>
+<span class="sd">        lr :</span>
+<span class="sd">            Learning rate for weight updates.</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Optimizer name.  ``&quot;adam&quot;`` enables Adam filtering of weight</span>
+<span class="sd">            gradients.  *None* uses plain gradient updates.</span>
+<span class="sd">        params :</span>
+<span class="sd">            Hyper-parameters for the optimizer (e.g. ``beta1``, ``beta2``,</span>
+<span class="sd">            ``epsilon``, and ``lr`` for Adam).  See :meth:`fit` for defaults.</span>
+<span class="sd">        record_trajectories :</span>
+<span class="sd">            If True, the scan output includes the full ``NetworkState`` at</span>
+<span class="sd">            every time step (useful for inspection but significantly slower).</span>
+<span class="sd">            If False (default), only predictions are accumulated.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        node_indices :</span>
-<span class="sd">            List of node indices in that layer.</span>
-
+<span class="sd">        Callable</span>
+<span class="sd">            JIT-compiled propagation function.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">layer_idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">layer_idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Layer index </span><span class="si">{</span><span class="n">layer_idx</span><span class="si">}</span><span class="s2"> out of range. &quot;</span>
-                    <span class="s2">&quot;Network has {len(self.layers)} layers.&quot;</span>
-                <span class="p">)</span>
+        <span class="c1"># Per-layer coupling functions and their gradients.</span>
+        <span class="c1"># coupling_fns[i] is applied to layer[i].expected_mean when layer[i]</span>
+        <span class="c1"># acts as a parent (i.e. when predicting layer[i-1]).</span>
+        <span class="n">coupling_fns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span>
+        <span class="n">coupling_fn_grads</span> <span class="o">=</span> <span class="p">[</span><span class="n">jax</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">fn</span><span class="p">:</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">coupling_fns</span><span class="p">]</span>
+        <span class="n">add_constant_inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span>  <span class="c1"># captured for bias updates</span>
+        <span class="n">layer_kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span>
+        <span class="n">update_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+
+        <span class="c1"># Build Adam parameters tuple (or None)</span>
+        <span class="c1"># Format: (beta1, beta2, epsilon, adam_lr_override)</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">adam_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">),</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">layer_idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">adam_params</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">NetworkState</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+                <span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span> <span class="o">=</span> <span class="n">propagation_step</span><span class="p">(</span>
+                    <span class="n">state</span><span class="p">,</span>
+                    <span class="n">inputs</span><span class="p">,</span>
+                    <span class="n">coupling_fns</span><span class="p">,</span>
+                    <span class="n">coupling_fn_grads</span><span class="p">,</span>
+                    <span class="n">add_constant_inputs</span><span class="p">,</span>
+                    <span class="n">lr</span><span class="p">,</span>
+                    <span class="n">layer_kinds</span><span class="p">,</span>
+                    <span class="n">adam_params</span><span class="p">,</span>
+                    <span class="n">update_type</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">NetworkState</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">propagation_step</span><span class="p">(</span>
+                    <span class="n">state</span><span class="p">,</span>
+                    <span class="n">inputs</span><span class="p">,</span>
+                    <span class="n">coupling_fns</span><span class="p">,</span>
+                    <span class="n">coupling_fn_grads</span><span class="p">,</span>
+                    <span class="n">add_constant_inputs</span><span class="p">,</span>
+                    <span class="n">lr</span><span class="p">,</span>
+                    <span class="n">layer_kinds</span><span class="p">,</span>
+                    <span class="n">adam_params</span><span class="p">,</span>
+                    <span class="n">update_type</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_step</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_prediction_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the jitted prediction function (forward pass only).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Callable</span>
+<span class="sd">            JIT-compiled prediction function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coupling_fns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span>
+        <span class="n">add_constant_inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span>
+        <span class="n">layer_kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">prediction_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">NetworkState</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Forward prediction without learning.&quot;&quot;&quot;</span>
+            <span class="n">layers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">params</span>
+
+            <span class="n">n_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
+
+            <span class="c1"># Set input</span>
+            <span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">expected_mean</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+
+            <span class="c1"># Top-down prediction</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">layer_kinds</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
+                    <span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vectorized_binary_prediction</span><span class="p">(</span>
+                        <span class="n">child_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                        <span class="n">parent_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">weights</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction</span><span class="p">(</span>
+                        <span class="n">child_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                        <span class="n">parent_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">weights</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                        <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                        <span class="n">time_step</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">time_step</span><span class="p">,</span>
+                        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Return output layer expected mean</span>
+            <span class="k">return</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">expected_mean</span>
+
+        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">prediction_step</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit network to data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Input data, shape (n_samples, n_input_features).</span>
+<span class="sd">        y :</span>
+<span class="sd">            Target data, shape (n_samples, n_output_features).</span>
+<span class="sd">        lr :</span>
+<span class="sd">            Learning rate for weight updates, or ``&quot;dynamic&quot;`` for</span>
+<span class="sd">            Kalman-gain updates.</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Optimizer name.  ``&quot;adam&quot;`` (default) filters weight gradients through the</span>
+<span class="sd">            Adam algorithm (Kingma &amp; Ba, 2015).  *None* uses plain gradient or</span>
+<span class="sd">            Kalman-gain updates.</span>
+<span class="sd">        params :</span>
+<span class="sd">            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default</span>
+<span class="sd">            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``</span>
+<span class="sd">            (default 1e-3, the Adam step size).</span>
+<span class="sd">        record_trajectories :</span>
+<span class="sd">            If True, record the full ``NetworkState`` at every time step (accessible</span>
+<span class="sd">            via ``self.trajectories``).  This is useful for inspection but significantly</span>
+<span class="sd">            increases memory usage and slows training. Default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        VectorizedDeepNetwork</span>
+<span class="sd">            Self with updated state.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If *optimizer* is not ``None`` or ``&quot;adam&quot;``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">optimizer</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown optimizer &#39;</span><span class="si">{</span><span class="n">optimizer</span><span class="si">}</span><span class="s2">&#39;. Supported: &#39;adam&#39; or None.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Initialize state if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
+
+        <span class="c1"># Recreate (and retrace) the propagation fn when settings change</span>
+        <span class="n">needs_retrace</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">!=</span> <span class="n">lr</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span> <span class="o">!=</span> <span class="n">optimizer</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">!=</span> <span class="n">record_trajectories</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">needs_retrace</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_propagation_fn</span><span class="p">(</span>
+                <span class="n">lr</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">record_trajectories</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="n">lr</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="n">record_trajectories</span>
+
+        <span class="c1"># Convert to JAX arrays</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="c1"># Run scan over data</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">)</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass without learning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Input data, shape (n_samples, n_input_features) or (n_input_features,).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jnp.ndarray</span>
+<span class="sd">            Predictions, shape (n_samples, n_output_features) or (n_output_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Network must be fit before predicting.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_prediction_fn</span><span class="p">()</span>
+
+        <span class="n">prediction_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Handle single sample vs batch</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">prediction_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Vectorize over samples</span>
+            <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">xi</span><span class="p">:</span> <span class="n">prediction_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">xi</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the network state.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        VectorizedDeepNetwork</span>
+<span class="sd">            Self with reset state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of layers in the network.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total number of nodes in the network.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print string representation of layer structure.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;DeepNetwork(nodes=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="si">}</span><span class="s2">, layers=[])&quot;</span>
-
-        <span class="n">layer_sizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_layer_sizes</span><span class="p">()</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;DeepNetwork(nodes=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="si">}</span><span class="s2">, layers=</span><span class="si">{</span><span class="n">layer_sizes</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print string representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;VectorizedDeepNetwork(nodes=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="si">}</span><span class="s2">, layers=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 </pre></div>
 

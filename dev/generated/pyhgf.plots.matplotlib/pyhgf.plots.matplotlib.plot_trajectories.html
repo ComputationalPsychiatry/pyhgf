@@ -471,6 +471,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html">pyhgf.model.HGF</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.DeepNetwork.html">pyhgf.model.DeepNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_volatile_state.html">pyhgf.model.add_volatile_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_binary_state.html">pyhgf.model.add_binary_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_ef_state.html">pyhgf.model.add_ef_state</a></li>
@@ -665,8 +666,6 @@ correspond to the number of nodes in the structure. The default is <cite>None</c
     <span class="n">tonic_volatility</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">6.0</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">},</span>
     <span class="n">tonic_drift</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
     <span class="n">volatility_coupling</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
-    <span class="n">eta0</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">eta1</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">binary_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -677,6 +676,9 @@ correspond to the number of nodes in the structure. The default is <cite>None</c
 <span class="n">three_levels_hgf</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">();</span>
 </pre></div>
 </div>
+<figure class="align-default">
+<img alt="../../_images/pyhgf-plots-matplotlib-plot_trajectories-2.png" class="plot-directive" src="../../_images/pyhgf-plots-matplotlib-plot_trajectories-2.png" />
+</figure>
 </dd></dl>
 
 </section>

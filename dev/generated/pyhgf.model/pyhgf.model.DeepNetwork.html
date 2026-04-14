@@ -59,7 +59,7 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.model.add_continuous_state" href="pyhgf.model.add_continuous_state.html" />
+    <link rel="next" title="pyhgf.model.add_volatile_state" href="pyhgf.model.add_volatile_state.html" />
     <link rel="prev" title="pyhgf.model.Network" href="pyhgf.model.Network.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -471,6 +471,7 @@
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.HGF.html">pyhgf.model.HGF</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.Network.html">pyhgf.model.Network</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.model.DeepNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_volatile_state.html">pyhgf.model.add_volatile_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_binary_state.html">pyhgf.model.add_binary_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_ef_state.html">pyhgf.model.add_ef_state</a></li>
@@ -591,58 +592,58 @@
 <h1>pyhgf.model.DeepNetwork<a class="headerlink" href="#pyhgf-model-deepnetwork" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.model.DeepNetwork">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">DeepNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'volatile-state'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork" title="Link to this definition">#</a></dt>
-<dd><p>A deep network with fully connected layers for predictive coding.</p>
-<p>This class extends Network with automatic layer tracking and convenience methods
-for building, visualizing, and training deep hierarchical networks.</p>
-<p>Unlike the base Network class, DeepNetwork automatically tracks layer structure
-as you add layers, providing simplified interfaces for plotting and fitting.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">DeepNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">DeepNetwork.&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'eHGF'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork" title="Link to this definition">#</a></dt>
+<dd><p>Deep predictive coding network with vectorized operations.</p>
+<p>This class implements a deep hierarchical Gaussian filter using layer-wise
+vectorized operations for efficient scaling to large networks.</p>
+<p>Unlike the standard DeepNetwork which uses per-node updates with Python loops, this
+implementation uses JAX matrix operations to update all nodes in a layer
+simultaneously.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Build a deep network with method chaining</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Build a network with method chaining</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
-<span class="gp">... </span>    <span class="n">DeepNetwork</span><span class="p">()</span>
-<span class="gp">... </span>    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">VectorizedDeepNetwork</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># Output layer</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># Hidden layer 1</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>   <span class="c1"># Hidden layer 2</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>   <span class="c1"># Input layer</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Or use add_layer_stack for multiple layers at once</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
-<span class="gp">... </span>    <span class="n">DeepNetwork</span><span class="p">()</span>
-<span class="gp">... </span>    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="o">.</span><span class="n">add_layer_stack</span><span class="p">(</span><span class="n">layer_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Fit to data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Plot without specifying layer indices</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="o">.</span><span class="n">plot_layers</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Fit with automatic input/output detection</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Make predictions</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_test</span><span class="p">)</span>
 </pre></div>
 </div>
+<p class="rubric">Notes</p>
+<p>The network uses volatile nodes internally, which have two levels:
+- Value level (external): represents the node’s belief about its value
+- Volatility level (internal): represents uncertainty about the value level</p>
+<p>Layer indexing follows the convention:
+- Layer 0 is the output layer (receives observations)
+- Layer N is the input layer (receives predictors)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>kind</strong> (<em>str</em>)</p></li>
-<li><p><strong>coupling_fn</strong> (<em>tuple</em><em>[</em><em>Optional</em><em>[</em><em>Callable</em><em>]</em><em>, </em><em>...</em><em>]</em>)</p></li>
-<li><p><strong>weight_init</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>)</p></li>
+<li><p><strong>coupling_fn</strong> (<em>Callable</em>)</p></li>
+<li><p><strong>update_type</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.model.DeepNetwork.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'volatile-state'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork.__init__" title="Link to this definition">#</a></dt>
-<dd><p>Initialize a DeepNetwork with layer tracking.</p>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">DeepNetwork.&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'eHGF'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/deep_network.html#DeepNetwork.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.DeepNetwork.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize a VectorizedDeepNetwork.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>kind</strong> (<em>str</em>) – The default node type for hidden layers.</p></li>
-<li><p><strong>coupling_fn</strong> (<em>tuple</em><em>[</em><em>Callable</em><em> | </em><em>None</em><em>, </em><em>...</em><em>]</em>) – Default coupling function(s) for hidden layers.</p></li>
-<li><p><strong>weight_init</strong> (<em>str</em><em> | </em><em>None</em>) – Weight initialisation strategy applied to hidden layers when
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">weight_initialisation()</span></code> is called.  Must be one of
-<code class="docutils literal notranslate"><span class="pre">&quot;xavier&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;he&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;orthogonal&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sparse&quot;</span></code>, or
-<em>None</em> (no automatic initialisation).</p></li>
+<li><p><strong>coupling_fn</strong> (<em>Callable</em>) – Coupling function applied between layers. Default is linear (identity),
+matching the Rust backend and the Network class. This function is
+applied to parent means before the weighted sum to predict child means.</p></li>
+<li><p><strong>update_type</strong> (<em>str</em>) – The type of volatility-level posterior update. Can be <code class="docutils literal notranslate"><span class="pre">&quot;eHGF&quot;</span></code>
+(default), <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;unbounded&quot;</span></code>. Matches the Network
+class and Rust backend.</p></li>
 </ul>
 </dd>
 </dl>
@@ -651,80 +652,26 @@ as you add layers, providing simplified interfaces for plotting and fitting.</p>
 <p class="rubric">Methods</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.DeepNetwork.__init__" title="pyhgf.model.DeepNetwork.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([kind, coupling_fn, weight_init])</p></td>
-<td><p>Initialize a DeepNetwork with layer tracking.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.DeepNetwork.__init__" title="pyhgf.model.DeepNetwork.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([coupling_fn, update_type])</p></td>
+<td><p>Initialize a VectorizedDeepNetwork.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_edges</span></code>(parent_idxs, children_idxs[, ...])</p></td>
-<td><p>Add a value or volatility coupling link between a set of nodes.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_layer</span></code>(size[, kind, tonic_volatility, ...])</p></td>
+<td><p>Add a layer of nodes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_layer</span></code>([size, kind, value_children, ...])</p></td>
-<td><p>Add a fully connected layer and track it.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_layer_stack</span></code>(layer_sizes[, kind, ...])</p></td>
+<td><p>Add multiple hidden layers at once.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_layer_stack</span></code>(layer_sizes[, kind, ...])</p></td>
-<td><p>Add multiple fully connected layers and track them.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y[, lr, optimizer, params, ...])</p></td>
+<td><p>Fit network to data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_nodes</span></code>(*args, **kwargs)</p></td>
-<td><p>Add nodes and track as a layer if they form the base.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
+<td><p>Forward pass without learning.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_belief_propagation_fn</span></code>([overwrite, ...])</p></td>
-<td><p>Create the belief propagation function.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_learning_propagation_fn</span></code>(...[, ...])</p></td>
-<td><p>Create the belief propagation function.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y[, inputs_x_idxs, inputs_y_idxs, ...])</p></td>
-<td><p>Fit the deep network to predictors (X, top layer) and outcomes (Y, bottom).</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_input_dimension</span></code>()</p></td>
-<td><p>Get input node dimensions.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_layer</span></code>(layer_idx)</p></td>
-<td><p>Get the node indices for a specific layer.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_layer_sizes</span></code>()</p></td>
-<td><p>Get the size of each tracked layer.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_network</span></code>()</p></td>
-<td><p>Return the attributes, edges and update sequence defining the network.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_custom_sequence</span></code>(update_branches, ...)</p></td>
-<td><p>Add new observations with custom update sequences.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_data</span></code>(input_data[, time_steps, ...])</p></td>
-<td><p>Add new observations.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_correlations</span></code>()</p></td>
-<td><p>Plot the heatmap of cross-trajectories correlation.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_deep_network</span></code>([backend])</p></td>
-<td><p>Plot the network in a deep-learning style (layer-by-layer).</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code>([backend])</p></td>
-<td><p>Visualization of node network using GraphViz or Networkx.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_nodes</span></code>(node_idxs, **kwargs)</p></td>
-<td><p>Plot the node(s) beliefs trajectories.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_samples</span></code>(**kwargs)</p></td>
-<td><p>Plot the parameters trajectories.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code>(**kwargs)</p></td>
-<td><p>Plot the parameters trajectories.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x, inputs_x_idxs, inputs_y_idxs)</p></td>
-<td><p>Generate predictions from the network using only the prediction steps.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample</span></code>(n_predictions[, time_steps, rng_key, ...])</p></td>
-<td><p>Generate predictions using the utility predict function.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">surprise</span></code>(response_function[, ...])</p></td>
-<td><p>Surprise of the model conditioned by the response function.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code>()</p></td>
-<td><p>Export the nodes trajectories and surprise as a Pandas data frame.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
+<td><p>Reset the network state.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, seed])</p></td>
-<td><p>Initialise coupling weights for every layer except the input layer.</p></td>
+<td><p>Initialise inter-layer weight matrices.</p></td>
 </tr>
 </tbody>
 </table>
@@ -732,8 +679,11 @@ as you add layers, providing simplified interfaces for plotting and fitting.</p>
 <p class="rubric">Attributes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_idxs</span></code></p></td>
-<td><p>Idexes of state nodes that can observe new data points by default.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_layers</span></code></p></td>
+<td><p>Number of layers in the network.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_nodes</span></code></p></td>
+<td><p>Total number of nodes in the network.</p></td>
 </tr>
 </tbody>
 </table>
@@ -762,11 +712,11 @@ as you add layers, providing simplified interfaces for plotting and fitting.</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.model.add_continuous_state.html"
+       href="pyhgf.model.add_volatile_state.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.model.add_continuous_state</p>
+        <p class="prev-next-title">pyhgf.model.add_volatile_state</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

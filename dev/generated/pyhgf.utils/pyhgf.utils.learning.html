@@ -471,6 +471,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html">pyhgf.model.HGF</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.DeepNetwork.html">pyhgf.model.DeepNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_volatile_state.html">pyhgf.model.add_volatile_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_binary_state.html">pyhgf.model.add_binary_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_ef_state.html">pyhgf.model.add_ef_state</a></li>
@@ -591,7 +592,7 @@
 <h1>pyhgf.utils.learning<a class="headerlink" href="#pyhgf-utils-learning" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.utils.learning">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.</span></span><span class="sig-name descname"><span class="pre">learning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_x_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_y_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/learning.html#learning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.learning" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.</span></span><span class="sig-name descname"><span class="pre">learning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_x_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs_y_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_adam</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/learning.html#learning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.learning" title="Link to this definition">#</a></dt>
 <dd><p>Update the networks coupling parameters using prospective configuration.</p>
 <p>This algorithm implements a learning step, using a predictive coding scheme,
 inspired by the prospective configuration scheme proposed in <a class="reference internal" href="#r4d48307ea3e6-1" id="id1">[1]</a>.</p>
@@ -609,6 +610,7 @@ observation steps in the nodes defined by <cite>inputs_y_idxs</cite>.</p></li>
 <li><p><strong>learning_sequence</strong> (<em>LearningSequence</em>) – The sequence that will be applied to the node structure. It is expected that
 the sequence contains a prediction, an update and a learning set of updates.</p></li>
 <li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – Information on the network’s edges.</p></li>
+<li><p><strong>use_adam</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -880,6 +880,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">posterior_update_mean_value_level</span><span class="p">,</span>
     <span class="n">posterior_update_precision_value_level</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.posterior_update_volatility_level</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">posterior_update_mean_volatility_level</span><span class="p">,</span>
+    <span class="n">posterior_update_precision_volatility_level</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="volatile_node_posterior_update">
@@ -913,6 +917,29 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">return</span> <span class="n">attributes</span></div>
 
+
+
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">volatile_node_volatility_posterior_update_standard</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the volatility level using the standard ordering.</span>
+
+<span class="sd">    This updates the implicit volatility parent&#39;s mean and precision using the</span>
+<span class="sd">    standard ordering: precision first, then mean using the updated precision.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Update precision first</span>
+    <span class="n">precision_vol</span> <span class="o">=</span> <span class="n">posterior_update_precision_volatility_level</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">)</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">precision_vol</span>
+
+    <span class="c1"># Update mean using the new precision</span>
+    <span class="n">mean_vol</span> <span class="o">=</span> <span class="n">posterior_update_mean_volatility_level</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">precision_vol</span>
+    <span class="p">)</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_vol</span>
+
+    <span class="k">return</span> <span class="n">attributes</span>
 </pre></div>
 
                 </article>
