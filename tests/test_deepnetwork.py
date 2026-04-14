@@ -13,7 +13,8 @@ def test_fit():
     """Test that DeepNetwork and RsNetwork produce finite fit results.
 
     Network: 2 targets → 2+1 hidden₁ → 2+1 hidden₂ → 1+1 input.
-    Tested with linear and one nonlinear coupling function.
+    Tested across all combinations of coupling function, optimizer, and
+    learning-rate mode.
     """
     n_targets, n_h1, n_h2, n_input = 2, 2, 2, 1
 
@@ -21,52 +22,63 @@ def test_fit():
     x = np.random.randn(5, n_input)
     y = np.random.randn(5, n_targets)
 
-    for coupling_name, py_coupling_fn in [(None, None), ("tanh", (jnp.tanh,))]:
-        label = f"coupling={coupling_name}"
+    coupling_variants = [
+        (None, None),  # linear (identity)
+        ("tanh", (jnp.tanh,)),  # nonlinear
+    ]
+    optimizer_variants = [
+        (None, 0.1),  # plain gradient, fixed lr
+        ("adam", 0.1),  # Adam optimizer, fixed lr
+        (None, "dynamic"),  # Kalman-gain (dynamic lr, no optimizer)
+    ]
 
-        # --- DeepNetwork (JAX vectorized) ---
-        dn = (
-            DeepNetwork(
-                coupling_fn=py_coupling_fn[0] if py_coupling_fn else lambda x: x
+    for coupling_name, py_coupling_fn in coupling_variants:
+        for optimizer, lr in optimizer_variants:
+            label = f"coupling={coupling_name}, optimizer={optimizer}, lr={lr}"
+
+            # --- DeepNetwork (JAX vectorized) ---
+            dn = (
+                DeepNetwork(
+                    coupling_fn=py_coupling_fn[0] if py_coupling_fn else lambda x: x
+                )
+                .add_layer(size=n_targets)
+                .add_layer(size=n_h1)
+                .add_layer(size=n_h2)
+                .add_layer(size=n_input)
             )
-            .add_layer(size=n_targets)
-            .add_layer(size=n_h1)
-            .add_layer(size=n_h2)
-            .add_layer(size=n_input)
-        )
-        dn.fit(x=x, y=y, lr=0.1, optimizer=None)
-        preds_dn = dn.predict(np.array([[0.5]]))
+            dn.fit(x=x, y=y, lr=lr, optimizer=optimizer)
+            preds_dn = dn.predict(np.array([[0.5]]))
 
-        # --- RsNetwork (Rust) ---
-        rs = (
-            RsNetwork()
-            .add_nodes(kind="continuous-state", n_nodes=n_targets)
-            .add_layer(size=n_h1, coupling_fn=coupling_name)
-            .add_layer(size=n_h2, coupling_fn=coupling_name)
-            .add_layer(size=n_input, coupling_fn=coupling_name)
-        )
-        predictors = tuple(rs.layers[-1][:n_input])
-        rs.fit(
-            x=x.tolist(),
-            y=y.tolist(),
-            inputs_x_idxs=predictors,
-            inputs_y_idxs=tuple(range(n_targets)),
-            lr=0.1,
-            optimizer=None,
-        )
-        preds_rs = rs.predict(
-            x=[[0.5]],
-            inputs_x_idxs=predictors,
-            inputs_y_idxs=tuple(range(n_targets)),
-        )
+            # --- RsNetwork (Rust) ---
+            rs = (
+                RsNetwork()
+                .add_nodes(kind="continuous-state", n_nodes=n_targets)
+                .add_layer(size=n_h1, coupling_fn=coupling_name)
+                .add_layer(size=n_h2, coupling_fn=coupling_name)
+                .add_layer(size=n_input, coupling_fn=coupling_name)
+            )
+            predictors = tuple(rs.layers[-1][:n_input])
+            rs.fit(
+                x=x.tolist(),
+                y=y.tolist(),
+                inputs_x_idxs=predictors,
+                inputs_y_idxs=tuple(range(n_targets)),
+                lr=lr,
+                optimizer=optimizer,
+            )
+            preds_rs = rs.predict(
+                x=[[0.5]],
+                inputs_x_idxs=predictors,
+                inputs_y_idxs=tuple(range(n_targets)),
+            )
 
-        # Both should produce finite predictions
-        assert np.all(np.isfinite(np.asarray(preds_dn))), (
-            f"{label}: DeepNetwork predictions contain NaN/Inf"
-        )
-        assert np.all(np.isfinite(np.asarray(preds_rs))), (
-            f"{label}: RsNetwork predictions contain NaN/Inf"
-        )
+            # Both should produce finite predictions
+            assert np.all(np.isfinite(np.asarray(preds_dn))), (
+                f"{label}: DeepNetwork predictions contain NaN/Inf"
+            )
+            assert np.all(np.isfinite(np.asarray(preds_rs))), (
+                f"{label}: RsNetwork predictions contain NaN/Inf"
+            )
 
 
 def test_add_layer():
