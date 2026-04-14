@@ -180,15 +180,13 @@ def plot_deep_network(
     )
 
     # Reverse so the bottom layer appears at the bottom visually
-    layers_reversed = list(reversed(deep_network.layers))
+    layers_reversed = list(reversed(deep_network.layer_sizes))
     layer_names = []
 
-    num_layers = len(deep_network.layers)
+    num_layers = len(deep_network.layer_sizes)
 
     # Create each layer block
-    for i, layer_nodes in enumerate(layers_reversed):
-        n_units = len(layer_nodes)
-
+    for i, n_units in enumerate(layers_reversed):
         true_idx = num_layers - 1 - i  # index in original (bottom=0)
 
         if true_idx == 0:

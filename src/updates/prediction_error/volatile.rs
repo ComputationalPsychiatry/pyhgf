@@ -17,7 +17,10 @@ fn b_func(x: f64, theta_l: f64, phi_l: f64, theta_r: f64, phi_r: f64) -> f64 {
 
 /// Compute value and volatility prediction errors for a volatile state node.
 fn compute_volatile_prediction_errors(network: &mut Network, node_idx: usize) {
-    let n_value_parents = network.edges[node_idx].value_parents.as_ref().map(|vp| vp.len());
+    // Count only non-constant value parents (exclude "constant-state" nodes).
+    let n_value_parents = network.edges[node_idx].value_parents.as_ref().map(|vp| {
+        vp.iter().filter(|&&p| network.edges[p].node_type != "constant-state").count()
+    });
     let n_volatility_parents = network.edges[node_idx].volatility_parents.as_ref().map(|vp| vp.len());
 
     let mean = network.attributes.states[node_idx].mean;

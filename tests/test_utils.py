@@ -254,7 +254,9 @@ def test_learning():
         .add_nodes(value_children=2, autoconnection_strength=0, coupling_fn=(jnp.tanh,))
     )
 
-    network.fit(x=x, y=y, inputs_x_idxs=(3,), inputs_y_idxs=(0, 1), lr=0.2)
+    network.fit(
+        x=x, y=y, inputs_x_idxs=(3,), inputs_y_idxs=(0, 1), lr=0.2, optimizer=None
+    )
 
     # dynamic learning rate
     network = (
@@ -274,6 +276,7 @@ def test_learning():
         inputs_x_idxs=(3,),
         inputs_y_idxs=(0, 1),
         lr="dynamic",
+        optimizer=None,
     )
 
 

@@ -1,13 +1,26 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
+# Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
+
+"""Vectorized deep predictive coding network.
+
+This module provides a vectorized implementation of deep HGF networks that uses
+layer-wise matrix operations instead of per-node updates.
+"""
 
 from __future__ import annotations
 
 from typing import Callable, Optional, Union
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 
-from pyhgf.model.network import Network
-from pyhgf.utils import set_coupling
+from pyhgf.typing import LayerParams, LayerState, NetworkState
+from pyhgf.updates.vectorized.binary import vectorized_binary_prediction
+from pyhgf.updates.vectorized.volatile import (
+    vectorized_layer_prediction,
+)
+from pyhgf.utils.vectorized_belief_propagation import propagation_step
 from pyhgf.utils.weight_initialisation import (
     he_init,
     orthogonal_init,
@@ -16,358 +29,283 @@ from pyhgf.utils.weight_initialisation import (
 )
 
 
-class DeepNetwork(Network):
-    """A deep network with fully connected layers for predictive coding.
+class DeepNetwork:
+    """Deep predictive coding network with vectorized operations.
 
-    This class extends Network with automatic layer tracking and convenience methods
-    for building, visualizing, and training deep hierarchical networks.
+    This class implements a deep hierarchical Gaussian filter using layer-wise
+    vectorized operations for efficient scaling to large networks.
 
-    Unlike the base Network class, DeepNetwork automatically tracks layer structure
-    as you add layers, providing simplified interfaces for plotting and fitting.
+    Unlike the standard DeepNetwork which uses per-node updates with Python loops, this
+    implementation uses JAX matrix operations to update all nodes in a layer
+    simultaneously.
 
     Examples
     --------
-    >>> # Build a deep network with method chaining
+    >>> # Build a network with method chaining
     >>> net = (
-    ...     DeepNetwork()
-    ...     .add_nodes(kind="continuous-state", n_nodes=10)
-    ...     .add_layer(size=8, precision=1.0)
-    ...     .add_layer(size=6, precision=1.0)
-    ...     .add_layer(size=4, precision=1.0)
+    ...     VectorizedDeepNetwork()
+    ...     .add_layer(size=10)  # Output layer
+    ...     .add_layer(size=8)   # Hidden layer 1
+    ...     .add_layer(size=6)   # Hidden layer 2
+    ...     .add_layer(size=4)   # Input layer
     ... )
     >>>
-    >>> # Or use add_layer_stack for multiple layers at once
-    >>> net = (
-    ...     DeepNetwork()
-    ...     .add_nodes(kind="continuous-state", n_nodes=10)
-    ...     .add_layer_stack(layer_sizes=[8, 6, 4], precision=1.0)
-    ... )
+    >>> # Fit to data
+    >>> net.fit(x_train, y_train, lr=0.2)
     >>>
-    >>> # Plot without specifying layer indices
-    >>> net.plot_layers()
-    >>>
-    >>> # Fit with automatic input/output detection
-    >>> net.fit(x_train, y_train)
+    >>> # Make predictions
+    >>> predictions = net.predict(x_test)
 
+    Notes
+    -----
+    The network uses volatile nodes internally, which have two levels:
+    - Value level (external): represents the node's belief about its value
+    - Volatility level (internal): represents uncertainty about the value level
+
+    Layer indexing follows the convention:
+    - Layer 0 is the output layer (receives observations)
+    - Layer N is the input layer (receives predictors)
     """
 
     def __init__(
         self,
-        kind: str = "volatile-state",
-        coupling_fn: tuple[Optional[Callable], ...] = (None,),
-        weight_init: Optional[str] = None,
+        coupling_fn: Callable = lambda x: x,
+        update_type: str = "eHGF",
     ):
-        """Initialize a DeepNetwork with layer tracking.
+        """Initialize a VectorizedDeepNetwork.
 
         Parameters
         ----------
-        kind :
-            The default node type for hidden layers.
         coupling_fn :
-            Default coupling function(s) for hidden layers.
-        weight_init :
-            Weight initialisation strategy applied to hidden layers when
-            :meth:`weight_initialisation` is called.  Must be one of
-            ``"xavier"``, ``"he"``, ``"orthogonal"``, ``"sparse"``, or
-            *None* (no automatic initialisation).
-
+            Coupling function applied between layers. Default is linear (identity),
+            matching the Rust backend and the Network class. This function is
+            applied to parent means before the weighted sum to predict child means.
+        update_type :
+            The type of volatility-level posterior update. Can be ``"eHGF"``
+            (default), ``"standard"`` or ``"unbounded"``. Matches the Network
+            class and Rust backend.
         """
-        super().__init__()
-        self.layers: list = []  # Track layer structure: list of lists of node indices
-        self.kind = kind
         self.coupling_fn = coupling_fn
-        self.weight_init = weight_init
+        self.update_type = update_type
+        self.layer_sizes: list[int] = []
+        self.layer_kinds: list[str] = []
+        self.tonic_volatilities: list[float] = []
+        self.tonic_volatilities_vol: list[float] = []
+        self.volatility_couplings: list[float] = []
+        self.add_constant_inputs: list[bool] = []
+        self.fully_connected: list[bool] = []
+        self.coupling_fns: list[Callable] = []  # per-layer coupling functions
+        self.state: Optional[NetworkState] = None
+        self.trajectories: Optional[NetworkState] = None
+        self.predictions: Optional[jnp.ndarray] = None
+        self._propagation_fn: Optional[Callable] = None
+        self._propagation_lr: Optional[Union[float, str]] = None
+        self._propagation_optimizer: Optional[str] = None
+        self._record_trajectories: bool = False
+        self._prediction_fn: Optional[Callable] = None
 
     def add_layer(
         self,
-        size: int = 1,
-        kind: Optional[str] = None,
-        value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
-        coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
-        coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
+        size: int,
+        kind: str = "volatile",
+        tonic_volatility: float = -4.0,
+        tonic_volatility_vol: float = -4.0,
+        volatility_coupling: float = 1.0,
         add_constant_input: bool = True,
-        **node_parameters,
-    ) -> DeepNetwork:
-        """Add a fully connected layer and track it.
-
-        Each new parent connects to all nodes in the provided list of children,
-        analogous to a dense layer in deep learning. By default, connects to all
-        orphan nodes (nodes without value parents).
+        fully_connected: bool = True,
+        coupling_fn: Optional[Callable] = None,
+    ) -> "DeepNetwork":
+        """Add a layer of nodes.
 
         Parameters
         ----------
         size :
-            Number of parent nodes to create in this layer.
+            Number of nodes in the layer.
         kind :
-            The type of nodes to add (e.g., "continuous-state", "volatile-state"). If
-            None, defaults to the type of node declared in the class.
-        value_children :
-            Index or list of indices for the child nodes below this layer.
-            If None, automatically connects to all orphan nodes in the network.
-        coupling_strengths :
-            Coupling strength(s) to the child nodes. Can be a single float
-            (applied to all connections) or a list/tuple of floats.
-        coupling_fn :
-            Coupling function(s) between the new nodes and their value children.
+            Type of nodes in this layer.  ``"volatile"`` (default) uses
+            continuous volatile nodes with value and volatility levels.
+            ``"binary"`` uses binary state nodes whose expected mean is the
+            sigmoid of the parent prediction and whose expected precision is
+            ``μ̂(1 − μ̂)``.
+        tonic_volatility :
+            Tonic volatility for the value level (log scale).
+            Only used for ``"volatile"`` layers.
+        tonic_volatility_vol :
+            Tonic volatility for the volatility level (log scale).
+            Only used for ``"volatile"`` layers.
+        volatility_coupling :
+            Coupling strength between the value and volatility levels.
+            Only used for ``"volatile"`` layers.
         add_constant_input :
-            If ``True``, add a constant-state bias node connected to all children
-            in this layer. The bias node is included in the layer indices.
-        **node_parameters
-            Additional keyword parameters for node configuration (e.g., precision,
-            mean, tonic_volatility, etc...). These will be passed to add_nodes.
+            If True, add a bias term to the layer's predictions.
+        fully_connected :
+            If True (default), each node in this layer connects to every node
+            in the child layer (dense weight matrix).  If False, nodes connect
+            one-to-one with the child layer (diagonal weight matrix).  This
+            requires both layers to have the same size and
+            ``add_constant_input=False``.
+        coupling_fn :
+            Coupling function for this layer. If None, uses the network-level coupling
+            function.
 
         Returns
         -------
-        self :
-            The updated network for method chaining.
+        VectorizedDeepNetwork
+            Self for method chaining.
 
+        Raises
+        ------
+        ValueError
+            If *kind* is not a recognised node type.
+        ValueError
+            If *fully_connected* is False with ``add_constant_input=True``.
+        ValueError
+            If *fully_connected* is False and this layer's size differs from
+            the preceding child layer.
         """
-        # Track the number of nodes before adding
-        n_nodes_before = self.n_nodes
-
-        # define the type of node to use in the hidden layers
-        if kind is None:
-            kind = self.kind
-
-        # define the coupling functions to use in the hidden layers
-        if coupling_fn is None:
-            coupling_fn = self.coupling_fn
-
-        # Auto-detect orphan nodes if no children specified
-        if value_children is None:
-            children = []
-            for idx in range(len(self.edges)):
-                # A node is orphan if it has no value parents and is not constant-state
-                if (
-                    self.edges[idx].value_parents is None
-                    and self.edges[idx].node_type != 0
-                ):
-                    children.append(idx)
-            if not children:
-                raise ValueError(
-                    "No orphan nodes found. Please specify value_children explicitly."
-                )
-        else:
-            # Normalize children to list
-            if isinstance(value_children, int):
-                children = [value_children]
-            else:
-                children = list(value_children)
-
-        # Add node parameters that shouldn't be overridden
-        node_params = {
-            "coupling_fn": coupling_fn,
-            "autoconnection_strength": 0.0,
-            **node_parameters,
+        # Normalise Rust-style kind names to short form
+        _kind_aliases = {
+            "volatile-state": "volatile",
+            "binary-state": "binary",
         }
+        kind = _kind_aliases.get(kind, kind)
 
-        # Add all parent nodes (one per unit in the new layer)
-        for _ in range(size):
-            self.add_nodes(
-                kind=kind,
-                value_children=(children, [coupling_strengths] * len(children)),
-                **node_params,
+        valid_kinds = {"volatile", "binary"}
+        if kind not in valid_kinds:
+            raise ValueError(
+                f"Invalid layer kind '{kind}'. Choose from {sorted(valid_kinds)}."
             )
 
-        # Optionally add a constant-state bias node
-        if add_constant_input:
-            non_constant_children = [
-                idx for idx in children if self.edges[idx].node_type != 0
-            ]
-            if non_constant_children:
-                self.add_nodes(
-                    kind="constant-state",
-                    value_children=(
-                        non_constant_children,
-                        [coupling_strengths] * len(non_constant_children),
-                    ),
-                    coupling_fn=coupling_fn if coupling_fn is not None else (None,),
+        if not fully_connected:
+            if add_constant_input:
+                raise ValueError(
+                    "One-to-one layers (fully_connected=False) cannot use "
+                    "add_constant_input=True."
+                )
+            if self.layer_sizes and self.layer_sizes[-1] != size:
+                raise ValueError(
+                    f"One-to-one layers require the same size as the child "
+                    f"layer ({self.layer_sizes[-1]}), got {size}."
                 )
 
-        # Record the new layer indices
-        new_layer_idxs = list(range(n_nodes_before, self.n_nodes))
-        self.layers.append(new_layer_idxs)
-
+        self.layer_sizes.append(size)
+        self.layer_kinds.append(kind)
+        self.tonic_volatilities.append(tonic_volatility)
+        self.tonic_volatilities_vol.append(tonic_volatility_vol)
+        self.volatility_couplings.append(volatility_coupling)
+        self.add_constant_inputs.append(add_constant_input)
+        self.fully_connected.append(fully_connected)
+        self.coupling_fns.append(
+            coupling_fn if coupling_fn is not None else self.coupling_fn
+        )
         return self
 
     def add_layer_stack(
         self,
         layer_sizes: list[int],
-        kind: Optional[str] = None,
-        value_children: Optional[Union[int, list[int], tuple[int, ...]]] = None,
-        coupling_strengths: Union[float, list[float], tuple[float, ...]] = 1.0,
-        coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
+        kind: str = "volatile",
+        tonic_volatility: float = -4.0,
+        tonic_volatility_vol: float = -4.0,
+        volatility_coupling: float = 1.0,
         add_constant_input: bool = True,
-        **node_parameters,
-    ) -> DeepNetwork:
-        """Add multiple fully connected layers and track them.
-
-        Builds multiple layers sequentially, with each layer automatically tracking
-        its node indices.
+        fully_connected: bool = True,
+        coupling_fn: Optional[Callable] = None,
+    ) -> "DeepNetwork":
+        """Add multiple hidden layers at once.
 
         Parameters
         ----------
         layer_sizes :
-            Number of parent nodes to create in each new layer.
+            List of layer sizes.
         kind :
-            The type of nodes to add (e.g., "continuous-state", "volatile-state"). If
-            None, defaults to the type of node declared in the class.
-        value_children :
-            Index or list of indices for the bottom layer.
-            If None, automatically connects to all orphan nodes for the first layer.
-        coupling_strengths :
-            Coupling strength(s) to apply across all layers.
+            Type of nodes for all layers (``"volatile"`` or ``"binary"``).
+        tonic_volatility :
+            Tonic volatility for all layers (value level, log scale).
+        tonic_volatility_vol :
+            Tonic volatility for all layers (volatility level, log scale).
+        volatility_coupling :
+            Coupling strength between the value and volatility levels for all layers.
+        add_constant_input :
+            If True, add a bias term to each layer's predictions.
+        fully_connected :
+            If True (default), layers are fully connected. If False, layers use
+            one-to-one connections (requires equal sizes).
         coupling_fn :
-            Coupling function(s) to apply across all layers.
-        **node_parameters
-            Additional keyword parameters for node configuration.
+            Coupling function for all layers. If None, uses the network-level coupling
+            function.
 
         Returns
         -------
-        self :
-            The updated network for method chaining.
-
+        VectorizedDeepNetwork
+            Self for method chaining.
         """
-        # define the type of node to use in the hidden layers
-        if kind is None:
-            kind = self.kind
-
-        # define the coupling functions to use in the hidden layers
-        if coupling_fn is None:
-            coupling_fn = self.coupling_fn
-
-        # Build layer by layer using the overridden add_layer
-        # which automatically tracks each layer
-        for i, size in enumerate(layer_sizes):
-            if i == 0:
-                self.add_layer(
-                    size=size,
-                    kind=kind,
-                    value_children=value_children,
-                    coupling_strengths=coupling_strengths,
-                    coupling_fn=coupling_fn,
-                    add_constant_input=add_constant_input,
-                    **node_parameters,
-                )
-            else:
-                self.add_layer(
-                    size=size,
-                    value_children=None,  # Auto-detect orphans
-                    coupling_strengths=coupling_strengths,
-                    coupling_fn=coupling_fn,
-                    add_constant_input=add_constant_input,
-                    **node_parameters,
-                )
-
+        for size in layer_sizes:
+            self.add_layer(
+                size=size,
+                kind=kind,
+                tonic_volatility=tonic_volatility,
+                tonic_volatility_vol=tonic_volatility_vol,
+                volatility_coupling=volatility_coupling,
+                add_constant_input=add_constant_input,
+                fully_connected=fully_connected,
+                coupling_fn=coupling_fn,
+            )
         return self
 
-    def add_nodes(self, *args, **kwargs) -> DeepNetwork:
-        """Add nodes and track as a layer if they form the base.
+    def _init_state(self) -> NetworkState:
+        """Initialize network state with uniform weights.
 
-        This overrides Network.add_nodes to track base/input layers.
-        """
-        n_nodes_before = self.n_nodes
-
-        # Call parent class method
-        super().add_nodes(*args, **kwargs)
-
-        # If this is creating multiple nodes at once, track as a layer
-        n_nodes = kwargs.get("n_nodes", 1)
-        if n_nodes > 1:
-            new_layer_idxs = list(range(n_nodes_before, self.n_nodes))
-            # Only add to layers if this is the first layer (base layer)
-            if len(self.layers) == 0:
-                self.layers.append(new_layer_idxs)
-
-        return self
-
-    def plot_deep_network(self, backend: str = "graphviz", **kwargs):
-        """Plot the network in a deep-learning style (layer-by-layer).
-
-        Parameters
-        ----------
-        backend :
-            The plotting backend to use. Only 'graphviz' is supported.
-        **kwargs
-            Additional arguments passed to the plotting function.
+        All inter-layer weights are set to ``1.0``, matching the DeepNetwork and
+        Rust backends.  Use :meth:`weight_initialisation` after construction to
+        apply Xavier, He, orthogonal, or sparse initialisation.
 
         Returns
         -------
-        The plot object (depends on backend).
-
+        NetworkState
+            Initialized network state.
         """
-        if backend == "graphviz":
-            from pyhgf.plots import graphviz
+        layers = []
+        weights = []
+        params = []
 
-            return graphviz.plot_deep_network(deep_network=self, **kwargs)
-        else:
-            raise ValueError(
-                "Invalid backend. Currently supports only backend='graphviz'."
+        for i, size in enumerate(self.layer_sizes):
+            # Create layer state
+            layers.append(LayerState.create(size))
+
+            # Create layer parameters
+            params.append(
+                LayerParams.create(
+                    n_nodes=size,
+                    tonic_volatility=self.tonic_volatilities[i],
+                    tonic_volatility_vol=self.tonic_volatilities_vol[i],
+                    volatility_coupling=self.volatility_couplings[i],
+                )
             )
 
-    def fit(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        inputs_x_idxs: Optional[tuple[int, ...]] = None,
-        inputs_y_idxs: Optional[tuple[int, ...]] = None,
-        lr: Union[str, float] = 0.2,
-        overwrite: bool = True,
-    ):
-        """Fit the deep network to predictors (X, top layer) and outcomes (Y, bottom).
+            # Create weights connecting to next layer (if not first layer)
+            # weights[i-1] connects layer[i-1] (child) to layer[i] (parent)
+            # If the parent layer has add_constant_input=True, an extra column
+            # is appended for the bias node (constant mean = 1.0).
+            if i > 0:
+                prev_size = self.layer_sizes[i - 1]
+                n_parent_cols = size + (1 if self.add_constant_inputs[i] else 0)
+                if self.fully_connected[i]:
+                    weights.append(jnp.ones((prev_size, n_parent_cols)))
+                else:
+                    weights.append(jnp.eye(prev_size, n_parent_cols))
 
-        If inputs_x_idxs and inputs_y_idxs are not provided, this method automatically
-        detects them based on the tracked layer structure:
-        - inputs_x_idxs: the first (top) layer
-        - inputs_y_idxs: the last (bottom) layer
+        # Adam moment buffers (zeros, same shapes as weights)
+        adam_m = tuple(jnp.zeros_like(w) for w in weights)
+        adam_v = tuple(jnp.zeros_like(w) for w in weights)
 
-        Parameters
-        ----------
-        x :
-            Predictor values (input features).
-        y :
-            Target values (predictions/labels).
-        inputs_x_idxs :
-            Node indices receiving the predictors. If None, uses the top layer.
-        inputs_y_idxs :
-            Node indices receiving the predictions. If None, uses the bottom layer.
-        lr :
-            Learning rate for coupling strength updates. Either "dynamic" or a float.
-            If a float is provided, the value will be used as learning rate.
-        overwrite
-            Whether to recreate the propagation function if it already exists.
-
-        Returns
-        -------
-        self :
-            The network with updated parameters.
-
-        """
-        # Auto-detect input/output layers if not specified
-        if inputs_x_idxs is None:
-            if not self.layers:
-                raise ValueError(
-                    "No layers tracked. Either provide inputs_x_idxs explicitly "
-                    "or use add_layer() to build the network."
-                )
-            inputs_x_idxs = tuple(self.layers[-1])  # First layer
-
-        if inputs_y_idxs is None:
-            if not self.layers:
-                raise ValueError(
-                    "No layers tracked. Either provide inputs_y_idxs explicitly "
-                    "or use add_layer() to build the network."
-                )
-            inputs_y_idxs = tuple(self.layers[0])  # Last layer
-
-        # Call parent fit method
-        return super().fit(
-            x=x,
-            y=y,
-            inputs_x_idxs=inputs_x_idxs,
-            inputs_y_idxs=inputs_y_idxs,
-            lr=lr,
-            overwrite=overwrite,
+        return NetworkState(
+            layers=tuple(layers),
+            weights=tuple(weights),
+            params=tuple(params),
+            time_step=1.0,
+            adam_m=adam_m,
+            adam_v=adam_v,
+            adam_t=0,
         )
 
     def weight_initialisation(
@@ -375,48 +313,46 @@ class DeepNetwork(Network):
         strategy: Optional[str] = None,
         seed: Optional[int] = None,
         **kwargs,
-    ) -> DeepNetwork:
-        """Initialise coupling weights for every layer except the input layer.
-
-        For each targeted layer the method generates a weight matrix whose dimensions
-        are ``(n_parents, n_current)`` — the number of parent nodes in the layer above
-        and the number of nodes in the current layer, and applies the values via
-        :func:`pyhgf.utils.set_coupling`.
-
-        The input (top) layer is skipped because it has no parents to
-        initialise.
+    ) -> "DeepNetwork":
+        """Initialise inter-layer weight matrices.
 
         Parameters
         ----------
         strategy :
-            Initialisation strategy.  One of ``"xavier"``, ``"he"``, ``"orthogonal"``,
-            or ``"sparse"``.  If *None*, falls back to ``self.weight_init`` set during
-            construction.
+            Initialisation strategy.  One of ``"xavier"``, ``"he"``,
+            ``"orthogonal"``, or ``"sparse"``.  If *None*, weights are left
+            unchanged (all ``1.0``).
         seed :
             Optional random seed passed to the initialisation function.
         **kwargs
-            Extra keyword arguments forwarded to the initialisation function (e.g.
-            ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).
+            Extra keyword arguments forwarded to the initialisation function
+            (e.g. ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).
 
         Returns
         -------
-        self :
-            The network with updated coupling weights (for method chaining).
+        VectorizedDeepNetwork
+            Self for method chaining.
 
         Raises
         ------
         ValueError
-            If no strategy is provided (neither as argument nor at init time), or if the
-            network has fewer than 2 tracked layers.
-
+            If the strategy name is not recognised or the state has not been
+            initialised yet.
         """
-        # If strategy is not provided here, use the default values from the constructor
         if strategy is None:
             return self
-        elif strategy not in ["xavier", "he", "orthogonal", "sparse"]:
+
+        valid = {"xavier", "he", "orthogonal", "sparse"}
+        if strategy not in valid:
             raise ValueError(
-                "Invalid weight initialisation strategy. Pass strategy='xavier' (or "
-                "'he', 'orthogonal', 'sparse') in the DeepNetwork constructor."
+                f"Invalid weight initialisation strategy '{strategy}'. "
+                f"Choose from {sorted(valid)}."
+            )
+
+        if self.state is None:
+            raise ValueError(
+                "State must be initialised before calling weight_initialisation. "
+                "Call fit() first or initialise the state manually."
             )
 
         _init_fns: dict[str, Callable[..., np.ndarray]] = {
@@ -425,100 +361,300 @@ class DeepNetwork(Network):
             "orthogonal": orthogonal_init,
             "sparse": sparse_init,
         }
-        init_fn: Callable[..., np.ndarray] = _init_fns[strategy]
+        init_fn = _init_fns[strategy]
 
-        if len(self.layers) < 2:
-            raise ValueError(
-                "weight_initialisation requires at least 2 tracked layers. "
-                f"The network currently has {len(self.layers)} layer(s)."
-            )
+        new_weights = list(self.state.weights)
+        for i, w in enumerate(new_weights):
+            n_children, n_parents = w.shape  # (prev_size, size)
+            flat = init_fn(n_parents, n_children, seed=seed, **kwargs)
+            new_weights[i] = jnp.array(flat.reshape(w.shape))
 
-        # Learnable node types whose children can receive initialised
-        # couplings: continuous-state (2), volatile-state (6), and
-        # constant-state (0) bias nodes.
-        learnable_types = {0, 2, 6}
-
-        # All layers except the top/input layer (layers[-1]).
-        # For each layer at index `layer_idx`, the parents live in the layer
-        # above at `layer_idx + 1`.
-        for layer_idx in range(0, len(self.layers) - 1):
-            current_nodes = self.layers[layer_idx]
-            parent_nodes = self.layers[layer_idx + 1]
-
-            # All child nodes must be continuous or volatile; parent nodes
-            # can additionally be constant-state bias nodes.
-            if not all(
-                self.edges[idx].node_type in learnable_types
-                for idx in current_nodes + parent_nodes
-            ):
-                continue
-
-            # Only non-constant children receive weights from parents;
-            # constant nodes are bias-only and have no parents.
-            child_nodes = [
-                idx for idx in current_nodes if self.edges[idx].node_type != 0
-            ]
-            if not child_nodes:
-                continue
-
-            n_parents = len(parent_nodes)
-            n_children = len(child_nodes)
-
-            # Generate weight matrix (flat, row-major: parent × child)
-            weights = init_fn(n_parents, n_children, seed=seed, **kwargs)
-
-            # Apply weights to each parent→child connection
-            for p_local, parent_idx in enumerate(parent_nodes):
-                for c_local, child_idx in enumerate(child_nodes):
-                    w = float(weights[p_local * n_children + c_local])
-                    self.attributes = set_coupling(
-                        attributes=self.attributes,
-                        edges=self.edges,
-                        parent_idx=parent_idx,
-                        child_idx=child_idx,
-                        coupling=w,
-                    )
-
+        self.state = NetworkState(
+            layers=self.state.layers,
+            weights=tuple(new_weights),
+            params=self.state.params,
+            time_step=self.state.time_step,
+            adam_m=self.state.adam_m,
+            adam_v=self.state.adam_v,
+            adam_t=self.state.adam_t,
+        )
         return self
 
-    def get_layer_sizes(self) -> list[int]:
-        """Get the size of each tracked layer.
-
-        Returns
-        -------
-        layer_sizes :
-            List of integers representing the number of nodes in each layer.
-
-        """
-        return [len(layer) for layer in self.layers]
-
-    def get_layer(self, layer_idx: int) -> list[int]:
-        """Get the node indices for a specific layer.
+    def _create_propagation_fn(
+        self,
+        lr: Union[float, str],
+        optimizer: Optional[str] = None,
+        params: Optional[dict] = None,
+        record_trajectories: bool = False,
+    ):
+        """Create the jitted propagation function.
 
         Parameters
         ----------
-        layer_idx :
-            The index of the layer (0 = first/bottom layer).
+        lr :
+            Learning rate for weight updates.
+        optimizer :
+            Optimizer name.  ``"adam"`` enables Adam filtering of weight
+            gradients.  *None* uses plain gradient updates.
+        params :
+            Hyper-parameters for the optimizer (e.g. ``beta1``, ``beta2``,
+            ``epsilon``, and ``lr`` for Adam).  See :meth:`fit` for defaults.
+        record_trajectories :
+            If True, the scan output includes the full ``NetworkState`` at
+            every time step (useful for inspection but significantly slower).
+            If False (default), only predictions are accumulated.
 
         Returns
         -------
-        node_indices :
-            List of node indices in that layer.
-
+        Callable
+            JIT-compiled propagation function.
         """
-        if layer_idx < 0 or layer_idx >= len(self.layers):
-            raise IndexError(
-                (
-                    f"Layer index {layer_idx} out of range. "
-                    "Network has {len(self.layers)} layers."
-                )
+        # Per-layer coupling functions and their gradients.
+        # coupling_fns[i] is applied to layer[i].expected_mean when layer[i]
+        # acts as a parent (i.e. when predicting layer[i-1]).
+        coupling_fns = self.coupling_fns
+        coupling_fn_grads = [jax.grad(lambda x, fn=fn: fn(x)) for fn in coupling_fns]
+        add_constant_inputs = self.add_constant_inputs  # captured for bias updates
+        layer_kinds = self.layer_kinds
+        update_type = self.update_type
+
+        # Build Adam parameters tuple (or None)
+        # Format: (beta1, beta2, epsilon, adam_lr_override)
+        if optimizer == "adam":
+            p = params or {}
+            adam_params: Optional[tuple[float, float, float, Optional[float]]] = (
+                p.get("beta1", 0.9),
+                p.get("beta2", 0.999),
+                p.get("epsilon", 1e-8),
+                p.get("lr", 1e-3),
             )
-        return self.layers[layer_idx]
+        else:
+            adam_params = None
+
+        if record_trajectories:
+
+            def _step(state: NetworkState, inputs):
+                new_state, output_pred = propagation_step(
+                    state,
+                    inputs,
+                    coupling_fns,
+                    coupling_fn_grads,
+                    add_constant_inputs,
+                    lr,
+                    layer_kinds,
+                    adam_params,
+                    update_type,
+                )
+                return new_state, (new_state, output_pred)
+
+        else:
+
+            def _step(state: NetworkState, inputs):
+                return propagation_step(
+                    state,
+                    inputs,
+                    coupling_fns,
+                    coupling_fn_grads,
+                    add_constant_inputs,
+                    lr,
+                    layer_kinds,
+                    adam_params,
+                    update_type,
+                )
+
+        return jax.jit(_step)
+
+    def _create_prediction_fn(self):
+        """Create the jitted prediction function (forward pass only).
+
+        Returns
+        -------
+        Callable
+            JIT-compiled prediction function.
+        """
+        coupling_fns = self.coupling_fns
+        add_constant_inputs = self.add_constant_inputs
+        layer_kinds = self.layer_kinds
+
+        def prediction_step(state: NetworkState, x):
+            """Forward prediction without learning."""
+            layers = list(state.layers)
+            params = state.params
+
+            n_layers = len(layers)
+
+            # Set input
+            layers[-1] = layers[-1]._replace(expected_mean=x)
+
+            # Top-down prediction
+            for i in range(n_layers - 1, 0, -1):
+                if layer_kinds[i - 1] == "binary":
+                    layers[i - 1] = vectorized_binary_prediction(
+                        child_state=layers[i - 1],
+                        parent_state=layers[i],
+                        weights=state.weights[i - 1],
+                        coupling_fn=coupling_fns[i],
+                        parent_has_constant=add_constant_inputs[i],
+                    )
+                else:
+                    layers[i - 1] = vectorized_layer_prediction(
+                        child_state=layers[i - 1],
+                        parent_state=layers[i],
+                        weights=state.weights[i - 1],
+                        params=params[i - 1],
+                        time_step=state.time_step,
+                        coupling_fn=coupling_fns[i],
+                        parent_has_constant=add_constant_inputs[i],
+                    )
+
+            # Return output layer expected mean
+            return layers[0].expected_mean
+
+        return jax.jit(prediction_step)
+
+    def fit(
+        self,
+        x: Union[np.ndarray, jnp.ndarray],
+        y: Union[np.ndarray, jnp.ndarray],
+        lr: Union[float, str] = 0.2,
+        optimizer: Optional[str] = "adam",
+        params: Optional[dict] = None,
+        record_trajectories: bool = False,
+    ) -> "DeepNetwork":
+        """Fit network to data.
+
+        Parameters
+        ----------
+        x :
+            Input data, shape (n_samples, n_input_features).
+        y :
+            Target data, shape (n_samples, n_output_features).
+        lr :
+            Learning rate for weight updates, or ``"dynamic"`` for
+            Kalman-gain updates.
+        optimizer :
+            Optimizer name.  ``"adam"`` (default) filters weight gradients through the
+            Adam algorithm (Kingma & Ba, 2015).  *None* uses plain gradient or
+            Kalman-gain updates.
+        params :
+            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default
+            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
+            (default 1e-3, the Adam step size).
+        record_trajectories :
+            If True, record the full ``NetworkState`` at every time step (accessible
+            via ``self.trajectories``).  This is useful for inspection but significantly
+            increases memory usage and slows training. Default is False.
+
+        Returns
+        -------
+        VectorizedDeepNetwork
+            Self with updated state.
+
+        Raises
+        ------
+        ValueError
+            If *optimizer* is not ``None`` or ``"adam"``.
+        """
+        if optimizer is not None and optimizer != "adam":
+            raise ValueError(
+                f"Unknown optimizer '{optimizer}'. Supported: 'adam' or None."
+            )
+
+        # Initialize state if needed
+        if self.state is None:
+            self.state = self._init_state()
+
+        # Recreate (and retrace) the propagation fn when settings change
+        needs_retrace = (
+            self._propagation_fn is None
+            or self._propagation_lr != lr
+            or self._propagation_optimizer != optimizer
+            or self._record_trajectories != record_trajectories
+        )
+        if needs_retrace:
+            self._propagation_fn = self._create_propagation_fn(
+                lr, optimizer, params, record_trajectories
+            )
+            self._propagation_lr = lr
+            self._propagation_optimizer = optimizer
+            self._record_trajectories = record_trajectories
+
+        # Convert to JAX arrays
+        x = jnp.asarray(x)
+        y = jnp.asarray(y)
+
+        # Run scan over data
+        assert self._propagation_fn is not None
+        if record_trajectories:
+            self.state, (self.trajectories, self.predictions) = jax.lax.scan(
+                self._propagation_fn, self.state, (x, y)
+            )
+        else:
+            self.trajectories = None
+            self.state, self.predictions = jax.lax.scan(
+                self._propagation_fn, self.state, (x, y)
+            )
+
+        return self
+
+    def predict(
+        self,
+        x: Union[np.ndarray, jnp.ndarray],
+    ) -> jnp.ndarray:
+        """Forward pass without learning.
+
+        Parameters
+        ----------
+        x :
+            Input data, shape (n_samples, n_input_features) or (n_input_features,).
+
+        Returns
+        -------
+        jnp.ndarray
+            Predictions, shape (n_samples, n_output_features) or (n_output_features,).
+        """
+        if self.state is None:
+            raise ValueError("Network must be fit before predicting.")
+
+        if self._prediction_fn is None:
+            self._prediction_fn = self._create_prediction_fn()
+
+        prediction_fn = self._prediction_fn
+        x = jnp.asarray(x)
+
+        # Handle single sample vs batch
+        if x.ndim == 1:
+            return prediction_fn(self.state, x)
+        else:
+            # Vectorize over samples
+            return jax.vmap(lambda xi: prediction_fn(self.state, xi))(x)
+
+    def reset(self) -> "DeepNetwork":
+        """Reset the network state.
+
+        Returns
+        -------
+        VectorizedDeepNetwork
+            Self with reset state.
+        """
+        self.state = self._init_state()
+        self._propagation_fn = None
+        self._propagation_lr = None
+        self._propagation_optimizer = None
+        self._record_trajectories = False
+        self._prediction_fn = None
+        return self
+
+    @property
+    def n_layers(self) -> int:
+        """Number of layers in the network."""
+        return len(self.layer_sizes)
+
+    @property
+    def n_nodes(self) -> int:
+        """Total number of nodes in the network."""
+        return sum(self.layer_sizes)
 
     def __repr__(self) -> str:
-        """Print string representation of layer structure."""
-        if not self.layers:
-            return f"DeepNetwork(nodes={self.n_nodes}, layers=[])"
-
-        layer_sizes = self.get_layer_sizes()
-        return f"DeepNetwork(nodes={self.n_nodes}, layers={layer_sizes})"
+        """Print string representation."""
+        return f"VectorizedDeepNetwork(nodes={self.n_nodes}, layers={self.layer_sizes})"
