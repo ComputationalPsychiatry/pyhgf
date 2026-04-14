@@ -180,15 +180,13 @@ def plot_deep_network(
     )
 
     # Reverse so the bottom layer appears at the bottom visually
-    layers_reversed = list(reversed(deep_network.layers))
+    layers_reversed = list(reversed(deep_network.layer_sizes))
     layer_names = []
 
-    num_layers = len(deep_network.layers)
+    num_layers = len(deep_network.layer_sizes)
 
     # Create each layer block
-    for i, layer_nodes in enumerate(layers_reversed):
-        n_units = len(layer_nodes)
-
+    for i, n_units in enumerate(layers_reversed):
         true_idx = num_layers - 1 - i  # index in original (bottom=0)
 
         if true_idx == 0:
@@ -205,9 +203,17 @@ def plot_deep_network(
 
     # Draw downward arrows between layers
     for i in range(len(layer_names) - 1):
-        graphviz_structure.edge(
-            layer_names[i], layer_names[i + 1], xlabel="fully connected"
-        )
+        # layer_names[i] is the top-most visual layer; true_idx counts from
+        # the bottom (0 = outcome).  coupling_fns[j] is applied to layer j's
+        # output, so the edge from parent layer to child layer j uses
+        # coupling_fns[j].
+        child_true_idx = num_layers - 1 - (i + 1)
+        fn = deep_network.coupling_fns[child_true_idx]
+        fn_name = getattr(fn, "__name__", None) or type(fn).__name__
+        # Replace the anonymous identity with a readable label
+        if fn_name == "<lambda>":
+            fn_name = "linear"
+        graphviz_structure.edge(layer_names[i], layer_names[i + 1], xlabel=fn_name)
 
     if filename is not None:
         graphviz_structure.render(filename, view=view, format="pdf")

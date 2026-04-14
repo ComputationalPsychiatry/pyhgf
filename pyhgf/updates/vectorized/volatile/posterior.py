@@ -6,24 +6,136 @@
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import grad, vmap
+from jax import grad as jgrad
+from jax import vmap
 
-from pyhgf.typing import LayerParams, LayerState
+from pyhgf.typing import LayerState
+
+
+def vectorized_posterior_update_precision_value_level(
+    layer: LayerState,
+    child: LayerState,
+    weights: jnp.ndarray,
+    coupling_fn_grad: Callable,
+) -> jnp.ndarray:
+    """Update the precision of the value level for all nodes in a layer.
+
+    This is the vectorized equivalent of
+    :func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level`.
+
+    .. note::
+
+        Unlike the standard continuous-state posterior updates elsewhere in the
+        toolbox, the volatile-state updates evaluate coupling function derivatives
+        at the *expected* mean (i.e. the prediction) rather than the posterior
+        mean. This choice is made to better suit deep learning networks where the
+        prediction serves as the natural reference point for computing updates.
+
+    Parameters
+    ----------
+    layer :
+        Current state of the parent layer (being updated).
+    child :
+        Current state of the child layer (providing prediction errors).
+    weights :
+        Weight matrix connecting child to parent, shape
+        ``(n_children, n_parents)``.
+    coupling_fn_grad :
+        Gradient of the coupling function.
+
+    Returns
+    -------
+    jnp.ndarray
+        Posterior precision for each node in the parent layer.
+    """
+    # Coupling derivatives at parent expected means
+    coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)
+
+    # Coupling second derivative (for second-order EKF correction)
+    coupling_second = vmap(jgrad(coupling_fn_grad))(layer.expected_mean)
+
+    # First-order term: sum_i(w_ij^2 * child_prec_i) * f'(m_j)^2
+    precision_contrib_1 = jnp.matmul(weights.T**2, child.expected_precision) * (
+        coupling_prime**2
+    )
+
+    # Second-order correction: -f''(m_j) * sum_i(child_prec_i * vpe_i)
+    sum_pi_vpe = jnp.dot(child.expected_precision, child.value_prediction_error)
+    precision_contrib_2 = -coupling_second * sum_pi_vpe
+
+    posterior_precision = (
+        layer.expected_precision + precision_contrib_1 + precision_contrib_2
+    )
+
+    return posterior_precision
+
+
+def vectorized_posterior_update_mean_value_level(
+    layer: LayerState,
+    child: LayerState,
+    weights: jnp.ndarray,
+    coupling_fn_grad: Callable,
+    posterior_precision: jnp.ndarray,
+) -> jnp.ndarray:
+    """Update the mean of the value level for all nodes in a layer.
+
+    This is the vectorized equivalent of
+    :func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level`.
+
+    .. note::
+
+        Unlike the standard continuous-state posterior updates elsewhere in the
+        toolbox, the volatile-state updates evaluate coupling function derivatives
+        at the *expected* mean (i.e. the prediction) rather than the posterior
+        mean. This choice is made to better suit deep learning networks where the
+        prediction serves as the natural reference point for computing updates.
+
+    Parameters
+    ----------
+    layer :
+        Current state of the parent layer (being updated).
+    child :
+        Current state of the child layer (providing prediction errors).
+    weights :
+        Weight matrix connecting child to parent, shape
+        ``(n_children, n_parents)``.
+    coupling_fn_grad :
+        Gradient of the coupling function.
+    posterior_precision :
+        Already-updated posterior precision for the parent layer.
+
+    Returns
+    -------
+    jnp.ndarray
+        Posterior mean for each node in the parent layer.
+    """
+    # Coupling derivatives at parent expected means
+    coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)
+
+    # Precision-weighted PE from children
+    weighted_pe = (
+        jnp.matmul(weights.T, child.expected_precision * child.value_prediction_error)
+        * coupling_prime
+        / posterior_precision
+    )
+
+    posterior_mean = layer.expected_mean + weighted_pe
+
+    return posterior_mean
 
 
 def vectorized_layer_posterior_update(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
-    params: LayerParams,
     coupling_fn_grad: Callable,
-    n_value_parents: int,
     parent_has_constant: bool = False,
 ) -> LayerState:
-    """Update posterior for all nodes in parent layer (volatile node - 5 steps).
+    """Update the value-level posterior for all nodes in a parent layer.
 
-    This implements the full volatile node posterior update with both value level and
-    volatility level updates.
+    This is the vectorized equivalent of
+    :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_posterior_update`.
+    It updates the value level precision first, then the mean.
 
     Parameters
     ----------
@@ -35,12 +147,8 @@ def vectorized_layer_posterior_update(
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``
         when the parent layer includes a constant input node.
-    params :
-        Layer parameters for the parent layer.
     coupling_fn_grad :
         Gradient of the coupling function.
-    n_value_parents :
-        Number of value parents for this layer.
     parent_has_constant :
         If True, the last column of *weights* corresponds to the constant
         input node and is stripped before computing the posterior update.
@@ -53,78 +161,20 @@ def vectorized_layer_posterior_update(
     # Strip the bias column if the parent has a constant input node
     if parent_has_constant:
         weights = weights[:, :-1]
-    # Coupling derivatives at parent means
-    # vmap the gradient function over parent means
-    coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)
 
-    # === STEP 1: Update value level precision ===
-    # Coupling second derivative at parent means (for second-order EKF correction)
-    coupling_second = vmap(grad(coupling_fn_grad))(layer.expected_mean)
-
-    # First-order term: weights.T shape (n_parents, n_children)
-    precision_contrib_1 = jnp.matmul(weights.T**2, child.expected_precision) * (
-        coupling_prime**2
-    )
-
-    # Second-order correction: matches posterior_update_precision_value_level
-    # -f''(m_j) * sum_i(pi_i * vpe_i) — note: no weight factor in sum (mirrors standard code)
-    sum_pi_vpe = jnp.dot(child.expected_precision, child.value_prediction_error)
-    precision_contrib_2 = -coupling_second * sum_pi_vpe
-
+    # Update precision first, then mean
     posterior_precision = jnp.clip(
-        layer.expected_precision + precision_contrib_1 + precision_contrib_2,
+        vectorized_posterior_update_precision_value_level(
+            layer, child, weights, coupling_fn_grad
+        ),
         a_max=1e8,
     )
 
-    # === STEP 2: Update value level mean ===
-    # Weighted prediction error from children
-    weighted_pe = (
-        jnp.matmul(weights.T, child.expected_precision * child.value_prediction_error)
-        * coupling_prime
-        / posterior_precision
-    )
-
-    posterior_mean = layer.expected_mean + weighted_pe
-
-    # === STEP 3: Recompute volatility PE with fresh values ===
-    # This matches standard HGF behavior where volatility parents
-    # update in the same timestep using fresh volatility PEs.
-    # Divide by n_value_parents to match volatile_node_value_prediction_error.
-    fresh_value_pe = (posterior_mean - layer.expected_mean) / n_value_parents
-
-    volatility_pe = (
-        (layer.expected_precision / posterior_precision)
-        + layer.expected_precision * (fresh_value_pe**2)
-        - 1.0
-    )
-
-    # === STEP 4 (eHGF order): Update volatility mean FIRST ===
-    # eHGF updates mean before precision, using expected_precision_vol as approximation.
-    # This matches Network(update_type="eHGF") which is now the default upstream.
-    vol_coupling = params.volatility_coupling
-    eff_prec = layer.effective_precision
-
-    precision_weighted_pe_vol = (vol_coupling * eff_prec * volatility_pe) / (
-        2.0 * layer.expected_precision_vol
-    )  # use EXPECTED, not posterior
-
-    posterior_mean_vol = layer.expected_mean_vol + precision_weighted_pe_vol
-
-    # === STEP 5: Update volatility level precision ===
-    precision_vol_contrib = (
-        0.5 * ((vol_coupling * eff_prec) ** 2)
-        + ((vol_coupling * eff_prec) ** 2) * volatility_pe
-        - 0.5 * (vol_coupling**2) * eff_prec * volatility_pe
-    )
-
-    posterior_precision_vol = jnp.clip(
-        layer.expected_precision_vol + precision_vol_contrib, a_max=1e8
+    posterior_mean = vectorized_posterior_update_mean_value_level(
+        layer, child, weights, coupling_fn_grad, posterior_precision
     )
 
     return layer._replace(
         precision=posterior_precision,
         mean=posterior_mean,
-        precision_vol=posterior_precision_vol,
-        mean_vol=posterior_mean_vol,
-        volatility_prediction_error=volatility_pe,
     )

@@ -16,15 +16,20 @@ def learning_weights(
     node_idx: int,
     edges: Edges,
     lr: Optional[float] = None,
+    adam_beta1: Optional[float] = None,
+    adam_beta2: Optional[float] = None,
+    adam_epsilon: Optional[float] = None,
 ) -> Attributes:
     r"""Unified weights update.
 
-    Branches on the ``lr`` parameter:
+    Branches on the ``lr`` and ``adam_beta1`` parameters:
 
-    - **Fixed** (``lr`` is a float): uses a fixed learning rate.
+    - **Adam** (``adam_beta1`` is a float): uses the Adam optimiser.
+    - **Fixed** (``lr`` is a float, no Adam): uses a fixed learning rate.
       :math:`\Delta w_i = \text{lr} \cdot (\text{PE} \cdot \pi_\text{child})
       \cdot g(\text{parent}_i)`
-    - **Dynamic** (``lr is None``): uses a precision-based learning rate (Kalman gain).
+    - **Dynamic** (``lr is None``, no Adam): uses a precision-based learning rate
+      (Kalman gain).
       :math:`K_i = \pi_{\text{parent}_i} / (\pi_{\text{parent}_i} + \pi_\text{child})`
 
     Parameters
@@ -39,7 +44,14 @@ def learning_weights(
         For each node, the index list value and volatility parents and children.
     lr :
         Fixed learning rate. When ``None`` (default) the dynamic
-        precision-weighted rule is used instead.
+        precision-weighted rule is used instead. When Adam is active, this is
+        the Adam step size.
+    adam_beta1 :
+        Adam first moment decay rate.  When ``None`` (default) Adam is not used.
+    adam_beta2 :
+        Adam second moment decay rate.
+    adam_epsilon :
+        Adam numerical stability constant.
 
     Returns
     -------
@@ -59,7 +71,7 @@ def learning_weights(
     # default to 1.0 so the dynamic path treats them identically.
     child_precision = attributes[node_idx].get("precision", 1.0)
 
-    if lr is None:
+    if lr is None and adam_beta1 is None:
         parent_precisions = jnp.array([
             attributes[parent_idx].get("precision", 1.0)
             for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
@@ -86,7 +98,24 @@ def learning_weights(
     # -----------------------------------------------------------------------
     pe = attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
 
-    if lr is not None:
+    if adam_beta1 is not None:
+        # Adam optimiser
+        assert adam_beta2 is not None
+        assert adam_epsilon is not None
+        gradient = pe * child_precision * prospective_activation
+        adam_m = (
+            adam_beta1 * attributes[node_idx]["adam_m"] + (1 - adam_beta1) * gradient
+        )
+        adam_v = (
+            adam_beta2 * attributes[node_idx]["adam_v"] + (1 - adam_beta2) * gradient**2
+        )
+        adam_t = attributes[-1]["adam_t"]
+        m_hat = adam_m / (1 - adam_beta1**adam_t)
+        v_hat = adam_v / (1 - adam_beta2**adam_t)
+        new_value_couplings = couplings + lr * m_hat / (jnp.sqrt(v_hat) + adam_epsilon)
+        attributes[node_idx]["adam_m"] = adam_m
+        attributes[node_idx]["adam_v"] = adam_v
+    elif lr is not None:
         # Fixed learning rate:
         # Δw_i = lr · (PE · π_child) · g(parent_i)
         new_value_couplings = (

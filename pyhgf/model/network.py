@@ -185,6 +185,8 @@ class Network:
         inputs_y_idxs: tuple[int, ...],
         overwrite: bool = True,
         lr: Union[str, float] = 0.2,
+        optimizer: Optional[str] = "adam",
+        params: Optional[dict] = None,
     ) -> "Network":
         """Create the belief propagation function.
 
@@ -202,9 +204,21 @@ class Network:
             preexisting values. Otherwise, do not create a new function if the attribute
             `scan_fn` is already defined.
         lr :
-            The kind of learning to use for the coupling strengths.
+            Learning rate for weight updates, or ``"dynamic"`` for Kalman-gain updates.
+        optimizer :
+            Optimizer name.  ``"adam"`` (default) filters weight gradients through the
+            Adam algorithm.  *None* uses plain gradient or Kalman-gain updates.
+        params :
+            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default
+            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
+            (default 1e-3, the Adam step size).
 
         """
+        if optimizer is not None and optimizer != "adam":
+            raise ValueError(
+                f"Unknown optimizer '{optimizer}'. Supported: 'adam' or None."
+            )
+
         # get the dimension of the input nodes
         if not self.input_dim:
             self.get_input_dimension()
@@ -216,7 +230,18 @@ class Network:
             )
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
-        if lr == "dynamic":
+        use_adam = optimizer == "adam"
+        if use_adam:
+            p = params or {}
+            adam_lr = p.get("lr", 1e-3)
+            learn_fn = Partial(
+                learning_weights,
+                lr=adam_lr,
+                adam_beta1=p.get("beta1", 0.9),
+                adam_beta2=p.get("beta2", 0.999),
+                adam_epsilon=p.get("epsilon", 1e-8),
+            )
+        elif lr == "dynamic":
             learn_fn = learning_weights
         elif isinstance(lr, float):
             learn_fn = Partial(learning_weights, lr=lr)
@@ -262,6 +287,16 @@ class Network:
             learning_steps=tuple(learning_steps),
         )
 
+        # Initialize Adam state for nodes that learn weights
+        if use_adam:
+            for node_idx, _ in learning_steps:
+                n_weights = len(
+                    self.edges[node_idx].value_parents  # type: ignore[arg-type]
+                )
+                self.attributes[node_idx]["adam_m"] = jnp.zeros(n_weights)
+                self.attributes[node_idx]["adam_v"] = jnp.zeros(n_weights)
+            self.attributes[-1]["adam_t"] = jnp.array(0)
+
         # create the learning propagation function
         # this function is used by scan to loop over predictors (x) and predictions (y)
         if (self.scan_fn is None) or overwrite:
@@ -271,6 +306,7 @@ class Network:
                 edges=self.edges,
                 inputs_x_idxs=inputs_x_idxs,
                 inputs_y_idxs=inputs_y_idxs,
+                use_adam=use_adam,
             )
 
         return self
@@ -282,6 +318,9 @@ class Network:
         inputs_x_idxs: tuple[int, ...],
         inputs_y_idxs: tuple[int, ...],
         lr: Union[str, float] = 0.2,
+        optimizer: Optional[str] = "adam",
+        params: Optional[dict] = None,
+        record_trajectories: bool = False,
         overwrite: bool = True,
     ):
         """Add new observations.
@@ -301,7 +340,20 @@ class Network:
         inputs_y_idxs :
             The indexes of the nodes receiving the predictions (y).
         lr :
-            The kind of learning to use for the coupling strengths.
+            Learning rate for weight updates, or ``"dynamic"`` for Kalman-gain updates.
+        optimizer :
+            Optimizer name. ``"adam"`` (default) filters weight gradients through the
+            Adam algorithm (Kingma & Ba, 2015). *None* uses plain gradient or
+            Kalman-gain updates.
+        params :
+            Dictionary of optimizer hyper-parameters. For Adam: ``beta1`` (default
+            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
+            (default 1e-3, the Adam step size).
+        record_trajectories :
+            If True, record the full node trajectories at every time step
+            (accessible via ``self.node_trajectories``). If False (default),
+            only the final state is kept, which significantly reduces memory
+            usage and speeds up training.
         overwrite :
             If `True`, create a new belief propagation function.
 
@@ -314,7 +366,11 @@ class Network:
         # generate the belief propagation function
         if (self.scan_fn is None) or overwrite:
             self = self.create_learning_propagation_fn(
-                inputs_x_idxs=inputs_x_idxs, inputs_y_idxs=inputs_y_idxs, lr=lr
+                inputs_x_idxs=inputs_x_idxs,
+                inputs_y_idxs=inputs_y_idxs,
+                lr=lr,
+                optimizer=optimizer,
+                params=params,
             )
 
         # wrap the inputs
@@ -323,10 +379,20 @@ class Network:
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
         # using precision-weighted prediction errors
-        last_attributes, node_trajectories = scan(self.scan_fn, self.attributes, inputs)
+        if record_trajectories:
+            last_attributes, node_trajectories = scan(
+                self.scan_fn, self.attributes, inputs
+            )
+            self.node_trajectories = node_trajectories
+        else:
 
-        # belief trajectories
-        self.node_trajectories = node_trajectories
+            def _no_traj_step(attributes, inputs):
+                new_attributes, _ = self.scan_fn(attributes, inputs)
+                return new_attributes, None
+
+            last_attributes, _ = scan(_no_traj_step, self.attributes, inputs)
+            self.node_trajectories = None  # type: ignore[assignment]
+
         self.last_attributes = last_attributes
 
         return self

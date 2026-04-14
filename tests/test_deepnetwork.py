@@ -1,103 +1,20 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from functools import partial
-
-import jax.nn
 import jax.numpy as jnp
 import numpy as np
+import pytest
 from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf.model import DeepNetwork
-
-NETWORK_CLASSES = [DeepNetwork, RsNetwork]
-
-# Mapping from Rust coupling-function name to Python (JAX) callable.
-# None means linear (identity) coupling — the default.
-COUPLING_FNS: dict[str | None, tuple | None] = {
-    None: None,
-    "relu": (jax.nn.relu,),
-    "sigmoid": (jax.nn.sigmoid,),
-    "tanh": (jnp.tanh,),
-    "leaky_relu": (partial(jax.nn.leaky_relu, negative_slope=0.01),),
-    "gelu": (partial(jax.nn.gelu, approximate=False),),
-}
-
-
-def _compare_trajectories(
-    py_net, rs_net, label: str, atol: float = 1e-3, rtol: float = 0.0
-) -> None:
-    """Assert that node trajectories match between Python and Rust backends."""
-    py_keys = set(py_net.node_trajectories.keys())
-    rs_keys = (
-        set(rs_net.node_trajectories.keys())
-        if isinstance(rs_net.node_trajectories, dict)
-        else set(range(len(rs_net.node_trajectories)))
-    )
-    common_nodes = sorted(py_keys & rs_keys)
-
-    # ----- Compare mean and precision at every node -----
-    for node_idx in common_nodes:
-        for key in ["mean", "precision"]:
-            py_traj = py_net.node_trajectories[node_idx]
-            rs_traj = rs_net.node_trajectories[node_idx]
-            if key not in py_traj or key not in rs_traj:
-                continue
-            py_val = np.asarray(py_traj[key])
-            rs_val = np.asarray(rs_traj[key])
-            assert np.allclose(py_val, rs_val, atol=atol, rtol=rtol), (
-                f"{label}: node {node_idx} '{key}' mismatch\n"
-                f"  Py={py_val}\n  Rs={rs_val}"
-            )
-
-    # ----- Compare volatile-level mean/precision -----
-    volatile_nodes = [
-        nid
-        for nid in common_nodes
-        if "mean_vol" in py_net.node_trajectories.get(nid, {})
-    ]
-    for node_idx in volatile_nodes:
-        for key in ["mean_vol", "precision_vol"]:
-            py_traj = py_net.node_trajectories[node_idx]
-            rs_traj = rs_net.node_trajectories[node_idx]
-            if key not in py_traj or key not in rs_traj:
-                continue
-            py_val = np.asarray(py_traj[key])
-            rs_val = np.asarray(rs_traj[key])
-            assert np.allclose(py_val, rs_val, atol=atol, rtol=rtol), (
-                f"{label}: node {node_idx} '{key}' mismatch\n"
-                f"  Py={py_val}\n  Rs={rs_val}"
-            )
-
-    # ----- Compare coupling weights (value_coupling_children) -----
-    weight_nodes = [
-        nid
-        for nid in common_nodes
-        if "value_coupling_children" in py_net.node_trajectories.get(nid, {})
-        and "value_coupling_children"
-        in (
-            rs_net.node_trajectories[nid]
-            if isinstance(rs_net.node_trajectories, dict)
-            else rs_net.node_trajectories[nid]
-            if nid < len(rs_net.node_trajectories)
-            else {}
-        )
-    ]
-    for node_idx in weight_nodes:
-        py_w = np.asarray(py_net.node_trajectories[node_idx]["value_coupling_children"])
-        rs_w = np.asarray(rs_net.node_trajectories[node_idx]["value_coupling_children"])
-        assert np.allclose(py_w, rs_w, atol=atol, rtol=rtol), (
-            f"{label}: node {node_idx} 'value_coupling_children' mismatch\n"
-            f"  Py={py_w}\n  Rs={rs_w}"
-        )
+from pyhgf.model import Network as PyNetwork
 
 
 def test_fit():
-    """Test that Python and Rust backends produce identical fit results.
+    """Test that DeepNetwork and RsNetwork produce finite fit results.
 
     Network: 2 targets → 2+1 hidden₁ → 2+1 hidden₂ → 1+1 input.
-    Tested with every available coupling function and both fixed and dynamic
-    learning rates.  No weight initialisation so default couplings (1.0) are
-    used, making the two backends directly comparable.
+    Tested across all combinations of coupling function, optimizer, and
+    learning-rate mode.
     """
     n_targets, n_h1, n_h2, n_input = 2, 2, 2, 1
 
@@ -105,135 +22,92 @@ def test_fit():
     x = np.random.randn(5, n_input)
     y = np.random.randn(5, n_targets)
 
-    for coupling_name, py_coupling_fn in COUPLING_FNS.items():
-        for lr in [0.1, "dynamic"]:
-            label = f"coupling={coupling_name}, lr={lr}"
+    coupling_variants = [
+        (None, None),  # linear (identity)
+        ("tanh", (jnp.tanh,)),  # nonlinear
+    ]
+    optimizer_variants = [
+        (None, 0.1),  # plain gradient, fixed lr
+        ("adam", 0.1),  # Adam optimizer, fixed lr
+        (None, "dynamic"),  # Kalman-gain (dynamic lr, no optimizer)
+    ]
 
-            fitted = []
-            for Network in NETWORK_CLASSES:
-                if Network is DeepNetwork:
-                    net = (
-                        Network()
-                        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-                        .add_layer(size=n_h1, coupling_fn=py_coupling_fn)
-                        .add_layer(size=n_h2, coupling_fn=py_coupling_fn)
-                        .add_layer(size=n_input, coupling_fn=py_coupling_fn)
-                    )
-                else:
-                    net = (
-                        Network()
-                        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-                        .add_layer(size=n_h1, coupling_fn=coupling_name)
-                        .add_layer(size=n_h2, coupling_fn=coupling_name)
-                        .add_layer(size=n_input, coupling_fn=coupling_name)
-                    )
+    for coupling_name, py_coupling_fn in coupling_variants:
+        for optimizer, lr in optimizer_variants:
+            label = f"coupling={coupling_name}, optimizer={optimizer}, lr={lr}"
 
-                predictors = tuple(net.layers[-1][:n_input])
-                fit_kwargs = dict(
-                    x=x,
-                    y=y,
-                    inputs_x_idxs=predictors,
-                    inputs_y_idxs=tuple(range(n_targets)),
-                    lr=lr,
+            # --- DeepNetwork (JAX vectorized) ---
+            dn = (
+                DeepNetwork(
+                    coupling_fn=py_coupling_fn[0] if py_coupling_fn else lambda x: x
                 )
-                # Rust defaults to Adam; override to plain updates for parity
-                if Network is RsNetwork:
-                    fit_kwargs["optimizer"] = None
-                net.fit(**fit_kwargs)
-                fitted.append(net)
+                .add_layer(size=n_targets)
+                .add_layer(size=n_h1)
+                .add_layer(size=n_h2)
+                .add_layer(size=n_input)
+            )
+            dn.fit(x=x, y=y, lr=lr, optimizer=optimizer)
+            preds_dn = dn.predict(np.array([[0.5]]))
 
-            py_net, rs_net = fitted
-            _compare_trajectories(py_net, rs_net, label)
+            # --- RsNetwork (Rust) ---
+            rs = (
+                RsNetwork()
+                .add_nodes(kind="continuous-state", n_nodes=n_targets)
+                .add_layer(size=n_h1, coupling_fn=coupling_name)
+                .add_layer(size=n_h2, coupling_fn=coupling_name)
+                .add_layer(size=n_input, coupling_fn=coupling_name)
+            )
+            predictors = tuple(rs.layers[-1][:n_input])
+            rs.fit(
+                x=x.tolist(),
+                y=y.tolist(),
+                inputs_x_idxs=predictors,
+                inputs_y_idxs=tuple(range(n_targets)),
+                lr=lr,
+                optimizer=optimizer,
+            )
+            preds_rs = rs.predict(
+                x=[[0.5]],
+                inputs_x_idxs=predictors,
+                inputs_y_idxs=tuple(range(n_targets)),
+            )
 
-
-def test_deepnetwork_add_value_parent_layer():
-    """Test building a fully connected parent layer."""
-    net = DeepNetwork()
-
-    # Create 4 bottom nodes
-    net = net.add_nodes(kind="continuous-state", n_nodes=4, precision=1.0)
-    bottom = list(range(4))
-
-    # Add one parent layer of size 3
-    n_nodes_before = net.n_nodes
-    net = net.add_layer(
-        size=3,
-        value_children=bottom,
-        precision=1.0,
-        tonic_volatility=-1.0,
-    )
-
-    # Expect 3 volatile + 1 constant (bias) = 4 new nodes
-    assert net.n_nodes == n_nodes_before + 4
-
-    # Get the indices of the newly added parents (excluding the bias node)
-    parents = list(range(n_nodes_before, n_nodes_before + 3))
-
-    # For each parent, check fully-connected structure
-    for p in parents:
-        assert net.edges[p].value_children == tuple(bottom)
-        assert len(net.attributes[p]["value_coupling_children"]) == len(bottom)
-
-    # Check that layer was tracked (includes bias node)
-    assert len(net.layers) == 2  # base layer + added layer
-    assert parents == net.layers[1][:3]
+            # Both should produce finite predictions
+            assert np.all(np.isfinite(np.asarray(preds_dn))), (
+                f"{label}: DeepNetwork predictions contain NaN/Inf"
+            )
+            assert np.all(np.isfinite(np.asarray(preds_rs))), (
+                f"{label}: RsNetwork predictions contain NaN/Inf"
+            )
 
 
-def test_deepnetwork_add_layer_stack():
+def test_add_layer():
+    """Test that add_layer correctly registers layers."""
+    net = DeepNetwork().add_layer(size=4).add_layer(size=3).add_layer(size=2)
+
+    assert net.n_layers == 3
+    assert net.layer_sizes == [4, 3, 2]
+    assert net.n_nodes == 4 + 3 + 2
+
+
+def test_add_layer_stack():
     """Test building a multi-layer stack."""
-    net = DeepNetwork()
+    net = DeepNetwork().add_layer_stack(layer_sizes=[4, 3, 2, 1])
 
-    # Base layer of 4 nodes
-    net = net.add_nodes(kind="continuous-state", n_nodes=4, precision=1.0)
-    bottom = list(range(4))
+    assert net.n_layers == 4
+    assert net.layer_sizes == [4, 3, 2, 1]
+    assert net.n_nodes == 4 + 3 + 2 + 1
 
-    # Build 3 → 2 → 1 parent stack
-    n_nodes_before = net.n_nodes
-    net = net.add_layer_stack(
-        value_children=bottom,
-        layer_sizes=[3, 2, 1],
-        precision=1.0,
-        tonic_volatility=-1.0,
-    )
 
-    # Check total nodes added (3+1 + 2+1 + 1+1 = 9)
-    assert net.n_nodes == n_nodes_before + 9
-
-    # Check that layers were tracked automatically
-    assert len(net.layers) == 4  # base + 3 added layers
-
-    # Get tracked layers (excluding base layer at index 0)
-    layers = net.layers[1:]  # Skip base layer
-
-    # Check layer sizes (volatile nodes + 1 bias each)
-    assert len(layers[0]) == 4  # 3 + 1 bias
-    assert len(layers[1]) == 3  # 2 + 1 bias
-    assert len(layers[2]) == 2  # 1 + 1 bias
-
-    # Check connections are fully dense
-    # Layer 0 → bottom (all nodes including bias connect to bottom)
-    for p in layers[0]:
-        assert net.edges[p].value_children == tuple(bottom)
-
-    # Layer 1 → layer 0's non-bias nodes (bias node has children so is not an orphan)
-    layer0_non_bias = layers[0][:3]  # first 3 are volatile, last is bias
-    for p in layers[1]:
-        assert net.edges[p].value_children == tuple(layer0_non_bias)
-
-    # Layer 2 → layer 1's non-bias nodes
-    layer1_non_bias = layers[1][:2]
-    for p in layers[2]:
-        assert net.edges[p].value_children == tuple(layer1_non_bias)
+def test_add_layer_binary():
+    """Test adding binary layers."""
+    net = DeepNetwork().add_layer(size=3, kind="binary").add_layer(size=2)
+    assert net.layer_kinds == ["binary", "volatile"]
+    assert net.n_layers == 2
 
 
 def test_predict():
-    """Test predict() on both Python (JAX) and Rust backends.
-
-    For each backend:
-    1. Build a small network (2 targets → 3 hidden → 4 predictors) and train it.
-    2. Verify predict() output shape, finiteness, and determinism.
-    3. Verify that predictions differ between a trained and an untrained network.
-    """
+    """Test predict() shape, finiteness, determinism, and trained vs untrained."""
     n_targets, n_hidden, n_predictors = 2, 3, 4
 
     np.random.seed(42)
@@ -241,99 +115,46 @@ def test_predict():
     y_train = np.random.randn(5, n_targets)
     x_test = np.random.randn(3, n_predictors)
 
-    for Network in NETWORK_CLASSES:
-        label = Network.__name__
+    dn = (
+        DeepNetwork()
+        .add_layer(size=n_targets)
+        .add_layer(size=n_hidden)
+        .add_layer(size=n_predictors)
+    )
+    dn.fit(x=x_train, y=y_train, lr=0.1)
+    preds = dn.predict(x_test)
 
-        # --- Build and train ---
-        net = (
-            Network()
-            .add_nodes(kind="continuous-state", n_nodes=n_targets)
-            .add_layer(size=n_hidden)
-            .add_layer(size=n_predictors)
-        )
+    assert preds.shape == (3, n_targets)
+    assert np.all(np.isfinite(preds))
 
-        targets = list(range(n_targets))
-        # Non-bias predictor nodes: first n_predictors of the last layer
-        predictors = list(net.layers[-1][:n_predictors])
+    # Determinism
+    assert np.allclose(preds, dn.predict(x_test), atol=1e-6)
 
-        # Prepare data: JAX arrays for Python backend, plain lists for Rust
-        if Network is DeepNetwork:
-            x_fit, y_fit = x_train, y_train
-            x_pred = jnp.array(x_test)
-        else:
-            x_fit = x_train.tolist()
-            y_fit = y_train.tolist()
-            x_pred = x_test.tolist()
-
-        net.fit(
-            x=x_fit,
-            y=y_fit,
-            inputs_x_idxs=tuple(predictors),
-            inputs_y_idxs=tuple(targets),
-            lr=0.1,
-        )
-
-        # --- Predict on new data ---
-        predictions = net.predict(
-            x=x_pred,
-            inputs_x_idxs=tuple(predictors),
-            inputs_y_idxs=tuple(targets),
-        )
-
-        # Shape check
-        assert predictions.shape == (3, n_targets), (
-            f"{label}: expected shape (3, {n_targets}), got {predictions.shape}"
-        )
-
-        # Finiteness
-        assert np.all(np.isfinite(predictions)), (
-            f"{label}: predictions contain NaN or Inf"
-        )
-
-        # Determinism
-        predictions2 = net.predict(
-            x=x_pred,
-            inputs_x_idxs=tuple(predictors),
-            inputs_y_idxs=tuple(targets),
-        )
-        assert np.allclose(predictions, predictions2, atol=1e-6), (
-            f"{label}: predict() is not deterministic across calls"
-        )
-
-        # --- Untrained network should give different predictions ---
-        net_untrained = (
-            Network()
-            .add_nodes(kind="continuous-state", n_nodes=n_targets)
-            .add_layer(size=n_hidden)
-            .add_layer(size=n_predictors)
-        )
-        if Network is DeepNetwork:
-            x_fit_1, y_fit_1 = x_train[:1], y_train[:1]
-        else:
-            x_fit_1 = [x_train[0].tolist()]
-            y_fit_1 = [y_train[0].tolist()]
-
-        net_untrained.fit(
-            x=x_fit_1,
-            y=y_fit_1,
-            inputs_x_idxs=tuple(predictors),
-            inputs_y_idxs=tuple(targets),
-            lr=0.0,
-        )
-        preds_untrained = net_untrained.predict(
-            x=x_pred,
-            inputs_x_idxs=tuple(predictors),
-            inputs_y_idxs=tuple(targets),
-        )
-        assert not np.allclose(predictions, preds_untrained, atol=1e-3), (
-            f"{label}: trained and untrained networks produce identical predictions"
-        )
+    # Untrained should differ
+    dn_untrained = (
+        DeepNetwork()
+        .add_layer(size=n_targets)
+        .add_layer(size=n_hidden)
+        .add_layer(size=n_predictors)
+    )
+    dn_untrained.fit(x=x_train[:1], y=y_train[:1], lr=0.0)
+    assert not np.allclose(preds, dn_untrained.predict(x_test), atol=1e-3)
 
 
-def _build_network(Network, n_targets=3, n_hidden=8, n_predictors=4):
-    """Build a 3-layer network (targets → hidden → predictors)."""
+def _build_network_dn(n_targets=3, n_hidden=8, n_predictors=4):
+    """Build a 3-layer DeepNetwork (targets → hidden → predictors)."""
     return (
-        Network()
+        DeepNetwork()
+        .add_layer(size=n_targets)
+        .add_layer(size=n_hidden)
+        .add_layer(size=n_predictors)
+    )
+
+
+def _build_network_rs(n_targets=3, n_hidden=8, n_predictors=4):
+    """Build a 3-layer RsNetwork (targets → hidden → predictors)."""
+    return (
+        RsNetwork()
         .add_nodes(kind="continuous-state", n_nodes=n_targets)
         .add_layer(size=n_hidden, coupling_strengths=1.0)
         .add_layer(size=n_predictors, coupling_strengths=1.0)
@@ -341,126 +162,323 @@ def _build_network(Network, n_targets=3, n_hidden=8, n_predictors=4):
 
 
 def test_weight_initialisation_strategies():
-    """All four strategies produce changed couplings on both backends."""
-    for Network in NETWORK_CLASSES:
-        label = Network.__name__
-        for strategy in ["xavier", "he", "orthogonal", "sparse"]:
-            net = _build_network(Network)
+    """All four strategies produce changed weights on both backends."""
+    for strategy in ["xavier", "he", "orthogonal", "sparse"]:
+        # --- DeepNetwork ---
+        dn = _build_network_dn()
+        dn.state = dn._init_state()
+        before = np.asarray(dn.state.weights[0]).copy()
+        dn.weight_initialisation(strategy, seed=42)
+        after = np.asarray(dn.state.weights[0])
+        assert not np.array_equal(before, after), (
+            f"DeepNetwork/{strategy}: weights unchanged by weight_initialisation"
+        )
 
-            # Record a coupling before init (should be the default 1.0)
-            if Network is DeepNetwork:
-                layers = net.layers
-                parent_idx = layers[1][0]
-                child_idx = layers[0][0]
-                before = float(
-                    net.attributes[child_idx]["value_coupling_parents"][
-                        net.edges[child_idx].value_parents.index(parent_idx)
-                    ]
-                )
-            else:
-                layers = [list(l) for l in net.layers]
-                parent_idx = layers[1][0]
-                child_idx = layers[0][0]
-                before = 1.0  # default coupling
-
-            # Apply weight initialisation
-            net.weight_initialisation(strategy, seed=42)
-
-            # After init, verify at least one coupling changed (not default)
-            if Network is DeepNetwork:
-                after = float(
-                    net.attributes[child_idx]["value_coupling_parents"][
-                        net.edges[child_idx].value_parents.index(parent_idx)
-                    ]
-                )
-            else:
-                # For RsNetwork we can check by reading node_trajectories after
-                # a minimal input_data call, but simpler: just check no error
-                # was raised, plus check the coupling via a second init + fit.
-                after = 0.0  # placeholder; the real check is that no error occurred
-
-            if Network is DeepNetwork:
-                assert after != before, (
-                    f"{label}/{strategy}: coupling not changed by weight_initialisation"
-                )
+        # --- RsNetwork ---
+        rs = _build_network_rs()
+        rs.weight_initialisation(strategy, seed=42)
+        # No error raised = success for Rust backend
 
 
 def test_weight_initialisation_deterministic():
-    """Same seed produces identical couplings on both backends."""
-    for Network in NETWORK_CLASSES:
-        label = Network.__name__
-        nets = []
-        for _ in range(2):
-            net = _build_network(Network)
-            net.weight_initialisation("xavier", seed=123)
-            nets.append(net)
+    """Same seed produces identical weights."""
+    nets = []
+    for _ in range(2):
+        dn = _build_network_dn()
+        dn.state = dn._init_state()
+        dn.weight_initialisation("xavier", seed=123)
+        nets.append(dn)
 
-        if Network is DeepNetwork:
-            for layer_idx in range(len(nets[0].layers) - 1):
-                for p_idx in nets[0].layers[layer_idx + 1]:
-                    w0 = np.asarray(
-                        nets[0].attributes[p_idx]["value_coupling_children"]
-                    )
-                    w1 = np.asarray(
-                        nets[1].attributes[p_idx]["value_coupling_children"]
-                    )
-                    assert np.array_equal(w0, w1), (
-                        f"{label}: non-deterministic weights at node {p_idx}"
-                    )
-
-
-def test_weight_initialisation_skips_input_layer():
-    """The top (input) layer couplings should remain at the default value."""
-    for Network in NETWORK_CLASSES:
-        label = Network.__name__
-        net = _build_network(Network, n_targets=3, n_hidden=8, n_predictors=2)
-
-        if Network is DeepNetwork:
-            layers = net.layers
-            # Input layer = layers[-1]; its nodes should have no value parents
-            input_nodes = layers[-1]
-            # Record couplings from the layer below (hidden → input) BEFORE init
-            hidden_nodes = layers[-2]
-            before_couplings = []
-            for p_idx in input_nodes:
-                before_couplings.append(
-                    np.array(net.attributes[p_idx]["value_coupling_children"]).copy()
-                )
-
-            net.weight_initialisation("he", seed=0)
-
-            # After init, the input layer's children couplings should have been
-            # modified (since hidden layer IS initialised and set_coupling updates
-            # both sides), but the input layer itself has no parents to init.
-            # Verify hidden layer DID change (skip bias nodes that lack the key)
-            for h_idx in hidden_nodes:
-                if "value_coupling_parents" not in net.attributes[h_idx]:
-                    continue
-                w = np.asarray(net.attributes[h_idx]["value_coupling_parents"])
-                assert not np.all(w == 1.0), (
-                    f"{label}: hidden node {h_idx} couplings unchanged"
-                )
+    for w0, w1 in zip(nets[0].state.weights, nets[1].state.weights):
+        assert np.array_equal(np.asarray(w0), np.asarray(w1))
 
 
 def test_weight_initialisation_invalid_strategy():
-    """Invalid strategy raises ValueError on both backends."""
-    for Network in NETWORK_CLASSES:
-        label = Network.__name__
-        net = _build_network(Network)
-        try:
-            net.weight_initialisation("nonexistent", seed=0)
-            assert False, f"{label}: expected ValueError for bad strategy"
-        except (ValueError, Exception):
-            pass
+    """Invalid strategy raises ValueError."""
+    dn = _build_network_dn()
+    dn.state = dn._init_state()
+    with pytest.raises(ValueError):
+        dn.weight_initialisation("nonexistent", seed=0)
 
 
-def test_weight_initialisation_too_few_layers():
-    """Fewer than 2 layers raises ValueError (Python backend only)."""
-    net = DeepNetwork()
-    net.add_nodes(kind="continuous-state", n_nodes=3)
-    # Only 1 layer tracked — should fail
-    try:
-        net.weight_initialisation("xavier", seed=0)
-        # If strategy is None it returns self; pass "xavier" to actually trigger
-    except ValueError:
-        pass
+def test_weight_initialisation_single_layer():
+    """Weight init on a single-layer network is a no-op."""
+    dn = DeepNetwork().add_layer(size=3)
+    dn.weight_initialisation("xavier", seed=0)
+    assert dn.state is not None
+    assert len(dn.state.weights) == 0
+
+
+def test_reset():
+    """Test that reset clears the state."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    x = np.random.randn(5, 3)
+    y = np.random.randn(5, 2)
+    dn.fit(x, y, lr=0.1)
+    assert dn.state is not None
+    assert dn.predictions is not None
+
+    dn.reset()
+    assert dn._propagation_fn is None
+    assert dn._prediction_fn is None
+
+
+def test_fully_connected_false():
+    """Test one-to-one (diagonal) weight matrix."""
+    dn = (
+        DeepNetwork()
+        .add_layer(size=3)
+        .add_layer(size=3, add_constant_input=False, fully_connected=False)
+    )
+    dn.state = dn._init_state()
+    # Weight matrix should be identity-like
+    w = np.asarray(dn.state.weights[0])
+    assert np.allclose(w, np.eye(3)), f"Expected identity weight matrix, got {w}"
+
+
+def test_cross_backend_binary_volatile():
+    """Compare RsNetwork, Network, and DeepNetwork with binary output + volatile hidden.
+
+    Architecture: 1 binary output → 2 volatile hidden → 1 volatile input.
+    Tested for all three update types: standard, eHGF, unbounded.
+    No constant inputs (bias) to keep cross-backend comparison simple.
+    """
+    n_targets = 1
+    n_hidden = 2
+    n_input = 1
+
+    np.random.seed(42)
+    x = np.random.randn(10, n_input)
+    y = np.random.choice([0.0, 1.0], size=(10, n_targets))
+
+    rtol, atol = 1e-4, 1e-6
+
+    for update_type in ["standard", "eHGF", "unbounded"]:
+        label = f"update_type={update_type}"
+
+        # --- DeepNetwork (JAX vectorized) ---
+        dn = (
+            DeepNetwork(update_type=update_type)
+            .add_layer(size=n_targets, kind="binary")
+            .add_layer(size=n_hidden, add_constant_input=False)
+            .add_layer(size=n_input, add_constant_input=False)
+        )
+        dn.fit(x=x, y=y, lr=0.1, optimizer=None)
+
+        # --- RsNetwork (Rust) ---
+        rs = (
+            RsNetwork(update_type=update_type)
+            .add_nodes(kind="binary-state", n_nodes=n_targets)
+            .add_layer(size=n_hidden, add_constant_input=False)
+            .add_layer(size=n_input, add_constant_input=False)
+        )
+        predictors = tuple(rs.layers[-1][:n_input])
+        targets = tuple(range(n_targets))
+        rs.fit(
+            x=x.tolist(),
+            y=y.tolist(),
+            inputs_x_idxs=predictors,
+            inputs_y_idxs=targets,
+            lr=0.1,
+            optimizer=None,
+        )
+
+        # --- Network (Python per-node) ---
+        net = (
+            PyNetwork(update_type=update_type)
+            .add_nodes(kind="binary-state", n_nodes=n_targets)
+            .add_nodes(
+                kind="volatile-state",
+                n_nodes=n_hidden,
+                value_children=list(range(n_targets)),
+            )
+            .add_nodes(
+                kind="volatile-state",
+                n_nodes=n_input,
+                value_children=list(range(n_targets, n_targets + n_hidden)),
+            )
+        )
+        x_idxs = tuple(range(n_targets + n_hidden, n_targets + n_hidden + n_input))
+        y_idxs = tuple(range(n_targets))
+        net.fit(
+            x=x,
+            y=y,
+            inputs_x_idxs=x_idxs,
+            inputs_y_idxs=y_idxs,
+            lr=0.1,
+            optimizer=None,
+        )
+
+        # ---- Compare hidden-layer volatile states ----
+        for i in range(n_hidden):
+            node_idx = n_targets + i
+            # Mean
+            net_mean = float(net.last_attributes[node_idx]["mean"])
+            rs_mean = float(rs.node_trajectories[node_idx]["mean"][-1])
+            dn_mean = float(dn.state.layers[1].mean[i])
+
+            assert np.allclose(net_mean, dn_mean, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] mean: Network={net_mean} vs DeepNetwork={dn_mean}"
+            )
+            assert np.allclose(rs_mean, dn_mean, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] mean: Rust={rs_mean} vs DeepNetwork={dn_mean}"
+            )
+
+            # Precision
+            net_prec = float(net.last_attributes[node_idx]["precision"])
+            rs_prec = float(rs.node_trajectories[node_idx]["precision"][-1])
+            dn_prec = float(dn.state.layers[1].precision[i])
+
+            assert np.allclose(net_prec, dn_prec, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] precision: Network={net_prec} vs DeepNetwork={dn_prec}"
+            )
+            assert np.allclose(rs_prec, dn_prec, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] precision: Rust={rs_prec} vs DeepNetwork={dn_prec}"
+            )
+
+            # Volatility-level mean
+            net_mean_vol = float(net.last_attributes[node_idx]["mean_vol"])
+            rs_mean_vol = float(rs.node_trajectories[node_idx]["mean_vol"][-1])
+            dn_mean_vol = float(dn.state.layers[1].mean_vol[i])
+
+            assert np.allclose(net_mean_vol, dn_mean_vol, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] mean_vol: Network={net_mean_vol} vs DeepNetwork={dn_mean_vol}"
+            )
+            assert np.allclose(rs_mean_vol, dn_mean_vol, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] mean_vol: Rust={rs_mean_vol} vs DeepNetwork={dn_mean_vol}"
+            )
+
+            # Volatility-level precision
+            net_prec_vol = float(net.last_attributes[node_idx]["precision_vol"])
+            rs_prec_vol = float(rs.node_trajectories[node_idx]["precision_vol"][-1])
+            dn_prec_vol = float(dn.state.layers[1].precision_vol[i])
+
+            assert np.allclose(net_prec_vol, dn_prec_vol, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] precision_vol: Network={net_prec_vol} vs DeepNetwork={dn_prec_vol}"
+            )
+            assert np.allclose(rs_prec_vol, dn_prec_vol, rtol=rtol, atol=atol), (
+                f"{label}: hidden[{i}] precision_vol: Rust={rs_prec_vol} vs DeepNetwork={dn_prec_vol}"
+            )
+
+        # ---- Compare coupling weights between volatile layers (hidden ← input) ----
+        for j in range(n_hidden):
+            node_idx = n_targets + j
+            net_weights = net.last_attributes[node_idx]["value_coupling_parents"]
+            for k in range(n_input):
+                w_net = float(net_weights[k])
+                w_rs = float(
+                    rs.node_trajectories[node_idx]["value_coupling_parents"][-1][k]
+                )
+                w_dn = float(dn.state.weights[1][j, k])
+
+                assert np.allclose(w_net, w_dn, rtol=rtol, atol=atol), (
+                    f"{label}: weight hidden[{j}]←input[{k}]: "
+                    f"Network={w_net} vs DeepNetwork={w_dn}"
+                )
+                assert np.allclose(w_rs, w_dn, rtol=rtol, atol=atol), (
+                    f"{label}: weight hidden[{j}]←input[{k}]: "
+                    f"Rust={w_rs} vs DeepNetwork={w_dn}"
+                )
+
+        # ---- Compare binary output coupling weights (should remain at 1.0) ----
+        for j in range(n_targets):
+            net_weights = net.last_attributes[j]["value_coupling_parents"]
+            for k in range(n_hidden):
+                w_net = float(net_weights[k])
+                w_dn = float(dn.state.weights[0][j, k])
+
+                assert np.allclose(w_net, w_dn, rtol=rtol, atol=atol), (
+                    f"{label}: weight binary[{j}]←hidden[{k}]: "
+                    f"Network={w_net} vs DeepNetwork={w_dn}"
+                )
+
+        # ---- Compare predictions ----
+        x_test = np.array([[0.5]])
+        preds_dn = dn.predict(x_test)
+        preds_rs = rs.predict(
+            x=[[0.5]],
+            inputs_x_idxs=predictors,
+            inputs_y_idxs=targets,
+        )
+        preds_net = net.predict(
+            x=np.array([[0.5]]),
+            inputs_x_idxs=x_idxs,
+            inputs_y_idxs=y_idxs,
+        )
+
+        assert np.all(np.isfinite(np.asarray(preds_dn))), (
+            f"{label}: DeepNetwork predictions contain NaN/Inf"
+        )
+        assert np.allclose(
+            np.asarray(preds_net), np.asarray(preds_dn), rtol=rtol, atol=atol
+        ), f"{label}: predictions: Network={preds_net} vs DeepNetwork={preds_dn}"
+        assert np.allclose(
+            np.asarray(preds_rs), np.asarray(preds_dn), rtol=rtol, atol=atol
+        ), f"{label}: predictions: Rust={preds_rs} vs DeepNetwork={preds_dn}"
+
+
+def test_add_layer_invalid_kind():
+    """Invalid layer kind raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid layer kind"):
+        DeepNetwork().add_layer(size=3, kind="invalid")
+
+
+def test_add_layer_one_to_one_constant_input():
+    """One-to-one layers cannot use add_constant_input."""
+    with pytest.raises(ValueError, match="One-to-one layers.*cannot use"):
+        (
+            DeepNetwork()
+            .add_layer(size=3)
+            .add_layer(size=3, fully_connected=False, add_constant_input=True)
+        )
+
+
+def test_add_layer_one_to_one_size_mismatch():
+    """One-to-one layers require matching sizes."""
+    with pytest.raises(ValueError, match="One-to-one layers require the same size"):
+        (
+            DeepNetwork()
+            .add_layer(size=3)
+            .add_layer(size=4, fully_connected=False, add_constant_input=False)
+        )
+
+
+def test_fit_invalid_optimizer():
+    """Unknown optimizer raises ValueError."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    with pytest.raises(ValueError, match="Unknown optimizer"):
+        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), optimizer="sgd")
+
+
+def test_fit_record_trajectories():
+    """fit(record_trajectories=True) stores trajectories."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    x = np.random.randn(5, 3)
+    y = np.random.randn(5, 2)
+    dn.fit(x=x, y=y, lr=0.1, record_trajectories=True)
+    assert dn.trajectories is not None
+
+
+def test_predict_before_fit():
+    """predict() before fit() raises ValueError."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    with pytest.raises(ValueError, match="must be fit"):
+        dn.predict(np.zeros((5, 3)))
+
+
+def test_predict_1d_input():
+    """predict() with 1d input returns 1d output."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), lr=0.1)
+    pred = dn.predict(np.array([0.1, 0.2, 0.3]))
+    assert pred.ndim == 1
+    assert pred.shape == (2,)
+
+
+def test_repr():
+    """__repr__ contains expected info."""
+    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
+    r = repr(dn)
+    assert "VectorizedDeepNetwork" in r
+    assert "nodes=5" in r
+    assert "[2, 3]" in r

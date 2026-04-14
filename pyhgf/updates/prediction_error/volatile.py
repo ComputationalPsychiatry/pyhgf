@@ -4,9 +4,9 @@ from jax import jit
 
 from pyhgf.typing import Edges
 from pyhgf.updates.posterior.volatile import (
-    volatile_node_posterior_update,
     volatile_node_posterior_update_ehgf,
     volatile_node_posterior_update_unbounded,
+    volatile_node_volatility_posterior_update_standard,
 )
 
 
@@ -87,8 +87,8 @@ def volatile_node_prediction_error(
             attributes=attributes, edges=edges, node_idx=node_idx
         )
     elif update_type == "standard":
-        attributes = volatile_node_posterior_update(
-            attributes=attributes, edges=edges, node_idx=node_idx
+        attributes = volatile_node_volatility_posterior_update_standard(
+            attributes=attributes, node_idx=node_idx
         )
 
     return attributes

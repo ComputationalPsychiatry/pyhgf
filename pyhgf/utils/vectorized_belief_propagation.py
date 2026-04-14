@@ -31,6 +31,7 @@ def propagation_step(
     lr: Union[float, str],
     layer_kinds: Optional[list[str]] = None,
     adam_params: Optional[tuple[float, float, float, Optional[float]]] = None,
+    update_type: str = "eHGF",
 ) -> tuple[NetworkState, jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -114,6 +115,8 @@ def propagation_step(
         layers[0] = vectorized_layer_prediction_error(
             layer=layers[0],
             n_parents=n_parents_0,
+            params=params[0],
+            update_type=update_type,
         )
 
     # Step 4b: per hidden layer — posterior then PE (interleaved)
@@ -124,12 +127,10 @@ def propagation_step(
             layer=layers[i],
             child=layers[i - 1],
             weights=weights[i - 1],
-            params=params[i],
             coupling_fn_grad=coupling_fn_grads[i],  # parent i's grad
-            n_value_parents=n_vp,
             parent_has_constant=add_constant_inputs[i],
         )
-        # Recompute PE using updated posterior mean so the layer
+        # Recompute PE and update volatility level so the layer
         # above receives the correct (post-posterior) error signal.
         if layer_kinds[i] == "binary":
             layers[i] = vectorized_binary_prediction_error(layer=layers[i])
@@ -137,6 +138,8 @@ def propagation_step(
             layers[i] = vectorized_layer_prediction_error(
                 layer=layers[i],
                 n_parents=n_vp,
+                params=params[i],
+                update_type=update_type,
             )
 
     # ========== LEARNING PHASE (after inference converges) ==========
@@ -156,6 +159,9 @@ def propagation_step(
         beta1, beta2, epsilon = 0.9, 0.999, 1e-8
 
     for i in range(1, n_layers):
+        # Binary nodes don't learn coupling weights (matches Network/Rust).
+        if layer_kinds[i - 1] == "binary":
+            continue
         weights[i - 1], new_m, new_v = vectorized_weight_update(
             parent_state=layers[i],
             child_state=layers[i - 1],

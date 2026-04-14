@@ -175,13 +175,32 @@ def test_network_plotting():
 
 def test_deep_network_plotting():
     """Test the plotting functions of the DeepNetwork class."""
-    # Or chain them in a single expression (like Keras/PyTorch):
+    from pyhgf.plots.graphviz.plot_network import plot_deep_network
+
     net = (
         DeepNetwork()
-        .add_nodes(kind="continuous-state", n_nodes=4, precision=5.0)
-        .add_layer(size=3, precision=1.0, tonic_volatility=-1.0)
-        .add_layer(size=2, precision=0.5, tonic_volatility=-2.0)
+        .add_layer(size=4)
+        .add_layer(size=3, tonic_volatility=-1.0)
+        .add_layer(size=2, tonic_volatility=-2.0)
     )
 
     # Visualize the network structure
-    net.plot_deep_network()
+    plot_deep_network(net, view=False)
+
+
+def test_networkx_volatile_state_nodes():
+    """Test that NetworkX backend renders volatile-state (type 6) nodes."""
+    # Build a network with volatile-state nodes
+    net = (
+        Network()
+        .add_nodes(kind="continuous-state", n_nodes=2)
+        .add_nodes(
+            kind="volatile-state",
+            n_nodes=2,
+            value_children=[0, 1],
+        )
+    )
+    net.input_data(input_data=np.random.randn(5, 2))
+
+    # This should hit the vv_nodes (node_type 6) rendering path
+    net.plot_network(backend="networkx")

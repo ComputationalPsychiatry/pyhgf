@@ -16,6 +16,7 @@ from pyhgf.updates.observation import set_observation, set_predictors
         "edges",
         "inputs_x_idxs",
         "inputs_y_idxs",
+        "use_adam",
     ),
 )
 def learning(
@@ -25,6 +26,7 @@ def learning(
     inputs_y_idxs: tuple[int],
     learning_sequence: LearningSequence,
     edges: Edges,
+    use_adam: bool = False,
 ) -> tuple[dict, dict]:
     """Update the networks coupling parameters using prospective configuration.
 
@@ -104,6 +106,8 @@ def learning(
 
     # 4. Learning step -----------------------------------------------------------------
     # ----------------------------------------------------------------------------------
+    if use_adam:
+        attributes[-1]["adam_t"] = attributes[-1]["adam_t"] + 1
     for node_idx, update_fn in learning_sequence.learning_steps:
         attributes = update_fn(attributes=attributes, node_idx=node_idx, edges=edges)
 
