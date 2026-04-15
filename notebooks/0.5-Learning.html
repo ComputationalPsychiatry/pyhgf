@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.9 documentation</title>
+    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.10 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../_static/documentation_options.js?v=8db09a1e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -61,6 +61,8 @@
     <link rel="icon" href="../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The binary Hierarchical Gaussian Filter" href="1.1-Binary_HGF.html" />
+    <link rel="prev" title="Planning and acting with predictive coding networks" href="0.4-Planning_and_acting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -151,6 +153,33 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -264,6 +293,33 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -338,7 +394,60 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"></div>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
+
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Deep Bayesian predictive coding</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
 </nav></div>
     </div>
   
@@ -377,6 +486,9 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Deep Bayesian predictive coding</span></li>
   </ul>
 </nav>
@@ -446,7 +558,7 @@
 <figure class="align-default" id="learning-prospective-config-task">
 <img alt="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41593-023-01514-1/MediaObjects/41593_2023_1514_Fig1_HTML.png?as=webp" src="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41593-023-01514-1/MediaObjects/41593_2023_1514_Fig1_HTML.png?as=webp" />
 <figcaption>
-<p><span class="caption-text">Learning with prospective configuration.</span><a class="headerlink" href="#learning-prospective-config-task" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 4 </span><span class="caption-text">Learning with prospective configuration.</span><a class="headerlink" href="#learning-prospective-config-task" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <section id="learning-in-deep-networks">
@@ -549,7 +661,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/78bed4f0798bb9ca9e7518181ead7f1d2cf6d9249623320e80132b8efa4eb7a2.png" src="../_images/78bed4f0798bb9ca9e7518181ead7f1d2cf6d9249623320e80132b8efa4eb7a2.png" />
+<img alt="../_images/aadd161a23211e8c8199ace2e5d9dc5c164b6053a7bb7f31506a7ce4eea0edc3.png" src="../_images/aadd161a23211e8c8199ace2e5d9dc5c164b6053a7bb7f31506a7ce4eea0edc3.png" />
 </div>
 </div>
 <p>This example illustrates the effectiveness of the variational update to replace the prospective configuration step based on gradient descent. As new observations contradict the expected outcomes (i.e., observing the river without hearing the water, from trials 40 to 80 in the bottom panel), the network efficiently reorganizes without interfering with other predictions (i.e,. still expecting smelling the salmon while seeing the water, top panel, trials 40 to 80).</p>
@@ -802,7 +914,7 @@ K_i = \frac{\pi_{\text{parent}_i}}{\pi_{\text{parent}_i} + \pi_{\text{child}}}
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/606375127d3304f4266ebde5697611a57e4d387792004796a226bf1ce00f6c0e.png" src="../_images/606375127d3304f4266ebde5697611a57e4d387792004796a226bf1ce00f6c0e.png" />
+<img alt="../_images/81fa25b29b316fb53ab93bc4e863e81b407592f8df5cb1456aa248341a2c34d6.png" src="../_images/81fa25b29b316fb53ab93bc4e863e81b407592f8df5cb1456aa248341a2c34d6.png" />
 </div>
 </div>
 </section>
@@ -1047,67 +1159,97 @@ Layers: 10  |  Nodes: 131
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.4743, acc=0.744 | test  loss=0.7196, acc=0.410
-Epoch  10 | train loss=0.1504, acc=0.956 | test  loss=0.1676, acc=0.945
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.3935, acc=0.829 | test  loss=0.7196, acc=0.410
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.1356, acc=0.954 | test  loss=0.1266, acc=0.970
-Epoch  30 | train loss=0.0802, acc=0.980 | test  loss=0.0856, acc=0.970
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.2083, acc=0.919 | test  loss=0.2228, acc=0.915
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.0718, acc=0.989 | test  loss=0.1319, acc=0.975
-Epoch  50 | train loss=0.0612, acc=0.986 | test  loss=0.0995, acc=0.955
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.1496, acc=0.953 | test  loss=0.1600, acc=0.935
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.0728, acc=0.981 | test  loss=0.0982, acc=0.965
-Epoch  70 | train loss=0.0525, acc=0.990 | test  loss=0.0699, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.0938, acc=0.974 | test  loss=0.1139, acc=0.960
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.0475, acc=0.993 | test  loss=0.0736, acc=0.980
-Epoch  90 | train loss=0.0473, acc=0.990 | test  loss=0.0665, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.0769, acc=0.978 | test  loss=0.1012, acc=0.965
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.0448, acc=0.995 | test  loss=0.0784, acc=0.975
-Epoch 110 | train loss=0.0432, acc=0.991 | test  loss=0.0806, acc=0.970
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.0614, acc=0.985 | test  loss=0.0779, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.0435, acc=0.993 | test  loss=0.0735, acc=0.975
-Epoch 130 | train loss=0.0414, acc=0.993 | test  loss=0.0760, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.0573, acc=0.985 | test  loss=0.0837, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.0404, acc=0.994 | test  loss=0.0748, acc=0.975
-Epoch 150 | train loss=0.0413, acc=0.995 | test  loss=0.0753, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.0628, acc=0.984 | test  loss=0.0722, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.0427, acc=0.994 | test  loss=0.0823, acc=0.970
-Epoch 170 | train loss=0.0443, acc=0.993 | test  loss=0.0787, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.0893, acc=0.969 | test  loss=0.0852, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.0419, acc=0.991 | test  loss=0.0773, acc=0.980
-Epoch 190 | train loss=0.0409, acc=0.994 | test  loss=0.0736, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.0507, acc=0.990 | test  loss=0.0716, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.0410, acc=0.994 | test  loss=0.0737, acc=0.980
-Epoch 210 | train loss=0.0384, acc=0.995 | test  loss=0.0658, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.0458, acc=0.993 | test  loss=0.0669, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.0415, acc=0.994 | test  loss=0.0803, acc=0.980
-Epoch 230 | train loss=0.0384, acc=0.995 | test  loss=0.0694, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.0462, acc=0.990 | test  loss=0.0641, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.0375, acc=0.994 | test  loss=0.0678, acc=0.985
-Epoch 250 | train loss=0.0437, acc=0.996 | test  loss=0.0731, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.0460, acc=0.991 | test  loss=0.0623, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.0406, acc=0.995 | test  loss=0.0722, acc=0.985
-Epoch 270 | train loss=0.0409, acc=0.994 | test  loss=0.0689, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.0532, acc=0.989 | test  loss=0.0632, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.0395, acc=0.995 | test  loss=0.0682, acc=0.985
-Epoch 290 | train loss=0.0391, acc=0.995 | test  loss=0.0670, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.0413, acc=0.993 | test  loss=0.0653, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.0387, acc=0.995 | test  loss=0.0666, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.0441, acc=0.991 | test  loss=0.0628, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.0496, acc=0.991 | test  loss=0.0579, acc=0.985
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.0401, acc=0.994 | test  loss=0.0593, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.0390, acc=0.995 | test  loss=0.0576, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.0387, acc=0.994 | test  loss=0.0545, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.0388, acc=0.993 | test  loss=0.0556, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.0393, acc=0.994 | test  loss=0.0584, acc=0.985
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.0369, acc=0.994 | test  loss=0.0581, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.0364, acc=0.995 | test  loss=0.0627, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.0369, acc=0.995 | test  loss=0.0613, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.0362, acc=0.994 | test  loss=0.0634, acc=0.980
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.0364, acc=0.994 | test  loss=0.0688, acc=0.975
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.0356, acc=0.994 | test  loss=0.0625, acc=0.985
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.0353, acc=0.995 | test  loss=0.0622, acc=0.985
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.0351, acc=0.995 | test  loss=0.0622, acc=0.985
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.0349, acc=0.995 | test  loss=0.0614, acc=0.985
 
 Saved 151 decision boundary snapshots
 </pre></div>
@@ -1138,17 +1280,17 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/1d5e62f7b8a25d6e023c52c0e96a642086acfd2e9361f911a5a0756c1d82b3a4.png" src="../_images/1d5e62f7b8a25d6e023c52c0e96a642086acfd2e9361f911a5a0756c1d82b3a4.png" />
+<img alt="../_images/931cf4652443807d90317273f41491c2a99d5e7b5229e2df2b3ab2e05ac05b05.png" src="../_images/931cf4652443807d90317273f41491c2a99d5e7b5229e2df2b3ab2e05ac05b05.png" />
 </div>
 </div>
 </section>
 <section id="decision-boundary-evolution">
 <h3>Decision boundary evolution<a class="headerlink" href="#decision-boundary-evolution" title="Link to this heading">#</a></h3>
-<p>We animate the decision boundary heatmap across training epochs alongside the loss curve. The GIF shows how the predictive coding network gradually carves out a non-linear separator to distinguish the two moons.</p>
+<p>We animate the decision boundary heatmap across training epochs alongside the loss curve.</p>
 <figure class="align-default" id="two-moons-animation">
 <img alt="../_images/two_moons_training.gif" src="../_images/two_moons_training.gif" />
 <figcaption>
-<p><span class="caption-text">The animation above displays the mean and covariance tracking of a bivariate normal distribution. The ellipse represents the 95% confidence interval of the covariance matrix. We can see that uncertainty is increasing in noisier sections of the distribution trajectory.</span><a class="headerlink" href="#two-moons-animation" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 5 </span><span class="caption-text">The GIF shows how the predictive coding network gradually carves out a non-linear separator to distinguish the two moons.</span><a class="headerlink" href="#two-moons-animation" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <div class="dropdown admonition note">
@@ -1216,7 +1358,7 @@ Python implementation: CPython
 Python version       : 3.12.3
 IPython version      : 9.12.0
 
-pyhgf : 0.2.9
+pyhgf : 0.2.10
 jax   : 0.4.31
 jaxlib: 0.4.31
 
@@ -1224,7 +1366,7 @@ IPython   : 9.12.0
 jax       : 0.4.31
 matplotlib: 3.10.8
 numpy     : 2.4.4
-pyhgf     : 0.2.9
+pyhgf     : 0.2.10
 seaborn   : 0.13.2
 treescope : 0.1.10
 
@@ -1245,6 +1387,24 @@ Watermark: 2.6.0
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="0.4-Planning_and_acting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Planning and acting with predictive coding networks</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="1.1-Binary_HGF.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">The binary Hierarchical Gaussian Filter</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               

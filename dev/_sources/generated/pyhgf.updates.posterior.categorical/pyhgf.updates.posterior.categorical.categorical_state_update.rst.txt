@@ -1,6 +1,0 @@
-﻿pyhgf.updates.posterior.categorical.categorical\_state\_update
-==============================================================
-
-.. currentmodule:: pyhgf.updates.posterior.categorical
-
-.. autofunction:: categorical_state_update

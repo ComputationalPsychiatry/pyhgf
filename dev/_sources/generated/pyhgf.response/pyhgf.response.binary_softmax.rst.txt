@@ -1,6 +1,0 @@
-﻿pyhgf.response.binary\_softmax
-==============================
-
-.. currentmodule:: pyhgf.response
-
-.. autofunction:: binary_softmax

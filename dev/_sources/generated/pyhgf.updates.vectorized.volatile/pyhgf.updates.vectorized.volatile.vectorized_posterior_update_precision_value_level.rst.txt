@@ -1,6 +1,0 @@
-﻿pyhgf.updates.vectorized.volatile.vectorized\_posterior\_update\_precision\_value\_level
-========================================================================================
-
-.. currentmodule:: pyhgf.updates.vectorized.volatile
-
-.. autofunction:: vectorized_posterior_update_precision_value_level

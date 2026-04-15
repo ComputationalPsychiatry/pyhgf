@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded &#8212; pyhgf 0.2.9 documentation</title>
+    <title>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded &#8212; pyhgf 0.2.10 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
 <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../../../../../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../../../../../_static/documentation_options.js?v=8db09a1e"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -584,6 +584,33 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../references.html">
+    References
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -695,6 +722,33 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../references.html">
+    References
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -891,52 +945,53 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Second quadratic approximation L2</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span>
 
-    <span class="n">w_phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-        <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="n">previous_child_variance</span>
-        <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">])</span>
-    <span class="p">)</span>
+    <span class="c1"># Canonical expansion point and its map back to native space</span>
+    <span class="n">ka</span> <span class="o">=</span> <span class="n">volatility_coupling</span>
+    <span class="n">om</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
+    <span class="n">phi_canon</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)))</span>
+    <span class="n">phi_full</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi_canon</span> <span class="o">-</span> <span class="n">om</span><span class="p">)</span> <span class="o">/</span> <span class="n">ka</span>
+
+    <span class="c1"># At phi_full, exp(ka*phi_full + om) = previous_child_variance*(2+sqrt(3))</span>
+    <span class="c1"># by construction — use this directly to avoid numerical round-trips</span>
+    <span class="n">exp_at_phi</span> <span class="o">=</span> <span class="n">previous_child_variance</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">))</span>
+
+    <span class="n">w_phi</span> <span class="o">=</span> <span class="n">exp_at_phi</span> <span class="o">/</span> <span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">+</span> <span class="n">exp_at_phi</span><span class="p">)</span>
 
     <span class="n">delta_phi</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span>
         <span class="o">+</span> <span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
-    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="n">previous_child_variance</span>
-        <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">])</span>
-    <span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">+</span> <span class="n">exp_at_phi</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
 
-    <span class="n">pi_l2</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span>
-        <span class="s2">&quot;expected_precision_vol&quot;</span>
-    <span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_phi</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta_phi</span><span class="p">)</span>
+    <span class="n">pi_l2</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">w_phi</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta_phi</span>
+    <span class="p">)</span>
 
     <span class="n">mu_hat_phi</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi_l2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi_l2</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">pi_l2</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">phi_full</span>
+        <span class="o">+</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span>
+        <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="n">pi_l2</span>
 
-    <span class="n">mu_l2</span> <span class="o">=</span> <span class="n">mu_hat_phi</span> <span class="o">+</span> <span class="p">((</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w_phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi_l2</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta_phi</span>
+    <span class="n">mu_l2</span> <span class="o">=</span> <span class="n">mu_hat_phi</span> <span class="o">+</span> <span class="p">((</span><span class="n">ka</span> <span class="o">*</span> <span class="n">w_phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi_l2</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta_phi</span>
 
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Compute the full quadratic approximation</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">theta_l</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
-        <span class="mf">1.2</span>
-        <span class="o">*</span> <span class="p">(</span>
-            <span class="p">(</span>
-                <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span>
-                <span class="o">+</span> <span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">])</span>
-                <span class="o">**</span> <span class="mi">2</span>
-            <span class="p">)</span>
-            <span class="o">/</span> <span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">*</span> <span class="n">pi_l1</span><span class="p">)</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
+
+    <span class="c1"># Total posterior uncertainty at child level (be_aux in the Matlab code)</span>
+    <span class="n">be_aux</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="c1"># Blending operates in canonical exponent space y = ka * muhat + om</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="n">theta_l</span> <span class="o">=</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.2</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="n">previous_child_variance</span><span class="p">)</span>
 
     <span class="c1"># Compute the weighting of the two approximations</span>
     <span class="c1"># using the smoothed rectangular function b</span>
     <span class="n">weighting</span> <span class="o">=</span> <span class="n">smoothed_rectangular</span><span class="p">(</span>
-        <span class="n">x</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">],</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">y_pred</span><span class="p">,</span>
         <span class="n">theta_l</span><span class="o">=</span><span class="n">theta_l</span><span class="p">,</span>
         <span class="n">phi_l</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
         <span class="n">theta_r</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>

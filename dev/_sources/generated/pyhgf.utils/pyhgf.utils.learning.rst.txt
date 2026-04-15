@@ -1,6 +1,0 @@
-﻿pyhgf.utils.learning
-====================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: learning

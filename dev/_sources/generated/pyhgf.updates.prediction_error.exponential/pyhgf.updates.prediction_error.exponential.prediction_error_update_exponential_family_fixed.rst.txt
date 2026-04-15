@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction\_error.exponential.prediction\_error\_update\_exponential\_family\_fixed
-=================================================================================================
-
-.. currentmodule:: pyhgf.updates.prediction_error.exponential
-
-.. autofunction:: prediction_error_update_exponential_family_fixed

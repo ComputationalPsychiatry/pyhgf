@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction.volatile.predict\_mean\_value\_level
-=============================================================
-
-.. currentmodule:: pyhgf.updates.prediction.volatile
-
-.. autofunction:: predict_mean_value_level

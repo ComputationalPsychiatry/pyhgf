@@ -1,6 +1,0 @@
-﻿pyhgf.math.binary\_surprise
-===========================
-
-.. currentmodule:: pyhgf.math
-
-.. autofunction:: binary_surprise

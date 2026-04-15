@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.9 documentation</title>
+    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.10 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../_static/documentation_options.js?v=8db09a1e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -61,6 +61,8 @@
     <link rel="icon" href="../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Zurich CPC II: Application to reinforcement learning" href="Exercise_2_Bayesian_reinforcement_learning.html" />
+    <link rel="prev" title="Modelling win-frequency bias in the Iowa Gambling Task" href="Example_5_Iowa_Gambling_Task.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -151,6 +153,33 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -264,6 +293,33 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -338,7 +394,60 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"></div>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep Bayesian predictive coding</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
 </nav></div>
     </div>
   
@@ -377,6 +486,9 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</span></li>
   </ul>
 </nav>
@@ -455,7 +567,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 <p>where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the fixed variance of the distribution. You can find more details on this as well as some code to get started with the simulations in the first tutorial on the <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html#">PyHGF documentation</a>.</p>
 <div class="exercise admonition" id="exercise1.1">
 
-<p class="admonition-title"></p>
+<p class="admonition-title"><span class="caption-number">Exercise 1 </span></p>
 <section id="exercise-content">
 <p>Using the equation above, write a Python code that implements a Gaussian random walk using the following parameters: <span class="math notranslate nohighlight">\(\sigma^2 = 1\)</span> and <span class="math notranslate nohighlight">\(x_1^{(0)} = 0\)</span>.</p>
 </section>
@@ -506,7 +618,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
 </div>
 <div class="exercise admonition" id="exercise1.2">
 
-<p class="admonition-title"></p>
+<p class="admonition-title"><span class="caption-number">Exercise 2 </span></p>
 <section id="exercise-content">
 <p>Write a Python code that generates values for <span class="math notranslate nohighlight">\(x_1\)</span> using the value coupling equation above with <span class="math notranslate nohighlight">\(\mu_1^{0} = 0.0\)</span> and <span class="math notranslate nohighlight">\(\sigma_1 = 1.5\)</span>.</p>
 </section>
@@ -541,7 +653,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="exercise admonition" id="exercise1.3">
 
-<p class="admonition-title"></p>
+<p class="admonition-title"><span class="caption-number">Exercise 3 </span></p>
 <section id="exercise-content">
 <ul class="simple">
 <li><p>Using the equation above and your previous implementation, write a Python code that generates values for <span class="math notranslate nohighlight">\(x_1\)</span> with <span class="math notranslate nohighlight">\(\omega_1 = -6.0\)</span>, <span class="math notranslate nohighlight">\(\mu_1^{(0)} = 0.0\)</span>,</p></li>
@@ -561,7 +673,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <figure class="align-default" id="networks">
 <img alt="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" />
 <figcaption>
-<p><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 10 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <p>In the following example, we illustrate how we can create a network with a more complex structure (i.e. a two-level continuous Hierarchical Gaussian Filter) and how this model can be inverted to update beliefs when presented with new observations.</p>
@@ -619,7 +731,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="exercise admonition" id="exercise1.4">
 
-<p class="admonition-title"></p>
+<p class="admonition-title"><span class="caption-number">Exercise 4 </span></p>
 <section id="exercise-content">
 <p>Each state node comes with parameters <code class="docutils literal notranslate"><span class="pre">mean</span></code>, <code class="docutils literal notranslate"><span class="pre">precision</span></code> and <code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code> that can be provided when creating the network. Using the function above, try to change these values. How does this influence the belief trajectories?</p>
 </section>
@@ -810,14 +922,14 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="exercise admonition" id="exercise1.5">
 
-<p class="admonition-title"></p>
+<p class="admonition-title"><span class="caption-number">Exercise 5 </span></p>
 <section id="exercise-content">
 <p>What quantity are we measuring in the code cell above? What does this represent?</p>
 </section>
 </div>
 <div class="exercise admonition" id="exercise1.6">
 
-<p class="admonition-title"></p>
+<p class="admonition-title"><span class="caption-number">Exercise 6 </span></p>
 <section id="exercise-content">
 <ul class="simple">
 <li><p>Select a city and download a recording OR use the data frame loaded above.</p></li>
@@ -832,7 +944,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <h1>Solutions<a class="headerlink" href="#solutions" title="Link to this heading">#</a></h1>
 <div class="solution admonition" id="solution-exercise1.1">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.1"> Exercise </a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.1"> Exercise 1</a></p>
 <section id="solution-content">
 <p>We can simulate a simple Gaussian Random Walk in Python either using a for loop and a list:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -864,7 +976,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.2">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.2"> Exercise </a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.2"> Exercise 2</a></p>
 <section id="solution-content">
 <p>We can simulate values from <span class="math notranslate nohighlight">\(x_1\)</span> using a for loop:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_1</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">sigma_1</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span>
@@ -879,7 +991,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.3">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.3"> Exercise </a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.3"> Exercise 3</a></p>
 <section id="solution-content">
 <p>We can simulate values from <span class="math notranslate nohighlight">\(x_1\)</span> using a for loop:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_1</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">sigma_1</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span>
@@ -894,7 +1006,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.4">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.4"> Exercise </a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.4"> Exercise 4</a></p>
 <section id="solution-content">
 <p>The code below will change mean, precision and tonic volatility at the first level. Here we use Python’s OOP features to express model creation, input data and plotting by chaining method call.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span>
@@ -911,7 +1023,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.5">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.5"> Exercise </a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.5"> Exercise 5</a></p>
 <section id="solution-content">
 <p>This method return the Gaussian surprise at each time point, which are then summed. The sum of the Gaussian surprise reflect the performances of the model at predicting the next value, larger values pointing to a model more surprise by its inputs, therefore poor performances. The surprise is define as <span class="math notranslate nohighlight">\(s = -log(p)\)</span>, this is thus the negative of the log probability function. Log probability functions are commonly used by sampling algorithm, it is thus straigthforwars to sample a model parameters when this function is available. There are an infinity of response possible functions - just like there is an infinity of possible networks - for more details on how to use tem, you can refer to the <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/2-Using_custom_response_functions.html">tutorial on custom response models</a>.</p>
 </section>
@@ -933,7 +1045,7 @@ Python implementation: CPython
 Python version       : 3.12.3
 IPython version      : 9.12.0
 
-pyhgf : 0.2.9
+pyhgf : 0.2.10
 jax   : 0.4.31
 jaxlib: 0.4.31
 
@@ -941,7 +1053,7 @@ IPython   : 9.12.0
 matplotlib: 3.10.8
 numpy     : 2.4.4
 pandas    : 3.0.2
-pyhgf     : 0.2.9
+pyhgf     : 0.2.10
 seaborn   : 0.13.2
 
 Watermark: 2.6.0
@@ -961,6 +1073,24 @@ Watermark: 2.6.0
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="Example_5_Iowa_Gambling_Task.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Modelling win-frequency bias in the Iowa Gambling Task</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Exercise_2_Bayesian_reinforcement_learning.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Zurich CPC II: Application to reinforcement learning</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               
