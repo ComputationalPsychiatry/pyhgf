@@ -180,6 +180,16 @@ for epoch in range(100):
 
 This implementation of the Hierarchical Gaussian Filter was inspired by the original [Matlab HGF Toolbox](https://translationalneuromodeling.github.io/tapas). A Julia implementation of the gHGF is also available [here](https://github.com/ComputationalPsychiatry/HGF.jl).
 
+The development of PyHGF is supported by:
+
+<p align="center">
+  <a href="https://www.au.dk"><img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/au.svg" height="80" alt="Aarhus University"></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://chc.au.dk"><img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/chc.png" height="80" alt="Center for Humanities Computing"></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://interactingminds.au.dk"><img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/imc.jpg" height="80" alt="Interacting Minds Centre"></a>
+</p>
+
 ## References
 
 1. Legrand, N., Weber, L., Waade, P. T., Daugaard, A. H. M., Khodadadi, M., Mikuš, N., & Mathys, C. (2024). pyhgf: A neural network library for predictive coding (Version 1). arXiv. https://doi.org/10.48550/ARXIV.2410.09206  
