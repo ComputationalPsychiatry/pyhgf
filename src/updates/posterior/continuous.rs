@@ -188,19 +188,30 @@ pub fn posterior_update_continuous_state_node_unbounded(network: &mut Network, n
     let mu_l1 = expected_mean + (vol_coupling * w_child / (2.0 * pi_l1)) * delta_child;
 
     // Second quadratic approximation L2
-    let phi = (previous_child_variance * (2.0 + 3.0_f64.sqrt())).ln();
-    let exp_kappa_phi = (vol_coupling * phi + child_tonic_volatility).clamp(-80.0, 80.0).exp();
-    let w_phi = exp_kappa_phi / (previous_child_variance + exp_kappa_phi);
-    let delta_phi = numerator / (previous_child_variance + exp_kappa_phi) - 1.0;
+    // Canonical expansion point and its map back to native space
+    let ka = vol_coupling;
+    let om = child_tonic_volatility;
+    let phi_canon = (previous_child_variance * (2.0 + 3.0_f64.sqrt())).ln();
+    let phi_full = (phi_canon - om) / ka;
+
+    // At phi_full, exp(ka*phi_full + om) = previous_child_variance*(2+sqrt(3))
+    // by construction — use this directly to avoid numerical round-trips
+    let exp_at_phi = previous_child_variance * (2.0 + 3.0_f64.sqrt());
+
+    let w_phi = exp_at_phi / (previous_child_variance + exp_at_phi);
+    let delta_phi = numerator / (previous_child_variance + exp_at_phi) - 1.0;
 
     let pi_l2 = expected_precision
-        + 0.5 * vol_coupling.powi(2) * w_phi * (w_phi + (2.0 * w_phi - 1.0) * delta_phi);
-    let mu_hat_phi = ((2.0 * pi_l2 - 1.0) * phi + expected_mean) / (2.0 * pi_l2);
-    let mu_l2 = mu_hat_phi + (vol_coupling * w_phi / (2.0 * pi_l2)) * delta_phi;
+        + 0.5 * ka.powi(2) * w_phi * (w_phi + (2.0 * w_phi - 1.0) * delta_phi);
+    let mu_hat_phi = ((pi_l2 - expected_precision) * phi_full + expected_precision * expected_mean) / pi_l2;
+    let mu_l2 = mu_hat_phi + (ka * w_phi / (2.0 * pi_l2)) * delta_phi;
 
     // Full quadratic approximation
-    let theta_l = (1.2 * numerator / (previous_child_variance * pi_l1)).sqrt();
-    let weighting = b(expected_mean, theta_l, 8.0, 0.0, 1.0);
+    // Blending operates in canonical exponent space y = ka * muhat + om
+    let be_aux = numerator;
+    let y_pred = ka * expected_mean + om;
+    let theta_l = -(1.2 * 2.0 * be_aux / previous_child_variance).sqrt();
+    let weighting = b(y_pred, theta_l, 8.0, 0.0, 1.0);
 
     let posterior_precision = (1.0 - weighting) * pi_l1 + weighting * pi_l2;
     let posterior_mean = (1.0 - weighting) * mu_l1 + weighting * mu_l2;

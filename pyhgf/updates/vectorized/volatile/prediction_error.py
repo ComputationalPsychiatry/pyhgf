@@ -254,37 +254,47 @@ def vectorized_layer_volatility_posterior_unbounded(
     # ------------------------------------------------------------------
     # Second quadratic approximation L2
     # ------------------------------------------------------------------
-    phi = jnp.log(previous_child_variance * (2.0 + jnp.sqrt(3.0)))
 
-    w_phi = jnp.exp(vol_coupling * phi + params.tonic_volatility) / (
-        previous_child_variance + jnp.exp(vol_coupling * phi + params.tonic_volatility)
-    )
+    # Canonical expansion point and its map back to native space
+    ka = vol_coupling
+    om = params.tonic_volatility
+    phi_canon = jnp.log(previous_child_variance * (2.0 + jnp.sqrt(3.0)))
+    phi_full = (phi_canon - om) / ka
+
+    # At phi_full, exp(ka*phi_full + om) = previous_child_variance*(2+sqrt(3))
+    # by construction — use this directly to avoid numerical round-trips
+    exp_at_phi = previous_child_variance * (2.0 + jnp.sqrt(3.0))
+
+    w_phi = exp_at_phi / (previous_child_variance + exp_at_phi)
 
     delta_phi = ((1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2) / (
-        previous_child_variance + jnp.exp(vol_coupling * phi + params.tonic_volatility)
+        previous_child_variance + exp_at_phi
     ) - 1.0
 
-    pi_l2 = layer.expected_precision_vol + 0.5 * vol_coupling**2 * w_phi * (
+    pi_l2 = layer.expected_precision_vol + 0.5 * ka**2 * w_phi * (
         w_phi + (2.0 * w_phi - 1.0) * delta_phi
     )
 
-    mu_hat_phi = ((2.0 * pi_l2 - 1.0) * phi + layer.expected_mean_vol) / (2.0 * pi_l2)
+    mu_hat_phi = (
+        (pi_l2 - layer.expected_precision_vol) * phi_full
+        + layer.expected_precision_vol * layer.expected_mean_vol
+    ) / pi_l2
 
-    mu_l2 = mu_hat_phi + ((vol_coupling * w_phi) / (2.0 * pi_l2)) * delta_phi
+    mu_l2 = mu_hat_phi + ((ka * w_phi) / (2.0 * pi_l2)) * delta_phi
 
     # ------------------------------------------------------------------
     # Full quadratic approximation: weighted combination of L1 and L2
     # ------------------------------------------------------------------
-    theta_l = jnp.sqrt(
-        1.2
-        * (
-            ((1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2)
-            / (previous_child_variance * pi_l1)
-        )
-    )
+
+    # Total posterior uncertainty at child level (be_aux in the Matlab code)
+    be_aux = (1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2
+
+    # Blending operates in canonical exponent space y = ka * muhat + om
+    y_pred = ka * layer.expected_mean_vol + om
+    theta_l = -jnp.sqrt(1.2 * 2.0 * be_aux / previous_child_variance)
 
     weighting = smoothed_rectangular(
-        x=layer.expected_mean_vol,
+        x=y_pred,
         theta_l=theta_l,
         phi_l=8.0,
         theta_r=0.0,
