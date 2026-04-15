@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>PyHGF: A Neural Network Library for Predictive Coding &#8212; pyhgf 0.2.8 documentation</title>
+    <title>Getting started &#8212; pyhgf 0.2.8 documentation</title>
   
   
   
@@ -54,12 +54,13 @@
     <script src="_static/togglebutton.js?v=b8b12719"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="_static/logo_small.svg"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Learn" href="learn.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -150,33 +151,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
       
@@ -292,33 +266,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
           
@@ -409,36 +356,47 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <p><a class="reference external" href="https://github.com/pre-commit/pre-commit"><img alt="pre-commit" src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&amp;logoColor=white" /></a> <a class="reference external" href="https://github.com/ComputationalPsychiatry/pyhgf/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/License-GPL%20v3-blue.svg" /></a> <a class="reference external" href="https://codecov.io/gh/ComputationalPsychiatry/pyhgf"><img alt="codecov" src="https://codecov.io/gh/ComputationalPsychiatry/pyhgf/branch/master/graph/badge.svg" /></a> <a class="reference external" href="https://github.com/psf/black"><img alt="black" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a> <a class="reference external" href="http://mypy-lang.org/"><img alt="mypy" src="http://www.mypy-lang.org/static/mypy_badge.svg" /></a> <a class="reference external" href="https://pycqa.github.io/isort/"><img alt="Imports: isort" src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&amp;labelColor=ef8336" /></a> <a class="reference external" href="https://badge.fury.io/py/pyhgf"><img alt="pip" src="https://badge.fury.io/py/pyhgf.svg" /></a></p>
-<section class="tex2jax_ignore mathjax_ignore" id="pyhgf-a-neural-network-library-for-predictive-coding">
-<h1>PyHGF: A Neural Network Library for Predictive Coding<a class="headerlink" href="#pyhgf-a-neural-network-library-for-predictive-coding" title="Link to this heading">#</a></h1>
-<img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/logo.png" align="left" alt="hgf" width="160" HSPACE=10>
-<p>PyHGF is a Python library for creating and manipulating dynamic probabilistic networks for predictive coding. These networks approximate Bayesian inference by optimizing beliefs through the diffusion of predictions and precision-weighted prediction errors. The network structure remains flexible during message-passing steps, allowing for dynamic adjustments. They can be used as a biologically plausible cognitive model in computational neuroscience or as a generalization of Bayesian filtering for designing efficient, modular decision-making agents. The default implementation supports the generalized Hierarchical Gaussian Filters (gHGF, Weber et al., 2024), but the framework is designed to be adaptable to other algorithms. Built on top of JAX, the core functions are differentiable and JIT-compiled where applicable. The library is optimized for modularity and ease of use, allowing seamless integration with other libraries in the ecosystem for Bayesian inference and optimization. Additionally, a binding with an implementation in Rust is under active development, which will further enhance flexibility during inference. You can find the method paper describing the toolbox <a class="reference external" href="https://arxiv.org/abs/2410.09206">here</a> and the method paper describing the gHGF, which is the main framework currently supported by the toolbox <a class="reference external" href="https://arxiv.org/abs/2305.10937">here</a>.</p>
+  <p align="center">
+  <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/logo.png" alt="hgf" width="160">
+</p>
+<h1 align="center">PyHGF: A Neural Network Library for Predictive Coding</h1>
+<p align="center">
+  <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white" alt="pre-commit"></a>
+  <a href="https://github.com/ComputationalPsychiatry/pyhgf/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="license"></a>
+  <a href="https://codecov.io/gh/ComputationalPsychiatry/pyhgf"><img src="https://codecov.io/gh/ComputationalPsychiatry/pyhgf/branch/master/graph/badge.svg" alt="codecov"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="http://mypy-lang.org/"><img src="http://www.mypy-lang.org/static/mypy_badge.svg" alt="mypy"></a>
+  <a href="https://badge.fury.io/py/pyhgf"><img src="https://badge.fury.io/py/pyhgf.svg" alt="pip"></a>
+</p>
+<p>PyHGF is a Python library for creating and manipulating dynamic probabilistic networks for predictive coding. These networks approximate Bayesian inference by optimizing beliefs through the diffusion of predictions and precision-weighted prediction errors. The graph structure remains flexible during message-passing steps, allowing for dynamic adjustments. They can be used as a biologically plausible cognitive model in computational neuroscience or as a generalization of Bayesian filtering for designing efficient, modular decision-making agents. With the current version you can:</p>
+<ul class="simple">
+<li><p>Build arbitrarily sized networks with the <strong>generalized Hierarchical Gaussian Filters</strong> (<a class="reference external" href="https://doi.org/10.7554/eLife.110174.1">Weber et al., 2026</a>)</p></li>
+<li><p>Use <strong>generalised Bayesian filtering</strong> with distributions from the exponential family (<a class="reference external" href="https://doi.org/10.1007/978-3-030-64919-7_7">Mathys &amp; Weber, 2020</a>)</p></li>
+<li><p>Define custom <strong>planning</strong> and <strong>action selection</strong> functions throught trajectories sampling (e.g. sophisticated inference, <a class="reference external" href="https://doi.org/10.1162/neco_a_01351">Friston et al., 2020</a>)</p></li>
+<li><p>Learn in <strong>deep predictive coding networks</strong> using a fast and scalable rethinking of prospective configuration (<a class="reference external" href="https://doi.org/10.1038/s41593-023-01514-1">Song et al., 2024</a>) from closed-form updates and volatility learning.</p></li>
+</ul>
+<p>The framework support both a JAX and Rust backend. It is designed to be adaptable to other algorithms. The core functions are differentiable and JIT-compiled where applicable. The library is optimized for modularity and ease of use, allowing seamless integration with other libraries in the ecosystem for Bayesian inference and optimization. You can find the method paper describing the toolbox <a class="reference external" href="https://arxiv.org/abs/2410.09206">here</a>.</p>
 <ul class="simple">
 <li><p>📖 <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/api.html">API Documentation</a></p></li>
 <li><p>✏️ <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/learn.html">Tutorials and examples</a></p></li>
 </ul>
 <section id="getting-started">
-<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h1>
 <section id="installation">
-<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h3>
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
 <p>The last official release can be downloaded from PIP:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf
-</pre></div>
-</div>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pyhgf</span></code></p>
 <p>The current version under development can be installed from the master branch of the GitHub folder:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>“git+https://github.com/ComputationalPsychiatry/pyhgf.git”
-</pre></div>
-</div>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">“git+https://github.com/ComputationalPsychiatry/pyhgf.git”</span></code></p>
 </section>
 <section id="how-does-it-work">
-<h3>How does it work?<a class="headerlink" href="#how-does-it-work" title="Link to this heading">#</a></h3>
-<p>Dynamic networks can be defined as a tuple containing the following variables:</p>
+<h2>How does it work?<a class="headerlink" href="#how-does-it-work" title="Link to this heading">#</a></h2>
+<p>Dynamic networks are fully defined by the following variables:</p>
 <ul class="simple">
 <li><p>The attributes (dictionary) that store each node’s states and parameters (e.g. value, precision, learning rates, volatility coupling, …).</p></li>
 <li><p>The edges (tuple) that lists, for each node, the indexes of the parents and children.</p></li>
 <li><p>A set of update functions. An update function receive a network tuple and returns an updated network tuple.</p></li>
-<li><p>An update sequence (tuple) that defines the order and target of the update functions.</p></li>
+<li><p>An update sequence (tuple) of callables (update functions) and pointers (nodes).</p></li>
 </ul>
 <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" align="center" alt="networks" style="width:100%; height:auto;">
 <p>You can find a deeper introduction to how to create and manipulate networks under the following link:</p>
@@ -447,16 +405,17 @@
 </ul>
 </section>
 <section id="the-generalized-hierarchical-gaussian-filter">
-<h3>The Generalized Hierarchical Gaussian Filter<a class="headerlink" href="#the-generalized-hierarchical-gaussian-filter" title="Link to this heading">#</a></h3>
+<h2>The Generalized Hierarchical Gaussian Filter<a class="headerlink" href="#the-generalized-hierarchical-gaussian-filter" title="Link to this heading">#</a></h2>
 <p>Generalized Hierarchical Gaussian Filters (gHGF) are specific instances of dynamic networks where node encodes a Gaussian distribution that can inherit its value (mean) and volatility (variance) from other nodes. The presentation of a new observation at the lowest level of the hierarchy (i.e., the input node) triggers a recursive update of the nodes’ belief (i.e., posterior distribution) through top-down predictions and bottom-up precision-weighted prediction errors. The resulting probabilistic network operates as a Bayesian filter, and a response function can parametrize actions/decisions given the current beliefs. By comparing those behaviours with actual outcomes, a surprise function can be optimized over a set of free parameters. The Hierarchical Gaussian Filter for binary and continuous inputs was first described in Mathys et al. (2011, 2014), and later implemented in the Matlab HGF Toolbox (part of <a class="reference external" href="https://translationalneuromodeling.github.io/tapas">TAPAS</a> (Frässle et al. 2021).</p>
 <p>You can find a deeper introduction on how does the gHGF works under the following link:</p>
 <ul class="simple">
 <li><p>🎓 <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html#theory">Introduction to the Hierarchical Gaussian Filter</a></p></li>
 </ul>
-</section>
 <section id="model-fitting">
 <h3>Model fitting<a class="headerlink" href="#model-fitting" title="Link to this heading">#</a></h3>
 <p>Here we demonstrate how to fit forwards a two-level binary Hierarchical Gaussian filter. The input time series are binary observations using an associative learning task Iglesias et al. (2013).</p>
+<details>
+<summary>Creating and fitting a binary HGF</summary>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
 
@@ -477,7 +436,13 @@
 <span class="n">hgf</span><span class="o">.</span><span class="n">plot_trajectories</span><span class="p">();</span>
 </pre></div>
 </div>
+</details>
 <p><img alt="png" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/trajectories.png" /></p>
+</section>
+<section id="surprise">
+<h3>Surprise<a class="headerlink" href="#surprise" title="Link to this heading">#</a></h3>
+<details>
+<summary>Computing the model's surprise</summary>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.response</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_softmax_inverse_temperature</span>
 
 <span class="c1"># compute the model&#39;s surprise (-log(p)) </span>
@@ -490,26 +455,85 @@
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sum of surprises = </span><span class="si">{</span><span class="n">surprise</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+</details>  
 <p><code class="docutils literal notranslate"><span class="pre">Model's</span> <span class="pre">surprise</span> <span class="pre">=</span> <span class="pre">138.8992462158203</span></code></p>
 </section>
 </section>
+<section id="generalised-bayesian-filtering">
+<h2>Generalised Bayesian filtering<a class="headerlink" href="#generalised-bayesian-filtering" title="Link to this heading">#</a></h2>
+<p>The framework supports online Bayesian filtering over any distribution in the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a> (<a class="reference external" href="https://doi.org/10.1007/978-3-030-64919-7_7">Mathys &amp; Weber, 2020</a>). Because these distributions share a common mathematical form, the posterior update reduces to a simple rule over the expected sufficient statistics <span class="math notranslate nohighlight">\(\xi\)</span> and a pseudo-count <span class="math notranslate nohighlight">\(\nu\)</span> that acts as an inverse learning rate. When the data source is non-stationary, <span class="math notranslate nohighlight">\(\nu\)</span> can be kept fixed for a constant learning rate, or it can be dynamically adapted through a Hierarchical Gaussian Filter, giving the agent a volatility-sensitive learning rate that speeds up when the environment changes and slows down when it is stable.</p>
+<details>
+<summary>Tracking a bivariate normal distribution</summary>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Create a generalised filter for a 2D normal distribution</span>
+<span class="n">bivariate_normal</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Network</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;ef-state&quot;</span><span class="p">,</span>
+        <span class="n">nus</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+        <span class="n">learning</span><span class="o">=</span><span class="s2">&quot;generalised-filtering&quot;</span><span class="p">,</span>
+        <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;multivariate-normal&quot;</span><span class="p">,</span>
+        <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">spiral_data</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</details>
+<p><img alt="gif" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/multivariate_normal.gif" /></p>
+<ul class="simple">
+<li><p>🎓 <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.3-Generalised_filtering.html">Generalised Bayesian filtering</a></p></li>
+</ul>
+</section>
+<section id="learning-in-deep-predictive-coding-networks">
+<h2>Learning in deep predictive coding networks<a class="headerlink" href="#learning-in-deep-predictive-coding-networks" title="Link to this heading">#</a></h2>
+<p>The framework extends predictive coding to deep neural networks through <em>prospective configuration</em> (<a class="reference external" href="https://doi.org/10.1038/s41593-023-01514-1">Song et al., 2024</a>): before updating any weight, the network first infers the most likely activations at every layer by settling prediction errors across the hierarchy, and only then adjusts the coupling strengths (weights). This two-phase infer-then-update cycle avoids the catastrophic interference that plagues standard backpropagation and naturally yields precision-weighted learning, where the balance of uncertainty between inputs and outputs controls the depth at which weights change.</p>
+<details>
+<summary>Binary classification on a two-moons dataset</summary>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+<span class="c1"># Build a 2 → 16 → 16 → 1 (binary) predictive coding network</span>
+<span class="n">clf_net</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">DeepNetwork</span><span class="p">(</span><span class="n">coupling_fn</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">weight_initialisation</span><span class="p">(</span><span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Train for 100 epochs using the Adam optimiser</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</details>
+<p><img alt="gif" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/two_moons_training.gif" /></p>
+<ul class="simple">
+<li><p>🎓 <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Learning.html">Deep Bayesian predictive coding</a></p></li>
+</ul>
+</section>
+</section>
 <section id="acknowledgments">
-<h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Link to this heading">#</a></h2>
-<p>This implementation of the Hierarchical Gaussian Filter was inspired by the original <a class="reference external" href="https://translationalneuromodeling.github.io/tapas">Matlab HGF Toolbox</a>. A Julia implementation is also available <a class="reference external" href="https://github.com/ComputationalPsychiatry/HGF.jl">here</a>.</p>
+<h1>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Link to this heading">#</a></h1>
+<p>This implementation of the Hierarchical Gaussian Filter was inspired by the original <a class="reference external" href="https://translationalneuromodeling.github.io/tapas">Matlab HGF Toolbox</a>. A Julia implementation of the gHGF is also available <a class="reference external" href="https://github.com/ComputationalPsychiatry/HGF.jl">here</a>.</p>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h2>
+<h1>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h1>
 <ol class="arabic simple">
 <li><p>Legrand, N., Weber, L., Waade, P. T., Daugaard, A. H. M., Khodadadi, M., Mikuš, N., &amp; Mathys, C. (2024). pyhgf: A neural network library for predictive coding (Version 1). arXiv. https://doi.org/10.48550/ARXIV.2410.09206</p></li>
 <li><p>Mathys, C. (2011). A Bayesian foundation for individual learning under uncertainty. In Frontiers in Human Neuroscience (Vol. 5). Frontiers Media SA. https://doi.org/10.3389/fnhum.2011.00039</p></li>
 <li><p>Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K. H., Friston, K. J., &amp; Stephan, K. E. (2014). Uncertainty in perception and the hierarchical Gaussian filter. Frontiers in Human Neuroscience, 8. https://doi.org/10.3389/fnhum.2014.00825</p></li>
-<li><p>Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp; Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 2). arXiv. https://doi.org/10.48550/ARXIV.2305.10937</p></li>
+<li><p>Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, &amp; Christoph Mathys. (2026). The generalized Hierarchical Gaussian Filter. eLife 15:RP110174. https://doi.org/10.7554/eLife.110174.1</p></li>
 <li><p>Frässle, S., Aponte, E. A., Bollmann, S., Brodersen, K. H., Do, C. T., Harrison, O. K., Harrison, S. J., Heinzle, J., Iglesias, S., Kasper, L., Lomakina, E. I., Mathys, C., Müller-Schrader, M., Pereira, I., Petzschner, F. H., Raman, S., Schöbi, D., Toussaint, B., Weber, L. A., … Stephan, K. E. (2021). TAPAS: An Open-Source Software Package for Translational Neuromodeling and Computational Psychiatry. In Frontiers in Psychiatry (Vol. 12). Frontiers Media SA. https://doi.org/10.3389/fpsyt.2021.680811</p></li>
 <li><p>Iglesias, S., Kasper, L., Harrison, S. J., Manka, R., Mathys, C., &amp; Stephan, K. E. (2021). Cholinergic and dopaminergic effects on prediction error and uncertainty responses during sensory associative learning. In NeuroImage (Vol. 226, p. 117590). Elsevier BV. https://doi.org/10.1016/j.neuroimage.2020.117590</p></li>
+<li><p>Mathys, C., Weber, L. (2020). Hierarchical Gaussian Filtering of Sufficient Statistic Time Series for Active Inference. In: Verbelen, T., Lanillos, P., Buckley, C.L., De Boom, C. (eds) Active Inference. IWAI 2020. Communications in Computer and Information Science, vol 1326. Springer, Cham. https://doi.org/10.1007/978-3-030-64919-7_7</p></li>
+<li><p>Friston, K., Da Costa, L., Hafner, D., Hesp, C., &amp; Parr, T. (2021). Sophisticated Inference. Neural Computation, 33(3), 713–763. https://doi.org/10.1162/neco_a_01351</p></li>
+<li><p>Song, Y., Millidge, B., Salvatori, T. et al. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nat Neurosci 27, 348–358 (2024). https://doi.org/10.1038/s41593-023-01514-1</p></li>
 </ol>
-<div class="toctree-wrapper compound">
-</div>
-</section>
 </section>
 
 
@@ -522,15 +546,6 @@
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="right-next"
-       href="learn.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Learn</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -550,16 +565,22 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting started</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-does-it-work">How does it work?</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-generalized-hierarchical-gaussian-filter">The Generalized Hierarchical Gaussian Filter</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Getting started</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-does-it-work">How does it work?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-generalized-hierarchical-gaussian-filter">The Generalized Hierarchical Gaussian Filter</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-fitting">Model fitting</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#surprise">Surprise</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acknowledgments">Acknowledgments</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generalised-bayesian-filtering">Generalised Bayesian filtering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#learning-in-deep-predictive-coding-networks">Learning in deep predictive coding networks</a></li>
 </ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#acknowledgments">Acknowledgments</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#references">References</a></li>
+</ul>
+
   </nav></div>
 
   <div class="sidebar-secondary-item">

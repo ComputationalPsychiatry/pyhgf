@@ -1,0 +1,6 @@
+﻿pyhgf.updates.learning.learning\_weights
+========================================
+
+.. currentmodule:: pyhgf.updates.learning
+
+.. autofunction:: learning_weights

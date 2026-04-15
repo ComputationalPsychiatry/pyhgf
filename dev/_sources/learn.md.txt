@@ -89,21 +89,22 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.
 :::
 
-:::{grid-item-card}  Planning and action
+:::{grid-item-card}  Planning and acting
 :link: planning_acting
 :link-type: ref
+:img-top: ./images/planning.png
 
 
-Planning and acting with predictive coding networks.
+Planning and acting by simulating forward trajectories in predictive coding networks.
 :::
 
-:::{grid-item-card}  Learning
+:::{grid-item-card}  Deep learning
 :link: learning
 :link-type: ref
-:img-top: ./images/deep_networks.png
+:img-top: ./images/two_moons_training.gif
 
 
-Learning with predictive coding networks.
+Learning in deep predictive coding networks using variational message passing for prospective configuration.
 :::
 
 ::::

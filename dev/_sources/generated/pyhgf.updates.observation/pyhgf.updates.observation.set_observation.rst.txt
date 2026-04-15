@@ -1,0 +1,6 @@
+﻿pyhgf.updates.observation.set\_observation
+==========================================
+
+.. currentmodule:: pyhgf.updates.observation
+
+.. autofunction:: set_observation

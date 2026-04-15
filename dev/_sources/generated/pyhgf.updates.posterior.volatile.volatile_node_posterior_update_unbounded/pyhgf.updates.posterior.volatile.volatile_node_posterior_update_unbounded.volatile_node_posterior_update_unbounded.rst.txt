@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.volatile.volatile\_node\_posterior\_update\_unbounded.volatile\_node\_posterior\_update\_unbounded
+==========================================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
+
+.. autofunction:: volatile_node_posterior_update_unbounded
