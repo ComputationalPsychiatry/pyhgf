@@ -1,0 +1,6 @@
+﻿pyhgf.model.add\_volatile\_state
+================================
+
+.. currentmodule:: pyhgf.model
+
+.. autofunction:: add_volatile_state

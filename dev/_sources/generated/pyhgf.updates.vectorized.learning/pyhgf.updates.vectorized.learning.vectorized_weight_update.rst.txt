@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorized.learning.vectorized\_weight\_update
+============================================================
+
+.. currentmodule:: pyhgf.updates.vectorized.learning
+
+.. autofunction:: vectorized_weight_update

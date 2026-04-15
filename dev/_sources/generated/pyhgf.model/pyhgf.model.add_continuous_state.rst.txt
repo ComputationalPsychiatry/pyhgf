@@ -1,0 +1,6 @@
+﻿pyhgf.model.add\_continuous\_state
+==================================
+
+.. currentmodule:: pyhgf.model
+
+.. autofunction:: add_continuous_state

@@ -1,0 +1,6 @@
+﻿pyhgf.utils.weight\_initialisation.he\_init
+===========================================
+
+.. currentmodule:: pyhgf.utils.weight_initialisation
+
+.. autofunction:: he_init

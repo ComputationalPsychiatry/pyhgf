@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction\_error.dirichlet.clusters\_likelihood
+==============================================================
+
+.. currentmodule:: pyhgf.updates.prediction_error.dirichlet
+
+.. autofunction:: clusters_likelihood

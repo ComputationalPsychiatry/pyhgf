@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction.volatile.volatile\_node\_prediction
+============================================================
+
+.. currentmodule:: pyhgf.updates.prediction.volatile
+
+.. autofunction:: volatile_node_prediction

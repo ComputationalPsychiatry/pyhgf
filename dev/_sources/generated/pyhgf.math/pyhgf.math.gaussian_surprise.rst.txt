@@ -1,0 +1,6 @@
+﻿pyhgf.math.gaussian\_surprise
+=============================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: gaussian_surprise

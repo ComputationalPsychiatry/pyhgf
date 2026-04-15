@@ -1,0 +1,6 @@
+﻿pyhgf.utils.get\_update\_sequence
+=================================
+
+.. currentmodule:: pyhgf.utils
+
+.. autofunction:: get_update_sequence

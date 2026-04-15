@@ -1,0 +1,6 @@
+﻿pyhgf.math.smoothed\_rectangular
+================================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: smoothed_rectangular
