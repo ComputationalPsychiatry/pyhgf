@@ -1137,37 +1137,47 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Second quadratic approximation L2</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)))</span>
 
-    <span class="n">w_phi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="n">previous_child_variance</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="c1"># Canonical expansion point and its map back to native space</span>
+    <span class="n">ka</span> <span class="o">=</span> <span class="n">vol_coupling</span>
+    <span class="n">om</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
+    <span class="n">phi_canon</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)))</span>
+    <span class="n">phi_full</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi_canon</span> <span class="o">-</span> <span class="n">om</span><span class="p">)</span> <span class="o">/</span> <span class="n">ka</span>
+
+    <span class="c1"># At phi_full, exp(ka*phi_full + om) = previous_child_variance*(2+sqrt(3))</span>
+    <span class="c1"># by construction — use this directly to avoid numerical round-trips</span>
+    <span class="n">exp_at_phi</span> <span class="o">=</span> <span class="n">previous_child_variance</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">))</span>
+
+    <span class="n">w_phi</span> <span class="o">=</span> <span class="n">exp_at_phi</span> <span class="o">/</span> <span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">+</span> <span class="n">exp_at_phi</span><span class="p">)</span>
 
     <span class="n">delta_phi</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="n">previous_child_variance</span> <span class="o">+</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span><span class="p">)</span>
+        <span class="n">previous_child_variance</span> <span class="o">+</span> <span class="n">exp_at_phi</span>
     <span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
 
-    <span class="n">pi_l2</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">vol_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">*</span> <span class="p">(</span>
+    <span class="n">pi_l2</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">*</span> <span class="p">(</span>
         <span class="n">w_phi</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w_phi</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta_phi</span>
     <span class="p">)</span>
 
-    <span class="n">mu_hat_phi</span> <span class="o">=</span> <span class="p">((</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi_l2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi_l2</span><span class="p">)</span>
+    <span class="n">mu_hat_phi</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">pi_l2</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span><span class="p">)</span> <span class="o">*</span> <span class="n">phi_full</span>
+        <span class="o">+</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="n">pi_l2</span>
 
-    <span class="n">mu_l2</span> <span class="o">=</span> <span class="n">mu_hat_phi</span> <span class="o">+</span> <span class="p">((</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">w_phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi_l2</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta_phi</span>
+    <span class="n">mu_l2</span> <span class="o">=</span> <span class="n">mu_hat_phi</span> <span class="o">+</span> <span class="p">((</span><span class="n">ka</span> <span class="o">*</span> <span class="n">w_phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi_l2</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta_phi</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Full quadratic approximation: weighted combination of L1 and L2</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">theta_l</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
-        <span class="mf">1.2</span>
-        <span class="o">*</span> <span class="p">(</span>
-            <span class="p">((</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="o">/</span> <span class="p">(</span><span class="n">previous_child_variance</span> <span class="o">*</span> <span class="n">pi_l1</span><span class="p">)</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
+
+    <span class="c1"># Total posterior uncertainty at child level (be_aux in the Matlab code)</span>
+    <span class="n">be_aux</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="c1"># Blending operates in canonical exponent space y = ka * muhat + om</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="n">theta_l</span> <span class="o">=</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.2</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="n">previous_child_variance</span><span class="p">)</span>
 
     <span class="n">weighting</span> <span class="o">=</span> <span class="n">smoothed_rectangular</span><span class="p">(</span>
-        <span class="n">x</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">y_pred</span><span class="p">,</span>
         <span class="n">theta_l</span><span class="o">=</span><span class="n">theta_l</span><span class="p">,</span>
         <span class="n">phi_l</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
         <span class="n">theta_r</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
