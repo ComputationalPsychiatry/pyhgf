@@ -49,6 +49,7 @@
    "outputs": [],
    "source": [
     "import sys\n",
+    "\n",
     "from IPython.utils import io\n",
     "\n",
     "if \"google.colab\" in sys.modules:\n",
@@ -93,8 +94,9 @@
     "import seaborn as sns\n",
     "from jax import jit, vjp\n",
     "from jax.tree_util import Partial\n",
-    "from pyhgf.model import Network\n",
-    "from pytensor.graph import Apply, Op"
+    "from pytensor.graph import Apply, Op\n",
+    "\n",
+    "from pyhgf.model import Network"
    ]
   },
   {
@@ -692,7 +694,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": null,
    "id": "895b59fc-9e49-4848-bc07-59325e34b5d4",
    "metadata": {
     "execution": {
@@ -705,6 +707,7 @@
    "outputs": [],
    "source": [
     "def categorical_surprise(omega_2, hgf, input_data):\n",
+    "    \"\"\"Compute the total surprise of a categorical HGF model.\"\"\"\n",
     "    # replace with a new omega in the model\n",
     "    for idx in np.arange(21, 31):\n",
     "        hgf.attributes[idx][\"tonic_volatility\"] = omega_2\n",
@@ -736,7 +739,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 11,
+   "execution_count": null,
    "id": "05bcec35-1b57-4593-9285-b773f0f9e5c9",
    "metadata": {
     "execution": {
@@ -752,6 +755,7 @@
     "\n",
     "\n",
     "def vjp_custom_op_jax(x, gz):\n",
+    "    \"\"\"Compute the vector-Jacobian product of the custom op surprise function.\"\"\"\n",
     "    _, vjp_fn = vjp(surprise_fn, x)\n",
     "    return vjp_fn(gz)[0]\n",
     "\n",
@@ -761,7 +765,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": null,
    "id": "191f65ab-6b82-4de6-9a3a-940f5d6c7400",
    "metadata": {
     "editable": true,
@@ -782,7 +786,10 @@
    "source": [
     "# The CustomOp needs `make_node`, `perform` and `grad`.\n",
     "class CustomOp(Op):\n",
+    "    \"\"\"Custom PyTensor Op wrapping a JAX function with its gradient.\"\"\"\n",
+    "\n",
     "    def make_node(self, x):\n",
+    "        \"\"\"Create a PyTensor node for the custom op.\"\"\"\n",
     "        # Create a PyTensor node specifying the number and type of inputs and outputs\n",
     "\n",
     "        # We convert the input into a PyTensor tensor variable\n",
@@ -792,6 +799,7 @@
     "        return Apply(self, inputs, outputs)\n",
     "\n",
     "    def perform(self, node, inputs, outputs):\n",
+    "        \"\"\"Perform the computation of the custom op.\"\"\"\n",
     "        # Evaluate the Op result for a specific numerical input\n",
     "\n",
     "        # The inputs are always wrapped in a list\n",
@@ -803,6 +811,7 @@
     "        outputs[0][0] = np.asarray(result, dtype=\"float64\")\n",
     "\n",
     "    def grad(self, inputs, output_gradients):\n",
+    "        \"\"\"Perform the gradient computation for the custom op.\"\"\"\n",
     "        # Create a PyTensor expression of the gradient\n",
     "        (x,) = inputs\n",
     "        (gz,) = output_gradients\n",
@@ -812,7 +821,10 @@
     "\n",
     "\n",
     "class VJPCustomOp(Op):\n",
+    "    \"\"\"Custom PyTensor Op for the vector-Jacobian product of the custom op.\"\"\"\n",
+    "\n",
     "    def make_node(self, x, gz):\n",
+    "        \"\"\"Create a PyTensor node for the custom op.\"\"\"\n",
     "        # Make sure the two inputs are tensor variables\n",
     "        inputs = [pt.as_tensor_variable(x), pt.as_tensor_variable(gz)]\n",
     "        # Output has the shape type and shape as the first input\n",
@@ -820,6 +832,7 @@
     "        return Apply(self, inputs, outputs)\n",
     "\n",
     "    def perform(self, node, inputs, outputs):\n",
+    "        \"\"\"Perform the computation of the custom op.\"\"\"\n",
     "        (x, gz) = inputs\n",
     "        result = jitted_vjp_custom_op_jax(x, gz)\n",
     "        outputs[0][0] = np.asarray(result, dtype=\"float64\")\n",
@@ -828,71 +841,6 @@
     "# Instantiate the Ops\n",
     "custom_op = CustomOp()\n",
     "vjp_custom_op = VJPCustomOp()"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 13,
-   "id": "ccf51208-980b-4ccd-9b2a-cae1525da3f0",
-   "metadata": {
-    "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T17:58:30.221819Z",
-     "iopub.status.busy": "2025-08-23T17:58:30.221601Z",
-     "iopub.status.idle": "2025-08-23T17:58:30.224684Z",
-     "shell.execute_reply": "2025-08-23T17:58:30.223788Z"
-    },
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
-   "outputs": [],
-   "source": [
-    "# with pm.Model() as model:\n",
-    "#    omega_2 = pm.Normal(\"omega_2\", -2.0, 2)\n",
-    "#    pm.Potential(\"hgf\", custom_op(omega_2))\n",
-    "#    categorical_idata = pm.sample(chains=2)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 14,
-   "id": "bce093e9-1ab0-4ea1-99e6-a83b68331b9c",
-   "metadata": {
-    "editable": true,
-    "execution": {
-     "iopub.execute_input": "2025-08-23T17:58:30.226819Z",
-     "iopub.status.busy": "2025-08-23T17:58:30.226596Z",
-     "iopub.status.idle": "2025-08-23T17:58:30.229817Z",
-     "shell.execute_reply": "2025-08-23T17:58:30.228935Z"
-    },
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
-   "outputs": [],
-   "source": [
-    "# az.plot_trace(categorical_idata)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "id": "44abf936-9aba-487c-bbb0-96ed9af3de73",
-   "metadata": {
-    "editable": true,
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
-   "source": [
-    "## The categorical state-transition node\n",
-    "\n",
-    "```{warning}\n",
-    "This is work in progress.\n",
-    "```"
    ]
   },
   {

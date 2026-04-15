@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.network &#8212; pyhgf 0.2.8 documentation</title>
+    <title>pyhgf.model.network &#8212; pyhgf 0.2.9 documentation</title>
   
   
   
@@ -26,56 +26,489 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../../../_static/documentation_options.js?v=b01fafc3"></script>
-    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
-    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-    <script type="module">
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
-window.addEventListener("load", () => mermaid.run());
-</script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/model/network';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
@@ -107,7 +540,7 @@ window.addEventListener("load", () => mermaid.run());
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
   <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
@@ -151,33 +584,6 @@ window.addEventListener("load", () => mermaid.run());
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
       
@@ -289,33 +695,6 @@ window.addEventListener("load", () => mermaid.run());
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
           
@@ -436,12 +815,14 @@ window.addEventListener("load", () => mermaid.run());
   <h1>Source code for pyhgf.model.network</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">random</span><span class="p">,</span> <span class="n">vmap</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.lax</span><span class="w"> </span><span class="kn">import</span> <span class="n">scan</span><span class="p">,</span> <span class="n">switch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Partial</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
@@ -449,30 +830,33 @@ window.addEventListener("load", () => mermaid.run());
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_binary_state</span><span class="p">,</span>
     <span class="n">add_categorical_state</span><span class="p">,</span>
+    <span class="n">add_constant_state</span><span class="p">,</span>
     <span class="n">add_continuous_state</span><span class="p">,</span>
     <span class="n">add_dp_state</span><span class="p">,</span>
     <span class="n">add_ef_state</span><span class="p">,</span>
+    <span class="n">add_volatile_state</span><span class="p">,</span>
     <span class="n">get_couplings</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">graphviz</span><span class="p">,</span> <span class="n">matplotlib</span><span class="p">,</span> <span class="n">networkx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Attributes</span><span class="p">,</span>
-    <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">Edges</span><span class="p">,</span>
-    <span class="n">NetworkParameters</span><span class="p">,</span>
-    <span class="n">UpdateSequence</span><span class="p">,</span>
     <span class="n">LearningSequence</span><span class="p">,</span>
+    <span class="n">NetworkParameters</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">UpdateSequence</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_edges</span><span class="p">,</span>
     <span class="n">beliefs_propagation</span><span class="p">,</span>
     <span class="n">get_input_idxs</span><span class="p">,</span>
     <span class="n">get_update_sequence</span><span class="p">,</span>
-    <span class="n">to_pandas</span><span class="p">,</span>
-    <span class="n">sample</span><span class="p">,</span>
     <span class="n">learning</span><span class="p">,</span>
+    <span class="n">predict_step</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">to_pandas</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">learning_weights</span>
 
 
 <div class="viewcode-block" id="Network">
@@ -617,14 +1001,17 @@ window.addEventListener("load", () => mermaid.run());
 
     <span class="k">def</span><span class="w"> </span><span class="nf">create_learning_propagation_fn</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the belief propagation function.</span>
 
 <span class="sd">        .. note:</span>
-<span class="sd">           This step is called by default when using py:meth:`input_data`.</span>
+<span class="sd">           This step is called by default when using py:meth:`fit`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -636,8 +1023,22 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            If `True` (default), create a new belief propagation function and ignore</span>
 <span class="sd">            preexisting values. Otherwise, do not create a new function if the attribute</span>
 <span class="sd">            `scan_fn` is already defined.</span>
+<span class="sd">        lr :</span>
+<span class="sd">            Learning rate for weight updates, or ``&quot;dynamic&quot;`` for Kalman-gain updates.</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Optimizer name.  ``&quot;adam&quot;`` (default) filters weight gradients through the</span>
+<span class="sd">            Adam algorithm.  *None* uses plain gradient or Kalman-gain updates.</span>
+<span class="sd">        params :</span>
+<span class="sd">            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default</span>
+<span class="sd">            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``</span>
+<span class="sd">            (default 1e-3, the Adam step size).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">optimizer</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown optimizer &#39;</span><span class="si">{</span><span class="n">optimizer</span><span class="si">}</span><span class="s2">&#39;. Supported: &#39;adam&#39; or None.&quot;</span>
+            <span class="p">)</span>
+
         <span class="c1"># get the dimension of the input nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_input_dimension</span><span class="p">()</span>
@@ -649,34 +1050,72 @@ window.addEventListener("load", () => mermaid.run());
             <span class="p">)</span>
         <span class="c1"># create the learning sequence</span>
         <span class="c1"># all nodes except the prediction nodes should update their coupling strengths</span>
-        <span class="n">learning_steps</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learning_weights</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
-            <span class="k">if</span> <span class="n">node_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
-        <span class="p">]</span>
+        <span class="n">use_adam</span> <span class="o">=</span> <span class="n">optimizer</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span>
+        <span class="k">if</span> <span class="n">use_adam</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">adam_lr</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
+            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+                <span class="n">learning_weights</span><span class="p">,</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">adam_lr</span><span class="p">,</span>
+                <span class="n">adam_beta1</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span>
+                <span class="n">adam_beta2</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
+                <span class="n">adam_epsilon</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
+            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">learning_weights</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span><span class="n">learning_weights</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid lr value. Should be &#39;dynamic&#39; or a float value.&quot;</span><span class="p">)</span>
 
         <span class="c1"># do not update the last layer</span>
-        <span class="n">update_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">step</span>
-                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span>
-                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">update_steps</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">step</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">update_steps</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+        <span class="p">]</span>
+
+        <span class="c1"># the learning steps should apply weight learning</span>
+        <span class="c1"># in the same order than the prediction errors occure</span>
+        <span class="c1"># only continuous-state (node_type 2) and volatile-state (node_type 6) nodes</span>
+        <span class="c1"># are eligible; binary-state nodes use sigmoid(Σ parent_expected_mean) which</span>
+        <span class="c1"># does not involve coupling weights, so the linear learning rule would be wrong.</span>
+        <span class="n">learning_steps</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of weight update to perform at this layer</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">update</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">update_steps</span><span class="p">):</span>
+            <span class="n">fn</span> <span class="o">=</span> <span class="n">update</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">fn_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;prediction_error&quot;</span> <span class="ow">in</span> <span class="n">fn_name</span><span class="p">:</span>
+                <span class="n">node_idx</span> <span class="o">=</span> <span class="n">update</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="ow">in</span> <span class="p">{</span>
+                    <span class="mi">2</span><span class="p">,</span>
+                    <span class="mi">6</span><span class="p">,</span>
+                <span class="p">}:</span>  <span class="c1"># continuous-state, volatile-state</span>
+                    <span class="n">learning_steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_idx</span><span class="p">,</span> <span class="n">learn_fn</span><span class="p">))</span>
+
         <span class="c1"># do not predict on the last layer</span>
-        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">step</span>
-                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
-                <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
+            <span class="n">step</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+        <span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_sequence</span> <span class="o">=</span> <span class="n">LearningSequence</span><span class="p">(</span>
             <span class="n">prediction_steps</span><span class="o">=</span><span class="n">prediction_steps</span><span class="p">,</span>
-            <span class="n">update_steps</span><span class="o">=</span><span class="n">update_steps</span><span class="p">,</span>
-            <span class="n">learning_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">learning_steps</span><span class="p">),</span>  <span class="c1"># type: ignore</span>
+            <span class="n">update_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">update_steps</span><span class="p">),</span>
+            <span class="n">learning_steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">learning_steps</span><span class="p">),</span>
         <span class="p">)</span>
+
+        <span class="c1"># Initialize Adam state for nodes that learn weights</span>
+        <span class="k">if</span> <span class="n">use_adam</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">learning_steps</span><span class="p">:</span>
+                <span class="n">n_weights</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore[arg-type]</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;adam_m&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_weights</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;adam_v&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_weights</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;adam_t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># create the learning propagation function</span>
         <span class="c1"># this function is used by scan to loop over predictors (x) and predictions (y)</span>
@@ -687,16 +1126,22 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
                 <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
                 <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
+                <span class="n">use_adam</span><span class="o">=</span><span class="n">use_adam</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new observations.</span>
 
@@ -714,6 +1159,23 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">            The indexes of the nodes receiving the predictors (x).</span>
 <span class="sd">        inputs_y_idxs :</span>
 <span class="sd">            The indexes of the nodes receiving the predictions (y).</span>
+<span class="sd">        lr :</span>
+<span class="sd">            Learning rate for weight updates, or ``&quot;dynamic&quot;`` for Kalman-gain updates.</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Optimizer name. ``&quot;adam&quot;`` (default) filters weight gradients through the</span>
+<span class="sd">            Adam algorithm (Kingma &amp; Ba, 2015). *None* uses plain gradient or</span>
+<span class="sd">            Kalman-gain updates.</span>
+<span class="sd">        params :</span>
+<span class="sd">            Dictionary of optimizer hyper-parameters. For Adam: ``beta1`` (default</span>
+<span class="sd">            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``</span>
+<span class="sd">            (default 1e-3, the Adam step size).</span>
+<span class="sd">        record_trajectories :</span>
+<span class="sd">            If True, record the full node trajectories at every time step</span>
+<span class="sd">            (accessible via ``self.node_trajectories``). If False (default),</span>
+<span class="sd">            only the final state is kept, which significantly reduces memory</span>
+<span class="sd">            usage and speeds up training.</span>
+<span class="sd">        overwrite :</span>
+<span class="sd">            If `True`, create a new belief propagation function.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -722,9 +1184,13 @@ window.addEventListener("load", () => mermaid.run());
             <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
 
         <span class="c1"># generate the belief propagation function</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="bp">self</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_learning_propagation_fn</span><span class="p">(</span>
-                <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span> <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span>
+                <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
+                <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
+                <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># wrap the inputs</span>
@@ -733,21 +1199,100 @@ window.addEventListener("load", () => mermaid.run());
         <span class="c1"># this is where the model loops over the whole input time series</span>
         <span class="c1"># at each time point, the node structure is traversed and beliefs are updated</span>
         <span class="c1"># using precision-weighted prediction errors</span>
-        <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
+            <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+        <span class="k">else</span><span class="p">:</span>
 
-        <span class="c1"># belief trajectories</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_no_traj_step</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+                <span class="n">new_attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_attributes</span><span class="p">,</span> <span class="kc">None</span>
+
+            <span class="n">last_attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="n">_no_traj_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="o">=</span> <span class="n">last_attributes</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+        <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+        <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate predictions from the network using only the prediction steps.</span>
+
+<span class="sd">        This method sets the predictor values on the top-layer nodes and runs the</span>
+<span class="sd">        prediction sequence (top-down) without any observation, posterior update, or</span>
+<span class="sd">        weight learning step. It returns the ``expected_mean`` of the bottom-layer</span>
+<span class="sd">        (target) nodes, which correspond to the network&#39;s predictions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            An array of predictor values with shape ``(n_samples, n_x_inputs)``.</span>
+<span class="sd">            Each row is fed to the nodes specified by ``inputs_x_idxs``.</span>
+<span class="sd">        inputs_x_idxs :</span>
+<span class="sd">            The indexes of the nodes receiving the predictors (top layer).</span>
+<span class="sd">        inputs_y_idxs :</span>
+<span class="sd">            The indexes of the target nodes whose ``expected_mean`` is returned</span>
+<span class="sd">            (bottom layer).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        predictions :</span>
+<span class="sd">            An array of shape ``(n_samples, len(inputs_y_idxs))`` containing the</span>
+<span class="sd">            ``expected_mean`` of each target node at every time step.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="c1"># ensure the update sequence exists</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+            <span class="p">)</span>
+
+        <span class="c1"># keep only prediction steps that are not on the predictor nodes</span>
+        <span class="n">prediction_steps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">step</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="o">.</span><span class="n">prediction_steps</span>
+            <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inputs_x_idxs</span>
+        <span class="p">)</span>
+
+        <span class="c1"># build a per-sample function that only predicts</span>
+        <span class="n">predict_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+            <span class="n">predict_step</span><span class="p">,</span>
+            <span class="n">prediction_steps</span><span class="o">=</span><span class="n">prediction_steps</span><span class="p">,</span>
+            <span class="n">edges</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+            <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
+            <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># use last_attributes (post-training state) when available</span>
+        <span class="n">init_attributes</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span>
+        <span class="p">)</span>
+
+        <span class="c1"># vmap over x rows; attributes are shared (not batched)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">predict_fn</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">))(</span><span class="n">init_attributes</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">predictions</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">input_data</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">input_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">input_data</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+        <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">ArrayLike</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">input_idxs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">rng_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add new observations.</span>
 
@@ -777,6 +1322,11 @@ window.addEventListener("load", () => mermaid.run());
 <span class="sd">        rng_keys :</span>
 <span class="sd">            Optional. A random key for the random number generator. This is only used</span>
 <span class="sd">            when an action function is provided.</span>
+<span class="sd">        record_trajectories :</span>
+<span class="sd">            If True (default), record the full node trajectories at every time</span>
+<span class="sd">            step (accessible via ``self.node_trajectories``).  If False, only</span>
+<span class="sd">            the final state is kept, which significantly reduces memory usage</span>
+<span class="sd">            and speeds up training.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">rng_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -800,12 +1350,10 @@ window.addEventListener("load", () => mermaid.run());
 
         <span class="c1"># observation mask</span>
         <span class="k">if</span> <span class="n">observed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
+            <span class="p">])</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">observed</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">observed</span> <span class="o">=</span> <span class="p">(</span><span class="n">observed</span><span class="p">,)</span>
@@ -822,10 +1370,20 @@ window.addEventListener("load", () => mermaid.run());
         <span class="c1"># this is where the model loops over the whole input time series</span>
         <span class="c1"># at each time point, the node structure is traversed and beliefs are updated</span>
         <span class="c1"># using precision-weighted prediction errors</span>
-        <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
+            <span class="n">last_attributes</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+        <span class="k">else</span><span class="p">:</span>
 
-        <span class="c1"># belief trajectories</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">node_trajectories</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_no_traj_step</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+                <span class="n">new_attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_attributes</span><span class="p">,</span> <span class="kc">None</span>
+
+            <span class="n">last_attributes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="n">_no_traj_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span> <span class="o">=</span> <span class="n">last_attributes</span>
 
         <span class="k">return</span> <span class="bp">self</span>
@@ -933,12 +1491,10 @@ window.addEventListener("load", () => mermaid.run());
 
         <span class="c1"># observation mask</span>
         <span class="k">if</span> <span class="n">observed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
+            <span class="n">observed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">))</span>
+            <span class="p">])</span>
 
         <span class="c1"># format input_data according to the input nodes dimension</span>
         <span class="n">split_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -1060,12 +1616,15 @@ window.addEventListener("load", () => mermaid.run());
             <span class="s2">&quot;categorical-state&quot;</span><span class="p">,</span>
             <span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
             <span class="s2">&quot;binary-state&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;volatile-state&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;constant-state&quot;</span><span class="p">,</span>
         <span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="p">(</span>
                     <span class="s2">&quot;Invalid node type. Should be one of the following: &quot;</span>
                     <span class="s2">&quot;&#39;dp-state&#39;, &#39;continuous-state&#39;, &#39;binary-state&#39;, &quot;</span>
-                    <span class="s2">&quot;&#39;ef-state&#39;, or &#39;categorical-state&#39;&quot;</span>
+                    <span class="s2">&quot;&#39;ef-state&#39;, &#39;categorical-state&#39;, &#39;volatile-state&#39;, &quot;</span>
+                    <span class="s2">&quot;or &#39;constant-state&#39;&quot;</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
@@ -1093,6 +1652,18 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">additional_parameters</span><span class="o">=</span><span class="n">additional_parameters</span><span class="p">,</span>
                 <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
             <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;volatile-state&quot;</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="n">add_volatile_state</span><span class="p">(</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
+                <span class="n">value_parents</span><span class="o">=</span><span class="n">value_parents</span><span class="p">,</span>
+                <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+                <span class="n">node_parameters</span><span class="o">=</span><span class="n">node_parameters</span><span class="p">,</span>
+                <span class="n">additional_parameters</span><span class="o">=</span><span class="n">additional_parameters</span><span class="p">,</span>
+                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;binary-state&quot;</span><span class="p">:</span>
             <span class="bp">self</span> <span class="o">=</span> <span class="n">add_binary_state</span><span class="p">(</span>
                 <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -1126,6 +1697,15 @@ window.addEventListener("load", () => mermaid.run());
                 <span class="n">node_parameters</span><span class="o">=</span><span class="n">node_parameters</span><span class="p">,</span>
                 <span class="n">additional_parameters</span><span class="o">=</span><span class="n">additional_parameters</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;constant-state&quot;</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="n">add_constant_state</span><span class="p">(</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
+                <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+                <span class="n">volatility_children</span><span class="o">=</span><span class="n">volatility_children</span><span class="p">,</span>
+                <span class="n">node_parameters</span><span class="o">=</span><span class="n">node_parameters</span><span class="p">,</span>
+                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -1152,12 +1732,10 @@ window.addEventListener("load", () => mermaid.run());
         <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;networkx&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">networkx</span><span class="o">.</span><span class="n">plot_network</span><span class="p">(</span><span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="s2">&quot;Invalid backend.&quot;</span>
-                    <span class="s2">&quot; Should be one of the following: &#39;graphviz&#39; or &#39;networkx&#39;&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span>
+                <span class="s2">&quot;Invalid backend.&quot;</span>
+                <span class="s2">&quot; Should be one of the following: &#39;graphviz&#39; or &#39;networkx&#39;&quot;</span><span class="p">,</span>
+            <span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Export the nodes trajectories and surprise as a Pandas data frame.</span>
@@ -1213,9 +1791,9 @@ window.addEventListener("load", () => mermaid.run());
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_edges</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
-        <span class="n">parent_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
-        <span class="n">children_idxs</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">parent_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">children_idxs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span>
         <span class="n">coupling_strengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
@@ -1223,12 +1801,12 @@ window.addEventListener("load", () => mermaid.run());
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kind :</span>
-<span class="sd">            The kind of coupling, can be `&quot;value&quot;` or `&quot;volatility&quot;`.</span>
 <span class="sd">        parent_idxs :</span>
 <span class="sd">            The index(es) of the parent node(s).</span>
 <span class="sd">        children_idxs :</span>
 <span class="sd">            The index(es) of the children node(s).</span>
+<span class="sd">        kind :</span>
+<span class="sd">            The kind of coupling, can be `&quot;value&quot;` or `&quot;volatility&quot;`.</span>
 <span class="sd">        coupling_strengths :</span>
 <span class="sd">            The coupling strength betwen the parents and children.</span>
 <span class="sd">        coupling_fn :</span>
@@ -1303,8 +1881,8 @@ window.addEventListener("load", () => mermaid.run());
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1315,7 +1893,7 @@ window.addEventListener("load", () => mermaid.run());
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>
@@ -1324,7 +1902,7 @@ window.addEventListener("load", () => mermaid.run());
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     <br/>
   </p>
 </div>
@@ -1338,7 +1916,7 @@ window.addEventListener("load", () => mermaid.run());
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
 </p></div>
       
     </div>

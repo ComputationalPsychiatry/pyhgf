@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.math.dirichlet_kullback_leibler &#8212; pyhgf 0.2.8 documentation</title>
+    <title>pyhgf.math.dirichlet_kullback_leibler &#8212; pyhgf 0.2.9 documentation</title>
   
   
   
@@ -27,52 +27,55 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../../_static/documentation_options.js?v=b01fafc3"></script>
-    <script src="../../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pyhgf.math/pyhgf.math.dirichlet_kullback_leibler';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.math.binary_surprise_finite_precision" href="pyhgf.math.binary_surprise_finite_precision.html" />
-    <link rel="prev" title="pyhgf.math.gaussian_surprise" href="pyhgf.math.gaussian_surprise.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
@@ -104,7 +107,7 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
   <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
@@ -148,33 +151,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
       
@@ -288,33 +264,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
           
@@ -378,130 +327,18 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
         <div class="sidebar-primary-item">
+
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.categorical/pyhgf.updates.posterior.categorical.categorical_state_update.html">pyhgf.updates.posterior.categorical.categorical_state_update</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf.continuous_node_posterior_update_ehgf</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html">pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node.html">pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.continuous.continuous_node_posterior_update/pyhgf.updates.posterior.continuous.continuous_node_posterior_update.continuous_node_posterior_update.html">pyhgf.updates.posterior.continuous.continuous_node_posterior_update.continuous_node_posterior_update</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.posterior.exponential/pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic.html">pyhgf.updates.posterior.exponential.posterior_update_exponential_family_dynamic</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.binary/pyhgf.updates.prediction.binary.binary_state_node_prediction.html">pyhgf.updates.prediction.binary.binary_state_node_prediction</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_mean.html">pyhgf.updates.prediction.continuous.predict_mean</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_precision.html">pyhgf.updates.prediction.continuous.predict_precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html">pyhgf.updates.prediction.continuous.continuous_node_prediction</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction.dirichlet/pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction.html">pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error.html">pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_finite_state_node_prediction_error.html">pyhgf.updates.prediction_error.binary.binary_finite_state_node_prediction_error</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.categorical/pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error.html">pyhgf.updates.prediction_error.categorical.categorical_state_prediction_error</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error.html">pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error.html">pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error.html">pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error.html">pyhgf.updates.prediction_error.dirichlet.dirichlet_node_prediction_error</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.update_cluster.html">pyhgf.updates.prediction_error.dirichlet.update_cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.create_cluster.html">pyhgf.updates.prediction_error.dirichlet.create_cluster</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.get_candidate.html">pyhgf.updates.prediction_error.dirichlet.get_candidate</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.likely_cluster_proposal.html">pyhgf.updates.prediction_error.dirichlet.likely_cluster_proposal</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.clusters_likelihood.html">pyhgf.updates.prediction_error.dirichlet.clusters_likelihood</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_dynamic.html">pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_dynamic</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.logp.html">pyhgf.distribution.logp</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.hgf_logp.html">pyhgf.distribution.hgf_logp</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFLogpGradOp.html">pyhgf.distribution.HGFLogpGradOp</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFDistribution.html">pyhgf.distribution.HGFDistribution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFPointwise.html">pyhgf.distribution.HGFPointwise</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html">pyhgf.model.HGF</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_binary_state.html">pyhgf.model.add_binary_state</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_ef_state.html">pyhgf.model.add_ef_state</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_categorical_state.html">pyhgf.model.add_categorical_state</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.add_dp_state.html">pyhgf.model.add_dp_state</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.get_couplings.html">pyhgf.model.get_couplings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.update_parameters.html">pyhgf.model.update_parameters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.insert_nodes.html">pyhgf.model.insert_nodes</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html">pyhgf.plots.matplotlib.plot_trajectories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_correlations.html">pyhgf.plots.matplotlib.plot_correlations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_nodes.html">pyhgf.plots.matplotlib.plot_nodes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_samples.html">pyhgf.plots.matplotlib.plot_samples</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html">pyhgf.plots.graphviz.plot_network</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html">pyhgf.plots.networkx.plot_network</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.first_level_gaussian_surprise.html">pyhgf.response.first_level_gaussian_surprise</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.total_gaussian_surprise.html">pyhgf.response.total_gaussian_surprise</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.first_level_binary_surprise.html">pyhgf.response.first_level_binary_surprise</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax.html">pyhgf.response.binary_softmax</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html">pyhgf.response.binary_softmax_inverse_temperature</a></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_edges.html">pyhgf.utils.add_edges</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.add_parent.html">pyhgf.utils.add_parent</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.beliefs_propagation.html">pyhgf.utils.beliefs_propagation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html">pyhgf.utils.fill_categorical_state_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_input_idxs.html">pyhgf.utils.get_input_idxs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.get_update_sequence.html">pyhgf.utils.get_update_sequence</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.learning.html">pyhgf.utils.learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.list_branches.html">pyhgf.utils.list_branches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.remove_node.html">pyhgf.utils.remove_node</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample_node_distribution.html">pyhgf.utils.sample_node_distribution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.sample.html">pyhgf.utils.sample</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.set_coupling.html">pyhgf.utils.set_coupling</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils/pyhgf.utils.to_pandas.html">pyhgf.utils.to_pandas</a></li>
-</ul>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.MultivariateNormal.html">pyhgf.math.MultivariateNormal</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.Normal.html">pyhgf.math.Normal</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.gaussian_predictive_distribution.html">pyhgf.math.gaussian_predictive_distribution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.gaussian_density.html">pyhgf.math.gaussian_density</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.binary_surprise.html">pyhgf.math.binary_surprise</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.gaussian_surprise.html">pyhgf.math.gaussian_surprise</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.math.dirichlet_kullback_leibler</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.math.binary_surprise_finite_precision.html">pyhgf.math.binary_surprise_finite_precision</a></li>
-</ul>
-</div>
+  <div class="bd-toc-item navbar-nav"></div>
 </nav></div>
     </div>
   
@@ -540,9 +377,6 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="../../api.html" class="nav-link">API</a></li>
-    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.math.dirichlet_kullback_leibler</span></li>
   </ul>
 </nav>
@@ -618,24 +452,6 @@ URL: <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/~wpenny/p
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="pyhgf.math.gaussian_surprise.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyhgf.math.gaussian_surprise</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="pyhgf.math.binary_surprise_finite_precision.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.math.binary_surprise_finite_precision</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -653,20 +469,20 @@ URL: <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/~wpenny/p
     class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> On this page
   </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyhgf.math.dirichlet_kullback_leibler"><code class="docutils literal notranslate"><span class="pre">dirichlet_kullback_leibler()</span></code></a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../../_sources/generated/pyhgf.math/pyhgf.math.dirichlet_kullback_leibler.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/generated/pyhgf.math/pyhgf.math.dirichlet_kullback_leibler.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -681,8 +497,8 @@ URL: <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/~wpenny/p
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -693,7 +509,7 @@ URL: <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/~wpenny/p
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>
@@ -702,7 +518,7 @@ URL: <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/~wpenny/p
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     <br/>
   </p>
 </div>
@@ -716,7 +532,7 @@ URL: <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/~wpenny/p
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
 </p></div>
       
     </div>

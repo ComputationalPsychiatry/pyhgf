@@ -170,13 +170,13 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 5,
+   "execution_count": null,
    "id": "e590009e-89c1-410a-a05b-8a2c34e10b65",
    "metadata": {},
    "outputs": [],
    "source": [
     "def sigmoid(x, temperature):\n",
-    "    \"\"\"The sigmoid response function with inverse temperature parameter.\"\"\"\n",
+    "    \"\"\"Compute the sigmoid response function with inverse temperature parameter.\"\"\"\n",
     "    return (x**temperature) / (x**temperature + (1 - x) ** temperature)"
    ]
   },
@@ -321,12 +321,13 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": null,
    "id": "7ab89a5c-a0fe-45f7-83fe-a278f8d80a34",
    "metadata": {},
    "outputs": [],
    "source": [
     "def logp(value, tonic_volatility_2, inverse_temperature):\n",
+    "    \"\"\"Compute the log-probability of the HGF model with given parameters.\"\"\"\n",
     "    return hgf_logp_op(\n",
     "        tonic_volatility_2=tonic_volatility_2,\n",
     "        response_function_parameters=pt.flatten(inverse_temperature),\n",
@@ -363,12 +364,13 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": null,
    "id": "6d94b1c0-16fa-4e39-a4dd-32125d13247d",
    "metadata": {},
    "outputs": [],
    "source": [
     "def logp_pointwise(tonic_volatility_2, inverse_temperature):\n",
+    "    \"\"\"Compute the pointwise log-probability of the HGF model with given parameters.\"\"\"\n",
     "    return hgf_logp_op_pointwise(\n",
     "        tonic_volatility_2=tonic_volatility_2,\n",
     "        response_function_parameters=inverse_temperature,\n",

@@ -49,6 +49,7 @@
    "outputs": [],
    "source": [
     "import sys\n",
+    "\n",
     "from IPython.utils import io\n",
     "\n",
     "if \"google.colab\" in sys.modules:\n",
@@ -87,7 +88,8 @@
     "import matplotlib.pyplot as plt\n",
     "import numpy as np\n",
     "import seaborn as sns\n",
-    "from pyhgf.model import Network, HGF\n",
+    "\n",
+    "from pyhgf.model import HGF, Network\n",
     "from pyhgf.typing import AdjacencyLists\n",
     "\n",
     "plt.rcParams[\"figure.constrained_layout.use\"] = True"

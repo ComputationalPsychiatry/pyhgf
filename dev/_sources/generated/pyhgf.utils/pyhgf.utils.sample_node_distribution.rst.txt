@@ -1,6 +1,0 @@
-﻿pyhgf.utils.sample\_node\_distribution
-======================================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: sample_node_distribution

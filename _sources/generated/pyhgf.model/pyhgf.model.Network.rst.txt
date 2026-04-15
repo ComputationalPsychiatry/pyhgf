@@ -18,6 +18,7 @@
       ~Network.add_nodes
       ~Network.create_belief_propagation_fn
       ~Network.create_learning_propagation_fn
+      ~Network.fit
       ~Network.get_input_dimension
       ~Network.get_network
       ~Network.input_custom_sequence
@@ -27,10 +28,10 @@
       ~Network.plot_nodes
       ~Network.plot_samples
       ~Network.plot_trajectories
+      ~Network.predict
       ~Network.sample
       ~Network.surprise
       ~Network.to_pandas
-      ~Network.train
    
    
 

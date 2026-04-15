@@ -51,6 +51,7 @@
    "outputs": [],
    "source": [
     "import sys\n",
+    "\n",
     "from IPython.utils import io\n",
     "\n",
     "if \"google.colab\" in sys.modules:\n",

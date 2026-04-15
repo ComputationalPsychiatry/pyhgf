@@ -51,6 +51,7 @@
    "outputs": [],
    "source": [
     "import sys\n",
+    "\n",
     "from IPython.utils import io\n",
     "\n",
     "if \"google.colab\" in sys.modules:\n",
@@ -92,6 +93,7 @@
     "import numpy as np\n",
     "import pandas as pd\n",
     "import seaborn as sns\n",
+    "\n",
     "from pyhgf import load_data\n",
     "from pyhgf.model import Network"
    ]

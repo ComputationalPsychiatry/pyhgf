@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Non-linear value coupling between continuous state nodes &#8212; pyhgf 0.2.8 documentation</title>
+    <title>Non-linear value coupling between continuous state nodes &#8212; pyhgf 0.2.9 documentation</title>
   
   
   
@@ -27,52 +27,55 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../_static/documentation_options.js?v=b01fafc3"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/5-Non_linear_value_coupling';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Example 1: Bayesian filtering of cardiac volatility" href="Example_1_Heart_rate_variability.html" />
-    <link rel="prev" title="Recovering computational parameters from observed behaviours" href="4-Parameter_recovery.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
@@ -104,7 +107,7 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
   <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
@@ -148,33 +151,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
       
@@ -288,33 +264,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
           
@@ -378,62 +327,18 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
         <div class="sidebar-primary-item">
+
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
-
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
-
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Non-linear value coupling between continuous state nodes</a></li>
-
-
-
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
-
-
-
-</ul>
-</div>
+  <div class="bd-toc-item navbar-nav"></div>
 </nav></div>
     </div>
   
@@ -472,9 +377,6 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
-    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Non-linear value coupling between continuous state nodes</span></li>
   </ul>
 </nav>
@@ -563,7 +465,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/0f09b649998bf7738f018e272cc10b621eafffcc3c87f52302f0c12580c5f49a.png" src="../_images/0f09b649998bf7738f018e272cc10b621eafffcc3c87f52302f0c12580c5f49a.png" />
+<img alt="../_images/bebc8931ae496cabefd09c5ba73e6b2185463d731860f3a4bb051b762c2c8d28.png" src="../_images/bebc8931ae496cabefd09c5ba73e6b2185463d731860f3a4bb051b762c2c8d28.png" />
 </div>
 </div>
 <p>Imagine that this behaviour constitutes a signal of a given underlying phenomenon. Now, we want to measure the same phenomenon with another instrument that above an arbitrary threshold <span class="math notranslate nohighlight">\(a\)</span> can track the signal <span class="math notranslate nohighlight">\(u_2\)</span>, but below that threshold just gives us some noise. This measurement <span class="math notranslate nohighlight">\(u_1\)</span> is supposed to be also noisier than the underlying signal.</p>
@@ -589,7 +491,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/b5ca6b3816b129d19ca29c683a106fcc5ee0ccfea33c3b8095eddd138b3d05d7.png" src="../_images/b5ca6b3816b129d19ca29c683a106fcc5ee0ccfea33c3b8095eddd138b3d05d7.png" />
+<img alt="../_images/8d021c693914e5ffa7b3c5a25fc858d13fc37d37cd6329a6cf05b4bcc2133bac.png" src="../_images/8d021c693914e5ffa7b3c5a25fc858d13fc37d37cd6329a6cf05b4bcc2133bac.png" />
 </div>
 </div>
 <p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Rectifier_(neural_networks)">ReLU (rectified linear unit) activation function</a> is commonly used in artificial neural networks and is defined as the non-negative part of its argument:</p>
@@ -648,6 +550,7 @@ x_1^{(k)} \sim Normal(g_{2,1}(x_2^{(k)})), \theta_1)
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Creating the functions</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Non-linear observation function.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">lax</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">a</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -699,7 +602,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/65ff0341485848339fb1ced2b89059b190d7d9a59785b0017a1bc8c5bde53a5a.png" src="../_images/65ff0341485848339fb1ced2b89059b190d7d9a59785b0017a1bc8c5bde53a5a.png" />
+<img alt="../_images/107143de2edeaa357d19f01778064b977c2b55ff8c9516f5ab98905c2d8413c1.png" src="../_images/107143de2edeaa357d19f01778064b977c2b55ff8c9516f5ab98905c2d8413c1.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -716,7 +619,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/1a84fe3c9b6d5b23bf0a55e0463d36535df22f6056e6f9b4cac039166916ea23.png" src="../_images/1a84fe3c9b6d5b23bf0a55e0463d36535df22f6056e6f9b4cac039166916ea23.png" />
+<img alt="../_images/334d999e1ebcf1d8e698b675c805e687863befb5c590dc0e2bc50dc6bc425334.png" src="../_images/334d999e1ebcf1d8e698b675c805e687863befb5c590dc0e2bc50dc6bc425334.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -735,22 +638,20 @@ If the value parent, as in this case, possesses multiple children, all the funct
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$x$&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$f(x)$&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;Noisy signal, $u_2$&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="s2">&quot;Linear expected mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Linear expected std&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Non-linear expected mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Non-linear expected std&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;Observation&quot;</span><span class="p">,</span>
-    <span class="p">]</span>
-<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span>
+    <span class="s2">&quot;Linear expected mean&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Linear expected std&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Non-linear expected mean&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Non-linear expected std&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Observation&quot;</span><span class="p">,</span>
+<span class="p">])</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/1beda4ea0feb790ad46d4bd698fe05533e8283a0752ab99d4e92d54741807a30.png" src="../_images/1beda4ea0feb790ad46d4bd698fe05533e8283a0752ab99d4e92d54741807a30.png" />
+<img alt="../_images/b8fcee67670f99bbb9a1856468c858252987e5b8303660d26b185707855461c3.png" src="../_images/b8fcee67670f99bbb9a1856468c858252987e5b8303660d26b185707855461c3.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -813,19 +714,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/96fcb5b1843cf4a3a256e865c01d734a4f74ebe6acfb9c611ea554d654b74daa.png" src="../_images/96fcb5b1843cf4a3a256e865c01d734a4f74ebe6acfb9c611ea554d654b74daa.png" />
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sinusoid_linear_hgf</span><span class="o">.</span><span class="n">input_idxs</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(0,)
-</pre></div>
-</div>
+<img alt="../_images/ffbd79b8ea5a6f46f911610b149944d7473e4de9f9c7302164471add662cbf70.png" src="../_images/ffbd79b8ea5a6f46f911610b149944d7473e4de9f9c7302164471add662cbf70.png" />
 </div>
 </div>
 <p>Notice how <span class="math notranslate nohighlight">\(\mu_1\)</span> is just drifting during the missing observation chuncks.</p>
@@ -848,7 +737,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a793d7f1b48cdaf083fd46a78abf773375ddd5500a9d84daf5714409a409b838.png" src="../_images/a793d7f1b48cdaf083fd46a78abf773375ddd5500a9d84daf5714409a409b838.png" />
+<img alt="../_images/8a571b3609d74cd7f3b1f72317044a6162cabd7f9d2ffe4ae01e5014794e17e5.png" src="../_images/8a571b3609d74cd7f3b1f72317044a6162cabd7f9d2ffe4ae01e5014794e17e5.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -899,7 +788,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/93e855aa4befbdab4ee446d3e571fc63e48b8002e86ffaf3370e4fe04f09cef1.png" src="../_images/93e855aa4befbdab4ee446d3e571fc63e48b8002e86ffaf3370e4fe04f09cef1.png" />
+<img alt="../_images/db67b6ba78eec4c814c3c9c056672beb01a7a60712f61bce13cb0e4f13804fa2.png" src="../_images/db67b6ba78eec4c814c3c9c056672beb01a7a60712f61bce13cb0e4f13804fa2.png" />
 </div>
 </div>
 </section>
@@ -957,7 +846,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/c251549a034326a50e90f9995c4e9f4282e59ad6752496ae4a54c6be1829e207.png" src="../_images/c251549a034326a50e90f9995c4e9f4282e59ad6752496ae4a54c6be1829e207.png" />
+<img alt="../_images/10ffbbbb3b3ff147dd5c1adc9e687b06cfdc2df666b646acbce7a9a0946cda1e.png" src="../_images/10ffbbbb3b3ff147dd5c1adc9e687b06cfdc2df666b646acbce7a9a0946cda1e.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>
@@ -972,25 +861,24 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri Oct 03 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed, 15 Apr 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.6.0
+IPython version      : 9.12.0
 
-pyhgf : 0.2.8
+pyhgf : 0.2.9
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-seaborn   : 0.13.2
-numpy     : 2.3.3
-pyhgf     : 0.2.8
-IPython   : 9.6.0
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
+IPython   : 9.12.0
 jax       : 0.4.31
-matplotlib: 3.10.6
+matplotlib: 3.10.8
+numpy     : 2.4.4
+pyhgf     : 0.2.9
+seaborn   : 0.13.2
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1007,24 +895,6 @@ Watermark: 2.5.0
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="4-Parameter_recovery.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Recovering computational parameters from observed behaviours</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="Example_1_Heart_rate_variability.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Example 1: Bayesian filtering of cardiac volatility</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -1042,9 +912,9 @@ Watermark: 2.5.0
     class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> On this page
   </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Non-linear value coupling between continuous state nodes</a><ul class="visible nav section-nav flex-column">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Non-linear value coupling between continuous state nodes</a><ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relu-rectified-linear-unit-activation-function">ReLU (rectified linear unit) activation function</a></li>
 </ul>
 </li>
@@ -1056,13 +926,13 @@ Watermark: 2.5.0
   </nav></div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/notebooks/5-Non_linear_value_coupling.ipynb.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/notebooks/5-Non_linear_value_coupling.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -1077,8 +947,8 @@ Watermark: 2.5.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1089,7 +959,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>
@@ -1098,7 +968,7 @@ Watermark: 2.5.0
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     <br/>
   </p>
 </div>
@@ -1112,7 +982,7 @@ Watermark: 2.5.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
 </p></div>
       
     </div>

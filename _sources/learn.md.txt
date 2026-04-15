@@ -44,6 +44,7 @@ notebooks/Example_1_Heart_rate_variability.ipynb
 notebooks/Example_2_Input_node_volatility_coupling.ipynb
 notebooks/Example_3_Multi_armed_bandit.ipynb
 notebooks/Example_4_Causal_discovery.ipynb
+notebooks/Example_5_Iowa_Gambling_Task.ipynb
 ```
 
 ```{toctree}
@@ -88,21 +89,22 @@ How to create and manipulate a network of probabilistic nodes for reinforcement 
 Predict, filter and smooth any distribution from the exponential family using generalisations of the Hierarchical Gaussian Filter.
 :::
 
-:::{grid-item-card}  Planning and action
+:::{grid-item-card}  Planning and acting
 :link: planning_acting
 :link-type: ref
+:img-top: ./images/planning.png
 
 
-Planning and acting with predictive coding networks.
+Planning and acting by simulating forward trajectories in predictive coding networks.
 :::
 
-:::{grid-item-card}  Learning
+:::{grid-item-card}  Deep learning
 :link: learning
 :link-type: ref
-:img-top: ./images/deep_networks.png
+:img-top: ./images/two_moons_training.gif
 
 
-Learning with predictive coding networks.
+Learning in deep predictive coding networks using variational message passing for prospective configuration.
 :::
 
 ::::
@@ -216,6 +218,13 @@ A generalisation of the binary Hierarchical Gaussian Filter to multiarmed bandit
 :img-top: ./images/causal_discovery.png
 
 Deriving a causal discovery prediction error to track the causal coupling strength between two random variable over time.
+:::
+
+:::{grid-item-card}  Modelling win-frequency bias in the Iowa Gambling Task
+:link: example_5
+:link-type: ref
+
+Using autoconnection strength to model biases in the Iowa Gambling Task.
 :::
 
 ::::

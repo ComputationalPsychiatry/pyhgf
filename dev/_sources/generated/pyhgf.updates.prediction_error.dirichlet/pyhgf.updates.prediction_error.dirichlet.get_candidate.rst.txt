@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction\_error.dirichlet.get\_candidate
-========================================================
-
-.. currentmodule:: pyhgf.updates.prediction_error.dirichlet
-
-.. autofunction:: get_candidate

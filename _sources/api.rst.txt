@@ -49,6 +49,7 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
 
     continuous_node_posterior_update_unbounded
+    posterior_update_unbounded
 
 .. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
 
@@ -70,6 +71,47 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update
 
     continuous_node_posterior_update
+
+Volatile nodes
+--------------
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_value_level
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_value_level
+
+    posterior_update_precision_value_level
+    posterior_update_mean_value_level
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level
+
+    posterior_update_precision_volatility_level
+    posterior_update_mean_volatility_level
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update
+
+    volatile_node_posterior_update
+    volatile_node_volatility_posterior_update_standard
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
+
+    volatile_node_posterior_update_ehgf
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
+
+    volatile_node_posterior_update_unbounded
 
 Exponential family
 ------------------
@@ -107,6 +149,19 @@ Continuous nodes
     predict_mean
     predict_precision
     continuous_node_prediction
+
+Volatile nodes
+--------------
+
+.. currentmodule:: pyhgf.updates.prediction.volatile
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.prediction.volatile
+
+    predict_precision_volatility_level
+    predict_mean_value_level
+    predict_precision_value_level
+    volatile_node_prediction
 
 Dirichlet processes
 -------------------
@@ -156,6 +211,18 @@ Continuous state nodes
     continuous_node_volatility_prediction_error
     continuous_node_prediction_error
 
+Volatile state nodes
+--------------------
+
+.. currentmodule:: pyhgf.updates.prediction_error.volatile
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.prediction_error.volatile
+
+    volatile_node_value_prediction_error
+    volatile_node_volatility_prediction_error
+    volatile_node_prediction_error
+
 Dirichlet state nodes
 ---------------------
 
@@ -181,6 +248,78 @@ Exponential family
 
     prediction_error_update_exponential_family_fixed
     prediction_error_update_exponential_family_dynamic
+
+Learning
+========
+
+Weight learning rules applied after the prediction error step.
+
+.. currentmodule:: pyhgf.updates.learning
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.learning
+
+    learning_weights
+
+Observations
+============
+
+Functions for setting observations and predictor values on input nodes.
+
+.. currentmodule:: pyhgf.updates.observation
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.observation
+
+    set_observation
+    set_predictors
+
+Vectorized updates
+==================
+
+Layer-wise vectorized implementations of the HGF update equations for deep predictive
+coding networks. These functions operate on entire layers instead of individual nodes
+and are used internally by :class:`pyhgf.model.DeepNetwork`.
+
+Volatile layers
+---------------
+
+.. currentmodule:: pyhgf.updates.vectorized.volatile
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorized.volatile
+
+    vectorized_layer_prediction
+    vectorized_layer_posterior_update
+    vectorized_posterior_update_precision_value_level
+    vectorized_posterior_update_mean_value_level
+    vectorized_layer_value_prediction_error
+    vectorized_layer_volatility_prediction_error
+    vectorized_layer_volatility_posterior_standard
+    vectorized_layer_volatility_posterior_ehgf
+    vectorized_layer_volatility_posterior_unbounded
+    vectorized_layer_prediction_error
+
+Binary layers
+-------------
+
+.. currentmodule:: pyhgf.updates.vectorized.binary
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorized.binary
+
+    vectorized_binary_prediction
+    vectorized_binary_prediction_error
+
+Vectorized learning
+-------------------
+
+.. currentmodule:: pyhgf.updates.vectorized.learning
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorized.learning
+
+    vectorized_weight_update
 
 Distribution
 ************
@@ -215,7 +354,10 @@ and creates a standard node structure for these models.
 
    HGF
    Network
+   DeepNetwork
+   add_volatile_state
    add_continuous_state
+   add_constant_state
    add_binary_state
    add_ef_state
    add_categorical_state
@@ -253,6 +395,7 @@ Graphviz
    :toctree: generated/pyhgf.plots.graphviz
 
    plot_network
+   plot_deep_network
 
 Networkx
 ========
@@ -299,11 +442,27 @@ Utilities for manipulating neural networks.
    get_update_sequence
    learning
    list_branches
+   predict_step
    remove_node
    sample_node_distribution
    sample
    set_coupling
    to_pandas
+
+Weight initialisation
+=====================
+
+Initialisation strategies for coupling weight matrices in predictive-coding networks.
+
+.. currentmodule:: pyhgf.utils.weight_initialisation
+
+.. autosummary::
+   :toctree: generated/pyhgf.utils.weight_initialisation
+
+   xavier_init
+   he_init
+   orthogonal_init
+   sparse_init
 
 Math
 ****
@@ -323,3 +482,6 @@ Math functions and probability densities.
     gaussian_surprise
     dirichlet_kullback_leibler
     binary_surprise_finite_precision
+    sigmoid_inverse_temperature
+    parametrised_sigmoid
+    smoothed_rectangular

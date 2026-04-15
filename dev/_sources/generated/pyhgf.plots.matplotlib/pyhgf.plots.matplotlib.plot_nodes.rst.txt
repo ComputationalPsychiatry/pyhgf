@@ -1,6 +1,0 @@
-﻿pyhgf.plots.matplotlib.plot\_nodes
-==================================
-
-.. currentmodule:: pyhgf.plots.matplotlib
-
-.. autofunction:: plot_nodes

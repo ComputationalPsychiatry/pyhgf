@@ -51,6 +51,7 @@
    "outputs": [],
    "source": [
     "import sys\n",
+    "\n",
     "from IPython.utils import io\n",
     "\n",
     "if \"google.colab\" in sys.modules:\n",
@@ -94,11 +95,12 @@
     "import pymc as pm\n",
     "import pytensor.tensor as pt\n",
     "import seaborn as sns\n",
+    "from pytensor import scan\n",
+    "\n",
     "from pyhgf import load_data\n",
     "from pyhgf.distribution import HGFDistribution, HGFPointwise\n",
     "from pyhgf.model import HGF\n",
     "from pyhgf.response import binary_softmax, first_level_binary_surprise\n",
-    "from pytensor import scan\n",
     "\n",
     "plt.rcParams[\"figure.constrained_layout.use\"] = True"
    ]
@@ -904,7 +906,6 @@
    "source": [
     "def rw_update(new_observation, current_belief, learning_rate):\n",
     "    \"\"\"Update the belief about contingencies at time t.\"\"\"\n",
-    "\n",
     "    # get the new value using the RW update\n",
     "    new_belief = current_belief + learning_rate * (new_observation - current_belief)\n",
     "\n",
@@ -1169,7 +1170,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 23,
+   "execution_count": null,
    "id": "74815eb3-9ca7-4717-9872-67e798d2301d",
    "metadata": {
     "editable": true,
@@ -1187,12 +1188,13 @@
    "outputs": [],
    "source": [
     "def logp(value, tonic_volatility_2):\n",
+    "    \"\"\"Log-probability function for the HGF model.\"\"\"\n",
     "    return hgf_logp_op(tonic_volatility_2=tonic_volatility_2)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 24,
+   "execution_count": null,
    "id": "54d53263-a204-412c-83a7-a147a1ffc1be",
    "metadata": {
     "execution": {
@@ -1205,6 +1207,7 @@
    "outputs": [],
    "source": [
     "def logp_pointwise(tonic_volatility_2):\n",
+    "    \"\"\"Pointwise log-probability function for the HGF model.\"\"\"\n",
     "    return hgf_logp_op_pointwise(tonic_volatility_2=tonic_volatility_2)"
    ]
   },
@@ -1438,7 +1441,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 30,
+   "execution_count": null,
    "id": "79cf5d48-df58-4e87-91d2-65541208924d",
    "metadata": {
     "editable": true,
@@ -1456,12 +1459,13 @@
    "outputs": [],
    "source": [
     "def logp(value, tonic_volatility_2):\n",
+    "    \"\"\"Log-probability function for the HGF model.\"\"\"\n",
     "    return hgf_logp_op(tonic_volatility_2=tonic_volatility_2)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 31,
+   "execution_count": null,
    "id": "362a75f4-5394-46f2-9fd0-021701db18f2",
    "metadata": {
     "execution": {
@@ -1474,6 +1478,7 @@
    "outputs": [],
    "source": [
     "def logp_pointwise(tonic_volatility_2):\n",
+    "    \"\"\"Pointwise log-probability function for the HGF model.\"\"\"\n",
     "    return hgf_logp_op_pointwise(tonic_volatility_2=tonic_volatility_2)"
    ]
   },
@@ -1680,14 +1685,12 @@
    "outputs": [],
    "source": [
     "%%capture --no-display\n",
-    "compare_df = az.compare(\n",
-    "    {\n",
-    "        \"biased_random\": biased_random_idata,\n",
-    "        \"RW\": rw_idata,\n",
-    "        \"two-level\": two_levels_idata,\n",
-    "        \"three-level\": three_levels_idata,\n",
-    "    }\n",
-    ")"
+    "compare_df = az.compare({\n",
+    "    \"biased_random\": biased_random_idata,\n",
+    "    \"RW\": rw_idata,\n",
+    "    \"two-level\": two_levels_idata,\n",
+    "    \"three-level\": three_levels_idata,\n",
+    "})"
    ]
   },
   {

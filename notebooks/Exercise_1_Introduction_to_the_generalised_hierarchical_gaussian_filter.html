@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.8 documentation</title>
+    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.9 documentation</title>
   
   
   
@@ -27,52 +27,55 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
-    <script src="../_static/documentation_options.js?v=b01fafc3"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/documentation_options.js?v=14672bda"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Zurich CPC II: Application to reinforcement learning" href="Exercise_2_Bayesian_reinforcement_learning.html" />
-    <link rel="prev" title="Example 4: Causal discovery in a predictive coding network" href="Example_4_Causal_discovery.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
@@ -104,7 +107,7 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
   <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
@@ -148,33 +151,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
       
@@ -288,33 +264,6 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../learn.html">
-    Learn
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../api.html">
-    API
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../cite.html">
-    Cite
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../references.html">
-    References
-  </a>
-</li>
-
   </ul>
 </nav></div>
           
@@ -378,62 +327,18 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
         <div class="sidebar-primary-item">
+
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="0.5-Learning.html">Deep learning with Bayesian predictive coding</a></li>
-
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
-
-
-
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
-
-<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
-
-
-<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
-
-
-
-</ul>
-</div>
+  <div class="bd-toc-item navbar-nav"></div>
 </nav></div>
     </div>
   
@@ -472,9 +377,6 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
-    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</span></li>
   </ul>
 </nav>
@@ -503,6 +405,7 @@
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
 <span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -525,6 +428,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_data</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 </pre></div>
@@ -551,7 +455,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 <p>where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the fixed variance of the distribution. You can find more details on this as well as some code to get started with the simulations in the first tutorial on the <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html#">PyHGF documentation</a>.</p>
 <div class="exercise admonition" id="exercise1.1">
 
-<p class="admonition-title"><span class="caption-number">Exercise 1 </span></p>
+<p class="admonition-title"></p>
 <section id="exercise-content">
 <p>Using the equation above, write a Python code that implements a Gaussian random walk using the following parameters: <span class="math notranslate nohighlight">\(\sigma^2 = 1\)</span> and <span class="math notranslate nohighlight">\(x_1^{(0)} = 0\)</span>.</p>
 </section>
@@ -597,12 +501,12 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + x_2^{(k)}, \, \sigma_1^2) \\
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/477281bf0394bd02b4503a8857affa07543c7d1fc51892b4222fec4d5134b6f5.png" src="../_images/477281bf0394bd02b4503a8857affa07543c7d1fc51892b4222fec4d5134b6f5.png" />
+<img alt="../_images/b91d765a4232a39cb5fca09666bec4d510fb3fa3719f37b7b4bc60ebc274b86f.png" src="../_images/b91d765a4232a39cb5fca09666bec4d510fb3fa3719f37b7b4bc60ebc274b86f.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.2">
 
-<p class="admonition-title"><span class="caption-number">Exercise 2 </span></p>
+<p class="admonition-title"></p>
 <section id="exercise-content">
 <p>Write a Python code that generates values for <span class="math notranslate nohighlight">\(x_1\)</span> using the value coupling equation above with <span class="math notranslate nohighlight">\(\mu_1^{0} = 0.0\)</span> and <span class="math notranslate nohighlight">\(\sigma_1 = 1.5\)</span>.</p>
 </section>
@@ -637,7 +541,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="exercise admonition" id="exercise1.3">
 
-<p class="admonition-title"><span class="caption-number">Exercise 3 </span></p>
+<p class="admonition-title"></p>
 <section id="exercise-content">
 <ul class="simple">
 <li><p>Using the equation above and your previous implementation, write a Python code that generates values for <span class="math notranslate nohighlight">\(x_1\)</span> with <span class="math notranslate nohighlight">\(\omega_1 = -6.0\)</span>, <span class="math notranslate nohighlight">\(\mu_1^{(0)} = 0.0\)</span>,</p></li>
@@ -657,7 +561,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <figure class="align-default" id="networks">
 <img alt="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" />
 <figcaption>
-<p><span class="caption-number">Fig. 9 </span><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
+<p><span class="caption-text">PyHGF is designed to automate the propagation of prediction (top-down) and prediction errors (bottom-up) in dynamic probabilistic networks. Predictions are triggered from the leaves to the roots of the networks prior to observation. Prediction errors and posterior updates a triggered after observation, from the roots to the leaves.</span><a class="headerlink" href="#networks" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
 <p>In the following example, we illustrate how we can create a network with a more complex structure (i.e. a two-level continuous Hierarchical Gaussian Filter) and how this model can be inverted to update beliefs when presented with new observations.</p>
@@ -710,12 +614,12 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f3a7baae7a79bcea15a337cd85822341f71b65bdf61333d71efaaaba65541cb6.png" src="../_images/f3a7baae7a79bcea15a337cd85822341f71b65bdf61333d71efaaaba65541cb6.png" />
+<img alt="../_images/5a0257eb07e5e31a230a3bd80fa0cd352628d4e07808c12e22454fa7a732f30a.png" src="../_images/5a0257eb07e5e31a230a3bd80fa0cd352628d4e07808c12e22454fa7a732f30a.png" />
 </div>
 </div>
 <div class="exercise admonition" id="exercise1.4">
 
-<p class="admonition-title"><span class="caption-number">Exercise 4 </span></p>
+<p class="admonition-title"></p>
 <section id="exercise-content">
 <p>Each state node comes with parameters <code class="docutils literal notranslate"><span class="pre">mean</span></code>, <code class="docutils literal notranslate"><span class="pre">precision</span></code> and <code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code> that can be provided when creating the network. Using the function above, try to change these values. How does this influence the belief trajectories?</p>
 </section>
@@ -887,7 +791,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/c6a8bd033d2ae7b805e3ce6e79551447a693f375cf96e1b2efa85b234f7b2b03.png" src="../_images/c6a8bd033d2ae7b805e3ce6e79551447a693f375cf96e1b2efa85b234f7b2b03.png" />
+<img alt="../_images/4ac7643ce17350d0258dd1f47805860859ed453fe0e3682846c7d55a6e10d5e4.png" src="../_images/4ac7643ce17350d0258dd1f47805860859ed453fe0e3682846c7d55a6e10d5e4.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -906,14 +810,14 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="exercise admonition" id="exercise1.5">
 
-<p class="admonition-title"><span class="caption-number">Exercise 5 </span></p>
+<p class="admonition-title"></p>
 <section id="exercise-content">
 <p>What quantity are we measuring in the code cell above? What does this represent?</p>
 </section>
 </div>
 <div class="exercise admonition" id="exercise1.6">
 
-<p class="admonition-title"><span class="caption-number">Exercise 6 </span></p>
+<p class="admonition-title"></p>
 <section id="exercise-content">
 <ul class="simple">
 <li><p>Select a city and download a recording OR use the data frame loaded above.</p></li>
@@ -928,7 +832,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 <h1>Solutions<a class="headerlink" href="#solutions" title="Link to this heading">#</a></h1>
 <div class="solution admonition" id="solution-exercise1.1">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.1"> Exercise 1</a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.1"> Exercise </a></p>
 <section id="solution-content">
 <p>We can simulate a simple Gaussian Random Walk in Python either using a for loop and a list:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -960,7 +864,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.2">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.2"> Exercise 2</a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.2"> Exercise </a></p>
 <section id="solution-content">
 <p>We can simulate values from <span class="math notranslate nohighlight">\(x_1\)</span> using a for loop:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_1</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">sigma_1</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span>
@@ -975,7 +879,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.3">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.3"> Exercise 3</a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.3"> Exercise </a></p>
 <section id="solution-content">
 <p>We can simulate values from <span class="math notranslate nohighlight">\(x_1\)</span> using a for loop:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x_1</span><span class="p">,</span> <span class="n">mu_1</span><span class="p">,</span> <span class="n">sigma_1</span> <span class="o">=</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span>
@@ -990,7 +894,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.4">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.4"> Exercise 4</a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.4"> Exercise </a></p>
 <section id="solution-content">
 <p>The code below will change mean, precision and tonic volatility at the first level. Here we use Python’s OOP features to express model creation, input data and plotting by chaining method call.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span>
@@ -1007,7 +911,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 <div class="solution admonition" id="solution-exercise1.5">
 
-<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.5"> Exercise 5</a></p>
+<p class="admonition-title">Solution to<a class="reference internal" href="#exercise1.5"> Exercise </a></p>
 <section id="solution-content">
 <p>This method return the Gaussian surprise at each time point, which are then summed. The sum of the Gaussian surprise reflect the performances of the model at predicting the next value, larger values pointing to a model more surprise by its inputs, therefore poor performances. The surprise is define as <span class="math notranslate nohighlight">\(s = -log(p)\)</span>, this is thus the negative of the log probability function. Log probability functions are commonly used by sampling algorithm, it is thus straigthforwars to sample a model parameters when this function is available. There are an infinity of response possible functions - just like there is an infinity of possible networks - for more details on how to use tem, you can refer to the <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/2-Using_custom_response_functions.html">tutorial on custom response models</a>.</p>
 </section>
@@ -1023,25 +927,24 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri Oct 03 2025
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed, 15 Apr 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.6.0
+IPython version      : 9.12.0
 
-pyhgf : 0.2.8
+pyhgf : 0.2.9
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-pyhgf     : 0.2.8
-sys       : 3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]
-pandas    : 2.3.3
-IPython   : 9.6.0
-matplotlib: 3.10.6
+IPython   : 9.12.0
+matplotlib: 3.10.8
+numpy     : 2.4.4
+pandas    : 3.0.2
+pyhgf     : 0.2.9
 seaborn   : 0.13.2
-numpy     : 2.3.3
 
-Watermark: 2.5.0
+Watermark: 2.6.0
 </pre></div>
 </div>
 </div>
@@ -1058,24 +961,6 @@ Watermark: 2.5.0
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="Example_4_Causal_discovery.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Example 4: Causal discovery in a predictive coding network</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="Exercise_2_Bayesian_reinforcement_learning.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Zurich CPC II: Application to reinforcement learning</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -1093,9 +978,9 @@ Watermark: 2.5.0
     class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> On this page
   </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a><ul class="visible nav section-nav flex-column">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a><ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-generative-model">The generative model</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gaussian-random-walks">Gaussian Random Walks</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#probabilistic-coupling-between-nodes">Probabilistic coupling between nodes</a><ul class="nav section-nav flex-column">
@@ -1116,13 +1001,13 @@ Watermark: 2.5.0
   </nav></div>
 
   <div class="sidebar-secondary-item">
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.ipynb.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div></div>
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/notebooks/Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
 
 </div></div>
               
@@ -1137,8 +1022,8 @@ Watermark: 2.5.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1149,7 +1034,7 @@ Watermark: 2.5.0
 
   <p class="copyright">
     
-      © Copyright 2022-2025, Nicolas Legrand.
+      © Copyright 2022-2026, Nicolas Legrand.
       <br/>
     
   </p>
@@ -1158,7 +1043,7 @@ Watermark: 2.5.0
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     <br/>
   </p>
 </div>
@@ -1172,7 +1057,7 @@ Watermark: 2.5.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
 </p></div>
       
     </div>

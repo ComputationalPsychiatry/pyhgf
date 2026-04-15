@@ -1,6 +1,0 @@
-﻿pyhgf.utils.set\_coupling
-=========================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: set_coupling

@@ -51,6 +51,7 @@
    "outputs": [],
    "source": [
     "import sys\n",
+    "\n",
     "from IPython.utils import io\n",
     "\n",
     "if \"google.colab\" in sys.modules:\n",
@@ -621,7 +622,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
+   "execution_count": null,
    "id": "9ffe8ee2-1b36-400b-8f71-09e9f097ba2a",
    "metadata": {
     "editable": true,
@@ -639,8 +640,7 @@
    "outputs": [],
    "source": [
     "def response_function(hgf, response_function_inputs, response_function_parameters=None):\n",
-    "    \"\"\"A simple response function returning the binary surprise.\"\"\"\n",
-    "\n",
+    "    \"\"\"Compute the binary surprise.\"\"\"\n",
     "    # response_function_parameters can be used to parametrize the response function (e.g. inverse temperature)\n",
     "    # ...<\n",
     "\n",

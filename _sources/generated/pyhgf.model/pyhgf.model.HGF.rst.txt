@@ -18,6 +18,7 @@
       ~HGF.add_nodes
       ~HGF.create_belief_propagation_fn
       ~HGF.create_learning_propagation_fn
+      ~HGF.fit
       ~HGF.get_input_dimension
       ~HGF.get_network
       ~HGF.input_custom_sequence
@@ -27,10 +28,10 @@
       ~HGF.plot_nodes
       ~HGF.plot_samples
       ~HGF.plot_trajectories
+      ~HGF.predict
       ~HGF.sample
       ~HGF.surprise
       ~HGF.to_pandas
-      ~HGF.train
    
    
 
