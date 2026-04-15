@@ -123,80 +123,68 @@ def posterior_update_unbounded(
     # ----------------------------------------------------------------------------------
     # Second quadratic approximation L2 ------------------------------------------------
     # ----------------------------------------------------------------------------------
-    phi = jnp.log(previous_child_variance * (2 + jnp.sqrt(3)))
 
-    w_phi = jnp.exp(
-        attributes[node_idx]["volatility_coupling_children"][0] * phi
-        + attributes[volatility_child_idx]["tonic_volatility"]
-    ) / (
-        previous_child_variance
-        + jnp.exp(
-            attributes[node_idx]["volatility_coupling_children"][0] * phi
-            + attributes[volatility_child_idx]["tonic_volatility"]
-        )
-    )
+    # Canonical expansion point and its map back to native space
+    ka = attributes[node_idx]["volatility_coupling_children"][0]
+    om = attributes[volatility_child_idx]["tonic_volatility"]
+    phi_canon = jnp.log(previous_child_variance * (2 + jnp.sqrt(3.0)))
+    phi_full = (phi_canon - om) / ka
+
+    # At phi_full, exp(ka*phi_full + om) = previous_child_variance*(2+sqrt(3))
+    # by construction — use this directly to avoid numerical round-trips
+    exp_at_phi = previous_child_variance * (2 + jnp.sqrt(3.0))
+
+    w_phi = exp_at_phi / (previous_child_variance + exp_at_phi)
 
     delta_phi = (
         (1 / attributes[volatility_child_idx]["precision"])
         + (
             attributes[volatility_child_idx]["mean"]
-            - (attributes[volatility_child_idx]["expected_mean"])
+            - attributes[volatility_child_idx]["expected_mean"]
         )
         ** 2
-    ) / (
-        previous_child_variance
-        + jnp.exp(
-            attributes[node_idx]["volatility_coupling_children"][0] * phi
-            + attributes[volatility_child_idx]["tonic_volatility"]
-        )
-    ) - 1.0
+    ) / (previous_child_variance + exp_at_phi) - 1.0
 
-    pi_l2 = attributes[node_idx]["expected_precision"] + 0.5 * attributes[node_idx][
-        "volatility_coupling_children"
-    ][0] ** 2 * w_phi * (w_phi + (2 * w_phi - 1) * delta_phi)
-
-    mu_hat_phi = ((2.0 * pi_l2 - 1.0) * phi + attributes[node_idx]["expected_mean"]) / (
-        2.0 * pi_l2
+    pi_l2 = attributes[node_idx]["expected_precision"] + 0.5 * ka**2 * w_phi * (
+        w_phi + (2 * w_phi - 1) * delta_phi
     )
 
-    mu_l2 = (
-        mu_hat_phi
-        + (
-            (attributes[node_idx]["volatility_coupling_children"][0] * w_phi)
-            / (2 * pi_l2)
-        )
-        * delta_phi
-    )
+    mu_hat_phi = (
+        (pi_l2 - attributes[node_idx]["expected_precision"]) * phi_full
+        + attributes[node_idx]["expected_precision"]
+        * attributes[node_idx]["expected_mean"]
+    ) / pi_l2
+
+    mu_l2 = mu_hat_phi + ((ka * w_phi) / (2 * pi_l2)) * delta_phi
 
     # ----------------------------------------------------------------------------------
     # compute the full quadratic approximation -----------------------------------------
     # ----------------------------------------------------------------------------------
-    theta_l = jnp.sqrt(
-        1.2
-        * (
-            (
-                (1 / attributes[volatility_child_idx]["precision"])
-                + (
-                    attributes[volatility_child_idx]["mean"]
-                    - attributes[volatility_child_idx]["expected_mean"]
-                )
-                ** 2
-            )
-            / (previous_child_variance * pi_l1)
-        )
-    )
 
-    # compute the weigthing of the two approximations
+    # Total posterior uncertainty at child level (be_aux in the Matlab code)
+    be_aux = (1 / attributes[volatility_child_idx]["precision"]) + (
+        attributes[volatility_child_idx]["mean"]
+        - attributes[volatility_child_idx]["expected_mean"]
+    ) ** 2
+
+    # Blending operates in canonical exponent space y = ka * muhat + om
+    y_pred = (
+        ka * attributes[node_idx]["expected_mean"]
+        + attributes[volatility_child_idx]["tonic_volatility"]
+    )
+    theta_l = -jnp.sqrt(1.2 * 2.0 * be_aux / previous_child_variance)
+
+    # Compute the weighting of the two approximations
     # using the smoothed rectangular function b
-    weigthing = smoothed_rectangular(
-        x=attributes[node_idx]["expected_mean"],
+    weighting = smoothed_rectangular(
+        x=y_pred,
         theta_l=theta_l,
         phi_l=8.0,
         theta_r=0.0,
         phi_r=1.0,
     )
 
-    posterior_precision = (1 - weigthing) * pi_l1 + weigthing * pi_l2
-    posterior_mean = (1 - weigthing) * mu_l1 + weigthing * mu_l2
+    posterior_precision = (1 - weighting) * pi_l1 + weighting * pi_l2
+    posterior_mean = (1 - weighting) * mu_l1 + weighting * mu_l2
 
     return posterior_precision, posterior_mean

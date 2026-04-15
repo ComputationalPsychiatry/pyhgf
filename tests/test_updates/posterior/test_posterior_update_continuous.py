@@ -89,5 +89,5 @@ def test_continuous_posterior_updates():
     new_attributes = continuous_node_posterior_update_unbounded(
         attributes=attributes, node_idx=2, edges=edges
     )
-    assert jnp.isclose(new_attributes[2]["mean"], -0.0019574)
-    assert jnp.isclose(new_attributes[2]["precision"], 1.0088315)
+    assert jnp.isclose(new_attributes[2]["mean"], -0.00210728)
+    assert jnp.isclose(new_attributes[2]["precision"], 1.0088314)
