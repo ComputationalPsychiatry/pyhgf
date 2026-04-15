@@ -191,3 +191,13 @@ This implementation of the Hierarchical Gaussian Filter was inspired by the orig
 7. Mathys, C., Weber, L. (2020). Hierarchical Gaussian Filtering of Sufficient Statistic Time Series for Active Inference. In: Verbelen, T., Lanillos, P., Buckley, C.L., De Boom, C. (eds) Active Inference. IWAI 2020. Communications in Computer and Information Science, vol 1326. Springer, Cham. https://doi.org/10.1007/978-3-030-64919-7_7
 8. Friston, K., Da Costa, L., Hafner, D., Hesp, C., & Parr, T. (2021). Sophisticated Inference. Neural Computation, 33(3), 713–763. https://doi.org/10.1162/neco_a_01351 
 9. Song, Y., Millidge, B., Salvatori, T. et al. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nat Neurosci 27, 348–358 (2024). https://doi.org/10.1038/s41593-023-01514-1 
+
+```{toctree}
+---
+hidden:
+---
+Learn <learn.md>
+API <api.rst>
+Cite <cite.md>
+References <references.md>
+```

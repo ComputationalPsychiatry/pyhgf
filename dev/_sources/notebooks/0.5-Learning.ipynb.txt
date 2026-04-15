@@ -1487,7 +1487,7 @@
    "source": [
     "### Decision boundary evolution\n",
     "\n",
-    "We animate the decision boundary heatmap across training epochs alongside the loss curve. The GIF shows how the predictive coding network gradually carves out a non-linear separator to distinguish the two moons."
+    "We animate the decision boundary heatmap across training epochs alongside the loss curve."
    ]
   },
   {
@@ -1505,7 +1505,7 @@
     "---\n",
     "name: two-moons-animation\n",
     "---\n",
-    "The animation above displays the mean and covariance tracking of a bivariate normal distribution. The ellipse represents the 95% confidence interval of the covariance matrix. We can see that uncertainty is increasing in noisier sections of the distribution trajectory.\n",
+    "The GIF shows how the predictive coding network gradually carves out a non-linear separator to distinguish the two moons.\n",
     "```"
    ]
   },
