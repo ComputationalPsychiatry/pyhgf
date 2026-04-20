@@ -1,0 +1,17 @@
+/* Make all grid cards equal height */
+.sd-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sd-card .sd-card-body {
+  flex-grow: 1; /* ensures text stretches evenly */
+}
+
+/* Force vignette images to have the same height */
+.sd-card img {
+  height: 250px;
+  object-fit: contain; /* scale while preserving aspect ratio */
+  width: 100%;        /* ensure consistent scaling */
+}

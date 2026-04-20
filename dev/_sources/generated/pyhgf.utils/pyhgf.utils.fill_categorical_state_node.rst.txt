@@ -1,0 +1,6 @@
+﻿pyhgf.utils.fill\_categorical\_state\_node
+==========================================
+
+.. currentmodule:: pyhgf.utils
+
+.. autofunction:: fill_categorical_state_node

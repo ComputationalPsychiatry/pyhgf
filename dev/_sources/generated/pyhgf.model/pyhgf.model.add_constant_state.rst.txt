@@ -1,0 +1,6 @@
+﻿pyhgf.model.add\_constant\_state
+================================
+
+.. currentmodule:: pyhgf.model
+
+.. autofunction:: add_constant_state

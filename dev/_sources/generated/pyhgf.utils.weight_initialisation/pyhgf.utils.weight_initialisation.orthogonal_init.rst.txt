@@ -1,0 +1,6 @@
+﻿pyhgf.utils.weight\_initialisation.orthogonal\_init
+===================================================
+
+.. currentmodule:: pyhgf.utils.weight_initialisation
+
+.. autofunction:: orthogonal_init

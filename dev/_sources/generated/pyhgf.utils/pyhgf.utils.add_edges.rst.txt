@@ -1,0 +1,6 @@
+﻿pyhgf.utils.add\_edges
+======================
+
+.. currentmodule:: pyhgf.utils
+
+.. autofunction:: add_edges
