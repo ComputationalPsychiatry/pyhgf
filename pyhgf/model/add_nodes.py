@@ -157,6 +157,10 @@ def add_constant_state(
     Constant-state nodes hold a fixed mean of 1.0 and have no prediction or update
     steps. They can only have children, never parents.
     """
+    # Validate that constant-state nodes cannot have volatility children
+    if volatility_children[0] is not None and len(volatility_children[0]) > 0:
+        raise ValueError("Constant-state nodes cannot have volatility children. ")
+
     node_type = 0
 
     default_parameters = {

@@ -61,6 +61,14 @@ def add_edges(
 
     assert isinstance(coupling_strengths, (list, tuple))
 
+    # Constant-state nodes can only be parents, never children.
+    for children_idx in children_idxs:
+        if edges[children_idx].node_type == 0:
+            raise ValueError(
+                "Constant-state nodes cannot have parents. "
+                f"Cannot add {kind} coupling to constant-state node {children_idx}."
+            )
+
     edges_as_list = list(edges)
     # update the parent nodes
     # -----------------------

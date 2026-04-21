@@ -122,28 +122,24 @@ class DeepNetwork:
         size :
             Number of nodes in the layer.
         kind :
-            Type of nodes in this layer.  ``"volatile"`` (default) uses
-            continuous volatile nodes with value and volatility levels.
-            ``"binary"`` uses binary state nodes whose expected mean is the
-            sigmoid of the parent prediction and whose expected precision is
-            ``μ̂(1 − μ̂)``.
+            Type of nodes in this layer. ``"volatile"`` (default) uses volatile nodes
+            with value and volatility levels. ``"binary"`` uses binary state nodes.
         tonic_volatility :
-            Tonic volatility for the value level (log scale).
-            Only used for ``"volatile"`` layers.
+            Tonic volatility for the value level (log scale). Only used for
+            ``"volatile"`` layers.
         tonic_volatility_vol :
-            Tonic volatility for the volatility level (log scale).
-            Only used for ``"volatile"`` layers.
+            Tonic volatility for the volatility level (log scale). Only used for
+            ``"volatile"`` layers.
         volatility_coupling :
-            Coupling strength between the value and volatility levels.
-            Only used for ``"volatile"`` layers.
+            Coupling strength between the value and volatility levels. Only used for
+            ``"volatile"`` layers.
         add_constant_input :
-            If True, add a bias term to the layer's predictions.
+            If `True`, add a bias term to the layer's predictions.
         fully_connected :
-            If True (default), each node in this layer connects to every node
-            in the child layer (dense weight matrix).  If False, nodes connect
-            one-to-one with the child layer (diagonal weight matrix).  This
-            requires both layers to have the same size and
-            ``add_constant_input=False``.
+            If `True` (default), each node in this layer connects to every node in the
+            child layer (dense weight matrix).  If False, nodes connect one-to-one with
+            the child layer (diagonal weight matrix). This requires both layers to have
+            the same size and ``add_constant_input=False``.
         coupling_fn :
             Coupling function for this layer. If None, uses the network-level coupling
             function.
@@ -161,7 +157,7 @@ class DeepNetwork:
             If *fully_connected* is False with ``add_constant_input=True``.
         ValueError
             If *fully_connected* is False and this layer's size differs from
-            the preceding child layer.
+            the preceding child layer (for non-binary child layers).
         """
         # Normalise Rust-style kind names to short form
         _kind_aliases = {
@@ -361,6 +357,9 @@ class DeepNetwork:
 
         new_weights = list(self.state.weights)
         for i, w in enumerate(new_weights):
+            # Binary child layers always use 1.0 weights — skip initialisation.
+            if self.layer_kinds[i] == "binary":
+                continue
             n_children, n_parents = w.shape  # (prev_size, size)
             flat = init_fn(n_parents, n_children, seed=seed, **kwargs)
             new_weights[i] = jnp.array(flat.reshape(w.shape))
