@@ -86,6 +86,22 @@ def test_network():
         custom_hgf.add_nodes(kind="error")
 
 
+def test_constant_state_nodes_reject_invalid_parent_links():
+    """Constant-state nodes must not be children of any other node."""
+    net = Network().add_nodes(kind="volatile-state")
+    net = net.add_nodes(kind="constant-state", value_children=0)
+
+    with raises(ValueError, match="Constant-state nodes cannot have parents"):
+        net.add_nodes(kind="volatile-state", value_children=1)
+
+    with raises(
+        ValueError, match="Constant-state nodes cannot have volatility children"
+    ):
+        Network().add_nodes(kind="volatile-state").add_nodes(
+            kind="constant-state", volatility_children=0
+        )
+
+
 def test_continuous_hgf():
     """Test the continuous HGF."""
     ##############

@@ -1,4 +1,5 @@
 use rshgf::model::Network;
+use std::collections::HashMap;
 
 /// Helper to assert approximate equality of f64 values.
 fn assert_close(actual: f64, expected: f64, tol: f64, label: &str) {
@@ -77,7 +78,8 @@ fn assert_vol_level_match(
 fn build_volatile_network(update_type: &str, data: &[f64]) -> Network {
     let mut net = Network::new(update_type);
     net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-    net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
+    net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
+        Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
     net.set_update_sequence();
     net.input_data(data.iter().map(|v| vec![*v]).collect(), None, true);
     net

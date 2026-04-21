@@ -81,6 +81,7 @@ def test_continuous_posterior_updates():
 
     # volatility update
     attributes, edges, _ = network.get_network()
+    attributes[-1]["time_step"] = 1.0
     attributes[1]["temp"]["current_variance"] = 1.0
     attributes[1]["expected_precision"] = 0.9820137619972229
     attributes[1]["mean"] = 0.5225493907928467
@@ -89,5 +90,5 @@ def test_continuous_posterior_updates():
     new_attributes = continuous_node_posterior_update_unbounded(
         attributes=attributes, node_idx=2, edges=edges
     )
-    assert jnp.isclose(new_attributes[2]["mean"], -0.00210728)
-    assert jnp.isclose(new_attributes[2]["precision"], 1.0088314)
+    assert jnp.isclose(new_attributes[2]["mean"], 0.01330645)
+    assert jnp.isclose(new_attributes[2]["precision"], 1.0161277)
