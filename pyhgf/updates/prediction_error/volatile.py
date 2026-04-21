@@ -10,8 +10,10 @@ from pyhgf.updates.posterior.volatile import (
 )
 
 
-@partial(jit, static_argnames=("node_idx",))
-def volatile_node_value_prediction_error(attributes: dict, node_idx: int) -> dict:
+@partial(jit, static_argnames=("node_idx", "edges"))
+def volatile_node_value_prediction_error(
+    attributes: dict, node_idx: int, edges: "Edges | None" = None
+) -> dict:
     """Compute the value prediction error of the value level.
 
     This is used by external value parents (if any).
@@ -21,9 +23,19 @@ def volatile_node_value_prediction_error(attributes: dict, node_idx: int) -> dic
         attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
     )
 
-    # Divide by number of value parents (if any)
+    # Divide by number of non-constant value parents (if any)
     if attributes[node_idx]["value_coupling_parents"] is not None:
-        value_prediction_error /= len(attributes[node_idx]["value_coupling_parents"])
+        if edges is not None and edges[node_idx].value_parents is not None:
+            n_non_const = sum(
+                edges[p].node_type != 0
+                for p in edges[node_idx].value_parents  # type: ignore[union-attr]
+            )
+            if n_non_const > 0:
+                value_prediction_error /= n_non_const
+        else:
+            value_prediction_error /= len(
+                attributes[node_idx]["value_coupling_parents"]
+            )
 
     attributes[node_idx]["temp"]["value_prediction_error"] = value_prediction_error
 
@@ -48,9 +60,6 @@ def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -
         - 1
     )
 
-    # This is internal coupling (always 1 volatility "parent")
-    # No division needed
-
     attributes[node_idx]["temp"]["volatility_prediction_error"] = (
         volatility_prediction_error
     )
@@ -71,7 +80,7 @@ def volatile_node_prediction_error(
     # ----------------------------------------------------------------------------------
 
     # value prediction error
-    attributes = volatile_node_value_prediction_error(attributes, node_idx)
+    attributes = volatile_node_value_prediction_error(attributes, node_idx, edges)
 
     # volatility prediction error
     attributes = volatile_node_volatility_prediction_error(attributes, node_idx)

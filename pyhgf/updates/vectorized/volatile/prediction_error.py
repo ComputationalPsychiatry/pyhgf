@@ -10,9 +10,8 @@ the correct order.
 """
 
 import jax.numpy as jnp
-from jax.nn import sigmoid
 
-from pyhgf.math import smoothed_rectangular
+from pyhgf.math import lambert_w0
 from pyhgf.typing import LayerParams, LayerState
 
 # ---------------------------------------------------------------------------
@@ -55,6 +54,9 @@ def vectorized_layer_volatility_prediction_error(
     This is the vectorized equivalent of
     :func:`pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error`.
 
+    Note that we are not dividing by the number of parents here, since volatile nodes
+    only have one implied parent.
+
     Parameters
     ----------
     layer :
@@ -69,9 +71,10 @@ def vectorized_layer_volatility_prediction_error(
     """
     volatility_pe = (
         (layer.expected_precision / layer.precision)
-        + layer.expected_precision * (layer.value_prediction_error**2)
+        + layer.expected_precision * ((layer.mean - layer.expected_mean) ** 2)
         - 1.0
     )
+
     return layer._replace(volatility_prediction_error=volatility_pe)
 
 
@@ -188,7 +191,11 @@ def vectorized_layer_volatility_posterior_unbounded(
     params: LayerParams,
     time_step: float,
 ) -> LayerState:
-    """Unbounded volatility-level posterior update (quadratic approximation).
+    """Unbounded volatility-level posterior update (Lambert W₀ dual-quadratic).
+
+    Implements the uhgf update: two quadratic expansions blended via a
+    variational energy-based softmax, with Gaussian mixture moment matching
+    for the final posterior precision.
 
     This is the vectorized equivalent of
     :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded`.
@@ -208,101 +215,81 @@ def vectorized_layer_volatility_posterior_unbounded(
     LayerState
         Updated layer state with ``precision_vol`` and ``mean_vol`` set.
     """
-    vol_coupling = params.volatility_coupling
-
-    # Reconstruct pre-prediction variance (1/precision before prediction step).
-    predicted_volatility = time_step * jnp.exp(
-        jnp.clip(
-            params.tonic_volatility + vol_coupling * layer.expected_mean_vol,
-            a_min=-80.0,
-            a_max=80.0,
-        )
-    )
-    previous_child_variance = 1.0 / layer.expected_precision - predicted_volatility
-    previous_child_variance = jnp.maximum(previous_child_variance, 1e-128)
-
-    # Delta: normalised innovation
-    delta_child = (
-        (1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2
-    ) / (
-        previous_child_variance
-        + jnp.exp(
-            jnp.clip(
-                vol_coupling * layer.expected_mean_vol + params.tonic_volatility,
-                a_min=-80.0,
-                a_max=80.0,
-            )
-        )
-    ) - 1.0
-
-    # ------------------------------------------------------------------
-    # First quadratic approximation L1
-    # ------------------------------------------------------------------
-    x = vol_coupling * layer.expected_mean_vol + params.tonic_volatility
-
-    w_child = sigmoid(x - jnp.log(previous_child_variance))
-
-    pi_l1 = layer.expected_precision_vol + 0.5 * vol_coupling**2 * w_child * (
-        1.0 - w_child
-    )
-
-    mu_l1 = (
-        layer.expected_mean_vol
-        + ((vol_coupling * w_child) / (2.0 * pi_l1)) * delta_child
-    )
-
-    # ------------------------------------------------------------------
-    # Second quadratic approximation L2
-    # ------------------------------------------------------------------
-
-    # Canonical expansion point and its map back to native space
-    ka = vol_coupling
+    ka = params.volatility_coupling
     om = params.tonic_volatility
-    phi_canon = jnp.log(previous_child_variance * (2.0 + jnp.sqrt(3.0)))
-    phi_full = (phi_canon - om) / ka
 
-    # At phi_full, exp(ka*phi_full + om) = previous_child_variance*(2+sqrt(3))
-    # by construction — use this directly to avoid numerical round-trips
-    exp_at_phi = previous_child_variance * (2.0 + jnp.sqrt(3.0))
-
-    w_phi = exp_at_phi / (previous_child_variance + exp_at_phi)
-
-    delta_phi = ((1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2) / (
-        previous_child_variance + exp_at_phi
-    ) - 1.0
-
-    pi_l2 = layer.expected_precision_vol + 0.5 * ka**2 * w_phi * (
-        w_phi + (2.0 * w_phi - 1.0) * delta_phi
+    # Reconstruct al_aux = 1/pi_prev_jm1
+    predicted_volatility = time_step * jnp.exp(
+        jnp.clip(om + ka * layer.expected_mean_vol, a_min=-80.0, a_max=80.0)
     )
-
-    mu_hat_phi = (
-        (pi_l2 - layer.expected_precision_vol) * phi_full
-        + layer.expected_precision_vol * layer.expected_mean_vol
-    ) / pi_l2
-
-    mu_l2 = mu_hat_phi + ((ka * w_phi) / (2.0 * pi_l2)) * delta_phi
-
-    # ------------------------------------------------------------------
-    # Full quadratic approximation: weighted combination of L1 and L2
-    # ------------------------------------------------------------------
-
-    # Total posterior uncertainty at child level (be_aux in the Matlab code)
+    al_aux = jnp.maximum(1.0 / layer.expected_precision - predicted_volatility, 1e-128)
     be_aux = (1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2
 
-    # Blending operates in canonical exponent space y = ka * muhat + om
-    y_pred = ka * layer.expected_mean_vol + om
-    theta_l = -jnp.sqrt(1.2 * 2.0 * be_aux / previous_child_variance)
+    muhat_j = layer.expected_mean_vol
+    pihat_j = layer.expected_precision_vol
 
-    weighting = smoothed_rectangular(
-        x=y_pred,
-        theta_l=theta_l,
-        phi_l=8.0,
-        theta_r=0.0,
-        phi_r=1.0,
+    # Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om
+    gamma_c = jnp.log(time_step) + ka * muhat_j + om
+
+    # Recompute v and w using muhat_j
+    v_jm1 = jnp.exp(jnp.clip(gamma_c, a_min=-80.0, a_max=80.0))
+    w_jm1 = v_jm1 / (al_aux + v_jm1)
+    da_jm1 = be_aux / (al_aux + v_jm1) - 1.0
+
+    # ------------------------------------------------------------------
+    # Expansion 1: quadratic at the prediction (prior mean)
+    # ------------------------------------------------------------------
+    pi1 = pihat_j + 0.5 * ka**2 * w_jm1 * (1.0 - w_jm1)
+    mu1 = muhat_j + (ka * w_jm1 / (2.0 * pi1)) * da_jm1
+
+    # ------------------------------------------------------------------
+    # Expansion 2: quadratic at the Lambert W₀ approximate mode
+    # ------------------------------------------------------------------
+    pihat_y = pihat_j / ka**2
+    W_arg = (be_aux / (2.0 * pihat_y)) * jnp.exp(
+        jnp.clip(0.5 / pihat_y - gamma_c, a_min=-80.0, a_max=80.0)
+    )
+    v_W = lambert_w0(W_arg)
+    y_star = gamma_c + v_W - 0.5 / pihat_y
+    x_star = (y_star - jnp.log(time_step) - om) / ka
+
+    s2 = time_step * jnp.exp(jnp.clip(ka * x_star + om, a_min=-80.0, a_max=80.0))
+    w2 = s2 / (al_aux + s2)
+    da2 = be_aux / (al_aux + s2) - 1.0
+
+    pi2_full = pihat_j + 0.5 * ka**2 * w2 * (w2 + (2.0 * w2 - 1.0) * da2)
+    pi2 = jnp.where(
+        pi2_full <= 0.0,
+        pihat_j + 0.5 * ka**2 * w2 * (1.0 - w2),
+        pi2_full,
+    )
+    mu2 = x_star + (0.5 * ka * w2 * da2 - pihat_j * (x_star - muhat_j)) / pi2
+
+    # ------------------------------------------------------------------
+    # Variational energy-based softmax blend
+    # ------------------------------------------------------------------
+    ey1 = time_step * jnp.exp(jnp.clip(ka * mu1 + om, a_min=-80.0, a_max=80.0))
+    I1 = (
+        -0.5 * jnp.log(al_aux + ey1)
+        - 0.5 * be_aux / (al_aux + ey1)
+        - 0.5 * pihat_j * (mu1 - muhat_j) ** 2
     )
 
-    posterior_precision_vol = (1.0 - weighting) * pi_l1 + weighting * pi_l2
-    posterior_mean_vol = (1.0 - weighting) * mu_l1 + weighting * mu_l2
+    ey2 = time_step * jnp.exp(jnp.clip(ka * mu2 + om, a_min=-80.0, a_max=80.0))
+    I2 = (
+        -0.5 * jnp.log(al_aux + ey2)
+        - 0.5 * be_aux / (al_aux + ey2)
+        - 0.5 * pihat_j * (mu2 - muhat_j) ** 2
+    )
+
+    b = 1.0 / (1.0 + jnp.exp(I1 - I2))  # sigmoid(I2 - I1)
+
+    # ------------------------------------------------------------------
+    # Gaussian mixture moment matching
+    # ------------------------------------------------------------------
+    posterior_mean_vol = (1.0 - b) * mu1 + b * mu2
+    sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2) ** 2
+    posterior_precision_vol = 1.0 / sig2
 
     return layer._replace(
         precision_vol=posterior_precision_vol,

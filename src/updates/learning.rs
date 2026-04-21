@@ -7,6 +7,11 @@ pub fn learning_weights(
     node_idx: usize,
     _time_step: f64,
 ) {
+    // Binary-state nodes use implicit 1.0 coupling — weights are not learned.
+    if network.edges[node_idx].node_type == "binary-state" {
+        return;
+    }
+
     let n_parents = match &network.edges[node_idx].value_parents {
         Some(vp) => vp.len(),
         None => return,

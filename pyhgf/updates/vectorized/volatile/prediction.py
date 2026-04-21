@@ -50,7 +50,8 @@ def vectorized_layer_prediction(
     LayerState
         Updated child layer state with expected values filled in.
     """
-    # 1. VOLATILITY LEVEL PREDICTION (internal)
+    # 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------
+    # ----------------------------------------------------------------------------------
     # Expected mean for volatility level (autoconnection = 1.0)
     expected_mean_vol = child_state.mean_vol
 
@@ -68,7 +69,24 @@ def vectorized_layer_prediction(
     # Effective precision for volatility level
     effective_precision_vol = predicted_volatility_vol * expected_precision_vol
 
-    # 2. VALUE LEVEL PREDICTION (external)
+    # 2. VALUE LEVEL PREDICTION (external) ---------------------------------------------
+    # ----------------------------------------------------------------------------------
+
+    # Mean prediction via matrix multiply
+    # weights shape: (n_children, n_parents) or (n_children, n_parents + 1)
+    # parent_state.expected_mean shape: (n_parents,)
+    parent_mean = parent_state.expected_mean
+    if parent_has_constant:
+        # Append constant 1.0 for bias node before applying coupling_fn
+        parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
+    coupled_parents = coupling_fn(parent_mean)
+    drift = jnp.matmul(weights, coupled_parents)
+
+    # Expected mean for value level
+    # Note: autoconnection_strength = 0 for i.i.d. classification
+    # (the previous observation should not bias the next prediction)
+    expected_mean = time_step * drift
+
     # Total volatility includes contribution from internal volatility level
     total_volatility = (
         params.tonic_volatility + params.volatility_coupling * expected_mean_vol
@@ -85,21 +103,6 @@ def vectorized_layer_prediction(
 
     # Effective precision for value level
     effective_precision = predicted_volatility * expected_precision
-
-    # Mean prediction via matrix multiply
-    # weights shape: (n_children, n_parents) or (n_children, n_parents + 1)
-    # parent_state.expected_mean shape: (n_parents,)
-    parent_mean = parent_state.expected_mean
-    if parent_has_constant:
-        # Append constant 1.0 for bias node before applying coupling_fn
-        parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
-    coupled_parents = coupling_fn(parent_mean)
-    drift = jnp.matmul(weights, coupled_parents)
-
-    # Expected mean for value level
-    # Note: autoconnection_strength = 0 for i.i.d. classification
-    # (the previous observation should not bias the next prediction)
-    expected_mean = time_step * drift
 
     return child_state._replace(
         expected_mean=expected_mean,

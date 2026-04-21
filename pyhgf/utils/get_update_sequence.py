@@ -194,7 +194,10 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
             # if this node has no parent, no need to compute prediction errors
             # unless this is an exponential family state node with fixed learning rate
-            if len(all_parents) == 0:
+            # or a volatile-state node (which updates its own volatility level).
+            # Volatile-state nodes must wait for their value-level posterior update first
+            # (same ordering rule as nodes with parents).
+            if len(all_parents) == 0 and network.edges[idx].node_type != 6:
                 if network.edges[idx].node_type == 3:
                     # retrieve the desired sufficient statistics function
                     # from the side parameter dictionary

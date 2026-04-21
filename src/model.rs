@@ -545,7 +545,7 @@ impl Network {
                     expected_precision: 1.0,
                     tonic_volatility: -4.0,
                     tonic_drift: 0.0,
-                    autoconnection_strength: 1.0,
+                    autoconnection_strength: 0.0,
                     current_variance: 1.0,
                     mean_vol: 0.0,
                     expected_mean_vol: 0.0,
@@ -1071,7 +1071,12 @@ impl Network {
                 }
             }
 
-            if !pre_layer.is_empty() {
+            // Binary-state children always use 1.0 weights — skip initialisation.
+            let pre_layer_has_binary = pre_layer
+                .iter()
+                .any(|&idx| self.edges[idx].node_type == "binary-state");
+
+            if !pre_layer.is_empty() && !pre_layer_has_binary {
                 let parent_nodes = first_layer.clone();
                 let n_parents = parent_nodes.len();
                 let n_children = pre_layer.len();
@@ -1517,7 +1522,8 @@ mod tests {
     fn test_volatile_node_ehgf_matches_explicit() {
         let mut volatile_net = Network::new("eHGF");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
+            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
         volatile_net.set_update_sequence();
 
         let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
@@ -1537,7 +1543,8 @@ mod tests {
     fn test_volatile_node_standard_matches_explicit() {
         let mut volatile_net = Network::new("standard");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
+            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
         volatile_net.set_update_sequence();
 
         let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
@@ -1557,7 +1564,8 @@ mod tests {
     fn test_volatile_node_unbounded_matches_explicit() {
         let mut volatile_net = Network::new("unbounded");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None, None);
+        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
+            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
         volatile_net.set_update_sequence();
 
         let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();

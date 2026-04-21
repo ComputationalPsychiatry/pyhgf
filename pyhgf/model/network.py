@@ -260,6 +260,7 @@ class Network:
         # only continuous-state (node_type 2) and volatile-state (node_type 6) nodes
         # are eligible; binary-state nodes use sigmoid(Σ parent_expected_mean) which
         # does not involve coupling weights, so the linear learning rule would be wrong.
+        # Constant-state nodes (node_type 0) cannot have parents, so they are excluded.
         learning_steps = []  # list of weight update to perform at this layer
         for i, update in enumerate(update_steps):
             fn = update[1]
@@ -268,6 +269,12 @@ class Network:
             )
             if fn is not None and "prediction_error" in fn_name:
                 node_idx = update[0]
+                # Skip constant-state nodes (they cannot have parents)
+                if self.edges[node_idx].node_type == 0:
+                    continue
+                # Skip nodes without value parents (nothing to learn)
+                if self.edges[node_idx].value_parents is None:
+                    continue
                 if self.edges[node_idx].node_type in {
                     2,
                     6,

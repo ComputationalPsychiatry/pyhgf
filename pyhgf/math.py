@@ -390,3 +390,19 @@ def smoothed_rectangular(
     return parametrised_sigmoid(x, theta_l, phi_l) * (
         1 - parametrised_sigmoid(x, theta_r, phi_r)
     )
+
+
+def lambert_w0(z: ArrayLike) -> Array:
+    """Principal branch of the Lambert W function for z >= 0.
+
+    Solves ``w * exp(w) = z`` via 6 Halley iterations, which yields machine
+    precision for all z >= 0.
+    """
+    w = jnp.log(z + 1.0)
+    for _ in range(6):
+        ew = jnp.exp(w)
+        f = w * ew - z
+        f1 = (w + 1.0) * ew
+        f2 = (w + 2.0) * ew
+        w = w - (2.0 * f * f1) / (2.0 * f1**2 - f * f2)
+    return w
