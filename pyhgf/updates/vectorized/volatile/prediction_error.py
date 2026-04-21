@@ -308,6 +308,7 @@ def vectorized_layer_prediction_error(
     params: LayerParams,
     update_type: str = "eHGF",
     time_step: float = 1.0,
+    has_volatility_parent: bool = True,
 ) -> LayerState:
     """Compute prediction errors and apply the volatility-level posterior update.
 
@@ -328,20 +329,26 @@ def vectorized_layer_prediction_error(
         One of ``"eHGF"`` (default), ``"standard"``, or ``"unbounded"``.
     time_step :
         Current time step.  Only required when ``update_type="unbounded"``.
+    has_volatility_parent :
+        If True (default), compute the volatility prediction error and apply
+        the volatility-level posterior update (mean_vol, precision_vol).
+        If False, only the value prediction error is computed and the
+        volatility level is left unchanged.
 
     Returns
     -------
     LayerState
         Updated layer state with prediction errors and volatility posterior.
     """
-    # 1. Prediction errors
-    layer = vectorized_layer_value_prediction_error(
-        layer,
-        n_parents,
-    )
+    # 1. Value prediction error (always computed)
+    layer = vectorized_layer_value_prediction_error(layer, n_parents)
+
+    if not has_volatility_parent:
+        return layer
+
+    # 2. Volatility prediction error and posterior update
     layer = vectorized_layer_volatility_prediction_error(layer)
 
-    # 2. Posterior updates for the volatility level
     if update_type == "eHGF":
         layer = vectorized_layer_volatility_posterior_ehgf(layer, params)
     elif update_type == "standard":

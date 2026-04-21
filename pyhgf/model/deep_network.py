@@ -95,6 +95,7 @@ class DeepNetwork:
         self.add_constant_inputs: list[bool] = []
         self.fully_connected: list[bool] = []
         self.coupling_fns: list[Callable] = []  # per-layer coupling functions
+        self.volatility_parents: list[bool] = []
         self.state: Optional[NetworkState] = None
         self.trajectories: Optional[NetworkState] = None
         self.predictions: Optional[jnp.ndarray] = None
@@ -114,6 +115,7 @@ class DeepNetwork:
         add_constant_input: bool = True,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
+        volatility_parent: bool = True,
     ) -> "DeepNetwork":
         """Add a layer of nodes.
 
@@ -143,6 +145,11 @@ class DeepNetwork:
         coupling_fn :
             Coupling function for this layer. If None, uses the network-level coupling
             function.
+        volatility_parent :
+            If True (default), this layer has an implied internal volatility parent:
+            mean_vol and precision_vol are predicted and updated each step. If False,
+            the volatility level is frozen and only tonic_volatility determines the
+            expected precision for the value level.
 
         Returns
         -------
@@ -194,6 +201,7 @@ class DeepNetwork:
         self.coupling_fns.append(
             coupling_fn if coupling_fn is not None else self.coupling_fn
         )
+        self.volatility_parents.append(volatility_parent)
         return self
 
     def add_layer_stack(
@@ -412,6 +420,7 @@ class DeepNetwork:
         add_constant_inputs = self.add_constant_inputs  # captured for bias updates
         layer_kinds = self.layer_kinds
         update_type = self.update_type
+        volatility_parents = self.volatility_parents
 
         # Build Adam parameters tuple (or None)
         # Format: (beta1, beta2, epsilon, adam_lr_override)
@@ -439,6 +448,7 @@ class DeepNetwork:
                     layer_kinds,
                     adam_params,
                     update_type,
+                    volatility_parents,
                 )
                 return new_state, (new_state, output_pred)
 
@@ -455,6 +465,7 @@ class DeepNetwork:
                     layer_kinds,
                     adam_params,
                     update_type,
+                    volatility_parents,
                 )
 
         return jax.jit(_step)
@@ -470,6 +481,7 @@ class DeepNetwork:
         coupling_fns = self.coupling_fns
         add_constant_inputs = self.add_constant_inputs
         layer_kinds = self.layer_kinds
+        volatility_parents = self.volatility_parents
 
         def prediction_step(state: NetworkState, x):
             """Forward prediction without learning."""
@@ -500,6 +512,7 @@ class DeepNetwork:
                         time_step=state.time_step,
                         coupling_fn=coupling_fns[i],
                         parent_has_constant=add_constant_inputs[i],
+                        has_volatility_parent=volatility_parents[i - 1],
                     )
 
             # Return output layer expected mean

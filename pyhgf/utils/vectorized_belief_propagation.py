@@ -32,6 +32,7 @@ def propagation_step(
     layer_kinds: Optional[list[str]] = None,
     adam_params: Optional[tuple[float, float, float, Optional[float]]] = None,
     update_type: str = "eHGF",
+    volatility_parents: Optional[list[bool]] = None,
 ) -> tuple[NetworkState, jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -60,6 +61,12 @@ def propagation_step(
         Tuple ``(beta1, beta2, epsilon, lr_override)`` for Adam optimiser.
         ``lr_override`` is an optional Adam-specific learning rate that overrides the
         main *lr* argument.  When *None*, Adam is not used.
+    volatility_parents :
+        Per-layer flag controlling whether the implied internal volatility parent
+        is active.  When ``True`` (default), mean_vol and precision_vol are
+        predicted and updated for that layer.  When ``False``, the volatility
+        level is frozen and only tonic_volatility determines the expected
+        precision.  Defaults to all ``True`` when *None*.
 
     Returns
     -------
@@ -78,6 +85,10 @@ def propagation_step(
     # Default: all volatile layers
     if layer_kinds is None:
         layer_kinds = ["volatile"] * n_layers
+
+    # Default: all layers have an implied volatility parent
+    if volatility_parents is None:
+        volatility_parents = [True] * n_layers
 
     # 1. Set predictors (top layer = input)
     layers[-1] = layers[-1]._replace(expected_mean=x, mean=x)
@@ -104,6 +115,7 @@ def propagation_step(
                 time_step=state.time_step,
                 coupling_fn=coupling_fns[i],
                 parent_has_constant=add_constant_inputs[i],
+                has_volatility_parent=volatility_parents[i - 1],
             )
 
     # Step 4a: PE for output layer (mean = y, observation-pinned)
@@ -117,6 +129,7 @@ def propagation_step(
             n_parents=n_parents_0,
             params=params[0],
             update_type=update_type,
+            has_volatility_parent=volatility_parents[0],
         )
 
     # Step 4b: per hidden layer — posterior then PE (interleaved)
@@ -140,6 +153,7 @@ def propagation_step(
                 n_parents=n_vp,
                 params=params[i],
                 update_type=update_type,
+                has_volatility_parent=volatility_parents[i],
             )
 
     # ========== LEARNING PHASE (after inference converges) ==========
