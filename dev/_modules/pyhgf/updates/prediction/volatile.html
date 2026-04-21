@@ -871,7 +871,6 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">jit</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Edges</span>
 
@@ -1033,20 +1032,6 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Value level&#39;s mean</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">predict_mean_value_level</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">)</span>
-
-    <span class="c1"># Scale expected precision when this node is the value parent of a binary node.</span>
-    <span class="c1"># Mirrors the scaling applied in the vectorized backend (scale_precision flag).</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">child_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span>  <span class="c1"># type: ignore[union-attr]</span>
-            <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># binary-state</span>
-                <span class="n">prev_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
-                <span class="n">prev_exp_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-                <span class="n">precision_scale</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">prev_mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">prev_mean</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span>
-                    <span class="n">sigmoid</span><span class="p">(</span><span class="n">prev_exp_mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">prev_exp_mean</span><span class="p">))</span>
-                <span class="p">)</span>
-                <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">expected_precision</span> <span class="o">*</span> <span class="n">precision_scale</span>
-                <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">effective_precision</span> <span class="o">*</span> <span class="n">precision_scale</span>
-                <span class="k">break</span>
 
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_precision</span>

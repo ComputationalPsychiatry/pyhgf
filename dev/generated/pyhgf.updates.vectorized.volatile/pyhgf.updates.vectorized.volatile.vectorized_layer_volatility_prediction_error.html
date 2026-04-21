@@ -648,6 +648,8 @@
 <dd><p>Compute the volatility prediction error for all nodes in a layer.</p>
 <p>This is the vectorized equivalent of
 <a class="reference internal" href="../pyhgf.updates.prediction_error.volatile/pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error.html#pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error" title="pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error()</span></code></a>.</p>
+<p>Note that we are not dividing by the number of parents here, since volatile nodes
+only have one implied parent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>layer</strong> (<em>LayerState</em>) – Current layer.  Must already carry an up-to-date

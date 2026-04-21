@@ -875,7 +875,6 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span>
 
@@ -890,7 +889,6 @@ window.runMermaid = runMermaid;</script>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">scale_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict expected mean/precision for all nodes in child layer (volatile node).</span>
 
@@ -917,9 +915,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        If True, the parent layer has a constant input node (mean = 1.0)</span>
 <span class="sd">        appended to its activations.  The last column of *weights*</span>
 <span class="sd">        carries the bias connections.</span>
-<span class="sd">    scale_precision :</span>
-<span class="sd">        If True, the node has a binary child and the expected precision should be scaled</span>
-<span class="sd">        to account for the influence of the sigmoid transform.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -976,17 +971,6 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Expected precision for value level</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">scale_precision</span><span class="p">:</span>
-        <span class="c1"># scale precision by the ratio of Bernoulli variances at t-1 vs t</span>
-        <span class="n">expected_precision</span> <span class="o">*=</span> <span class="p">(</span>
-            <span class="n">sigmoid</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
-            <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">mean</span><span class="p">))</span>
-            <span class="o">/</span> <span class="p">(</span>
-                <span class="n">sigmoid</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
-                <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">))</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
 
     <span class="c1"># Effective precision for value level</span>
     <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>

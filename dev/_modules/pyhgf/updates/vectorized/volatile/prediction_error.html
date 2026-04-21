@@ -928,6 +928,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    This is the vectorized equivalent of</span>
 <span class="sd">    :func:`pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error`.</span>
 
+<span class="sd">    Note that we are not dividing by the number of parents here, since volatile nodes</span>
+<span class="sd">    only have one implied parent.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    layer :</span>
@@ -942,9 +945,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">volatility_pe</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">*</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">value_prediction_error</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">*</span> <span class="p">((</span><span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
         <span class="o">-</span> <span class="mf">1.0</span>
     <span class="p">)</span>
+
     <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">volatility_pe</span><span class="p">)</span></div>
 
 

@@ -996,28 +996,24 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        size :</span>
 <span class="sd">            Number of nodes in the layer.</span>
 <span class="sd">        kind :</span>
-<span class="sd">            Type of nodes in this layer.  ``&quot;volatile&quot;`` (default) uses</span>
-<span class="sd">            continuous volatile nodes with value and volatility levels.</span>
-<span class="sd">            ``&quot;binary&quot;`` uses binary state nodes whose expected mean is the</span>
-<span class="sd">            sigmoid of the parent prediction and whose expected precision is</span>
-<span class="sd">            ``μ̂(1 − μ̂)``.</span>
+<span class="sd">            Type of nodes in this layer. ``&quot;volatile&quot;`` (default) uses volatile nodes</span>
+<span class="sd">            with value and volatility levels. ``&quot;binary&quot;`` uses binary state nodes.</span>
 <span class="sd">        tonic_volatility :</span>
-<span class="sd">            Tonic volatility for the value level (log scale).</span>
-<span class="sd">            Only used for ``&quot;volatile&quot;`` layers.</span>
+<span class="sd">            Tonic volatility for the value level (log scale). Only used for</span>
+<span class="sd">            ``&quot;volatile&quot;`` layers.</span>
 <span class="sd">        tonic_volatility_vol :</span>
-<span class="sd">            Tonic volatility for the volatility level (log scale).</span>
-<span class="sd">            Only used for ``&quot;volatile&quot;`` layers.</span>
+<span class="sd">            Tonic volatility for the volatility level (log scale). Only used for</span>
+<span class="sd">            ``&quot;volatile&quot;`` layers.</span>
 <span class="sd">        volatility_coupling :</span>
-<span class="sd">            Coupling strength between the value and volatility levels.</span>
-<span class="sd">            Only used for ``&quot;volatile&quot;`` layers.</span>
+<span class="sd">            Coupling strength between the value and volatility levels. Only used for</span>
+<span class="sd">            ``&quot;volatile&quot;`` layers.</span>
 <span class="sd">        add_constant_input :</span>
-<span class="sd">            If True, add a bias term to the layer&#39;s predictions.</span>
+<span class="sd">            If `True`, add a bias term to the layer&#39;s predictions.</span>
 <span class="sd">        fully_connected :</span>
-<span class="sd">            If True (default), each node in this layer connects to every node</span>
-<span class="sd">            in the child layer (dense weight matrix).  If False, nodes connect</span>
-<span class="sd">            one-to-one with the child layer (diagonal weight matrix).  This</span>
-<span class="sd">            requires both layers to have the same size and</span>
-<span class="sd">            ``add_constant_input=False``.</span>
+<span class="sd">            If `True` (default), each node in this layer connects to every node in the</span>
+<span class="sd">            child layer (dense weight matrix).  If False, nodes connect one-to-one with</span>
+<span class="sd">            the child layer (diagonal weight matrix). This requires both layers to have</span>
+<span class="sd">            the same size and ``add_constant_input=False``.</span>
 <span class="sd">        coupling_fn :</span>
 <span class="sd">            Coupling function for this layer. If None, uses the network-level coupling</span>
 <span class="sd">            function.</span>
@@ -1035,7 +1031,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            If *fully_connected* is False with ``add_constant_input=True``.</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            If *fully_connected* is False and this layer&#39;s size differs from</span>
-<span class="sd">            the preceding child layer.</span>
+<span class="sd">            the preceding child layer (for non-binary child layers).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Normalise Rust-style kind names to short form</span>
         <span class="n">_kind_aliases</span> <span class="o">=</span> <span class="p">{</span>
@@ -1060,23 +1056,6 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;One-to-one layers require the same size as the child &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;layer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span>
-                <span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;The parent of a binary layer must have the same number of nodes &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">fully_connected</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;The parent of a binary layer must use one-to-one connections &quot;</span>
-                    <span class="s2">&quot;(fully_connected=False).&quot;</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">add_constant_input</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;The parent of a binary layer must not have a constant input &quot;</span>
-                    <span class="s2">&quot;(add_constant_input=False).&quot;</span>
                 <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
@@ -1252,6 +1231,9 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">new_weights</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_weights</span><span class="p">):</span>
+            <span class="c1"># Binary child layers always use 1.0 weights — skip initialisation.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># (prev_size, size)</span>
             <span class="n">flat</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">new_weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
@@ -1392,7 +1374,6 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">time_step</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">time_step</span><span class="p">,</span>
                         <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                         <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                        <span class="n">scale_precision</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">layer_kinds</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">),</span>
                     <span class="p">)</span>
 
             <span class="c1"># Return output layer expected mean</span>
