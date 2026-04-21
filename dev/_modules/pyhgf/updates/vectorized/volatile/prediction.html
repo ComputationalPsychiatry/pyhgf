@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -39,10 +39,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
     <script src="../../../../../_static/documentation_options.js?v=8db09a1e"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -514,7 +514,9 @@ window.runMermaid = runMermaid;</script>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -889,6 +891,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict expected mean/precision for all nodes in child layer (volatile node).</span>
 
@@ -915,6 +918,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        If True, the parent layer has a constant input node (mean = 1.0)</span>
 <span class="sd">        appended to its activations.  The last column of *weights*</span>
 <span class="sd">        carries the bias connections.</span>
+<span class="sd">    has_volatility_parent :</span>
+<span class="sd">        If True (default), the layer has an implied internal volatility parent</span>
+<span class="sd">        whose state (mean_vol, precision_vol) is predicted and updated.</span>
+<span class="sd">        If False, the volatility level is frozen: mean_vol and precision_vol</span>
+<span class="sd">        are not propagated forward, and only tonic_volatility drives the</span>
+<span class="sd">        expected precision for the value level.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -923,22 +932,28 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="c1"># Expected mean for volatility level (autoconnection = 1.0)</span>
-    <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
+    <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
+        <span class="c1"># Expected mean for volatility level (autoconnection = 1.0)</span>
+        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
 
-    <span class="c1"># Predicted volatility for volatility level</span>
-    <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-        <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="mf">80.0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">80.0</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">predicted_volatility_vol</span><span class="p">,</span> <span class="mf">1e-128</span><span class="p">)</span>
+        <span class="c1"># Predicted volatility for volatility level</span>
+        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="mf">80.0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">80.0</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">predicted_volatility_vol</span><span class="p">,</span> <span class="mf">1e-128</span><span class="p">)</span>
 
-    <span class="c1"># Expected precision for volatility level</span>
-    <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="o">+</span> <span class="n">predicted_volatility_vol</span>
-    <span class="p">)</span>
+        <span class="c1"># Expected precision for volatility level</span>
+        <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="o">+</span> <span class="n">predicted_volatility_vol</span>
+        <span class="p">)</span>
 
-    <span class="c1"># Effective precision for volatility level</span>
-    <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">predicted_volatility_vol</span> <span class="o">*</span> <span class="n">expected_precision_vol</span>
+        <span class="c1"># Effective precision for volatility level</span>
+        <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">predicted_volatility_vol</span> <span class="o">*</span> <span class="n">expected_precision_vol</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Volatility level is frozen — pass through current values unchanged</span>
+        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
+        <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span>
+        <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">effective_precision_vol</span>
 
     <span class="c1"># 2. VALUE LEVEL PREDICTION (external) ---------------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
@@ -958,10 +973,14 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># (the previous observation should not bias the next prediction)</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">drift</span>
 
-    <span class="c1"># Total volatility includes contribution from internal volatility level</span>
-    <span class="n">total_volatility</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span> <span class="o">+</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">expected_mean_vol</span>
-    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
+        <span class="c1"># Total volatility includes contribution from internal volatility level</span>
+        <span class="n">total_volatility</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span> <span class="o">+</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">expected_mean_vol</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Only tonic volatility — no mean_vol contribution</span>
+        <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
 
     <span class="c1"># Predicted volatility for value level</span>
     <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
@@ -1013,8 +1032,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1048,7 +1067,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
 </p></div>
       
     </div>
