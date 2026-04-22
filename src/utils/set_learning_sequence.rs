@@ -31,7 +31,11 @@ pub fn build_learning_sequence(
         .filter_map(|&(idx, step)| {
             if step.name().contains("prediction_error") {
                 let is_learnable = edges.get(idx)
-                    .map(|e| e.node_type == "continuous-state" || e.node_type == "volatile-state")
+                    .map(|e| {
+                        e.node_type == "continuous-state"
+                            || e.node_type == "volatile-state"
+                            || e.node_type == "binary-state"
+                    })
                     .unwrap_or(false);
                 if is_learnable {
                     Some((idx, UpdateStep::LearningWeights))
@@ -192,7 +196,7 @@ mod tests {
     }
 
     #[test]
-    fn test_binary_node_excluded_from_learning() {
+    fn test_binary_node_included_in_learning() {
         let mut edges = make_edges(&[0, 1]);
         edges[0].node_type = String::from("binary-state");
 
@@ -202,8 +206,10 @@ mod tests {
         ];
         let seq = build_learning_sequence(&[], &updates, &[], &edges);
 
-        assert_eq!(seq.learning_steps.len(), 1);
-        assert_eq!(seq.learning_steps[0].0, 1);
+        // Both binary-state (0) and continuous-state (1) are now learnable.
+        assert_eq!(seq.learning_steps.len(), 2);
+        assert!(seq.learning_steps.iter().any(|(idx, _)| *idx == 0));
+        assert!(seq.learning_steps.iter().any(|(idx, _)| *idx == 1));
     }
 
     #[test]

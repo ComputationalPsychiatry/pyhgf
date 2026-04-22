@@ -7,10 +7,7 @@ pub fn learning_weights(
     node_idx: usize,
     _time_step: f64,
 ) {
-    // Binary-state nodes use implicit 1.0 coupling — weights are not learned.
-    if network.edges[node_idx].node_type == "binary-state" {
-        return;
-    }
+    let is_binary = network.edges[node_idx].node_type == "binary-state";
 
     let n_parents = match &network.edges[node_idx].value_parents {
         Some(vp) => vp.len(),
@@ -43,10 +40,15 @@ pub fn learning_weights(
 
         let parent_mean = network.attributes.states[parent_idx].mean;
 
-        let coupling_fn = network.attributes.fn_ptrs[parent_idx].coupling_fn;
-        let prosp_act = match coupling_fn {
-            Some(cf) => (cf.f)(parent_mean),
-            None => parent_mean,
+        // Binary nodes use sigmoid coupling for the weight update.
+        let prosp_act = if is_binary {
+            crate::math::sigmoid(parent_mean)
+        } else {
+            let coupling_fn = network.attributes.fn_ptrs[parent_idx].coupling_fn;
+            match coupling_fn {
+                Some(cf) => (cf.f)(parent_mean),
+                None => parent_mean,
+            }
         };
 
         let new_value_coupling = match fixed_lr {

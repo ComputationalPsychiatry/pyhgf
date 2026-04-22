@@ -365,9 +365,6 @@ class DeepNetwork:
 
         new_weights = list(self.state.weights)
         for i, w in enumerate(new_weights):
-            # Binary child layers always use 1.0 weights — skip initialisation.
-            if self.layer_kinds[i] == "binary":
-                continue
             n_children, n_parents = w.shape  # (prev_size, size)
             flat = init_fn(n_parents, n_children, seed=seed, **kwargs)
             new_weights[i] = jnp.array(flat.reshape(w.shape))
@@ -426,11 +423,13 @@ class DeepNetwork:
         # Format: (beta1, beta2, epsilon, adam_lr_override)
         if optimizer == "adam":
             p = params or {}
+            # Use the outer lr as Adam's step size unless explicitly overridden.
+            adam_lr = p.get("lr", lr if isinstance(lr, float) else 1e-3)
             adam_params: Optional[tuple[float, float, float, Optional[float]]] = (
                 p.get("beta1", 0.9),
                 p.get("beta2", 0.999),
                 p.get("epsilon", 1e-8),
-                p.get("lr", 1e-3),
+                adam_lr,
             )
         else:
             adam_params = None
