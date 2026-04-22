@@ -2,10 +2,6 @@ use crate::model::Network;
 
 /// Prediction error from a continuous state node
 pub fn prediction_error_continuous_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
-    // Count only non-constant value parents (exclude "constant-state" nodes).
-    let n_value_parents = network.edges[node_idx].value_parents.as_ref().map(|vp| {
-        vp.iter().filter(|&&p| network.edges[p].node_type != "constant-state").count()
-    });
     let n_volatility_parents = network.edges[node_idx].volatility_parents.as_ref().map(|vp| vp.len());
 
     let mean = network.attributes.states[node_idx].mean;
@@ -14,10 +10,7 @@ pub fn prediction_error_continuous_state_node(network: &mut Network, node_idx: u
     let expected_precision = network.attributes.states[node_idx].expected_precision;
 
     // Value prediction error: δ = μ - μ̂
-    let mut value_prediction_error = mean - expected_mean;
-    if let Some(n) = n_value_parents {
-        value_prediction_error /= n as f64;
-    }
+    let value_prediction_error = mean - expected_mean;
 
     // Volatility prediction error: Δ = (π̂ / π) + π̂ · δ² - 1
     let mut volatility_prediction_error =

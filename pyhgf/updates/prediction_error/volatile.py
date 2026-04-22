@@ -23,20 +23,6 @@ def volatile_node_value_prediction_error(
         attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
     )
 
-    # Divide by number of non-constant value parents (if any)
-    if attributes[node_idx]["value_coupling_parents"] is not None:
-        if edges is not None and edges[node_idx].value_parents is not None:
-            n_non_const = sum(
-                edges[p].node_type != 0
-                for p in edges[node_idx].value_parents  # type: ignore[union-attr]
-            )
-            if n_non_const > 0:
-                value_prediction_error /= n_non_const
-        else:
-            value_prediction_error /= len(
-                attributes[node_idx]["value_coupling_parents"]
-            )
-
     attributes[node_idx]["temp"]["value_prediction_error"] = value_prediction_error
 
     return attributes

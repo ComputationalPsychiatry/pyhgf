@@ -120,16 +120,11 @@ def propagation_step(
             )
 
     # Step 4a: PE for output layer (mean = y, observation-pinned)
-    # Exclude the bias column (if any) from the parent count.
-    n_parents_0 = weights[0].shape[1] - (1 if add_constant_inputs[1] else 0)
     if layer_kinds[0] == "binary":
-        layers[0] = vectorized_binary_prediction_error(
-            layer=layers[0], n_parents=n_parents_0
-        )
+        layers[0] = vectorized_binary_prediction_error(layer=layers[0])
     else:
         layers[0] = vectorized_layer_prediction_error(
             layer=layers[0],
-            n_parents=n_parents_0,
             params=params[0],
             update_type=update_type,
             has_volatility_parent=volatility_parents[0],
@@ -137,8 +132,6 @@ def propagation_step(
 
     # Step 4b: per hidden layer — posterior then PE (interleaved)
     for i in range(1, n_layers - 1):
-        # Real (non-constant) parent count for this layer
-        n_vp = weights[i].shape[1] - (1 if add_constant_inputs[i + 1] else 0)
         layers[i] = vectorized_layer_posterior_update(
             layer=layers[i],
             child=layers[i - 1],
@@ -149,13 +142,10 @@ def propagation_step(
         # Recompute PE and update volatility level so the layer
         # above receives the correct (post-posterior) error signal.
         if layer_kinds[i] == "binary":
-            layers[i] = vectorized_binary_prediction_error(
-                layer=layers[i], n_parents=n_vp
-            )
+            layers[i] = vectorized_binary_prediction_error(layer=layers[i])
         else:
             layers[i] = vectorized_layer_prediction_error(
                 layer=layers[i],
-                n_parents=n_vp,
                 params=params[i],
                 update_type=update_type,
                 has_volatility_parent=volatility_parents[i],
