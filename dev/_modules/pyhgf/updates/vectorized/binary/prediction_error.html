@@ -881,16 +881,18 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.vectorized.binary/pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error.html#pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_binary_prediction_error</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">n_parents</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute prediction errors for a binary state node layer.</span>
 
 <span class="sd">    The value prediction error for binary nodes is scaled by the inverse of the</span>
 <span class="sd">    expected precision (Bernoulli variance) so it can be consumed directly by the</span>
-<span class="sd">    continuous parent&#39;s posterior update without requiring a different update step:</span>
+<span class="sd">    continuous parent&#39;s posterior update without requiring a different update step,</span>
+<span class="sd">    then divided by the number of value parents to distribute the signal:</span>
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \\delta_b = \\frac{\\mu_b - \\hat{\\mu}_b}{\\hat{\\pi}_b}</span>
+<span class="sd">        \\delta_b = \\frac{\\mu_b - \\hat{\\mu}_b}{\\hat{\\pi}_b \cdot N_{\\text{parents}}}</span>
 
 <span class="sd">    The posterior precision of a binary node is set equal to the expected precision</span>
 <span class="sd">    (there is no precision update for binary nodes).</span>
@@ -900,6 +902,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    layer :</span>
 <span class="sd">        Current binary layer state with ``mean`` (observation) and</span>
 <span class="sd">        ``expected_mean``/``expected_precision`` set by the prediction step.</span>
+<span class="sd">    n_parents :</span>
+<span class="sd">        Number of value parents for this layer (default: 1).  The PE is divided</span>
+<span class="sd">        by this count so each parent receives its proportional share of the signal.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -911,6 +916,9 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Scale by inverse expected precision (eq. 98 in Weber et al., v1)</span>
     <span class="n">value_pe</span> <span class="o">=</span> <span class="n">value_pe</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span>
+
+    <span class="c1"># Distribute across value parents</span>
+    <span class="n">value_pe</span> <span class="o">=</span> <span class="n">value_pe</span> <span class="o">/</span> <span class="n">n_parents</span>
 
     <span class="c1"># Posterior precision = expected precision for binary nodes</span>
     <span class="n">precision</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span>

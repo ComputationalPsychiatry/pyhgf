@@ -648,19 +648,24 @@
 <h1>pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error<a class="headerlink" href="#pyhgf-updates-vectorized-binary-vectorized-binary-prediction-error" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.binary.</span></span><span class="sig-name descname"><span class="pre">vectorized_binary_prediction_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/binary/prediction_error.html#vectorized_binary_prediction_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.binary.</span></span><span class="sig-name descname"><span class="pre">vectorized_binary_prediction_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/binary/prediction_error.html#vectorized_binary_prediction_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error" title="Link to this definition">#</a></dt>
 <dd><p>Compute prediction errors for a binary state node layer.</p>
 <p>The value prediction error for binary nodes is scaled by the inverse of the
 expected precision (Bernoulli variance) so it can be consumed directly by the
-continuous parent’s posterior update without requiring a different update step:</p>
+continuous parent’s posterior update without requiring a different update step,
+then divided by the number of value parents to distribute the signal:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\\delta_b = \\frac{\\mu_b - \\hat{\\mu}_b}{\\hat{\\pi}_b}\end{split}\]</div>
+\[\begin{split}\\delta_b = \\frac{\\mu_b - \\hat{\\mu}_b}{\\hat{\\pi}_b \cdot N_{\\text{parents}}}\end{split}\]</div>
 <p>The posterior precision of a binary node is set equal to the expected precision
 (there is no precision update for binary nodes).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>layer</strong> (<em>LayerState</em>) – Current binary layer state with <code class="docutils literal notranslate"><span class="pre">mean</span></code> (observation) and
-<code class="docutils literal notranslate"><span class="pre">expected_mean</span></code>/<code class="docutils literal notranslate"><span class="pre">expected_precision</span></code> set by the prediction step.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer</strong> (<em>LayerState</em>) – Current binary layer state with <code class="docutils literal notranslate"><span class="pre">mean</span></code> (observation) and
+<code class="docutils literal notranslate"><span class="pre">expected_mean</span></code>/<code class="docutils literal notranslate"><span class="pre">expected_precision</span></code> set by the prediction step.</p></li>
+<li><p><strong>n_parents</strong> (<em>int</em>) – Number of value parents for this layer (default: 1).  The PE is divided
+by this count so each parent receives its proportional share of the signal.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated layer state with <code class="docutils literal notranslate"><span class="pre">value_prediction_error</span></code> and <code class="docutils literal notranslate"><span class="pre">precision</span></code>.</p>
