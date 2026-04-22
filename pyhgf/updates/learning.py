@@ -5,6 +5,7 @@ from typing import Optional
 
 import jax.numpy as jnp
 from jax import jit
+from jax.nn import sigmoid as jax_sigmoid
 
 from pyhgf.typing import Attributes, Edges
 from pyhgf.utils import set_coupling
@@ -78,15 +79,19 @@ def learning_weights(
         ])
 
     # 2. find the coupling function for each parent → child pair
+    # Binary nodes always use sigmoid coupling in the weight update.
     # -----------------------------------------------------------
-    coupling_fns = [
-        edges[parent_idx].coupling_fn[  # type: ignore[index]
-            edges[parent_idx].value_children.index(node_idx)  # type: ignore[union-attr]
+    if edges[node_idx].node_type == 1:  # binary-state
+        coupling_fns = [jax_sigmoid for _ in edges[node_idx].value_parents]  # type: ignore[union-attr]
+    else:
+        coupling_fns = [
+            edges[parent_idx].coupling_fn[  # type: ignore[index]
+                edges[parent_idx].value_children.index(node_idx)  # type: ignore[union-attr]
+            ]
+            if edges[parent_idx].coupling_fn is not None
+            else None
+            for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
         ]
-        if edges[parent_idx].coupling_fn is not None
-        else None
-        for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
-    ]
 
     # 3. compute the prospective activation for each parent
     # -------------------------------------------------------

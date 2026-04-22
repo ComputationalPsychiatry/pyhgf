@@ -257,9 +257,8 @@ class Network:
 
         # the learning steps should apply weight learning
         # in the same order than the prediction errors occure
-        # only continuous-state (node_type 2) and volatile-state (node_type 6) nodes
-        # are eligible; binary-state nodes use sigmoid(Σ parent_expected_mean) which
-        # does not involve coupling weights, so the linear learning rule would be wrong.
+        # continuous-state (2), volatile-state (6), and binary-state (1) nodes
+        # are eligible. binary-state uses sigmoid coupling in the weight update.
         # Constant-state nodes (node_type 0) cannot have parents, so they are excluded.
         learning_steps = []  # list of weight update to perform at this layer
         for i, update in enumerate(update_steps):
@@ -276,9 +275,10 @@ class Network:
                 if self.edges[node_idx].value_parents is None:
                     continue
                 if self.edges[node_idx].node_type in {
+                    1,
                     2,
                     6,
-                }:  # continuous-state, volatile-state
+                }:  # binary-state, continuous-state, volatile-state
                     learning_steps.append((node_idx, learn_fn))
 
         # do not predict on the last layer

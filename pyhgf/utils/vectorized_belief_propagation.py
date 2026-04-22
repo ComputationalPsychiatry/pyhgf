@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Callable, Optional, Union
 
 import jax.numpy as jnp
+from jax.nn import sigmoid
 
 from pyhgf.typing import NetworkState
 from pyhgf.updates.vectorized.binary import (
@@ -122,7 +123,9 @@ def propagation_step(
     # Exclude the bias column (if any) from the parent count.
     n_parents_0 = weights[0].shape[1] - (1 if add_constant_inputs[1] else 0)
     if layer_kinds[0] == "binary":
-        layers[0] = vectorized_binary_prediction_error(layer=layers[0])
+        layers[0] = vectorized_binary_prediction_error(
+            layer=layers[0], n_parents=n_parents_0
+        )
     else:
         layers[0] = vectorized_layer_prediction_error(
             layer=layers[0],
@@ -146,7 +149,9 @@ def propagation_step(
         # Recompute PE and update volatility level so the layer
         # above receives the correct (post-posterior) error signal.
         if layer_kinds[i] == "binary":
-            layers[i] = vectorized_binary_prediction_error(layer=layers[i])
+            layers[i] = vectorized_binary_prediction_error(
+                layer=layers[i], n_parents=n_vp
+            )
         else:
             layers[i] = vectorized_layer_prediction_error(
                 layer=layers[i],
@@ -173,9 +178,6 @@ def propagation_step(
         beta1, beta2, epsilon = 0.9, 0.999, 1e-8
 
     for i in range(1, n_layers):
-        # Binary nodes don't learn coupling weights (matches Network/Rust).
-        if layer_kinds[i - 1] == "binary":
-            continue
         weights[i - 1], new_m, new_v = vectorized_weight_update(
             parent_state=layers[i],
             child_state=layers[i - 1],
