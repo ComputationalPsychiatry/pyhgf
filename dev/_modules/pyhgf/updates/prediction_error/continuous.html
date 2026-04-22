@@ -904,9 +904,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the value parent node that will be updated.</span>
 <span class="sd">    edges :</span>
-<span class="sd">        The edges of the probabilistic nodes.  When provided, constant-state</span>
-<span class="sd">        parents (``node_type == 0``) are excluded from the value-parent count</span>
-<span class="sd">        used to normalise the prediction error.</span>
+<span class="sd">        Unused. Kept for API compatibility with callers that pass edges.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -928,16 +926,6 @@ window.runMermaid = runMermaid;</script>
     <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
     <span class="p">)</span>
-
-    <span class="c1"># divide by the number of (non-constant) value parents</span>
-    <span class="k">if</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_parents&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">vp</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span> <span class="k">if</span> <span class="n">edges</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">vp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">n_value_parents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">vp</span> <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">n_value_parents</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_parents&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">n_value_parents</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">value_prediction_error</span> <span class="o">/=</span> <span class="n">n_value_parents</span>
 
     <span class="c1"># send to the value parent node for later use in the update step</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;value_prediction_error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_prediction_error</span>

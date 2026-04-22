@@ -646,16 +646,16 @@
 <h1>pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error<a class="headerlink" href="#pyhgf-updates-vectorized-volatile-vectorized-layer-value-prediction-error" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_layer_value_prediction_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/prediction_error.html#vectorized_layer_value_prediction_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_layer_value_prediction_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/prediction_error.html#vectorized_layer_value_prediction_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error" title="Link to this definition">#</a></dt>
 <dd><p>Compute the value prediction error for all nodes in a layer.</p>
 <p>This is the vectorized equivalent of
 <a class="reference internal" href="../pyhgf.updates.prediction_error.volatile/pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error.html#pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error" title="pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error()</span></code></a>.</p>
+<p>Parent-count normalisation is applied in the prediction step instead
+(the drift is divided by <code class="docutils literal notranslate"><span class="pre">n_parents</span></code> before setting <code class="docutils literal notranslate"><span class="pre">expected_mean</span></code>),
+so the PE carries the full residual without further scaling.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>layer</strong> (<em>LayerState</em>) – Current layer with <code class="docutils literal notranslate"><span class="pre">mean</span></code> and <code class="docutils literal notranslate"><span class="pre">expected_mean</span></code> set.</p></li>
-<li><p><strong>n_parents</strong> (<em>int</em>) – Number of value parents for this layer (for normalization).</p></li>
-</ul>
+<dd class="field-odd"><p><strong>layer</strong> (<em>LayerState</em>) – Current layer with <code class="docutils literal notranslate"><span class="pre">mean</span></code> and <code class="docutils literal notranslate"><span class="pre">expected_mean</span></code> set.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Updated layer state with <code class="docutils literal notranslate"><span class="pre">value_prediction_error</span></code> set.</p>

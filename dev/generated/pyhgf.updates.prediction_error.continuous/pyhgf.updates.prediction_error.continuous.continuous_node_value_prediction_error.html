@@ -660,9 +660,7 @@ given by:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>attributes</strong> (<em>dict</em>) – The attributes of the probabilistic nodes.</p></li>
 <li><p><strong>node_idx</strong> (<em>int</em>) – Pointer to the value parent node that will be updated.</p></li>
-<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes.  When provided, constant-state
-parents (<code class="docutils literal notranslate"><span class="pre">node_type</span> <span class="pre">==</span> <span class="pre">0</span></code>) are excluded from the value-parent count
-used to normalise the prediction error.</p></li>
+<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – Unused. Kept for API compatibility with callers that pass edges.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

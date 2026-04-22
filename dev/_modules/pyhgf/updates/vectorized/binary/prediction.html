@@ -939,7 +939,6 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
         <span class="n">parent_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_mean</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
 
-    <span class="c1"># Weighted sum of coupled parent means</span>
     <span class="n">coupled_parents</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_mean</span><span class="p">)</span>
     <span class="n">logit</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">coupled_parents</span><span class="p">)</span>
 

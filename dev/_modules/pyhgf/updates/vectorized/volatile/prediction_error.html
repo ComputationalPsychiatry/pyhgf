@@ -894,27 +894,27 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error.html#pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_value_prediction_error</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
-    <span class="n">n_parents</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the value prediction error for all nodes in a layer.</span>
 
 <span class="sd">    This is the vectorized equivalent of</span>
 <span class="sd">    :func:`pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error`.</span>
 
+<span class="sd">    Parent-count normalisation is applied in the prediction step instead</span>
+<span class="sd">    (the drift is divided by ``n_parents`` before setting ``expected_mean``),</span>
+<span class="sd">    so the PE carries the full residual without further scaling.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    layer :</span>
 <span class="sd">        Current layer with ``mean`` and ``expected_mean`` set.</span>
-<span class="sd">    n_parents :</span>
-<span class="sd">        Number of value parents for this layer (for normalization).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    LayerState</span>
 <span class="sd">        Updated layer state with ``value_prediction_error`` set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">raw_pe</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span>
-    <span class="n">value_pe</span> <span class="o">=</span> <span class="n">raw_pe</span> <span class="o">/</span> <span class="n">n_parents</span>
+    <span class="n">value_pe</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span>
 
     <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">value_prediction_error</span><span class="o">=</span><span class="n">value_pe</span><span class="p">)</span></div>
 
@@ -1192,7 +1192,6 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction_error.html#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction_error">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_prediction_error</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
-    <span class="n">n_parents</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
     <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
@@ -1205,12 +1204,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    It first computes value and volatility prediction errors, then dispatches to</span>
 <span class="sd">    the appropriate volatility-level posterior update depending on *update_type*.</span>
 
+<span class="sd">    Parent-count normalisation is applied in the prediction step (drift divided by</span>
+<span class="sd">    ``n_parents``), so the PE is the plain residual ``mean - expected_mean``.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    layer :</span>
 <span class="sd">        Current layer with ``mean`` and ``expected_mean`` set.</span>
-<span class="sd">    n_parents :</span>
-<span class="sd">        Number of value parents for this layer (for normalization).</span>
 <span class="sd">    params :</span>
 <span class="sd">        Layer parameters (needed by all volatility posterior updates).</span>
 <span class="sd">    update_type :</span>
@@ -1229,7 +1229,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Updated layer state with prediction errors and volatility posterior.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 1. Value prediction error (always computed)</span>
-    <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_value_prediction_error</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">n_parents</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_value_prediction_error</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">layer</span>
