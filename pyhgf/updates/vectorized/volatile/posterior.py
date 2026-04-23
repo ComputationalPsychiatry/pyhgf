@@ -25,11 +25,11 @@ def vectorized_posterior_update_precision_value_level(
 
     .. note::
 
-        Unlike the standard continuous-state posterior updates elsewhere in the
-        toolbox, the volatile-state updates evaluate coupling function derivatives
-        at the *expected* mean (i.e. the prediction) rather than the posterior
-        mean. This choice is made to better suit deep learning networks where the
-        prediction serves as the natural reference point for computing updates.
+        Unlike the standard continuous-state posterior updates elsewhere in the toolbox,
+        the volatile-state updates evaluate coupling function derivatives at the
+        *expected* mean (i.e. the prediction) rather than the posterior mean. This
+        choice is made to better suit deep learning networks where the prediction serves
+        as the natural reference point for computing updates.
 
     Parameters
     ----------
@@ -59,8 +59,10 @@ def vectorized_posterior_update_precision_value_level(
         coupling_prime**2
     )
 
-    # Second-order correction: -f''(m_j) * sum_i(child_prec_i * vpe_i)
-    sum_pi_vpe = jnp.dot(child.expected_precision, child.value_prediction_error)
+    # Second-order correction: -f''(m_j) * sum_i(w_ij * child_prec_i * vpe_i)
+    sum_pi_vpe = jnp.matmul(
+        weights.T, child.expected_precision * child.value_prediction_error
+    )
     precision_contrib_2 = -coupling_second * sum_pi_vpe
 
     posterior_precision = (

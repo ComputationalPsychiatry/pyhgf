@@ -54,7 +54,7 @@ def posterior_update_precision_value_level(
 
                 posterior_precision += child_expected_precision * (
                     (value_coupling**2) * (coupling_fn_prime**2)
-                    - coupling_fn_second * value_pe
+                    - value_coupling * coupling_fn_second * value_pe
                 )
 
     return posterior_precision
