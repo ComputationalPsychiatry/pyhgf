@@ -114,7 +114,7 @@ def vectorized_weight_update(
             new_v = None
     else:
         # Dynamic: Kalman gain (Adam not applicable)
-        kalman_gain = parent_precision[None, :] / (
+        kalman_gain = child_state.precision[:, None] / (
             parent_precision[None, :] + child_state.precision[:, None]
         )
         coupling_delta = coupling_delta * kalman_gain

@@ -129,7 +129,7 @@ def learning_weights(
     else:
         # Dynamic (precision-weighted Kalman gain):
         # Δw_i = K_i · PE · g(parent_i)
-        precision_weighting = parent_precisions / (parent_precisions + child_precision)
+        precision_weighting = child_precision / (parent_precisions + child_precision)
         new_value_couplings = (
             couplings + precision_weighting * pe * prospective_activation
         )

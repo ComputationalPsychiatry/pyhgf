@@ -67,7 +67,7 @@ pub fn learning_weights(
             None => {
                 let parent_precision = network.attributes.states[parent_idx].precision;
                 let precision_weighting =
-                    parent_precision / (parent_precision + child_precision);
+                    child_precision / (parent_precision + child_precision);
                 coupling + precision_weighting * pe * prosp_act
             }
         };
