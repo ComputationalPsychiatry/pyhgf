@@ -515,8 +515,8 @@
 <p class="admonition-title">Tip</p>
 <p>Authors</p>
 <ul class="simple">
-<li><p>Kora Tristan, Aarhus University, Denmark (kora.montemagno&#64;cas.au.dk)</p></li>
-<li><p>Nicolas Legrand, Aarhus University, Denmark (nicolas.legrand&#64;cas.au.dk)</p></li>
+<li><p>Kora Tristan, Aarhus University, Denmark (<a class="reference external" href="mailto:kora&#46;montemagno&#37;&#52;&#48;cas&#46;au&#46;dk">kora<span>&#46;</span>montemagno<span>&#64;</span>cas<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
+<li><p>Nicolas Legrand, Aarhus University, Denmark (<a class="reference external" href="mailto:nicolas&#46;legrand&#37;&#52;&#48;cas&#46;au&#46;dk">nicolas<span>&#46;</span>legrand<span>&#64;</span>cas<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
 </ul>
 </div>
 <div class="cell docutils container">
@@ -851,7 +851,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/7617fc7609acd36ca75539cf00bb190f84db437e4e9b9303d1fc1cb25af545f1.png" src="../_images/7617fc7609acd36ca75539cf00bb190f84db437e4e9b9303d1fc1cb25af545f1.png" />
+<img alt="../_images/742f574dd40518e452317c5d53e3c5acd4f33b8b344aa8ebc40ae3771fa37231.png" src="../_images/742f574dd40518e452317c5d53e3c5acd4f33b8b344aa8ebc40ae3771fa37231.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -869,7 +869,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sinusoid_nonlinear_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># x1 - node 1</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
@@ -902,7 +902,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/bab90c945f5487d57d9c21c6ebded332c7576c3ac128af6c7c14d5249d01fdbf.png" src="../_images/bab90c945f5487d57d9c21c6ebded332c7576c3ac128af6c7c14d5249d01fdbf.png" />
+<img alt="../_images/8f28b61f451da30e1b9936cb7c4ad0d6ed7f6f72aa270edbbb79fa95db391d88.png" src="../_images/8f28b61f451da30e1b9936cb7c4ad0d6ed7f6f72aa270edbbb79fa95db391d88.png" />
 </div>
 </div>
 </section>
@@ -928,7 +928,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sinusoid_nonlinear_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>  <span class="c1"># u1 - Continuous node 0</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># x1 - node 1</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
         <span class="n">value_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sin</span><span class="p">,)</span>
@@ -960,7 +960,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/01ea73521fabb16192431f3bbe9f1d32e68bcff8c2e01d59febb5fb4ee8ddb1b.png" src="../_images/01ea73521fabb16192431f3bbe9f1d32e68bcff8c2e01d59febb5fb4ee8ddb1b.png" />
+<img alt="../_images/3176bf9f529b017bb937a5fc1fbc8e420961f94487645644ef88883a6153dfd4.png" src="../_images/3176bf9f529b017bb937a5fc1fbc8e420961f94487645644ef88883a6153dfd4.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>

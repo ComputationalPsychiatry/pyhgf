@@ -908,7 +908,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    was computed beforehand by</span>
 <span class="sd">    :py:func:`pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error`.</span>
 
-<span class="sd">    For non-linear value coupling:</span>
+<span class="sd">    For non-linear value coupling we use equation 50 from [1]_.:</span>
 
 <span class="sd">    .. math::</span>
 
@@ -980,8 +980,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;</span>
-<span class="sd">       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).</span>
-<span class="sd">       arXiv. https://doi.org/10.48550/ARXIV.2305.10937</span>
+<span class="sd">       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife Sciences</span>
+<span class="sd">       Publications, Ltd. https://doi.org/10.7554/elife.110174.1</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
@@ -1043,7 +1043,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c1"># Value coupling updates - update the precision of a value parent</span>
-    <span class="c1"># ---------------------------------------------------------------</span>
+    <span class="c1"># Using eq. 50 from Weber et al. (2026)</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
@@ -1051,30 +1052,31 @@ window.runMermaid = runMermaid;</script>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># linear coupling</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
                 <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># non-linear coupling</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
+                    <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="p">)</span>
                 <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
                     <span class="s2">&quot;value_prediction_error&quot;</span>
                 <span class="p">]</span>
                 <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">value_coupling</span>
-                    <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
                     <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
                     <span class="o">*</span> <span class="n">value_prediction_error</span>
                 <span class="p">)</span>
 
             <span class="c1"># cancel the prediction error if the child value was not observed</span>
             <span class="n">precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
-                <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
-                <span class="o">*</span> <span class="n">coupling_fn_prime</span>
-                <span class="o">-</span> <span class="n">coupling_fn_second</span>
-            <span class="p">)</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+                <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+                <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span> <span class="o">-</span> <span class="n">coupling_fn_second</span><span class="p">)</span>
+                <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
 
     <span class="c1"># Volatility coupling updates - update the precision of a volatility parent</span>
-    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>

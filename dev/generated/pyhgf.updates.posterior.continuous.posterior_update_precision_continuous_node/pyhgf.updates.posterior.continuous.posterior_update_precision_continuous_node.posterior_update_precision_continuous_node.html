@@ -663,7 +663,7 @@ state nodes <span class="math notranslate nohighlight">\(j\)</span> at time <spa
 and the state node and <span class="math notranslate nohighlight">\(\delta_j^{(k)}\)</span> is the value prediction error that
 was computed beforehand by
 <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error()</span></code>.</p>
-<p>For non-linear value coupling:</p>
+<p>For non-linear value coupling we use equation 50 from <a class="reference internal" href="#r8ae25ca6771b-1" id="id1">[1]</a>.:</p>
 <div class="math notranslate nohighlight">
 \[\pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}
 \hat{\pi}_j^{(k)} * (\kappa_j^2 * g'_{j,b}(\mu_b^(k-1))^2 -
@@ -689,7 +689,7 @@ volatility prediction error given by:</p>
 <p><span class="math notranslate nohighlight">\(\gamma_j^{(k)}\)</span> is the effective precision of the prediction, given by:</p>
 <div class="math notranslate nohighlight">
 \[\gamma_j^{(k)} = \Omega_j^{(k)} \hat{\pi}_j^{(k)}\]</div>
-<p>that was computed in the prediction step. See <a class="reference internal" href="#r8ae25ca6771b-1" id="id1">[1]</a> for more details.</p>
+<p>that was computed in the prediction step. See <a class="reference internal" href="#r8ae25ca6771b-1" id="id2">[1]</a> for more details.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -720,10 +720,11 @@ the parent node instead of the expected mean of the child node.</p>
 <p class="rubric">References</p>
 <div role="list" class="citation-list">
 <div class="citation" id="r8ae25ca6771b-1" role="doc-biblioentry">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>)</span>
 <p>Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;
-Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.10937">https://doi.org/10.48550/ARXIV.2305.10937</a></p>
+Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife Sciences
+Publications, Ltd. <a class="reference external" href="https://doi.org/10.7554/elife.110174.1">https://doi.org/10.7554/elife.110174.1</a></p>
 </div>
 </div>
 </dd></dl>
