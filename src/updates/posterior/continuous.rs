@@ -39,7 +39,7 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
                     let g_prime = (cf.df)(parent_mean);
                     let g_second = (cf.d2f)(parent_mean);
                     let child_vape = child_state.value_prediction_error;
-                    (g_prime.powi(2), g_second * child_vape)
+                    (g_prime.powi(2), kappa * g_second * child_vape)
                 }
                 None => (1.0, 0.0),
             };
