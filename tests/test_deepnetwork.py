@@ -45,6 +45,7 @@ def test_fit():
                 .add_layer(size=n_h1)
                 .add_layer(size=n_h2)
                 .add_layer(size=n_input)
+                .weight_initialisation("xavier", seed=42)
             )
             dn.fit(x=x, y=y, lr=lr, optimizer=optimizer)
             preds_dn = dn.predict(np.array([[0.5]]))

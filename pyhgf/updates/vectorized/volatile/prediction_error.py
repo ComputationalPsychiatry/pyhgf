@@ -21,27 +21,27 @@ from pyhgf.typing import LayerParams, LayerState
 
 def vectorized_layer_value_prediction_error(
     layer: LayerState,
-    n_parents: int,
 ) -> LayerState:
     """Compute the value prediction error for all nodes in a layer.
 
     This is the vectorized equivalent of
     :func:`pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error`.
 
+    Parent-count normalisation is applied in the prediction step instead
+    (the drift is divided by ``n_parents`` before setting ``expected_mean``),
+    so the PE carries the full residual without further scaling.
+
     Parameters
     ----------
     layer :
         Current layer with ``mean`` and ``expected_mean`` set.
-    n_parents :
-        Number of value parents for this layer (for normalization).
 
     Returns
     -------
     LayerState
         Updated layer state with ``value_prediction_error`` set.
     """
-    raw_pe = layer.mean - layer.expected_mean
-    value_pe = raw_pe / n_parents
+    value_pe = layer.mean - layer.expected_mean
 
     return layer._replace(value_prediction_error=value_pe)
 
@@ -304,7 +304,6 @@ def vectorized_layer_volatility_posterior_unbounded(
 
 def vectorized_layer_prediction_error(
     layer: LayerState,
-    n_parents: int,
     params: LayerParams,
     update_type: str = "eHGF",
     time_step: float = 1.0,
@@ -317,12 +316,13 @@ def vectorized_layer_prediction_error(
     It first computes value and volatility prediction errors, then dispatches to
     the appropriate volatility-level posterior update depending on *update_type*.
 
+    Parent-count normalisation is applied in the prediction step (drift divided by
+    ``n_parents``), so the PE is the plain residual ``mean - expected_mean``.
+
     Parameters
     ----------
     layer :
         Current layer with ``mean`` and ``expected_mean`` set.
-    n_parents :
-        Number of value parents for this layer (for normalization).
     params :
         Layer parameters (needed by all volatility posterior updates).
     update_type :
@@ -341,7 +341,7 @@ def vectorized_layer_prediction_error(
         Updated layer state with prediction errors and volatility posterior.
     """
     # 1. Value prediction error (always computed)
-    layer = vectorized_layer_value_prediction_error(layer, n_parents)
+    layer = vectorized_layer_value_prediction_error(layer)
 
     if not has_volatility_parent:
         return layer

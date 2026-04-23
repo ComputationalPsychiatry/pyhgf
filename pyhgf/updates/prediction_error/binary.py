@@ -39,12 +39,6 @@ def binary_state_node_prediction_error(
     # (eq. 98, Weber et al., v1)
     value_prediction_error /= attributes[node_idx]["expected_precision"]
 
-    # distribute across value parents
-    n_parents = (
-        len(edges[node_idx].value_parents) if edges[node_idx].value_parents else 1  # type:ignore
-    )
-    value_prediction_error /= n_parents
-
     # store the prediction errors in the binary node
     attributes[node_idx]["temp"]["value_prediction_error"] = value_prediction_error
 

@@ -31,9 +31,7 @@ def continuous_node_value_prediction_error(
     node_idx :
         Pointer to the value parent node that will be updated.
     edges :
-        The edges of the probabilistic nodes.  When provided, constant-state
-        parents (``node_type == 0``) are excluded from the value-parent count
-        used to normalise the prediction error.
+        Unused. Kept for API compatibility with callers that pass edges.
 
     Returns
     -------
@@ -55,16 +53,6 @@ def continuous_node_value_prediction_error(
     value_prediction_error = (
         attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
     )
-
-    # divide by the number of (non-constant) value parents
-    if attributes[node_idx]["value_coupling_parents"] is not None:
-        vp = edges[node_idx].value_parents if edges else None
-        if vp is not None:
-            n_value_parents = len([p for p in vp if edges[p].node_type != 0])
-        else:
-            n_value_parents = len(attributes[node_idx]["value_coupling_parents"])
-        if n_value_parents > 0:
-            value_prediction_error /= n_value_parents
 
     # send to the value parent node for later use in the update step
     attributes[node_idx]["temp"]["value_prediction_error"] = value_prediction_error

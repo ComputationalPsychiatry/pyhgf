@@ -16,10 +16,6 @@ fn lambert_w0(z: f64) -> f64 {
 
 /// Compute value and volatility prediction errors for a volatile state node.
 fn compute_volatile_prediction_errors(network: &mut Network, node_idx: usize) {
-    // Count only non-constant value parents (exclude "constant-state" nodes).
-    let n_value_parents = network.edges[node_idx].value_parents.as_ref().map(|vp| {
-        vp.iter().filter(|&&p| network.edges[p].node_type != "constant-state").count()
-    });
     let n_volatility_parents = network.edges[node_idx].volatility_parents.as_ref().map(|vp| vp.len());
 
     let mean = network.attributes.states[node_idx].mean;
@@ -28,10 +24,7 @@ fn compute_volatile_prediction_errors(network: &mut Network, node_idx: usize) {
     let expected_precision = network.attributes.states[node_idx].expected_precision;
 
     // Value prediction error: δ = μ - μ̂
-    let mut value_prediction_error = mean - expected_mean;
-    if let Some(n) = n_value_parents {
-        value_prediction_error /= n as f64;
-    }
+    let value_prediction_error = mean - expected_mean;
     
     // Volatility prediction error (internal coupling, no division)
     let mut volatility_prediction_error =
