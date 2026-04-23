@@ -1059,7 +1059,9 @@ window.runMermaid = runMermaid;</script>
                     <span class="s2">&quot;value_prediction_error&quot;</span>
                 <span class="p">]</span>
                 <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                    <span class="n">value_coupling</span>
+                    <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+                    <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
                     <span class="o">*</span> <span class="n">value_prediction_error</span>
                 <span class="p">)</span>
 

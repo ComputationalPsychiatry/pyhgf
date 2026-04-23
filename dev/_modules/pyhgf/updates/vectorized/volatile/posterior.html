@@ -932,8 +932,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">coupling_prime</span><span class="o">**</span><span class="mi">2</span>
     <span class="p">)</span>
 
-    <span class="c1"># Second-order correction: -f&#39;&#39;(m_j) * sum_i(child_prec_i * vpe_i)</span>
-    <span class="n">sum_pi_vpe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">value_prediction_error</span><span class="p">)</span>
+    <span class="c1"># Second-order correction: -f&#39;&#39;(m_j) * sum_i(w_ij * child_prec_i * vpe_i)</span>
+    <span class="n">sum_pi_vpe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
+        <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">*</span> <span class="n">child</span><span class="o">.</span><span class="n">value_prediction_error</span>
+    <span class="p">)</span>
     <span class="n">precision_contrib_2</span> <span class="o">=</span> <span class="o">-</span><span class="n">coupling_second</span> <span class="o">*</span> <span class="n">sum_pi_vpe</span>
 
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="p">(</span>

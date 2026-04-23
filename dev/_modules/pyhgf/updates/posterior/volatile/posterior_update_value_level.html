@@ -927,7 +927,7 @@ window.runMermaid = runMermaid;</script>
 
                 <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="n">child_expected_precision</span> <span class="o">*</span> <span class="p">(</span>
                     <span class="p">(</span><span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-                    <span class="o">-</span> <span class="n">coupling_fn_second</span> <span class="o">*</span> <span class="n">value_pe</span>
+                    <span class="o">-</span> <span class="n">value_coupling</span> <span class="o">*</span> <span class="n">coupling_fn_second</span> <span class="o">*</span> <span class="n">value_pe</span>
                 <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">posterior_precision</span></div>
