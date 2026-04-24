@@ -185,10 +185,10 @@ def predict_precision(
             )
 
     # compute the predicted_volatility from the total volatility
-    predicted_volatility = time_step * jnp.exp(
-        jnp.clip(total_volatility, a_min=-80.0, a_max=80.0)
+    predicted_volatility = time_step * jnp.exp(total_volatility)
+    predicted_volatility = jnp.where(
+        predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
-    predicted_volatility = jnp.maximum(predicted_volatility, 1e-128)
 
     # Estimate the new expected precision for the node
     expected_precision = 1 / (

@@ -64,10 +64,10 @@ def vectorized_layer_prediction(
         expected_mean_vol = child_state.mean_vol
 
         # Predicted volatility for volatility level
-        predicted_volatility_vol = time_step * jnp.exp(
-            jnp.clip(params.tonic_volatility_vol, a_min=-80.0, a_max=80.0)
+        predicted_volatility_vol = time_step * jnp.exp(params.tonic_volatility_vol)
+        predicted_volatility_vol = jnp.where(
+            predicted_volatility_vol > 1e-128, predicted_volatility_vol, jnp.nan
         )
-        predicted_volatility_vol = jnp.maximum(predicted_volatility_vol, 1e-128)
 
         # Expected precision for volatility level
         expected_precision_vol = 1.0 / (
@@ -110,10 +110,10 @@ def vectorized_layer_prediction(
         total_volatility = params.tonic_volatility
 
     # Predicted volatility for value level
-    predicted_volatility = time_step * jnp.exp(
-        jnp.clip(total_volatility, a_min=-80.0, a_max=80.0)
+    predicted_volatility = time_step * jnp.exp(total_volatility)
+    predicted_volatility = jnp.where(
+        predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
-    predicted_volatility = jnp.maximum(predicted_volatility, 1e-128)
 
     # Expected precision for value level
     expected_precision = 1.0 / (1.0 / child_state.precision + predicted_volatility)

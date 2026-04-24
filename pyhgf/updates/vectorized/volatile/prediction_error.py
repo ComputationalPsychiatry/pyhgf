@@ -10,6 +10,7 @@ the correct order.
 """
 
 import jax.numpy as jnp
+from jax.nn import sigmoid
 
 from pyhgf.math import lambert_w0
 from pyhgf.typing import LayerParams, LayerState
@@ -218,10 +219,10 @@ def vectorized_layer_volatility_posterior_unbounded(
     ka = params.volatility_coupling
     om = params.tonic_volatility
 
-    # Reconstruct al_aux = 1/pi_prev_jm1
-    predicted_volatility = time_step * jnp.exp(
-        jnp.clip(om + ka * layer.expected_mean_vol, a_min=-80.0, a_max=80.0)
-    )
+    # Reconstruct al_aux = 1/pi_prev_jm1 from the predicted state.
+    # Kept consistent with vectorized_layer_prediction (no clipping) so the
+    # subtraction cancels exactly: 1/pihat_jm1 - predicted_volatility = 1/pi_prev_jm1.
+    predicted_volatility = time_step * jnp.exp(om + ka * layer.expected_mean_vol)
     al_aux = jnp.maximum(1.0 / layer.expected_precision - predicted_volatility, 1e-128)
     be_aux = (1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2
 
@@ -231,9 +232,10 @@ def vectorized_layer_volatility_posterior_unbounded(
     # Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om
     gamma_c = jnp.log(time_step) + ka * muhat_j + om
 
-    # Recompute v and w using muhat_j
-    v_jm1 = jnp.exp(jnp.clip(gamma_c, a_min=-80.0, a_max=80.0))
-    w_jm1 = v_jm1 / (al_aux + v_jm1)
+    # Recompute v and w using muhat_j.  The w formula is written as
+    # 1/(1 + al_aux/v) so it stays finite when v_jm1 overflows to ∞ (→ 1).
+    v_jm1 = jnp.exp(gamma_c)
+    w_jm1 = 1.0 / (1.0 + al_aux / v_jm1)
     da_jm1 = be_aux / (al_aux + v_jm1) - 1.0
 
     # ------------------------------------------------------------------
@@ -246,43 +248,54 @@ def vectorized_layer_volatility_posterior_unbounded(
     # Expansion 2: quadratic at the Lambert W₀ approximate mode
     # ------------------------------------------------------------------
     pihat_y = pihat_j / ka**2
-    W_arg = (be_aux / (2.0 * pihat_y)) * jnp.exp(
-        jnp.clip(0.5 / pihat_y - gamma_c, a_min=-80.0, a_max=80.0)
-    )
+
+    # Compute W_arg in log-space and cap at log(float_max) — matches MATLAB's
+    # "W_arg = exp(min(log_W_arg, log(realmax)))".
+    log_W_arg = jnp.log(be_aux) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
+    log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
+    W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
     v_W = lambert_w0(W_arg)
     y_star = gamma_c + v_W - 0.5 / pihat_y
     x_star = (y_star - jnp.log(time_step) - om) / ka
 
-    s2 = time_step * jnp.exp(jnp.clip(ka * x_star + om, a_min=-80.0, a_max=80.0))
-    w2 = s2 / (al_aux + s2)
+    # Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).
+    s2 = time_step * jnp.exp(ka * x_star + om)
+    w2 = 1.0 / (1.0 + al_aux / s2)
     da2 = be_aux / (al_aux + s2) - 1.0
 
     pi2_full = pihat_j + 0.5 * ka**2 * w2 * (w2 + (2.0 * w2 - 1.0) * da2)
-    pi2 = jnp.where(
+    pi2_safe = jnp.where(
         pi2_full <= 0.0,
         pihat_j + 0.5 * ka**2 * w2 * (1.0 - w2),
         pi2_full,
     )
-    mu2 = x_star + (0.5 * ka * w2 * da2 - pihat_j * (x_star - muhat_j)) / pi2
+    mu2_safe = x_star + (0.5 * ka * w2 * da2 - pihat_j * (x_star - muhat_j)) / pi2_safe
+
+    # Fall back to Expansion 1 if Expansion 2 yields non-finite results —
+    # matches MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1".
+    exp2_finite = jnp.isfinite(pi2_safe) & jnp.isfinite(mu2_safe)
+    pi2 = jnp.where(exp2_finite, pi2_safe, pi1)
+    mu2 = jnp.where(exp2_finite, mu2_safe, mu1)
 
     # ------------------------------------------------------------------
-    # Variational energy-based softmax blend
+    # Variational energy-based softmax blend (direct form, matches MATLAB)
     # ------------------------------------------------------------------
-    ey1 = time_step * jnp.exp(jnp.clip(ka * mu1 + om, a_min=-80.0, a_max=80.0))
+    ey1 = time_step * jnp.exp(ka * mu1 + om)
     I1 = (
         -0.5 * jnp.log(al_aux + ey1)
         - 0.5 * be_aux / (al_aux + ey1)
         - 0.5 * pihat_j * (mu1 - muhat_j) ** 2
     )
 
-    ey2 = time_step * jnp.exp(jnp.clip(ka * mu2 + om, a_min=-80.0, a_max=80.0))
+    ey2 = time_step * jnp.exp(ka * mu2 + om)
     I2 = (
         -0.5 * jnp.log(al_aux + ey2)
         - 0.5 * be_aux / (al_aux + ey2)
         - 0.5 * pihat_j * (mu2 - muhat_j) ** 2
     )
 
-    b = 1.0 / (1.0 + jnp.exp(I1 - I2))  # sigmoid(I2 - I1)
+    # Stable sigmoid matches b = 1/(1 + exp(I1 - I2)) without NaN at ±∞.
+    b = sigmoid(I2 - I1)
 
     # ------------------------------------------------------------------
     # Gaussian mixture moment matching

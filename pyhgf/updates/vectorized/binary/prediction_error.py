@@ -19,10 +19,6 @@ def vectorized_binary_prediction_error(
 
         \\delta_b = \\frac{\\mu_b - \\hat{\\mu}_b}{\\hat{\\pi}_b}
 
-    Parent-count normalisation is applied in the prediction step instead
-    (the logit is divided by ``n_parents`` before the sigmoid), so the PE
-    carries the full residual signal without further scaling.
-
     The posterior precision of a binary node is set equal to the expected precision
     (there is no precision update for binary nodes).
 
