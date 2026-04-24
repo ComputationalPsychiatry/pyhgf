@@ -52,6 +52,8 @@ pub struct AdjacencyLists{
     #[pyo3(get, set)]
     pub node_type: String,
     #[pyo3(get, set)]
+    pub learning_kind: String,
+    #[pyo3(get, set)]
     pub value_parents: Option<Vec<usize>>,
     #[pyo3(get, set)]
     pub value_children: Option<Vec<usize>>,
@@ -443,6 +445,7 @@ impl Network {
 
         let edges = AdjacencyLists {
             node_type: String::from(kind),
+            learning_kind: String::from("precision_weighted"),
             value_parents: value_parents.clone(),
             value_children: value_children.clone(),
             volatility_parents: volatility_parents.clone(),
@@ -532,6 +535,7 @@ impl Network {
             "volatile-state" => {
                 let volatile_edges = AdjacencyLists {
                     node_type: String::from(kind),
+                    learning_kind: String::from("precision_weighted"),
                     value_parents: value_parents.clone(),
                     value_children: value_children.clone(),
                     volatility_parents: None,
@@ -861,17 +865,15 @@ impl Network {
     ///   to the leaf nodes (nodes without parents) when not provided from Python.
     /// * `inputs_y_idxs` - Node indices that receive target observations. Defaults
     ///   to the root nodes (nodes without children) when not provided from Python.
-    /// * `lr` - Learning rate applied to all non-input nodes. Defaults to `0.2`
-    ///   from Python. Pass `"dynamic"` (Python only) to skip setting a fixed rate
-    ///   and let each node use its own `lr` field.
+    /// * `lr` - Gradient application. `Some(f)` sets a fixed learning rate on all
+    ///   non-input nodes. `None` triggers the Adam optimiser (equivalent to
+    ///   `lr="adam"` from Python); the Adam step size is taken from
+    ///   `params["lr"]` (default 1e-3).
     /// * `record_trajectories` - When `true`, stores the full state history for
     ///   every node at each time step, accessible via `node_trajectories`.
-    /// * `optimizer` - Optional optimizer name. Currently supports `"adam"`, which
-    ///   initialises an Adam state for filtering coupling weight updates. When
-    ///   `None`, plain gradient updates are used.
-    /// * `params` - Optional dictionary of optimizer hyper-parameters. For Adam:
-    ///   `beta1` (default 0.9), `beta2` (default 0.999), `epsilon` (default 1e-8),
-    ///   and `lr` (optional override for the Adam step size).
+    /// * `params` - Optional dictionary of Adam hyper-parameters (only used when
+    ///   `lr == None`): `beta1` (default 0.9), `beta2` (default 0.999),
+    ///   `epsilon` (default 1e-8), and `lr` (default 1e-3, the Adam step size).
     pub fn fit(
         &mut self,
         x: &[Vec<f64>],
@@ -880,8 +882,8 @@ impl Network {
         inputs_y_idxs: &[usize],
         lr: Option<f64>,
         record_trajectories: bool,
-        optimizer: Option<&str>,
         params: Option<&HashMap<String, f64>>,
+        learning_kind: &str,
     ) {
         if self.update_sequence.predictions.is_empty()
             && self.update_sequence.updates.is_empty()
@@ -889,15 +891,25 @@ impl Network {
             self.set_update_sequence();
         }
 
-        if let Some(lr_val) = lr {
-            for (node_idx, state) in self.attributes.states.iter_mut().enumerate() {
-                if !inputs_x_idxs.contains(&node_idx) {
-                    state.lr = lr_val;
-                }
+        // Set learning_kind on all non-input nodes
+        for (node_idx, edge) in self.edges.iter_mut().enumerate() {
+            if !inputs_x_idxs.contains(&node_idx) {
+                edge.learning_kind = String::from(learning_kind);
             }
         }
-        // Initialise Adam optimiser state if requested
-        if let Some("adam") = optimizer {
+
+        // Always set a fixed lr on non-input nodes so learning_weights never skips
+        // updates when lr is NaN.  When Adam is requested (lr == None), the Adam
+        // step size from params overrides this.
+        let fixed_lr = lr.unwrap_or(1e-3);
+        for (node_idx, state) in self.attributes.states.iter_mut().enumerate() {
+            if !inputs_x_idxs.contains(&node_idx) {
+                state.lr = fixed_lr;
+            }
+        }
+
+        // Initialise Adam optimiser state when lr == None ("adam" on the Python side)
+        if lr.is_none() {
             let coupling_sizes: Vec<usize> = self
                 .attributes
                 .vectors
@@ -1355,7 +1367,7 @@ impl Network {
         Ok(slf)
     }
 
-    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true, optimizer="adam", params=None))]
+    #[pyo3(name = "fit", signature = (x, y, inputs_x_idxs=None, inputs_y_idxs=None, lr=None, record_trajectories=true, params=None, learning_kind="precision_weighted"))]
     fn py_fit<'py>(
         mut slf: PyRefMut<'py, Self>,
         x: Bound<'py, PyAny>,
@@ -1364,17 +1376,20 @@ impl Network {
         inputs_y_idxs: Option<Vec<usize>>,
         lr: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
-        optimizer: Option<&str>,
         params: Option<&Bound<'py, PyDict>>,
+        learning_kind: &str,
     ) -> PyResult<PyRefMut<'py, Self>> {
+        // lr can be a non-negative float (fixed step size) or the string "adam"
+        // (triggers the Adam optimiser).  When omitted, defaults to 0.2.
+        // On the Rust side, None signals Adam, Some(f) is the fixed step size.
         let lr_option: Option<f64> = match lr {
             Some(ref obj) => {
                 if let Ok(s) = obj.extract::<String>() {
-                    if s == "dynamic" {
+                    if s == "adam" {
                         None
                     } else {
                         return Err(pyo3::exceptions::PyValueError::new_err(
-                            format!("Invalid lr string '{}'. Use 'dynamic' or a float.", s),
+                            format!("Invalid lr string '{}'. Expected a non-negative float or 'adam'.", s),
                         ));
                     }
                 } else {
@@ -1421,7 +1436,7 @@ impl Network {
             None => None,
         };
 
-        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories, optimizer, params_map.as_ref());
+        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories, params_map.as_ref(), learning_kind);
         Ok(slf)
     }
 

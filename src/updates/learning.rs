@@ -2,6 +2,10 @@ use crate::model::Network;
 use crate::utils::set_coupling::set_coupling;
 
 /// Unified weights update.
+///
+/// Computes a gradient according to `learning_kind` (standard /
+/// precision_weighted / dynamic), then scales it by `lr` uniformly. When
+/// Adam state is present, the gradient is filtered through Adam instead.
 pub fn learning_weights(
     network: &mut Network,
     node_idx: usize,
@@ -20,13 +24,17 @@ pub fn learning_weights(
     let child_precision = network.attributes.states[node_idx].precision;
 
     let lr_val = network.attributes.states[node_idx].lr;
-    let fixed_lr = if lr_val.is_nan() { None } else { Some(lr_val) };
+    // NaN lr means "no lr set" → skip update for this node.
+    if lr_val.is_nan() {
+        return;
+    }
+
+    let learning_kind = network.edges[node_idx].learning_kind.clone();
 
     let pe = child_mean - child_expected_mean;
 
-    // --- per-parent update (no temporary Vecs) -----------------------
+    // --- per-parent update -------------------------------------------
     for i in 0..n_parents {
-        // Index into the parent list without cloning the Vec.
         let parent_idx = network.edges[node_idx]
             .value_parents
             .as_ref()
@@ -51,25 +59,28 @@ pub fn learning_weights(
             }
         };
 
-        let new_value_coupling = match fixed_lr {
-            Some(lr) => {
-                let gradient = pe * child_precision * prosp_act;
+        // Compute the gradient according to learning_kind.
+        // Binary nodes skip precision multiplication — the Bernoulli
+        // variance is already embedded in the binary prediction-error formula.
+        let gradient = if learning_kind == "dynamic" {
+            let parent_precision = network.attributes.states[parent_idx].precision;
+            let kalman_gain = child_precision / (parent_precision + child_precision);
+            kalman_gain * pe * prosp_act
+        } else if learning_kind == "standard" || is_binary {
+            pe * prosp_act
+        } else {
+            // "precision_weighted" (default)
+            pe * child_precision * prosp_act
+        };
 
-                // If Adam state is available, filter the gradient through Adam
-                if let Some(ref mut adam) = network.adam_state {
-                    let effective_lr = adam.lr.unwrap_or(lr);
-                    let adam_update = adam.step(node_idx, i, gradient, effective_lr);
-                    coupling + adam_update
-                } else {
-                    coupling + lr * gradient
-                }
-            }
-            None => {
-                let parent_precision = network.attributes.states[parent_idx].precision;
-                let precision_weighting =
-                    child_precision / (parent_precision + child_precision);
-                coupling + precision_weighting * pe * prosp_act
-            }
+        // Apply lr uniformly: Adam filter if state is present, otherwise
+        // direct scaling by lr_val.
+        let new_value_coupling = if let Some(ref mut adam) = network.adam_state {
+            let effective_lr = adam.lr.unwrap_or(lr_val);
+            let adam_update = adam.step(node_idx, i, gradient, effective_lr);
+            coupling + adam_update
+        } else {
+            coupling + lr_val * gradient
         };
 
         let new_value_coupling = if new_value_coupling.is_infinite() || new_value_coupling.is_nan()

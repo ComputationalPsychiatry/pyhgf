@@ -101,7 +101,7 @@ class DeepNetwork:
         self.predictions: Optional[jnp.ndarray] = None
         self._propagation_fn: Optional[Callable] = None
         self._propagation_lr: Optional[Union[float, str]] = None
-        self._propagation_optimizer: Optional[str] = None
+        self._propagation_learning_kind: Optional[str] = None
         self._record_trajectories: bool = False
         self._prediction_fn: Optional[Callable] = None
 
@@ -383,7 +383,7 @@ class DeepNetwork:
     def _create_propagation_fn(
         self,
         lr: Union[float, str],
-        optimizer: Optional[str] = None,
+        learning_kind: str = "precision_weighted",
         params: Optional[dict] = None,
         record_trajectories: bool = False,
     ):
@@ -392,17 +392,18 @@ class DeepNetwork:
         Parameters
         ----------
         lr :
-            Learning rate for weight updates.
-        optimizer :
-            Optimizer name.  ``"adam"`` enables Adam filtering of weight
-            gradients.  *None* uses plain gradient updates.
+            How the gradient is applied: a non-negative float for direct scaling, or
+            ``"adam"`` for the Adam optimiser.
+        learning_kind :
+            Gradient computation mode: ``"standard"``, ``"precision_weighted"``
+            (default), or ``"dynamic"``.
         params :
-            Hyper-parameters for the optimizer (e.g. ``beta1``, ``beta2``,
-            ``epsilon``, and ``lr`` for Adam).  See :meth:`fit` for defaults.
+            Hyper-parameters for the Adam optimiser (``beta1``, ``beta2``, ``epsilon``,
+            ``lr``). Only used when ``lr="adam"``.
         record_trajectories :
-            If True, the scan output includes the full ``NetworkState`` at
-            every time step (useful for inspection but significantly slower).
-            If False (default), only predictions are accumulated.
+            If True, the scan output includes the full ``NetworkState`` at every time
+            step (useful for inspection but significantly slower). If False (default),
+            only predictions are accumulated.
 
         Returns
         -------
@@ -419,17 +420,14 @@ class DeepNetwork:
         update_type = self.update_type
         volatility_parents = self.volatility_parents
 
-        # Build Adam parameters tuple (or None)
-        # Format: (beta1, beta2, epsilon, adam_lr_override)
-        if optimizer == "adam":
+        # Resolve Adam hyper-parameters when lr="adam".
+        if lr == "adam":
             p = params or {}
-            # Use the outer lr as Adam's step size unless explicitly overridden.
-            adam_lr = p.get("lr", lr if isinstance(lr, float) else 1e-3)
-            adam_params: Optional[tuple[float, float, float, Optional[float]]] = (
+            adam_params: Optional[tuple[float, float, float, float]] = (
                 p.get("beta1", 0.9),
                 p.get("beta2", 0.999),
                 p.get("epsilon", 1e-8),
-                adam_lr,
+                p.get("lr", 1e-3),
             )
         else:
             adam_params = None
@@ -448,6 +446,7 @@ class DeepNetwork:
                     adam_params,
                     update_type,
                     volatility_parents,
+                    learning_kind,
                 )
                 return new_state, (new_state, output_pred)
 
@@ -465,6 +464,7 @@ class DeepNetwork:
                     adam_params,
                     update_type,
                     volatility_parents,
+                    learning_kind,
                 )
 
         return jax.jit(_step)
@@ -523,8 +523,8 @@ class DeepNetwork:
         self,
         x: Union[np.ndarray, jnp.ndarray],
         y: Union[np.ndarray, jnp.ndarray],
-        lr: Union[float, str] = 0.2,
-        optimizer: Optional[str] = "adam",
+        lr: Union[float, str] = "adam",
+        learning_kind: str = "precision_weighted",
         params: Optional[dict] = None,
         record_trajectories: bool = False,
     ) -> "DeepNetwork":
@@ -537,16 +537,23 @@ class DeepNetwork:
         y :
             Target data, shape (n_samples, n_output_features).
         lr :
-            Learning rate for weight updates, or ``"dynamic"`` for
-            Kalman-gain updates.
-        optimizer :
-            Optimizer name.  ``"adam"`` (default) filters weight gradients through the
-            Adam algorithm (Kingma & Ba, 2015).  *None* uses plain gradient or
-            Kalman-gain updates.
+            How the gradient is applied:
+
+            - **float ≥ 0** — direct scaling of the gradient.
+            - ``"adam"`` (default) — Adam optimiser; step size set by ``params["lr"]``
+            (default 1e-3).
+        learning_kind :
+            Gradient computation mode:
+
+            - ``"precision_weighted"`` (default) — gradient is weighted by the child
+            layer's posterior precision before applying *lr*.
+            - ``"standard"`` — raw prediction-error outer product, no precision
+            weighting.
+            - ``"dynamic"`` — Kalman-gain rule.
         params :
-            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default
-            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
-            (default 1e-3, the Adam step size).
+            Hyper-parameters for the Adam optimiser: ``beta1`` (default 0.9), ``beta2``
+            (default 0.999), ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3, the
+            Adam step size).
         record_trajectories :
             If True, record the full ``NetworkState`` at every time step (accessible
             via ``self.trajectories``).  This is useful for inspection but significantly
@@ -560,13 +567,8 @@ class DeepNetwork:
         Raises
         ------
         ValueError
-            If *optimizer* is not ``None`` or ``"adam"``.
+            If *learning_kind* or *lr* is an unrecognised value.
         """
-        if optimizer is not None and optimizer != "adam":
-            raise ValueError(
-                f"Unknown optimizer '{optimizer}'. Supported: 'adam' or None."
-            )
-
         # Initialize state if needed
         if self.state is None:
             self.state = self._init_state()
@@ -575,15 +577,15 @@ class DeepNetwork:
         needs_retrace = (
             self._propagation_fn is None
             or self._propagation_lr != lr
-            or self._propagation_optimizer != optimizer
+            or self._propagation_learning_kind != learning_kind
             or self._record_trajectories != record_trajectories
         )
         if needs_retrace:
             self._propagation_fn = self._create_propagation_fn(
-                lr, optimizer, params, record_trajectories
+                lr, learning_kind, params, record_trajectories
             )
             self._propagation_lr = lr
-            self._propagation_optimizer = optimizer
+            self._propagation_learning_kind = learning_kind
             self._record_trajectories = record_trajectories
 
         # Convert to JAX arrays
@@ -647,7 +649,7 @@ class DeepNetwork:
         self.state = self._init_state()
         self._propagation_fn = None
         self._propagation_lr = None
-        self._propagation_optimizer = None
+        self._propagation_learning_kind = None
         self._record_trajectories = False
         self._prediction_fn = None
         return self

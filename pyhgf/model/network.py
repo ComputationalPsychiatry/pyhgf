@@ -185,7 +185,7 @@ class Network:
         inputs_y_idxs: tuple[int, ...],
         overwrite: bool = True,
         lr: Union[str, float] = 0.2,
-        optimizer: Optional[str] = "adam",
+        learning_kind: str = "precision_weighted",
         params: Optional[dict] = None,
     ) -> "Network":
         """Create the belief propagation function.
@@ -204,21 +204,18 @@ class Network:
             preexisting values. Otherwise, do not create a new function if the attribute
             `scan_fn` is already defined.
         lr :
-            Learning rate for weight updates, or ``"dynamic"`` for Kalman-gain updates.
-        optimizer :
-            Optimizer name.  ``"adam"`` (default) filters weight gradients through the
-            Adam algorithm.  *None* uses plain gradient or Kalman-gain updates.
+            How the gradient is applied: a non-negative float for direct scaling, or
+            ``"adam"`` for the Adam optimiser.  Applied uniformly across all
+            *learning_kind* values, including ``"dynamic"``.
+        learning_kind :
+            Gradient computation mode: ``"standard"``, ``"precision_weighted"``
+            (default), or ``"dynamic"``.
         params :
-            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default
-            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
-            (default 1e-3, the Adam step size).
+            Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
+            ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``
+            (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).
 
         """
-        if optimizer is not None and optimizer != "adam":
-            raise ValueError(
-                f"Unknown optimizer '{optimizer}'. Supported: 'adam' or None."
-            )
-
         # get the dimension of the input nodes
         if not self.input_dim:
             self.get_input_dimension()
@@ -230,23 +227,24 @@ class Network:
             )
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
-        use_adam = optimizer == "adam"
+        use_adam = lr == "adam"
         if use_adam:
             p = params or {}
             adam_lr = p.get("lr", 1e-3)
             learn_fn = Partial(
                 learning_weights,
+                kind=learning_kind,
                 lr=adam_lr,
                 adam_beta1=p.get("beta1", 0.9),
                 adam_beta2=p.get("beta2", 0.999),
                 adam_epsilon=p.get("epsilon", 1e-8),
             )
-        elif lr == "dynamic":
-            learn_fn = learning_weights
         elif isinstance(lr, float):
-            learn_fn = Partial(learning_weights, lr=lr)
+            learn_fn = Partial(learning_weights, kind=learning_kind, lr=lr)
         else:
-            raise ValueError("Invalid lr value. Should be 'dynamic' or a float value.")
+            raise ValueError(
+                f"Invalid lr value '{lr}'. Expected a non-negative float or 'adam'."
+            )
 
         # do not update the last layer
         update_steps = [
@@ -325,7 +323,7 @@ class Network:
         inputs_x_idxs: tuple[int, ...],
         inputs_y_idxs: tuple[int, ...],
         lr: Union[str, float] = 0.2,
-        optimizer: Optional[str] = "adam",
+        learning_kind: str = "precision_weighted",
         params: Optional[dict] = None,
         record_trajectories: bool = False,
         overwrite: bool = True,
@@ -347,15 +345,15 @@ class Network:
         inputs_y_idxs :
             The indexes of the nodes receiving the predictions (y).
         lr :
-            Learning rate for weight updates, or ``"dynamic"`` for Kalman-gain updates.
-        optimizer :
-            Optimizer name. ``"adam"`` (default) filters weight gradients through the
-            Adam algorithm (Kingma & Ba, 2015). *None* uses plain gradient or
-            Kalman-gain updates.
+            How the gradient is applied: a non-negative float for direct scaling, or
+            ``"adam"`` for the Adam optimiser.
+        learning_kind :
+            Gradient computation mode: ``"standard"``, ``"precision_weighted"``
+            (default), or ``"dynamic"``.
         params :
-            Dictionary of optimizer hyper-parameters. For Adam: ``beta1`` (default
-            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``
-            (default 1e-3, the Adam step size).
+            Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
+            ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``
+            (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).
         record_trajectories :
             If True, record the full node trajectories at every time step
             (accessible via ``self.node_trajectories``). If False (default),
@@ -376,7 +374,7 @@ class Network:
                 inputs_x_idxs=inputs_x_idxs,
                 inputs_y_idxs=inputs_y_idxs,
                 lr=lr,
-                optimizer=optimizer,
+                learning_kind=learning_kind,
                 params=params,
             )
 
