@@ -68,6 +68,7 @@ mod tests {
             edges: vec![
                 AdjacencyLists {
                     node_type: "continuous-state".into(),
+                    learning_kind: "precision_weighted".into(),
                     value_parents: Some(vec![1, 2]),
                     value_children: None,
                     volatility_parents: None,
@@ -75,6 +76,7 @@ mod tests {
                 },
                 AdjacencyLists {
                     node_type: "continuous-state".into(),
+                    learning_kind: "precision_weighted".into(),
                     value_parents: None,
                     value_children: Some(vec![0]),
                     volatility_parents: None,
@@ -82,6 +84,7 @@ mod tests {
                 },
                 AdjacencyLists {
                     node_type: "continuous-state".into(),
+                    learning_kind: "precision_weighted".into(),
                     value_parents: None,
                     value_children: Some(vec![0]),
                     volatility_parents: None,
