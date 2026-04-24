@@ -987,7 +987,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">new_v</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Dynamic: Kalman gain (Adam not applicable)</span>
-        <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
             <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">coupling_delta</span> <span class="o">*</span> <span class="n">kalman_gain</span>

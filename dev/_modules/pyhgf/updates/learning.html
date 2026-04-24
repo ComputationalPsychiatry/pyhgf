@@ -1002,7 +1002,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Dynamic (precision-weighted Kalman gain):</span>
         <span class="c1"># Δw_i = K_i · PE · g(parent_i)</span>
-        <span class="n">precision_weighting</span> <span class="o">=</span> <span class="n">parent_precisions</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precisions</span> <span class="o">+</span> <span class="n">child_precision</span><span class="p">)</span>
+        <span class="n">precision_weighting</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precisions</span> <span class="o">+</span> <span class="n">child_precision</span><span class="p">)</span>
         <span class="n">new_value_couplings</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">couplings</span> <span class="o">+</span> <span class="n">precision_weighting</span> <span class="o">*</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">prospective_activation</span>
         <span class="p">)</span>
