@@ -254,11 +254,9 @@ def test_learning():
         .add_nodes(value_children=2, autoconnection_strength=0, coupling_fn=(jnp.tanh,))
     )
 
-    network.fit(
-        x=x, y=y, inputs_x_idxs=(3,), inputs_y_idxs=(0, 1), lr=0.2, optimizer=None
-    )
+    network.fit(x=x, y=y, inputs_x_idxs=(3,), inputs_y_idxs=(0, 1), lr=0.2)
 
-    # dynamic learning rate
+    # Kalman-gain learning rule with a fixed step size
     network = (
         Network(update_type="unbounded")
         .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
@@ -275,8 +273,8 @@ def test_learning():
         y=y,
         inputs_x_idxs=(3,),
         inputs_y_idxs=(0, 1),
-        lr="dynamic",
-        optimizer=None,
+        lr=0.2,
+        learning_kind="dynamic",
     )
 
 

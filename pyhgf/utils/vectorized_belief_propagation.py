@@ -34,6 +34,7 @@ def propagation_step(
     adam_params: Optional[tuple[float, float, float, Optional[float]]] = None,
     update_type: str = "eHGF",
     volatility_parents: Optional[list[bool]] = None,
+    learning_kind: str = "precision_weighted",
 ) -> tuple[NetworkState, jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -54,7 +55,8 @@ def propagation_step(
     add_constant_inputs :
         Per-layer flags indicating whether a bias term is added.
     lr :
-        Learning rate (float) or ``"dynamic"`` for Kalman-gain updates.
+        Learning rate: a non-negative float for direct scaling, or ``"adam"``
+        for the Adam optimiser.
     layer_kinds :
         Per-layer node type (``"volatile"`` or ``"binary"``).  Defaults to
         all ``"volatile"`` when *None*.
@@ -68,6 +70,9 @@ def propagation_step(
         predicted and updated for that layer.  When ``False``, the volatility
         level is frozen and only tonic_volatility determines the expected
         precision.  Defaults to all ``True`` when *None*.
+    learning_kind :
+        Gradient computation mode passed to :func:`vectorized_weight_update`:
+        ``"standard"``, ``"precision_weighted"`` (default), or ``"dynamic"``.
 
     Returns
     -------
@@ -153,19 +158,17 @@ def propagation_step(
 
     # ========== LEARNING PHASE (after inference converges) ==========
     # Update weights once using converged activities
-    lr_value: Optional[float] = None if lr == "dynamic" else float(lr)
+    use_adam = lr == "adam"
+    adam_t = state.adam_t + 1 if use_adam else state.adam_t
 
     adam_m_list = list(state.adam_m)
     adam_v_list = list(state.adam_v)
-    use_adam = adam_params is not None
-    adam_t = state.adam_t + 1 if use_adam else state.adam_t
+
     if adam_params is not None:
-        beta1, beta2, epsilon, adam_lr_override = adam_params
-        # Adam lr override takes precedence (matches Rust behaviour)
-        if adam_lr_override is not None:
-            lr_value = adam_lr_override
+        beta1, beta2, epsilon, _adam_lr_override = adam_params
+        _adam_lr = _adam_lr_override if _adam_lr_override is not None else 1e-3
     else:
-        beta1, beta2, epsilon = 0.9, 0.999, 1e-8
+        beta1, beta2, epsilon, _adam_lr = 0.9, 0.999, 1e-8, 1e-3
 
     for i in range(1, n_layers):
         weights[i - 1], new_m, new_v = vectorized_weight_update(
@@ -173,11 +176,14 @@ def propagation_step(
             child_state=layers[i - 1],
             weights=weights[i - 1],
             coupling_fn=coupling_fns[i],
-            lr=lr_value,
+            kind=learning_kind,
+            lr=lr,
             parent_has_constant=add_constant_inputs[i],
+            child_is_binary=(layer_kinds[i - 1] == "binary"),
             adam_m=adam_m_list[i - 1] if use_adam else None,
             adam_v=adam_v_list[i - 1] if use_adam else None,
             adam_t=adam_t,
+            adam_lr=_adam_lr,
             adam_beta1=beta1,
             adam_beta2=beta2,
             adam_epsilon=epsilon,

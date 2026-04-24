@@ -13,8 +13,7 @@ def test_fit():
     """Test that DeepNetwork and RsNetwork produce finite fit results.
 
     Network: 2 targets → 2+1 hidden₁ → 2+1 hidden₂ → 1+1 input.
-    Tested across all combinations of coupling function, optimizer, and
-    learning-rate mode.
+    Tested across all combinations of coupling function and learning-rate mode.
     """
     n_targets, n_h1, n_h2, n_input = 2, 2, 2, 1
 
@@ -26,15 +25,18 @@ def test_fit():
         (None, None),  # linear (identity)
         ("tanh", (jnp.tanh,)),  # nonlinear
     ]
-    optimizer_variants = [
-        (None, 0.1),  # plain gradient, fixed lr
-        ("adam", 0.1),  # Adam optimizer, fixed lr
-        (None, "dynamic"),  # Kalman-gain (dynamic lr, no optimizer)
+    # (learning_kind, lr, label) — lr is now applied uniformly to all kinds,
+    # including "dynamic".  "adam" triggers the Adam optimiser on both backends.
+    lr_variants = [
+        ("precision_weighted", 0.1, "precision_weighted lr=0.1"),
+        ("precision_weighted", "adam", "precision_weighted adam"),
+        ("standard", 0.1, "standard lr=0.1"),
+        ("dynamic", 0.1, "dynamic lr=0.1"),
     ]
 
     for coupling_name, py_coupling_fn in coupling_variants:
-        for optimizer, lr in optimizer_variants:
-            label = f"coupling={coupling_name}, optimizer={optimizer}, lr={lr}"
+        for kind, lr, lr_label in lr_variants:
+            label = f"coupling={coupling_name}, {lr_label}"
 
             # --- DeepNetwork (JAX vectorized) ---
             dn = (
@@ -47,7 +49,7 @@ def test_fit():
                 .add_layer(size=n_input)
                 .weight_initialisation("xavier", seed=42)
             )
-            dn.fit(x=x, y=y, lr=lr, optimizer=optimizer)
+            dn.fit(x=x, y=y, lr=lr, learning_kind=kind)
             preds_dn = dn.predict(np.array([[0.5]]))
 
             # --- RsNetwork (Rust) ---
@@ -57,6 +59,7 @@ def test_fit():
                 .add_layer(size=n_h1, coupling_fn=coupling_name)
                 .add_layer(size=n_h2, coupling_fn=coupling_name)
                 .add_layer(size=n_input, coupling_fn=coupling_name)
+                .weight_initialisation("xavier", seed=42)
             )
             predictors = tuple(rs.layers[-1][:n_input])
             rs.fit(
@@ -65,7 +68,7 @@ def test_fit():
                 inputs_x_idxs=predictors,
                 inputs_y_idxs=tuple(range(n_targets)),
                 lr=lr,
-                optimizer=optimizer,
+                learning_kind=kind,
             )
             preds_rs = rs.predict(
                 x=[[0.5]],
@@ -126,7 +129,7 @@ def test_predict():
         .add_layer(size=n_hidden)
         .add_layer(size=n_predictors)
     )
-    dn.fit(x=x_train, y=y_train, lr=0.1)
+    dn.fit(x=x_train, y=y_train, lr="adam")
     preds = dn.predict(x_test)
 
     assert preds.shape == (3, n_targets)
@@ -282,7 +285,7 @@ def test_three_backends_binary_volatile():
             .add_layer(size=n_hidden)
             .add_layer(size=n_input, add_constant_input=False)
         )
-        dn.fit(x=x, y=y, lr=0.1, optimizer=None)
+        dn.fit(x=x, y=y, lr=0.1)
 
         # --- RsNetwork (Rust) ---
         rs = (
@@ -300,7 +303,6 @@ def test_three_backends_binary_volatile():
             inputs_x_idxs=predictors,
             inputs_y_idxs=targets_idxs,
             lr=0.1,
-            optimizer=None,
         )
 
         # --- Network (Python per-node) ---
@@ -326,7 +328,6 @@ def test_three_backends_binary_volatile():
             inputs_x_idxs=x_idxs,
             inputs_y_idxs=y_idxs,
             lr=0.1,
-            optimizer=None,
         )
 
         # ---- Hidden-layer volatile states ----
@@ -471,11 +472,13 @@ def test_add_layer_one_to_one_size_mismatch():
         )
 
 
-def test_fit_invalid_optimizer():
-    """Unknown optimizer raises ValueError."""
+def test_fit_invalid_lr():
+    """Unknown lr string or learning_kind raises ValueError."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-    with pytest.raises(ValueError, match="Unknown optimizer"):
-        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), optimizer="sgd")
+    with pytest.raises(ValueError, match="Unknown lr value"):
+        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), lr="sgd")
+    with pytest.raises(ValueError, match="Unknown kind"):
+        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), lr=0.1, learning_kind="kalman")
 
 
 def test_fit_record_trajectories():

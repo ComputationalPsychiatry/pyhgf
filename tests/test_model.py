@@ -252,8 +252,7 @@ def test_network_adam_optimizer():
         y=y,
         inputs_x_idxs=x_idxs,
         inputs_y_idxs=y_idxs,
-        lr=0.1,
-        optimizer="adam",
+        lr="adam",
     )
 
     assert net.last_attributes is not None
@@ -294,7 +293,6 @@ def test_network_fit_record_trajectories():
         inputs_x_idxs=x_idxs,
         inputs_y_idxs=y_idxs,
         lr=0.1,
-        optimizer=None,
         record_trajectories=True,
     )
 
