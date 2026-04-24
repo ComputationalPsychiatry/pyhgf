@@ -1048,6 +1048,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">vectorized_posterior_update_precision_value_level</span><span class="p">(</span>
             <span class="n">layer</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">coupling_fn_grad</span>
         <span class="p">),</span>
+        <span class="n">a_min</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">,</span>
         <span class="n">a_max</span><span class="o">=</span><span class="mf">1e8</span><span class="p">,</span>
     <span class="p">)</span>
 
