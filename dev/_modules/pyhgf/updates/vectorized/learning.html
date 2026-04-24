@@ -874,7 +874,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">&quot;&quot;&quot;Vectorized weight learning for deep predictive coding networks.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 
@@ -888,28 +888,40 @@ window.runMermaid = runMermaid;</script>
     <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-    <span class="n">lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_is_binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">adam_m</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">adam_v</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">adam_t</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">adam_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
     <span class="n">adam_beta1</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
     <span class="n">adam_beta2</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.999</span><span class="p">,</span>
     <span class="n">adam_epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Unified weight update for vectorized layers.</span>
 
-<span class="sd">    Branches on the ``lr`` parameter:</span>
+<span class="sd">    The gradient is first computed according to *kind*, then scaled by *lr*</span>
+<span class="sd">    (uniformly across all modes):</span>
 
-<span class="sd">    - **Fixed** (``lr`` is a float):</span>
-<span class="sd">      :math:`\Delta w = \text{lr} \cdot \text{PE} \cdot \pi_\text{child}</span>
-<span class="sd">      \cdot g(\text{parent})`</span>
-<span class="sd">    - **Dynamic** (``lr is None``): Kalman-gain rule.</span>
-<span class="sd">      :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`</span>
-<span class="sd">      :math:`\Delta w = K \cdot \text{PE} \cdot g(\text{parent})`</span>
+<span class="sd">    - **standard** (``kind=&quot;standard&quot;``):</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent})`</span>
+<span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``):</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`</span>
+<span class="sd">    - **dynamic** (``kind=&quot;dynamic&quot;``): Kalman-gain-weighted PE.</span>
+<span class="sd">      :math:`K = \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child})`</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`</span>
 
-<span class="sd">    When ``adam_m`` and ``adam_v`` are provided (not *None*), the fixed-LR gradient is</span>
-<span class="sd">    filtered through Adam before being applied.</span>
+<span class="sd">    *lr* controls how the gradient is applied (same semantics for all three</span>
+<span class="sd">    kinds):</span>
+
+<span class="sd">    - **float ≥ 0**: :math:`\Delta w = g \cdot \text{lr}`</span>
+<span class="sd">    - ``&quot;adam&quot;``: gradient filtered through the Adam optimiser</span>
+<span class="sd">      (Kingma &amp; Ba, 2015); step size controlled by *adam_lr*.</span>
+
+<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for ``kind=&quot;dynamic&quot;``,</span>
+<span class="sd">    pass ``lr=1.0``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -923,20 +935,31 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        a constant input node.</span>
 <span class="sd">    coupling_fn :</span>
 <span class="sd">        Coupling function applied to parent means.</span>
+<span class="sd">    kind :</span>
+<span class="sd">        Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
+<span class="sd">        or ``&quot;dynamic&quot;``.</span>
 <span class="sd">    lr :</span>
-<span class="sd">        Fixed learning rate.  When ``None`` (default) the dynamic</span>
-<span class="sd">        precision-weighted Kalman-gain rule is used instead.</span>
+<span class="sd">        How the gradient is applied: a non-negative float for direct scaling,</span>
+<span class="sd">        or ``&quot;adam&quot;`` for the Adam optimiser.  Applied uniformly across all</span>
+<span class="sd">        *kind* values, including ``&quot;dynamic&quot;``.</span>
 <span class="sd">    parent_has_constant :</span>
 <span class="sd">        If True, the parent layer has a constant input node.  The parent</span>
 <span class="sd">        mean is augmented with 1.0 and the precision with the parent</span>
 <span class="sd">        precision mean so the bias column of *weights* is updated.</span>
+<span class="sd">    child_is_binary :</span>
+<span class="sd">        If True, the child layer is a binary node.  In ``&quot;precision_weighted&quot;``</span>
+<span class="sd">        mode the precision multiplication is skipped because the Bernoulli</span>
+<span class="sd">        variance is already embedded in the binary prediction-error formula.</span>
 <span class="sd">    adam_m :</span>
 <span class="sd">        First moment estimate for Adam, same shape as *weights*.</span>
-<span class="sd">        Pass ``None`` to disable Adam.</span>
+<span class="sd">        Required when ``lr=&quot;adam&quot;``.</span>
 <span class="sd">    adam_v :</span>
 <span class="sd">        Second moment estimate for Adam, same shape as *weights*.</span>
+<span class="sd">        Required when ``lr=&quot;adam&quot;``.</span>
 <span class="sd">    adam_t :</span>
 <span class="sd">        Global Adam timestep (already incremented for this step).</span>
+<span class="sd">    adam_lr :</span>
+<span class="sd">        Adam step size.  Only used when ``lr=&quot;adam&quot;``.</span>
 <span class="sd">    adam_beta1 :</span>
 <span class="sd">        Exponential decay rate for the first moment.</span>
 <span class="sd">    adam_beta2 :</span>
@@ -952,7 +975,25 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Updated first moment (or *None* when Adam is not used).</span>
 <span class="sd">    new_adam_v :</span>
 <span class="sd">        Updated second moment (or *None* when Adam is not used).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If *kind* is not one of ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
+<span class="sd">        or ``&quot;dynamic&quot;``.</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If *lr* is a string other than ``&quot;adam&quot;``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected &#39;standard&#39;, &#39;precision_weighted&#39;, &quot;</span>
+            <span class="s2">&quot;or &#39;dynamic&#39;.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">lr</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown lr value &#39;</span><span class="si">{</span><span class="n">lr</span><span class="si">}</span><span class="s2">&#39;. Expected a non-negative float or &#39;adam&#39;.&quot;</span>
+        <span class="p">)</span>
+
     <span class="c1"># Prediction error at child layer</span>
     <span class="n">pe</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
 
@@ -968,29 +1009,31 @@ window.runMermaid = runMermaid;</script>
     <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_mean</span><span class="p">)</span>
 
     <span class="c1"># Base outer product: PE ⊗ g(parent)</span>
-    <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">base_delta</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
 
-    <span class="k">if</span> <span class="n">lr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Raw gradient (before LR scaling)</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">coupling_delta</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">adam_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">adam_v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Adam-filtered update</span>
-            <span class="n">new_m</span> <span class="o">=</span> <span class="n">adam_beta1</span> <span class="o">*</span> <span class="n">adam_m</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span>
-            <span class="n">new_v</span> <span class="o">=</span> <span class="n">adam_beta2</span> <span class="o">*</span> <span class="n">adam_v</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span><span class="o">**</span><span class="mi">2</span>
-            <span class="n">m_hat</span> <span class="o">=</span> <span class="n">new_m</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="o">**</span><span class="n">adam_t</span><span class="p">)</span>
-            <span class="n">v_hat</span> <span class="o">=</span> <span class="n">new_v</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta2</span><span class="o">**</span><span class="n">adam_t</span><span class="p">)</span>
-            <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">m_hat</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">adam_epsilon</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">lr</span>
-            <span class="n">new_m</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">new_v</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Dynamic: Kalman gain (Adam not applicable)</span>
+    <span class="c1"># Compute the gradient according to *kind*</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
         <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
             <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">coupling_delta</span> <span class="o">*</span> <span class="n">kalman_gain</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">base_delta</span> <span class="o">*</span> <span class="n">kalman_gain</span>
+    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_weighted&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">base_delta</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># &quot;standard&quot;, or binary child where Bernoulli variance must not be doubled</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">base_delta</span>
+
+    <span class="c1"># Apply *lr* uniformly across all kinds</span>
+    <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">adam_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">adam_v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;adam_m and adam_v must be provided when lr=&#39;adam&#39;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">new_m</span> <span class="o">=</span> <span class="n">adam_beta1</span> <span class="o">*</span> <span class="n">adam_m</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span>
+        <span class="n">new_v</span> <span class="o">=</span> <span class="n">adam_beta2</span> <span class="o">*</span> <span class="n">adam_v</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">m_hat</span> <span class="o">=</span> <span class="n">new_m</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="o">**</span><span class="n">adam_t</span><span class="p">)</span>
+        <span class="n">v_hat</span> <span class="o">=</span> <span class="n">new_v</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta2</span><span class="o">**</span><span class="n">adam_t</span><span class="p">)</span>
+        <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">adam_lr</span> <span class="o">*</span> <span class="n">m_hat</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">adam_epsilon</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">lr</span><span class="p">)</span>
         <span class="n">new_m</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">new_v</span> <span class="o">=</span> <span class="kc">None</span>
 

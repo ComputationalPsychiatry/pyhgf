@@ -660,8 +660,8 @@ It updates the value level precision first, then the mean.</p>
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents</span> <span class="pre">+</span> <span class="pre">1)</span></code>
 when the parent layer includes a constant input node.</p></li>
 <li><p><strong>coupling_fn_grad</strong> (<em>Callable</em>) – Gradient of the coupling function.</p></li>
-<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the last column of <em>weights</em> corresponds to the constant
-input node and is stripped before computing the posterior update.</p></li>
+<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the last column of <em>weights</em> corresponds to the constant input node and
+is stripped before computing the posterior update.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

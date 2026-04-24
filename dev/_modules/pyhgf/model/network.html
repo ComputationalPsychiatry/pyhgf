@@ -1061,7 +1061,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Network&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the belief propagation function.</span>
@@ -1080,21 +1080,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            preexisting values. Otherwise, do not create a new function if the attribute</span>
 <span class="sd">            `scan_fn` is already defined.</span>
 <span class="sd">        lr :</span>
-<span class="sd">            Learning rate for weight updates, or ``&quot;dynamic&quot;`` for Kalman-gain updates.</span>
-<span class="sd">        optimizer :</span>
-<span class="sd">            Optimizer name.  ``&quot;adam&quot;`` (default) filters weight gradients through the</span>
-<span class="sd">            Adam algorithm.  *None* uses plain gradient or Kalman-gain updates.</span>
+<span class="sd">            How the gradient is applied: a non-negative float for direct scaling, or</span>
+<span class="sd">            ``&quot;adam&quot;`` for the Adam optimiser.  Applied uniformly across all</span>
+<span class="sd">            *learning_kind* values, including ``&quot;dynamic&quot;``.</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``</span>
+<span class="sd">            (default), or ``&quot;dynamic&quot;``.</span>
 <span class="sd">        params :</span>
-<span class="sd">            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default</span>
-<span class="sd">            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``</span>
-<span class="sd">            (default 1e-3, the Adam step size).</span>
+<span class="sd">            Dictionary of Adam hyper-parameters (used only when ``lr=&quot;adam&quot;``):</span>
+<span class="sd">            ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``</span>
+<span class="sd">            (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">optimizer</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Unknown optimizer &#39;</span><span class="si">{</span><span class="n">optimizer</span><span class="si">}</span><span class="s2">&#39;. Supported: &#39;adam&#39; or None.&quot;</span>
-            <span class="p">)</span>
-
         <span class="c1"># get the dimension of the input nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_input_dimension</span><span class="p">()</span>
@@ -1106,23 +1103,24 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
         <span class="c1"># create the learning sequence</span>
         <span class="c1"># all nodes except the prediction nodes should update their coupling strengths</span>
-        <span class="n">use_adam</span> <span class="o">=</span> <span class="n">optimizer</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span>
+        <span class="n">use_adam</span> <span class="o">=</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span>
         <span class="k">if</span> <span class="n">use_adam</span><span class="p">:</span>
             <span class="n">p</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
             <span class="n">adam_lr</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)</span>
             <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
                 <span class="n">learning_weights</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
                 <span class="n">lr</span><span class="o">=</span><span class="n">adam_lr</span><span class="p">,</span>
                 <span class="n">adam_beta1</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span>
                 <span class="n">adam_beta2</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
                 <span class="n">adam_epsilon</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">),</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
-            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">learning_weights</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span><span class="n">learning_weights</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+            <span class="n">learn_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span><span class="n">learning_weights</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid lr value. Should be &#39;dynamic&#39; or a float value.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid lr value &#39;</span><span class="si">{</span><span class="n">lr</span><span class="si">}</span><span class="s2">&#39;. Expected a non-negative float or &#39;adam&#39;.&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># do not update the last layer</span>
         <span class="n">update_steps</span> <span class="o">=</span> <span class="p">[</span>
@@ -1201,7 +1199,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">inputs_x_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">inputs_y_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
         <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -1223,15 +1221,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        inputs_y_idxs :</span>
 <span class="sd">            The indexes of the nodes receiving the predictions (y).</span>
 <span class="sd">        lr :</span>
-<span class="sd">            Learning rate for weight updates, or ``&quot;dynamic&quot;`` for Kalman-gain updates.</span>
-<span class="sd">        optimizer :</span>
-<span class="sd">            Optimizer name. ``&quot;adam&quot;`` (default) filters weight gradients through the</span>
-<span class="sd">            Adam algorithm (Kingma &amp; Ba, 2015). *None* uses plain gradient or</span>
-<span class="sd">            Kalman-gain updates.</span>
+<span class="sd">            How the gradient is applied: a non-negative float for direct scaling, or</span>
+<span class="sd">            ``&quot;adam&quot;`` for the Adam optimiser.</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``</span>
+<span class="sd">            (default), or ``&quot;dynamic&quot;``.</span>
 <span class="sd">        params :</span>
-<span class="sd">            Dictionary of optimizer hyper-parameters. For Adam: ``beta1`` (default</span>
-<span class="sd">            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``</span>
-<span class="sd">            (default 1e-3, the Adam step size).</span>
+<span class="sd">            Dictionary of Adam hyper-parameters (used only when ``lr=&quot;adam&quot;``):</span>
+<span class="sd">            ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``</span>
+<span class="sd">            (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).</span>
 <span class="sd">        record_trajectories :</span>
 <span class="sd">            If True, record the full node trajectories at every time step</span>
 <span class="sd">            (accessible via ``self.node_trajectories``). If False (default),</span>
@@ -1252,7 +1250,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="n">inputs_x_idxs</span><span class="p">,</span>
                 <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="n">inputs_y_idxs</span><span class="p">,</span>
                 <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
-                <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
                 <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
             <span class="p">)</span>
 

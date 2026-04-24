@@ -655,9 +655,6 @@ expected precision (Bernoulli variance) so it can be consumed directly by the
 continuous parent’s posterior update without requiring a different update step:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\\delta_b = \\frac{\\mu_b - \\hat{\\mu}_b}{\\hat{\\pi}_b}\end{split}\]</div>
-<p>Parent-count normalisation is applied in the prediction step instead
-(the logit is divided by <code class="docutils literal notranslate"><span class="pre">n_parents</span></code> before the sigmoid), so the PE
-carries the full residual signal without further scaling.</p>
 <p>The posterior precision of a binary node is set equal to the expected precision
 (there is no precision update for binary nodes).</p>
 <dl class="field-list simple">

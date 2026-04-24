@@ -1061,10 +1061,10 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
 
     <span class="c1"># compute the predicted_volatility from the total volatility</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-        <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="mf">80.0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">80.0</span><span class="p">)</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
     <span class="p">)</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">predicted_volatility</span><span class="p">,</span> <span class="mf">1e-128</span><span class="p">)</span>
 
     <span class="c1"># Estimate the new expected precision for the node</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span>

@@ -884,11 +884,12 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="learning_weights">
 <a class="viewcode-back" href="../../../generated/pyhgf.updates.learning/pyhgf.updates.learning.learning_weights.html#pyhgf.updates.learning.learning_weights">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;edges&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">learning_weights</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span><span class="p">,</span>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
     <span class="n">lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">adam_beta1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">adam_beta2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -896,15 +897,26 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Unified weights update.</span>
 
-<span class="sd">    Branches on the ``lr`` and ``adam_beta1`` parameters:</span>
+<span class="sd">    The gradient is first computed according to *kind*, then scaled by *lr*:</span>
 
-<span class="sd">    - **Adam** (``adam_beta1`` is a float): uses the Adam optimiser.</span>
-<span class="sd">    - **Fixed** (``lr`` is a float, no Adam): uses a fixed learning rate.</span>
-<span class="sd">      :math:`\Delta w_i = \text{lr} \cdot (\text{PE} \cdot \pi_\text{child})</span>
-<span class="sd">      \cdot g(\text{parent}_i)`</span>
-<span class="sd">    - **Dynamic** (``lr is None``, no Adam): uses a precision-based learning rate</span>
-<span class="sd">      (Kalman gain).</span>
-<span class="sd">      :math:`K_i = \pi_{\text{parent}_i} / (\pi_{\text{parent}_i} + \pi_\text{child})`</span>
+<span class="sd">    - **standard** (``kind=&quot;standard&quot;``): raw prediction-error outer product, no</span>
+<span class="sd">    precision weighting.</span>
+<span class="sd">      :math:`g_i = \text{PE} \cdot g(\text{parent}_i)`</span>
+<span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``): gradient weighted</span>
+<span class="sd">      by the child posterior precision.</span>
+<span class="sd">      :math:`g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)`</span>
+<span class="sd">    - **dynamic** (``kind=&quot;dynamic&quot;``): Kalman-gain-weighted PE.</span>
+<span class="sd">      :math:`K_i = \pi_\text{child} / (\pi_{\text{parent}_i} + \pi_\text{child})`</span>
+<span class="sd">      :math:`g_i = K_i \cdot \text{PE} \cdot g(\text{parent}_i)`</span>
+
+<span class="sd">    *lr* controls how the gradient is applied (same semantics for all three kinds):</span>
+
+<span class="sd">    - **Adam** (``adam_beta1`` is a float): gradient filtered through Adam; step size</span>
+<span class="sd">    controlled by *lr*.</span>
+<span class="sd">    - **Fixed** (``adam_beta1`` is None): :math:`\Delta w_i = \text{lr} \cdot g_i`.</span>
+
+<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for ``kind=&quot;dynamic&quot;``, pass</span>
+<span class="sd">    ``lr=1.0``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -916,10 +928,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
 <span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as node number.</span>
 <span class="sd">        For each node, the index list value and volatility parents and children.</span>
+<span class="sd">    kind :</span>
+<span class="sd">        Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;`` (default),</span>
+<span class="sd">        or ``&quot;dynamic&quot;``.</span>
 <span class="sd">    lr :</span>
-<span class="sd">        Fixed learning rate. When ``None`` (default) the dynamic</span>
-<span class="sd">        precision-weighted rule is used instead. When Adam is active, this is</span>
-<span class="sd">        the Adam step size.</span>
+<span class="sd">        Fixed learning rate or Adam step size.  Applied uniformly across all *kind*</span>
+<span class="sd">        values, including ``&quot;dynamic&quot;``.</span>
 <span class="sd">    adam_beta1 :</span>
 <span class="sd">        Adam first moment decay rate.  When ``None`` (default) Adam is not used.</span>
 <span class="sd">    adam_beta2 :</span>
@@ -934,26 +948,15 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 1. get the prospective activation vector from the upper layer with coupling</span>
-    <span class="c1"># ---------------------------------------------------------------------------</span>
     <span class="n">means</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore[union-attr]</span>
     <span class="p">]</span>
     <span class="n">couplings</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_parents&quot;</span><span class="p">]</span>
 
-    <span class="c1"># constant-state parents (node_type 0) may lack a &quot;precision&quot; attribute;</span>
-    <span class="c1"># default to 1.0 so the dynamic path treats them identically.</span>
     <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">lr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">adam_beta1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">parent_precisions</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore[union-attr]</span>
-        <span class="p">])</span>
-
     <span class="c1"># 2. find the coupling function for each parent → child pair</span>
-    <span class="c1"># Binary nodes always use sigmoid coupling in the weight update.</span>
-    <span class="c1"># -----------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># binary-state</span>
         <span class="n">coupling_fns</span> <span class="o">=</span> <span class="p">[</span><span class="n">jax_sigmoid</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span><span class="p">]</span>  <span class="c1"># type: ignore[union-attr]</span>
     <span class="k">else</span><span class="p">:</span>
@@ -966,21 +969,32 @@ window.runMermaid = runMermaid;</script>
             <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore[union-attr]</span>
         <span class="p">]</span>
 
-    <span class="c1"># 3. compute the prospective activation for each parent</span>
-    <span class="c1"># -------------------------------------------------------</span>
+    <span class="c1"># 3. prospective activation for each parent</span>
     <span class="n">prospective_activation</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
         <span class="n">fn</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span> <span class="k">if</span> <span class="n">fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mean</span> <span class="k">for</span> <span class="n">mean</span><span class="p">,</span> <span class="n">fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">coupling_fns</span><span class="p">)</span>
     <span class="p">])</span>
 
-    <span class="c1"># 4. update the coupling strength between this node and its value parents</span>
-    <span class="c1"># -----------------------------------------------------------------------</span>
+    <span class="c1"># 4. compute the gradient according to *kind*</span>
     <span class="n">pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">is_binary</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">1</span>
 
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
+        <span class="n">parent_precisions</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="p">])</span>
+
+        <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precisions</span> <span class="o">+</span> <span class="n">child_precision</span><span class="p">)</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">kalman_gain</span> <span class="o">*</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">prospective_activation</span>
+    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_weighted&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_binary</span><span class="p">:</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">child_precision</span> <span class="o">*</span> <span class="n">prospective_activation</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># &quot;standard&quot;, or binary child where Bernoulli variance must not be doubled</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">prospective_activation</span>
+
+    <span class="c1"># 5. apply *lr* uniformly across all kinds (direct scaling or Adam)</span>
     <span class="k">if</span> <span class="n">adam_beta1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Adam optimiser</span>
         <span class="k">assert</span> <span class="n">adam_beta2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="n">adam_epsilon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">child_precision</span> <span class="o">*</span> <span class="n">prospective_activation</span>
         <span class="n">adam_m</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">adam_beta1</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;adam_m&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span>
         <span class="p">)</span>
@@ -993,19 +1007,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">new_value_couplings</span> <span class="o">=</span> <span class="n">couplings</span> <span class="o">+</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">m_hat</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">adam_epsilon</span><span class="p">)</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;adam_m&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adam_m</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;adam_v&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adam_v</span>
-    <span class="k">elif</span> <span class="n">lr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Fixed learning rate:</span>
-        <span class="c1"># Δw_i = lr · (PE · π_child) · g(parent_i)</span>
-        <span class="n">new_value_couplings</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">couplings</span> <span class="o">+</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">child_precision</span> <span class="o">*</span> <span class="n">prospective_activation</span>
-        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Dynamic (precision-weighted Kalman gain):</span>
-        <span class="c1"># Δw_i = K_i · PE · g(parent_i)</span>
-        <span class="n">precision_weighting</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precisions</span> <span class="o">+</span> <span class="n">child_precision</span><span class="p">)</span>
-        <span class="n">new_value_couplings</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">couplings</span> <span class="o">+</span> <span class="n">precision_weighting</span> <span class="o">*</span> <span class="n">pe</span> <span class="o">*</span> <span class="n">prospective_activation</span>
-        <span class="p">)</span>
+        <span class="n">new_value_couplings</span> <span class="o">=</span> <span class="n">couplings</span> <span class="o">+</span> <span class="n">lr</span> <span class="o">*</span> <span class="n">gradient</span>
 
     <span class="c1"># guard against inf/nan coupling values</span>
     <span class="n">new_value_couplings</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
@@ -1018,7 +1021,6 @@ window.runMermaid = runMermaid;</script>
         <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span><span class="p">,</span>  <span class="c1"># type: ignore[arg-type]</span>
         <span class="n">new_value_couplings</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="c1"># update the coupling strength in the attributes dictionary for both nodes</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="n">set_coupling</span><span class="p">(</span>
             <span class="n">parent_idx</span><span class="o">=</span><span class="n">value_parent_idx</span><span class="p">,</span>
             <span class="n">child_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>

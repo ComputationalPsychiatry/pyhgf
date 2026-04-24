@@ -937,10 +937,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
 
         <span class="c1"># Predicted volatility for volatility level</span>
-        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-            <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="mf">80.0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">80.0</span><span class="p">)</span>
+        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">)</span>
+        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">predicted_volatility_vol</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility_vol</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
         <span class="p">)</span>
-        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">predicted_volatility_vol</span><span class="p">,</span> <span class="mf">1e-128</span><span class="p">)</span>
 
         <span class="c1"># Expected precision for volatility level</span>
         <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
@@ -983,10 +983,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
 
     <span class="c1"># Predicted volatility for value level</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-        <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=-</span><span class="mf">80.0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">80.0</span><span class="p">)</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
     <span class="p">)</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">predicted_volatility</span><span class="p">,</span> <span class="mf">1e-128</span><span class="p">)</span>
 
     <span class="c1"># Expected precision for value level</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span><span class="p">)</span>

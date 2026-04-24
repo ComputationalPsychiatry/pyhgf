@@ -976,7 +976,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
@@ -1259,7 +1259,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_propagation_fn</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
@@ -1268,17 +1268,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        lr :</span>
-<span class="sd">            Learning rate for weight updates.</span>
-<span class="sd">        optimizer :</span>
-<span class="sd">            Optimizer name.  ``&quot;adam&quot;`` enables Adam filtering of weight</span>
-<span class="sd">            gradients.  *None* uses plain gradient updates.</span>
+<span class="sd">            How the gradient is applied: a non-negative float for direct scaling, or</span>
+<span class="sd">            ``&quot;adam&quot;`` for the Adam optimiser.</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``</span>
+<span class="sd">            (default), or ``&quot;dynamic&quot;``.</span>
 <span class="sd">        params :</span>
-<span class="sd">            Hyper-parameters for the optimizer (e.g. ``beta1``, ``beta2``,</span>
-<span class="sd">            ``epsilon``, and ``lr`` for Adam).  See :meth:`fit` for defaults.</span>
+<span class="sd">            Hyper-parameters for the Adam optimiser (``beta1``, ``beta2``, ``epsilon``,</span>
+<span class="sd">            ``lr``). Only used when ``lr=&quot;adam&quot;``.</span>
 <span class="sd">        record_trajectories :</span>
-<span class="sd">            If True, the scan output includes the full ``NetworkState`` at</span>
-<span class="sd">            every time step (useful for inspection but significantly slower).</span>
-<span class="sd">            If False (default), only predictions are accumulated.</span>
+<span class="sd">            If True, the scan output includes the full ``NetworkState`` at every time</span>
+<span class="sd">            step (useful for inspection but significantly slower). If False (default),</span>
+<span class="sd">            only predictions are accumulated.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1295,17 +1296,14 @@ window.runMermaid = runMermaid;</script>
         <span class="n">update_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
         <span class="n">volatility_parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span>
 
-        <span class="c1"># Build Adam parameters tuple (or None)</span>
-        <span class="c1"># Format: (beta1, beta2, epsilon, adam_lr_override)</span>
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+        <span class="c1"># Resolve Adam hyper-parameters when lr=&quot;adam&quot;.</span>
+        <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
             <span class="n">p</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
-            <span class="c1"># Use the outer lr as Adam&#39;s step size unless explicitly overridden.</span>
-            <span class="n">adam_lr</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="n">lr</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1e-3</span><span class="p">)</span>
-            <span class="n">adam_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">adam_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span>
                 <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
                 <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">),</span>
-                <span class="n">adam_lr</span><span class="p">,</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">adam_params</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1324,6 +1322,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">adam_params</span><span class="p">,</span>
                     <span class="n">update_type</span><span class="p">,</span>
                     <span class="n">volatility_parents</span><span class="p">,</span>
+                    <span class="n">learning_kind</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span><span class="p">)</span>
 
@@ -1341,6 +1340,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">adam_params</span><span class="p">,</span>
                     <span class="n">update_type</span><span class="p">,</span>
                     <span class="n">volatility_parents</span><span class="p">,</span>
+                    <span class="n">learning_kind</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_step</span><span class="p">)</span>
@@ -1399,8 +1399,8 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
@@ -1413,16 +1413,23 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        y :</span>
 <span class="sd">            Target data, shape (n_samples, n_output_features).</span>
 <span class="sd">        lr :</span>
-<span class="sd">            Learning rate for weight updates, or ``&quot;dynamic&quot;`` for</span>
-<span class="sd">            Kalman-gain updates.</span>
-<span class="sd">        optimizer :</span>
-<span class="sd">            Optimizer name.  ``&quot;adam&quot;`` (default) filters weight gradients through the</span>
-<span class="sd">            Adam algorithm (Kingma &amp; Ba, 2015).  *None* uses plain gradient or</span>
-<span class="sd">            Kalman-gain updates.</span>
+<span class="sd">            How the gradient is applied:</span>
+
+<span class="sd">            - **float ≥ 0** — direct scaling of the gradient.</span>
+<span class="sd">            - ``&quot;adam&quot;`` (default) — Adam optimiser; step size set by ``params[&quot;lr&quot;]``</span>
+<span class="sd">            (default 1e-3).</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            Gradient computation mode:</span>
+
+<span class="sd">            - ``&quot;precision_weighted&quot;`` (default) — gradient is weighted by the child</span>
+<span class="sd">            layer&#39;s posterior precision before applying *lr*.</span>
+<span class="sd">            - ``&quot;standard&quot;`` — raw prediction-error outer product, no precision</span>
+<span class="sd">            weighting.</span>
+<span class="sd">            - ``&quot;dynamic&quot;`` — Kalman-gain rule.</span>
 <span class="sd">        params :</span>
-<span class="sd">            Dictionary of optimizer hyper-parameters.  For Adam: ``beta1`` (default</span>
-<span class="sd">            0.9), ``beta2`` (default 0.999), ``epsilon`` (default 1e-8), and ``lr``</span>
-<span class="sd">            (default 1e-3, the Adam step size).</span>
+<span class="sd">            Hyper-parameters for the Adam optimiser: ``beta1`` (default 0.9), ``beta2``</span>
+<span class="sd">            (default 0.999), ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3, the</span>
+<span class="sd">            Adam step size).</span>
 <span class="sd">        record_trajectories :</span>
 <span class="sd">            If True, record the full ``NetworkState`` at every time step (accessible</span>
 <span class="sd">            via ``self.trajectories``).  This is useful for inspection but significantly</span>
@@ -1436,13 +1443,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If *optimizer* is not ``None`` or ``&quot;adam&quot;``.</span>
+<span class="sd">            If *learning_kind* or *lr* is an unrecognised value.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">optimizer</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Unknown optimizer &#39;</span><span class="si">{</span><span class="n">optimizer</span><span class="si">}</span><span class="s2">&#39;. Supported: &#39;adam&#39; or None.&quot;</span>
-            <span class="p">)</span>
-
         <span class="c1"># Initialize state if needed</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
@@ -1451,15 +1453,15 @@ window.runMermaid = runMermaid;</script>
         <span class="n">needs_retrace</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">!=</span> <span class="n">lr</span>
-            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span> <span class="o">!=</span> <span class="n">optimizer</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">!=</span> <span class="n">learning_kind</span>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">!=</span> <span class="n">record_trajectories</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">needs_retrace</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_propagation_fn</span><span class="p">(</span>
-                <span class="n">lr</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">record_trajectories</span>
+                <span class="n">lr</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">record_trajectories</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="n">lr</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="n">learning_kind</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="n">record_trajectories</span>
 
         <span class="c1"># Convert to JAX arrays</span>
@@ -1523,7 +1525,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_optimizer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span>
