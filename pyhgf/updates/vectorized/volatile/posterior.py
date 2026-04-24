@@ -169,6 +169,7 @@ def vectorized_layer_posterior_update(
         vectorized_posterior_update_precision_value_level(
             layer, child, weights, coupling_fn_grad
         ),
+        a_min=layer.expected_precision,
         a_max=1e8,
     )
 
