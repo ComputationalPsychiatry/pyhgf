@@ -152,8 +152,8 @@ def vectorized_layer_posterior_update(
     coupling_fn_grad :
         Gradient of the coupling function.
     parent_has_constant :
-        If True, the last column of *weights* corresponds to the constant
-        input node and is stripped before computing the posterior update.
+        If True, the last column of *weights* corresponds to the constant input node and
+        is stripped before computing the posterior update.
 
     Returns
     -------

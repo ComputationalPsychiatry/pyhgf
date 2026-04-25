@@ -131,42 +131,52 @@ fn unbounded_volatility_level_update(network: &Network, node_idx: usize, time_st
     // Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om
     let gamma_c = time_step.ln() + ka * muhat_j + om;
 
-    // Recompute v and w using muhat_j
-    let v_jm1 = gamma_c.clamp(-80.0, 80.0).exp();
-    let w_jm1 = v_jm1 / (al_aux + v_jm1);
+    // Recompute v and w using muhat_j. w is written as 1/(1 + al_aux/v) so
+    // it stays finite when v_jm1 overflows to +inf (→ 1), matching Julia.
+    let v_jm1 = gamma_c.exp();
+    let w_jm1 = 1.0 / (1.0 + al_aux / v_jm1);
     let da_jm1 = be_aux / (al_aux + v_jm1) - 1.0;
 
     // Expansion 1: quadratic at the prediction (prior mean)
     let pi1 = pihat_j + 0.5 * ka.powi(2) * w_jm1 * (1.0 - w_jm1);
     let mu1 = muhat_j + (ka * w_jm1 / (2.0 * pi1)) * da_jm1;
 
-    // Expansion 2: quadratic at the Lambert W0 approximate mode
+    // Expansion 2: quadratic at the Lambert W0 approximate mode.
+    // W_arg is computed in log-space and capped at log(f64::MAX) to match the
+    // MATLAB reference: W_arg = exp(min(log_W_arg, log(realmax))).
     let pihat_y = pihat_j / ka.powi(2);
-    let w_arg = (be_aux / (2.0 * pihat_y))
-        * (0.5 / pihat_y - gamma_c).clamp(-80.0, 80.0).exp();
+    let log_w_arg = be_aux.ln() - (2.0 * pihat_y).ln() + 0.5 / pihat_y - gamma_c;
+    let w_arg = log_w_arg.min(f64::MAX.ln()).exp();
     let v_w = lambert_w0(w_arg);
     let y_star = gamma_c + v_w - 0.5 / pihat_y;
     let x_star = (y_star - time_step.ln() - om) / ka;
 
-    let s2 = time_step * (ka * x_star + om).clamp(-80.0, 80.0).exp();
-    let w2 = s2 / (al_aux + s2);
+    // Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).
+    let s2 = time_step * (ka * x_star + om).exp();
+    let w2 = 1.0 / (1.0 + al_aux / s2);
     let da2 = be_aux / (al_aux + s2) - 1.0;
 
     let pi2_full = pihat_j + 0.5 * ka.powi(2) * w2 * (w2 + (2.0 * w2 - 1.0) * da2);
-    let pi2 = if pi2_full <= 0.0 {
+    let pi2_safe = if pi2_full <= 0.0 {
         pihat_j + 0.5 * ka.powi(2) * w2 * (1.0 - w2)
     } else {
         pi2_full
     };
-    let mu2 = x_star + (0.5 * ka * w2 * da2 - pihat_j * (x_star - muhat_j)) / pi2;
+    let mu2_safe = x_star + (0.5 * ka * w2 * da2 - pihat_j * (x_star - muhat_j)) / pi2_safe;
 
-    // Variational energy-based softmax blend
-    let ey1 = time_step * (ka * mu1 + om).clamp(-80.0, 80.0).exp();
+    // Fall back to Expansion 1 if Expansion 2 yields non-finite results —
+    // matches MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1".
+    let exp2_finite = pi2_safe.is_finite() && mu2_safe.is_finite();
+    let pi2 = if exp2_finite { pi2_safe } else { pi1 };
+    let mu2 = if exp2_finite { mu2_safe } else { mu1 };
+
+    // Variational energy-based softmax blend (direct form, matches MATLAB)
+    let ey1 = time_step * (ka * mu1 + om).exp();
     let i1 = -0.5 * (al_aux + ey1).ln()
         - 0.5 * be_aux / (al_aux + ey1)
         - 0.5 * pihat_j * (mu1 - muhat_j).powi(2);
 
-    let ey2 = time_step * (ka * mu2 + om).clamp(-80.0, 80.0).exp();
+    let ey2 = time_step * (ka * mu2 + om).exp();
     let i2 = -0.5 * (al_aux + ey2).ln()
         - 0.5 * be_aux / (al_aux + ey2)
         - 0.5 * pihat_j * (mu2 - muhat_j).powi(2);

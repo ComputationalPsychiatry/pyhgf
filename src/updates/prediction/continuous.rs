@@ -45,7 +45,8 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
         }
     }
 
-    let predicted_volatility = (time_step * total_volatility.clamp(-80.0, 80.0).exp()).max(1e-128);
+    let pv_raw = time_step * total_volatility.exp();
+    let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
     let expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
 

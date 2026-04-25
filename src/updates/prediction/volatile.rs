@@ -18,7 +18,8 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     // ===================================================================
     // 1. PREDICT VOLATILITY LEVEL (implicit internal state)
     // ===================================================================    
-    let predicted_volatility_vol = (time_step * tonic_volatility_vol.clamp(-80.0, 80.0).exp()).max(1e-128);
+    let pvv_raw = time_step * tonic_volatility_vol.exp();
+    let predicted_volatility_vol = if pvv_raw > 1e-128 { pvv_raw } else { f64::NAN };
     let expected_precision_vol = 1.0 / ((1.0 / precision_vol) + predicted_volatility_vol);
     let effective_precision_vol = predicted_volatility_vol * expected_precision_vol;
 
@@ -28,7 +29,8 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
 
     // --- 2a. Predict precision (depends on volatility level) ---
     let total_volatility = tonic_volatility + volatility_coupling_internal * mean_vol;
-    let predicted_volatility = (time_step * total_volatility.clamp(-80.0, 80.0).exp()).max(1e-128);
+    let pv_raw = time_step * total_volatility.exp();
+    let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
     let expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
 

@@ -66,6 +66,7 @@ mod tests {
         for i in 0..=max_idx {
             edges.push(AdjacencyLists {
                 node_type: if idxs.contains(&i) { String::from("continuous-state") } else { String::from("unknown") },
+                learning_kind: String::from("precision_weighted"),
                 value_parents: None,
                 value_children: None,
                 volatility_parents: None,
