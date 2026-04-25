@@ -28,6 +28,18 @@ from pyhgf.utils.weight_initialisation import (
     xavier_init,
 )
 
+# Default per-layer parameter values (matching ``LayerParams.create``).
+_LAYER_PARAM_DEFAULTS: dict[str, float] = {
+    "tonic_volatility": -4.0,
+    "tonic_volatility_vol": -4.0,
+    "volatility_coupling": 1.0,
+}
+
+# Names of fields that can be overridden per layer.
+_LAYER_STATE_FIELDS: frozenset[str] = frozenset(LayerState._fields)
+_LAYER_PARAM_FIELDS: frozenset[str] = frozenset(LayerParams._fields)
+_LAYER_OVERRIDE_FIELDS: frozenset[str] = _LAYER_STATE_FIELDS | _LAYER_PARAM_FIELDS
+
 
 class DeepNetwork:
     """Deep predictive coding network with vectorized operations.
@@ -89,9 +101,9 @@ class DeepNetwork:
         self.update_type = update_type
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
-        self.tonic_volatilities: list[float] = []
-        self.tonic_volatilities_vol: list[float] = []
-        self.volatility_couplings: list[float] = []
+        # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
+        # Populated from the ``**kwargs`` of :meth:`add_layer`.
+        self.layer_overrides: list[dict[str, float]] = []
         self.add_constant_inputs: list[bool] = []
         self.fully_connected: list[bool] = []
         self.coupling_fns: list[Callable] = []  # per-layer coupling functions
@@ -109,13 +121,11 @@ class DeepNetwork:
         self,
         size: int,
         kind: str = "volatile",
-        tonic_volatility: float = -4.0,
-        tonic_volatility_vol: float = -4.0,
-        volatility_coupling: float = 1.0,
         add_constant_input: bool = True,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
         volatility_parent: bool = True,
+        **kwargs,
     ) -> "DeepNetwork":
         """Add a layer of nodes.
 
@@ -126,15 +136,6 @@ class DeepNetwork:
         kind :
             Type of nodes in this layer. ``"volatile"`` (default) uses volatile nodes
             with value and volatility levels. ``"binary"`` uses binary state nodes.
-        tonic_volatility :
-            Tonic volatility for the value level (log scale). Only used for
-            ``"volatile"`` layers.
-        tonic_volatility_vol :
-            Tonic volatility for the volatility level (log scale). Only used for
-            ``"volatile"`` layers.
-        volatility_coupling :
-            Coupling strength between the value and volatility levels. Only used for
-            ``"volatile"`` layers.
         add_constant_input :
             If `True`, add a bias term to the layer's predictions.
         fully_connected :
@@ -148,8 +149,16 @@ class DeepNetwork:
         volatility_parent :
             If True (default), this layer has an implied internal volatility parent:
             mean_vol and precision_vol are predicted and updated each step. If False,
-            the volatility level is frozen and only tonic_volatility determines the
+            the volatility level is frozen and only ``tonic_volatility`` determines the
             expected precision for the value level.
+        **kwargs :
+            Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`
+            (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,
+            ``mean_vol``, ``precision_vol``, ...) or :class:`pyhgf.typing.LayerParams`
+            (``tonic_volatility``, ``tonic_volatility_vol``, ``volatility_coupling``).
+            Each value is broadcast to the layer's ``size``. Unknown names raise
+            ``ValueError``. Defaults match ``LayerState.create`` and
+            ``LayerParams.create``.
 
         Returns
         -------
@@ -159,12 +168,10 @@ class DeepNetwork:
         Raises
         ------
         ValueError
-            If *kind* is not a recognised node type.
-        ValueError
-            If *fully_connected* is False with ``add_constant_input=True``.
-        ValueError
-            If *fully_connected* is False and this layer's size differs from
-            the preceding child layer (for non-binary child layers).
+            If *kind* is not a recognised node type, if a key in *kwargs* does not match
+            a ``LayerState`` or ``LayerParams`` field, if *fully_connected* is False
+            with ``add_constant_input=True``, or if *fully_connected* is False and this
+            layer's size differs from the preceding child layer.
         """
         # Normalise Rust-style kind names to short form
         _kind_aliases = {
@@ -177,6 +184,13 @@ class DeepNetwork:
         if kind not in valid_kinds:
             raise ValueError(
                 f"Invalid layer kind '{kind}'. Choose from {sorted(valid_kinds)}."
+            )
+
+        invalid_keys = [k for k in kwargs if k not in _LAYER_OVERRIDE_FIELDS]
+        if invalid_keys:
+            raise ValueError(
+                f"Unknown layer override(s): {invalid_keys}. "
+                f"Valid fields are {sorted(_LAYER_OVERRIDE_FIELDS)}."
             )
 
         if not fully_connected:
@@ -193,9 +207,7 @@ class DeepNetwork:
 
         self.layer_sizes.append(size)
         self.layer_kinds.append(kind)
-        self.tonic_volatilities.append(tonic_volatility)
-        self.tonic_volatilities_vol.append(tonic_volatility_vol)
-        self.volatility_couplings.append(volatility_coupling)
+        self.layer_overrides.append(dict(kwargs))
         self.add_constant_inputs.append(add_constant_input)
         self.fully_connected.append(fully_connected)
         self.coupling_fns.append(
@@ -208,12 +220,10 @@ class DeepNetwork:
         self,
         layer_sizes: list[int],
         kind: str = "volatile",
-        tonic_volatility: float = -4.0,
-        tonic_volatility_vol: float = -4.0,
-        volatility_coupling: float = 1.0,
         add_constant_input: bool = True,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
+        **kwargs,
     ) -> "DeepNetwork":
         """Add multiple hidden layers at once.
 
@@ -223,12 +233,6 @@ class DeepNetwork:
             List of layer sizes.
         kind :
             Type of nodes for all layers (``"volatile"`` or ``"binary"``).
-        tonic_volatility :
-            Tonic volatility for all layers (value level, log scale).
-        tonic_volatility_vol :
-            Tonic volatility for all layers (volatility level, log scale).
-        volatility_coupling :
-            Coupling strength between the value and volatility levels for all layers.
         add_constant_input :
             If True, add a bias term to each layer's predictions.
         fully_connected :
@@ -237,6 +241,10 @@ class DeepNetwork:
         coupling_fn :
             Coupling function for all layers. If None, uses the network-level coupling
             function.
+        **kwargs :
+            Per-layer overrides forwarded to :meth:`add_layer` (any field of
+            ``LayerState`` or ``LayerParams``, e.g. ``tonic_volatility``,
+            ``precision``).
 
         Returns
         -------
@@ -247,12 +255,10 @@ class DeepNetwork:
             self.add_layer(
                 size=size,
                 kind=kind,
-                tonic_volatility=tonic_volatility,
-                tonic_volatility_vol=tonic_volatility_vol,
-                volatility_coupling=volatility_coupling,
                 add_constant_input=add_constant_input,
                 fully_connected=fully_connected,
                 coupling_fn=coupling_fn,
+                **kwargs,
             )
         return self
 
@@ -273,18 +279,25 @@ class DeepNetwork:
         params = []
 
         for i, size in enumerate(self.layer_sizes):
-            # Create layer state
-            layers.append(LayerState.create(size))
+            overrides = self.layer_overrides[i]
 
-            # Create layer parameters
-            params.append(
-                LayerParams.create(
-                    n_nodes=size,
-                    tonic_volatility=self.tonic_volatilities[i],
-                    tonic_volatility_vol=self.tonic_volatilities_vol[i],
-                    volatility_coupling=self.volatility_couplings[i],
-                )
-            )
+            # Layer state with per-layer overrides (broadcast scalar -> (n_nodes,))
+            state = LayerState.create(size)
+            state_overrides = {
+                k: jnp.full(size, v)
+                for k, v in overrides.items()
+                if k in _LAYER_STATE_FIELDS
+            }
+            if state_overrides:
+                state = state._replace(**state_overrides)
+            layers.append(state)
+
+            # Layer parameters with defaults overridden per layer
+            param_kwargs = dict(_LAYER_PARAM_DEFAULTS)
+            for k, v in overrides.items():
+                if k in _LAYER_PARAM_FIELDS:
+                    param_kwargs[k] = v
+            params.append(LayerParams.create(n_nodes=size, **param_kwargs))
 
             # Create weights connecting to next layer (if not first layer)
             # weights[i-1] connects layer[i-1] (child) to layer[i] (parent)
