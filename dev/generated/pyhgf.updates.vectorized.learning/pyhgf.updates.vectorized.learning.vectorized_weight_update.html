@@ -657,7 +657,8 @@
 <span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent})\)</span></p></li>
 <li><p><strong>precision_weighted</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_weighted&quot;</span></code>):
 <span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}\)</span></p></li>
-<li><p><strong>dynamic</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;dynamic&quot;</span></code>): Kalman-gain-weighted PE.
+<li><p><strong>precision_ratio</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>): Kalman-gain-weighted
+PE using the posterior precisions of child and parent.
 <span class="math notranslate nohighlight">\(K = \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child})\)</span>
 <span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) \cdot K\)</span></p></li>
 </ul>
@@ -668,8 +669,8 @@ kinds):</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>: gradient filtered through the Adam optimiser
 (Kingma &amp; Ba, 2015); step size controlled by <em>adam_lr</em>.</p></li>
 </ul>
-<p>To recover the old “full Kalman step” behaviour for <code class="docutils literal notranslate"><span class="pre">kind=&quot;dynamic&quot;</span></code>,
-pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
+<p>To recover the old “full Kalman step” behaviour for
+<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>, pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -680,10 +681,10 @@ pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span><
 a constant input node.</p></li>
 <li><p><strong>coupling_fn</strong> (<em>Callable</em>) – Coupling function applied to parent means.</p></li>
 <li><p><strong>kind</strong> (<em>str</em>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
-or <code class="docutils literal notranslate"><span class="pre">&quot;dynamic&quot;</span></code>.</p></li>
+or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
 <li><p><strong>lr</strong> (<em>float</em><em> | </em><em>str</em>) – How the gradient is applied: a non-negative float for direct scaling,
 or <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code> for the Adam optimiser.  Applied uniformly across all
-<em>kind</em> values, including <code class="docutils literal notranslate"><span class="pre">&quot;dynamic&quot;</span></code>.</p></li>
+<em>kind</em> values, including <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
 <li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the parent layer has a constant input node.  The parent
 mean is augmented with 1.0 and the precision with the parent
 precision mean so the bias column of <em>weights</em> is updated.</p></li>
@@ -712,7 +713,7 @@ Required when <code class="docutils literal notranslate"><span class="pre">lr=&q
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ValueError</strong> – If <em>kind</em> is not one of <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
-or <code class="docutils literal notranslate"><span class="pre">&quot;dynamic&quot;</span></code>.</p></li>
+or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
 <li><p><strong>ValueError</strong> – If <em>lr</em> is a string other than <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>.</p></li>
 </ul>
 </dd>

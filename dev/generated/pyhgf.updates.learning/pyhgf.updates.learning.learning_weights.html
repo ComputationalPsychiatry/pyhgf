@@ -662,7 +662,8 @@
 <li><p><strong>precision_weighted</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_weighted&quot;</span></code>): gradient weighted
 by the child posterior precision.
 <span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)\)</span></p></li>
-<li><p><strong>dynamic</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;dynamic&quot;</span></code>): Kalman-gain-weighted PE.
+<li><p><strong>precision_ratio</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>): Kalman-gain-weighted PE
+using the posterior precisions of child and parent.
 <span class="math notranslate nohighlight">\(K_i = \pi_\text{child} / (\pi_{\text{parent}_i} + \pi_\text{child})\)</span>
 <span class="math notranslate nohighlight">\(g_i = K_i \cdot \text{PE} \cdot g(\text{parent}_i)\)</span></p></li>
 </ul>
@@ -672,8 +673,8 @@ by the child posterior precision.
 </ul>
 <p>controlled by <em>lr</em>.
 - <strong>Fixed</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is None): <span class="math notranslate nohighlight">\(\Delta w_i = \text{lr} \cdot g_i\)</span>.</p>
-<p>To recover the old “full Kalman step” behaviour for <code class="docutils literal notranslate"><span class="pre">kind=&quot;dynamic&quot;</span></code>, pass
-<code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
+<p>To recover the old “full Kalman step” behaviour for <code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>,
+pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -683,9 +684,9 @@ by the child posterior precision.
 <code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as node number.
 For each node, the index list value and volatility parents and children.</p></li>
 <li><p><strong>kind</strong> (<em>str</em>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code> (default),
-or <code class="docutils literal notranslate"><span class="pre">&quot;dynamic&quot;</span></code>.</p></li>
+or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
 <li><p><strong>lr</strong> (<em>float</em><em> | </em><em>None</em>) – Fixed learning rate or Adam step size.  Applied uniformly across all <em>kind</em>
-values, including <code class="docutils literal notranslate"><span class="pre">&quot;dynamic&quot;</span></code>.</p></li>
+values, including <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
 <li><p><strong>adam_beta1</strong> (<em>float</em><em> | </em><em>None</em>) – Adam first moment decay rate.  When <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) Adam is not used.</p></li>
 <li><p><strong>adam_beta2</strong> (<em>float</em><em> | </em><em>None</em>) – Adam second moment decay rate.</p></li>
 <li><p><strong>adam_epsilon</strong> (<em>float</em><em> | </em><em>None</em>) – Adam numerical stability constant.</p></li>

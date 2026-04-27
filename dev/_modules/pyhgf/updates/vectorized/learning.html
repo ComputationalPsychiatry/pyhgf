@@ -909,7 +909,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent})`</span>
 <span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``):</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`</span>
-<span class="sd">    - **dynamic** (``kind=&quot;dynamic&quot;``): Kalman-gain-weighted PE.</span>
+<span class="sd">    - **precision_ratio** (``kind=&quot;precision_ratio&quot;``): Kalman-gain-weighted</span>
+<span class="sd">      PE using the posterior precisions of child and parent.</span>
 <span class="sd">      :math:`K = \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child})`</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`</span>
 
@@ -920,8 +921,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    - ``&quot;adam&quot;``: gradient filtered through the Adam optimiser</span>
 <span class="sd">      (Kingma &amp; Ba, 2015); step size controlled by *adam_lr*.</span>
 
-<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for ``kind=&quot;dynamic&quot;``,</span>
-<span class="sd">    pass ``lr=1.0``.</span>
+<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for</span>
+<span class="sd">    ``kind=&quot;precision_ratio&quot;``, pass ``lr=1.0``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -937,11 +938,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Coupling function applied to parent means.</span>
 <span class="sd">    kind :</span>
 <span class="sd">        Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
-<span class="sd">        or ``&quot;dynamic&quot;``.</span>
+<span class="sd">        or ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">    lr :</span>
 <span class="sd">        How the gradient is applied: a non-negative float for direct scaling,</span>
 <span class="sd">        or ``&quot;adam&quot;`` for the Adam optimiser.  Applied uniformly across all</span>
-<span class="sd">        *kind* values, including ``&quot;dynamic&quot;``.</span>
+<span class="sd">        *kind* values, including ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">    parent_has_constant :</span>
 <span class="sd">        If True, the parent layer has a constant input node.  The parent</span>
 <span class="sd">        mean is augmented with 1.0 and the precision with the parent</span>
@@ -980,14 +981,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If *kind* is not one of ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
-<span class="sd">        or ``&quot;dynamic&quot;``.</span>
+<span class="sd">        or ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If *lr* is a string other than ``&quot;adam&quot;``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_ratio&quot;</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected &#39;standard&#39;, &#39;precision_weighted&#39;, &quot;</span>
-            <span class="s2">&quot;or &#39;dynamic&#39;.&quot;</span>
+            <span class="s2">&quot;or &#39;precision_ratio&#39;.&quot;</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">lr</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1012,7 +1013,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">base_delta</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
 
     <span class="c1"># Compute the gradient according to *kind*</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_ratio&quot;</span><span class="p">:</span>
         <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
             <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="p">)</span>

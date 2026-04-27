@@ -1285,7 +1285,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            ``&quot;adam&quot;`` for the Adam optimiser.</span>
 <span class="sd">        learning_kind :</span>
 <span class="sd">            Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``</span>
-<span class="sd">            (default), or ``&quot;dynamic&quot;``.</span>
+<span class="sd">            (default), or ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">        params :</span>
 <span class="sd">            Hyper-parameters for the Adam optimiser (``beta1``, ``beta2``, ``epsilon``,</span>
 <span class="sd">            ``lr``). Only used when ``lr=&quot;adam&quot;``.</span>
@@ -1438,7 +1438,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            layer&#39;s posterior precision before applying *lr*.</span>
 <span class="sd">            - ``&quot;standard&quot;`` — raw prediction-error outer product, no precision</span>
 <span class="sd">            weighting.</span>
-<span class="sd">            - ``&quot;dynamic&quot;`` — Kalman-gain rule.</span>
+<span class="sd">            - ``&quot;precision_ratio&quot;`` — Kalman-gain rule.</span>
 <span class="sd">        params :</span>
 <span class="sd">            Hyper-parameters for the Adam optimiser: ``beta1`` (default 0.9), ``beta2``</span>
 <span class="sd">            (default 0.999), ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3, the</span>
@@ -1542,59 +1542,6 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">plot_layers</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">variables</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">,),</span>
-        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
-        <span class="n">figsize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot layer-wise parameter trajectories.</span>
-
-<span class="sd">        Each row of the figure corresponds to a variable (a field of</span>
-<span class="sd">        :class:`pyhgf.typing.LayerState`) and each column to a layer.</span>
-<span class="sd">        ``mode=&quot;all&quot;`` draws one line per node; ``mode=&quot;mean_ci&quot;`` draws the</span>
-<span class="sd">        across-node mean and a 95% confidence interval using</span>
-<span class="sd">        ``seaborn.lineplot``.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        layers :</span>
-<span class="sd">            Indices of the layers to plot. ``None`` (default) plots all layers.</span>
-<span class="sd">        variables :</span>
-<span class="sd">            Name (or sequence of names) of ``LayerState`` fields to plot,</span>
-<span class="sd">            e.g. ``&quot;expected_mean&quot;``, ``&quot;precision&quot;``, ``&quot;mean_vol&quot;``.</span>
-<span class="sd">        mode :</span>
-<span class="sd">            ``&quot;all&quot;`` for one line per node, ``&quot;mean_ci&quot;`` for mean ± 95% CI.</span>
-<span class="sd">        figsize :</span>
-<span class="sd">            Matplotlib figure size in inches.</span>
-<span class="sd">        axes :</span>
-<span class="sd">            Pre-existing 2D array of axes to draw into.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        axes :</span>
-<span class="sd">            2D array of Matplotlib axes, shape ``(n_variables, n_layers)``.</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If ``self.trajectories`` is ``None`` (run ``fit(...,</span>
-<span class="sd">            record_trajectories=True)`` first), or if a variable / layer index</span>
-<span class="sd">            / mode is invalid.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots.matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_layers</span> <span class="k">as</span> <span class="n">_plot_layers</span>
-
-        <span class="k">return</span> <span class="n">_plot_layers</span><span class="p">(</span>
-            <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-            <span class="n">layers</span><span class="o">=</span><span class="n">layers</span><span class="p">,</span>
-            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
-            <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span>
-            <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span>
-        <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>

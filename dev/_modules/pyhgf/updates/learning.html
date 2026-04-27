@@ -905,7 +905,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``): gradient weighted</span>
 <span class="sd">      by the child posterior precision.</span>
 <span class="sd">      :math:`g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)`</span>
-<span class="sd">    - **dynamic** (``kind=&quot;dynamic&quot;``): Kalman-gain-weighted PE.</span>
+<span class="sd">    - **precision_ratio** (``kind=&quot;precision_ratio&quot;``): Kalman-gain-weighted PE</span>
+<span class="sd">      using the posterior precisions of child and parent.</span>
 <span class="sd">      :math:`K_i = \pi_\text{child} / (\pi_{\text{parent}_i} + \pi_\text{child})`</span>
 <span class="sd">      :math:`g_i = K_i \cdot \text{PE} \cdot g(\text{parent}_i)`</span>
 
@@ -915,8 +916,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    controlled by *lr*.</span>
 <span class="sd">    - **Fixed** (``adam_beta1`` is None): :math:`\Delta w_i = \text{lr} \cdot g_i`.</span>
 
-<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for ``kind=&quot;dynamic&quot;``, pass</span>
-<span class="sd">    ``lr=1.0``.</span>
+<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for ``kind=&quot;precision_ratio&quot;``,</span>
+<span class="sd">    pass ``lr=1.0``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -930,10 +931,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        For each node, the index list value and volatility parents and children.</span>
 <span class="sd">    kind :</span>
 <span class="sd">        Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;`` (default),</span>
-<span class="sd">        or ``&quot;dynamic&quot;``.</span>
+<span class="sd">        or ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">    lr :</span>
 <span class="sd">        Fixed learning rate or Adam step size.  Applied uniformly across all *kind*</span>
-<span class="sd">        values, including ``&quot;dynamic&quot;``.</span>
+<span class="sd">        values, including ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">    adam_beta1 :</span>
 <span class="sd">        Adam first moment decay rate.  When ``None`` (default) Adam is not used.</span>
 <span class="sd">    adam_beta2 :</span>
@@ -978,7 +979,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
     <span class="n">is_binary</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">1</span>
 
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_ratio&quot;</span><span class="p">:</span>
         <span class="n">parent_precisions</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
             <span class="n">attributes</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>  <span class="c1"># type: ignore[union-attr]</span>
