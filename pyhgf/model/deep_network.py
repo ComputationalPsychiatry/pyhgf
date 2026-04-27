@@ -667,6 +667,59 @@ class DeepNetwork:
         self._prediction_fn = None
         return self
 
+    def plot_layers(
+        self,
+        layers: Optional[list[int]] = None,
+        variables=("expected_mean",),
+        mode: str = "all",
+        figsize: Optional[tuple] = None,
+        axes=None,
+    ):
+        """Plot layer-wise parameter trajectories.
+
+        Each row of the figure corresponds to a variable (a field of
+        :class:`pyhgf.typing.LayerState`) and each column to a layer.
+        ``mode="all"`` draws one line per node; ``mode="mean_ci"`` draws the
+        across-node mean and a 95% confidence interval using
+        ``seaborn.lineplot``.
+
+        Parameters
+        ----------
+        layers :
+            Indices of the layers to plot. ``None`` (default) plots all layers.
+        variables :
+            Name (or sequence of names) of ``LayerState`` fields to plot,
+            e.g. ``"expected_mean"``, ``"precision"``, ``"mean_vol"``.
+        mode :
+            ``"all"`` for one line per node, ``"mean_ci"`` for mean ± 95% CI.
+        figsize :
+            Matplotlib figure size in inches.
+        axes :
+            Pre-existing 2D array of axes to draw into.
+
+        Returns
+        -------
+        axes :
+            2D array of Matplotlib axes, shape ``(n_variables, n_layers)``.
+
+        Raises
+        ------
+        ValueError
+            If ``self.trajectories`` is ``None`` (run ``fit(...,
+            record_trajectories=True)`` first), or if a variable / layer index
+            / mode is invalid.
+        """
+        from pyhgf.plots.matplotlib import plot_layers as _plot_layers
+
+        return _plot_layers(
+            network=self,
+            layers=layers,
+            variables=variables,
+            mode=mode,
+            figsize=figsize,
+            axes=axes,
+        )
+
     @property
     def n_layers(self) -> int:
         """Number of layers in the network."""
