@@ -17,6 +17,7 @@
       ~DeepNetwork.add_layer
       ~DeepNetwork.add_layer_stack
       ~DeepNetwork.fit
+      ~DeepNetwork.plot_layers
       ~DeepNetwork.predict
       ~DeepNetwork.reset
       ~DeepNetwork.weight_initialisation
