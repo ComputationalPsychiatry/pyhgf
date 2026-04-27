@@ -4,8 +4,8 @@ use crate::utils::set_coupling::set_coupling;
 /// Unified weights update.
 ///
 /// Computes a gradient according to `learning_kind` (standard /
-/// precision_weighted / dynamic), then scales it by `lr` uniformly. When
-/// Adam state is present, the gradient is filtered through Adam instead.
+/// precision_weighted / precision_ratio), then scales it by `lr` uniformly.
+/// When Adam state is present, the gradient is filtered through Adam instead.
 pub fn learning_weights(
     network: &mut Network,
     node_idx: usize,
@@ -62,7 +62,7 @@ pub fn learning_weights(
         // Compute the gradient according to learning_kind.
         // Binary nodes skip precision multiplication — the Bernoulli
         // variance is already embedded in the binary prediction-error formula.
-        let gradient = if learning_kind == "dynamic" {
+        let gradient = if learning_kind == "precision_ratio" {
             let parent_precision = network.attributes.states[parent_idx].precision;
             let kalman_gain = child_precision / (parent_precision + child_precision);
             kalman_gain * pe * prosp_act

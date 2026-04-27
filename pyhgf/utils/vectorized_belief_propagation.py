@@ -72,7 +72,7 @@ def propagation_step(
         precision.  Defaults to all ``True`` when *None*.
     learning_kind :
         Gradient computation mode passed to :func:`vectorized_weight_update`:
-        ``"standard"``, ``"precision_weighted"`` (default), or ``"dynamic"``.
+        ``"standard"``, ``"precision_weighted"`` (default), or ``"precision_ratio"``.
 
     Returns
     -------

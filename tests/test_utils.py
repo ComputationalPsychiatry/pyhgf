@@ -274,7 +274,7 @@ def test_learning():
         inputs_x_idxs=(3,),
         inputs_y_idxs=(0, 1),
         lr=0.2,
-        learning_kind="dynamic",
+        learning_kind="precision_ratio",
     )
 
 
