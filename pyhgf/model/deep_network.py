@@ -409,7 +409,7 @@ class DeepNetwork:
             ``"adam"`` for the Adam optimiser.
         learning_kind :
             Gradient computation mode: ``"standard"``, ``"precision_weighted"``
-            (default), or ``"dynamic"``.
+            (default), or ``"precision_ratio"``.
         params :
             Hyper-parameters for the Adam optimiser (``beta1``, ``beta2``, ``epsilon``,
             ``lr``). Only used when ``lr="adam"``.
@@ -562,7 +562,7 @@ class DeepNetwork:
             layer's posterior precision before applying *lr*.
             - ``"standard"`` — raw prediction-error outer product, no precision
             weighting.
-            - ``"dynamic"`` — Kalman-gain rule.
+            - ``"precision_ratio"`` — Kalman-gain rule.
         params :
             Hyper-parameters for the Adam optimiser: ``beta1`` (default 0.9), ``beta2``
             (default 0.999), ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3, the

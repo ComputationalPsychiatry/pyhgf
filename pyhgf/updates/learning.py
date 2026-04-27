@@ -32,7 +32,8 @@ def learning_weights(
     - **precision_weighted** (``kind="precision_weighted"``): gradient weighted
       by the child posterior precision.
       :math:`g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)`
-    - **dynamic** (``kind="dynamic"``): Kalman-gain-weighted PE.
+    - **precision_ratio** (``kind="precision_ratio"``): Kalman-gain-weighted PE
+      using the posterior precisions of child and parent.
       :math:`K_i = \pi_\text{child} / (\pi_{\text{parent}_i} + \pi_\text{child})`
       :math:`g_i = K_i \cdot \text{PE} \cdot g(\text{parent}_i)`
 
@@ -42,8 +43,8 @@ def learning_weights(
     controlled by *lr*.
     - **Fixed** (``adam_beta1`` is None): :math:`\Delta w_i = \text{lr} \cdot g_i`.
 
-    To recover the old "full Kalman step" behaviour for ``kind="dynamic"``, pass
-    ``lr=1.0``.
+    To recover the old "full Kalman step" behaviour for ``kind="precision_ratio"``,
+    pass ``lr=1.0``.
 
     Parameters
     ----------
@@ -57,10 +58,10 @@ def learning_weights(
         For each node, the index list value and volatility parents and children.
     kind :
         Gradient computation mode: ``"standard"``, ``"precision_weighted"`` (default),
-        or ``"dynamic"``.
+        or ``"precision_ratio"``.
     lr :
         Fixed learning rate or Adam step size.  Applied uniformly across all *kind*
-        values, including ``"dynamic"``.
+        values, including ``"precision_ratio"``.
     adam_beta1 :
         Adam first moment decay rate.  When ``None`` (default) Adam is not used.
     adam_beta2 :
@@ -105,7 +106,7 @@ def learning_weights(
     pe = attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
     is_binary = edges[node_idx].node_type == 1
 
-    if kind == "dynamic":
+    if kind == "precision_ratio":
         parent_precisions = jnp.array([
             attributes[parent_idx].get("precision", 1.0)
             for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]

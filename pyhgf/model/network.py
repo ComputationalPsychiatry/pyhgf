@@ -206,10 +206,10 @@ class Network:
         lr :
             How the gradient is applied: a non-negative float for direct scaling, or
             ``"adam"`` for the Adam optimiser.  Applied uniformly across all
-            *learning_kind* values, including ``"dynamic"``.
+            *learning_kind* values, including ``"precision_ratio"``.
         learning_kind :
             Gradient computation mode: ``"standard"``, ``"precision_weighted"``
-            (default), or ``"dynamic"``.
+            (default), or ``"precision_ratio"``.
         params :
             Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
             ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``
@@ -349,7 +349,7 @@ class Network:
             ``"adam"`` for the Adam optimiser.
         learning_kind :
             Gradient computation mode: ``"standard"``, ``"precision_weighted"``
-            (default), or ``"dynamic"``.
+            (default), or ``"precision_ratio"``.
         params :
             Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
             ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``

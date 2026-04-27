@@ -36,7 +36,8 @@ def vectorized_weight_update(
       :math:`g = \text{PE} \otimes g(\text{parent})`
     - **precision_weighted** (``kind="precision_weighted"``):
       :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`
-    - **dynamic** (``kind="dynamic"``): Kalman-gain-weighted PE.
+    - **precision_ratio** (``kind="precision_ratio"``): Kalman-gain-weighted
+      PE using the posterior precisions of child and parent.
       :math:`K = \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child})`
       :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`
 
@@ -47,8 +48,8 @@ def vectorized_weight_update(
     - ``"adam"``: gradient filtered through the Adam optimiser
       (Kingma & Ba, 2015); step size controlled by *adam_lr*.
 
-    To recover the old "full Kalman step" behaviour for ``kind="dynamic"``,
-    pass ``lr=1.0``.
+    To recover the old "full Kalman step" behaviour for
+    ``kind="precision_ratio"``, pass ``lr=1.0``.
 
     Parameters
     ----------
@@ -64,11 +65,11 @@ def vectorized_weight_update(
         Coupling function applied to parent means.
     kind :
         Gradient computation mode: ``"standard"``, ``"precision_weighted"``,
-        or ``"dynamic"``.
+        or ``"precision_ratio"``.
     lr :
         How the gradient is applied: a non-negative float for direct scaling,
         or ``"adam"`` for the Adam optimiser.  Applied uniformly across all
-        *kind* values, including ``"dynamic"``.
+        *kind* values, including ``"precision_ratio"``.
     parent_has_constant :
         If True, the parent layer has a constant input node.  The parent
         mean is augmented with 1.0 and the precision with the parent
@@ -107,14 +108,14 @@ def vectorized_weight_update(
     ------
     ValueError
         If *kind* is not one of ``"standard"``, ``"precision_weighted"``,
-        or ``"dynamic"``.
+        or ``"precision_ratio"``.
     ValueError
         If *lr* is a string other than ``"adam"``.
     """
-    if kind not in ("standard", "precision_weighted", "dynamic"):
+    if kind not in ("standard", "precision_weighted", "precision_ratio"):
         raise ValueError(
             f"Unknown kind '{kind}'. Expected 'standard', 'precision_weighted', "
-            "or 'dynamic'."
+            "or 'precision_ratio'."
         )
     if isinstance(lr, str) and lr != "adam":
         raise ValueError(
@@ -139,7 +140,7 @@ def vectorized_weight_update(
     base_delta = pe[:, None] * coupled_parent[None, :]
 
     # Compute the gradient according to *kind*
-    if kind == "dynamic":
+    if kind == "precision_ratio":
         kalman_gain = child_state.precision[:, None] / (
             parent_precision[None, :] + child_state.precision[:, None]
         )
