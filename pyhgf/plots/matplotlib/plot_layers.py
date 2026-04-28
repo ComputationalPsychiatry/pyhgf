@@ -4,14 +4,15 @@ from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-from matplotlib.axes import Axes
+from matplotlib.collections import LineCollection
 
 from pyhgf.typing import LayerState
 
 if TYPE_CHECKING:
     from pyhgf.model import DeepNetwork
+
+# 95% normal-approximation z-score used for the ``"mean_ci"`` band.
+_Z_95 = 1.959963984540054
 
 # Virtual variables that are computed from ``LayerState`` fields rather than
 # read directly. Each entry maps a name accepted in ``variables`` to a
@@ -37,38 +38,44 @@ def plot_layers(
     Each row of the resulting figure corresponds to a *variable* (a field of
     :class:`pyhgf.typing.LayerState`) and each column to a *layer*. In ``"all"``
     mode every node trajectory is drawn as its own line; in ``"mean_ci"`` mode
-    the across-node mean and a 95% confidence interval are drawn with
-    ``seaborn.lineplot``.
+    the across-node mean and a 95% confidence interval are drawn as a
+    Matplotlib line + shaded band.
+
+    Both modes are vectorised so the cost scales linearly with ``T * n_nodes``
+    — the ``"all"`` path uses a single :class:`matplotlib.collections.LineCollection`
+    instead of a per-node ``ax.plot`` call, and the ``"mean_ci"`` path
+    aggregates over nodes with NumPy and renders one ``plot`` + ``fill_between``
+    pair per axis (no long-format DataFrame, no bootstrap).
 
     Parameters
     ----------
     network :
         A :class:`pyhgf.model.DeepNetwork` instance whose ``trajectories``
-        attribute has been populated (call ``net.fit(..., record_trajectories=True)``
-        first).
+        attribute has been populated (call ``net.fit(...,
+        record_trajectories=True)`` first).
     layers :
         Indices of the layers to plot. ``None`` (default) plots every layer.
     variables :
-        Name (or sequence of names) of :class:`pyhgf.typing.LayerState` fields
-        to plot — for example ``"expected_mean"``, ``"precision"``,
-        ``"value_prediction_error"``, ``"mean_vol"``. The derived name
-        ``"PWPE"`` is also accepted: it plots the precision-weighted
-        prediction error ``(mean - expected_mean) * expected_precision``.
-        A single string is accepted as shorthand for a one-element list.
+        Name (or sequence of names) of :class:`pyhgf.typing.LayerState` fields to plot
+        — for example ``"expected_mean"``, ``"precision"``,
+        ``"value_prediction_error"``, ``"mean_vol"``. The derived name ``"PWPE"`` is
+        also accepted: it plots the precision-weighted prediction error ``(mean -
+        expected_mean) * expected_precision``. A single string is accepted as shorthand
+        for a one-element list.
     mode :
-        ``"all"`` to draw one line per node, ``"mean_ci"`` to draw the
-        across-node mean with a 95% confidence interval (Seaborn's
-        ``lineplot``).
+        ``"all"`` to draw one line per node, ``"mean_ci"`` to draw the across-node mean
+        with a 95% normal-approximation confidence band.
     figsize :
         Figure size in inches. Defaults to ``(3.5 * n_cols, 2.5 * n_rows)``.
     axes :
-        Pre-existing 2D array of Matplotlib axes (rows = variables, cols =
-        layers). When ``None`` (default), a new figure is created.
+        Pre-existing 2D array of Matplotlib axes (rows = variables, cols = layers). When
+        ``None`` (default), a new figure is created.
 
     Returns
     -------
     axes :
-        2D ``ndarray`` of Matplotlib axes, shape ``(len(variables), len(layers))``.
+        2D ``ndarray`` of Matplotlib axes, shape ``(len(variables),
+        len(layers))``.
 
     Raises
     ------
@@ -140,24 +147,35 @@ def plot_layers(
             else:
                 data = np.asarray(getattr(layer, var))
             n_steps, n_nodes = data.shape
+            time = np.arange(n_steps)
 
             if mode == "all":
-                time = np.arange(n_steps)
-                for n in range(n_nodes):
-                    ax.plot(time, data[:, n], lw=1, alpha=0.8)
+                # One LineCollection per axis is dramatically faster than
+                # n_nodes separate ax.plot calls when n_nodes is large.
+                # segments has shape (n_nodes, T, 2): per-node (x, y) pairs.
+                x = np.broadcast_to(time, (n_nodes, n_steps))
+                segments = np.stack([x, data.T], axis=-1)
+                lc = LineCollection(segments, linewidths=1.0, alpha=0.6)
+                ax.add_collection(lc)
+                ax.set_xlim(time[0], time[-1] if n_steps > 1 else time[0] + 1)
+                finite = data[np.isfinite(data)]
+                if finite.size:
+                    ymin, ymax = float(finite.min()), float(finite.max())
+                    pad = 0.05 * (ymax - ymin) if ymax > ymin else 1.0
+                    ax.set_ylim(ymin - pad, ymax + pad)
             else:  # "mean_ci"
-                long_df = pd.DataFrame({
-                    "time_step": np.tile(np.arange(n_steps), n_nodes),
-                    var: data.T.ravel(),
-                    "node": np.repeat(np.arange(n_nodes), n_steps),
-                })
-                sns.lineplot(
-                    data=long_df,
-                    x="time_step",
-                    y=var,
-                    ax=ax,
-                    errorbar=("ci", 95),
-                )
+                # Aggregate across nodes with NumPy (O(T * n_nodes) once),
+                # then draw a single line + shaded band.  This avoids both
+                # the (T * n_nodes)-row long DataFrame and Seaborn's
+                # bootstrap, which dominate runtime for large inputs.
+                mean = np.nanmean(data, axis=1)
+                ax.plot(time, mean, lw=1.5)
+                if n_nodes > 1:
+                    sem = np.nanstd(data, axis=1, ddof=1) / np.sqrt(n_nodes)
+                    half = _Z_95 * sem
+                    ax.fill_between(
+                        time, mean - half, mean + half, alpha=0.25, linewidth=0
+                    )
 
             if r == 0:
                 ax.set_title(
