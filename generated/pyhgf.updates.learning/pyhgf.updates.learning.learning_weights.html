@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.updates.learning.learning_weights &#8212; pyhgf 0.2.10 documentation</title>
+    <title>pyhgf.updates.learning.learning_weights &#8212; pyhgf 0.2.11 documentation</title>
   
   
   
@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -40,12 +40,12 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../_static/documentation_options.js?v=8db09a1e"></script>
+    <script src="../../_static/documentation_options.js?v=29c81e07"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -83,7 +83,9 @@
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -646,18 +648,33 @@
 <h1>pyhgf.updates.learning.learning_weights<a class="headerlink" href="#pyhgf-updates-learning-learning-weights" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.learning.learning_weights">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.learning.</span></span><span class="sig-name descname"><span class="pre">learning_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adam_beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adam_beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adam_epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/learning.html#learning_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.learning.learning_weights" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.learning.</span></span><span class="sig-name descname"><span class="pre">learning_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'precision_weighted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adam_beta1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adam_beta2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adam_epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/learning.html#learning_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.learning.learning_weights" title="Link to this definition">#</a></dt>
 <dd><p>Unified weights update.</p>
-<p>Branches on the <code class="docutils literal notranslate"><span class="pre">lr</span></code> and <code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> parameters:</p>
+<p>The gradient is first computed according to <em>kind</em>, then scaled by <em>lr</em>:</p>
 <ul class="simple">
-<li><p><strong>Adam</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is a float): uses the Adam optimiser.</p></li>
-<li><p><strong>Fixed</strong> (<code class="docutils literal notranslate"><span class="pre">lr</span></code> is a float, no Adam): uses a fixed learning rate.
-<span class="math notranslate nohighlight">\(\Delta w_i = \text{lr} \cdot (\text{PE} \cdot \pi_\text{child})
-\cdot g(\text{parent}_i)\)</span></p></li>
-<li><p><strong>Dynamic</strong> (<code class="docutils literal notranslate"><span class="pre">lr</span> <span class="pre">is</span> <span class="pre">None</span></code>, no Adam): uses a precision-based learning rate
-(Kalman gain).
-<span class="math notranslate nohighlight">\(K_i = \pi_{\text{parent}_i} / (\pi_{\text{parent}_i} + \pi_\text{child})\)</span></p></li>
+<li><p><strong>standard</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;standard&quot;</span></code>): raw prediction-error outer product, no</p></li>
 </ul>
+<dl class="simple">
+<dt>precision weighting.</dt><dd><p><span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot g(\text{parent}_i)\)</span></p>
+</dd>
+</dl>
+<ul class="simple">
+<li><p><strong>precision_weighted</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_weighted&quot;</span></code>): gradient weighted
+by the child posterior precision.
+<span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)\)</span></p></li>
+<li><p><strong>precision_ratio</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>): Kalman-gain-weighted PE
+using the posterior precisions of child and parent.
+<span class="math notranslate nohighlight">\(K_i = \pi_\text{child} / (\pi_{\text{parent}_i} + \pi_\text{child})\)</span>
+<span class="math notranslate nohighlight">\(g_i = K_i \cdot \text{PE} \cdot g(\text{parent}_i)\)</span></p></li>
+</ul>
+<p><em>lr</em> controls how the gradient is applied (same semantics for all three kinds):</p>
+<ul class="simple">
+<li><p><strong>Adam</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is a float): gradient filtered through Adam; step size</p></li>
+</ul>
+<p>controlled by <em>lr</em>.
+- <strong>Fixed</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is None): <span class="math notranslate nohighlight">\(\Delta w_i = \text{lr} \cdot g_i\)</span>.</p>
+<p>To recover the old “full Kalman step” behaviour for <code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>,
+pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -666,9 +683,10 @@
 <li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes as a tuple of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as node number.
 For each node, the index list value and volatility parents and children.</p></li>
-<li><p><strong>lr</strong> (<em>float</em><em> | </em><em>None</em>) – Fixed learning rate. When <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) the dynamic
-precision-weighted rule is used instead. When Adam is active, this is
-the Adam step size.</p></li>
+<li><p><strong>kind</strong> (<em>str</em>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code> (default),
+or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
+<li><p><strong>lr</strong> (<em>float</em><em> | </em><em>None</em>) – Fixed learning rate or Adam step size.  Applied uniformly across all <em>kind</em>
+values, including <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
 <li><p><strong>adam_beta1</strong> (<em>float</em><em> | </em><em>None</em>) – Adam first moment decay rate.  When <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) Adam is not used.</p></li>
 <li><p><strong>adam_beta2</strong> (<em>float</em><em> | </em><em>None</em>) – Adam second moment decay rate.</p></li>
 <li><p><strong>adam_epsilon</strong> (<em>float</em><em> | </em><em>None</em>) – Adam numerical stability constant.</p></li>
@@ -758,8 +776,8 @@ the Adam step size.</p></li>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -793,7 +811,7 @@ the Adam step size.</p></li>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
 </p></div>
       
     </div>

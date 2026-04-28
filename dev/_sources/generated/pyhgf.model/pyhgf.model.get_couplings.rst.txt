@@ -1,6 +1,0 @@
-﻿pyhgf.model.get\_couplings
-==========================
-
-.. currentmodule:: pyhgf.model
-
-.. autofunction:: get_couplings

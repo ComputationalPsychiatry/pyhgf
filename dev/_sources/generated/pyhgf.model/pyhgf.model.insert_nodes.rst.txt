@@ -1,6 +1,0 @@
-﻿pyhgf.model.insert\_nodes
-=========================
-
-.. currentmodule:: pyhgf.model
-
-.. autofunction:: insert_nodes

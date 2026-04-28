@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node &#8212; pyhgf 0.2.10 documentation</title>
+    <title>pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node &#8212; pyhgf 0.2.11 documentation</title>
   
   
   
@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -40,12 +40,12 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../_static/documentation_options.js?v=8db09a1e"></script>
+    <script src="../../_static/documentation_options.js?v=29c81e07"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -83,7 +83,9 @@
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -661,7 +663,7 @@ state nodes <span class="math notranslate nohighlight">\(j\)</span> at time <spa
 and the state node and <span class="math notranslate nohighlight">\(\delta_j^{(k)}\)</span> is the value prediction error that
 was computed beforehand by
 <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error()</span></code>.</p>
-<p>For non-linear value coupling:</p>
+<p>For non-linear value coupling we use equation 50 from <a class="reference internal" href="#r8ae25ca6771b-1" id="id1">[1]</a>.:</p>
 <div class="math notranslate nohighlight">
 \[\pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}
 \hat{\pi}_j^{(k)} * (\kappa_j^2 * g'_{j,b}(\mu_b^(k-1))^2 -
@@ -687,7 +689,7 @@ volatility prediction error given by:</p>
 <p><span class="math notranslate nohighlight">\(\gamma_j^{(k)}\)</span> is the effective precision of the prediction, given by:</p>
 <div class="math notranslate nohighlight">
 \[\gamma_j^{(k)} = \Omega_j^{(k)} \hat{\pi}_j^{(k)}\]</div>
-<p>that was computed in the prediction step. See <a class="reference internal" href="#r8ae25ca6771b-1" id="id1">[1]</a> for more details.</p>
+<p>that was computed in the prediction step. See <a class="reference internal" href="#r8ae25ca6771b-1" id="id2">[1]</a> for more details.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -718,10 +720,11 @@ the parent node instead of the expected mean of the child node.</p>
 <p class="rubric">References</p>
 <div role="list" class="citation-list">
 <div class="citation" id="r8ae25ca6771b-1" role="doc-biblioentry">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>)</span>
 <p>Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;
-Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.10937">https://doi.org/10.48550/ARXIV.2305.10937</a></p>
+Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife Sciences
+Publications, Ltd. <a class="reference external" href="https://doi.org/10.7554/elife.110174.1">https://doi.org/10.7554/elife.110174.1</a></p>
 </div>
 </div>
 </dd></dl>
@@ -801,8 +804,8 @@ arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.1
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -836,7 +839,7 @@ arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.1
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
 </p></div>
       
     </div>

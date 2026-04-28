@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.10 documentation</title>
+    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.11 documentation</title>
   
   
   
@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -40,12 +40,12 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../_static/documentation_options.js?v=8db09a1e"></script>
+    <script src="../_static/documentation_options.js?v=29c81e07"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -83,7 +83,9 @@
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -532,12 +534,13 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.animation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">animation</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">treescope</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.animation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">animation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span><span class="p">,</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.plots.graphviz.plot_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_deep_network</span>
 
@@ -631,9 +634,9 @@
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
     <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">record_trajectories</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">);</span>
 </pre></div>
 </div>
@@ -661,7 +664,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/aadd161a23211e8c8199ace2e5d9dc5c164b6053a7bb7f31506a7ce4eea0edc3.png" src="../_images/aadd161a23211e8c8199ace2e5d9dc5c164b6053a7bb7f31506a7ce4eea0edc3.png" />
+<img alt="../_images/fca7c9c5cfd574effa9a9e55c517d6f7f8d471e9003b164d5a64a8aba0a7f273.png" src="../_images/fca7c9c5cfd574effa9a9e55c517d6f7f8d471e9003b164d5a64a8aba0a7f273.png" />
 </div>
 </div>
 <p>This example illustrates the effectiveness of the variational update to replace the prospective configuration step based on gradient descent. As new observations contradict the expected outcomes (i.e., observing the river without hearing the water, from trials 40 to 80 in the bottom panel), the network efficiently reorganizes without interfering with other predictions (i.e,. still expecting smelling the salmon while seeing the water, top panel, trials 40 to 80).</p>
@@ -810,18 +813,18 @@ K_i = \frac{\pi_{\text{parent}_i}}{\pi_{\text{parent}_i} + \pi_{\text{child}}}
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
     <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">record_trajectories</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">high_outcome_precision_network</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
     <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
     <span class="n">inputs_x_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,),</span>
     <span class="n">inputs_y_idxs</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,),</span>
-    <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;dynamic&quot;</span><span class="p">,</span>
+    <span class="n">lr</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">record_trajectories</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">);</span>
 </pre></div>
 </div>
@@ -848,9 +851,9 @@ K_i = \frac{\pi_{\text{parent}_i}}{\pi_{\text{parent}_i} + \pi_{\text{child}}}
 
 <span class="c1"># high prediction precision</span>
 <span class="c1"># -------------------------</span>
-<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;mako&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;mako&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]):</span>
     <span class="n">expected_means</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">high_predictor_precision_network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">][</span>
             <span class="n">time_step</span>
@@ -876,9 +879,9 @@ K_i = \frac{\pi_{\text{parent}_i}}{\pi_{\text{parent}_i} + \pi_{\text{child}}}
 
 <span class="c1"># high outcome precision</span>
 <span class="c1"># ----------------------</span>
-<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;rocket&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;rocket&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">color</span><span class="p">,</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">]):</span>
     <span class="n">expected_means</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">high_outcome_precision_network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">][</span><span class="n">time_step</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
@@ -914,7 +917,7 @@ K_i = \frac{\pi_{\text{parent}_i}}{\pi_{\text{parent}_i} + \pi_{\text{child}}}
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/81fa25b29b316fb53ab93bc4e863e81b407592f8df5cb1456aa248341a2c34d6.png" src="../_images/81fa25b29b316fb53ab93bc4e863e81b407592f8df5cb1456aa248341a2c34d6.png" />
+<img alt="../_images/e32f697a9ed6a21da0132ca31f08e2835908f60a5d5c04950ee04b7806753ce5.png" src="../_images/e32f697a9ed6a21da0132ca31f08e2835908f60a5d5c04950ee04b7806753ce5.png" />
 </div>
 </div>
 </section>
@@ -1052,8 +1055,16 @@ Grid points: 37,848
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="k">for</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;#3b4cc0&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;#b40426&quot;</span><span class="p">)]:</span>
     <span class="n">mask</span> <span class="o">=</span> <span class="n">y_moons</span> <span class="o">==</span> <span class="bp">cls</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X_moons</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X_moons</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-               <span class="n">edgecolors</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Class </span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">X_moons</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">X_moons</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+        <span class="n">s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">edgecolors</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
+        <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Class </span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;$x_1$&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;$x_2$&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Two-Moons Dataset&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">minorticks_on</span><span class="p">()</span>
@@ -1062,7 +1073,7 @@ Grid points: 37,848
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/71c10f0b6329d2647b71db9c6e31d946daa679679f69d462fbb630c730b43acf.png" src="../_images/71c10f0b6329d2647b71db9c6e31d946daa679679f69d462fbb630c730b43acf.png" />
+<img alt="../_images/4e23a1214c82e1959c4a447f4b9f8efc3280fb53e5d000b3b091536241bf0a44.png" src="../_images/4e23a1214c82e1959c4a447f4b9f8efc3280fb53e5d000b3b091536241bf0a44.png" />
 </div>
 </div>
 </section>
@@ -1075,14 +1086,18 @@ Grid points: 37,848
 <span class="n">clf_net</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">DeepNetwork</span><span class="p">(</span><span class="n">coupling_fn</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
     <span class="o">.</span><span class="n">weight_initialisation</span><span class="p">(</span><span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="p">)</span>
@@ -1094,7 +1109,7 @@ Grid points: 37,848
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Architecture: 2 → 16 → 16 → 1 (binary)
-Layers: 10  |  Nodes: 131
+Layers: 14  |  Nodes: 195
 </pre></div>
 </div>
 </div>
@@ -1134,7 +1149,12 @@ Layers: 10  |  Nodes: 131
     <span class="n">test_accs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">test_preds</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="n">test_labels</span><span class="p">))</span>
 
     <span class="c1"># Train: one full pass through the training set</span>
-    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">jax_X_train</span><span class="p">,</span> <span class="n">jax_y_train</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">LR</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+        <span class="n">jax_X_train</span><span class="p">,</span> 
+        <span class="n">jax_y_train</span><span class="p">,</span> 
+        <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> 
+        <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;precision_ratio&quot;</span>
+    <span class="p">)</span>
 
     <span class="c1"># Training metrics from the predictions during this epoch</span>
     <span class="n">train_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">clf_net</span><span class="o">.</span><span class="n">predictions</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -1159,97 +1179,97 @@ Layers: 10  |  Nodes: 131
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.3935, acc=0.829 | test  loss=0.7196, acc=0.410
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.3006, acc=0.886 | test  loss=0.5155, acc=0.835
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.2083, acc=0.919 | test  loss=0.2228, acc=0.915
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.1488, acc=0.978 | test  loss=0.1389, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.1496, acc=0.953 | test  loss=0.1600, acc=0.935
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.0688, acc=0.975 | test  loss=0.0694, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.0938, acc=0.974 | test  loss=0.1139, acc=0.960
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.0550, acc=0.983 | test  loss=0.0442, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.0769, acc=0.978 | test  loss=0.1012, acc=0.965
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.0499, acc=0.986 | test  loss=0.0513, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.0614, acc=0.985 | test  loss=0.0779, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.0350, acc=0.993 | test  loss=0.0222, acc=0.990
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.0573, acc=0.985 | test  loss=0.0837, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.0362, acc=0.986 | test  loss=0.0345, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.0628, acc=0.984 | test  loss=0.0722, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.0341, acc=0.989 | test  loss=0.0374, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.0893, acc=0.969 | test  loss=0.0852, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.0334, acc=0.989 | test  loss=0.0458, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.0507, acc=0.990 | test  loss=0.0716, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.0345, acc=0.990 | test  loss=0.0510, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.0458, acc=0.993 | test  loss=0.0669, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.0401, acc=0.980 | test  loss=0.0327, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.0462, acc=0.990 | test  loss=0.0641, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.0306, acc=0.986 | test  loss=0.0380, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.0460, acc=0.991 | test  loss=0.0623, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.0332, acc=0.989 | test  loss=0.0442, acc=0.990
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.0532, acc=0.989 | test  loss=0.0632, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.0250, acc=0.990 | test  loss=0.0340, acc=0.990
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.0413, acc=0.993 | test  loss=0.0653, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.0232, acc=0.989 | test  loss=0.0396, acc=0.990
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.0441, acc=0.991 | test  loss=0.0628, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.0237, acc=0.989 | test  loss=0.0431, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.0496, acc=0.991 | test  loss=0.0579, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.0235, acc=0.990 | test  loss=0.0386, acc=0.990
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.0401, acc=0.994 | test  loss=0.0593, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.0257, acc=0.990 | test  loss=0.0499, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.0390, acc=0.995 | test  loss=0.0576, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.0255, acc=0.993 | test  loss=0.0409, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.0387, acc=0.994 | test  loss=0.0545, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.0224, acc=0.991 | test  loss=0.0308, acc=0.990
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.0388, acc=0.993 | test  loss=0.0556, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.0232, acc=0.990 | test  loss=0.0433, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.0393, acc=0.994 | test  loss=0.0584, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.0228, acc=0.990 | test  loss=0.0428, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.0369, acc=0.994 | test  loss=0.0581, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.0225, acc=0.990 | test  loss=0.0485, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.0364, acc=0.995 | test  loss=0.0627, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.0262, acc=0.990 | test  loss=0.0537, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.0369, acc=0.995 | test  loss=0.0613, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.0231, acc=0.990 | test  loss=0.0533, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.0362, acc=0.994 | test  loss=0.0634, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.0157, acc=0.994 | test  loss=0.0637, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.0364, acc=0.994 | test  loss=0.0688, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.0210, acc=0.989 | test  loss=0.0422, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.0356, acc=0.994 | test  loss=0.0625, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.0438, acc=0.986 | test  loss=0.0376, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.0353, acc=0.995 | test  loss=0.0622, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.0229, acc=0.990 | test  loss=0.0411, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.0351, acc=0.995 | test  loss=0.0622, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.0216, acc=0.989 | test  loss=0.0379, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.0349, acc=0.995 | test  loss=0.0614, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.0320, acc=0.984 | test  loss=0.0377, acc=0.985
 
 Saved 151 decision boundary snapshots
 </pre></div>
@@ -1280,7 +1300,7 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/931cf4652443807d90317273f41491c2a99d5e7b5229e2df2b3ab2e05ac05b05.png" src="../_images/931cf4652443807d90317273f41491c2a99d5e7b5229e2df2b3ab2e05ac05b05.png" />
+<img alt="../_images/6b01dc78e8c2b3c0c1ae6dc1deb81e7dbdfe935c70e2b41d2655fc52fa87d99c.png" src="../_images/6b01dc78e8c2b3c0c1ae6dc1deb81e7dbdfe935c70e2b41d2655fc52fa87d99c.png" />
 </div>
 </div>
 </section>
@@ -1352,21 +1372,21 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Wed, 15 Apr 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 28 Apr 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
-IPython version      : 9.12.0
+IPython version      : 9.13.0
 
-pyhgf : 0.2.10
+pyhgf : 0.2.11
 jax   : 0.4.31
 jaxlib: 0.4.31
 
-IPython   : 9.12.0
+IPython   : 9.13.0
 jax       : 0.4.31
-matplotlib: 3.10.8
+matplotlib: 3.10.9
 numpy     : 2.4.4
-pyhgf     : 0.2.10
+pyhgf     : 0.2.11
 seaborn   : 0.13.2
 treescope : 0.1.10
 
@@ -1474,8 +1494,8 @@ Watermark: 2.6.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1509,7 +1529,7 @@ Watermark: 2.6.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
 </p></div>
       
     </div>

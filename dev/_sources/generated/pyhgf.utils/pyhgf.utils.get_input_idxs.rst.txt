@@ -1,6 +1,0 @@
-﻿pyhgf.utils.get\_input\_idxs
-============================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: get_input_idxs
