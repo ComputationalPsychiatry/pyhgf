@@ -27,7 +27,7 @@ _DERIVED_VARIABLES = {
 
 def plot_layers(
     network: "DeepNetwork",
-    layers: Optional[Sequence[int]] = None,
+    layers: Optional[Union[int, Sequence[int]]] = None,
     variables: Union[str, Sequence[str]] = ("expected_mean",),
     mode: str = "all",
     figsize: Optional[tuple] = None,
@@ -54,7 +54,9 @@ def plot_layers(
         attribute has been populated (call ``net.fit(...,
         record_trajectories=True)`` first).
     layers :
-        Indices of the layers to plot. ``None`` (default) plots every layer.
+        Index or indices of the layers to plot. A single ``int`` is accepted
+        as shorthand for a one-element list. ``None`` (default) plots every
+        layer.
     variables :
         Name (or sequence of names) of :class:`pyhgf.typing.LayerState` fields to plot
         — for example ``"expected_mean"``, ``"precision"``,
@@ -97,7 +99,10 @@ def plot_layers(
 
     if layers is None:
         layers = list(range(network.n_layers))
-    layers = list(layers)
+    elif isinstance(layers, (int, np.integer)):
+        layers = [int(layers)]
+    else:
+        layers = list(layers)
 
     valid_fields = set(LayerState._fields)
     valid_names = valid_fields | set(_DERIVED_VARIABLES)

@@ -669,7 +669,7 @@ class DeepNetwork:
 
     def plot_layers(
         self,
-        layers: Optional[list[int]] = None,
+        layers: Optional[Union[int, list[int]]] = None,
         variables=("expected_mean",),
         mode: str = "all",
         figsize: Optional[tuple] = None,
@@ -686,7 +686,9 @@ class DeepNetwork:
         Parameters
         ----------
         layers :
-            Indices of the layers to plot. ``None`` (default) plots all layers.
+            Index or indices of the layers to plot. A single ``int`` is
+            accepted as shorthand for a one-element list. ``None`` (default)
+            plots all layers.
         variables :
             Name (or sequence of names) of ``LayerState`` fields to plot,
             e.g. ``"expected_mean"``, ``"precision"``, ``"mean_vol"``.
