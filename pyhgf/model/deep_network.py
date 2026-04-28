@@ -692,7 +692,9 @@ class DeepNetwork:
         variables :
             Name (or sequence of names) of ``LayerState`` fields to plot,
             e.g. ``"expected_mean"``, ``"precision"``, ``"mean_vol"``. The
-            derived name ``"PWPE"`` is also accepted.
+            derived name ``"PWPE"`` is also accepted: it plots the magnitude
+            of the precision-weighted prediction error,
+            ``|mean - expected_mean| * expected_precision``.
         mode :
             ``"all"`` for one line per node, ``"mean_ci"`` for mean ± 95% CI.
         figsize :

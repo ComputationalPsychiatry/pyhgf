@@ -19,7 +19,7 @@ _Z_95 = 1.959963984540054
 # function ``(LayerState) -> ndarray`` of shape (T, n_nodes).
 _DERIVED_VARIABLES = {
     "PWPE": lambda layer: (
-        (np.asarray(layer.mean) - np.asarray(layer.expected_mean))
+        np.abs(np.asarray(layer.mean) - np.asarray(layer.expected_mean))
         * np.asarray(layer.expected_precision)
     ),
 }
@@ -38,15 +38,9 @@ def plot_layers(
 
     Each row of the resulting figure corresponds to a *variable* (a field of
     :class:`pyhgf.typing.LayerState`) and each column to a *layer*. In ``"all"``
-    mode every node trajectory is drawn as its own line; in ``"mean_ci"`` mode
-    the across-node mean and a 95% confidence interval are drawn as a
-    Matplotlib line + shaded band.
-
-    Both modes are vectorised so the cost scales linearly with ``T * n_nodes``
-    — the ``"all"`` path uses a single :class:`matplotlib.collections.LineCollection`
-    instead of a per-node ``ax.plot`` call, and the ``"mean_ci"`` path
-    aggregates over nodes with NumPy and renders one ``plot`` + ``fill_between``
-    pair per axis (no long-format DataFrame, no bootstrap).
+    mode every node trajectory is drawn as its own line; in ``"mean_ci"`` mode the
+    across-node mean and a 95% confidence interval are drawn as a Matplotlib line +
+    shaded band.
 
     Parameters
     ----------
@@ -62,9 +56,11 @@ def plot_layers(
         Name (or sequence of names) of :class:`pyhgf.typing.LayerState` fields
         to plot — for example ``"expected_mean"``, ``"precision"``,
         ``"value_prediction_error"``, ``"mean_vol"``. The derived name
-        ``"PWPE"`` is also accepted: it plots the precision-weighted prediction
-        error ``(mean - expected_mean) * expected_precision``. A single string
-        is accepted as shorthand for a one-element list.
+        ``"PWPE"`` is also accepted: it plots the magnitude of the precision-weighted
+        prediction error, ``|mean - expected_mean| * expected_precision`` (the absolute
+        value of the PE is used so that positive and negative deviations both
+        contribute positively to the displayed signal). A single string is accepted as
+        shorthand for a one-element list.
     mode :
         ``"all"`` to draw one line per node, ``"mean_ci"`` to draw the
         across-node mean with a 95% normal-approximation confidence band.
