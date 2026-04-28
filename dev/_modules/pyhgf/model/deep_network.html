@@ -1545,7 +1545,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_layers</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">variables</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">,),</span>
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
         <span class="n">figsize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1562,7 +1562,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        layers :</span>
-<span class="sd">            Indices of the layers to plot. ``None`` (default) plots all layers.</span>
+<span class="sd">            Index or indices of the layers to plot. A single ``int`` is</span>
+<span class="sd">            accepted as shorthand for a one-element list. ``None`` (default)</span>
+<span class="sd">            plots all layers.</span>
 <span class="sd">        variables :</span>
 <span class="sd">            Name (or sequence of names) of ``LayerState`` fields to plot,</span>
 <span class="sd">            e.g. ``&quot;expected_mean&quot;``, ``&quot;precision&quot;``, ``&quot;mean_vol&quot;``.</span>
