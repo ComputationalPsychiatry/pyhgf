@@ -673,15 +673,15 @@ class DeepNetwork:
         variables=("expected_mean",),
         mode: str = "all",
         figsize: Optional[tuple] = None,
-        axes=None,
+        color: Optional[Union[tuple, str]] = None,
+        axs=None,
     ):
         """Plot layer-wise parameter trajectories.
 
         Each row of the figure corresponds to a variable (a field of
         :class:`pyhgf.typing.LayerState`) and each column to a layer.
         ``mode="all"`` draws one line per node; ``mode="mean_ci"`` draws the
-        across-node mean and a 95% confidence interval using
-        ``seaborn.lineplot``.
+        across-node mean and a 95% normal-approximation confidence band.
 
         Parameters
         ----------
@@ -691,17 +691,24 @@ class DeepNetwork:
             plots all layers.
         variables :
             Name (or sequence of names) of ``LayerState`` fields to plot,
-            e.g. ``"expected_mean"``, ``"precision"``, ``"mean_vol"``.
+            e.g. ``"expected_mean"``, ``"precision"``, ``"mean_vol"``. The
+            derived name ``"PWPE"`` is also accepted.
         mode :
             ``"all"`` for one line per node, ``"mean_ci"`` for mean ± 95% CI.
         figsize :
             Matplotlib figure size in inches.
-        axes :
-            Pre-existing 2D array of axes to draw into.
+        color :
+            Colour of the lines (``"all"`` mode) or of the mean curve and
+            confidence band (``"mean_ci"`` mode). When ``None`` (default),
+            Matplotlib's default colour cycle is used.
+        axs :
+            A 2D array of Matplotlib axes (rows = variables, cols = layers)
+            where to draw the trajectories. The default is ``None`` (create a
+            new figure).
 
         Returns
         -------
-        axes :
+        axs :
             2D array of Matplotlib axes, shape ``(n_variables, n_layers)``.
 
         Raises
@@ -719,7 +726,8 @@ class DeepNetwork:
             variables=variables,
             mode=mode,
             figsize=figsize,
-            axes=axes,
+            color=color,
+            axs=axs,
         )
 
     @property

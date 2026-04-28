@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,7 +31,8 @@ def plot_layers(
     variables: Union[str, Sequence[str]] = ("expected_mean",),
     mode: str = "all",
     figsize: Optional[tuple] = None,
-    axes: Optional[np.ndarray] = None,
+    color: Optional[Union[tuple, str]] = None,
+    axs: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """Plot layer-wise parameter trajectories of a :class:`DeepNetwork`.
 
@@ -58,24 +59,29 @@ def plot_layers(
         as shorthand for a one-element list. ``None`` (default) plots every
         layer.
     variables :
-        Name (or sequence of names) of :class:`pyhgf.typing.LayerState` fields to plot
-        — for example ``"expected_mean"``, ``"precision"``,
-        ``"value_prediction_error"``, ``"mean_vol"``. The derived name ``"PWPE"`` is
-        also accepted: it plots the precision-weighted prediction error ``(mean -
-        expected_mean) * expected_precision``. A single string is accepted as shorthand
-        for a one-element list.
+        Name (or sequence of names) of :class:`pyhgf.typing.LayerState` fields
+        to plot — for example ``"expected_mean"``, ``"precision"``,
+        ``"value_prediction_error"``, ``"mean_vol"``. The derived name
+        ``"PWPE"`` is also accepted: it plots the precision-weighted prediction
+        error ``(mean - expected_mean) * expected_precision``. A single string
+        is accepted as shorthand for a one-element list.
     mode :
-        ``"all"`` to draw one line per node, ``"mean_ci"`` to draw the across-node mean
-        with a 95% normal-approximation confidence band.
+        ``"all"`` to draw one line per node, ``"mean_ci"`` to draw the
+        across-node mean with a 95% normal-approximation confidence band.
     figsize :
         Figure size in inches. Defaults to ``(3.5 * n_cols, 2.5 * n_rows)``.
-    axes :
-        Pre-existing 2D array of Matplotlib axes (rows = variables, cols = layers). When
-        ``None`` (default), a new figure is created.
+    color :
+        The color of the lines (``"all"`` mode) or of the mean curve and
+        confidence band (``"mean_ci"`` mode). When ``None`` (default),
+        Matplotlib's default colour cycle is used.
+    axs :
+        A 2D array of Matplotlib axes (rows = variables, cols = layers)
+        where to draw the trajectories. The default is ``None`` (create a new
+        figure), matching :func:`plot_trajectories`.
 
     Returns
     -------
-    axes :
+    axs :
         2D ``ndarray`` of Matplotlib axes, shape ``(len(variables),
         len(layers))``.
 
@@ -128,24 +134,24 @@ def plot_layers(
     n_cols = len(layers)
 
     # Set up the axes grid ----------------------------------------------
-    if axes is None:
+    if axs is None:
         if figsize is None:
             figsize = (3.5 * n_cols, 2.5 * n_rows)
-        _, axes = plt.subplots(
+        _, axs = plt.subplots(
             n_rows, n_cols, figsize=figsize, squeeze=False, sharex=True
         )
     else:
-        axes = np.atleast_2d(axes)
-        if axes.shape != (n_rows, n_cols):
+        axs = np.atleast_2d(axs)
+        if axs.shape != (n_rows, n_cols):
             raise ValueError(
-                f"`axes` shape {axes.shape} does not match "
+                f"`axs` shape {axs.shape} does not match "
                 f"(n_variables, n_layers) = ({n_rows}, {n_cols})."
             )
 
     # Plot ---------------------------------------------------------------
     for r, var in enumerate(variables):
         for c, layer_idx in enumerate(layers):
-            ax = axes[r, c]
+            ax = axs[r, c]
             layer = network.trajectories.layers[layer_idx]
             if var in _DERIVED_VARIABLES:
                 data = np.asarray(_DERIVED_VARIABLES[var](layer))
@@ -160,7 +166,10 @@ def plot_layers(
                 # segments has shape (n_nodes, T, 2): per-node (x, y) pairs.
                 x = np.broadcast_to(time, (n_nodes, n_steps))
                 segments = np.stack([x, data.T], axis=-1)
-                lc = LineCollection(segments, linewidths=1.0, alpha=0.6)
+                lc_kwargs: dict[str, Any] = {"linewidths": 1.0, "alpha": 0.6}
+                if color is not None:
+                    lc_kwargs["colors"] = color
+                lc = LineCollection(segments, **lc_kwargs)
                 ax.add_collection(lc)
                 ax.set_xlim(time[0], time[-1] if n_steps > 1 else time[0] + 1)
                 finite = data[np.isfinite(data)]
@@ -174,13 +183,17 @@ def plot_layers(
                 # the (T * n_nodes)-row long DataFrame and Seaborn's
                 # bootstrap, which dominate runtime for large inputs.
                 mean = np.nanmean(data, axis=1)
-                ax.plot(time, mean, lw=1.5)
+                line_kwargs: dict[str, Any] = {"lw": 1.5}
+                if color is not None:
+                    line_kwargs["color"] = color
+                ax.plot(time, mean, **line_kwargs)
                 if n_nodes > 1:
                     sem = np.nanstd(data, axis=1, ddof=1) / np.sqrt(n_nodes)
                     half = _Z_95 * sem
-                    ax.fill_between(
-                        time, mean - half, mean + half, alpha=0.25, linewidth=0
-                    )
+                    band_kwargs: dict[str, Any] = {"alpha": 0.25, "linewidth": 0}
+                    if color is not None:
+                        band_kwargs["color"] = color
+                    ax.fill_between(time, mean - half, mean + half, **band_kwargs)
 
             if r == 0:
                 ax.set_title(
@@ -195,4 +208,4 @@ def plot_layers(
             else:
                 ax.set_xlabel("")
 
-    return axes
+    return axs
