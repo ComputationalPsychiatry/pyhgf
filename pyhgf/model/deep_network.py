@@ -667,6 +667,71 @@ class DeepNetwork:
         self._prediction_fn = None
         return self
 
+    def plot_layers(
+        self,
+        layers: Optional[Union[int, list[int]]] = None,
+        variables=("expected_mean",),
+        mode: str = "all",
+        figsize: Optional[tuple] = None,
+        color: Optional[Union[tuple, str]] = None,
+        axs=None,
+    ):
+        """Plot layer-wise parameter trajectories.
+
+        Each row of the figure corresponds to a variable (a field of
+        :class:`pyhgf.typing.LayerState`) and each column to a layer.
+        ``mode="all"`` draws one line per node; ``mode="mean_ci"`` draws the
+        across-node mean and a 95% normal-approximation confidence band.
+
+        Parameters
+        ----------
+        layers :
+            Index or indices of the layers to plot. A single ``int`` is
+            accepted as shorthand for a one-element list. ``None`` (default)
+            plots all layers.
+        variables :
+            Name (or sequence of names) of ``LayerState`` fields to plot,
+            e.g. ``"expected_mean"``, ``"precision"``, ``"mean_vol"``. The
+            derived name ``"PWPE"`` is also accepted: it plots the magnitude
+            of the precision-weighted prediction error,
+            ``|mean - expected_mean| * expected_precision``.
+        mode :
+            ``"all"`` for one line per node, ``"mean_ci"`` for mean ± 95% CI.
+        figsize :
+            Matplotlib figure size in inches.
+        color :
+            Colour of the lines (``"all"`` mode) or of the mean curve and
+            confidence band (``"mean_ci"`` mode). When ``None`` (default),
+            Matplotlib's default colour cycle is used.
+        axs :
+            A 2D array of Matplotlib axes (rows = variables, cols = layers)
+            where to draw the trajectories. The default is ``None`` (create a
+            new figure).
+
+        Returns
+        -------
+        axs :
+            2D array of Matplotlib axes, shape ``(n_variables, n_layers)``.
+
+        Raises
+        ------
+        ValueError
+            If ``self.trajectories`` is ``None`` (run ``fit(...,
+            record_trajectories=True)`` first), or if a variable / layer index
+            / mode is invalid.
+        """
+        from pyhgf.plots.matplotlib import plot_layers as _plot_layers
+
+        return _plot_layers(
+            network=self,
+            layers=layers,
+            variables=variables,
+            mode=mode,
+            figsize=figsize,
+            color=color,
+            axs=axs,
+        )
+
     @property
     def n_layers(self) -> int:
         """Number of layers in the network."""
