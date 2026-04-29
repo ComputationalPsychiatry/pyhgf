@@ -52,6 +52,13 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
 
     let expected_mean = autoconnection_strength * mean + time_step * driftrate;
 
+    // Input/leaf override: a volatile-state node with no value children is an
+    // observed input — it does not undergo a Gaussian random walk between
+    // observations, so the tonic-volatility contribution to the value-level
+    // expected precision is dropped (matches the continuous-node treatment in
+    // `prediction_continuous_state_node`).
+    let is_input = network.edges[node_idx].value_children.is_none();
+
     // Store all results
     let state = &mut network.attributes.states[node_idx];
     state.current_variance = current_variance;
@@ -59,6 +66,11 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     state.expected_precision_vol = expected_precision_vol;
     state.effective_precision_vol = effective_precision_vol;
     state.expected_mean = expected_mean;
-    state.expected_precision = expected_precision;
-    state.effective_precision = effective_precision;
+    if is_input {
+        state.expected_precision = precision;
+        state.effective_precision = 0.0;
+    } else {
+        state.expected_precision = expected_precision;
+        state.effective_precision = effective_precision;
+    }
 }

@@ -19,6 +19,7 @@ def vectorized_layer_prediction(
     coupling_fn: Callable = jnp.tanh,
     parent_has_constant: bool = False,
     has_volatility_parent: bool = True,
+    is_input_layer: bool = False,
 ) -> LayerState:
     """Predict expected mean/precision for all nodes in child layer (volatile node).
 
@@ -51,6 +52,13 @@ def vectorized_layer_prediction(
         If False, the volatility level is frozen: mean_vol and precision_vol
         are not propagated forward, and only tonic_volatility drives the
         expected precision for the value level.
+    is_input_layer :
+        If True, the layer is treated as an observed input/leaf — it does not
+        undergo a Gaussian random walk between observations. The
+        ``tonic_volatility`` contribution to the value-level expected precision
+        is skipped and ``expected_precision`` is set to the prior precision,
+        mirroring the continuous-node treatment in
+        :func:`pyhgf.updates.prediction.continuous.continuous_node_prediction`.
 
     Returns
     -------
@@ -120,6 +128,14 @@ def vectorized_layer_prediction(
 
     # Effective precision for value level
     effective_precision = predicted_volatility * expected_precision
+
+    # Input/leaf override: an observed layer with no value children does not
+    # undergo a Gaussian random walk between observations, so the
+    # tonic-volatility contribution to the value-level expected precision is
+    # dropped (matches the continuous-node treatment).
+    if is_input_layer:
+        expected_precision = child_state.precision
+        effective_precision = jnp.zeros_like(effective_precision)
 
     return child_state._replace(
         expected_mean=expected_mean,

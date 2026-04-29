@@ -154,7 +154,23 @@ def volatile_node_prediction(
     expected_mean = predict_mean_value_level(attributes, edges, node_idx)
 
     attributes[node_idx]["expected_mean"] = expected_mean
-    attributes[node_idx]["expected_precision"] = expected_precision
-    attributes[node_idx]["temp"]["effective_precision"] = effective_precision
+
+    # Input/leaf override: an observed volatile node has no value children, so it
+    # does not undergo a Gaussian random walk between observations. Skip the
+    # tonic-volatility contribution at the value level and use the prior precision
+    # directly, mirroring the continuous-node treatment in
+    # :func:`continuous_node_prediction`.
+    if (
+        (edges[node_idx].value_children is None)
+        and (edges[node_idx].volatility_children is None)
+        and (edges[node_idx].volatility_parents is None)
+    ):
+        attributes[node_idx]["expected_precision"] = attributes[node_idx]["precision"]
+        attributes[node_idx]["temp"]["effective_precision"] = jnp.zeros_like(
+            effective_precision
+        )
+    else:
+        attributes[node_idx]["expected_precision"] = expected_precision
+        attributes[node_idx]["temp"]["effective_precision"] = effective_precision
 
     return attributes

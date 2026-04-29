@@ -513,3 +513,53 @@ def test_repr():
     assert "VectorizedDeepNetwork" in r
     assert "nodes=5" in r
     assert "[2, 3]" in r
+
+
+def test_input_layer_invariant_to_tonic_volatility():
+    """The bottom layer's ``expected_precision`` must ignore its tonic_volatility.
+
+    Layer 0 is the observation layer of a DeepNetwork — it has no value
+    children, so it does not undergo a Gaussian random walk between samples
+    and the tonic-volatility contribution should be skipped (mirroring the
+    per-node continuous-node treatment).
+    """
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal((5, 2)).astype(np.float32)
+    y = rng.standard_normal((5, 1)).astype(np.float32)
+
+    expected_precisions = []
+    for omega in [-8.0, 0.0]:
+        net = (
+            DeepNetwork()
+            .add_layer(
+                size=1,
+                tonic_volatility=omega,
+                precision=5.0,
+                expected_precision=5.0,
+            )
+            .add_layer(size=4)
+            .add_layer(size=2)
+        )
+        # lr=0 so weights don't drift across samples — isolates the
+        # tonic-volatility effect on the prediction step.
+        net.fit(
+            x=x,
+            y=y,
+            lr=0.0,
+            learning_kind="standard",
+            record_trajectories=True,
+        )
+        expected_precisions.append(
+            np.asarray(net.trajectories.layers[0].expected_precision)
+        )
+
+    np.testing.assert_allclose(
+        expected_precisions[0],
+        expected_precisions[1],
+        rtol=1e-5,
+        err_msg=(
+            "DeepNetwork bottom layer's expected_precision changes with "
+            "tonic_volatility — is_input_layer override missing"
+        ),
+    )
+    np.testing.assert_allclose(expected_precisions[0], 5.0, rtol=1e-5)
