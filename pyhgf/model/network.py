@@ -119,6 +119,10 @@ class Network:
             if self.edges[idx].node_type == 2:
                 self.attributes[idx]["autoconnection_strength"] = 0.0
                 self.attributes[idx]["tonic_volatility"] = 0.0
+            # ``observed`` is read by the propagation step on every input node.
+            # Node kinds whose defaults don't declare it (e.g. volatile-state)
+            # default to 1 here so the scan-carry pytree stays consistent.
+            self.attributes[idx].setdefault("observed", 1)
 
         return input_idxs
 

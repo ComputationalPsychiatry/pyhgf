@@ -128,6 +128,9 @@ def propagation_step(
                 coupling_fn=coupling_fns[i],
                 parent_has_constant=add_constant_inputs[i],
                 has_volatility_parent=volatility_parents[i - 1],
+                # Layer 0 is the observation layer of a DeepNetwork — it has no
+                # value children below, so it does not undergo a random walk.
+                is_input_layer=(i - 1 == 0),
             )
 
     # Step 4a: PE for output layer (mean = y, observation-pinned)
