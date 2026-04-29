@@ -1,0 +1,6 @@
+﻿pyhgf.distribution.logp
+=======================
+
+.. currentmodule:: pyhgf.distribution
+
+.. autofunction:: logp

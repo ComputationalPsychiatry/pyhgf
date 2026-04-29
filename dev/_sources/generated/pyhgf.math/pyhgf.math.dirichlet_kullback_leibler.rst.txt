@@ -1,0 +1,6 @@
+﻿pyhgf.math.dirichlet\_kullback\_leibler
+=======================================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: dirichlet_kullback_leibler

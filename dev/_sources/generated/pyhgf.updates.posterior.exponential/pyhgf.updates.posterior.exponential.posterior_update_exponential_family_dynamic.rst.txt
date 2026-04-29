@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.exponential.posterior\_update\_exponential\_family\_dynamic
+===================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.exponential
+
+.. autofunction:: posterior_update_exponential_family_dynamic

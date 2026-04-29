@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.volatile.volatile\_node\_posterior\_update.volatile\_node\_posterior\_update
+====================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update
+
+.. autofunction:: volatile_node_posterior_update
