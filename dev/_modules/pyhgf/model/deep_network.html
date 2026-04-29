@@ -990,6 +990,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
@@ -1275,6 +1276,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the jitted propagation function.</span>
 
@@ -1293,6 +1295,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            If True, the scan output includes the full ``NetworkState`` at every time</span>
 <span class="sd">            step (useful for inspection but significantly slower). If False (default),</span>
 <span class="sd">            only predictions are accumulated.</span>
+<span class="sd">        weight_update :</span>
+<span class="sd">            If ``True`` (default), the learning phase updates the weights at the</span>
+<span class="sd">            end of each step. If ``False``, weights are frozen — the network</span>
+<span class="sd">            performs inference only.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1336,6 +1342,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">update_type</span><span class="p">,</span>
                     <span class="n">volatility_parents</span><span class="p">,</span>
                     <span class="n">learning_kind</span><span class="p">,</span>
+                    <span class="n">weight_update</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span><span class="p">)</span>
 
@@ -1354,6 +1361,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">update_type</span><span class="p">,</span>
                     <span class="n">volatility_parents</span><span class="p">,</span>
                     <span class="n">learning_kind</span><span class="p">,</span>
+                    <span class="n">weight_update</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_step</span><span class="p">)</span>
@@ -1416,6 +1424,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit network to data.</span>
 
@@ -1447,6 +1456,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            If True, record the full ``NetworkState`` at every time step (accessible</span>
 <span class="sd">            via ``self.trajectories``).  This is useful for inspection but significantly</span>
 <span class="sd">            increases memory usage and slows training. Default is False.</span>
+<span class="sd">        weight_update :</span>
+<span class="sd">            If ``True`` (default), the learning phase updates the network&#39;s</span>
+<span class="sd">            weights at the end of each step. Set to ``False`` to freeze the</span>
+<span class="sd">            weights and run only the inference (prediction → PE → posterior)</span>
+<span class="sd">            cycle — useful for evaluating a fixed model on new data while</span>
+<span class="sd">            still recording trajectories.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1468,14 +1483,16 @@ window.runMermaid = runMermaid;</script>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">!=</span> <span class="n">lr</span>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">!=</span> <span class="n">learning_kind</span>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">!=</span> <span class="n">record_trajectories</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">!=</span> <span class="n">weight_update</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">needs_retrace</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_propagation_fn</span><span class="p">(</span>
-                <span class="n">lr</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">record_trajectories</span>
+                <span class="n">lr</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">record_trajectories</span><span class="p">,</span> <span class="n">weight_update</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="n">lr</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="n">learning_kind</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="n">record_trajectories</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">=</span> <span class="n">weight_update</span>
 
         <span class="c1"># Convert to JAX arrays</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1540,6 +1557,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span>
 
