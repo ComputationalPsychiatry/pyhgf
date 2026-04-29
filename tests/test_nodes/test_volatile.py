@@ -117,3 +117,52 @@ def test_explicit_cross_backend_ehgf():
 def test_explicit_cross_backend_unbounded():
     """Test Python and Rust explicit networks agree (unbounded update)."""
     _run_explicit_cross_backend("unbounded")
+
+
+def _run_volatile_input_invariance(cls, label):
+    """Vary ``tonic_volatility`` of a volatile-state input/leaf node.
+
+    The input/leaf node has no value children, so it does not undergo a
+    Gaussian random walk between observations. Its ``expected_precision``
+    must therefore be its prior precision — identical for any value of
+    ``tonic_volatility`` — mirroring the continuous-node treatment.
+    """
+    timeseries = np.array([0.5, 1.0, 0.7, 0.3])
+    expected_precisions = []
+    for omega in [-8.0, 0.0]:
+        net = (
+            cls(update_type="unbounded")
+            .add_nodes(
+                kind="volatile-state",
+                tonic_volatility=omega,
+                precision=5.0,
+                expected_precision=5.0,
+            )
+            .add_nodes(value_children=0)
+            .input_data(input_data=timeseries)
+        )
+        expected_precisions.append(
+            np.asarray(net.node_trajectories[0]["expected_precision"])
+        )
+
+    np.testing.assert_allclose(
+        expected_precisions[0],
+        expected_precisions[1],
+        rtol=1e-5,
+        err_msg=(
+            f"{label}: input volatile-state node's expected_precision changes "
+            "with tonic_volatility — input-leaf override missing"
+        ),
+    )
+    # And it should equal the prior precision of 5.0 throughout.
+    np.testing.assert_allclose(expected_precisions[0], 5.0, rtol=1e-5)
+
+
+def test_volatile_input_node_invariant_to_tonic_volatility_python():
+    """Per-node Python: volatile-state input ignores tonic_volatility."""
+    _run_volatile_input_invariance(PyNetwork, "py")
+
+
+def test_volatile_input_node_invariant_to_tonic_volatility_rust():
+    """Per-node Rust: volatile-state input ignores tonic_volatility."""
+    _run_volatile_input_invariance(RsNetwork, "rs")
