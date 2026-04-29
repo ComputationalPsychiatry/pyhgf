@@ -583,6 +583,8 @@ def test_fit_weight_update_toggle_retraces():
         not np.array_equal(before, np.asarray(after))
         for before, after in zip(weights_after_frozen, dn.state.weights)
     )
+
+
 def test_input_layer_invariant_to_tonic_volatility():
     """The bottom layer's ``expected_precision`` must ignore its tonic_volatility.
 
