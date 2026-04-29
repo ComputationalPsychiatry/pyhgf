@@ -35,6 +35,7 @@ def propagation_step(
     update_type: str = "eHGF",
     volatility_parents: Optional[list[bool]] = None,
     learning_kind: str = "precision_weighted",
+    weight_update: bool = True,
 ) -> tuple[NetworkState, jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -73,6 +74,11 @@ def propagation_step(
     learning_kind :
         Gradient computation mode passed to :func:`vectorized_weight_update`:
         ``"standard"``, ``"precision_weighted"`` (default), or ``"precision_ratio"``.
+    weight_update :
+        If ``True`` (default), run the weight-learning phase at the end of the
+        step. If ``False``, weights and Adam moments are passed through
+        unchanged — useful for inference-only forward passes through a fixed
+        network.
 
     Returns
     -------
@@ -157,40 +163,43 @@ def propagation_step(
             )
 
     # ========== LEARNING PHASE (after inference converges) ==========
-    # Update weights once using converged activities
+    # Update weights once using converged activities — skipped when
+    # ``weight_update=False`` so the same network can be used for pure
+    # inference (forward + posterior + PE only).
     use_adam = lr == "adam"
-    adam_t = state.adam_t + 1 if use_adam else state.adam_t
+    adam_t = state.adam_t + 1 if (use_adam and weight_update) else state.adam_t
 
     adam_m_list = list(state.adam_m)
     adam_v_list = list(state.adam_v)
 
-    if adam_params is not None:
-        beta1, beta2, epsilon, _adam_lr_override = adam_params
-        _adam_lr = _adam_lr_override if _adam_lr_override is not None else 1e-3
-    else:
-        beta1, beta2, epsilon, _adam_lr = 0.9, 0.999, 1e-8, 1e-3
+    if weight_update:
+        if adam_params is not None:
+            beta1, beta2, epsilon, _adam_lr_override = adam_params
+            _adam_lr = _adam_lr_override if _adam_lr_override is not None else 1e-3
+        else:
+            beta1, beta2, epsilon, _adam_lr = 0.9, 0.999, 1e-8, 1e-3
 
-    for i in range(1, n_layers):
-        weights[i - 1], new_m, new_v = vectorized_weight_update(
-            parent_state=layers[i],
-            child_state=layers[i - 1],
-            weights=weights[i - 1],
-            coupling_fn=coupling_fns[i],
-            kind=learning_kind,
-            lr=lr,
-            parent_has_constant=add_constant_inputs[i],
-            child_is_binary=(layer_kinds[i - 1] == "binary"),
-            adam_m=adam_m_list[i - 1] if use_adam else None,
-            adam_v=adam_v_list[i - 1] if use_adam else None,
-            adam_t=adam_t,
-            adam_lr=_adam_lr,
-            adam_beta1=beta1,
-            adam_beta2=beta2,
-            adam_epsilon=epsilon,
-        )
-        if use_adam and new_m is not None:
-            adam_m_list[i - 1] = new_m
-            adam_v_list[i - 1] = new_v
+        for i in range(1, n_layers):
+            weights[i - 1], new_m, new_v = vectorized_weight_update(
+                parent_state=layers[i],
+                child_state=layers[i - 1],
+                weights=weights[i - 1],
+                coupling_fn=coupling_fns[i],
+                kind=learning_kind,
+                lr=lr,
+                parent_has_constant=add_constant_inputs[i],
+                child_is_binary=(layer_kinds[i - 1] == "binary"),
+                adam_m=adam_m_list[i - 1] if use_adam else None,
+                adam_v=adam_v_list[i - 1] if use_adam else None,
+                adam_t=adam_t,
+                adam_lr=_adam_lr,
+                adam_beta1=beta1,
+                adam_beta2=beta2,
+                adam_epsilon=epsilon,
+            )
+            if use_adam and new_m is not None:
+                adam_m_list[i - 1] = new_m
+                adam_v_list[i - 1] = new_v
 
     new_state = NetworkState(
         layers=tuple(layers),

@@ -115,6 +115,7 @@ class DeepNetwork:
         self._propagation_lr: Optional[Union[float, str]] = None
         self._propagation_learning_kind: Optional[str] = None
         self._record_trajectories: bool = False
+        self._propagation_weight_update: bool = True
         self._prediction_fn: Optional[Callable] = None
 
     def add_layer(
@@ -399,6 +400,7 @@ class DeepNetwork:
         learning_kind: str = "precision_weighted",
         params: Optional[dict] = None,
         record_trajectories: bool = False,
+        weight_update: bool = True,
     ):
         """Create the jitted propagation function.
 
@@ -417,6 +419,10 @@ class DeepNetwork:
             If True, the scan output includes the full ``NetworkState`` at every time
             step (useful for inspection but significantly slower). If False (default),
             only predictions are accumulated.
+        weight_update :
+            If ``True`` (default), the learning phase updates the weights at the
+            end of each step. If ``False``, weights are frozen — the network
+            performs inference only.
 
         Returns
         -------
@@ -460,6 +466,7 @@ class DeepNetwork:
                     update_type,
                     volatility_parents,
                     learning_kind,
+                    weight_update,
                 )
                 return new_state, (new_state, output_pred)
 
@@ -478,6 +485,7 @@ class DeepNetwork:
                     update_type,
                     volatility_parents,
                     learning_kind,
+                    weight_update,
                 )
 
         return jax.jit(_step)
@@ -540,6 +548,7 @@ class DeepNetwork:
         learning_kind: str = "precision_weighted",
         params: Optional[dict] = None,
         record_trajectories: bool = False,
+        weight_update: bool = True,
     ) -> "DeepNetwork":
         """Fit network to data.
 
@@ -571,6 +580,12 @@ class DeepNetwork:
             If True, record the full ``NetworkState`` at every time step (accessible
             via ``self.trajectories``).  This is useful for inspection but significantly
             increases memory usage and slows training. Default is False.
+        weight_update :
+            If ``True`` (default), the learning phase updates the network's
+            weights at the end of each step. Set to ``False`` to freeze the
+            weights and run only the inference (prediction → PE → posterior)
+            cycle — useful for evaluating a fixed model on new data while
+            still recording trajectories.
 
         Returns
         -------
@@ -592,14 +607,16 @@ class DeepNetwork:
             or self._propagation_lr != lr
             or self._propagation_learning_kind != learning_kind
             or self._record_trajectories != record_trajectories
+            or self._propagation_weight_update != weight_update
         )
         if needs_retrace:
             self._propagation_fn = self._create_propagation_fn(
-                lr, learning_kind, params, record_trajectories
+                lr, learning_kind, params, record_trajectories, weight_update
             )
             self._propagation_lr = lr
             self._propagation_learning_kind = learning_kind
             self._record_trajectories = record_trajectories
+            self._propagation_weight_update = weight_update
 
         # Convert to JAX arrays
         x = jnp.asarray(x)
@@ -664,6 +681,7 @@ class DeepNetwork:
         self._propagation_lr = None
         self._propagation_learning_kind = None
         self._record_trajectories = False
+        self._propagation_weight_update = True
         self._prediction_fn = None
         return self
 

@@ -513,3 +513,73 @@ def test_repr():
     assert "VectorizedDeepNetwork" in r
     assert "nodes=5" in r
     assert "[2, 3]" in r
+
+
+def test_fit_weight_update_false_freezes_weights():
+    """fit(weight_update=False) keeps weights identical to the pre-fit state."""
+    np.random.seed(0)
+    x = np.random.randn(10, 3).astype(np.float32)
+    y = np.random.randn(10, 2).astype(np.float32)
+
+    dn = (
+        DeepNetwork()
+        .add_layer(size=2)
+        .add_layer(size=4)
+        .add_layer(size=3)
+        .weight_initialisation("xavier", seed=42)
+    )
+    weights_before = [np.asarray(w).copy() for w in dn.state.weights]
+
+    dn.fit(x=x, y=y, lr=0.1, weight_update=False)
+    for before, after in zip(weights_before, dn.state.weights):
+        assert np.array_equal(before, np.asarray(after))
+
+    # Adam state must also stay frozen (no step counter increment).
+    assert int(dn.state.adam_t) == 0
+
+
+def test_fit_weight_update_true_changes_weights():
+    """fit(weight_update=True) (default) actually changes the weights."""
+    np.random.seed(0)
+    x = np.random.randn(10, 3).astype(np.float32)
+    y = np.random.randn(10, 2).astype(np.float32)
+
+    dn = (
+        DeepNetwork()
+        .add_layer(size=2)
+        .add_layer(size=4)
+        .add_layer(size=3)
+        .weight_initialisation("xavier", seed=42)
+    )
+    weights_before = [np.asarray(w).copy() for w in dn.state.weights]
+    dn.fit(x=x, y=y, lr=0.1)
+    assert any(
+        not np.array_equal(before, np.asarray(after))
+        for before, after in zip(weights_before, dn.state.weights)
+    )
+
+
+def test_fit_weight_update_toggle_retraces():
+    """Toggling weight_update across calls forces a re-trace and yields the right state."""
+    np.random.seed(0)
+    x = np.random.randn(5, 3).astype(np.float32)
+    y = np.random.randn(5, 2).astype(np.float32)
+
+    dn = (
+        DeepNetwork()
+        .add_layer(size=2)
+        .add_layer(size=4)
+        .add_layer(size=3)
+        .weight_initialisation("xavier", seed=42)
+    )
+
+    # First call with weight_update=False — weights frozen
+    dn.fit(x=x, y=y, lr=0.1, weight_update=False)
+    weights_after_frozen = [np.asarray(w).copy() for w in dn.state.weights]
+
+    # Now flip to weight_update=True — must re-trace and actually update
+    dn.fit(x=x, y=y, lr=0.1, weight_update=True)
+    assert any(
+        not np.array_equal(before, np.asarray(after))
+        for before, after in zip(weights_after_frozen, dn.state.weights)
+    )
