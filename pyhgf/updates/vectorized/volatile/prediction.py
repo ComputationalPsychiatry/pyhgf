@@ -68,8 +68,8 @@ def vectorized_layer_prediction(
     # 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------
     # ----------------------------------------------------------------------------------
     if has_volatility_parent:
-        # Expected mean for volatility level (autoconnection = 1.0)
-        expected_mean_vol = child_state.mean_vol
+        # Expected mean for volatility level
+        expected_mean_vol = params.autoconnection_strength_vol * child_state.mean_vol
 
         # Predicted volatility for volatility level
         predicted_volatility_vol = time_step * jnp.exp(params.tonic_volatility_vol)

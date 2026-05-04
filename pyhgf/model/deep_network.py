@@ -33,6 +33,7 @@ _LAYER_PARAM_DEFAULTS: dict[str, float] = {
     "tonic_volatility": -4.0,
     "tonic_volatility_vol": -4.0,
     "volatility_coupling": 1.0,
+    "autoconnection_strength_vol": 1.0,
 }
 
 # Names of fields that can be overridden per layer.
@@ -156,7 +157,8 @@ class DeepNetwork:
             Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`
             (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,
             ``mean_vol``, ``precision_vol``, ...) or :class:`pyhgf.typing.LayerParams`
-            (``tonic_volatility``, ``tonic_volatility_vol``, ``volatility_coupling``).
+            (``tonic_volatility``, ``tonic_volatility_vol``, ``volatility_coupling``,
+            ``autoconnection_strength_vol``).
             Each value is broadcast to the layer's ``size``. Unknown names raise
             ``ValueError``. Defaults match ``LayerState.create`` and
             ``LayerParams.create``.
