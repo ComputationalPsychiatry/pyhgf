@@ -129,6 +129,7 @@ class LayerParams(NamedTuple):
     tonic_volatility: Array  # Value level tonic volatility
     tonic_volatility_vol: Array  # Volatility level tonic volatility
     volatility_coupling: Array  # Internal volatility coupling strength
+    autoconnection_strength_vol: Array  # Implied volatility parent autoconnection
 
     @classmethod
     def create(
@@ -137,6 +138,7 @@ class LayerParams(NamedTuple):
         tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
         volatility_coupling: float = 1.0,
+        autoconnection_strength_vol: float = 1.0,
     ) -> "LayerParams":
         """Create LayerParams with specified values.
 
@@ -150,6 +152,11 @@ class LayerParams(NamedTuple):
             Volatility level tonic volatility (log scale).
         volatility_coupling :
             Internal volatility coupling strength.
+        autoconnection_strength_vol :
+            Autoconnection strength of the implied volatility parent. The
+            volatility-level expected mean is computed as
+            ``autoconnection_strength_vol * mean_vol``. Defaults to ``1.0``
+            (random walk on the volatility level).
 
         Returns
         -------
@@ -160,6 +167,7 @@ class LayerParams(NamedTuple):
             tonic_volatility=jnp.full(n_nodes, tonic_volatility),
             tonic_volatility_vol=jnp.full(n_nodes, tonic_volatility_vol),
             volatility_coupling=jnp.full(n_nodes, volatility_coupling),
+            autoconnection_strength_vol=jnp.full(n_nodes, autoconnection_strength_vol),
         )
 
 
