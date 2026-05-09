@@ -10,9 +10,13 @@ from pyhgf.math import lambert_w0
 from pyhgf.typing import Edges
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "max_posterior_precision"))
 def continuous_node_posterior_update_unbounded(
-    attributes: dict, node_idx: int, edges: Edges, **args
+    attributes: dict,
+    node_idx: int,
+    edges: Edges,
+    max_posterior_precision: float = 1e10,
+    **args,
 ) -> dict:
     """Update the posterior of a continuous node with unbounded quadratic approximation.
 
@@ -24,6 +28,8 @@ def continuous_node_posterior_update_unbounded(
         Pointer to the node that needs to be updated.
     edges :
         The edges of the probabilistic nodes.
+    max_posterior_precision :
+        Upper bound applied to the posterior precision write. Default ``1e10``.
 
     Returns
     -------
@@ -34,7 +40,9 @@ def continuous_node_posterior_update_unbounded(
         attributes=attributes, node_idx=node_idx, edges=edges
     )
 
-    attributes[node_idx]["precision"] = posterior_precision
+    attributes[node_idx]["precision"] = jnp.minimum(
+        posterior_precision, max_posterior_precision
+    )
     attributes[node_idx]["mean"] = posterior_mean
 
     return attributes

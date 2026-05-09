@@ -81,7 +81,8 @@ fn mean_update_volatility_level(network: &Network, node_idx: usize, node_precisi
 pub fn prediction_error_volatile_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
     compute_volatile_prediction_errors(network, node_idx);
 
-    let precision_vol = precision_update_volatility_level(network, node_idx);
+    let precision_vol =
+        precision_update_volatility_level(network, node_idx).min(network.max_posterior_precision);
     network.attributes.states[node_idx].precision_vol = precision_vol;
 
     let mean_vol = mean_update_volatility_level(network, node_idx, precision_vol);
@@ -100,7 +101,8 @@ pub fn prediction_error_volatile_state_node_ehgf(network: &mut Network, node_idx
     let mean_vol = mean_update_volatility_level(network, node_idx, expected_precision_vol);
     network.attributes.states[node_idx].mean_vol = mean_vol;
 
-    let precision_vol = precision_update_volatility_level(network, node_idx);
+    let precision_vol =
+        precision_update_volatility_level(network, node_idx).min(network.max_posterior_precision);
     network.attributes.states[node_idx].precision_vol = precision_vol;
 }
 
@@ -112,7 +114,8 @@ pub fn prediction_error_volatile_state_node_unbounded(network: &mut Network, nod
     compute_volatile_prediction_errors(network, node_idx);
 
     let (precision_vol, mean_vol) = unbounded_volatility_level_update(network, node_idx, time_step);
-    network.attributes.states[node_idx].precision_vol = precision_vol;
+    network.attributes.states[node_idx].precision_vol =
+        precision_vol.min(network.max_posterior_precision);
     network.attributes.states[node_idx].mean_vol = mean_vol;
 }
 

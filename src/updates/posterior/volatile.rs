@@ -68,7 +68,8 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
 
 pub fn posterior_update_volatile_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
     // POSTERIOR UPDATE VALUE LEVEL
-    let precision_value = precision_update_value_level(network, node_idx);
+    let precision_value =
+        precision_update_value_level(network, node_idx).min(network.max_posterior_precision);
     network.attributes.states[node_idx].precision = precision_value;
 
     let mean_value = mean_update_value_level(network, node_idx, precision_value);

@@ -302,6 +302,10 @@ pub struct Network{
     pub roots: Vec<usize>,
     /// Leaf nodes: nodes that have no parents (neither value nor volatility).
     pub leafs: Vec<usize>,
+    /// Upper bound applied to every posterior precision write (value level for
+    /// continuous/volatile nodes and the implicit volatility level for volatile
+    /// nodes). Defaults to ``1e10`` and is shared with the JAX backends.
+    pub max_posterior_precision: f64,
 }
 
 /// Helper: get the list of trajectory field names to export for a given node type.
@@ -379,6 +383,7 @@ impl Network {
             adam_state: None,
             roots: Vec::new(),
             leafs: Vec::new(),
+            max_posterior_precision: 1e10,
         }
     }
 
@@ -1024,6 +1029,7 @@ impl Network {
             adam_state: None,
             roots: Vec::new(),
             leafs: Vec::new(),
+            max_posterior_precision: self.max_posterior_precision,
         };
 
         x.iter()
@@ -1184,9 +1190,21 @@ fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f
 impl Network {
 
     #[new]
-    #[pyo3(signature = (update_type="eHGF"))]
-    fn py_new(update_type: &str) -> Self {
-        Network::new(update_type)
+    #[pyo3(signature = (update_type="eHGF", max_posterior_precision=1e10))]
+    fn py_new(update_type: &str, max_posterior_precision: f64) -> Self {
+        let mut net = Network::new(update_type);
+        net.max_posterior_precision = max_posterior_precision;
+        net
+    }
+
+    #[getter]
+    fn get_max_posterior_precision(&self) -> f64 {
+        self.max_posterior_precision
+    }
+
+    #[setter]
+    fn set_max_posterior_precision(&mut self, value: f64) {
+        self.max_posterior_precision = value;
     }
 
     #[pyo3(name = "add_nodes", signature = (kind="continuous-state", n_nodes=1, value_parents=None, value_children=None, volatility_parents=None, volatility_children=None, coupling_fn=None, **kwargs))]

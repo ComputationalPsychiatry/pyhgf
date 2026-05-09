@@ -9,10 +9,11 @@ from jax.nn import sigmoid
 from pyhgf.math import lambert_w0
 
 
-@partial(jit, static_argnames=("node_idx",))
+@partial(jit, static_argnames=("node_idx", "max_posterior_precision"))
 def volatile_node_posterior_update_unbounded(
     attributes: dict,
     node_idx: int,
+    max_posterior_precision: float = 1e10,
 ) -> dict:
     """Update the volatility level using an unbounded quadratic approximation.
 
@@ -30,6 +31,9 @@ def volatile_node_posterior_update_unbounded(
         The attributes of the probabilistic nodes.
     node_idx :
         Pointer to the volatile node.
+    max_posterior_precision :
+        Upper bound applied to the volatility-level posterior precision write.
+        Default ``1e10``.
 
     Returns
     -------
@@ -131,7 +135,9 @@ def volatile_node_posterior_update_unbounded(
     sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2) ** 2
     posterior_precision = 1.0 / sig2
 
-    attributes[node_idx]["precision_vol"] = posterior_precision
+    attributes[node_idx]["precision_vol"] = jnp.minimum(
+        posterior_precision, max_posterior_precision
+    )
     attributes[node_idx]["mean_vol"] = posterior_mean
 
     return attributes

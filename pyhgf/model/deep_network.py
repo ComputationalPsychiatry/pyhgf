@@ -84,6 +84,7 @@ class DeepNetwork:
         self,
         coupling_fn: Callable = lambda x: x,
         update_type: str = "eHGF",
+        max_posterior_precision: float = 1e10,
     ):
         """Initialize a VectorizedDeepNetwork.
 
@@ -97,9 +98,15 @@ class DeepNetwork:
             The type of volatility-level posterior update. Can be ``"eHGF"``
             (default), ``"standard"`` or ``"unbounded"``. Matches the Network
             class and Rust backend.
+        max_posterior_precision :
+            Upper bound applied to every posterior precision write (value level and
+            volatility level). Defaults to ``1e10`` and is shared with the nodalised
+            ``Network`` and the Rust backend. Increase it to relax the cap, or lower it
+            to be more conservative against precision blow-up.
         """
         self.coupling_fn = coupling_fn
         self.update_type = update_type
+        self.max_posterior_precision = float(max_posterior_precision)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -117,6 +124,7 @@ class DeepNetwork:
         self._propagation_learning_kind: Optional[str] = None
         self._record_trajectories: bool = False
         self._propagation_weight_update: bool = True
+        self._propagation_max_posterior_precision: Optional[float] = None
         self._prediction_fn: Optional[Callable] = None
 
     def add_layer(
@@ -440,6 +448,7 @@ class DeepNetwork:
         layer_kinds = self.layer_kinds
         update_type = self.update_type
         volatility_parents = self.volatility_parents
+        max_posterior_precision = self.max_posterior_precision
 
         # Resolve Adam hyper-parameters when lr="adam".
         if lr == "adam":
@@ -469,6 +478,7 @@ class DeepNetwork:
                     volatility_parents,
                     learning_kind,
                     weight_update,
+                    max_posterior_precision,
                 )
                 return new_state, (new_state, output_pred)
 
@@ -488,6 +498,7 @@ class DeepNetwork:
                     volatility_parents,
                     learning_kind,
                     weight_update,
+                    max_posterior_precision,
                 )
 
         return jax.jit(_step)
@@ -610,6 +621,7 @@ class DeepNetwork:
             or self._propagation_learning_kind != learning_kind
             or self._record_trajectories != record_trajectories
             or self._propagation_weight_update != weight_update
+            or self._propagation_max_posterior_precision != self.max_posterior_precision
         )
         if needs_retrace:
             self._propagation_fn = self._create_propagation_fn(
@@ -619,6 +631,7 @@ class DeepNetwork:
             self._propagation_learning_kind = learning_kind
             self._record_trajectories = record_trajectories
             self._propagation_weight_update = weight_update
+            self._propagation_max_posterior_precision = self.max_posterior_precision
 
         # Convert to JAX arrays
         x = jnp.asarray(x)
