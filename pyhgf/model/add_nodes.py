@@ -154,8 +154,10 @@ def add_constant_state(
 ):
     """Add constant-state (bias) node(s) to a network.
 
-    Constant-state nodes hold a fixed mean of 1.0 and have no prediction or update
-    steps. They can only have children, never parents.
+    Constant-state nodes hold a fixed mean of 1.0 and precision of 1.0 (fully known
+    bias). They are always wired to their children linearly (``coupling_fn`` is forced
+    to ``None``), have no prediction or update steps, and can only have children, never
+    parents.
     """
     # Validate that constant-state nodes cannot have volatility children
     if volatility_children[0] is not None and len(volatility_children[0]) > 0:
@@ -166,11 +168,18 @@ def add_constant_state(
     default_parameters = {
         "mean": 1.0,
         "expected_mean": 1.0,
+        "precision": 1.0,
+        "expected_precision": 1.0,
         "value_coupling_children": value_children[1],
     }
 
     # allow caller overrides
     default_parameters.update(node_parameters)
+
+    # Constant-state nodes are always linearly connected to their children;
+    # any caller-supplied coupling function is dropped to preserve the
+    # bias = 1.0 invariant across backends.
+    coupling_fn = tuple(None for _ in coupling_fn)
 
     network = insert_nodes(
         network=network,

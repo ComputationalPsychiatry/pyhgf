@@ -15,7 +15,7 @@ def vectorized_binary_prediction(
     child_state: LayerState,
     parent_state: LayerState,
     weights: jnp.ndarray,
-    coupling_fn: Callable = jnp.tanh,
+    coupling_fn: Callable,
     parent_has_constant: bool = False,
 ) -> LayerState:
     r"""Predict expected mean and precision for a binary state node layer.
@@ -61,12 +61,11 @@ def vectorized_binary_prediction(
     LayerState
         Updated child layer state with binary expected values.
     """
-    # Augment parent mean with constant node if needed
-    parent_mean = parent_state.expected_mean
+    # Apply coupling to the parent activations only; the constant bias node is
+    # always wired in linearly (g(1) = 1) regardless of coupling_fn.
+    coupled_parents = coupling_fn(parent_state.expected_mean)
     if parent_has_constant:
-        parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
-
-    coupled_parents = coupling_fn(parent_mean)
+        coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
     logit = jnp.matmul(weights, coupled_parents)
 
     # Sigmoid transform to get binary expected mean
