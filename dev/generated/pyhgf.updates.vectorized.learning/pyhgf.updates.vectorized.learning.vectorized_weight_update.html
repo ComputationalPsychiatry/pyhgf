@@ -657,20 +657,37 @@
 <span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent})\)</span></p></li>
 <li><p><strong>precision_weighted</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_weighted&quot;</span></code>):
 <span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}\)</span></p></li>
-<li><p><strong>precision_ratio</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>): Kalman-gain-weighted
-PE using the posterior precisions of child and parent.
-<span class="math notranslate nohighlight">\(K = \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child})\)</span>
+<li><p><strong>precision_ratio</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>): Kalman-gain-style gain
+using the parent’s expected precision in the numerator.
+<span class="math notranslate nohighlight">\(K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})\)</span>
 <span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) \cdot K\)</span></p></li>
+<li><p><strong>map_natural</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;map_natural&quot;</span></code>): MAP weight update derived from
+the predictive-coding free energy with a Gaussian weight prior whose
+precision is the parent layer’s expected precision. Combines child
+precision (numerator) with the parent prior plus per-weight Fisher
+curvature <span class="math notranslate nohighlight">\(g(\text{parent})^2\)</span> (denominator), giving a bounded,
+curvature-aware update that uses both precisions.
+Gaussian child:
+<span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child} \cdot g(\text{parent})^2)\)</span>.
+Binary child (drop the redundant <span class="math notranslate nohighlight">\(\pi_\text{child}\)</span> factor since
+the Bernoulli Fisher cancels through the sigmoid):
+<span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) / (\pi_\text{parent} + g(\text{parent})^2)\)</span>.</p></li>
+<li><p><strong>pure_natural</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;pure_natural&quot;</span></code>): Riemannian natural gradient
+under the parent’s precision metric — uses both precisions with no
+curvature term, no extra hyperparameter.
+Gaussian child:
+<span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / \pi_\text{parent}\)</span>.
+Binary child:
+<span class="math notranslate nohighlight">\(g = \text{PE} \otimes g(\text{parent}) / \pi_\text{parent}\)</span>.
+Not bounded — risks blowing up when <span class="math notranslate nohighlight">\(\pi_\text{parent}\)</span> is small.</p></li>
 </ul>
-<p><em>lr</em> controls how the gradient is applied (same semantics for all three
+<p><em>lr</em> controls how the gradient is applied (same semantics for all five
 kinds):</p>
 <ul class="simple">
 <li><p><strong>float ≥ 0</strong>: <span class="math notranslate nohighlight">\(\Delta w = g \cdot \text{lr}\)</span></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>: gradient filtered through the Adam optimiser
 (Kingma &amp; Ba, 2015); step size controlled by <em>adam_lr</em>.</p></li>
 </ul>
-<p>To recover the old “full Kalman step” behaviour for
-<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>, pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -681,13 +698,14 @@ kinds):</p>
 a constant input node.</p></li>
 <li><p><strong>coupling_fn</strong> (<em>Callable</em>) – Coupling function applied to parent means.</p></li>
 <li><p><strong>kind</strong> (<em>str</em>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
-or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;map_natural&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;pure_natural&quot;</span></code>.</p></li>
 <li><p><strong>lr</strong> (<em>float</em><em> | </em><em>str</em>) – How the gradient is applied: a non-negative float for direct scaling,
 or <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code> for the Adam optimiser.  Applied uniformly across all
 <em>kind</em> values, including <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
-<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the parent layer has a constant input node.  The parent
-mean is augmented with 1.0 and the precision with the parent
-precision mean so the bias column of <em>weights</em> is updated.</p></li>
+<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the parent layer has a constant input node. Constant nodes are assumed
+to have mean = 1.0 and precision = 1.0 (fully known bias), and are concatenated
+to the coupled parent vector after <code class="docutils literal notranslate"><span class="pre">coupling_fn</span></code> is applied so the bias entry
+is unconditionally linear regardless of the coupling function.</p></li>
 <li><p><strong>child_is_binary</strong> (<em>bool</em>) – If True, the child layer is a binary node.  In <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>
 mode the precision multiplication is skipped because the Bernoulli
 variance is already embedded in the binary prediction-error formula.</p></li>
@@ -713,7 +731,7 @@ Required when <code class="docutils literal notranslate"><span class="pre">lr=&q
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ValueError</strong> – If <em>kind</em> is not one of <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
-or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;map_natural&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;pure_natural&quot;</span></code>.</p></li>
 <li><p><strong>ValueError</strong> – If <em>lr</em> is a string other than <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>.</p></li>
 </ul>
 </dd>
