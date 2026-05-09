@@ -132,6 +132,7 @@ def vectorized_layer_posterior_update(
     weights: jnp.ndarray,
     coupling_fn_grad: Callable,
     parent_has_constant: bool = False,
+    max_posterior_precision: float = 1e10,
 ) -> LayerState:
     """Update the value-level posterior for all nodes in a parent layer.
 
@@ -154,6 +155,8 @@ def vectorized_layer_posterior_update(
     parent_has_constant :
         If True, the last column of *weights* corresponds to the constant input node and
         is stripped before computing the posterior update.
+    max_posterior_precision :
+        Upper bound applied to the posterior precision. Default ``1e10``.
 
     Returns
     -------
@@ -170,7 +173,7 @@ def vectorized_layer_posterior_update(
             layer, child, weights, coupling_fn_grad
         ),
         a_min=layer.expected_precision,
-        a_max=1e8,
+        a_max=max_posterior_precision,
     )
 
     posterior_mean = vectorized_posterior_update_mean_value_level(

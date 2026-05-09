@@ -72,7 +72,11 @@ class Network:
 
     """
 
-    def __init__(self, update_type: str = "eHGF") -> None:
+    def __init__(
+        self,
+        update_type: str = "eHGF",
+        max_posterior_precision: float = 1e10,
+    ) -> None:
         """Initialize an empty neural network.
 
         Parameters
@@ -89,6 +93,12 @@ class Network:
             .. note:
               The different update steps only apply to nodes having at least one
               volatility parents. In other cases, the regular HGF updates are applied.
+        max_posterior_precision :
+            Upper bound applied to every posterior precision write (value level for
+            continuous/volatile nodes and the implicit volatility level for volatile
+            nodes). Defaults to ``1e10`` and is shared with the vectorized JAX and Rust
+            backends. Increase it to relax the cap, or lower it to be more conservative
+            against precision blow-up.
 
         """
         self.edges: Edges = ()
@@ -104,6 +114,7 @@ class Network:
         self.action_steps: Optional[Sequence] = None
         self.last_attributes: Optional[Attributes] = None
         self.update_type = update_type
+        self.max_posterior_precision = float(max_posterior_precision)
 
     @property
     def input_idxs(self):

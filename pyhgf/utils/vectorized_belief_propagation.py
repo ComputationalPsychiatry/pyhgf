@@ -36,6 +36,7 @@ def propagation_step(
     volatility_parents: Optional[list[bool]] = None,
     learning_kind: str = "precision_weighted",
     weight_update: bool = True,
+    max_posterior_precision: float = 1e10,
 ) -> tuple[NetworkState, jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -79,6 +80,10 @@ def propagation_step(
         step. If ``False``, weights and Adam moments are passed through
         unchanged — useful for inference-only forward passes through a fixed
         network.
+    max_posterior_precision :
+        Upper bound applied to every posterior precision write (value level via
+        :func:`vectorized_layer_posterior_update` and volatility level via
+        :func:`vectorized_layer_prediction_error`). Default ``1e10``.
 
     Returns
     -------
@@ -142,6 +147,7 @@ def propagation_step(
             params=params[0],
             update_type=update_type,
             has_volatility_parent=volatility_parents[0],
+            max_posterior_precision=max_posterior_precision,
         )
 
     # Step 4b: per hidden layer — posterior then PE (interleaved)
@@ -152,6 +158,7 @@ def propagation_step(
             weights=weights[i - 1],
             coupling_fn_grad=coupling_fn_grads[i],  # parent i's grad
             parent_has_constant=add_constant_inputs[i],
+            max_posterior_precision=max_posterior_precision,
         )
         # Recompute PE and update volatility level so the layer
         # above receives the correct (post-posterior) error signal.
@@ -163,6 +170,7 @@ def propagation_step(
                 params=params[i],
                 update_type=update_type,
                 has_volatility_parent=volatility_parents[i],
+                max_posterior_precision=max_posterior_precision,
             )
 
     # ========== LEARNING PHASE (after inference converges) ==========

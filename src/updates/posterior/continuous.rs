@@ -123,9 +123,12 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
 pub fn posterior_update_continuous_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
+    let max_posterior_precision = network.max_posterior_precision;
 
     let precision_wpe = precision_update_from_children(network, node_idx);
-    let posterior_precision = (expected_precision + precision_wpe).max(1e-128);
+    let posterior_precision = (expected_precision + precision_wpe)
+        .max(1e-128)
+        .min(max_posterior_precision);
 
     let mean_wpe = mean_update_from_children(network, node_idx, posterior_precision);
     let posterior_mean = expected_mean + mean_wpe;
@@ -142,13 +145,16 @@ pub fn posterior_update_continuous_state_node(network: &mut Network, node_idx: u
 pub fn posterior_update_continuous_state_node_ehgf(network: &mut Network, node_idx: usize, _time_step: f64) {
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
+    let max_posterior_precision = network.max_posterior_precision;
 
     let mean_wpe = mean_update_from_children(network, node_idx, expected_precision);
     let posterior_mean = expected_mean + mean_wpe;
     network.attributes.states[node_idx].mean = posterior_mean;
 
     let precision_wpe = precision_update_from_children(network, node_idx);
-    let posterior_precision = (expected_precision + precision_wpe).max(1e-128);
+    let posterior_precision = (expected_precision + precision_wpe)
+        .max(1e-128)
+        .min(max_posterior_precision);
     network.attributes.states[node_idx].precision = posterior_precision;
 }
 
@@ -233,7 +239,7 @@ pub fn posterior_update_continuous_state_node_unbounded(network: &mut Network, n
     // Gaussian mixture moment matching
     let posterior_mean = (1.0 - b) * mu1 + b * mu2;
     let sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2).powi(2);
-    let posterior_precision = 1.0 / sig2;
+    let posterior_precision = (1.0 / sig2).min(network.max_posterior_precision);
 
     let state = &mut network.attributes.states[node_idx];
     state.precision = posterior_precision;

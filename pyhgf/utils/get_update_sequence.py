@@ -168,9 +168,16 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
                         update_fn = continuous_node_posterior_update
                     else:
                         raise ValueError("Invalid update type.")
+                    update_fn = Partial(
+                        update_fn,
+                        max_posterior_precision=network.max_posterior_precision,
+                    )
 
                 elif network.edges[idx].node_type == 6:
-                    update_fn = volatile_node_posterior_update
+                    update_fn = Partial(
+                        volatile_node_posterior_update,
+                        max_posterior_precision=network.max_posterior_precision,
+                    )
 
                 elif network.edges[idx].node_type == 4:
                     update_fn = None
@@ -257,7 +264,9 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
                     elif network.edges[idx].node_type == 6:
                         update_fn = Partial(
-                            volatile_node_prediction_error, update_type=update_type
+                            volatile_node_prediction_error,
+                            update_type=update_type,
+                            max_posterior_precision=network.max_posterior_precision,
                         )
 
                     else:

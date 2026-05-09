@@ -3,6 +3,7 @@
 
 from functools import partial
 
+import jax.numpy as jnp
 from jax import jit
 
 from pyhgf.typing import Edges
@@ -17,11 +18,12 @@ from .posterior_update_volatility_level import (
 )
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "max_posterior_precision"))
 def volatile_node_posterior_update(
     attributes: dict,
     edges: Edges,
     node_idx: int,
+    max_posterior_precision: float = 1e10,
 ) -> dict:
     """Update a volatile node and the implied volatility parent.
 
@@ -31,11 +33,25 @@ def volatile_node_posterior_update(
     deep learning networks where the prediction serves as the natural reference for
     computing updates.
 
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.Indexes`.
+    node_idx :
+        Pointer to the volatile node that needs to be updated.
+    max_posterior_precision :
+        Upper bound applied to the value-level posterior precision write.
+        Default ``1e10``.
+
     """
     # Update precision first
     precision_value = posterior_update_precision_value_level(
         attributes, edges, node_idx
     )
+    precision_value = jnp.minimum(precision_value, max_posterior_precision)
     attributes[node_idx]["precision"] = precision_value
 
     # Update mean using new precision
@@ -47,18 +63,30 @@ def volatile_node_posterior_update(
     return attributes
 
 
-@partial(jit, static_argnames=("node_idx",))
+@partial(jit, static_argnames=("node_idx", "max_posterior_precision"))
 def volatile_node_volatility_posterior_update_standard(
     attributes: dict,
     node_idx: int,
+    max_posterior_precision: float = 1e10,
 ) -> dict:
     """Update the volatility level using the standard ordering.
 
     This updates the implicit volatility parent's mean and precision using the
     standard ordering: precision first, then mean using the updated precision.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile node that needs to be updated.
+    max_posterior_precision :
+        Upper bound applied to the volatility-level posterior precision write.
+        Default ``1e10``.
     """
     # Update precision first
     precision_vol = posterior_update_precision_volatility_level(attributes, node_idx)
+    precision_vol = jnp.minimum(precision_vol, max_posterior_precision)
     attributes[node_idx]["precision_vol"] = precision_vol
 
     # Update mean using the new precision

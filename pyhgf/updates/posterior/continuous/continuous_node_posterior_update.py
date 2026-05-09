@@ -2,6 +2,7 @@
 
 from functools import partial
 
+import jax.numpy as jnp
 from jax import jit
 
 from pyhgf.typing import Edges
@@ -12,9 +13,13 @@ from .posterior_update_precision_continuous_node import (
 )
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "max_posterior_precision"))
 def continuous_node_posterior_update(
-    attributes: dict, node_idx: int, edges: Edges, **args
+    attributes: dict,
+    node_idx: int,
+    edges: Edges,
+    max_posterior_precision: float = 1e10,
+    **args,
 ) -> dict:
     """Update the posterior of a continuous node using the standard HGF update.
 
@@ -36,6 +41,8 @@ def continuous_node_posterior_update(
         The edges of the probabilistic nodes as a tuple of
         :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as node number.
         For each node, the index list value and volatility parents and children.
+    max_posterior_precision :
+        Upper bound applied to the posterior precision write. Default ``1e10``.
 
     Returns
     -------
@@ -54,8 +61,11 @@ def continuous_node_posterior_update(
 
     """
     # update the posterior mean and precision
-    attributes[node_idx]["precision"] = posterior_update_precision_continuous_node(
+    posterior_precision = posterior_update_precision_continuous_node(
         attributes, edges, node_idx
+    )
+    attributes[node_idx]["precision"] = jnp.minimum(
+        posterior_precision, max_posterior_precision
     )
 
     attributes[node_idx]["mean"] = posterior_update_mean_continuous_node(

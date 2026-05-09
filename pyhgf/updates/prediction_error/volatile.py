@@ -53,14 +53,38 @@ def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -
     return attributes
 
 
-@partial(jit, static_argnames=("edges", "node_idx", "update_type"))
+@partial(
+    jit,
+    static_argnames=("edges", "node_idx", "update_type", "max_posterior_precision"),
+)
 def volatile_node_prediction_error(
-    attributes: dict, node_idx: int, edges: Edges, update_type: str, **args
+    attributes: dict,
+    node_idx: int,
+    edges: Edges,
+    update_type: str,
+    max_posterior_precision: float = 1e10,
+    **args,
 ) -> dict:
     """Apply prediction errors and posterior updates to the volatility parent.
 
     - Value PE: for external value parents (if any)
     - Volatility PE: for the implicit internal volatility level
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile node that needs to be updated.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.Indexes`.
+    update_type :
+        The type of volatility-level posterior update. One of ``"eHGF"``,
+        ``"standard"`` or ``"unbounded"``.
+    max_posterior_precision :
+        Upper bound forwarded to the volatility-level posterior update and
+        applied to the resulting precision write. Default ``1e10``.
     """
     # 1. Prediction errors -------------------------------------------------------------
     # ----------------------------------------------------------------------------------
@@ -75,15 +99,22 @@ def volatile_node_prediction_error(
     # ----------------------------------------------------------------------------------
     if update_type == "unbounded":
         attributes = volatile_node_posterior_update_unbounded(
-            attributes=attributes, node_idx=node_idx
+            attributes=attributes,
+            node_idx=node_idx,
+            max_posterior_precision=max_posterior_precision,
         )
     elif update_type == "eHGF":
         attributes = volatile_node_posterior_update_ehgf(
-            attributes=attributes, edges=edges, node_idx=node_idx
+            attributes=attributes,
+            edges=edges,
+            node_idx=node_idx,
+            max_posterior_precision=max_posterior_precision,
         )
     elif update_type == "standard":
         attributes = volatile_node_volatility_posterior_update_standard(
-            attributes=attributes, node_idx=node_idx
+            attributes=attributes,
+            node_idx=node_idx,
+            max_posterior_precision=max_posterior_precision,
         )
 
     return attributes

@@ -99,6 +99,7 @@ mod tests {
             adam_state: None,
             roots: vec![1],
             leafs: vec![0],
+            max_posterior_precision: 1e10,
         }
     }
 
