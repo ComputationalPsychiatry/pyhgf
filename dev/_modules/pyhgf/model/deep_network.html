@@ -959,6 +959,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
         <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
+        <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
 
@@ -972,9 +973,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            The type of volatility-level posterior update. Can be ``&quot;eHGF&quot;``</span>
 <span class="sd">            (default), ``&quot;standard&quot;`` or ``&quot;unbounded&quot;``. Matches the Network</span>
 <span class="sd">            class and Rust backend.</span>
+<span class="sd">        max_posterior_precision :</span>
+<span class="sd">            Upper bound applied to every posterior precision write (value level and</span>
+<span class="sd">            volatility level). Defaults to ``1e10`` and is shared with the nodalised</span>
+<span class="sd">            ``Network`` and the Rust backend. Increase it to relax the cap, or lower it</span>
+<span class="sd">            to be more conservative against precision blow-up.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.</span>
@@ -992,6 +999,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_max_posterior_precision</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
@@ -1316,6 +1324,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">layer_kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span>
         <span class="n">update_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
         <span class="n">volatility_parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span>
+        <span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span>
 
         <span class="c1"># Resolve Adam hyper-parameters when lr=&quot;adam&quot;.</span>
         <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
@@ -1345,6 +1354,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">volatility_parents</span><span class="p">,</span>
                     <span class="n">learning_kind</span><span class="p">,</span>
                     <span class="n">weight_update</span><span class="p">,</span>
+                    <span class="n">max_posterior_precision</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span><span class="p">)</span>
 
@@ -1364,6 +1374,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">volatility_parents</span><span class="p">,</span>
                     <span class="n">learning_kind</span><span class="p">,</span>
                     <span class="n">weight_update</span><span class="p">,</span>
+                    <span class="n">max_posterior_precision</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_step</span><span class="p">)</span>
@@ -1486,6 +1497,7 @@ window.runMermaid = runMermaid;</script>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">!=</span> <span class="n">learning_kind</span>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">!=</span> <span class="n">record_trajectories</span>
             <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">!=</span> <span class="n">weight_update</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_max_posterior_precision</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">needs_retrace</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_propagation_fn</span><span class="p">(</span>
@@ -1495,6 +1507,7 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="n">learning_kind</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="n">record_trajectories</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">=</span> <span class="n">weight_update</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_max_posterior_precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span>
 
         <span class="c1"># Convert to JAX arrays</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>

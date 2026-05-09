@@ -1011,6 +1011,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">coupling_fn_grad</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the value-level posterior for all nodes in a parent layer.</span>
 
@@ -1033,6 +1034,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    parent_has_constant :</span>
 <span class="sd">        If True, the last column of *weights* corresponds to the constant input node and</span>
 <span class="sd">        is stripped before computing the posterior update.</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to the posterior precision. Default ``1e10``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1049,7 +1052,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">layer</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">coupling_fn_grad</span>
         <span class="p">),</span>
         <span class="n">a_min</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">,</span>
-        <span class="n">a_max</span><span class="o">=</span><span class="mf">1e8</span><span class="p">,</span>
+        <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">vectorized_posterior_update_mean_value_level</span><span class="p">(</span>

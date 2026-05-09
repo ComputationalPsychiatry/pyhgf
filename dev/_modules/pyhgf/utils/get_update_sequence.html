@@ -1041,9 +1041,16 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">continuous_node_posterior_update</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid update type.&quot;</span><span class="p">)</span>
+                    <span class="n">update_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+                        <span class="n">update_fn</span><span class="p">,</span>
+                        <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+                    <span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
-                    <span class="n">update_fn</span> <span class="o">=</span> <span class="n">volatile_node_posterior_update</span>
+                    <span class="n">update_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
+                        <span class="n">volatile_node_posterior_update</span><span class="p">,</span>
+                        <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+                    <span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
                     <span class="n">update_fn</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1130,7 +1137,9 @@ window.runMermaid = runMermaid;</script>
 
                     <span class="k">elif</span> <span class="n">network</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
                         <span class="n">update_fn</span> <span class="o">=</span> <span class="n">Partial</span><span class="p">(</span>
-                            <span class="n">volatile_node_prediction_error</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="n">update_type</span>
+                            <span class="n">volatile_node_prediction_error</span><span class="p">,</span>
+                            <span class="n">update_type</span><span class="o">=</span><span class="n">update_type</span><span class="p">,</span>
+                            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
                         <span class="p">)</span>
 
                     <span class="k">else</span><span class="p">:</span>
