@@ -633,9 +633,15 @@ impl Network {
                 self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
             }
             "constant-state" => {
+                // Constant state nodes are assumed to have mean = 1.0 and
+                // precision = 1.0 (fully known bias). They are always wired to
+                // their children linearly (no coupling function), regardless
+                // of the layer's coupling_fn.
                 let state = NodeState {
                     mean: 1.0,
                     expected_mean: 1.0,
+                    precision: 1.0,
+                    expected_precision: 1.0,
                     ..Default::default()
                 };
                 self.attributes.states.push(state);
@@ -673,7 +679,9 @@ impl Network {
                 }
 
                 self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
+                // Force constant-state nodes to use no coupling (identity)
+                // regardless of what the caller passed.
+                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: None });
             }
             _ => {}
         }
