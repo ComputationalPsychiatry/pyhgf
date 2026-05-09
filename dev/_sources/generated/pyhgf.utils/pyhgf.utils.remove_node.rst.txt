@@ -1,6 +1,0 @@
-﻿pyhgf.utils.remove\_node
-========================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: remove_node

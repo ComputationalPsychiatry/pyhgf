@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.11 documentation</title>
+    <title>Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -577,10 +577,10 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 </section>
 <section id="probabilistic-coupling-between-nodes">
 <h3>Probabilistic coupling between nodes<a class="headerlink" href="#probabilistic-coupling-between-nodes" title="Link to this heading">#</a></h3>
-<p>We have simulated above a simple GRW. At each time point, this process is fully described by the implied Normal distribution, which is parametrised by the mean and the variance. The gHGF hierarchically generalize this process by making the parameters of a stochastic process depend on another node at a different level, and thus another GRW <span id="id1">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span>. But because a Gaussian distribution is defined by two parameters (mean and variance), we can distinguish two ways for a node to influence another node: <strong>value coupling</strong> (targetting the value <span class="math notranslate nohighlight">\(\mu\)</span> of the child node) or <strong>volatility coupling</strong> (targetting the volatility <span class="math notranslate nohighlight">\(\sigma^2\)</span> of the child node).</p>
+<p>We have simulated above a simple GRW. At each time point, this process is fully described by the implied Normal distribution, which is parametrised by the mean and the variance. The gHGF hierarchically generalize this process by making the parameters of a stochastic process depend on another node at a different level, and thus another GRW <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span>. But because a Gaussian distribution is defined by two parameters (mean and variance), we can distinguish two ways for a node to influence another node: <strong>value coupling</strong> (targetting the value <span class="math notranslate nohighlight">\(\mu\)</span> of the child node) or <strong>volatility coupling</strong> (targetting the volatility <span class="math notranslate nohighlight">\(\sigma^2\)</span> of the child node).</p>
 <section id="value-coupling">
 <h4>Value coupling<a class="headerlink" href="#value-coupling" title="Link to this heading">#</a></h4>
-<p>Let’s consider for example a network constituted of two nodes <span class="math notranslate nohighlight">\(x_1\)</span> and <span class="math notranslate nohighlight">\(x_2\)</span>, as it is found in the continuous HGF <span id="id2">[<a class="reference internal" href="../references.html#id3" title="Christoph D. Mathys, Ekaterina I. Lomakina, Jean Daunizeau, Sandra Iglesias, Kay H. Brodersen, Karl J. Friston, and Klaas E. Stephan. Uncertainty in perception and the hierarchical gaussian filter. Frontiers in Human Neuroscience, 2014. URL: https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825, doi:10.3389/fnhum.2014.00825.">Mathys <em>et al.</em>, 2014</a>]</span>. The node <span class="math notranslate nohighlight">\(x_1\)</span> is performing a GRW as previously described. We can add a dependency on the mean of the distribution (<strong>value coupling</strong>) by assuming that <span class="math notranslate nohighlight">\(x_1\)</span> inherits the difference step from <span class="math notranslate nohighlight">\(x_2\)</span>, instead of using only its own previous value. Mathematically, this would write:</p>
+<p>Let’s consider for example a network constituted of two nodes <span class="math notranslate nohighlight">\(x_1\)</span> and <span class="math notranslate nohighlight">\(x_2\)</span>, as it is found in the continuous HGF <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id3" title="Christoph D. Mathys, Ekaterina I. Lomakina, Jean Daunizeau, Sandra Iglesias, Kay H. Brodersen, Karl J. Friston, and Klaas E. Stephan. Uncertainty in perception and the hierarchical gaussian filter. Frontiers in Human Neuroscience, 2014. URL: https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825, doi:10.3389/fnhum.2014.00825.">Mathys <em>et al.</em>, 2014</a>]</span>. The node <span class="math notranslate nohighlight">\(x_1\)</span> is performing a GRW as previously described. We can add a dependency on the mean of the distribution (<strong>value coupling</strong>) by assuming that <span class="math notranslate nohighlight">\(x_1\)</span> inherits the difference step from <span class="math notranslate nohighlight">\(x_2\)</span>, instead of using only its own previous value. Mathematically, this would write:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}
 x_2^{(k)} \sim \mathcal{N}(x_2^{(k-1)}, \, \sigma_2^2) \\
@@ -741,7 +741,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </section>
 <section id="practice-filtering-the-worlds-weather">
 <h2>Practice: Filtering the worlds weather<a class="headerlink" href="#practice-filtering-the-worlds-weather" title="Link to this heading">#</a></h2>
-<p>In the previous section, we introduced the computational concept behind the generalised Hierarchical Gaussian Filter. For the time left before the break, you are going to apply this knowledge to a more practical context: filtering the world’s weather. We will use data from <span id="id3">[<a class="reference internal" href="../references.html#id11" title="Stefan Pfenninger and Iain Staffell. Long-term patterns of european PV output using 30 years of validated hourly reanalysis and satellite data. Energy, 114:1251–1265, November 2016. URL: https://doi.org/10.1016/j.energy.2016.08.060, doi:10.1016/j.energy.2016.08.060.">Pfenninger and Staffell, 2016</a>, <a class="reference internal" href="../references.html#id12" title="Iain Staffell and Stefan Pfenninger. Using bias-corrected reanalysis to simulate current and future wind power output. Energy, 114:1224–1239, November 2016. URL: https://doi.org/10.1016/j.energy.2016.08.068, doi:10.1016/j.energy.2016.08.068.">Staffell and Pfenninger, 2016</a>]</span> that is made available <a class="reference external" href="https://renewables.ninja/">here</a>. This database contains hourly recordings of various weather parameters that have been tracked over one year at different positions in the world. The data from Aarhus can be loaded using the following function call:</p>
+<p>In the previous section, we introduced the computational concept behind the generalised Hierarchical Gaussian Filter. For the time left before the break, you are going to apply this knowledge to a more practical context: filtering the world’s weather. We will use data from <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../references.html#id11" title="Stefan Pfenninger and Iain Staffell. Long-term patterns of european PV output using 30 years of validated hourly reanalysis and satellite data. Energy, 114:1251–1265, November 2016. URL: https://doi.org/10.1016/j.energy.2016.08.060, doi:10.1016/j.energy.2016.08.060.">Pfenninger and Staffell, 2016</a>, <a class="reference internal" href="../references.html#id12" title="Iain Staffell and Stefan Pfenninger. Using bias-corrected reanalysis to simulate current and future wind power output. Energy, 114:1224–1239, November 2016. URL: https://doi.org/10.1016/j.energy.2016.08.068, doi:10.1016/j.energy.2016.08.068.">Staffell and Pfenninger, 2016</a>]</span> that is made available <a class="reference external" href="https://renewables.ninja/">here</a>. This database contains hourly recordings of various weather parameters that have been tracked over one year at different positions in the world. The data from Aarhus can be loaded using the following function call:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">aarhus_weather_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
@@ -1041,13 +1041,13 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \, f(x_2^{(k)}))
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 28 Apr 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat, 09 May 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
 IPython version      : 9.13.0
 
-pyhgf : 0.2.11
+pyhgf : 0.2.12
 jax   : 0.4.31
 jaxlib: 0.4.31
 
@@ -1055,7 +1055,7 @@ IPython   : 9.13.0
 matplotlib: 3.10.9
 numpy     : 2.4.4
 pandas    : 3.0.2
-pyhgf     : 0.2.11
+pyhgf     : 0.2.12
 seaborn   : 0.13.2
 
 Watermark: 2.6.0

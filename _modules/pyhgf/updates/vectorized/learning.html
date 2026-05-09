@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.vectorized.learning &#8212; pyhgf 0.2.11 documentation</title>
+    <title>pyhgf.updates.vectorized.learning &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../../../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../../../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -909,20 +909,36 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent})`</span>
 <span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``):</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`</span>
-<span class="sd">    - **precision_ratio** (``kind=&quot;precision_ratio&quot;``): Kalman-gain-weighted</span>
-<span class="sd">      PE using the posterior precisions of child and parent.</span>
-<span class="sd">      :math:`K = \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child})`</span>
+<span class="sd">    - **precision_ratio** (``kind=&quot;precision_ratio&quot;``): Kalman-gain-style gain</span>
+<span class="sd">      using the parent&#39;s expected precision in the numerator.</span>
+<span class="sd">      :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`</span>
+<span class="sd">    - **map_natural** (``kind=&quot;map_natural&quot;``): MAP weight update derived from</span>
+<span class="sd">      the predictive-coding free energy with a Gaussian weight prior whose</span>
+<span class="sd">      precision is the parent layer&#39;s expected precision. Combines child</span>
+<span class="sd">      precision (numerator) with the parent prior plus per-weight Fisher</span>
+<span class="sd">      curvature :math:`g(\text{parent})^2` (denominator), giving a bounded,</span>
+<span class="sd">      curvature-aware update that uses both precisions.</span>
+<span class="sd">      Gaussian child:</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child} \cdot g(\text{parent})^2)`.</span>
+<span class="sd">      Binary child (drop the redundant :math:`\pi_\text{child}` factor since</span>
+<span class="sd">      the Bernoulli Fisher cancels through the sigmoid):</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) / (\pi_\text{parent} + g(\text{parent})^2)`.</span>
+<span class="sd">    - **pure_natural** (``kind=&quot;pure_natural&quot;``): Riemannian natural gradient</span>
+<span class="sd">      under the parent&#39;s precision metric — uses both precisions with no</span>
+<span class="sd">      curvature term, no extra hyperparameter.</span>
+<span class="sd">      Gaussian child:</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / \pi_\text{parent}`.</span>
+<span class="sd">      Binary child:</span>
+<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) / \pi_\text{parent}`.</span>
+<span class="sd">      Not bounded — risks blowing up when :math:`\pi_\text{parent}` is small.</span>
 
-<span class="sd">    *lr* controls how the gradient is applied (same semantics for all three</span>
+<span class="sd">    *lr* controls how the gradient is applied (same semantics for all five</span>
 <span class="sd">    kinds):</span>
 
 <span class="sd">    - **float ≥ 0**: :math:`\Delta w = g \cdot \text{lr}`</span>
 <span class="sd">    - ``&quot;adam&quot;``: gradient filtered through the Adam optimiser</span>
 <span class="sd">      (Kingma &amp; Ba, 2015); step size controlled by *adam_lr*.</span>
-
-<span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for</span>
-<span class="sd">    ``kind=&quot;precision_ratio&quot;``, pass ``lr=1.0``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -938,15 +954,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Coupling function applied to parent means.</span>
 <span class="sd">    kind :</span>
 <span class="sd">        Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
-<span class="sd">        or ``&quot;precision_ratio&quot;``.</span>
+<span class="sd">        ``&quot;precision_ratio&quot;``, ``&quot;map_natural&quot;``, or ``&quot;pure_natural&quot;``.</span>
 <span class="sd">    lr :</span>
 <span class="sd">        How the gradient is applied: a non-negative float for direct scaling,</span>
 <span class="sd">        or ``&quot;adam&quot;`` for the Adam optimiser.  Applied uniformly across all</span>
 <span class="sd">        *kind* values, including ``&quot;precision_ratio&quot;``.</span>
 <span class="sd">    parent_has_constant :</span>
-<span class="sd">        If True, the parent layer has a constant input node.  The parent</span>
-<span class="sd">        mean is augmented with 1.0 and the precision with the parent</span>
-<span class="sd">        precision mean so the bias column of *weights* is updated.</span>
+<span class="sd">        If True, the parent layer has a constant input node. Constant nodes are assumed</span>
+<span class="sd">        to have mean = 1.0 and precision = 1.0 (fully known bias), and are concatenated</span>
+<span class="sd">        to the coupled parent vector after ``coupling_fn`` is applied so the bias entry</span>
+<span class="sd">        is unconditionally linear regardless of the coupling function.</span>
 <span class="sd">    child_is_binary :</span>
 <span class="sd">        If True, the child layer is a binary node.  In ``&quot;precision_weighted&quot;``</span>
 <span class="sd">        mode the precision multiplication is skipped because the Bernoulli</span>
@@ -981,15 +998,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If *kind* is not one of ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
-<span class="sd">        or ``&quot;precision_ratio&quot;``.</span>
+<span class="sd">        ``&quot;precision_ratio&quot;``, ``&quot;map_natural&quot;``, or ``&quot;pure_natural&quot;``.</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If *lr* is a string other than ``&quot;adam&quot;``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_ratio&quot;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected &#39;standard&#39;, &#39;precision_weighted&#39;, &quot;</span>
-            <span class="s2">&quot;or &#39;precision_ratio&#39;.&quot;</span>
-        <span class="p">)</span>
+    <span class="n">_valid_kinds</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;precision_ratio&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;map_natural&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pure_natural&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_valid_kinds</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected one of </span><span class="si">{</span><span class="n">_valid_kinds</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">lr</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Unknown lr value &#39;</span><span class="si">{</span><span class="n">lr</span><span class="si">}</span><span class="s2">&#39;. Expected a non-negative float or &#39;adam&#39;.&quot;</span>
@@ -998,30 +1019,55 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Prediction error at child layer</span>
     <span class="n">pe</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
 
-    <span class="c1"># Coupled parent activation</span>
-    <span class="n">parent_mean</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">mean</span>
-    <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">precision</span>
+    <span class="c1"># Coupled parent activation. The coupling is applied to the parent&#39;s actual</span>
+    <span class="c1"># activations only; the constant bias node is always wired in linearly</span>
+    <span class="c1"># (g(1) = 1) regardless of coupling_fn, so the bias entry is appended to the</span>
+    <span class="c1"># coupled vector untouched.</span>
+    <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
-        <span class="n">parent_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_mean</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
-        <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
-            <span class="n">parent_precision</span><span class="p">,</span>
-            <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">parent_precision</span><span class="p">)]),</span>
-        <span class="p">])</span>
-    <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_mean</span><span class="p">)</span>
+        <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">coupled_parent</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
 
     <span class="c1"># Base outer product: PE ⊗ g(parent)</span>
-    <span class="n">base_delta</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">gradient</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
 
     <span class="c1"># Compute the gradient according to *kind*</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_ratio&quot;</span><span class="p">:</span>
-        <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;precision_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;map_natural&quot;</span><span class="p">,</span> <span class="s2">&quot;pure_natural&quot;</span><span class="p">):</span>
+        <span class="c1"># All three rules need the parent&#39;s expected precision, optionally</span>
+        <span class="c1"># extended with a 1.0 entry for the constant bias node.</span>
+        <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
+        <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
+            <span class="c1"># Constant state nodes are assumed to have mean = 1.0 and</span>
+            <span class="c1"># precision = 1.0 (fully known bias).</span>
+            <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_ratio&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
+        <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">base_delta</span> <span class="o">*</span> <span class="n">kalman_gain</span>
+        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">kalman_gain</span>
+    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;map_natural&quot;</span><span class="p">:</span>
+        <span class="c1"># MAP weight update: free-energy gradient with a Gaussian weight prior</span>
+        <span class="c1"># whose precision equals the parent&#39;s expected precision.</span>
+        <span class="c1"># Denominator includes the per-weight Fisher curvature g(parent)**2.</span>
+        <span class="k">if</span> <span class="n">child_is_binary</span><span class="p">:</span>
+            <span class="c1"># Bernoulli Fisher cancels through sigmoid → drop child precision.</span>
+            <span class="n">gain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
+                <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="p">)</span>
+        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">gain</span>
+    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;pure_natural&quot;</span><span class="p">:</span>
+        <span class="c1"># Riemannian natural gradient under the parent&#39;s precision metric.</span>
+        <span class="c1"># No bounding term — can blow up if parent_precision is small.</span>
+        <span class="k">if</span> <span class="n">child_is_binary</span><span class="p">:</span>
+            <span class="n">gain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">gain</span>
     <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_weighted&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">base_delta</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>  <span class="c1"># &quot;standard&quot;, or binary child where Bernoulli variance must not be doubled</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">base_delta</span>
+        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
 
     <span class="c1"># Apply *lr* uniformly across all kinds</span>
     <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>

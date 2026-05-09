@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.2.11 documentation</title>
+    <title>Creating and manipulating networks of probabilistic nodes &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -539,7 +539,7 @@
 </div>
 </div>
 </div>
-<p><a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/index.html#">pyhgf</a> is designed with inspiration from graph neural network libraries that can support message-passing schemes and perform belief propagation through networks of probabilistic nodes. Here, this principle is applied to predictive processing and focuses on networks that are structured as <strong>rooted trees</strong> and perform variational message passing to update beliefs about the state of the environment, inferred from the observations at the root of the tree. While this library is optimized to implement the standard two-level and three-level HGF <span id="id1">[<a class="reference internal" href="../references.html#id3" title="Christoph D. Mathys, Ekaterina I. Lomakina, Jean Daunizeau, Sandra Iglesias, Kay H. Brodersen, Karl J. Friston, and Klaas E. Stephan. Uncertainty in perception and the hierarchical gaussian filter. Frontiers in Human Neuroscience, 2014. URL: https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825, doi:10.3389/fnhum.2014.00825.">Mathys <em>et al.</em>, 2014</a>, <a class="reference internal" href="../references.html#id2" title="Christoph D. Mathys. A Bayesian foundation for individual learning under uncertainty. Frontiers in Human Neuroscience, 5(May):1–20, 2011. URL: http://journal.frontiersin.org/article/10.3389/fnhum.2011.00039/abstract, doi:10.3389/fnhum.2011.00039.">Mathys, 2011</a>]</span>, as well as the generalized HGF <span id="id2">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span>, it can also be applied to much larger use cases, with the idea is to generalize belief propagation as it has been described so far to larger and more complex networks that will capture a greater variety of environmental structure. Therefore, the library is also designed to facilitate the creation and manipulation of such probabilistic networks. Importantly, here we consider that a probabilistic network should be defined by the following four variables:</p>
+<p><a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/index.html#">pyhgf</a> is designed with inspiration from graph neural network libraries that can support message-passing schemes and perform belief propagation through networks of probabilistic nodes. Here, this principle is applied to predictive processing and focuses on networks that are structured as <strong>rooted trees</strong> and perform variational message passing to update beliefs about the state of the environment, inferred from the observations at the root of the tree. While this library is optimized to implement the standard two-level and three-level HGF <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id3" title="Christoph D. Mathys, Ekaterina I. Lomakina, Jean Daunizeau, Sandra Iglesias, Kay H. Brodersen, Karl J. Friston, and Klaas E. Stephan. Uncertainty in perception and the hierarchical gaussian filter. Frontiers in Human Neuroscience, 2014. URL: https://www.frontiersin.org/articles/10.3389/fnhum.2014.00825, doi:10.3389/fnhum.2014.00825.">Mathys <em>et al.</em>, 2014</a>, <a class="reference internal" href="../references.html#id2" title="Christoph D. Mathys. A Bayesian foundation for individual learning under uncertainty. Frontiers in Human Neuroscience, 5(May):1–20, 2011. URL: http://journal.frontiersin.org/article/10.3389/fnhum.2011.00039/abstract, doi:10.3389/fnhum.2011.00039.">Mathys, 2011</a>]</span>, as well as the generalized HGF <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span>, it can also be applied to much larger use cases, with the idea is to generalize belief propagation as it has been described so far to larger and more complex networks that will capture a greater variety of environmental structure. Therefore, the library is also designed to facilitate the creation and manipulation of such probabilistic networks. Importantly, here we consider that a probabilistic network should be defined by the following four variables:</p>
 <ol class="arabic simple">
 <li><p>the network parameters</p></li>
 <li><p>the network structure</p></li>
@@ -708,7 +708,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 <section id="multivariate-coupling">
 <h3>Multivariate coupling<a class="headerlink" href="#multivariate-coupling" title="Link to this heading">#</a></h3>
-<p>As we can see in the examples above, nodes in a valid HGF network can be influenced by multiple parents (either value or volatility parents). Similarly, a single node can be influenced by multiple children. This feature is termed <em>multivariate descendency</em> and <em>multivariate ascendency</em> (respectively) and is a central addition to the generalization of the HGF <span id="id3">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span> that was implemented in this package, as well as in the <a class="reference external" href="https://github.com/ComputationalPsychiatry/HierarchicalGaussianFiltering.jl">Julia counterpart</a>.</p>
+<p>As we can see in the examples above, nodes in a valid HGF network can be influenced by multiple parents (either value or volatility parents). Similarly, a single node can be influenced by multiple children. This feature is termed <em>multivariate descendency</em> and <em>multivariate ascendency</em> (respectively) and is a central addition to the generalization of the HGF <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. 2023. arXiv:2305.10937.">Weber <em>et al.</em>, 2023</a>]</span> that was implemented in this package, as well as in the <a class="reference external" href="https://github.com/ComputationalPsychiatry/HierarchicalGaussianFiltering.jl">Julia counterpart</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Hierarchical Gaussian Filters have often been described in terms of levels. For example, the two-level and three-level HGFs are specific instances of  node structures designed to track the volatility and meta-volatility of binary or continuous processes, respectively. While such models can easily be implemented in this framework, the notion of level itself is now less informative. This is a consequence of the multivariate control and influence properties, which can result in structures in which some nodes have a position in the hierarchy that cannot be clearly disambiguated.</p>
@@ -779,7 +779,7 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f0ea0e54530958d2d506a4708e0d6fde3f10dc70893e170776fbc174faff0f6a.png" src="../_images/f0ea0e54530958d2d506a4708e0d6fde3f10dc70893e170776fbc174faff0f6a.png" />
+<img alt="../_images/c6c453a24e67ccfea993e9272120e7bfe1077704e6dfa045cd2bcad22f70d10f.png" src="../_images/c6c453a24e67ccfea993e9272120e7bfe1077704e6dfa045cd2bcad22f70d10f.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -1101,20 +1101,20 @@ Contrary to standard graph networks, the directed connection between nodes can h
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 28 Apr 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat, 09 May 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
 IPython version      : 9.13.0
 
-pyhgf : 0.2.11
+pyhgf : 0.2.12
 jax   : 0.4.31
 jaxlib: 0.4.31
 
 IPython   : 9.13.0
 matplotlib: 3.10.9
 numpy     : 2.4.4
-pyhgf     : 0.2.11
+pyhgf     : 0.2.12
 seaborn   : 0.13.2
 
 Watermark: 2.6.0

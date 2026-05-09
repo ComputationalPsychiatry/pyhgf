@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.vectorized.volatile.prediction_error &#8212; pyhgf 0.2.11 documentation</title>
+    <title>pyhgf.updates.vectorized.volatile.prediction_error &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../../../../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -966,6 +966,7 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_volatility_posterior_standard</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the volatility level using the standard ordering.</span>
 
@@ -979,6 +980,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Current layer state with ``volatility_prediction_error`` set.</span>
 <span class="sd">    params :</span>
 <span class="sd">        Layer parameters (provides ``volatility_coupling``).</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to the volatility-level posterior precision.</span>
+<span class="sd">        Default ``1e10``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1000,7 +1004,8 @@ window.runMermaid = runMermaid;</script>
         <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eff_prec</span> <span class="o">*</span> <span class="n">volatility_pe</span>
     <span class="p">)</span>
     <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
-        <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="n">precision_vol_contrib</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">1e8</span>
+        <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="n">precision_vol_contrib</span><span class="p">,</span>
+        <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Mean using updated precision</span>
@@ -1021,6 +1026,7 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_volatility_posterior_ehgf</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EHGF volatility-level posterior update (mean first, then precision).</span>
 
@@ -1037,6 +1043,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Current layer state with ``volatility_prediction_error`` set.</span>
 <span class="sd">    params :</span>
 <span class="sd">        Layer parameters (provides ``volatility_coupling``).</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to the volatility-level posterior precision.</span>
+<span class="sd">        Default ``1e10``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1060,7 +1069,8 @@ window.runMermaid = runMermaid;</script>
         <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eff_prec</span> <span class="o">*</span> <span class="n">volatility_pe</span>
     <span class="p">)</span>
     <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
-        <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="n">precision_vol_contrib</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mf">1e8</span>
+        <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="n">precision_vol_contrib</span><span class="p">,</span>
+        <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
@@ -1076,6 +1086,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unbounded volatility-level posterior update (Lambert W₀ dual-quadratic).</span>
 
@@ -1095,6 +1106,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        ``tonic_volatility``).</span>
 <span class="sd">    time_step :</span>
 <span class="sd">        Current time step (needed to reconstruct the pre-prediction variance).</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to the volatility-level posterior precision.</span>
+<span class="sd">        Default ``1e10``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1187,7 +1201,7 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="n">posterior_mean_vol</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">mu2</span>
     <span class="n">sig2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi1</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="n">pi2</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">mu2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-    <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sig2</span>
+    <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">sig2</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
@@ -1209,6 +1223,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute prediction errors and apply the volatility-level posterior update.</span>
 
@@ -1235,6 +1250,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        the volatility-level posterior update (mean_vol, precision_vol).</span>
 <span class="sd">        If False, only the value prediction error is computed and the</span>
 <span class="sd">        volatility level is left unchanged.</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to the volatility-level posterior precision.</span>
+<span class="sd">        Default ``1e10``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1251,12 +1269,19 @@ window.runMermaid = runMermaid;</script>
     <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_prediction_error</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">:</span>
-        <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_ehgf</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_ehgf</span><span class="p">(</span>
+            <span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span>
+        <span class="p">)</span>
     <span class="k">elif</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
-        <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_standard</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_standard</span><span class="p">(</span>
+            <span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span>
+        <span class="p">)</span>
     <span class="k">elif</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">:</span>
         <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_unbounded</span><span class="p">(</span>
-            <span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">time_step</span>
+            <span class="n">layer</span><span class="p">,</span>
+            <span class="n">params</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">layer</span></div>

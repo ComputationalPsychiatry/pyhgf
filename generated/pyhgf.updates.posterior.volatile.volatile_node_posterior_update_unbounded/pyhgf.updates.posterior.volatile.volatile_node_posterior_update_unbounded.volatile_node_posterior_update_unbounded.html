@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded &#8212; pyhgf 0.2.11 documentation</title>
+    <title>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -646,7 +646,7 @@
 <h1>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded<a class="headerlink" href="#pyhgf-updates-posterior-volatile-volatile-node-posterior-update-unbounded-volatile-node-posterior-update-unbounded" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.</span></span><span class="sig-name descname"><span class="pre">volatile_node_posterior_update_unbounded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/volatile/volatile_node_posterior_update_unbounded.html#volatile_node_posterior_update_unbounded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.</span></span><span class="sig-name descname"><span class="pre">volatile_node_posterior_update_unbounded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_posterior_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/volatile/volatile_node_posterior_update_unbounded.html#volatile_node_posterior_update_unbounded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded" title="Link to this definition">#</a></dt>
 <dd><p>Update the volatility level using an unbounded quadratic approximation.</p>
 <p>Implements the uhgf update: two quadratic expansions are blended via a
 variational energy-based softmax weight, and the final posterior is the
@@ -659,6 +659,8 @@ W_0 function, which solves the mode equation exactly in the limit alpha -&gt; 0.
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>attributes</strong> (<em>dict</em>) – The attributes of the probabilistic nodes.</p></li>
 <li><p><strong>node_idx</strong> (<em>int</em>) – Pointer to the volatile node.</p></li>
+<li><p><strong>max_posterior_precision</strong> (<em>float</em>) – Upper bound applied to the volatility-level posterior precision write.
+Default <code class="docutils literal notranslate"><span class="pre">1e10</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

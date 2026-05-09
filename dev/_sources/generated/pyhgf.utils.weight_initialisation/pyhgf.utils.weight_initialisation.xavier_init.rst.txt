@@ -1,6 +1,0 @@
-﻿pyhgf.utils.weight\_initialisation.xavier\_init
-===============================================
-
-.. currentmodule:: pyhgf.utils.weight_initialisation
-
-.. autofunction:: xavier_init

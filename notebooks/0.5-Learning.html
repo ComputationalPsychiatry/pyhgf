@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.11 documentation</title>
+    <title>Deep Bayesian predictive coding &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -557,7 +557,7 @@
 <p>The features exposed here are still a work in progress.</p>
 </div>
 <p>The hierarchical Gaussian filter is built on top of a generative model that is governed by Gaussian random walks, which is best used to model the time-resolved evolution of beliefs in volatile environments. But the framework can easily extend to traditional applications of predictive coding, such as deep neural networks, where the variational message passing replaces the use of iterative gradient descent during inference.</p>
-<p>In this notebook, we show that the <strong>prospective configuration</strong> in predictive coding networks can be performed by one-shot variational updates, removing the need for gradient descent over the energy function, while learning expected precision in the hidden layers, which is often fixed in other approaches. We illustrate this with the “bear example” from <span id="id1">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span> and on a classification task with deep networks.</p>
+<p>In this notebook, we show that the <strong>prospective configuration</strong> in predictive coding networks can be performed by one-shot variational updates, removing the need for gradient descent over the energy function, while learning expected precision in the hidden layers, which is often fixed in other approaches. We illustrate this with the “bear example” from <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span> and on a classification task with deep networks.</p>
 <figure class="align-default" id="learning-prospective-config-task">
 <img alt="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41593-023-01514-1/MediaObjects/41593_2023_1514_Fig1_HTML.png?as=webp" src="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41593-023-01514-1/MediaObjects/41593_2023_1514_Fig1_HTML.png?as=webp" />
 <figcaption>
@@ -568,7 +568,7 @@
 <h2>Learning in deep networks<a class="headerlink" href="#learning-in-deep-networks" title="Link to this heading">#</a></h2>
 <section id="prospective-configuration">
 <h3>Prospective configuration<a class="headerlink" href="#prospective-configuration" title="Link to this heading">#</a></h3>
-<p>In standard backpropagation, weights are updated using gradients computed from a fixed forward pass. The network’s activations are “frozen” while the error signal propagates backward. <strong>Prospective configuration</strong> <span id="id2">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span> takes a different approach: before any weight change, the network first <em>infers</em> the most likely activations at every layer by settling prediction errors across the whole hierarchy. Only once this inference step has converged are the weights updated. This two-phase process (infer activations, then update weights) prevents the catastrophic interference that arises when a local weight change inadvertently distorts representations elsewhere in the network.</p>
+<p>In standard backpropagation, weights are updated using gradients computed from a fixed forward pass. The network’s activations are “frozen” while the error signal propagates backward. <strong>Prospective configuration</strong> <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span> takes a different approach: before any weight change, the network first <em>infers</em> the most likely activations at every layer by settling prediction errors across the whole hierarchy. Only once this inference step has converged are the weights updated. This two-phase process (infer activations, then update weights) prevents the catastrophic interference that arises when a local weight change inadvertently distorts representations elsewhere in the network.</p>
 <p>In <code class="docutils literal notranslate"><span class="pre">pyhgf</span></code>, this is implemented naturally through the belief propagation cycle. At each observation:</p>
 <ol class="arabic simple">
 <li><p><strong>Prediction</strong>: predictors (<span class="math notranslate nohighlight">\(x\)</span>) are provided in the leaf nodes. Each node generates a top-down prediction for its children via a nonlinear coupling function <span class="math notranslate nohighlight">\(g(\cdot)\)</span>.</p></li>
@@ -576,7 +576,7 @@
 <li><p><strong>Posterior update</strong>: node activations (means and precisions) are updated to minimise free energy, settling the network into a new equilibrium. This is comparable to the <em>prospective configuration</em> step.</p></li>
 <li><p><strong>Weight update</strong>: only after the activations have settled are the coupling strengths (weights) adjusted using the prediction errors and the inferred activations.</p></li>
 </ol>
-<p>We illustrate this using the “bear” example network from <span id="id3">Song <em>et al.</em> [<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">2024</a>]</span>.</p>
+<p>We illustrate this using the “bear” example network from <span class="bibtex-citation" id="id3">Song <em>et al.</em> [<a class="reference internal" href="../references.html#id18" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">2024</a>]</span>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># here x represents the visual input (River / No River)</span>
@@ -1149,12 +1149,7 @@ Layers: 14  |  Nodes: 195
     <span class="n">test_accs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">test_preds</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="n">test_labels</span><span class="p">))</span>
 
     <span class="c1"># Train: one full pass through the training set</span>
-    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-        <span class="n">jax_X_train</span><span class="p">,</span> 
-        <span class="n">jax_y_train</span><span class="p">,</span> 
-        <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> 
-        <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;precision_ratio&quot;</span>
-    <span class="p">)</span>
+    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">jax_X_train</span><span class="p">,</span> <span class="n">jax_y_train</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;precision_ratio&quot;</span><span class="p">)</span>
 
     <span class="c1"># Training metrics from the predictions during this epoch</span>
     <span class="n">train_preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">clf_net</span><span class="o">.</span><span class="n">predictions</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -1179,97 +1174,97 @@ Layers: 14  |  Nodes: 195
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.3006, acc=0.886 | test  loss=0.5155, acc=0.835
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.2749, acc=0.894 | test  loss=0.5101, acc=0.835
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.1488, acc=0.978 | test  loss=0.1389, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.1035, acc=0.965 | test  loss=0.1254, acc=0.940
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.0688, acc=0.975 | test  loss=0.0694, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.0854, acc=0.971 | test  loss=0.1048, acc=0.940
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.0550, acc=0.983 | test  loss=0.0442, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.0775, acc=0.975 | test  loss=0.1063, acc=0.950
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.0499, acc=0.986 | test  loss=0.0513, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.0703, acc=0.976 | test  loss=0.1101, acc=0.950
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.0350, acc=0.993 | test  loss=0.0222, acc=0.990
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.0630, acc=0.979 | test  loss=0.1064, acc=0.950
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.0362, acc=0.986 | test  loss=0.0345, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.0562, acc=0.979 | test  loss=0.0991, acc=0.965
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.0341, acc=0.989 | test  loss=0.0374, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.0484, acc=0.979 | test  loss=0.0880, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.0334, acc=0.989 | test  loss=0.0458, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.0399, acc=0.984 | test  loss=0.0786, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.0345, acc=0.990 | test  loss=0.0510, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.0319, acc=0.988 | test  loss=0.0741, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.0401, acc=0.980 | test  loss=0.0327, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.0261, acc=0.990 | test  loss=0.0733, acc=0.975
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.0306, acc=0.986 | test  loss=0.0380, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.0227, acc=0.991 | test  loss=0.0752, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.0332, acc=0.989 | test  loss=0.0442, acc=0.990
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.0206, acc=0.991 | test  loss=0.0779, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.0250, acc=0.990 | test  loss=0.0340, acc=0.990
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.0192, acc=0.993 | test  loss=0.0800, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.0232, acc=0.989 | test  loss=0.0396, acc=0.990
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.0180, acc=0.993 | test  loss=0.0810, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.0237, acc=0.989 | test  loss=0.0431, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.0168, acc=0.993 | test  loss=0.0812, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.0235, acc=0.990 | test  loss=0.0386, acc=0.990
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.0159, acc=0.994 | test  loss=0.0815, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.0257, acc=0.990 | test  loss=0.0499, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.0152, acc=0.994 | test  loss=0.0824, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.0255, acc=0.993 | test  loss=0.0409, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.0146, acc=0.994 | test  loss=0.0831, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.0224, acc=0.991 | test  loss=0.0308, acc=0.990
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.0139, acc=0.994 | test  loss=0.0823, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.0232, acc=0.990 | test  loss=0.0433, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.0134, acc=0.994 | test  loss=0.0843, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.0228, acc=0.990 | test  loss=0.0428, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.0129, acc=0.994 | test  loss=0.0857, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.0225, acc=0.990 | test  loss=0.0485, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.0125, acc=0.994 | test  loss=0.0868, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.0262, acc=0.990 | test  loss=0.0537, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.0120, acc=0.994 | test  loss=0.0876, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.0231, acc=0.990 | test  loss=0.0533, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.0116, acc=0.995 | test  loss=0.0895, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.0157, acc=0.994 | test  loss=0.0637, acc=0.975
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.0112, acc=0.995 | test  loss=0.0904, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.0210, acc=0.989 | test  loss=0.0422, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.0108, acc=0.995 | test  loss=0.0910, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.0438, acc=0.986 | test  loss=0.0376, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.0107, acc=0.995 | test  loss=0.0906, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.0229, acc=0.990 | test  loss=0.0411, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.0105, acc=0.995 | test  loss=0.0901, acc=0.985
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.0216, acc=0.989 | test  loss=0.0379, acc=0.980
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.0103, acc=0.995 | test  loss=0.0899, acc=0.980
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.0320, acc=0.984 | test  loss=0.0377, acc=0.985
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.0098, acc=0.995 | test  loss=0.0901, acc=0.980
 
 Saved 151 decision boundary snapshots
 </pre></div>
@@ -1300,7 +1295,7 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/6b01dc78e8c2b3c0c1ae6dc1deb81e7dbdfe935c70e2b41d2655fc52fa87d99c.png" src="../_images/6b01dc78e8c2b3c0c1ae6dc1deb81e7dbdfe935c70e2b41d2655fc52fa87d99c.png" />
+<img alt="../_images/8c42bbce5c577b01f1a0db348c977cc297fb646140cfaf02e6843d19db40e702.png" src="../_images/8c42bbce5c577b01f1a0db348c977cc297fb646140cfaf02e6843d19db40e702.png" />
 </div>
 </div>
 </section>
@@ -1372,13 +1367,13 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 28 Apr 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat, 09 May 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
 IPython version      : 9.13.0
 
-pyhgf : 0.2.11
+pyhgf : 0.2.12
 jax   : 0.4.31
 jaxlib: 0.4.31
 
@@ -1386,7 +1381,7 @@ IPython   : 9.13.0
 jax       : 0.4.31
 matplotlib: 3.10.9
 numpy     : 2.4.4
-pyhgf     : 0.2.11
+pyhgf     : 0.2.12
 seaborn   : 0.13.2
 treescope : 0.1.10
 

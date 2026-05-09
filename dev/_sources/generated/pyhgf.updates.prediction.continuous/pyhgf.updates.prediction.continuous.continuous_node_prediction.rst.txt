@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction.continuous.continuous\_node\_prediction
-================================================================
-
-.. currentmodule:: pyhgf.updates.prediction.continuous
-
-.. autofunction:: continuous_node_prediction

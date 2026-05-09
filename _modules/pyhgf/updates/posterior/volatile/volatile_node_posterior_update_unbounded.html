@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded &#8212; pyhgf 0.2.11 documentation</title>
+    <title>pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../../../../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -882,10 +882,11 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="volatile_node_posterior_update_unbounded">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded.html#pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;max_posterior_precision&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">volatile_node_posterior_update_unbounded</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the volatility level using an unbounded quadratic approximation.</span>
 
@@ -903,6 +904,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The attributes of the probabilistic nodes.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the volatile node.</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to the volatility-level posterior precision write.</span>
+<span class="sd">        Default ``1e10``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1004,7 +1008,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">sig2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi1</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="n">pi2</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">mu2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sig2</span>
 
-    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_precision</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+        <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">max_posterior_precision</span>
+    <span class="p">)</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_mean</span>
 
     <span class="k">return</span> <span class="n">attributes</span></div>

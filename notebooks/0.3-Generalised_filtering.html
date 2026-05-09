@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.2.11 documentation</title>
+    <title>Generalised Bayesian Filtering of exponential family distributions &#8212; pyhgf 0.2.12 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../_static/documentation_options.js?v=29c81e07"></script>
+    <script src="../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -550,7 +550,7 @@
 </div>
 </div>
 <p>In this tutorial, we are interested in online Bayesian filtering when applied to <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family distributions</a>. Bayesian inference in high-dimensional space can rapidly become intractable, requiring approximation or sampling methods that always remain computationally costly. However exponential family distributions have interesting properties that allow expressing Bayesian updates through a simple closed-form solution over hyperparameters that is common to all family members. This property is well-described for stationary distributions and can extend to non-stationary distributions through the application of a fixed learning rate. But this solution can be further improved by dynamically learning the learning rate itself, which is something that Hierarchical Gaussian Filters are especially good at.</p>
-<p>Here, we leverage the approach described in <span id="id1">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. In this tutorial we will describe how to filter stationary and non-stationary distributions using a fixed learning rate or by using a predictive coding network on top of sufficient statistics elicited by new observations. This approach has the advantage of being extremely modular and flexible while extending dynamic Bayesian filtering to a whole range of models. This already underpins the <a class="reference internal" href="1.2-Categorical_HGF.html#categorical-hgf"><span class="std std-ref">The categorical Hierarchical Gaussian Filter</span></a>, in which case the implied distribution is a Dirichlet distribution.</p>
+<p>Here, we leverage the approach described in <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> to demonstrate that the Hierarchical Gaussian Filter can be generalized to any probability distribution that belongs to the <a class="reference external" href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. In this tutorial we will describe how to filter stationary and non-stationary distributions using a fixed learning rate or by using a predictive coding network on top of sufficient statistics elicited by new observations. This approach has the advantage of being extremely modular and flexible while extending dynamic Bayesian filtering to a whole range of models. This already underpins the <a class="reference internal" href="1.2-Categorical_HGF.html#categorical-hgf"><span class="std std-ref">The categorical Hierarchical Gaussian Filter</span></a>, in which case the implied distribution is a Dirichlet distribution.</p>
 <section id="theory">
 <h2>Theory<a class="headerlink" href="#theory" title="Link to this heading">#</a></h2>
 <div class="admonition hint">
@@ -570,7 +570,7 @@ where:</p>
 <li><p><span class="math notranslate nohighlight">\(b(\vartheta)\)</span> is a scalar function</p></li>
 </ul>
 </div>
-<p>It has been shown in <span id="id2">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> that, when chosing as prior:</p>
+<p>It has been shown in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id16" title="Christoph Mathys and Lilian Weber. Hierarchical gaussian filtering of sufficient statistic time series for active inference. In Tim Verbelen, Pablo Lanillos, Christopher L. Buckley, and Cedric De Boom, editors, Active Inference, 52–58. Cham, 2020. Springer International Publishing.">Mathys and Weber, 2020</a>]</span> that, when chosing as prior:</p>
 <div class="math notranslate nohighlight">
 \[
 p(\vartheta|\xi, \nu) = g_{\xi, \nu}(\vartheta) := z(\xi, \nu) \exp (\nu(\eta(\vartheta)·\xi−b(\vartheta)))
@@ -1134,13 +1134,13 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 28 Apr 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat, 09 May 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
 IPython version      : 9.13.0
 
-pyhgf : 0.2.11
+pyhgf : 0.2.12
 jax   : 0.4.31
 jaxlib: 0.4.31
 
@@ -1148,7 +1148,7 @@ IPython   : 9.13.0
 jax       : 0.4.31
 matplotlib: 3.10.9
 numpy     : 2.4.4
-pyhgf     : 0.2.11
+pyhgf     : 0.2.12
 seaborn   : 0.13.2
 
 Watermark: 2.6.0
