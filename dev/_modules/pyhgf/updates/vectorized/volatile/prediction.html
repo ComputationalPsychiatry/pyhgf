@@ -941,8 +941,8 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
-        <span class="c1"># Expected mean for volatility level (autoconnection = 1.0)</span>
-        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
+        <span class="c1"># Expected mean for volatility level</span>
+        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">autoconnection_strength_vol</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
 
         <span class="c1"># Predicted volatility for volatility level</span>
         <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">)</span>
