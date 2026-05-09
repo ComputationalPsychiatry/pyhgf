@@ -888,7 +888,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict expected mean and precision for a binary state node layer.</span>
@@ -934,12 +934,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    LayerState</span>
 <span class="sd">        Updated child layer state with binary expected values.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Augment parent mean with constant node if needed</span>
-    <span class="n">parent_mean</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span>
+    <span class="c1"># Apply coupling to the parent activations only; the constant bias node is</span>
+    <span class="c1"># always wired in linearly (g(1) = 1) regardless of coupling_fn.</span>
+    <span class="n">coupled_parents</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
-        <span class="n">parent_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_mean</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
-
-    <span class="n">coupled_parents</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_mean</span><span class="p">)</span>
+        <span class="n">coupled_parents</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">coupled_parents</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
     <span class="n">logit</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">coupled_parents</span><span class="p">)</span>
 
     <span class="c1"># Sigmoid transform to get binary expected mean</span>

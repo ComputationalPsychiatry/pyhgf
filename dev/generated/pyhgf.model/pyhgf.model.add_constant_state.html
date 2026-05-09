@@ -648,8 +648,10 @@
 <dt class="sig sig-object py" id="pyhgf.model.add_constant_state">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.model.</span></span><span class="sig-name descname"><span class="pre">add_constant_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_children</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volatility_children</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/add_nodes.html#add_constant_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.add_constant_state" title="Link to this definition">#</a></dt>
 <dd><p>Add constant-state (bias) node(s) to a network.</p>
-<p>Constant-state nodes hold a fixed mean of 1.0 and have no prediction or update
-steps. They can only have children, never parents.</p>
+<p>Constant-state nodes hold a fixed mean of 1.0 and precision of 1.0 (fully known
+bias). They are always wired to their children linearly (<code class="docutils literal notranslate"><span class="pre">coupling_fn</span></code> is forced
+to <code class="docutils literal notranslate"><span class="pre">None</span></code>), have no prediction or update steps, and can only have children, never
+parents.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

@@ -1033,8 +1033,10 @@ window.runMermaid = runMermaid;</script>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add constant-state (bias) node(s) to a network.</span>
 
-<span class="sd">    Constant-state nodes hold a fixed mean of 1.0 and have no prediction or update</span>
-<span class="sd">    steps. They can only have children, never parents.</span>
+<span class="sd">    Constant-state nodes hold a fixed mean of 1.0 and precision of 1.0 (fully known</span>
+<span class="sd">    bias). They are always wired to their children linearly (``coupling_fn`` is forced</span>
+<span class="sd">    to ``None``), have no prediction or update steps, and can only have children, never</span>
+<span class="sd">    parents.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Validate that constant-state nodes cannot have volatility children</span>
     <span class="k">if</span> <span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1045,11 +1047,18 @@ window.runMermaid = runMermaid;</script>
     <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="s2">&quot;expected_mean&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;expected_precision&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="s2">&quot;value_coupling_children&quot;</span><span class="p">:</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
     <span class="p">}</span>
 
     <span class="c1"># allow caller overrides</span>
     <span class="n">default_parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">node_parameters</span><span class="p">)</span>
+
+    <span class="c1"># Constant-state nodes are always linearly connected to their children;</span>
+    <span class="c1"># any caller-supplied coupling function is dropped to preserve the</span>
+    <span class="c1"># bias = 1.0 invariant across backends.</span>
+    <span class="n">coupling_fn</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">coupling_fn</span><span class="p">)</span>
 
     <span class="n">network</span> <span class="o">=</span> <span class="n">insert_nodes</span><span class="p">(</span>
         <span class="n">network</span><span class="o">=</span><span class="n">network</span><span class="p">,</span>
