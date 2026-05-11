@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorized.volatile.vectorized\_layer\_prediction\_error
+======================================================================
+
+.. currentmodule:: pyhgf.updates.vectorized.volatile
+
+.. autofunction:: vectorized_layer_prediction_error

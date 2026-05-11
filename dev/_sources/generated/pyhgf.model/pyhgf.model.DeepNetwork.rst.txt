@@ -1,0 +1,36 @@
+﻿pyhgf.model.DeepNetwork
+=======================
+
+.. currentmodule:: pyhgf.model
+
+.. autoclass:: DeepNetwork
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DeepNetwork.__init__
+      ~DeepNetwork.add_layer
+      ~DeepNetwork.add_layer_stack
+      ~DeepNetwork.fit
+      ~DeepNetwork.plot_layers
+      ~DeepNetwork.predict
+      ~DeepNetwork.reset
+      ~DeepNetwork.weight_initialisation
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DeepNetwork.n_layers
+      ~DeepNetwork.n_nodes
+   
+   
