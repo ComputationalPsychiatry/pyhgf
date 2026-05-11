@@ -169,7 +169,13 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     precision_weigthed_prediction_error = 0.0
 
     # Value coupling updates - update the precision of a value parent
-    # Using eq. 50 from Weber et al. (2026)
+    # Using eq. 50 from Weber et al. (2026), with the posterior-step
+    # (smoothing) correction: replace π̂_a by π̂_a · (π_a − π̂_a) / π_a — the predicted
+    # precision scaled by the child's bottom-up information ratio. The same factor
+    # applies to both the g'² term and the g''·δ_a term. Reduces to the canonical
+    # formula when the child is fully observed (π_a ≫ π̂_a); returns no contribution
+    # when the child gained no bottom-up information (π_a = π̂_a) — which the canonical
+    # formula incorrectly credits anyway.
     # ----------------------------------------------------------------------------------
     if edges[node_idx].value_children is not None:
         for value_child_idx, value_coupling, coupling_fn in zip(
@@ -194,9 +200,34 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
                     * value_prediction_error
                 )
 
+            # Effective child precision under the smoothing correction. The Schur
+            # derivation assumes a Gaussian-Gaussian value-coupling edge, so the
+            # correction is only valid when the child carries a Gaussian belief
+            # AND is an interior node (it must itself have run a Gaussian posterior
+            # update against information from below). All other cases — binary
+            # children (type 1), categorical (5), input/constant (0), exponential
+            # family (3), Dirichlet (4), and any Gaussian leaf (types 2/6 with no
+            # children of their own) — are clamped/non-Gaussian and fall back to
+            # the canonical ``π̂_a`` (matching the paper's Limit 3, π_a → ∞).
+            child_node_type = edges[value_child_idx].node_type
+            child_is_gaussian_interior = child_node_type in (2, 6) and (
+                edges[value_child_idx].value_children is not None
+                or edges[value_child_idx].volatility_children is not None
+            )
+            child_expected_precision = attributes[value_child_idx]["expected_precision"]
+            if child_is_gaussian_interior:
+                child_precision = attributes[value_child_idx]["precision"]
+                effective_child_precision = (
+                    child_expected_precision
+                    * (child_precision - child_expected_precision)
+                    / child_precision
+                )
+            else:
+                effective_child_precision = child_expected_precision
+
             # cancel the prediction error if the child value was not observed
             precision_weigthed_prediction_error += (
-                attributes[value_child_idx]["expected_precision"]
+                effective_child_precision
                 * (coupling_fn_prime - coupling_fn_second)
                 * attributes[value_child_idx]["observed"]
             )
