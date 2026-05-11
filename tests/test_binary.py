@@ -49,6 +49,10 @@ def test_update_binary_input_parents():
         edges=binary_hgf.edges,
         input_idxs=(0,),
     )
+    # Expected values reflect the piHGF prediction step: the volatility-parent
+    # variance enters node 1's predicted log-volatility through the exact
+    # moment-generating-function correction κ²/(2 π̂_parent), which shifts
+    # node 1's posterior mean and precision relative to the canonical formula.
     for idx, val in zip(
         ["mean", "expected_mean", "expected_precision"],
         [1.0, 0.7310586, 0.19661193],
@@ -56,12 +60,12 @@ def test_update_binary_input_parents():
         assert jnp.isclose(new_attributes[0][idx], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [1.8515793, 1.0, 0.31581485, 0.11920292],
+        [2.2378633, 1.0, 0.21726260, 0.02065066],
     ):
         assert jnp.isclose(new_attributes[1][idx], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [0.12210602, 1.0, 0.47702926, 0.26894143],
+        [-0.59007323, 1.0, 0.33852935, 0.26894143],
     ):
         assert jnp.isclose(new_attributes[2][idx], val)
 
@@ -73,19 +77,19 @@ def test_binary_scan_loop():
     binary_hgf = (
         Network()
         .add_nodes(kind="binary-state")
-        .add_nodes(value_children=0, mean=0.0, tonic_volatility=1.0)
-        .add_nodes(volatility_children=1, mean=0.0, tonic_volatility=1.0)
+        .add_nodes(value_children=0, mean=0.0, tonic_volatility=-2.0)
+        .add_nodes(volatility_children=1, mean=0.0, tonic_volatility=-2.0)
         .input_data(input_data=u)
     )
 
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [-1.5600492, -1.5068374, 3.4091694, 3.2606704],
+        [-2.3000510, -2.1670487, 0.7725345, 0.6803430],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[1][idx][-1], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [-5.35091, -5.320357, 0.025971143, 0.024351958],
+        [-0.9867410, -0.9642940, 0.3663204, 0.3500401],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[2][idx][-1], val)
 

@@ -51,7 +51,7 @@ def test_logp():
         hgf=hgf,
     )
 
-    assert jnp.isclose(log_likelihood.sum(), 1141.0585)
+    assert jnp.isclose(log_likelihood.sum(), 1274.5693)
 
 
 def test_vectorized_continuous_logp(benchmark):
@@ -156,7 +156,7 @@ def test_vectorized_continuous_logp(benchmark):
     # benchmark
     log_likelihoods = benchmark(get_likelihood)
 
-    assert jnp.isclose(log_likelihoods.sum(), 2282.1165).all()
+    assert jnp.isclose(log_likelihoods.sum(), 2549.1389).all()
 
 
 def test_vectorized_binary_logp(benchmark):
@@ -308,7 +308,7 @@ def test_hgf_logp():
         time_steps=time_steps,
     )
     assert sum_log_likelihoods == log_likelihoods.sum()
-    assert jnp.isclose(sum_log_likelihoods, 2269.6929).all()
+    assert jnp.isclose(sum_log_likelihoods, 2560.788).all()
 
     # test the gradient
     grad_logp = jit(
@@ -343,9 +343,9 @@ def test_hgf_logp():
         1e4,
         np.ones(2),
     )
-    assert jnp.isclose(gradients[0], 0.09576362)
-    assert jnp.isclose(gradients[1], -8.531818)
-    assert jnp.isclose(gradients[2], -189.85936)
+    assert jnp.isclose(gradients[0], 0.0697077)
+    assert jnp.isclose(gradients[1], -9.3390074)
+    assert jnp.isclose(gradients[2], 14.6951771)
 
     ##########################
     # Three-level binary HGF #
@@ -389,7 +389,7 @@ def test_hgf_logp():
     )
 
     assert sum_log_likelihoods == log_likelihoods.sum()
-    assert jnp.isclose(sum_log_likelihoods, -248.07889)
+    assert jnp.isclose(sum_log_likelihoods, -240.40129)
 
     # test the gradient
     grad_logp = jit(
@@ -425,8 +425,8 @@ def test_hgf_logp():
         np.ones(2),
     )
     assert jnp.isclose(gradients[0], 0.0)
-    assert jnp.isclose(gradients[1], 1.9314771)
-    assert jnp.isclose(gradients[2], 30.185408)
+    assert jnp.isclose(gradients[1], 1.3663380)
+    assert jnp.isclose(gradients[2], 23.0852890)
 
 
 def test_pytensor_pointwise_logp():
@@ -504,7 +504,7 @@ def test_pytensor_logp():
         response_function_parameters=np.ones(1),
     ).eval()
 
-    assert jnp.isclose(logp, 1141.05847168)
+    assert jnp.isclose(logp, 1274.56933594)
 
     ##############
     # Binary HGF #
@@ -580,7 +580,7 @@ def test_pytensor_grad_logp_continuous(benchmark):
     # benchmark
     tonic_volatility_1 = benchmark(get_grad_volatility_1)
 
-    assert jnp.isclose(tonic_volatility_1, -3.3479857)
+    assert jnp.isclose(tonic_volatility_1, -4.2841077)
 
 
 def test_pytensor_grad_logp_binary(benchmark):
@@ -653,7 +653,7 @@ def test_pymc_sampling():
 
     pointslogs = model.point_logps(initial_point)
     assert pointslogs["tonic_volatility_2"] == -1.39
-    assert pointslogs["hhgf_loglike"] == 1468.28
+    assert pointslogs["hhgf_loglike"] == 1510.28
 
     with model:
         idata = pm.sample(chains=2, cores=1, tune=1000)
