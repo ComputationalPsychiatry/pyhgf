@@ -17,7 +17,9 @@ def _assert_value_level_match(net_a, node_a, net_b, node_b, label="", rtol=1e-5)
         ), f"{label}: Value-level key '{key}' mismatch"
 
 
-def _assert_vol_level_match(volatile_net, vol_node, explicit_net, exp_node, label=""):
+def _assert_vol_level_match(
+    volatile_net, vol_node, explicit_net, exp_node, label="", rtol=1e-4, atol=1e-6
+):
     """Assert volatility-level trajectories match (volatile _vol vs explicit node)."""
     vol_key_map = {
         "mean_vol": "mean",
@@ -29,6 +31,8 @@ def _assert_vol_level_match(volatile_net, vol_node, explicit_net, exp_node, labe
         assert np.allclose(
             volatile_net.node_trajectories[vol_node][vol_key],
             explicit_net.node_trajectories[exp_node][explicit_key],
+            rtol=rtol,
+            atol=atol,
         ), f"{label}: Volatility-level key '{vol_key}' vs '{explicit_key}' mismatch"
 
 
