@@ -19,6 +19,21 @@ fn lambert_w0(z: f64) -> f64 {
 // =============================================================================
 
 /// Compute the precision update contribution from value and volatility children.
+///
+/// The value-coupling branch implements the posterior-step (smoothing)
+/// correction of the relaxed HGF: the canonical child-precision factor
+/// `π̂_a` is replaced by `π̂_a · (π_a − π̂_a) / π_a` — the predicted precision
+/// scaled by the child's bottom-up information ratio. The same factor applies
+/// to both the `g'²` and the `g''·δ_a` terms. Reduces to the canonical formula
+/// when the child is fully observed; returns no contribution when the child
+/// gained no bottom-up information.
+///
+/// Boundary leaves (children with no children of their own) are clamped
+/// observations and fall back to the canonical `π̂_a` — pyhgf's convention
+/// keeps `precision = expected_precision` for such nodes, so the smoothing
+/// form would otherwise zero out their contribution.
+///
+/// Volatility coupling is unchanged.
 fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
     let mut precision_wpe = 0.0;
 
@@ -44,7 +59,28 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
                 None => (1.0, 0.0),
             };
 
-            precision_wpe += (child_expected_precision
+            // Effective child precision under the smoothing correction. The
+            // Schur derivation assumes a Gaussian-Gaussian value-coupling edge,
+            // so the correction applies only when the child carries a Gaussian
+            // belief (continuous-state or volatile-state) AND is interior (has
+            // children of its own). Binary, categorical, input/constant,
+            // exponential family, and Dirichlet children, plus any Gaussian
+            // leaf, fall back to the canonical `π̂_a` (paper's Limit 3).
+            let child_node_type = network.edges[child_idx].node_type.as_str();
+            let child_is_gaussian_interior =
+                matches!(child_node_type, "continuous-state" | "volatile-state")
+                    && (network.edges[child_idx].value_children.is_some()
+                        || network.edges[child_idx].volatility_children.is_some());
+            let effective_child_precision = if child_is_gaussian_interior {
+                let child_precision = child_state.precision;
+                child_expected_precision
+                    * (child_precision - child_expected_precision)
+                    / child_precision
+            } else {
+                child_expected_precision
+            };
+
+            precision_wpe += (effective_child_precision
                 * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term)) * observed;
         }
     }

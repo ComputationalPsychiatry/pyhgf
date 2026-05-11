@@ -159,6 +159,11 @@ def propagation_step(
             coupling_fn_grad=coupling_fn_grads[i],  # parent i's grad
             parent_has_constant=add_constant_inputs[i],
             max_posterior_precision=max_posterior_precision,
+            # Layer 0 is the observation leaf — its `precision` is the
+            # representational stand-in for a clamped observation, not a
+            # bottom-up posterior gain. Tell the kernel to use the canonical
+            # contribution (paper's Limit 3, π_a → ∞) for that case.
+            child_is_input_layer=(i - 1 == 0),
         )
         # Recompute PE and update volatility level so the layer
         # above receives the correct (post-posterior) error signal.

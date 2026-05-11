@@ -16,7 +16,16 @@ def posterior_update_precision_value_level(
 ) -> float:
     """Update the precision of the value level using value children's PEs.
 
-    This is similar to continuous node value coupling precision update.
+    Implements the posterior-step (smoothing) correction of the relaxed HGF: the
+    canonical child-precision factor ``π̂_a`` is replaced by
+    ``π̂_a · (π_a − π̂_a) / π_a`` — the predicted precision scaled by the child's
+    bottom-up information ratio. The same factor applies to both the ``g'²`` and the
+    ``g''·δ_a`` contributions. Reduces to the canonical formula when the child is fully
+    observed; returns no contribution when the child gained no bottom-up information.
+
+    A child with no children of its own is an input: pyhgf's convention keeps
+    ``precision = expected_precision`` for such nodes, so the smoothing form would zero
+    out their contribution. Fall back to the canonical ``π̂_a``.
 
     .. note::
 
@@ -36,12 +45,32 @@ def posterior_update_precision_value_level(
             attributes[node_idx]["value_coupling_children"],
             edges[node_idx].coupling_fn,
         ):
-            # Get child's expected precision
+            # Effective child precision under the smoothing correction. The Schur
+            # derivation assumes a Gaussian-Gaussian value-coupling edge, so the
+            # correction applies only when the child carries a Gaussian belief
+            # (continuous-state type 2 or volatile-state type 6) AND is interior
+            # (has children of its own). Binary, categorical, input/constant,
+            # exponential family, and Dirichlet children, plus any Gaussian leaf,
+            # fall back to the canonical ``π̂_a``.
+            child_node_type = edges[value_child_idx].node_type
+            child_is_gaussian_interior = child_node_type in (2, 6) and (
+                edges[value_child_idx].value_children is not None
+                or edges[value_child_idx].volatility_children is not None
+            )
             child_expected_precision = attributes[value_child_idx]["expected_precision"]
+            if child_is_gaussian_interior:
+                child_precision = attributes[value_child_idx]["precision"]
+                effective_child_precision = (
+                    child_expected_precision
+                    * (child_precision - child_expected_precision)
+                    / child_precision
+                )
+            else:
+                effective_child_precision = child_expected_precision
 
             # Linear coupling
             if coupling_fn is None:
-                posterior_precision += (value_coupling**2) * child_expected_precision
+                posterior_precision += (value_coupling**2) * effective_child_precision
             else:
                 # Non-linear coupling (with gradient)
                 coupling_fn_prime = grad(coupling_fn)(
@@ -52,7 +81,7 @@ def posterior_update_precision_value_level(
                 )
                 value_pe = attributes[value_child_idx]["temp"]["value_prediction_error"]
 
-                posterior_precision += child_expected_precision * (
+                posterior_precision += effective_child_precision * (
                     (value_coupling**2) * (coupling_fn_prime**2)
                     - value_coupling * coupling_fn_second * value_pe
                 )
