@@ -98,3 +98,4 @@ convention = "numpy"
 [tool.ruff.format]
 # Ensure the formatter is on (replaces Black)
 preview = true
+docstring-code-line-length = 88
