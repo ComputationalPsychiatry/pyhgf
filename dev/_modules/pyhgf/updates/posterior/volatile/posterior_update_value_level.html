@@ -889,7 +889,16 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the precision of the value level using value children&#39;s PEs.</span>
 
-<span class="sd">    This is similar to continuous node value coupling precision update.</span>
+<span class="sd">    Implements the posterior-step (smoothing) correction of the relaxed HGF: the</span>
+<span class="sd">    canonical child-precision factor ``π̂_a`` is replaced by</span>
+<span class="sd">    ``π̂_a · (π_a − π̂_a) / π_a`` — the predicted precision scaled by the child&#39;s</span>
+<span class="sd">    bottom-up information ratio. The same factor applies to both the ``g&#39;²`` and the</span>
+<span class="sd">    ``g&#39;&#39;·δ_a`` contributions. Reduces to the canonical formula when the child is fully</span>
+<span class="sd">    observed; returns no contribution when the child gained no bottom-up information.</span>
+
+<span class="sd">    A child with no children of its own is an input: pyhgf&#39;s convention keeps</span>
+<span class="sd">    ``precision = expected_precision`` for such nodes, so the smoothing form would zero</span>
+<span class="sd">    out their contribution. Fall back to the canonical ``π̂_a``.</span>
 
 <span class="sd">    .. note::</span>
 
@@ -909,12 +918,32 @@ window.runMermaid = runMermaid;</script>
             <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="p">):</span>
-            <span class="c1"># Get child&#39;s expected precision</span>
+            <span class="c1"># Effective child precision under the smoothing correction. The Schur</span>
+            <span class="c1"># derivation assumes a Gaussian-Gaussian value-coupling edge, so the</span>
+            <span class="c1"># correction applies only when the child carries a Gaussian belief</span>
+            <span class="c1"># (continuous-state type 2 or volatile-state type 6) AND is interior</span>
+            <span class="c1"># (has children of its own). Binary, categorical, input/constant,</span>
+            <span class="c1"># exponential family, and Dirichlet children, plus any Gaussian leaf,</span>
+            <span class="c1"># fall back to the canonical ``π̂_a``.</span>
+            <span class="n">child_node_type</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span>
+            <span class="n">child_is_gaussian_interior</span> <span class="o">=</span> <span class="n">child_node_type</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">)</span>
             <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">child_is_gaussian_interior</span><span class="p">:</span>
+                <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+                <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">child_expected_precision</span>
+                    <span class="o">*</span> <span class="p">(</span><span class="n">child_precision</span> <span class="o">-</span> <span class="n">child_expected_precision</span><span class="p">)</span>
+                    <span class="o">/</span> <span class="n">child_precision</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="n">child_expected_precision</span>
 
             <span class="c1"># Linear coupling</span>
             <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="p">(</span><span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">child_expected_precision</span>
+                <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="p">(</span><span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">effective_child_precision</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Non-linear coupling (with gradient)</span>
                 <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span>
@@ -925,7 +954,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
                 <span class="n">value_pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;value_prediction_error&quot;</span><span class="p">]</span>
 
-                <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="n">child_expected_precision</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="n">effective_child_precision</span> <span class="o">*</span> <span class="p">(</span>
                     <span class="p">(</span><span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
                     <span class="o">-</span> <span class="n">value_coupling</span> <span class="o">*</span> <span class="n">coupling_fn_second</span> <span class="o">*</span> <span class="n">value_pe</span>
                 <span class="p">)</span>

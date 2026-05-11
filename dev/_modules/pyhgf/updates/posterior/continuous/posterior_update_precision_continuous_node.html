@@ -1043,7 +1043,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c1"># Value coupling updates - update the precision of a value parent</span>
-    <span class="c1"># Using eq. 50 from Weber et al. (2026)</span>
+    <span class="c1"># Using eq. 50 from Weber et al. (2026), with the posterior-step</span>
+    <span class="c1"># (smoothing) correction: replace π̂_a by π̂_a · (π_a − π̂_a) / π_a — the predicted</span>
+    <span class="c1"># precision scaled by the child&#39;s bottom-up information ratio. The same factor</span>
+    <span class="c1"># applies to both the g&#39;² term and the g&#39;&#39;·δ_a term. Reduces to the canonical</span>
+    <span class="c1"># formula when the child is fully observed (π_a ≫ π̂_a); returns no contribution</span>
+    <span class="c1"># when the child gained no bottom-up information (π_a = π̂_a) — which the canonical</span>
+    <span class="c1"># formula incorrectly credits anyway.</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
@@ -1068,9 +1074,34 @@ window.runMermaid = runMermaid;</script>
                     <span class="o">*</span> <span class="n">value_prediction_error</span>
                 <span class="p">)</span>
 
+            <span class="c1"># Effective child precision under the smoothing correction. The Schur</span>
+            <span class="c1"># derivation assumes a Gaussian-Gaussian value-coupling edge, so the</span>
+            <span class="c1"># correction is only valid when the child carries a Gaussian belief</span>
+            <span class="c1"># AND is an interior node (it must itself have run a Gaussian posterior</span>
+            <span class="c1"># update against information from below). All other cases — binary</span>
+            <span class="c1"># children (type 1), categorical (5), input/constant (0), exponential</span>
+            <span class="c1"># family (3), Dirichlet (4), and any Gaussian leaf (types 2/6 with no</span>
+            <span class="c1"># children of their own) — are clamped/non-Gaussian and fall back to</span>
+            <span class="c1"># the canonical ``π̂_a`` (matching the paper&#39;s Limit 3, π_a → ∞).</span>
+            <span class="n">child_node_type</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span>
+            <span class="n">child_is_gaussian_interior</span> <span class="o">=</span> <span class="n">child_node_type</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">child_is_gaussian_interior</span><span class="p">:</span>
+                <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+                <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">child_expected_precision</span>
+                    <span class="o">*</span> <span class="p">(</span><span class="n">child_precision</span> <span class="o">-</span> <span class="n">child_expected_precision</span><span class="p">)</span>
+                    <span class="o">/</span> <span class="n">child_precision</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="n">child_expected_precision</span>
+
             <span class="c1"># cancel the prediction error if the child value was not observed</span>
             <span class="n">precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+                <span class="n">effective_child_precision</span>
                 <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span> <span class="o">-</span> <span class="n">coupling_fn_second</span><span class="p">)</span>
                 <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
             <span class="p">)</span>

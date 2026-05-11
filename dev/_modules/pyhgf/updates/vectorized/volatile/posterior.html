@@ -890,11 +890,30 @@ window.runMermaid = runMermaid;</script>
     <span class="n">child</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">coupling_fn_grad</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">child_is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the precision of the value level for all nodes in a layer.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the precision of the value level for all nodes in a layer.</span>
 
 <span class="sd">    This is the vectorized equivalent of</span>
 <span class="sd">    :func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level`.</span>
+
+<span class="sd">    Implements the *posterior-step (smoothing) correction* of the relaxed HGF on</span>
+<span class="sd">    value-coupling edges. Lifting the mean-field delta-collapse approximation</span>
+<span class="sd">    :math:`q(x_a, x_b) = q(x_a)\,q(x_b)` to a structured Gaussian on the value-coupling</span>
+<span class="sd">    edge and applying the Schur complement yields the substitution</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \hat\pi_a^{(k)} \;\longmapsto\;</span>
+<span class="sd">        \hat\pi_a^{(k)} \, \frac{\pi_a^{(k)} - \hat\pi_a^{(k)}}{\pi_a^{(k)}}</span>
+
+<span class="sd">    in the canonical value-coupling contribution to :math:`\pi_b^{(k)}`. The</span>
+<span class="sd">    multiplicative factor :math:`(\pi_a - \hat\pi_a)/\pi_a \in [0, 1]` is the fraction</span>
+<span class="sd">    of the child&#39;s posterior precision attributable to bottom-up evidence (rather than</span>
+<span class="sd">    to its own predicted prior). The same factor scales both the :math:`g&#39;^2` and the</span>
+<span class="sd">    :math:`g&#39;&#39;\,\delta_a` contributions. Reduces to the canonical formula when the child</span>
+<span class="sd">    is fully observed (:math:`\pi_a \gg \hat\pi_a`); returns no update when the child</span>
+<span class="sd">    gained no bottom-up information (:math:`\pi_a = \hat\pi_a`).</span>
 
 <span class="sd">    .. note::</span>
 
@@ -915,6 +934,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        ``(n_children, n_parents)``.</span>
 <span class="sd">    coupling_fn_grad :</span>
 <span class="sd">        Gradient of the coupling function.</span>
+<span class="sd">    child_is_input_layer :</span>
+<span class="sd">        If True, the child is the clamped observation leaf (binary or</span>
+<span class="sd">        continuous output). In that case the paper&#39;s Limit 3 applies</span>
+<span class="sd">        (``π_a → ∞``) and the smoothing correction reduces to the canonical</span>
+<span class="sd">        contribution ``π̂_a``. We bypass the ``(π_a − π̂_a)/π_a`` formula</span>
+<span class="sd">        here because pyhgf&#39;s leaf convention sets ``π_a = π̂_a`` for the</span>
+<span class="sd">        binary PE and never updates ``π_a`` for a continuous leaf — neither</span>
+<span class="sd">        signals &quot;info gained&quot;, so the smoothing form would incorrectly</span>
+<span class="sd">        zero out the leaf&#39;s contribution. Defaults to ``False`` (interior</span>
+<span class="sd">        child, full smoothing correction).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -927,14 +956,39 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Coupling second derivative (for second-order EKF correction)</span>
     <span class="n">coupling_second</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">jgrad</span><span class="p">(</span><span class="n">coupling_fn_grad</span><span class="p">))(</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
 
-    <span class="c1"># First-order term: sum_i(w_ij^2 * child_prec_i) * f&#39;(m_j)^2</span>
-    <span class="n">precision_contrib_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+    <span class="c1"># Effective child precision under the smoothing correction:</span>
+    <span class="c1">#     π̂_a · (π_a − π̂_a) / π_a</span>
+    <span class="c1"># By the time this kernel runs for an interior child, the child layer&#39;s</span>
+    <span class="c1"># bottom-up posterior update has already populated ``child.precision``;</span>
+    <span class="c1"># the prediction-step value remains in ``child.expected_precision``.</span>
+    <span class="c1"># Their difference (π_a − π̂_a) is the information actually gained at the</span>
+    <span class="c1"># child during the bottom-up sweep — exactly the quantity the</span>
+    <span class="c1"># structured-Gaussian + Schur derivation identifies as the fresh</span>
+    <span class="c1"># evidence the parent should be credited with.</span>
+    <span class="c1">#</span>
+    <span class="c1"># For a clamped leaf (binary/continuous observation layer), pyhgf&#39;s</span>
+    <span class="c1"># representational convention does not store the &quot;infinite&quot; posterior</span>
+    <span class="c1"># precision that the observation logically carries — ``π_a`` stays</span>
+    <span class="c1"># equal to ``π̂_a``. We therefore short-circuit to the canonical</span>
+    <span class="c1"># contribution ``π̂_a``, matching the paper&#39;s Limit 3 (``π_a → ∞``).</span>
+    <span class="k">if</span> <span class="n">child_is_input_layer</span><span class="p">:</span>
+        <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span>
+            <span class="o">*</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">precision</span> <span class="o">-</span> <span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">)</span>
+            <span class="o">/</span> <span class="n">child</span><span class="o">.</span><span class="n">precision</span>
+        <span class="p">)</span>
+
+    <span class="c1"># First-order term: sum_i(w_ij^2 * effective_child_prec_i) * f&#39;(m_j)^2</span>
+    <span class="n">precision_contrib_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">effective_child_precision</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
         <span class="n">coupling_prime</span><span class="o">**</span><span class="mi">2</span>
     <span class="p">)</span>
 
-    <span class="c1"># Second-order correction: -f&#39;&#39;(m_j) * sum_i(w_ij * child_prec_i * vpe_i)</span>
+    <span class="c1"># Second-order correction: -f&#39;&#39;(m_j) * sum_i(w_ij * effective_child_prec_i * vpe_i)</span>
+    <span class="c1"># The same multiplicative factor (π_a − π̂_a)/π_a applies.</span>
     <span class="n">sum_pi_vpe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span>
-        <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">*</span> <span class="n">child</span><span class="o">.</span><span class="n">value_prediction_error</span>
+        <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">effective_child_precision</span> <span class="o">*</span> <span class="n">child</span><span class="o">.</span><span class="n">value_prediction_error</span>
     <span class="p">)</span>
     <span class="n">precision_contrib_2</span> <span class="o">=</span> <span class="o">-</span><span class="n">coupling_second</span> <span class="o">*</span> <span class="n">sum_pi_vpe</span>
 
@@ -1012,6 +1066,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">coupling_fn_grad</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
+    <span class="n">child_is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the value-level posterior for all nodes in a parent layer.</span>
 
@@ -1036,6 +1091,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        is stripped before computing the posterior update.</span>
 <span class="sd">    max_posterior_precision :</span>
 <span class="sd">        Upper bound applied to the posterior precision. Default ``1e10``.</span>
+<span class="sd">    child_is_input_layer :</span>
+<span class="sd">        If True, the child is the clamped observation leaf (binary or</span>
+<span class="sd">        continuous output). The smoothing correction reduces to the</span>
+<span class="sd">        canonical contribution (paper&#39;s Limit 3). Defaults to ``False``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1049,7 +1108,11 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Update precision first, then mean</span>
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
         <span class="n">vectorized_posterior_update_precision_value_level</span><span class="p">(</span>
-            <span class="n">layer</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">coupling_fn_grad</span>
+            <span class="n">layer</span><span class="p">,</span>
+            <span class="n">child</span><span class="p">,</span>
+            <span class="n">weights</span><span class="p">,</span>
+            <span class="n">coupling_fn_grad</span><span class="p">,</span>
+            <span class="n">child_is_input_layer</span><span class="o">=</span><span class="n">child_is_input_layer</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="n">a_min</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">,</span>
         <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>

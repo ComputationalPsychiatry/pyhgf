@@ -54,6 +54,8 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/logo_small.svg"/>
@@ -646,10 +648,24 @@
 <h1>pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level<a class="headerlink" href="#pyhgf-updates-vectorized-volatile-vectorized-posterior-update-precision-value-level" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_posterior_update_precision_value_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn_grad</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/posterior.html#vectorized_posterior_update_precision_value_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_posterior_update_precision_value_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn_grad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_is_input_layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/posterior.html#vectorized_posterior_update_precision_value_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level" title="Link to this definition">#</a></dt>
 <dd><p>Update the precision of the value level for all nodes in a layer.</p>
 <p>This is the vectorized equivalent of
 <a class="reference internal" href="../pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level" title="pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level()</span></code></a>.</p>
+<p>Implements the <em>posterior-step (smoothing) correction</em> of the relaxed HGF on
+value-coupling edges. Lifting the mean-field delta-collapse approximation
+<span class="math notranslate nohighlight">\(q(x_a, x_b) = q(x_a)\,q(x_b)\)</span> to a structured Gaussian on the value-coupling
+edge and applying the Schur complement yields the substitution</p>
+<div class="math notranslate nohighlight">
+\[\hat\pi_a^{(k)} \;\longmapsto\;
+\hat\pi_a^{(k)} \, \frac{\pi_a^{(k)} - \hat\pi_a^{(k)}}{\pi_a^{(k)}}\]</div>
+<p>in the canonical value-coupling contribution to <span class="math notranslate nohighlight">\(\pi_b^{(k)}\)</span>. The
+multiplicative factor <span class="math notranslate nohighlight">\((\pi_a - \hat\pi_a)/\pi_a \in [0, 1]\)</span> is the fraction
+of the child’s posterior precision attributable to bottom-up evidence (rather than
+to its own predicted prior). The same factor scales both the <span class="math notranslate nohighlight">\(g'^2\)</span> and the
+<span class="math notranslate nohighlight">\(g''\,\delta_a\)</span> contributions. Reduces to the canonical formula when the child
+is fully observed (<span class="math notranslate nohighlight">\(\pi_a \gg \hat\pi_a\)</span>); returns no update when the child
+gained no bottom-up information (<span class="math notranslate nohighlight">\(\pi_a = \hat\pi_a\)</span>).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Unlike the standard continuous-state posterior updates elsewhere in the toolbox,
@@ -666,6 +682,15 @@ as the natural reference point for computing updates.</p>
 <li><p><strong>weights</strong> (<em>Array</em>) – Weight matrix connecting child to parent, shape
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code>.</p></li>
 <li><p><strong>coupling_fn_grad</strong> (<em>Callable</em>) – Gradient of the coupling function.</p></li>
+<li><p><strong>child_is_input_layer</strong> (<em>bool</em>) – If True, the child is the clamped observation leaf (binary or
+continuous output). In that case the paper’s Limit 3 applies
+(<code class="docutils literal notranslate"><span class="pre">π_a</span> <span class="pre">→</span> <span class="pre">∞</span></code>) and the smoothing correction reduces to the canonical
+contribution <code class="docutils literal notranslate"><span class="pre">π̂_a</span></code>. We bypass the <code class="docutils literal notranslate"><span class="pre">(π_a</span> <span class="pre">−</span> <span class="pre">π̂_a)/π_a</span></code> formula
+here because pyhgf’s leaf convention sets <code class="docutils literal notranslate"><span class="pre">π_a</span> <span class="pre">=</span> <span class="pre">π̂_a</span></code> for the
+binary PE and never updates <code class="docutils literal notranslate"><span class="pre">π_a</span></code> for a continuous leaf — neither
+signals “info gained”, so the smoothing form would incorrectly
+zero out the leaf’s contribution. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code> (interior
+child, full smoothing correction).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

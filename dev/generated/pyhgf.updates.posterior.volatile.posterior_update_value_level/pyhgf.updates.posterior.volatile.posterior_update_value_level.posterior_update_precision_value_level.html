@@ -648,7 +648,15 @@
 <dt class="sig sig-object py" id="pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.updates.posterior.volatile.posterior_update_value_level.</span></span><span class="sig-name descname"><span class="pre">posterior_update_precision_value_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/posterior/volatile/posterior_update_value_level.html#posterior_update_precision_value_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level" title="Link to this definition">#</a></dt>
 <dd><p>Update the precision of the value level using value children’s PEs.</p>
-<p>This is similar to continuous node value coupling precision update.</p>
+<p>Implements the posterior-step (smoothing) correction of the relaxed HGF: the
+canonical child-precision factor <code class="docutils literal notranslate"><span class="pre">π̂_a</span></code> is replaced by
+<code class="docutils literal notranslate"><span class="pre">π̂_a</span> <span class="pre">·</span> <span class="pre">(π_a</span> <span class="pre">−</span> <span class="pre">π̂_a)</span> <span class="pre">/</span> <span class="pre">π_a</span></code> — the predicted precision scaled by the child’s
+bottom-up information ratio. The same factor applies to both the <code class="docutils literal notranslate"><span class="pre">g'²</span></code> and the
+<code class="docutils literal notranslate"><span class="pre">g''·δ_a</span></code> contributions. Reduces to the canonical formula when the child is fully
+observed; returns no contribution when the child gained no bottom-up information.</p>
+<p>A child with no children of its own is an input: pyhgf’s convention keeps
+<code class="docutils literal notranslate"><span class="pre">precision</span> <span class="pre">=</span> <span class="pre">expected_precision</span></code> for such nodes, so the smoothing form would zero
+out their contribution. Fall back to the canonical <code class="docutils literal notranslate"><span class="pre">π̂_a</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Unlike the standard continuous-state posterior updates elsewhere in the
