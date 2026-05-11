@@ -45,6 +45,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
     "matplotlib.sphinxext.plot_directive",
     "numpydoc",
     "myst_nb",
@@ -64,12 +65,15 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "jax": ("https://jax.readthedocs.io/en/latest", None),
+    "pytensor": ("https://pytensor.readthedocs.io/en/latest", None),
+    "pymc": ("https://www.pymc.io/projects/docs/en/stable", None),
 }
 
 # Generate the API documentation when building
 autosummary_generate = True
 autodoc_typehints = "description"
 numpydoc_show_class_members = False
+autosummary_generate_overwrite = True   # always rewrite, never reuse stale stubs
 
 # raise an error if the documentation does not build and exit the process
 # this should especially ensure that the notebooks run correctly
@@ -125,6 +129,12 @@ html_theme_options = {
 }
 
 myst_enable_extensions = ["dollarmath", "colon_fence"]
+
+# MyST's H1-first check fires on pages whose top heading is raw HTML
+# (e.g. index.md's centred ``<h1 align="center">…</h1>``), which MyST
+# doesn't recognise as a heading. The styled HTML title is intentional
+# — suppress the false-positive header warning.
+suppress_warnings = ["myst.header"]
 
 html_sidebars = {
     "api": [],

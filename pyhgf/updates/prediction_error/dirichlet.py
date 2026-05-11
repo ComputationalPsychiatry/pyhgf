@@ -46,7 +46,6 @@ def dirichlet_node_prediction_error(
     -------
     attributes :
         The attributes of the probabilistic nodes.
-
     """
     values = attributes[node_idx]["mean"]  # the input value
     alpha = attributes[node_idx]["alpha"]  # the concentration parameter
@@ -149,7 +148,6 @@ def update_cluster(operands: tuple, edges: Edges, node_idx: int) -> Attributes:
     -------
     attributes :
         The attributes of the probabilistic nodes.
-
     """
     attributes, cluster_idx, value, _ = operands
 
@@ -186,7 +184,6 @@ def create_cluster(operands: tuple, edges: Edges, node_idx: int) -> Attributes:
     -------
     attributes :
         The attributes of the probabilistic nodes.
-
     """
     attributes, cluster_idx, value, (candidate_mean, candidate_sigma) = operands
 
@@ -243,7 +240,6 @@ def get_candidate(
         The mean of the new candidate cluster.
     sigma :
         The standard deviation of the new candidate cluster.
-
     """
     # sample n likely clusters given the base distribution priors
     mus, sigmas, weights = likely_cluster_proposal(
@@ -319,7 +315,6 @@ def likely_cluster_proposal(
     weights :
         Weigths for each cluster candidate under pre-existing cluster (irrespective of
         new observations).
-
     """
     # sample new candidate for cluster means
     key, use_key = random.split(key)
@@ -394,6 +389,5 @@ def clusters_likelihood(
     -------
     likelihood :
         The probability of observing the value under each cluster.
-
     """
     return pdf(value, expected_mean, expected_sigma)

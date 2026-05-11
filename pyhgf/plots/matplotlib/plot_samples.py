@@ -37,7 +37,6 @@ def plot_samples(
     -------
     Axes :
         Matplotlib axes used for plotting.
-
     """
     # Number of nodes based on the network's structure
     n_nodes = len(network.edges)

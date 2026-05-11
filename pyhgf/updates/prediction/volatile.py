@@ -92,7 +92,6 @@ def predict_precision_value_level(
     Laplace term ``(t · α · g'(μ̂_b))² / π̂_b`` to the marginal predictive variance. Both
     corrections vanish in the limit of perfectly known parents, recovering the canonical
     formula exactly.
-
     """
     time_step = attributes[-1]["time_step"]
 

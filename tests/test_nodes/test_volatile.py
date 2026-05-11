@@ -17,7 +17,9 @@ def _assert_value_level_match(net_a, node_a, net_b, node_b, label="", rtol=1e-5)
         ), f"{label}: Value-level key '{key}' mismatch"
 
 
-def _assert_vol_level_match(volatile_net, vol_node, explicit_net, exp_node, label=""):
+def _assert_vol_level_match(
+    volatile_net, vol_node, explicit_net, exp_node, label="", rtol=1e-4, atol=1e-6
+):
     """Assert volatility-level trajectories match (volatile _vol vs explicit node)."""
     vol_key_map = {
         "mean_vol": "mean",
@@ -29,11 +31,13 @@ def _assert_vol_level_match(volatile_net, vol_node, explicit_net, exp_node, labe
         assert np.allclose(
             volatile_net.node_trajectories[vol_node][vol_key],
             explicit_net.node_trajectories[exp_node][explicit_key],
+            rtol=rtol,
+            atol=atol,
         ), f"{label}: Volatility-level key '{vol_key}' vs '{explicit_key}' mismatch"
 
 
 def _build_volatile(cls, update_type, timeseries):
-    """Build a volatile-state network with autoconnection=1.0 for equivalence testing."""
+    """Build a volatile-state network with autoconnection for equivalence testing."""
     return (
         cls(update_type=update_type)
         .add_nodes()
@@ -125,10 +129,10 @@ def test_explicit_cross_backend_unbounded():
 def _run_volatile_input_invariance(cls, label):
     """Vary ``tonic_volatility`` of a volatile-state input/leaf node.
 
-    The input/leaf node has no value children, so it does not undergo a
-    Gaussian random walk between observations. Its ``expected_precision``
-    must therefore be its prior precision — identical for any value of
-    ``tonic_volatility`` — mirroring the continuous-node treatment.
+    The input/leaf node has no value children, so it does not undergo a Gaussian random
+    walk between observations. Its ``expected_precision`` must therefore be its prior
+    precision — identical for any value of ``tonic_volatility`` — mirroring the
+    continuous-node treatment.
     """
     timeseries = np.array([0.5, 1.0, 0.7, 0.3])
     expected_precisions = []

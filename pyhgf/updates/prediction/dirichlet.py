@@ -35,7 +35,6 @@ def dirichlet_node_prediction(
         Static input nodes' parameters for the neural network.
     dirichlet_node :
         Static parameters of the Dirichlet process node.
-
     """
     # get the parameter (mean and variance) from the exponential state parent nodes
     value_parent_idxs = edges[node_idx].value_parents

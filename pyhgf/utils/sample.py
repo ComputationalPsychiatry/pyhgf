@@ -41,7 +41,6 @@ def sample(
     -------
     predictions :
         Dictionary of predictions for each parameter/node.
-
     """
     # Prepare placeholders for the inputs and observations.
     # In generative mode, these are not used so we set them to None.

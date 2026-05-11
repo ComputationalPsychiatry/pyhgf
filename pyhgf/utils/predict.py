@@ -53,7 +53,6 @@ def predict_step(
     -------
     predictions :
         A 1-D array of ``expected_mean`` values, one per target node.
-
     """
     attributes[-1]["time_step"] = 1.0
 

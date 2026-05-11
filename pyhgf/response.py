@@ -35,7 +35,6 @@ def first_level_gaussian_surprise(
     -------
     surprise :
         The model's surprise, given the input data.
-
     """
     # compute the sum of Gaussian surprise at the first level
     # the input value at time t is compared to the Gaussian prediction at t-1
@@ -70,7 +69,6 @@ def total_gaussian_surprise(
     -------
     surprise :
         The model's surprise, given the input data.
-
     """
     # compute the sum of Gaussian surprise across every node
     surprise = 0.0
@@ -114,7 +112,6 @@ def first_level_binary_surprise(
     -------
     surprise :
         The model's surprise given the input data.
-
     """
     surprise = jnp.zeros(len(hgf.node_trajectories[-1]["time_step"]))
     for binary_input_idx in hgf.input_idxs:
@@ -154,7 +151,6 @@ def binary_softmax(
     -------
     surprise :
         The surprise under the binary softmax model.
-
     """
     # the expected values at the first level of the HGF
     beliefs = hgf.node_trajectories[0]["expected_mean"]

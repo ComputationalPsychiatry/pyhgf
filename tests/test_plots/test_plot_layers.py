@@ -1,7 +1,5 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Tests for :func:`pyhgf.plots.matplotlib.plot_layers` / ``DeepNetwork.plot_layers``."""
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest

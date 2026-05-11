@@ -3,8 +3,8 @@
 
 """Vectorized update functions for deep predictive coding networks.
 
-This module provides layer-wise vectorized implementations of HGF
-update equations that operate on entire layers instead of individual nodes.
+This module provides layer-wise vectorized implementations of HGF update equations that
+operate on entire layers instead of individual nodes.
 """
 
 from .posterior import (

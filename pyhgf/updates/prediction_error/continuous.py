@@ -159,7 +159,6 @@ def continuous_node_prediction_error(
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
        Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
        arXiv. https://doi.org/10.48550/ARXIV.2305.10937
-
     """
     # Store value prediction errors
     # -----------------------------

@@ -2,8 +2,17 @@ exclude: |
     (?x)^(
         docs/.*|
     )$
-    
+
 repos:
+-   repo: https://github.com/PyCQA/docformatter
+    rev: v1.7.8
+    hooks:
+      - id: docformatter
+        args:
+          - --in-place
+          - --wrap-summaries=88
+          - --wrap-descriptions=88
+          - --black                     # quote/blankline conventions match ruff-format
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
   rev: v0.15.12

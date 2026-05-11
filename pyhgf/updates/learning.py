@@ -27,7 +27,7 @@ def learning_weights(
     The gradient is first computed according to *kind*, then scaled by *lr*:
 
     - **standard** (``kind="standard"``): raw prediction-error outer product, no
-    precision weighting.
+      precision weighting.
       :math:`g_i = \text{PE} \cdot g(\text{parent}_i)`
     - **precision_weighted** (``kind="precision_weighted"``): gradient weighted
       by the child posterior precision.
@@ -39,8 +39,8 @@ def learning_weights(
 
     *lr* controls how the gradient is applied (same semantics for all three kinds):
 
-    - **Adam** (``adam_beta1`` is a float): gradient filtered through Adam; step size
-    controlled by *lr*.
+    - **Adam** (``adam_beta1`` is a float): gradient filtered through Adam;
+      step size controlled by *lr*.
     - **Fixed** (``adam_beta1`` is None): :math:`\Delta w_i = \text{lr} \cdot g_i`.
 
     To recover the old "full Kalman step" behaviour for ``kind="precision_ratio"``,

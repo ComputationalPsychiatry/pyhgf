@@ -90,6 +90,7 @@ extend-include = ["*.ipynb"]
 [tool.ruff.lint]
 select = ["D", "I"]
 ignore = ["D100", "D104"]
+extend-select = ["D301"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -97,3 +98,4 @@ convention = "numpy"
 [tool.ruff.format]
 # Ensure the formatter is on (replaces Black)
 preview = true
+docstring-code-line-length = 88

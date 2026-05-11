@@ -19,7 +19,6 @@ def to_pandas(network: "Network") -> pd.DataFrame:
     trajectories_df :
         Pandas data frame with the time series of sufficient statistics and the
         surprise of each node in the structure.
-
     """
     n_nodes = len(network.edges)
     # get time and time steps from the first input node

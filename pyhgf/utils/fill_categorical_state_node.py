@@ -31,7 +31,6 @@ def fill_categorical_state_node(
     -------
     hgf :
         The updated instance of the HGF model.
-
     """
     # add the binary states - one for each category
     network.add_nodes(

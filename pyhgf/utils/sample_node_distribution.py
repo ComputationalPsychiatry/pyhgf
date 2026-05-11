@@ -30,7 +30,6 @@ def sample_node_distribution(
     -------
     sample :
         The sampled value from the node's distribution.
-
     """
     if edges[node_idx].node_type == 1:
         mu = attributes[node_idx]["expected_mean"]

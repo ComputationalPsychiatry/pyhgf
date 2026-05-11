@@ -40,7 +40,6 @@ def load_data(dataset: str) -> Union[tuple[np.ndarray, ...], np.ndarray]:
       K. E. (2021). Cholinergic and dopaminergic effects on prediction error and
       uncertainty responses during sensory associative learning. In NeuroImage (Vol.
       226, p. 117590). Elsevier BV. https://doi.org/10.1016/j.neuroimage.2020.117590
-
     """
     if dataset == "continuous":
         data = pd.read_csv(

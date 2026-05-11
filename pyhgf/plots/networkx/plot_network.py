@@ -34,7 +34,6 @@ def plot_network(
     matplotlib.figure.Figure
         The figure containing the network visualization if ax is None,
         otherwise returns the NetworkX graph object
-
     """
     try:
         import networkx as nx

@@ -29,7 +29,6 @@ def plot_network(network: Network) -> Source:
     -----
     This function requires [Graphviz](https://github.com/xflr6/graphviz) to be
     installed to work correctly.
-
     """
     try:
         import graphviz
@@ -152,7 +151,6 @@ def plot_deep_network(
     -------
     graphviz_structure :
         Graphviz object.
-
     """
     graphviz_structure = Digraph(
         "deep-network",

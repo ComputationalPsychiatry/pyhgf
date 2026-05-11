@@ -67,7 +67,6 @@ def beliefs_propagation(
     -------
     attributes, attributes :
         A tuple of parameters structure (carryover and accumulated).
-
     """
     # when observations is "generative", only time_step is provided
     # and the other variables are None
