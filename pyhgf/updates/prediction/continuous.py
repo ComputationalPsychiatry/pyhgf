@@ -3,7 +3,7 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import Array, jit
+from jax import Array, grad, jit
 
 from pyhgf.typing import Edges
 
@@ -109,33 +109,61 @@ def predict_precision(
 ) -> tuple[Array, Array]:
     r"""Compute the expected precision of a continuous state node.
 
-    The expected precision at time :math:`k` for a state node :math:`a` is given by
-    [1]_:
+    This is the *improved* (piHGF) prediction step, which marginalises over the parents'
+    variational Gaussians rather than collapsing them to point estimates. Two additional
+    variance terms appear relative to the canonical (g)HGF formulation [1]_:
+
+    * an **exact** volatility-coupling term obtained from the moment-generating
+      function of the Gaussian volatility parent;
+    * a **first-order Laplace** value-coupling term arising from the Taylor
+      expansion of the coupling function.
+
+    Both terms vanish in the limit of perfectly known parents, recovering the canonical
+    formula exactly.
+
+    The marginal predictive variance at time :math:`k` for a state node :math:`a`
+    with volatility parents :math:`\check a` and value parents :math:`b` is
 
     .. math::
 
-        \hat{\pi}_a^{(k)} = \frac{1}{\frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}}
+        \mathrm{Var}\!\left[x_a^{(k)}\right] =
+            \frac{1}{\pi_a^{(k-1)}}
+            + t^{(k)}
+              \exp\!\left( \omega_a
+                + \sum_{j} \left(
+                    \kappa_{a,\check a_j}\, \hat{\mu}_{\check a_j}
+                    + \frac{\kappa_{a,\check a_j}^{2}}{2\, \hat{\pi}_{\check a_j}}
+                  \right)
+              \right)
+            + \sum_{b} \frac{
+                \left( t^{(k)}\, \alpha_{b,a}\, g'(\hat{\mu}_b) \right)^{2}
+              }{ \hat{\pi}_b }.
 
-    where :math:`\Omega_a^{(k)}` is the *total predicted volatility*. This term is the
-    sum of the tonic (endogenous) and phasic (exogenous) volatility, such as:
+    The new term :math:`\kappa_{a,\check a_j}^{2} / (2\, \hat{\pi}_{\check a_j})`
+    inside the exponent is the Jensen-inequality contribution of a Gaussian-distributed
+    volatility parent through the convex :math:`\exp(\cdot)` non-linearity, available in
+    closed form. The new term :math:`(\alpha_{b,a}\, g'(\hat{\mu}_b))^{2} / \hat{\pi}_b`
+    outside the exponent is the law-of-total-variance contribution of a
+    Gaussian-distributed value parent through the linearised coupling function. Both use
+    *predicted*, not posterior, parent precisions, keeping the prediction schedule
+    strictly top-down.
+
+    The expected precision is the inverse of the marginal predictive variance:
 
     .. math::
 
-        \Omega_a^{(k)} = t^{(k)}
-        \exp{ \left( \omega_a + \sum_{j=1}^{N_{vopa}} \kappa_j \hat{\mu}_a^{(k-1)} \right) }
+        \hat{\pi}_a^{(k)} = \mathrm{Var}\!\left[x_a^{(k)}\right]^{-1}.
 
-
-    with :math:`\kappa_j` the volatility coupling strength with the volatility parent
-    :math:`j`.
-
-    The *effective precision* :math:`\gamma_a^{(k)}` is given by:
+    The *effective precision* :math:`\gamma_a^{(k)}` is defined relative to the
+    volatility-driven part of the variance only,
 
     .. math::
 
-        \gamma_a^{(k)} = \Omega_a^{(k)} \hat{\pi}_a^{(k)}
+        \gamma_a^{(k)} = \Omega_a^{(k)}\, \hat{\pi}_a^{(k)},
 
-    This value is also saved in the node for later use during the update steps.
-
+    where :math:`\Omega_a^{(k)}` denotes the (improved) phasic + tonic volatility
+    contribution. This value is stored on the node for later use during the
+    posterior update.
 
     Parameters
     ----------
@@ -173,7 +201,10 @@ def predict_precision(
     total_volatility = attributes[node_idx]["tonic_volatility"]
 
     # Look at the (optional) volatility parents and add their value to the tonic
-    # volatility to get the total volatility
+    # volatility to get the total volatility. The piHGF improvement adds the
+    # closed-form moment-generating-function correction κ²/(2 π̂) inside the
+    # exponent so that the volatility parent enters as a full Gaussian rather
+    # than a point estimate.
     if volatility_parents_idxs is not None:
         for volatility_parents_idx, volatility_coupling in zip(
             volatility_parents_idxs,
@@ -183,6 +214,9 @@ def predict_precision(
                 volatility_coupling
                 * attributes[volatility_parents_idx]["expected_mean"]
             )
+            total_volatility += (volatility_coupling**2) / (
+                2.0 * attributes[volatility_parents_idx]["expected_precision"]
+            )
 
     # compute the predicted_volatility from the total volatility
     predicted_volatility = time_step * jnp.exp(total_volatility)
@@ -190,12 +224,41 @@ def predict_precision(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # Estimate the new expected precision for the node
+    # piHGF Laplace value-coupling correction. The conditional mean of x_a is
+    # linearised around μ̂_b via a first-order Taylor expansion of the coupling
+    # function g; the resulting variance contribution from each value parent is
+    # (t · α · g'(μ̂_b))² / π̂_b. The factor t arises because the value-parent
+    # contribution to the mean is scaled by the time step in :func:`predict_mean`.
+    value_parents_idxs = edges[node_idx].value_parents
+    value_coupling_variance = jnp.zeros_like(predicted_volatility)
+    if value_parents_idxs is not None:
+        for value_parent_idx, psi in zip(
+            value_parents_idxs,
+            attributes[node_idx]["value_coupling_parents"],
+        ):
+            child_position = edges[value_parent_idx].value_children.index(node_idx)
+            coupling_fn = edges[value_parent_idx].coupling_fn[child_position]
+            mu_b = attributes[value_parent_idx]["expected_mean"]
+            if coupling_fn is None:
+                g_prime = jnp.ones_like(mu_b)
+            else:
+                g_prime = grad(coupling_fn)(mu_b)
+
+            value_coupling_variance += (time_step * psi * g_prime) ** 2 / attributes[
+                value_parent_idx
+            ]["expected_precision"]
+
+    # Estimate the new expected precision for the node by inverting the
+    # marginal predictive variance (own variance + improved volatility term +
+    # Laplace value-coupling term).
     expected_precision = 1 / (
-        (1 / attributes[node_idx]["precision"]) + predicted_volatility
+        (1 / attributes[node_idx]["precision"])
+        + predicted_volatility
+        + value_coupling_variance
     )
 
-    # compute the effective precision (γ)
+    # compute the effective precision (γ); only the volatility-driven part
+    # enters γ, since γ is consumed by the volatility-coupling posterior update.
     effective_precision = predicted_volatility * expected_precision
 
     return expected_precision, effective_precision
@@ -206,6 +269,12 @@ def continuous_node_prediction(
     attributes: dict, node_idx: int, edges: Edges, **args
 ) -> dict:
     """Update the expected mean and expected precision of a continuous node [1]_.
+
+    The precision prediction follows the improved (piHGF) scheme, which marginalises
+    over the parents' variational Gaussians instead of treating them as point estimates.
+    See :func:`predict_precision` for the precise formula and its two additional
+    variance terms (volatility-coupling moment-generating- function term and
+    value-coupling Laplace term).
 
     Parameters
     ----------

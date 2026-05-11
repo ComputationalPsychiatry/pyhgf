@@ -27,30 +27,48 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     // 2. PREDICT VALUE LEVEL (external facing)
     // ===================================================================
 
-    // --- 2a. Predict precision (depends on volatility level) ---
-    let total_volatility = tonic_volatility + volatility_coupling_internal * mean_vol;
-    let pv_raw = time_step * total_volatility.exp();
-    let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
-    let expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
-    let effective_precision = predicted_volatility * expected_precision;
-
-    // --- 2b. Predict mean (including value parents if any) ---
+    // --- 2a. Predict mean (including value parents if any). Also accumulate
+    //         the piHGF Laplace value-coupling variance:
+    //             Σ_b (Δt · α · g'(μ̂_b))² / π̂_b
     let mut driftrate = 0.0;
+    let mut value_coupling_variance = 0.0_f64;
     if let Some(ref vp_idxs) = network.edges[node_idx].value_parents {
         let couplings = &network.attributes.vectors[node_idx].value_coupling_parents;
 
         for (i, &parent_idx) in vp_idxs.iter().enumerate() {
             let parent_expected_mean = network.attributes.states[parent_idx].expected_mean;
+            let parent_expected_precision =
+                network.attributes.states[parent_idx].expected_precision;
             let value_coupling_parent = couplings.get(i).copied().unwrap_or(1.0);
-            let parent_value = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
-                Some(cf) => (cf.f)(parent_expected_mean),
-                None => parent_expected_mean,
+            let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn
+            {
+                Some(cf) => ((cf.f)(parent_expected_mean), (cf.df)(parent_expected_mean)),
+                None => (parent_expected_mean, 1.0),
             };
             driftrate += value_coupling_parent * parent_value;
+            let coeff = time_step * value_coupling_parent * g_prime;
+            value_coupling_variance += coeff * coeff / parent_expected_precision;
         }
     }
 
     let expected_mean = autoconnection_strength * mean + time_step * driftrate;
+
+    // --- 2b. Predict precision (depends on volatility level). The implicit
+    //         volatility level enters the conditional variance through
+    //         exp(κ · x_vol); marginalising over the volatility level's
+    //         Gaussian yields the closed-form moment-generating-function
+    //         correction κ² / (2 · π̂_vol) inside the log-volatility exponent.
+    let total_volatility = tonic_volatility
+        + volatility_coupling_internal * mean_vol
+        + (volatility_coupling_internal * volatility_coupling_internal)
+            / (2.0 * expected_precision_vol);
+    let pv_raw = time_step * total_volatility.exp();
+    let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
+    let expected_precision =
+        1.0 / ((1.0 / precision) + predicted_volatility + value_coupling_variance);
+    // Effective precision γ — only the volatility-driven part enters γ, since
+    // γ is consumed by the volatility-coupling posterior update.
+    let effective_precision = predicted_volatility * expected_precision;
 
     // Input/leaf override: a volatile-state node with no value children is an
     // observed input — it does not undergo a Gaussian random walk between

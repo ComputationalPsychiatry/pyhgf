@@ -1,7 +1,7 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import Array, jit
+from jax import Array, grad, jit
 
 from pyhgf.typing import Edges
 
@@ -77,14 +77,22 @@ def predict_mean_value_level(
     return expected_mean
 
 
-@partial(jit, static_argnames=("node_idx",))
+@partial(jit, static_argnames=("edges", "node_idx"))
 def predict_precision_value_level(
     attributes: dict,
+    edges: Edges,
     node_idx: int,
 ) -> tuple[Array, Array]:
     """Predict the precision of the value level using the implicit volatility level.
 
-    The volatility level's mean modulates the value level's precision.
+    The volatility level's mean modulates the value level's precision. The implicit
+    volatility level is treated as a full Gaussian parent: the exact
+    moment-generating-function correction ``κ² / (2 · π̂_vol)`` is added inside the
+    log-volatility exponent. In addition, each value parent contributes a first-order
+    Laplace term ``(t · α · g'(μ̂_b))² / π̂_b`` to the marginal predictive variance. Both
+    corrections vanish in the limit of perfectly known parents, recovering the canonical
+    formula exactly.
+
     """
     time_step = attributes[-1]["time_step"]
 
@@ -92,15 +100,20 @@ def predict_precision_value_level(
     precision = attributes[node_idx]["precision"]
     tonic_volatility = attributes[node_idx]["tonic_volatility"]
 
-    # Get volatility level's expected mean (already computed)
+    # Get volatility level's expected mean and precision (already computed)
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
+    expected_precision_vol = attributes[node_idx]["expected_precision_vol"]
 
     # Get internal coupling strength
     volatility_coupling_internal = attributes[node_idx]["volatility_coupling_internal"]
 
-    # Total volatility = tonic + contribution from implicit volatility parent
-    total_volatility = tonic_volatility + (
-        volatility_coupling_internal * expected_mean_vol
+    # Total volatility = tonic + linear contribution of the implicit volatility
+    # parent + closed-form moment-generating-function correction κ²/(2 π̂_vol)
+    # that arises from marginalising over the volatility parent's Gaussian.
+    total_volatility = (
+        tonic_volatility
+        + (volatility_coupling_internal * expected_mean_vol)
+        + (volatility_coupling_internal**2) / (2.0 * expected_precision_vol)
     )
 
     # Compute predicted volatility
@@ -109,10 +122,38 @@ def predict_precision_value_level(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # Expected precision
-    expected_precision = 1 / ((1 / precision) + predicted_volatility)
+    # Laplace value-coupling correction. The conditional mean of the value level
+    # is linearised around μ̂_b via a first-order Taylor expansion of the coupling
+    # function g; the variance contribution from each value parent is then
+    # (t · α · g'(μ̂_b))² / π̂_b. The factor t arises because the value-parent
+    # contribution to the mean is scaled by the time step in
+    # :func:`predict_mean_value_level`.
+    value_parents_idxs = edges[node_idx].value_parents
+    value_coupling_variance = jnp.zeros_like(predicted_volatility)
+    if value_parents_idxs is not None:
+        for value_parent_idx, psi in zip(
+            value_parents_idxs,
+            attributes[node_idx]["value_coupling_parents"],
+        ):
+            child_position = edges[value_parent_idx].value_children.index(node_idx)
+            coupling_fn = edges[value_parent_idx].coupling_fn[child_position]
+            mu_b = attributes[value_parent_idx]["expected_mean"]
+            if coupling_fn is None:
+                g_prime = jnp.ones_like(mu_b)
+            else:
+                g_prime = grad(coupling_fn)(mu_b)
 
-    # Effective precision
+            value_coupling_variance += (time_step * psi * g_prime) ** 2 / attributes[
+                value_parent_idx
+            ]["expected_precision"]
+
+    # Expected precision = inverse marginal predictive variance.
+    expected_precision = 1 / (
+        (1 / precision) + predicted_volatility + value_coupling_variance
+    )
+
+    # Effective precision (γ): only the volatility-driven part enters γ, since
+    # γ is consumed by the volatility-coupling posterior update.
     effective_precision = predicted_volatility * expected_precision
 
     return expected_precision, effective_precision
@@ -147,7 +188,7 @@ def volatile_node_prediction(
     # 2. PREDICT VALUE LEVEL (external facing)
     # Value level's precision depends on volatility level
     expected_precision, effective_precision = predict_precision_value_level(
-        attributes, node_idx
+        attributes, edges, node_idx
     )
 
     # Value level's mean
