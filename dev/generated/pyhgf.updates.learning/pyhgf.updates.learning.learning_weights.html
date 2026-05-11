@@ -652,13 +652,9 @@
 <dd><p>Unified weights update.</p>
 <p>The gradient is first computed according to <em>kind</em>, then scaled by <em>lr</em>:</p>
 <ul class="simple">
-<li><p><strong>standard</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;standard&quot;</span></code>): raw prediction-error outer product, no</p></li>
-</ul>
-<dl class="simple">
-<dt>precision weighting.</dt><dd><p><span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot g(\text{parent}_i)\)</span></p>
-</dd>
-</dl>
-<ul class="simple">
+<li><p><strong>standard</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;standard&quot;</span></code>): raw prediction-error outer product, no
+precision weighting.
+<span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot g(\text{parent}_i)\)</span></p></li>
 <li><p><strong>precision_weighted</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_weighted&quot;</span></code>): gradient weighted
 by the child posterior precision.
 <span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)\)</span></p></li>
@@ -669,27 +665,27 @@ using the posterior precisions of child and parent.
 </ul>
 <p><em>lr</em> controls how the gradient is applied (same semantics for all three kinds):</p>
 <ul class="simple">
-<li><p><strong>Adam</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is a float): gradient filtered through Adam; step size</p></li>
+<li><p><strong>Adam</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is a float): gradient filtered through Adam;
+step size controlled by <em>lr</em>.</p></li>
+<li><p><strong>Fixed</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is None): <span class="math notranslate nohighlight">\(\Delta w_i = \text{lr} \cdot g_i\)</span>.</p></li>
 </ul>
-<p>controlled by <em>lr</em>.
-- <strong>Fixed</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is None): <span class="math notranslate nohighlight">\(\Delta w_i = \text{lr} \cdot g_i\)</span>.</p>
 <p>To recover the old “full Kalman step” behaviour for <code class="docutils literal notranslate"><span class="pre">kind=&quot;precision_ratio&quot;</span></code>,
 pass <code class="docutils literal notranslate"><span class="pre">lr=1.0</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>attributes</strong> (<em>dict</em><em>[</em><em>int</em><em> | </em><em>str</em><em>, </em><em>dict</em><em>]</em>) – The attributes of the probabilistic network.</p></li>
-<li><p><strong>node_idx</strong> (<em>int</em>) – Pointer to the input node.</p></li>
-<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes as a tuple of
+<li><p><strong>attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>]</em>) – The attributes of the probabilistic network.</p></li>
+<li><p><strong>node_idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Pointer to the input node.</p></li>
+<li><p><strong>edges</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes as a tuple of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as node number.
 For each node, the index list value and volatility parents and children.</p></li>
-<li><p><strong>kind</strong> (<em>str</em>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code> (default),
+<li><p><strong>kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code> (default),
 or <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
-<li><p><strong>lr</strong> (<em>float</em><em> | </em><em>None</em>) – Fixed learning rate or Adam step size.  Applied uniformly across all <em>kind</em>
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Fixed learning rate or Adam step size.  Applied uniformly across all <em>kind</em>
 values, including <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
-<li><p><strong>adam_beta1</strong> (<em>float</em><em> | </em><em>None</em>) – Adam first moment decay rate.  When <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) Adam is not used.</p></li>
-<li><p><strong>adam_beta2</strong> (<em>float</em><em> | </em><em>None</em>) – Adam second moment decay rate.</p></li>
-<li><p><strong>adam_epsilon</strong> (<em>float</em><em> | </em><em>None</em>) – Adam numerical stability constant.</p></li>
+<li><p><strong>adam_beta1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Adam first moment decay rate.  When <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) Adam is not used.</p></li>
+<li><p><strong>adam_beta2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Adam second moment decay rate.</p></li>
+<li><p><strong>adam_epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Adam numerical stability constant.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

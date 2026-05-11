@@ -1003,7 +1003,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    logp :</span>
 <span class="sd">        The log-probability (negative surprise).</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">hgf</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
         <span class="c1"># update this network&#39;s attributes</span>
@@ -1167,7 +1166,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    log_prob :</span>
 <span class="sd">        The sum of the log probabilities (negative surprise).</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># number of models</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1296,7 +1294,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            A list of tuples with the same length as the number of models. Each tuple</span>
 <span class="sd">            contains additional data and parameters that can be accessed by the</span>
 <span class="sd">            response functions.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">time_steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -1559,7 +1556,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            A list of tuples with the same length as the number of models. Each tuple</span>
 <span class="sd">            contains additional data and parameters that can be accessible to the</span>
 <span class="sd">            response functions.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">time_steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -1706,7 +1702,6 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    This class should be used in the context of model comparison where the pointwise log</span>
 <span class="sd">    probabilities are required for cross-validation.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HGFPointwise.__init__">
@@ -1745,7 +1740,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            A list of tuples with the same length as the number of models. Each tuple</span>
 <span class="sd">            contains additional data and parameters that can be accessed by the</span>
 <span class="sd">            response functions.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">time_steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>

@@ -669,11 +669,11 @@ prediction error directly.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>child_state</strong> (<em>LayerState</em>) – Current state of the binary child layer (being predicted).</p></li>
 <li><p><strong>parent_state</strong> (<em>LayerState</em>) – Current state of the parent layer (predictor).</p></li>
-<li><p><strong>weights</strong> (<em>Array</em>) – Weight matrix connecting child to parent, shape <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or
+<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>) – Weight matrix connecting child to parent, shape <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents</span> <span class="pre">+</span> <span class="pre">1)</span></code> when the parent layer includes a constant input
 node.</p></li>
-<li><p><strong>coupling_fn</strong> (<em>Callable</em>) – Coupling function applied to parent means (default: tanh).</p></li>
-<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the parent layer has a constant input node (mean = 1.0)
+<li><p><strong>coupling_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Coupling function applied to parent means (default: tanh).</p></li>
+<li><p><strong>parent_has_constant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the parent layer has a constant input node (mean = 1.0)
 appended to its activations.</p></li>
 </ul>
 </dd>

@@ -908,7 +908,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
 <span class="sd">        The model&#39;s surprise, given the input data.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># compute the sum of Gaussian surprise at the first level</span>
     <span class="c1"># the input value at time t is compared to the Gaussian prediction at t-1</span>
@@ -946,7 +945,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
 <span class="sd">        The model&#39;s surprise, given the input data.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># compute the sum of Gaussian surprise across every node</span>
     <span class="n">surprise</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -993,7 +991,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
 <span class="sd">        The model&#39;s surprise given the input data.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">surprise</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]))</span>
     <span class="k">for</span> <span class="n">binary_input_idx</span> <span class="ow">in</span> <span class="n">hgf</span><span class="o">.</span><span class="n">input_idxs</span><span class="p">:</span>
@@ -1036,7 +1033,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
 <span class="sd">        The surprise under the binary softmax model.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># the expected values at the first level of the HGF</span>
     <span class="n">beliefs</span> <span class="o">=</span> <span class="n">hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>

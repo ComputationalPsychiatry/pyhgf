@@ -681,8 +681,8 @@ simultaneously.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>coupling_fn</strong> (<em>Callable</em>)</p></li>
-<li><p><strong>update_type</strong> (<em>str</em>)</p></li>
-<li><p><strong>max_posterior_precision</strong> (<em>float</em>)</p></li>
+<li><p><strong>update_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>max_posterior_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -693,13 +693,13 @@ simultaneously.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>coupling_fn</strong> (<em>Callable</em>) – Coupling function applied between layers. Default is linear (identity),
+<li><p><strong>coupling_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Coupling function applied between layers. Default is linear (identity),
 matching the Rust backend and the Network class. This function is
 applied to parent means before the weighted sum to predict child means.</p></li>
-<li><p><strong>update_type</strong> (<em>str</em>) – The type of volatility-level posterior update. Can be <code class="docutils literal notranslate"><span class="pre">&quot;eHGF&quot;</span></code>
+<li><p><strong>update_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The type of volatility-level posterior update. Can be <code class="docutils literal notranslate"><span class="pre">&quot;eHGF&quot;</span></code>
 (default), <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;unbounded&quot;</span></code>. Matches the Network
 class and Rust backend.</p></li>
-<li><p><strong>max_posterior_precision</strong> (<em>float</em>) – Upper bound applied to every posterior precision write (value level and
+<li><p><strong>max_posterior_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Upper bound applied to every posterior precision write (value level and
 volatility level). Defaults to <code class="docutils literal notranslate"><span class="pre">1e10</span></code> and is shared with the nodalised
 <code class="docutils literal notranslate"><span class="pre">Network</span></code> and the Rust backend. Increase it to relax the cap, or lower it
 to be more conservative against precision blow-up.</p></li>

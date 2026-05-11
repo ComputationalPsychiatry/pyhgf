@@ -654,16 +654,16 @@ deviation) and the surprise at each level of the node structure.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>) – An instance of the main Network class.</p></li>
-<li><p><strong>ci</strong> (<em>bool</em>) – Show the uncertainty around the values estimates (standard deviation).</p></li>
-<li><p><strong>show_surprise</strong> (<em>bool</em>) – If <cite>True</cite> plot each node’s surprise together with sufficient statistics.
+<li><p><strong>ci</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Show the uncertainty around the values estimates (standard deviation).</p></li>
+<li><p><strong>show_surprise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <cite>True</cite> plot each node’s surprise together with sufficient statistics.
 If <cite>False</cite>, only the input node’s surprise is depicted.</p></li>
-<li><p><strong>show_posterior</strong> (<em>bool</em>) – If <cite>True</cite>, plot the posterior mean and precision on the top of expected mean and
+<li><p><strong>show_posterior</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <cite>True</cite>, plot the posterior mean and precision on the top of expected mean and
 precision. Defaults to <cite>False</cite>.</p></li>
-<li><p><strong>show_total_surprise</strong> (<em>bool</em>) – If <cite>True</cite>, plot the sum of surprises across all nodes in the bottom panel.
+<li><p><strong>show_total_surprise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <cite>True</cite>, plot the sum of surprises across all nodes in the bottom panel.
 Defaults to <cite>False</cite>.</p></li>
-<li><p><strong>figsize</strong> (<em>tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – The width and height of the figure. Defaults to <cite>(18, 9)</cite> for a two-level model,
+<li><p><strong>figsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – The width and height of the figure. Defaults to <cite>(18, 9)</cite> for a two-level model,
 or to <cite>(18, 12)</cite> for a three-level model.</p></li>
-<li><p><strong>axs</strong> (<em>list</em><em> | </em><em>Axes</em><em> | </em><em>None</em>) – A list of Matplotlib axes instances where to draw the trajectories. This should
+<li><p><strong>axs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> | </em><em>Axes</em><em> | </em><em>None</em>) – A list of Matplotlib axes instances where to draw the trajectories. This should
 correspond to the number of nodes in the structure. The default is <cite>None</cite>
 (create a new figure).</p></li>
 </ul>

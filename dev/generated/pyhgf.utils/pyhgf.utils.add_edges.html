@@ -651,13 +651,13 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>attributes</strong> (<em>dict</em>) – Attributes of the neural network.</p></li>
-<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – Edges of the neural network.</p></li>
+<li><p><strong>attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Attributes of the neural network.</p></li>
+<li><p><strong>edges</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – Edges of the neural network.</p></li>
 <li><p><strong>kind</strong> – The kind of coupling can be <cite>“value”</cite> or <cite>“volatility”</cite>.</p></li>
 <li><p><strong>parent_idxs</strong> – The index(es) of the parent node(s).</p></li>
 <li><p><strong>children_idxs</strong> – The index(es) of the children node(s).</p></li>
-<li><p><strong>coupling_strengths</strong> (<em>float</em><em> | </em><em>list</em><em>[</em><em>float</em><em>] </em><em>| </em><em>tuple</em><em>[</em><em>float</em><em>]</em>) – The coupling strength between the parents and children.</p></li>
-<li><p><strong>coupling_fn</strong> (<em>tuple</em><em>[</em><em>Callable</em><em> | </em><em>None</em><em>, </em><em>...</em><em>]</em>) – Coupling function(s) between the current node and its value children.
+<li><p><strong>coupling_strengths</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – The coupling strength between the parents and children.</p></li>
+<li><p><strong>coupling_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em> | </em><em>None</em><em>, </em><em>...</em><em>]</em>) – Coupling function(s) between the current node and its value children.
 It has to be provided as a tuple. If multiple value children are specified,
 the coupling functions must be stated in the same order of the children.
 Note: if a node has multiple parents nodes with different coupling
@@ -667,7 +667,7 @@ linear.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
 </dd></dl>

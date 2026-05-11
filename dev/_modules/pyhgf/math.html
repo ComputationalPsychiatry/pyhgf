@@ -874,7 +874,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">custom_jvp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">digamma</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">gammaln</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
@@ -888,7 +888,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] https://en.wikipedia.org/wiki/Exponential_family</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
@@ -913,7 +912,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        xis :</span>
 <span class="sd">            The sufficient statistics.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">mean</span><span class="p">,</span>
@@ -942,7 +940,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        means, covariance :</span>
 <span class="sd">            The parameters of the distribution (mean and covariance).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="n">xis</span><span class="p">[:</span><span class="n">dimension</span><span class="p">]</span>
         <span class="n">covariance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dimension</span><span class="p">,</span> <span class="n">dimension</span><span class="p">))</span>
@@ -963,7 +960,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] https://en.wikipedia.org/wiki/Exponential_family</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
@@ -988,7 +984,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        xis :</span>
 <span class="sd">            The sufficient statistics.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="n">mean</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">variance</span><span class="p">])</span>
 
@@ -1010,7 +1005,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        mean, variance :</span>
 <span class="sd">            The parameters of the distribution (mean and variance).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="n">xis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">variance</span> <span class="o">=</span> <span class="n">xis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">mean</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -1060,7 +1054,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       statistic time series for active inference. In Communications in Computer and</span>
 <span class="sd">       Information Science. Active Inference (pp. 52–58).</span>
 <span class="sd">       doi:10.1007/978-3-030-64919-7_7</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">nu</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">xi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">xi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)))</span>
@@ -1121,7 +1114,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &gt;&gt;&gt; from pyhgf.binary import binary_surprise</span>
 <span class="sd">    &gt;&gt;&gt; binary_surprise(x=1.0, expected_mean=0.7)</span>
 <span class="sd">    `Array(0.35667497, dtype=float32, weak_type=True)`</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">clipping</span><span class="p">:</span>
         <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
@@ -1170,7 +1162,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &gt;&gt;&gt; from pyhgf.math import gaussian_surprise</span>
 <span class="sd">    &gt;&gt;&gt; gaussian_surprise(x=2.0, expected_mean=0.0, expected_precision=1.0)</span>
 <span class="sd">    `Array(2.9189386, dtype=float32, weak_type=True)`</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
         <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
@@ -1255,7 +1246,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
 <span class="sd">        The binary surprise under finite precision.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
         <span class="n">expected_mean</span> <span class="o">*</span> <span class="n">gaussian_density</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">expected_precision</span><span class="p">)</span>
@@ -1296,11 +1286,25 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="nd">@custom_jvp</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">lambert_w0</span><span class="p">(</span><span class="n">z</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Principal branch of the Lambert W function for z &gt;= 0.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Principal branch of the Lambert W function for z &gt;= 0.</span>
 
 <span class="sd">    Solves ``w * exp(w) = z`` via 6 Halley iterations, which yields machine</span>
 <span class="sd">    precision for all z &gt;= 0.</span>
+
+<span class="sd">    A custom JVP is attached so that reverse-mode autodiff does not backprop</span>
+<span class="sd">    through the Halley iterations. The implicit relation ``w * exp(w) = z``</span>
+<span class="sd">    yields the closed-form derivative</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \frac{\partial W}{\partial z} = \frac{1}{e^{w}\,(1 + w)},</span>
+
+<span class="sd">    which is well-defined for all ``z &gt;= 0`` (in particular at ``z = 0``,</span>
+<span class="sd">    where ``w = 0`` gives ``∂W/∂z = 1``). This avoids the NaN gradients that</span>
+<span class="sd">    would otherwise arise when the Halley iterations&#39; intermediate ``exp(w)``</span>
+<span class="sd">    values overflow.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
@@ -1310,6 +1314,16 @@ window.runMermaid = runMermaid;</script>
         <span class="n">f2</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">f1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">f1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">f</span> <span class="o">*</span> <span class="n">f2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">w</span>
+
+
+<span class="nd">@lambert_w0</span><span class="o">.</span><span class="n">defjvp</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_lambert_w0_jvp</span><span class="p">(</span><span class="n">primals</span><span class="p">,</span> <span class="n">tangents</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">z</span><span class="p">,)</span> <span class="o">=</span> <span class="n">primals</span>
+    <span class="p">(</span><span class="n">z_dot</span><span class="p">,)</span> <span class="o">=</span> <span class="n">tangents</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">lambert_w0</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="c1"># ∂W/∂z = 1 / (exp(w) * (1 + w)); safe at z = 0 (w = 0 → 1).</span>
+    <span class="n">tangent_out</span> <span class="o">=</span> <span class="n">z_dot</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">w</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">w</span><span class="p">,</span> <span class="n">tangent_out</span>
 </pre></div>
 
                 </article>

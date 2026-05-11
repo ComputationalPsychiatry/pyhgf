@@ -693,31 +693,31 @@ kinds):</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parent_state</strong> (<em>LayerState</em>) – Current state of the parent layer.</p></li>
 <li><p><strong>child_state</strong> (<em>LayerState</em>) – Current state of the child layer (with observations).</p></li>
-<li><p><strong>weights</strong> (<em>Array</em>) – Current weight matrix, shape <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or
+<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>) – Current weight matrix, shape <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents</span> <span class="pre">+</span> <span class="pre">1)</span></code> when the parent layer includes
 a constant input node.</p></li>
-<li><p><strong>coupling_fn</strong> (<em>Callable</em>) – Coupling function applied to parent means.</p></li>
-<li><p><strong>kind</strong> (<em>str</em>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
+<li><p><strong>coupling_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Coupling function applied to parent means.</p></li>
+<li><p><strong>kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Gradient computation mode: <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
 <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;map_natural&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;pure_natural&quot;</span></code>.</p></li>
-<li><p><strong>lr</strong> (<em>float</em><em> | </em><em>str</em>) – How the gradient is applied: a non-negative float for direct scaling,
+<li><p><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – How the gradient is applied: a non-negative float for direct scaling,
 or <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code> for the Adam optimiser.  Applied uniformly across all
 <em>kind</em> values, including <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>.</p></li>
-<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the parent layer has a constant input node. Constant nodes are assumed
+<li><p><strong>parent_has_constant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the parent layer has a constant input node. Constant nodes are assumed
 to have mean = 1.0 and precision = 1.0 (fully known bias), and are concatenated
 to the coupled parent vector after <code class="docutils literal notranslate"><span class="pre">coupling_fn</span></code> is applied so the bias entry
 is unconditionally linear regardless of the coupling function.</p></li>
-<li><p><strong>child_is_binary</strong> (<em>bool</em>) – If True, the child layer is a binary node.  In <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>
+<li><p><strong>child_is_binary</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child layer is a binary node.  In <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>
 mode the precision multiplication is skipped because the Bernoulli
 variance is already embedded in the binary prediction-error formula.</p></li>
-<li><p><strong>adam_m</strong> (<em>Array</em><em> | </em><em>None</em>) – First moment estimate for Adam, same shape as <em>weights</em>.
+<li><p><strong>adam_m</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><em>None</em>) – First moment estimate for Adam, same shape as <em>weights</em>.
 Required when <code class="docutils literal notranslate"><span class="pre">lr=&quot;adam&quot;</span></code>.</p></li>
-<li><p><strong>adam_v</strong> (<em>Array</em><em> | </em><em>None</em>) – Second moment estimate for Adam, same shape as <em>weights</em>.
+<li><p><strong>adam_v</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><em>None</em>) – Second moment estimate for Adam, same shape as <em>weights</em>.
 Required when <code class="docutils literal notranslate"><span class="pre">lr=&quot;adam&quot;</span></code>.</p></li>
-<li><p><strong>adam_t</strong> (<em>int</em>) – Global Adam timestep (already incremented for this step).</p></li>
-<li><p><strong>adam_lr</strong> (<em>float</em>) – Adam step size.  Only used when <code class="docutils literal notranslate"><span class="pre">lr=&quot;adam&quot;</span></code>.</p></li>
-<li><p><strong>adam_beta1</strong> (<em>float</em>) – Exponential decay rate for the first moment.</p></li>
-<li><p><strong>adam_beta2</strong> (<em>float</em>) – Exponential decay rate for the second moment.</p></li>
-<li><p><strong>adam_epsilon</strong> (<em>float</em>) – Small constant for numerical stability.</p></li>
+<li><p><strong>adam_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Global Adam timestep (already incremented for this step).</p></li>
+<li><p><strong>adam_lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Adam step size.  Only used when <code class="docutils literal notranslate"><span class="pre">lr=&quot;adam&quot;</span></code>.</p></li>
+<li><p><strong>adam_beta1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Exponential decay rate for the first moment.</p></li>
+<li><p><strong>adam_beta2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Exponential decay rate for the second moment.</p></li>
+<li><p><strong>adam_epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Small constant for numerical stability.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -730,13 +730,13 @@ Required when <code class="docutils literal notranslate"><span class="pre">lr=&q
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ValueError</strong> – If <em>kind</em> is not one of <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <em>kind</em> is not one of <code class="docutils literal notranslate"><span class="pre">&quot;standard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;precision_weighted&quot;</span></code>,
 <code class="docutils literal notranslate"><span class="pre">&quot;precision_ratio&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;map_natural&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;pure_natural&quot;</span></code>.</p></li>
-<li><p><strong>ValueError</strong> – If <em>lr</em> is a string other than <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <em>lr</em> is a string other than <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple[<em>Array</em>, <em>Array</em> | None, <em>Array</em> | None]</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>, <a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a> | None, <a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a> | None]</p>
 </dd>
 </dl>
 </dd></dl>

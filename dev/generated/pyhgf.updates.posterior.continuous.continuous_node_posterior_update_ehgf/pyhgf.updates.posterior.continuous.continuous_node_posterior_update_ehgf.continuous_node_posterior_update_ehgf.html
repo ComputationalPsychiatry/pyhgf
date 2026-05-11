@@ -663,13 +663,13 @@ some circumstances</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>attributes</strong> (<em>dict</em>) – The attributes of the probabilistic nodes.</p></li>
-<li><p><strong>node_idx</strong> (<em>int</em>) – Pointer to the node that needs to be updated. After continuous updates, the
+<li><p><strong>attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – The attributes of the probabilistic nodes.</p></li>
+<li><p><strong>node_idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Pointer to the node that needs to be updated. After continuous updates, the
 parameters of value and volatility parents (if any) will be different.</p></li>
-<li><p><strong>edges</strong> (<em>tuple</em><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes as a tuple of
+<li><p><strong>edges</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic nodes as a tuple of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as node number.
 For each node, the index list value and volatility parents and children.</p></li>
-<li><p><strong>max_posterior_precision</strong> (<em>float</em>) – Upper bound applied to the posterior precision write. Default <code class="docutils literal notranslate"><span class="pre">1e10</span></code>.</p></li>
+<li><p><strong>max_posterior_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Upper bound applied to the posterior precision write. Default <code class="docutils literal notranslate"><span class="pre">1e10</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

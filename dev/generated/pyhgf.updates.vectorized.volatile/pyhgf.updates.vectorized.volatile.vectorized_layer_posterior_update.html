@@ -656,14 +656,14 @@ It updates the value level precision first, then the mean.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>layer</strong> (<em>LayerState</em>) – Current state of the parent layer (being updated).</p></li>
 <li><p><strong>child</strong> (<em>LayerState</em>) – Current state of the child layer (providing prediction errors).</p></li>
-<li><p><strong>weights</strong> (<em>Array</em>) – Weight matrix connecting child to parent, shape
+<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>) – Weight matrix connecting child to parent, shape
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents</span> <span class="pre">+</span> <span class="pre">1)</span></code>
 when the parent layer includes a constant input node.</p></li>
-<li><p><strong>coupling_fn_grad</strong> (<em>Callable</em>) – Gradient of the coupling function.</p></li>
-<li><p><strong>parent_has_constant</strong> (<em>bool</em>) – If True, the last column of <em>weights</em> corresponds to the constant input node and
+<li><p><strong>coupling_fn_grad</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Gradient of the coupling function.</p></li>
+<li><p><strong>parent_has_constant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the last column of <em>weights</em> corresponds to the constant input node and
 is stripped before computing the posterior update.</p></li>
-<li><p><strong>max_posterior_precision</strong> (<em>float</em>) – Upper bound applied to the posterior precision. Default <code class="docutils literal notranslate"><span class="pre">1e10</span></code>.</p></li>
-<li><p><strong>child_is_input_layer</strong> (<em>bool</em>) – If True, the child is the clamped observation leaf (binary or
+<li><p><strong>max_posterior_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Upper bound applied to the posterior precision. Default <code class="docutils literal notranslate"><span class="pre">1e10</span></code>.</p></li>
+<li><p><strong>child_is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child is the clamped observation leaf (binary or
 continuous output). The smoothing correction reduces to the
 canonical contribution (paper’s Limit 3). Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>

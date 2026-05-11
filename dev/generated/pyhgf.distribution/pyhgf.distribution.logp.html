@@ -653,64 +653,64 @@ network parameters, input data, and behaviours under a decision model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mean_1</strong> (<em>float</em>) – The mean at the first level of the HGF. For the continuous HGF, this is the mean
+<li><p><strong>mean_1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The mean at the first level of the HGF. For the continuous HGF, this is the mean
 of the first value parent (x_1). For the binary HGF this is the mean of the
 binary state node (x_0).</p></li>
-<li><p><strong>mean_2</strong> (<em>float</em>) – The mean at the second level of the HGF. For the continuous HGF, this is the
+<li><p><strong>mean_2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The mean at the second level of the HGF. For the continuous HGF, this is the
 mean of the first volatility parent (x_2). For the binary HGF this is the mean
 of the first continuous state node (x_1).</p></li>
-<li><p><strong>mean_3</strong> (<em>float</em>) – The mean at the third level of the HGF. The value of this parameter will be
+<li><p><strong>mean_3</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The mean at the third level of the HGF. The value of this parameter will be
 ignored when using a two-level HGF (<cite>n_levels=2</cite>). For the continuous HGF, this
 is the mean of the second volatility parent (x_3). For the binary HGF this is
 the mean of the first volatility parent (x_2).</p></li>
-<li><p><strong>precision_1</strong> (<em>float</em>) – The precision at the first level of the HGF. For the continuous HGF, this is the
+<li><p><strong>precision_1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The precision at the first level of the HGF. For the continuous HGF, this is the
 precision of the first value parent (x_1). For the binary HGF this is the
 precision of the binary state node (x_0).</p></li>
-<li><p><strong>precision_2</strong> (<em>float</em>) – The precision at the second level of the HGF. For the continuous HGF, this is
+<li><p><strong>precision_2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The precision at the second level of the HGF. For the continuous HGF, this is
 the precision of the first volatility parent (x_2). For the binary HGF this is
 the precision of the first continuous state node (x_1).</p></li>
-<li><p><strong>precision_3</strong> (<em>float</em>) – The precision at the third level of the HGF. The value of this parameter will
+<li><p><strong>precision_3</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The precision at the third level of the HGF. The value of this parameter will
 be ignored when using a two-level HGF (<cite>n_levels=2</cite>). For the continuous HGF,
 this is the precision of the second volatility parent (x_3). For the binary HGF
 this is the precision of the first volatility parent (x_2).</p></li>
-<li><p><strong>tonic_volatility_1</strong> (<em>float</em>) – The tonic volatility at the first level (x_1 for the continuous HGF, x_2 for the
+<li><p><strong>tonic_volatility_1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The tonic volatility at the first level (x_1 for the continuous HGF, x_2 for the
 binary HGF). This parameter represents the tonic part of the variance (the part
 that is not inherited from parent nodes).</p></li>
-<li><p><strong>tonic_volatility_2</strong> (<em>float</em>) – The tonic volatility at the second level (x_2 for the continuous HGF, x_3 for
+<li><p><strong>tonic_volatility_2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The tonic volatility at the second level (x_2 for the continuous HGF, x_3 for
 the binary HGF). This parameter represents the tonic part of the variance (the
 part that is not inherited from parent nodes).</p></li>
-<li><p><strong>tonic_volatility_3</strong> (<em>float</em>) – The tonic volatility at the third level of the HGF. This parameter represents
+<li><p><strong>tonic_volatility_3</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The tonic volatility at the third level of the HGF. This parameter represents
 the tonic part of the variance (the part that is not inherited from parent
 nodes). This parameter is only used for a three-level continuous HGF.</p></li>
-<li><p><strong>tonic_drift_1</strong> (<em>float</em>) – The tonic drift at the first level of the HGF (x_1 for the continuous HGF,
+<li><p><strong>tonic_drift_1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The tonic drift at the first level of the HGF (x_1 for the continuous HGF,
 x_2 for the binary HGF). This parameter represents the drift of the random walk.</p></li>
-<li><p><strong>tonic_drift_2</strong> (<em>float</em>) – The tonic drift at the second level of the HGF (x_2 for the continuous HGF,
+<li><p><strong>tonic_drift_2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The tonic drift at the second level of the HGF (x_2 for the continuous HGF,
 x_3 for the binary HGF). This parameter represents the drift of the random walk.</p></li>
-<li><p><strong>tonic_drift_3</strong> (<em>float</em>) – The tonic drift at the third level of the HGF. This parameter represents the
+<li><p><strong>tonic_drift_3</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The tonic drift at the third level of the HGF. This parameter represents the
 drift of the random walk. This parameter is only used for a three-level
 continuous HGF.</p></li>
-<li><p><strong>volatility_coupling_1</strong> (<em>float</em>) – The volatility coupling between the first and second levels of the HGF (between
+<li><p><strong>volatility_coupling_1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The volatility coupling between the first and second levels of the HGF (between
 x_1 and x_2 for a continuous HGF, and between x_2 and x_3 for a binary HGF).
 This represents the phasic part of the variance (the part affected by the
 parent nodes). Defaults to <cite>1.0</cite> (full connectivity).</p></li>
-<li><p><strong>volatility_coupling_2</strong> (<em>float</em>) – The volatility coupling between the second and third levels of the HGF (x_2 and
+<li><p><strong>volatility_coupling_2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The volatility coupling between the second and third levels of the HGF (x_2 and
 x_2 for a continuous HGF, not applicable to a binary HGF). This represents the
 phasic part of the variance (the part affected by the parent nodes). Defaults
 to <cite>1.0</cite>  (full connectivity). The value of this parameter will be ignored when
 using a two-level HGF (<cite>n_levels=2</cite>).</p></li>
-<li><p><strong>input_precision</strong> (<em>float</em>) – The expected precision associated with the continuous input.</p></li>
-<li><p><strong>response_function_parameters</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of additional parameters that will be passed to the response function
+<li><p><strong>input_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The expected precision associated with the continuous input.</p></li>
+<li><p><strong>response_function_parameters</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.bool" title="(in NumPy v2.4)"><em>bool</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.number" title="(in NumPy v2.4)"><em>number</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) – An array of additional parameters that will be passed to the response function
 to compute the surprise. This can include values over which inference is
 performed in a PyMC model (e.g. the inverse temperature of a binary softmax).</p></li>
-<li><p><strong>input_data</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of input time series. The first dimension is the number of time steps
+<li><p><strong>input_data</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.bool" title="(in NumPy v2.4)"><em>bool</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.number" title="(in NumPy v2.4)"><em>number</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) – An array of input time series. The first dimension is the number of time steps
 and the second dimension is the number of features. The number of features is
 the number of input nodes times the input dimensions.</p></li>
-<li><p><strong>time_steps</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em>) – An array of input time steps, where the first dimension is the number of models
+<li><p><strong>time_steps</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.bool" title="(in NumPy v2.4)"><em>bool</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.number" title="(in NumPy v2.4)"><em>number</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) – An array of input time steps, where the first dimension is the number of models
 to fit in parallel.</p></li>
 <li><p><strong>hgf</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.HGF.html#pyhgf.model.HGF" title="pyhgf.model.hgf.HGF"><em>HGF</em></a>) – An instance of a two or three-level Hierarchical Gaussian Filter.</p></li>
-<li><p><strong>response_function_inputs</strong> (<em>Array</em><em> | </em><em>ndarray</em><em> | </em><em>bool</em><em> | </em><em>number</em><em> | </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>tuple</em><em> | </em><em>None</em>) – An array of behavioural inputs is passed to the response function, where the first
+<li><p><strong>response_function_inputs</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.bool" title="(in NumPy v2.4)"><em>bool</em></a><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.number" title="(in NumPy v2.4)"><em>number</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> | </em><em>None</em>) – An array of behavioural inputs is passed to the response function, where the first
 dimension is the number of models to fit in parallel.</p></li>
-<li><p><strong>response_function</strong> (<em>Callable</em>) – The response function that is used by the decision model.</p></li>
+<li><p><strong>response_function</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – The response function that is used by the decision model.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

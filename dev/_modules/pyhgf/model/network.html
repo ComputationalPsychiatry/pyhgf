@@ -942,7 +942,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    scan_fn :</span>
 <span class="sd">        The function that is passed to :py:func:`jax.lax.scan`. This is a pre-</span>
 <span class="sd">        parametrized version of :py:func:`pyhgf.networks.beliefs_propagation`.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Network.__init__">
@@ -974,7 +973,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            nodes). Defaults to ``1e10`` and is shared with the vectorized JAX and Rust</span>
 <span class="sd">            backends. Increase it to relax the cap, or lower it to be more conservative</span>
 <span class="sd">            against precision blow-up.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span> <span class="o">=</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of nodes in the network</span>
@@ -1036,7 +1034,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        sampling_fn :</span>
 <span class="sd">            If `True`, also create a generative sampling function. This is used for</span>
 <span class="sd">            generative sampling of the network. Defaults to `False`.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get the dimension of the input nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
@@ -1105,7 +1102,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Dictionary of Adam hyper-parameters (used only when ``lr=&quot;adam&quot;``):</span>
 <span class="sd">            ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``</span>
 <span class="sd">            (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get the dimension of the input nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
@@ -1252,7 +1248,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            usage and speeds up training.</span>
 <span class="sd">        overwrite :</span>
 <span class="sd">            If `True`, create a new belief propagation function.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
@@ -1322,7 +1317,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        predictions :</span>
 <span class="sd">            An array of shape ``(n_samples, len(inputs_y_idxs))`` containing the</span>
 <span class="sd">            ``expected_mean`` of each target node at every time step.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
@@ -1403,7 +1397,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            step (accessible via ``self.node_trajectories``).  If False, only</span>
 <span class="sd">            the final state is kept, which significantly reduces memory usage</span>
 <span class="sd">            and speeds up training.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">rng_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># get one key for each time step</span>
@@ -1480,8 +1473,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Array of time steps.</span>
 <span class="sd">        rng_key :</span>
 <span class="sd">            Random number generator key, by default PRNGKey(0).</span>
-
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">time_steps</span><span class="o">=</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">n_predictions</span><span class="o">=</span><span class="n">n_predictions</span><span class="p">,</span> <span class="n">rng_key</span><span class="o">=</span><span class="n">rng_key</span>
@@ -1540,7 +1531,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        rng_keys :</span>
 <span class="sd">            Optional. A random key for the random number generator. This is only used</span>
 <span class="sd">            when an action function is provided.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">rng_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># get one key for each time step</span>
@@ -1684,7 +1674,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        **kwargs :</span>
 <span class="sd">            Additional keyword parameters will be passed and overwrite the node</span>
 <span class="sd">            attributes.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
             <span class="s2">&quot;dp-state&quot;</span><span class="p">,</span>
@@ -1821,7 +1810,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        structure_df :</span>
 <span class="sd">            Pandas data frame with the time series of sufficient statistics and</span>
 <span class="sd">            the surprise of each node in the structure.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
@@ -1856,7 +1844,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        surprise :</span>
 <span class="sd">            The model&#39;s surprise given the input data and the response function.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">response_function</span><span class="p">(</span>
             <span class="n">hgf</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -1893,7 +1880,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            functions, a coupling function should be indicated for all the parent nodes.</span>
 <span class="sd">            If no coupling function is stated, the relationship between nodes is assumed</span>
 <span class="sd">            linear.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">add_edges</span><span class="p">(</span>
             <span class="n">attributes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>

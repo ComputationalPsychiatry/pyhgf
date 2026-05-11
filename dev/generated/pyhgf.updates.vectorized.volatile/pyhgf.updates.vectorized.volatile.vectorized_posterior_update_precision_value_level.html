@@ -679,10 +679,10 @@ as the natural reference point for computing updates.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>layer</strong> (<em>LayerState</em>) – Current state of the parent layer (being updated).</p></li>
 <li><p><strong>child</strong> (<em>LayerState</em>) – Current state of the child layer (providing prediction errors).</p></li>
-<li><p><strong>weights</strong> (<em>Array</em>) – Weight matrix connecting child to parent, shape
+<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>) – Weight matrix connecting child to parent, shape
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code>.</p></li>
-<li><p><strong>coupling_fn_grad</strong> (<em>Callable</em>) – Gradient of the coupling function.</p></li>
-<li><p><strong>child_is_input_layer</strong> (<em>bool</em>) – If True, the child is the clamped observation leaf (binary or
+<li><p><strong>coupling_fn_grad</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Gradient of the coupling function.</p></li>
+<li><p><strong>child_is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child is the clamped observation leaf (binary or
 continuous output). In that case the paper’s Limit 3 applies
 (<code class="docutils literal notranslate"><span class="pre">π_a</span> <span class="pre">→</span> <span class="pre">∞</span></code>) and the smoothing correction reduces to the canonical
 contribution <code class="docutils literal notranslate"><span class="pre">π̂_a</span></code>. We bypass the <code class="docutils literal notranslate"><span class="pre">(π_a</span> <span class="pre">−</span> <span class="pre">π̂_a)/π_a</span></code> formula

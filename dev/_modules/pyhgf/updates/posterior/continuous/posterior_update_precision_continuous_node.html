@@ -1037,7 +1037,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The new posterior precision when at least one of the children has</span>
 <span class="sd">        observed a new value. We then use the regular HGF update for volatility</span>
 <span class="sd">        coupling.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># sum the prediction errors from both value and volatility coupling</span>
     <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -1175,7 +1174,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The new posterior precision in the case of missing values in all child nodes.</span>
 <span class="sd">        The new precision decreases proportionally to the time elapsed, accounting for</span>
 <span class="sd">        the influence of volatility parents.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># List the node&#39;s volatility parents</span>
     <span class="n">volatility_parents_idxs</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_parents</span>

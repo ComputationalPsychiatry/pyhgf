@@ -900,7 +900,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    The gradient is first computed according to *kind*, then scaled by *lr*:</span>
 
 <span class="sd">    - **standard** (``kind=&quot;standard&quot;``): raw prediction-error outer product, no</span>
-<span class="sd">    precision weighting.</span>
+<span class="sd">      precision weighting.</span>
 <span class="sd">      :math:`g_i = \text{PE} \cdot g(\text{parent}_i)`</span>
 <span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``): gradient weighted</span>
 <span class="sd">      by the child posterior precision.</span>
@@ -912,8 +912,8 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    *lr* controls how the gradient is applied (same semantics for all three kinds):</span>
 
-<span class="sd">    - **Adam** (``adam_beta1`` is a float): gradient filtered through Adam; step size</span>
-<span class="sd">    controlled by *lr*.</span>
+<span class="sd">    - **Adam** (``adam_beta1`` is a float): gradient filtered through Adam;</span>
+<span class="sd">      step size controlled by *lr*.</span>
 <span class="sd">    - **Fixed** (``adam_beta1`` is None): :math:`\Delta w_i = \text{lr} \cdot g_i`.</span>
 
 <span class="sd">    To recover the old &quot;full Kalman step&quot; behaviour for ``kind=&quot;precision_ratio&quot;``,</span>
