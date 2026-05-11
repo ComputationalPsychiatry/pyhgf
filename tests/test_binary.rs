@@ -48,6 +48,12 @@ fn test_binary_2_levels_single_obs() {
 
 // ---------------------------------------------------------------------------
 // Three-level binary HGF  (binary → continuous value → continuous volatility)
+//
+// Expected values reflect the piHGF prediction step: relative to the canonical
+// (g)HGF, the volatility parent's variance enters the child's predicted
+// log-volatility through the exact moment-generating-function correction
+// `κ² / (2 π̂_parent)`, which shifts node-1's predicted precision (and every
+// downstream quantity that depends on it).
 // ---------------------------------------------------------------------------
 
 #[test]
@@ -70,25 +76,25 @@ fn test_binary_3_levels_single_obs() {
     network.set_update_sequence();
     network.input_data(vec![vec![1.0]], None, true);
 
-    // Node 0 — binary state
+    // Node 0 — binary state (no volatility parent → unchanged from canonical)
     let n0 = &network.node_trajectories.nodes[0];
     assert_close(n0.mean[0],               1.0,                 "n0 mean");
     assert_close(n0.expected_mean[0],       0.731058578630005,   "n0 expected_mean");
     assert_close(n0.precision[0],           0.196611933241482,   "n0 precision");
     assert_close(n0.expected_precision[0],  0.196611933241482,   "n0 expected_precision");
 
-    // Node 1 — continuous value parent
+    // Node 1 — continuous value parent (has volatility parent node 2 → piHGF correction applies)
     let n1 = &network.node_trajectories.nodes[1];
-    assert_close(n1.mean[0],               1.851579388643765,   "n1 mean");
+    assert_close(n1.mean[0],               2.237863416338325,   "n1 mean");
     assert_close(n1.expected_mean[0],       1.0,                 "n1 expected_mean");
-    assert_close(n1.precision[0],           0.315814855263599,   "n1 precision");
-    assert_close(n1.expected_precision[0],  0.119202922022118,   "n1 expected_precision");
+    assert_close(n1.precision[0],           0.217262597650345,   "n1 precision");
+    assert_close(n1.expected_precision[0],  0.020650664408863,   "n1 expected_precision");
 
-    // Node 2 — continuous volatility parent
+    // Node 2 — continuous volatility parent (top of chain, no parent above → expected_precision unchanged)
     let n2 = &network.node_trajectories.nodes[2];
-    assert_close(n2.mean[0],               0.122106073579546,   "n2 mean");
+    assert_close(n2.mean[0],              -0.590073315695407,   "n2 mean");
     assert_close(n2.expected_mean[0],       1.0,                 "n2 expected_mean");
-    assert_close(n2.precision[0],           0.477029233491799,   "n2 precision");
+    assert_close(n2.precision[0],           0.338529363231949,   "n2 precision");
     assert_close(n2.expected_precision[0],  0.268941421369995,   "n2 expected_precision");
 }
 
@@ -121,35 +127,35 @@ fn test_binary_3_levels_two_obs() {
 
     // Node 1
     let n1 = &network.node_trajectories.nodes[1];
-    assert_close(n1.mean[0],               1.851579388643765,   "s0 n1 mean");
+    assert_close(n1.mean[0],               2.237863416338325,   "s0 n1 mean");
     assert_close(n1.expected_mean[0],       1.0,                 "s0 n1 expected_mean");
-    assert_close(n1.precision[0],           0.315814855263599,   "s0 n1 precision");
-    assert_close(n1.expected_precision[0],  0.119202922022118,   "s0 n1 expected_precision");
+    assert_close(n1.precision[0],           0.217262597650345,   "s0 n1 precision");
+    assert_close(n1.expected_precision[0],  0.020650664408863,   "s0 n1 expected_precision");
 
     // Node 2
     let n2 = &network.node_trajectories.nodes[2];
-    assert_close(n2.mean[0],               0.122106073579546,   "s0 n2 mean");
+    assert_close(n2.mean[0],              -0.590073315695407,   "s0 n2 mean");
     assert_close(n2.expected_mean[0],       1.0,                 "s0 n2 expected_mean");
-    assert_close(n2.precision[0],           0.477029233491799,   "s0 n2 precision");
+    assert_close(n2.precision[0],           0.338529363231949,   "s0 n2 precision");
     assert_close(n2.expected_precision[0],  0.268941421369995,   "s0 n2 expected_precision");
 
     // ---- Step 1 (observation = 0.0) ----
 
     // Node 0
     assert_close(n0.mean[1],               0.0,                 "s1 n0 mean");
-    assert_close(n0.expected_mean[1],       0.864312434683762,   "s1 n0 expected_mean");
-    assert_close(n0.precision[1],           0.117276449934790,   "s1 n0 precision");
-    assert_close(n0.expected_precision[1],  0.117276449934790,   "s1 n0 expected_precision");
+    assert_close(n0.expected_mean[1],       0.903598504654528,   "s1 n0 expected_mean");
+    assert_close(n0.precision[1],           0.087108247040629,   "s1 n0 precision");
+    assert_close(n0.expected_precision[1],  0.087108247040629,   "s1 n0 expected_precision");
 
     // Node 1
-    assert_close(n1.mean[1],              -1.262036374001900,   "s1 n1 mean");
-    assert_close(n1.expected_mean[1],       1.851579388643765,   "s1 n1 expected_mean");
-    assert_close(n1.precision[1],           0.277591231729039,   "s1 n1 precision");
-    assert_close(n1.expected_precision[1],  0.160314781794250,   "s1 n1 expected_precision");
+    assert_close(n1.mean[1],              -5.284533904669165,   "s1 n1 mean");
+    assert_close(n1.expected_mean[1],       2.237863416338325,   "s1 n1 expected_mean");
+    assert_close(n1.precision[1],           0.120121081896470,   "s1 n1 precision");
+    assert_close(n1.expected_precision[1],  0.033012834855841,   "s1 n1 expected_precision");
 
     // Node 2
-    assert_close(n2.mean[1],               1.463518011798027,   "s1 n2 mean");
-    assert_close(n2.expected_mean[1],       0.122106073579546,   "s1 n2 expected_mean");
-    assert_close(n2.precision[1],           0.324672177971350,   "s1 n2 precision");
-    assert_close(n2.expected_precision[1],  0.207702031121115,   "s1 n2 expected_precision");
+    assert_close(n2.mean[1],               2.158820265884744,   "s1 n2 mean");
+    assert_close(n2.expected_mean[1],      -0.590073315695407,   "s1 n2 expected_mean");
+    assert_close(n2.precision[1],           0.873239364537027,   "s1 n2 precision");
+    assert_close(n2.expected_precision[1],  0.176297339712625,   "s1 n2 expected_precision");
 }

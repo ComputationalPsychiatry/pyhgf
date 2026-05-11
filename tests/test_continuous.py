@@ -41,17 +41,17 @@ def test_two_nodes_hgf():
 
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.5, 0.2, 0.0],
+        [1.0, 0.2715764, 0.2, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[0][key], val)
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.4820137, 0.98201376, 0.06747576, 0.0],
+        [1.2535901, 0.98201376, 0.0433278, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[1][key], val)
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.1070137, 0.98201376, -0.12219789, 0.0],
+        [1.0997133, 0.98201376, -0.1650925, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[2][key], val)
 
@@ -110,21 +110,23 @@ def test_continuous_scan_loop():
         .input_data(input_data=timeserie)
     )
 
+    # Expected values reflect the piHGF prediction step (see note in
+    # test_two_nodes_hgf above).
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.9716732, 0.8241, 0.79489124],
+        [1.0, 0.8507265, 0.8241, 0.7947102],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[0][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [7.785051, 6.813378, 0.79853684, 0.79489124],
+        [7.2534165, 6.4026899, 0.7981572, 0.7947102],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[1][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [0.25191233, 0.25114372, -3.5367591, -3.5352085],
+        [0.3041883, 0.3028755, -5.6034684, -5.5994463],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[2][idx][-1], val)
 

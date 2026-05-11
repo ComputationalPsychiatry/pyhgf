@@ -642,11 +642,19 @@ impl Network {
                 // precision = 1.0 (fully known bias). They are always wired to
                 // their children linearly (no coupling function), regardless
                 // of the layer's coupling_fn.
+                //
+                // ``expected_precision`` is set to infinity so that the piHGF
+                // Laplace value-coupling term `(t · α · g'(µ̂))² / π̂_parent`
+                // contributes zero for the bias parent — matching the JAX
+                // vectorised backend, which concatenates an `inf` into the
+                // parent-precision vector for the constant column. (The
+                // posterior-level ``precision`` is kept at 1.0 because the
+                // ``precision_ratio`` learning gain reads it directly.)
                 let state = NodeState {
                     mean: 1.0,
                     expected_mean: 1.0,
                     precision: 1.0,
-                    expected_precision: 1.0,
+                    expected_precision: f64::INFINITY,
                     ..Default::default()
                 };
                 self.attributes.states.push(state);

@@ -165,11 +165,17 @@ def add_constant_state(
 
     node_type = 0
 
+    # ``expected_precision`` is set to infinity so that the piHGF Laplace
+    # value-coupling term ``(t · α · g'(µ̂))² / π̂_parent`` contributes zero
+    # for the bias parent — matching the JAX vectorised backend, which
+    # concatenates an ``inf`` into the parent-precision vector for the
+    # constant column. (The posterior-level ``precision`` is kept at 1.0
+    # because some downstream code reads it directly without dividing.)
     default_parameters = {
         "mean": 1.0,
         "expected_mean": 1.0,
         "precision": 1.0,
-        "expected_precision": 1.0,
+        "expected_precision": jnp.inf,
         "value_coupling_children": value_children[1],
     }
 

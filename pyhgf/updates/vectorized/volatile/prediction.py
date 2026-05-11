@@ -6,6 +6,7 @@
 from typing import Callable
 
 import jax.numpy as jnp
+from jax import grad, vmap
 
 from pyhgf.typing import LayerParams, LayerState
 
@@ -110,8 +111,13 @@ def vectorized_layer_prediction(
 
     if has_volatility_parent:
         # Total volatility includes contribution from internal volatility level
+        # plus the closed-form moment-generating-function correction
+        # κ² / (2 · π̂_vol) that arises from marginalising over the volatility
+        # level's Gaussian rather than collapsing it to a point estimate.
         total_volatility = (
-            params.tonic_volatility + params.volatility_coupling * expected_mean_vol
+            params.tonic_volatility
+            + params.volatility_coupling * expected_mean_vol
+            + (params.volatility_coupling**2) / (2.0 * expected_precision_vol)
         )
     else:
         # Only tonic volatility — no mean_vol contribution
@@ -123,10 +129,26 @@ def vectorized_layer_prediction(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # Expected precision for value level
-    expected_precision = 1.0 / (1.0 / child_state.precision + predicted_volatility)
+    # Laplace value-coupling correction. Marginalising over the value parents'
+    # Gaussian yields, per child node i, the additional variance
+    #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̂_j
+    # where g' is the elementwise derivative of the coupling function and π̂_j
+    # is the parent's predicted precision. The constant-bias parent (if any)
+    # has infinite precision and therefore contributes zero.
+    parent_precision = parent_state.expected_precision
+    if parent_has_constant:
+        parent_precision = jnp.concatenate([parent_precision, jnp.array([jnp.inf])])
+    g_prime = vmap(grad(coupling_fn))(parent_mean)
+    weighted_grad = weights * (time_step * g_prime)
+    value_coupling_variance = jnp.sum(weighted_grad**2 / parent_precision, axis=-1)
 
-    # Effective precision for value level
+    # Expected precision for value level (inverse marginal predictive variance)
+    expected_precision = 1.0 / (
+        1.0 / child_state.precision + predicted_volatility + value_coupling_variance
+    )
+
+    # Effective precision for value level — only the volatility-driven part
+    # enters γ, since γ is consumed by the volatility-coupling posterior update.
     effective_precision = predicted_volatility * expected_precision
 
     # Input/leaf override: an observed layer with no value children does not
