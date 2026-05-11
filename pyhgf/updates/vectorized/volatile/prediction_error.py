@@ -5,8 +5,8 @@
 
 This module mirrors :mod:`pyhgf.updates.prediction_error.volatile` for vectorized
 layers: it provides separate value and volatility prediction-error functions, per-
-update-type volatility posterior functions, and a combined driver that calls them in
-the correct order.
+update-type volatility posterior functions, and a combined driver that calls them in the
+correct order.
 """
 
 import jax.numpy as jnp

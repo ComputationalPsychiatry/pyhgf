@@ -24,7 +24,6 @@ def list_branches(node_idxs: list, edges: tuple, branch_list: list = []) -> list
     -------
     branch_list :
         The list of node indexes that belong to the branch.
-
     """
     for idx in node_idxs:
         # add this node to the exclusion list

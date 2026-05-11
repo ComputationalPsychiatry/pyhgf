@@ -3,8 +3,8 @@
 
 """Vectorized deep predictive coding network.
 
-This module provides a vectorized implementation of deep HGF networks that uses
-layer-wise matrix operations instead of per-node updates.
+This module provides a vectorized implementation of deep HGF networks that uses layer-
+wise matrix operations instead of per-node updates.
 """
 
 from __future__ import annotations

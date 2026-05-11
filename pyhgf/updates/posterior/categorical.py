@@ -44,7 +44,6 @@ def categorical_state_update(
     See Also
     --------
     binary_input_update, continuous_input_update
-
     """
     # get the expected values before the update
     expected_mean = jnp.array([

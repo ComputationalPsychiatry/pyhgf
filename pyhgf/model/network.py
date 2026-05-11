@@ -69,7 +69,6 @@ class Network:
     scan_fn :
         The function that is passed to :py:func:`jax.lax.scan`. This is a pre-
         parametrized version of :py:func:`pyhgf.networks.beliefs_propagation`.
-
     """
 
     def __init__(
@@ -99,7 +98,6 @@ class Network:
             nodes). Defaults to ``1e10`` and is shared with the vectorized JAX and Rust
             backends. Increase it to relax the cap, or lower it to be more conservative
             against precision blow-up.
-
         """
         self.edges: Edges = ()
         self.n_nodes: int = 0  # number of nodes in the network
@@ -160,7 +158,6 @@ class Network:
         sampling_fn :
             If `True`, also create a generative sampling function. This is used for
             generative sampling of the network. Defaults to `False`.
-
         """
         # get the dimension of the input nodes
         if not self.input_dim:
@@ -229,7 +226,6 @@ class Network:
             Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
             ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``
             (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).
-
         """
         # get the dimension of the input nodes
         if not self.input_dim:
@@ -376,7 +372,6 @@ class Network:
             usage and speeds up training.
         overwrite :
             If `True`, create a new belief propagation function.
-
         """
         if x.ndim == 1:
             x = x[:, jnp.newaxis]
@@ -446,7 +441,6 @@ class Network:
         predictions :
             An array of shape ``(n_samples, len(inputs_y_idxs))`` containing the
             ``expected_mean`` of each target node at every time step.
-
         """
         if x.ndim == 1:
             x = x[:, jnp.newaxis]
@@ -527,7 +521,6 @@ class Network:
             step (accessible via ``self.node_trajectories``).  If False, only
             the final state is kept, which significantly reduces memory usage
             and speeds up training.
-
         """
         if rng_keys is not None:
             # get one key for each time step
@@ -604,8 +597,6 @@ class Network:
             Array of time steps.
         rng_key :
             Random number generator key, by default PRNGKey(0).
-
-
         """
         self.samples = sample(
             self, time_steps=time_steps, n_predictions=n_predictions, rng_key=rng_key
@@ -664,7 +655,6 @@ class Network:
         rng_keys :
             Optional. A random key for the random number generator. This is only used
             when an action function is provided.
-
         """
         if rng_keys is not None:
             # get one key for each time step
@@ -808,7 +798,6 @@ class Network:
         **kwargs :
             Additional keyword parameters will be passed and overwrite the node
             attributes.
-
         """
         if kind not in [
             "dp-state",
@@ -945,7 +934,6 @@ class Network:
         structure_df :
             Pandas data frame with the time series of sufficient statistics and
             the surprise of each node in the structure.
-
         """
         return to_pandas(self)
 
@@ -980,7 +968,6 @@ class Network:
         -------
         surprise :
             The model's surprise given the input data and the response function.
-
         """
         return response_function(
             hgf=self,
@@ -1017,7 +1004,6 @@ class Network:
             functions, a coupling function should be indicated for all the parent nodes.
             If no coupling function is stated, the relationship between nodes is assumed
             linear.
-
         """
         attributes, edges = add_edges(
             attributes=self.attributes,

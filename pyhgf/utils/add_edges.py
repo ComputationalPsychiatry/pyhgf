@@ -40,7 +40,6 @@ def add_edges(
         functions, a coupling function should be indicated for all the parent nodes.
         If no coupling function is stated, the relationship between nodes is assumed
         linear.
-
     """
     if kind not in ["value", "volatility"]:
         raise ValueError(

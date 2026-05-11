@@ -28,7 +28,6 @@ class HGF(Network):
         strength with children and parents (i.e. `"value_coupling_parents"`,
         `"value_coupling_children"`, `"volatility_coupling_parents"`,
         `"volatility_coupling_children"`).
-
     """
 
     def __init__(
@@ -110,7 +109,6 @@ class HGF(Network):
             A dictionary containing the initial values for the tonic drift
             at different levels of the hierarchy. This represents the drift of the
             random walk. Defaults set all entries to `0.0` (no drift).
-
         """
         Network.__init__(self, update_type=update_type)
         self.model_type = model_type
@@ -235,7 +233,6 @@ class HGF(Network):
         -------
         surprise :
             The model's surprise given the input data and the response function.
-
         """
         if response_function is None:
             response_function = (

@@ -493,14 +493,14 @@ def test_fit_record_trajectories():
 
 
 def test_predict_before_fit():
-    """predict() before fit() raises ValueError."""
+    """Predict() before fit() raises ValueError."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     with pytest.raises(ValueError, match="must be fit"):
         dn.predict(np.zeros((5, 3)))
 
 
 def test_predict_1d_input():
-    """predict() with 1d input returns 1d output."""
+    """Predict() with 1d input returns 1d output."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), lr=0.1)
     pred = dn.predict(np.array([0.1, 0.2, 0.3]))
@@ -562,7 +562,7 @@ def test_fit_weight_update_true_changes_weights():
 
 
 def test_fit_weight_update_toggle_retraces():
-    """Toggling weight_update across calls forces a re-trace and yields the right state."""
+    """Toggling weight_update across calls."""
     np.random.seed(0)
     x = np.random.randn(5, 3).astype(np.float32)
     y = np.random.randn(5, 2).astype(np.float32)
@@ -590,10 +590,9 @@ def test_fit_weight_update_toggle_retraces():
 def test_input_layer_invariant_to_tonic_volatility():
     """The bottom layer's ``expected_precision`` must ignore its tonic_volatility.
 
-    Layer 0 is the observation layer of a DeepNetwork — it has no value
-    children, so it does not undergo a Gaussian random walk between samples
-    and the tonic-volatility contribution should be skipped (mirroring the
-    per-node continuous-node treatment).
+    Layer 0 is the observation layer of a DeepNetwork — it has no value children, so it
+    does not undergo a Gaussian random walk between samples and the tonic-volatility
+    contribution should be skipped (mirroring the per-node continuous-node treatment).
     """
     rng = np.random.default_rng(0)
     x = rng.standard_normal((5, 2)).astype(np.float32)

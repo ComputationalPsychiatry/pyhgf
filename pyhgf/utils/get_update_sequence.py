@@ -64,7 +64,6 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
         The sequence of prediction update.
     update_sequence :
         The sequence of prediction error and posterior updates.
-
     """
     # initialize the update and prediction sequences
     update_sequence: list = []

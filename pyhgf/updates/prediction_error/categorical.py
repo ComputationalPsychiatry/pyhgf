@@ -39,7 +39,6 @@ def categorical_state_prediction_error(
     See Also
     --------
     binary_input_update, continuous_input_update
-
     """
     # pass the mean to the binary state nodes
     for mean, value_parent_idx in zip(

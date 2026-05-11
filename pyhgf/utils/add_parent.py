@@ -29,7 +29,6 @@ def add_parent(
         The updated attributes of the existing network.
     edges :
         The updated edges of the existing network.
-
     """
     # Get index for node to be added
     new_node_idx = len(edges)

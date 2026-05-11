@@ -45,7 +45,6 @@ def volatile_node_posterior_update(
     max_posterior_precision :
         Upper bound applied to the value-level posterior precision write.
         Default ``1e10``.
-
     """
     # Update precision first
     precision_value = posterior_update_precision_value_level(

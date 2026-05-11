@@ -23,7 +23,6 @@ def plot_correlations(network: "Network") -> Axes:
     axs :
         The Matplotlib axe instance containing the heatmap of parameters trajectories
         correlation.
-
     """
     trajectories_df = network.to_pandas()
     trajectories_df = pd.concat(

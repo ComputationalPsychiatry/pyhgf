@@ -10,8 +10,7 @@ NETWORK_CLASSES = [PyNetwork, RsNetwork]
 
 
 def _build_binary_2_levels(cls, u):
-    """
-    Two-level binary HGF.
+    """Two-level binary HGF.
 
     Network topology
     ----------------
@@ -27,8 +26,7 @@ def _build_binary_2_levels(cls, u):
 
 
 def _build_binary_3_levels(cls, u):
-    """
-    Three-level binary HGF.
+    """Three-level binary HGF.
 
     Network topology
     ----------------
@@ -60,9 +58,9 @@ def _build_binary_3_levels(cls, u):
 def _compare_backends(results, node_idxs, keys):
     """Assert that all backends produce identical trajectories.
 
-    JAX defaults to float32 while Rust uses f64, so accumulated rounding
-    differences over many recursive updates can reach ~1e-3.  We use
-    ``rtol=1e-4`` which is comfortably within float32 precision.
+    JAX defaults to float32 while Rust uses f64, so accumulated rounding differences
+    over many recursive updates can reach ~1e-3.  We use ``rtol=1e-4`` which is
+    comfortably within float32 precision.
     """
     names = list(results.keys())
     ref_name = names[0]
@@ -121,8 +119,8 @@ def test_binary_2_levels():
 def test_binary_3_levels():
     """Three-level binary HGF: binary input → value parent → volatility parent.
 
-    Checks that PyNetwork and RsNetwork produce identical belief trajectories and
-    that the Python backend's final values match the canonical reference output.
+    Checks that PyNetwork and RsNetwork produce identical belief trajectories and that
+    the Python backend's final values match the canonical reference output.
     """
     u, _ = load_data("binary")
 

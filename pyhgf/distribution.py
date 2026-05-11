@@ -130,7 +130,6 @@ def logp(
     -------
     logp :
         The log-probability (negative surprise).
-
     """
     if hgf.model_type == "continuous":
         # update this network's attributes
@@ -291,7 +290,6 @@ def hgf_logp(
     -------
     log_prob :
         The sum of the log probabilities (negative surprise).
-
     """
     # number of models
     n = input_data.shape[0]
@@ -415,7 +413,6 @@ class HGFLogpGradOp(Op):
             A list of tuples with the same length as the number of models. Each tuple
             contains additional data and parameters that can be accessed by the
             response functions.
-
         """
         if time_steps is None:
             time_steps = np.ones(shape=input_data.shape)
@@ -672,7 +669,6 @@ class HGFDistribution(Op):
             A list of tuples with the same length as the number of models. Each tuple
             contains additional data and parameters that can be accessible to the
             response functions.
-
         """
         if time_steps is None:
             time_steps = np.ones(shape=input_data.shape)
@@ -815,7 +811,6 @@ class HGFPointwise(Op):
 
     This class should be used in the context of model comparison where the pointwise log
     probabilities are required for cross-validation.
-
     """
 
     def __init__(
@@ -852,7 +847,6 @@ class HGFPointwise(Op):
             A list of tuples with the same length as the number of models. Each tuple
             contains additional data and parameters that can be accessed by the
             response functions.
-
         """
         if time_steps is None:
             time_steps = np.ones(shape=input_data.shape)

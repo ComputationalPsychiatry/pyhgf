@@ -54,7 +54,6 @@ def volatile_node_posterior_update_ehgf(
     See Also
     --------
     volatile_node_posterior_update, volatile_node_posterior_update_unbounded
-
     """
     # UPDATE VOLATILITY LEVEL (eHGF: mean first, then precision) -----------------------
     # ----------------------------------------------------------------------------------

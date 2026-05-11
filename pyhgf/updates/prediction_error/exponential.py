@@ -42,7 +42,6 @@ def prediction_error_update_exponential_family_fixed(
     .. [1] Mathys, C., & Weber, L. (2020). Hierarchical Gaussian Filtering of Sufficient
        Statistic Time Series for Active Inference. In Active Inference (pp. 52–58).
        Springer International Publishing. https://doi.org/10.1007/978-3-030-64919-7_7
-
     """
     # retrieve the expected sufficient statistics from new observations
     attributes[node_idx]["observation_ss"] = sufficient_stats_fn(
@@ -100,7 +99,6 @@ def prediction_error_update_exponential_family_dynamic(
     .. [1] Mathys, C., & Weber, L. (2020). Hierarchical Gaussian Filtering of Sufficient
        Statistic Time Series for Active Inference. In Active Inference (pp. 52–58).
        Springer International Publishing. https://doi.org/10.1007/978-3-030-64919-7_7
-
     """
     # retrieve the expected sufficient statistics from new observations
     attributes[node_idx]["observation_ss"] = sufficient_stats_fn(

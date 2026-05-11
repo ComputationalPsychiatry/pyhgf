@@ -29,7 +29,6 @@ def set_coupling(
         Pointer to the child node.
     coupling :
         The new coupling strength between the parent and child node.
-
     """
     # 1. update the coupling strength in the attributes dictionary for the child node
     # -------------------------------------------------------------------------------

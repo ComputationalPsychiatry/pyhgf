@@ -21,7 +21,6 @@ class AdjacencyLists(NamedTuple):
 
     The variable `coupling_fn` list the coupling functions between this nodes and the
     children nodes. If `None` is provided, a linear coupling is assumed.
-
     """
 
     node_type: int
@@ -65,10 +64,11 @@ NetworkParameters = tuple[Attributes, Edges, UpdateSequence]
 
 
 class LayerState(NamedTuple):
-    """State for all nodes in a layer. All arrays have shape (n_nodes,).
+    """State for all nodes in a layer.
 
-    This represents the state of a volatile node layer with both value level (external)
-    and volatility level (internal) variables.
+    All arrays have shape (n_nodes,).     This represents the state of a volatile node
+    layer with both value level (external)     and volatility level (internal)
+    variables.
     """
 
     # Value level (external)
@@ -121,9 +121,10 @@ class LayerState(NamedTuple):
 
 
 class LayerParams(NamedTuple):
-    """Static parameters for a layer. All arrays have shape (n_nodes,).
+    """Static parameters for a layer.
 
-    These parameters control the volatility dynamics of the layer.
+    All arrays have shape (n_nodes,).     These parameters control the volatility
+    dynamics of the layer.
     """
 
     tonic_volatility: Array  # Value level tonic volatility

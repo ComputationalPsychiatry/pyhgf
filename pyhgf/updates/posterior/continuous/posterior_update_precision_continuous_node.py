@@ -163,7 +163,6 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
         The new posterior precision when at least one of the children has
         observed a new value. We then use the regular HGF update for volatility
         coupling.
-
     """
     # sum the prediction errors from both value and volatility coupling
     precision_weigthed_prediction_error = 0.0
@@ -301,7 +300,6 @@ def precision_update_missing_values(
         The new posterior precision in the case of missing values in all child nodes.
         The new precision decreases proportionally to the time elapsed, accounting for
         the influence of volatility parents.
-
     """
     # List the node's volatility parents
     volatility_parents_idxs = edges[node_idx].volatility_parents

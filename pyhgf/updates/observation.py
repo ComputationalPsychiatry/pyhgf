@@ -31,7 +31,6 @@ def set_observation(
     -------
     attributes :
         The attributes of the probabilistic network.
-
     """
     attributes[node_idx]["mean"] = values
     attributes[node_idx]["observed"] = observed
@@ -60,7 +59,6 @@ def set_predictors(
     -------
     attributes :
         The attributes of the probabilistic network.
-
     """
     attributes[node_idx]["expected_mean"] = values
     attributes[node_idx]["mean"] = values

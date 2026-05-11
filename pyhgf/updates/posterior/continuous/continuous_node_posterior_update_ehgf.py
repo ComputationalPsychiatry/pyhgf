@@ -64,7 +64,6 @@ def continuous_node_posterior_update_ehgf(
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
        Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
        arXiv. https://doi.org/10.48550/ARXIV.2305.10937
-
     """
     # update the posterior mean and precision using the eHGF update step
     # we start with the mean update using the expected precision as an approximation

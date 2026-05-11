@@ -85,13 +85,24 @@ def posterior_update_unbounded(
     muhat_j = attributes[node_idx]["expected_mean"]
     pihat_j = attributes[node_idx]["expected_precision"]
 
-    # Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om
-    gamma_c = jnp.log(t_k) + ka * muhat_j + om
+    # All quantities are kept in log-space whenever they would otherwise pass
+    # through ``exp`` of a potentially large number. Forming ``v = exp(γ)``
+    # explicitly is correct in the forward pass (downstream uses are
+    # saturation-stable, e.g. ``1/(1 + α/v) → 1`` as ``v → ∞``) but corrupts
+    # the backward pass: the local partial of the saturating expression is
+    # ``0`` while ``d v / d γ = exp(γ) = ∞``, and ``0 · ∞ = NaN``. We rewrite
+    # every such occurrence using ``sigmoid``/``logaddexp`` so neither the
+    # forward nor the backward ever materialises ``inf``.
+    log_t_k = jnp.log(t_k)
+    log_al_aux = jnp.log(al_aux)
 
-    # Recompute v and w using muhat_j. The w formula is written as
-    # 1/(1 + al_aux/v) so it stays finite when v_jm1 overflows to ∞ (→ 1).
-    v_jm1 = jnp.exp(gamma_c)
-    w_jm1 = 1.0 / (1.0 + al_aux / v_jm1)
+    # Canonical exponent at prediction: γ = log(t_k) + ka*muhat_j + om
+    gamma_c = log_t_k + ka * muhat_j + om
+
+    # w_jm1 = 1/(1 + al_aux/exp(γ)) = sigmoid(γ − log α). Matches the original
+    # ``1/(1 + al_aux/v_jm1)`` exactly for every finite γ, and stays
+    # gradient-safe when γ → ±∞.
+    w_jm1 = sigmoid(gamma_c - log_al_aux)
 
     # Volatility prediction error: da_jm1 = pihat_jm1 * be_aux - 1, with
     # pihat_jm1 = child's expected_precision (set in the prediction step at
@@ -116,12 +127,18 @@ def posterior_update_unbounded(
     W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
     v_W = lambert_w0(W_arg)
     y_star = gamma_c + v_W - 0.5 / pihat_y
-    x_star = (y_star - jnp.log(t_k) - om) / ka
+    x_star = (y_star - log_t_k - om) / ka
 
-    # Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).
-    s2 = t_k * jnp.exp(ka * x_star + om)
-    w2 = 1.0 / (1.0 + al_aux / s2)
-    da2 = be_aux / (al_aux + s2) - 1.0
+    # Log-space form of s2, w2, da2 — equivalent to the original
+    #   s2 = t_k * exp(ka*x_star + om)
+    #   w2 = 1 / (1 + al_aux / s2)
+    #   da2 = be_aux / (al_aux + s2) - 1
+    # but without ever materialising ``s2 = inf`` in the forward pass, which
+    # would inject NaN gradients via 0·∞.
+    log_s2 = log_t_k + ka * x_star + om
+    log_denom_s = jnp.logaddexp(log_al_aux, log_s2)  # = log(al_aux + s2)
+    w2 = sigmoid(log_s2 - log_al_aux)
+    da2 = be_aux * jnp.exp(-log_denom_s) - 1.0
 
     pi2_full = pihat_j + 0.5 * ka**2 * w2 * (w2 + (2.0 * w2 - 1.0) * da2)
     pi2_safe = jnp.where(
@@ -133,24 +150,47 @@ def posterior_update_unbounded(
 
     # Fall back to Expansion 1 if Expansion 2 yields non-finite results —
     # matches MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1".
+    #
+    # Double-where masking: replace any non-finite ``pi2_safe`` / ``mu2_safe``
+    # with safe constants *before* they enter the outer ``where``. The bare
+    # form ``jnp.where(c, pi2_safe, pi1)`` is correct in the forward pass but
+    # poisons the backward pass: ``where``'s VJP routes a zero cotangent into
+    # the masked-out branch, and ``0 * NaN = NaN`` in IEEE-754 — so a single
+    # non-finite intermediate at any scan step turns the whole gradient into
+    # NaN, which forces NUTS to reject the trajectory and adapt the step size
+    # downward, blowing up the number of leapfrog evaluations per sample.
     exp2_finite = jnp.isfinite(pi2_safe) & jnp.isfinite(mu2_safe)
-    pi2 = jnp.where(exp2_finite, pi2_safe, pi1)
-    mu2 = jnp.where(exp2_finite, mu2_safe, mu1)
+    pi2_safe_for_grad = jnp.where(exp2_finite, pi2_safe, 1.0)
+    mu2_safe_for_grad = jnp.where(exp2_finite, mu2_safe, 0.0)
+    pi2 = jnp.where(exp2_finite, pi2_safe_for_grad, pi1)
+    mu2 = jnp.where(exp2_finite, mu2_safe_for_grad, mu1)
 
     # ----------------------------------------------------------------------------------
-    # Variational energy-based softmax blend (direct form, matches MATLAB)
+    # Variational energy-based softmax blend (direct form, matches MATLAB).
+    #
+    # The original form is
+    #     ey  = t_k * exp(ka*mu + om)
+    #     I   = -0.5 * log(al_aux + ey) - 0.5 * be_aux / (al_aux + ey) - ...
+    # which materialises ``ey = inf`` for large ``ka*mu + om`` and then
+    # injects 0·∞ NaNs in the backward pass even though the forward saturates
+    # cleanly. The log-space rewrite below is mathematically identical for
+    # every finite input and stays gradient-safe at the saturation limits:
+    # ``logaddexp`` and ``exp(-positive)`` are both bounded forward and
+    # backward.
     # ----------------------------------------------------------------------------------
-    ey1 = t_k * jnp.exp(ka * mu1 + om)
+    log_ey1 = log_t_k + ka * mu1 + om
+    log_denom_1 = jnp.logaddexp(log_al_aux, log_ey1)  # = log(al_aux + ey1)
     I1 = (
-        -0.5 * jnp.log(al_aux + ey1)
-        - 0.5 * be_aux / (al_aux + ey1)
+        -0.5 * log_denom_1
+        - 0.5 * be_aux * jnp.exp(-log_denom_1)
         - 0.5 * pihat_j * (mu1 - muhat_j) ** 2
     )
 
-    ey2 = t_k * jnp.exp(ka * mu2 + om)
+    log_ey2 = log_t_k + ka * mu2 + om
+    log_denom_2 = jnp.logaddexp(log_al_aux, log_ey2)
     I2 = (
-        -0.5 * jnp.log(al_aux + ey2)
-        - 0.5 * be_aux / (al_aux + ey2)
+        -0.5 * log_denom_2
+        - 0.5 * be_aux * jnp.exp(-log_denom_2)
         - 0.5 * pihat_j * (mu2 - muhat_j) ** 2
     )
 

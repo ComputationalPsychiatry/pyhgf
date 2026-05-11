@@ -14,7 +14,6 @@ def get_input_idxs(edges: Edges) -> tuple[int, ...]:
         The edges of the probabilistic network as a tuple of
         :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the number of
         nodes. For each node, the index list value/volatility - parents/children.
-
     """
     return tuple([
         i

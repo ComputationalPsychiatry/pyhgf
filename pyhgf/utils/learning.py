@@ -64,7 +64,6 @@ def learning(
         (2024). Inferring neural activity before plasticity as a foundation for
         learning beyond backpropagation. Nature Neuroscience, 27(2), 348–358.
         doi:10.1038/s41593-023-01514-1
-
     """
     # Unpack the inputs tuple.
     x, y = inputs

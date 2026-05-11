@@ -31,7 +31,6 @@ def _remove_edges(
     -------
     tuple[dict, Edges]
         Updated attributes and edges with removed connections.
-
     """
     if kind not in ["value", "volatility"]:
         raise ValueError(
@@ -163,7 +162,6 @@ def remove_node(attributes: dict, edges: Edges, index: int) -> tuple[dict, Edges
     -------
     tuple[dict, Edges]
         Updated attributes and edges with the node removed and indices adjusted.
-
     """
     # ensure that the node exists in the network
     if index not in attributes or index >= len(edges):
