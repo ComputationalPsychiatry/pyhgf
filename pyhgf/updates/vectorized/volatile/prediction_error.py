@@ -233,11 +233,21 @@ def vectorized_layer_volatility_posterior_unbounded(
     ka = params.volatility_coupling
     om = params.tonic_volatility
 
-    # Reconstruct al_aux = 1/pi_prev_jm1 from the predicted state.
-    # Kept consistent with vectorized_layer_prediction (no clipping) so the
-    # subtraction cancels exactly: 1/pihat_jm1 - predicted_volatility = 1/pi_prev_jm1.
-    predicted_volatility = time_step * jnp.exp(om + ka * layer.expected_mean_vol)
-    al_aux = jnp.maximum(1.0 / layer.expected_precision - predicted_volatility, 1e-128)
+    # Reconstruct al_aux = 1/pi_prev_jm1 exactly from the *conditional* predicted
+    # precision. The prediction step sets
+    #     1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
+    # where predicted_volatility carries the full log-volatility exponent, including
+    # the MGF correction ka^2 / (2 * pihat_vol). Subtracting the same
+    # predicted_volatility cancels back to 1/precision_prev. Using the marginal
+    # expected_precision here would leave the value-coupling variance behind, and
+    # omitting the MGF term would leave that behind — both were latent errors that
+    # only surfaced once value coupling shifted the operating point.
+    predicted_volatility = time_step * jnp.exp(
+        om + ka * layer.expected_mean_vol + ka**2 / (2.0 * layer.expected_precision_vol)
+    )
+    al_aux = jnp.maximum(
+        1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
+    )
     be_aux = (1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2
 
     muhat_j = layer.expected_mean_vol
@@ -250,7 +260,12 @@ def vectorized_layer_volatility_posterior_unbounded(
     # 1/(1 + al_aux/v) so it stays finite when v_jm1 overflows to ∞ (→ 1).
     v_jm1 = jnp.exp(gamma_c)
     w_jm1 = 1.0 / (1.0 + al_aux / v_jm1)
-    da_jm1 = be_aux / (al_aux + v_jm1) - 1.0
+    # Volatility prediction error da_jm1 = pihat * be_aux - 1, with pihat the
+    # *marginal* predicted precision. Written explicitly rather than as
+    # be_aux/(al_aux+v_jm1) - 1: that identity only holds when al_aux is the
+    # reconstruction 1/expected_precision - v_jm1, which is no longer the case now
+    # that al_aux is the exact 1/precision_prev.
+    da_jm1 = layer.expected_precision * be_aux - 1.0
 
     # ------------------------------------------------------------------
     # Expansion 1: quadratic at the prediction (prior mean)

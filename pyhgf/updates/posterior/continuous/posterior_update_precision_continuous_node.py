@@ -141,7 +141,26 @@ def posterior_update_precision_continuous_node(
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
-    """Compute new precision in the case of observed values.
+    r"""Compute new precision in the case of observed values.
+
+    Applies the canonical value- and volatility-coupling posterior-precision updates
+    (eq. 50 of Weber et al. (2026) [1]_), augmented by the *relaxed* posterior-step
+    (smoothing) correction on each Gaussian-interior value child: the child-precision
+    factor :math:`\hat{\pi}_a` is replaced by the harmonic combination
+
+    .. math::
+
+        \hat{\pi}_a \longmapsto
+        \frac{\hat{\pi}_a \, \pi_y}{\hat{\pi}_a + \pi_y}, \qquad
+        \pi_y = \pi_a - \tilde{\pi}_a,
+
+    where :math:`\hat{\pi}_a` is the child's *conditional* predicted precision
+    (stored as ``child.temp["conditional_expected_precision"]``) and
+    :math:`\tilde{\pi}_a` its *marginal* predicted precision
+    (``child.expected_precision``). The Schur complement uses the conditional;
+    substituting the marginal would double-count parent uncertainty. Non-Gaussian
+    children and Gaussian leaves fall back to the canonical predicted-precision
+    factor :math:`\tilde{\pi}_a` (:math:`\pi_a \to \infty`).
 
     Parameters
     ----------
@@ -149,33 +168,30 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
         The attributes of the probabilistic nodes.
     edges :
         The edges of the probabilistic nodes as a tuple of
-        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the number
-        of nodes. For each node, the index lists the value and volatility parents and
-        children.
+        :py:class:`pyhgf.typing.AdjacencyLists`.
     node_idx :
         Pointer to the value parent node that will be updated.
-    time_step :
-        The time elapsed between this observation and the previous one.
 
     Returns
     -------
     posterior_precision :
         The new posterior precision when at least one of the children has
-        observed a new value. We then use the regular HGF update for volatility
-        coupling.
+        observed a new value.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife
+       Sciences Publications, Ltd. https://doi.org/10.7554/elife.110174.1
     """
     # sum the prediction errors from both value and volatility coupling
     precision_weigthed_prediction_error = 0.0
 
-    # Value coupling updates - update the precision of a value parent
-    # Using eq. 50 from Weber et al. (2026), with the posterior-step
-    # (smoothing) correction: replace π̂_a by π̂_a · (π_a − π̂_a) / π_a — the predicted
-    # precision scaled by the child's bottom-up information ratio. The same factor
-    # applies to both the g'² term and the g''·δ_a term. Reduces to the canonical
-    # formula when the child is fully observed (π_a ≫ π̂_a); returns no contribution
-    # when the child gained no bottom-up information (π_a = π̂_a) — which the canonical
-    # formula incorrectly credits anyway.
-    # ----------------------------------------------------------------------------------
+    # Value coupling updates - update the precision of a value parent.
+    # eq. 50 of Weber et al. (2026), with the fully-corrected posterior-step
+    # (smoothing) correction: replace the canonical child-precision factor by
+    #     π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a.
+    # The same factor scales both the (κ g')² term and the κ g''·δ_a term.
     if edges[node_idx].value_children is not None:
         for value_child_idx, value_coupling, coupling_fn in zip(
             edges[node_idx].value_children,  # type: ignore
@@ -207,7 +223,7 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
             # children (type 1), categorical (5), input/constant (0), exponential
             # family (3), Dirichlet (4), and any Gaussian leaf (types 2/6 with no
             # children of their own) — are clamped/non-Gaussian and fall back to
-            # the canonical ``π̂_a`` (matching the paper's Limit 3, π_a → ∞).
+            # the canonical predicted-precision factor π̃_a (π_a → ∞).
             child_node_type = edges[value_child_idx].node_type
             child_is_gaussian_interior = child_node_type in (2, 6) and (
                 edges[value_child_idx].value_children is not None
@@ -215,12 +231,16 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
             )
             child_expected_precision = attributes[value_child_idx]["expected_precision"]
             if child_is_gaussian_interior:
+                # π_y = π_a − π̃_a (bottom-up evidence precision, against the
+                # marginal). The Schur complement carries the *conditional* predicted
+                # precision π̂_a (stored in temp); using the marginal here would
+                # double-count parent uncertainty.
                 child_precision = attributes[value_child_idx]["precision"]
-                effective_child_precision = (
-                    child_expected_precision
-                    * (child_precision - child_expected_precision)
-                    / child_precision
-                )
+                pi_y = child_precision - child_expected_precision
+                child_cond = attributes[value_child_idx]["temp"][
+                    "conditional_expected_precision"
+                ]
+                effective_child_precision = child_cond * pi_y / (child_cond + pi_y)
             else:
                 effective_child_precision = child_expected_precision
 
@@ -280,26 +300,27 @@ def precision_update_missing_values(
 ) -> float:
     """Compute new precision in the case of missing observations.
 
+    When no value or volatility child reports an observation at the current step,
+    the node simply ages its precision by one step of its random walk: there are no
+    prediction errors to integrate, so the new precision is the canonical predicted
+    precision under the volatility-parent random walk.
+
     Parameters
     ----------
     attributes :
         The attributes of the probabilistic nodes.
     edges :
         The edges of the probabilistic nodes as a tuple of
-        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the number
-        of nodes. For each node, the index lists the value and volatility parents and
-        children.
+        :py:class:`pyhgf.typing.AdjacencyLists`.
     node_idx :
         Pointer to the value parent node that will be updated.
-    time_step :
-        The time elapsed between this observation and the previous one.
 
     Returns
     -------
     posterior_precision_missing_values :
-        The new posterior precision in the case of missing values in all child nodes.
-        The new precision decreases proportionally to the time elapsed, accounting for
-        the influence of volatility parents.
+        The new posterior precision in the case of missing values in all child
+        nodes. The new precision decreases proportionally to the time elapsed,
+        accounting for the influence of volatility parents.
     """
     # List the node's volatility parents
     volatility_parents_idxs = edges[node_idx].volatility_parents

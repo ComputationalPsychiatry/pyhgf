@@ -1,6 +1,22 @@
 use crate::model::Network;
 
-/// Prediction from a volatile state node
+/// Prediction step for a volatile state node.
+///
+/// Predicts both the implicit volatility level (mean_vol, expected_precision_vol)
+/// and the externally-facing value level. Two predicted precisions of the value
+/// level are stored:
+///
+/// * π̂ = 1 / (1/π + Ω) — `conditional_expected_precision`. Own variance plus
+///   volatility chain, without the parent-uncertainty bleed-through term. Used by
+///   the parent's Schur-complement posterior-step correction.
+/// * π̃ = 1 / (1/π̂ + Σ_b (Δt · α · g'(μ̂_b))² / π̃_b) — `expected_precision`,
+///   the inverse marginal predictive variance, adding the first-order Laplace
+///   contribution from each value parent (using the parent's marginal predicted
+///   precision π̃_b).
+///
+/// Ω = Δt · exp(ω + κ · μ_vol + κ² / (2 π̂_vol)); the MGF correction
+/// κ² / (2 π̂_vol) marginalises over the implicit volatility level's Gaussian
+/// rather than collapsing it to a point estimate.
 pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, time_step: f64) {
     // Copy own scalar state
     let precision = network.attributes.states[node_idx].precision;
@@ -27,9 +43,11 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     // 2. PREDICT VALUE LEVEL (external facing)
     // ===================================================================
 
-    // --- 2a. Predict mean (including value parents if any). Also accumulate
-    //         the piHGF Laplace value-coupling variance:
-    //             Σ_b (Δt · α · g'(μ̂_b))² / π̂_b
+    // --- 2a. Predict mean (including value parents if any). Also accumulate the
+    //         piHGF Laplace value-coupling variance
+    //             Σ_b (Δt · α · g'(μ̂_b))² / π̃_b
+    //         using each parent's marginal predicted precision π̃_b
+    //         (= `parent.expected_precision`).
     let mut driftrate = 0.0;
     let mut value_coupling_variance = 0.0_f64;
     if let Some(ref vp_idxs) = network.edges[node_idx].value_parents {
@@ -64,6 +82,12 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
             / (2.0 * expected_precision_vol);
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
+    // Conditional predicted precision π̂_a — precision of x_a given its value
+    // parents (own variance + volatility only), WITHOUT the parent-uncertainty
+    // value-coupling term. This is what the parent's posterior-step Schur
+    // complement acts on; substituting the marginal would double-count parent
+    // uncertainty.
+    let conditional_expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
     let expected_precision =
         1.0 / ((1.0 / precision) + predicted_volatility + value_coupling_variance);
     // Effective precision γ — only the volatility-driven part enters γ, since
@@ -86,9 +110,13 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     state.expected_mean = expected_mean;
     if is_input {
         state.expected_precision = precision;
+        // A leaf has no volatility random walk, so the conditional and marginal
+        // predicted precisions coincide with the prior precision.
+        state.conditional_expected_precision = precision;
         state.effective_precision = 0.0;
     } else {
         state.expected_precision = expected_precision;
+        state.conditional_expected_precision = conditional_expected_precision;
         state.effective_precision = effective_precision;
     }
 }
