@@ -128,6 +128,7 @@ fn unbounded_volatility_level_update(network: &Network, node_idx: usize, time_st
     let mean = s.mean;
     let expected_mean = s.expected_mean;
     let precision = s.precision;
+    let expected_precision = s.expected_precision;
     let al_aux = s.current_variance.max(1e-128); // 1/pi_prev_jm1
     let be_aux = (1.0 / precision) + (mean - expected_mean).powi(2);
 
@@ -138,7 +139,11 @@ fn unbounded_volatility_level_update(network: &Network, node_idx: usize, time_st
     // it stays finite when v_jm1 overflows to +inf (→ 1), matching Julia.
     let v_jm1 = gamma_c.exp();
     let w_jm1 = 1.0 / (1.0 + al_aux / v_jm1);
-    let da_jm1 = be_aux / (al_aux + v_jm1) - 1.0;
+    // Volatility prediction error: da_jm1 = pihat * be_aux - 1, with pihat the
+    // *marginal* predicted precision (expected_precision). Matches the standard /
+    // eHGF volatility PE and the JAX/Python backends; the earlier
+    // be_aux/(al_aux+v_jm1) - 1 form used a no-MGF/no-coupling conditional precision.
+    let da_jm1 = expected_precision * be_aux - 1.0;
 
     // Expansion 1: quadratic at the prediction (prior mean)
     let pi1 = pihat_j + 0.5 * ka.powi(2) * w_jm1 * (1.0 - w_jm1);

@@ -22,10 +22,29 @@ def vectorized_layer_prediction(
     has_volatility_parent: bool = True,
     is_input_layer: bool = False,
 ) -> LayerState:
-    """Predict expected mean/precision for all nodes in child layer (volatile node).
+    r"""Predict expected mean/precision for all nodes in a volatile-node layer.
 
-    This implements the full volatile node prediction with both value level
-    and volatility level predictions.
+    Computes both the value-level (external) and volatility-level (internal)
+    predictions. Two predicted precisions of the value level are stored:
+
+    .. math::
+
+        \hat{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+            \right)^{-1}, \qquad
+        \frac{1}{\tilde{\pi}_a^{(k)}} = \frac{1}{\hat{\pi}_a^{(k)}}
+            + \sum_b \frac{ (t^{(k)} \, \alpha_b \, g'(\hat{\mu}_b))^2 }
+                          { \tilde{\pi}_b },
+
+    where :math:`\hat{\pi}_a` (``conditional_expected_precision``) is the
+    AR-plus-volatility chain precision without parent-uncertainty bleed-through and
+    :math:`\tilde{\pi}_a` (``expected_precision``) adds the first-order Laplace
+    value-coupling contribution from each value parent. The bleed-through term uses
+    the parent's *marginal* predicted precision :math:`\tilde{\pi}_b`
+    (``parent_state.expected_precision``), which generalises the artifact's
+    two-node :math:`\hat{\pi}_b` to deep networks by propagating each parent's full
+    marginal predictive variance. The volatility-coupling correction
+    :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})` enters :math:`\Omega_a^{(k)}`
+    inside the log-volatility exponent.
 
     Parameters
     ----------
@@ -40,31 +59,33 @@ def vectorized_layer_prediction(
     params :
         Layer parameters for the child layer.
     time_step :
-        Time step for the prediction.
+        Time step :math:`t^{(k)}` for the prediction.
     coupling_fn :
-        Coupling function applied to parent means (default: tanh).
+        Coupling function applied to parent means (default :func:`jax.numpy.tanh`).
     parent_has_constant :
         If True, the parent layer has a constant input node (mean = 1.0)
-        appended to its activations.  The last column of *weights*
-        carries the bias connections.
+        appended to its activations. The last column of *weights* carries the bias
+        connections; its predicted precision is treated as infinite so it
+        contributes zero to the value-coupling variance.
     has_volatility_parent :
         If True (default), the layer has an implied internal volatility parent
-        whose state (mean_vol, precision_vol) is predicted and updated.
-        If False, the volatility level is frozen: mean_vol and precision_vol
-        are not propagated forward, and only tonic_volatility drives the
-        expected precision for the value level.
+        whose state (``mean_vol``, ``precision_vol``) is predicted and updated.
+        If False, the volatility level is frozen and only ``tonic_volatility``
+        drives the expected precision for the value level.
     is_input_layer :
-        If True, the layer is treated as an observed input/leaf — it does not
+        If True, the layer is treated as an observed input/leaf: it does not
         undergo a Gaussian random walk between observations. The
         ``tonic_volatility`` contribution to the value-level expected precision
-        is skipped and ``expected_precision`` is set to the prior precision,
-        mirroring the continuous-node treatment in
+        is skipped, ``expected_precision`` and ``conditional_expected_precision``
+        are both set to the prior precision, and the effective precision is
+        zeroed — mirroring the continuous-node treatment in
         :func:`pyhgf.updates.prediction.continuous.continuous_node_prediction`.
 
     Returns
     -------
     LayerState
-        Updated child layer state with expected values filled in.
+        Updated child layer state with predicted means and precisions populated
+        for both the value and volatility levels.
     """
     # 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------
     # ----------------------------------------------------------------------------------
@@ -102,12 +123,12 @@ def vectorized_layer_prediction(
         # Append constant 1.0 for bias node before applying coupling_fn
         parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
     coupled_parents = coupling_fn(parent_mean)
-    drift = jnp.matmul(weights, coupled_parents)
 
     # Expected mean for value level
     # Note: autoconnection_strength = 0 for i.i.d. classification
     # (the previous observation should not bias the next prediction)
-    expected_mean = time_step * drift
+    # Here we remove the influence of time_step on the expected mean.
+    expected_mean = jnp.matmul(weights, coupled_parents)
 
     if has_volatility_parent:
         # Total volatility includes contribution from internal volatility level
@@ -129,12 +150,11 @@ def vectorized_layer_prediction(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # Laplace value-coupling correction. Marginalising over the value parents'
-    # Gaussian yields, per child node i, the additional variance
-    #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̂_j
-    # where g' is the elementwise derivative of the coupling function and π̂_j
-    # is the parent's predicted precision. The constant-bias parent (if any)
-    # has infinite precision and therefore contributes zero.
+    # Laplace value-coupling correction. Linearising g at μ̂_b and marginalising
+    # over each parent's Gaussian yields, per child node i, the additional variance
+    #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̃_j,
+    # using the parent's marginal predicted precision π̃_j (= `expected_precision`).
+    # The constant-bias parent (if any) has infinite precision and contributes zero.
     parent_precision = parent_state.expected_precision
     if parent_has_constant:
         parent_precision = jnp.concatenate([parent_precision, jnp.array([jnp.inf])])
@@ -142,26 +162,40 @@ def vectorized_layer_prediction(
     weighted_grad = weights * (time_step * g_prime)
     value_coupling_variance = jnp.sum(weighted_grad**2 / parent_precision, axis=-1)
 
-    # Expected precision for value level (inverse marginal predictive variance)
-    expected_precision = 1.0 / (
-        1.0 / child_state.precision + predicted_volatility + value_coupling_variance
+    # Conditional predicted precision π̂_a — the precision of x_a given a specific
+    # value of x_b (own AR-plus-volatility variance only, no parent-uncertainty
+    # bleed-through). This is the precision that enters the joint (x_a, x_b)
+    # Gaussian's Schur complement at the parent's posterior-step (smoothing)
+    # correction; substituting π̃_a there would double-count parent uncertainty.
+    conditional_expected_precision = 1.0 / (
+        1.0 / child_state.precision + predicted_volatility
     )
 
-    # Effective precision for value level — only the volatility-driven part
-    # enters γ, since γ is consumed by the volatility-coupling posterior update.
+    # Marginal predicted precision π̃_a — inverse marginal predictive variance,
+    # adding the law-of-total-variance bleed-through to the conditional variance.
+    expected_precision = 1.0 / (
+        1.0 / conditional_expected_precision + value_coupling_variance
+    )
+
+    # Effective precision γ — only the volatility-driven part enters γ, since γ
+    # is consumed by the volatility-coupling posterior update.
     effective_precision = predicted_volatility * expected_precision
 
     # Input/leaf override: an observed layer with no value children does not
     # undergo a Gaussian random walk between observations, so the
     # tonic-volatility contribution to the value-level expected precision is
-    # dropped (matches the continuous-node treatment).
+    # dropped (matches the continuous-node treatment). The conditional and
+    # marginal coincide in this regime since both lose the volatility term and
+    # there is no parent-uncertainty bleed-through to apply.
     if is_input_layer:
         expected_precision = child_state.precision
+        conditional_expected_precision = child_state.precision
         effective_precision = jnp.zeros_like(effective_precision)
 
     return child_state._replace(
         expected_mean=expected_mean,
         expected_precision=expected_precision,
+        conditional_expected_precision=conditional_expected_precision,
         effective_precision=effective_precision,
         expected_mean_vol=expected_mean_vol,
         expected_precision_vol=expected_precision_vol,

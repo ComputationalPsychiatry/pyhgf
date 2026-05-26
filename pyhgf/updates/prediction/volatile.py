@@ -82,16 +82,52 @@ def predict_precision_value_level(
     attributes: dict,
     edges: Edges,
     node_idx: int,
-) -> tuple[Array, Array]:
-    """Predict the precision of the value level using the implicit volatility level.
+) -> tuple[Array, Array, Array]:
+    r"""Predict the value-level precisions using the implicit volatility level.
 
-    The volatility level's mean modulates the value level's precision. The implicit
-    volatility level is treated as a full Gaussian parent: the exact
-    moment-generating-function correction ``κ² / (2 · π̂_vol)`` is added inside the
-    log-volatility exponent. In addition, each value parent contributes a first-order
-    Laplace term ``(t · α · g'(μ̂_b))² / π̂_b`` to the marginal predictive variance. Both
-    corrections vanish in the limit of perfectly known parents, recovering the canonical
-    formula exactly.
+    The implicit volatility level is treated as a full Gaussian parent: the exact
+    moment-generating-function correction :math:`\kappa^2 / (2 \, \hat{\pi}_{\mathrm{vol}})`
+    is added inside the log-volatility exponent. In addition, each value parent
+    contributes a first-order Laplace term
+    :math:`(t^{(k)} \, \alpha \, g'(\hat{\mu}_b))^2 / \tilde{\pi}_b` to the marginal
+    predictive variance (using each parent's marginal predicted precision,
+    ``expected_precision``).
+
+    Two predicted precisions are returned (see
+    :class:`pyhgf.typing.LayerState` for the notation table):
+
+    .. math::
+
+        \frac{1}{\hat{\pi}_a^{(k)}}
+            = \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}, \qquad
+        \frac{1}{\tilde{\pi}_a^{(k)}}
+            = \frac{1}{\hat{\pi}_a^{(k)}}
+              + \sum_{b} \frac{ (t^{(k)} \, \alpha_b \, g'(\hat{\mu}_b))^2 }
+                              { \tilde{\pi}_b }.
+
+    :math:`\hat{\pi}_a` is the *conditional* predicted precision used by the
+    parent's posterior-step Schur complement; :math:`\tilde{\pi}_a` is the *marginal*
+    predicted precision consumed by downstream surprise/likelihood code.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic network as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`.
+    node_idx :
+        Index of the volatile state node.
+
+    Returns
+    -------
+    expected_precision :
+        The marginal predicted precision :math:`\tilde{\pi}_a^{(k)}`.
+    conditional_expected_precision :
+        The conditional predicted precision :math:`\hat{\pi}_a^{(k)}`.
+    effective_precision :
+        The effective precision :math:`\gamma_a^{(k)} = \Omega_a^{(k)} \tilde{\pi}_a^{(k)}`,
+        consumed by the volatility-coupling posterior update.
     """
     time_step = attributes[-1]["time_step"]
 
@@ -124,7 +160,8 @@ def predict_precision_value_level(
     # Laplace value-coupling correction. The conditional mean of the value level
     # is linearised around μ̂_b via a first-order Taylor expansion of the coupling
     # function g; the variance contribution from each value parent is then
-    # (t · α · g'(μ̂_b))² / π̂_b. The factor t arises because the value-parent
+    # (t · α · g'(μ̂_b))² / π̃_b, using the parent's marginal predicted precision
+    # π̃_b (= `expected_precision`). The factor t arises because the value-parent
     # contribution to the mean is scaled by the time step in
     # :func:`predict_mean_value_level`.
     value_parents_idxs = edges[node_idx].value_parents
@@ -146,6 +183,13 @@ def predict_precision_value_level(
                 value_parent_idx
             ]["expected_precision"]
 
+    # Conditional predicted precision π̂_a — the precision of x_a given its
+    # value parents (own variance + volatility only), WITHOUT the parent-uncertainty
+    # value-coupling term. This is the quantity the parent's posterior-step Schur
+    # complement acts on; substituting the marginal there would double-count parent
+    # uncertainty.
+    conditional_expected_precision = 1 / ((1 / precision) + predicted_volatility)
+
     # Expected precision = inverse marginal predictive variance.
     expected_precision = 1 / (
         (1 / precision) + predicted_volatility + value_coupling_variance
@@ -155,7 +199,7 @@ def predict_precision_value_level(
     # γ is consumed by the volatility-coupling posterior update.
     effective_precision = predicted_volatility * expected_precision
 
-    return expected_precision, effective_precision
+    return expected_precision, conditional_expected_precision, effective_precision
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))
@@ -186,8 +230,8 @@ def volatile_node_prediction(
 
     # 2. PREDICT VALUE LEVEL (external facing)
     # Value level's precision depends on volatility level
-    expected_precision, effective_precision = predict_precision_value_level(
-        attributes, edges, node_idx
+    expected_precision, conditional_expected_precision, effective_precision = (
+        predict_precision_value_level(attributes, edges, node_idx)
     )
 
     # Value level's mean
@@ -206,11 +250,19 @@ def volatile_node_prediction(
         and (edges[node_idx].volatility_parents is None)
     ):
         attributes[node_idx]["expected_precision"] = attributes[node_idx]["precision"]
+        # A leaf has no volatility random walk, so the conditional and marginal
+        # predicted precisions coincide with the prior precision.
+        attributes[node_idx]["temp"]["conditional_expected_precision"] = attributes[
+            node_idx
+        ]["precision"]
         attributes[node_idx]["temp"]["effective_precision"] = jnp.zeros_like(
             effective_precision
         )
     else:
         attributes[node_idx]["expected_precision"] = expected_precision
+        attributes[node_idx]["temp"]["conditional_expected_precision"] = (
+            conditional_expected_precision
+        )
         attributes[node_idx]["temp"]["effective_precision"] = effective_precision
 
     return attributes

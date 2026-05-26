@@ -64,11 +64,31 @@ NetworkParameters = tuple[Attributes, Edges, UpdateSequence]
 
 
 class LayerState(NamedTuple):
-    """State for all nodes in a layer.
+    r"""State for all nodes in a layer.
 
-    All arrays have shape (n_nodes,).     This represents the state of a volatile node
-    layer with both value level (external)     and volatility level (internal)
-    variables.
+    All arrays have shape ``(n_nodes,)``. This represents the state of a volatile node
+    layer with both value level (external) and volatility level (internal) variables.
+
+    Notation for the two predicted precisions
+    -----------------------------------------
+    The relaxed posterior update distinguishes two prediction-step precisions of the
+    value level:
+
+    * ``expected_precision`` -- :math:`\tilde{\pi}` (marginal predicted precision).
+      Inverse of the marginal predictive variance, including the value-coupling
+      bleed-through term :math:`\alpha^2 g'(\hat{\mu}_b)^2 / \hat{\pi}_b`. This is the
+      predictive precision of the node's generative distribution; it is what gets
+      recorded in trajectories and consumed downstream by surprise / likelihood code.
+    * ``conditional_expected_precision`` -- :math:`\hat{\pi}` (conditional predicted
+      precision; the canonical Weber et al. quantity). Inverse of the conditional
+      variance given the value parents -- own variance plus volatility, *without* the
+      parent-uncertainty bleed-through term. This is the precision that enters the
+      joint :math:`(x_a, x_b)` Gaussian's Schur complement at the parent's
+      posterior-step (smoothing) update; substituting :math:`\tilde{\pi}` there would
+      double-count parent uncertainty.
+
+    The two coincide in the canonical limit :math:`\hat{\pi}_b \to \infty` (perfectly
+    known value parent), recovering Weber et al. (2026) exactly.
     """
 
     # Value level (external)
@@ -76,6 +96,7 @@ class LayerState(NamedTuple):
     precision: Array
     expected_mean: Array
     expected_precision: Array
+    conditional_expected_precision: Array
     effective_precision: Array
     value_prediction_error: Array
 
@@ -108,6 +129,7 @@ class LayerState(NamedTuple):
             precision=jnp.ones(n_nodes),
             expected_mean=jnp.zeros(n_nodes),
             expected_precision=jnp.ones(n_nodes),
+            conditional_expected_precision=jnp.ones(n_nodes),
             effective_precision=jnp.zeros(n_nodes),
             value_prediction_error=jnp.zeros(n_nodes),
             # Volatility level

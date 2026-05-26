@@ -20,18 +20,25 @@ fn lambert_w0(z: f64) -> f64 {
 
 /// Compute the precision update contribution from value and volatility children.
 ///
-/// The value-coupling branch implements the posterior-step (smoothing)
-/// correction of the relaxed HGF: the canonical child-precision factor
-/// `π̂_a` is replaced by `π̂_a · (π_a − π̂_a) / π_a` — the predicted precision
-/// scaled by the child's bottom-up information ratio. The same factor applies
-/// to both the `g'²` and the `g''·δ_a` terms. Reduces to the canonical formula
-/// when the child is fully observed; returns no contribution when the child
-/// gained no bottom-up information.
+/// The value-coupling branch implements the posterior-step (smoothing) correction
+/// of the relaxed HGF: the canonical child-precision factor is replaced by the
+/// harmonic combination
 ///
-/// Boundary leaves (children with no children of their own) are clamped
-/// observations and fall back to the canonical `π̂_a` — pyhgf's convention
-/// keeps `precision = expected_precision` for such nodes, so the smoothing
-/// form would otherwise zero out their contribution.
+/// ```text
+/// π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```
+///
+/// where π̂_a is the child's conditional predicted precision
+/// (`conditional_expected_precision`) and π̃_a its marginal predicted precision
+/// (`expected_precision`). The same factor scales both the `(κ g')²` and the
+/// `κ g'' · δ_a` terms. Reduces to the canonical formula when the child is fully
+/// observed (π_y → ∞); returns no contribution when the child gained no bottom-up
+/// information (π_y = 0).
+///
+/// Non-Gaussian children and Gaussian leaves fall back to the canonical
+/// predicted-precision factor π̃_a — pyhgf keeps `precision = expected_precision`
+/// for clamped observations, so the harmonic form would otherwise zero out their
+/// contribution.
 ///
 /// Volatility coupling is unchanged.
 fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
@@ -61,21 +68,25 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
 
             // Effective child precision under the smoothing correction. The
             // Schur derivation assumes a Gaussian-Gaussian value-coupling edge,
-            // so the correction applies only when the child carries a Gaussian
+            // so the correction only applies when the child carries a Gaussian
             // belief (continuous-state or volatile-state) AND is interior (has
             // children of its own). Binary, categorical, input/constant,
-            // exponential family, and Dirichlet children, plus any Gaussian
-            // leaf, fall back to the canonical `π̂_a` (paper's Limit 3).
+            // exponential-family, and Dirichlet children, plus any Gaussian
+            // leaf, fall back to the canonical predicted-precision factor π̃_a
+            // (paper's Limit 3, π_a → ∞).
             let child_node_type = network.edges[child_idx].node_type.as_str();
             let child_is_gaussian_interior =
                 matches!(child_node_type, "continuous-state" | "volatile-state")
                     && (network.edges[child_idx].value_children.is_some()
                         || network.edges[child_idx].volatility_children.is_some());
             let effective_child_precision = if child_is_gaussian_interior {
+                // π_y = π_a − π̃_a; the Schur complement carries the *conditional*
+                // predicted precision π̂_a (stored on the child). Using the
+                // marginal would double-count parent uncertainty.
                 let child_precision = child_state.precision;
-                child_expected_precision
-                    * (child_precision - child_expected_precision)
-                    / child_precision
+                let pi_y = child_precision - child_expected_precision;
+                let child_cond = child_state.conditional_expected_precision;
+                child_cond * pi_y / (child_cond + pi_y)
             } else {
                 child_expected_precision
             };
@@ -108,6 +119,17 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
 }
 
 /// Compute the mean update contribution from value and volatility children.
+///
+/// The value-coupling branch uses the joint-Gaussian (RTS-smoother) gain
+///
+/// ```text
+/// g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```
+///
+/// accumulated across children and divided once by `node_precision` (π_b) — this is
+/// what makes the multi-child mean exact rather than a sum of independent
+/// single-child RTS gains. For leaves and non-Gaussian children π_y = 0 and g_a
+/// collapses to π̃_a (= `child.expected_precision`), recovering the canonical gain.
 fn mean_update_from_children(network: &Network, node_idx: usize, node_precision: f64) -> f64 {
     let mut value_pwpe = 0.0;
     let mut volatility_pwpe = 0.0;
@@ -129,7 +151,25 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
                 None => 1.0,
             };
 
-            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision) * child_vape;
+            // Joint-Gaussian (RTS-smoother) gain g_a = π̂_a · π_a / (π̂_a + π_y),
+            // π_y = π_a − π̃_a; summed over children then divided once by node_precision
+            // (exact multi-child marginal mean). Leaves / non-Gaussian children have
+            // π_y = 0 so g_a collapses to the marginal, recovering the canonical gain.
+            let child_node_type = network.edges[child_idx].node_type.as_str();
+            let child_is_gaussian_interior =
+                matches!(child_node_type, "continuous-state" | "volatile-state")
+                    && (network.edges[child_idx].value_children.is_some()
+                        || network.edges[child_idx].volatility_children.is_some());
+            let gain_precision = if child_is_gaussian_interior {
+                let child_precision = child_state.precision;
+                let pi_y = child_precision - child_expected_precision;
+                let child_cond = child_state.conditional_expected_precision;
+                child_cond * child_precision / (child_cond + pi_y)
+            } else {
+                child_expected_precision
+            };
+
+            value_pwpe += (kappa * coupling_fn_prime * gain_precision / node_precision) * child_vape;
         }
     }
 
@@ -225,7 +265,12 @@ pub fn posterior_update_continuous_state_node_unbounded(network: &mut Network, n
     // to +inf (→ 1), matching Julia's rearrangement.
     let v_jm1 = gamma_c.exp();
     let w_jm1 = 1.0 / (1.0 + al_aux / v_jm1);
-    let da_jm1 = be_aux / (al_aux + v_jm1) - 1.0;
+    // Volatility prediction error: da_jm1 = pihat_child * be_aux - 1, with
+    // pihat_child the volatility child's *marginal* predicted precision. Matches the
+    // standard/eHGF volatility PE, the volatile-state node's fused update, and the
+    // Python backend; the earlier be_aux/(al_aux+v_jm1) - 1 form used a
+    // no-MGF/no-coupling conditional precision.
+    let da_jm1 = child_state.expected_precision * be_aux - 1.0;
 
     let pi1 = pihat_j + 0.5 * ka.powi(2) * w_jm1 * (1.0 - w_jm1);
     let mu1 = muhat_j + (ka * w_jm1 / (2.0 * pi1)) * da_jm1;

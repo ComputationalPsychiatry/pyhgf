@@ -14,65 +14,54 @@ def posterior_update_mean_continuous_node(
     node_idx: int,
     node_precision: float,
 ) -> float:
-    r"""Update the mean of a state node using the value prediction errors [1]_.
+    r"""Update the mean of a state node using value- and volatility-coupling PEs [1]_.
 
-    1. Mean update from value coupling.
+    1. Mean update from value coupling
+    ----------------------------------
 
-    The new mean of a state node :math:`b` value coupled with other input and/or state
-    nodes :math:`j` at time :math:`k` is given by:
-
-    For linear value coupling:
-
-    .. math::
-        \mu_b^{(k)} =  \hat{\mu}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \frac{\kappa_j \hat{\pi}_j^{(k)}}{\pi_b} \delta_j^{(k)}
-
-    Where :math:`\kappa_j` is the volatility coupling strength between the child node
-    and the state node and :math:`\delta_j^{(k)}` is the value prediction error that
-    was computed beforehand by
-    :py:func:`pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error`.
-
-    For non-linear value coupling:
-
-    .. math::
-        \mu_b^{(k)} =  \hat{\mu}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \frac{\kappa_j g'_{j,b}({\mu}_b^{(k-1)}) \hat{\pi}_j^{(k)}}{\pi_b}
-            \delta_j^{(k)}
-
-
-    2. Mean update from volatility coupling.
-
-    The new mean of a state node :math:`b` volatility coupled with other input and/or
-    state nodes :math:`j` at time :math:`k` is given by:
-
-    .. math::
-        \mu_b^{(k)} = \hat{\mu}_b^{(k)} + \frac{1}{2\pi_b}
-          \sum_{j=1}^{N_{children}} \kappa_j \gamma_j^{(k)} \Delta_j^{(k)}
-
-    where :math:`\kappa_j` is the volatility coupling strength between the volatility
-    parent and the volatility children :math:`j` and :math:`\Delta_j^{(k)}` is the
-    volatility prediction error is given by:
+    Each value child :math:`j` contributes
 
     .. math::
 
-        \Delta_j^{(k)} = \frac{\hat{\pi}_j^{(k)}}{\pi_j^{(k)}} +
-        \hat{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1
+        \Delta \mu_b \;\mathrel{+}=\;
+            \frac{\kappa_j \, g'_{j,b}(\mu_b^{(k-1)}) \, g_{a,j}}{\pi_b} \, \delta_j^{(k)},
+            \qquad
+        g_{a,j} \,=\, \frac{\hat{\pi}_j^{(k)} \, \pi_j^{(k)}}{\hat{\pi}_j^{(k)} + \pi_{y,j}},
+            \qquad
+        \pi_{y,j} \,=\, \pi_j^{(k)} - \tilde{\pi}_j^{(k)},
 
-    with :math:`\delta_j^{(k)}` the value prediction error
-    :math:`\delta_j^{(k)} = \mu_j^{k} - \hat{\mu}_j^{k}`.
+    where :math:`\kappa_j` is the value-coupling strength, :math:`g'_{j,b}` is the
+    derivative of the coupling function (1 for linear coupling),
+    :math:`\hat{\pi}_j` is the child's *conditional* predicted precision (stored as
+    ``child.temp["conditional_expected_precision"]``), :math:`\tilde{\pi}_j` its
+    *marginal* predicted precision (``child.expected_precision``), and
+    :math:`\delta_j^{(k)}` is the value prediction error computed by
+    :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
+    The smoothing form :math:`g_{a,j}` is the joint-Gaussian (RTS-smoother) gain
+    derived from the structured-Gaussian variational posterior on the value-coupling
+    edge; for leaves and non-Gaussian children :math:`\pi_{y,j} = 0` and
+    :math:`g_{a,j}` collapses to the marginal :math:`\tilde{\pi}_j`, recovering the
+    canonical gain :math:`\hat{\pi}_j \, \pi_j / \pi_j = \tilde{\pi}_j`.
 
-    :math:`\gamma_j^{(k)}` is the effective precision of the prediction, given by:
+    2. Mean update from volatility coupling
+    ---------------------------------------
 
     .. math::
 
-        \gamma_j^{(k)} = \Omega_j^{(k)} \hat{\pi}_j^{(k)}
+        \Delta \mu_b \mathrel{+}= \frac{1}{2 \, \pi_b}
+            \sum_{j} \kappa_j \, \gamma_j^{(k)} \, \Delta_j^{(k)},
 
-    with :math:`\Omega_j^{(k)}` the predicted volatility computed in the prediction
-    step :py:func:`pyhgf.updates.prediction.predict_precision`.
+    where :math:`\kappa_j` is the volatility-coupling strength between the
+    volatility parent and the volatility child :math:`j`,
+    :math:`\gamma_j^{(k)} = \Omega_j^{(k)} \, \tilde{\pi}_j^{(k)}` is the effective
+    precision of the prediction (computed in the prediction step,
+    :py:func:`pyhgf.updates.prediction.predict_precision`), and the volatility
+    prediction error is
 
-    If the child node is a continuous state node, the volatility prediction error
-    :math:`\Delta_j^{(k)}` was computed by
-    :py:func:`pyhgf.updates.prediction_errors.continuous.continuous_node_volatility_prediction_error`.
+    .. math::
+
+        \Delta_j^{(k)} = \frac{\tilde{\pi}_j^{(k)}}{\pi_j^{(k)}} +
+            \tilde{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1.
 
     Parameters
     ----------
@@ -80,26 +69,20 @@ def posterior_update_mean_continuous_node(
         The attributes of the probabilistic nodes.
     edges :
         The edges of the probabilistic nodes as a tuple of
-        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node
-        number. For each node, the index lists the value and volatility parents and
-        children.
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
     node_idx :
         Pointer to the value parent node that will be updated.
     node_precision :
-        The precision of the node. Depending on the kind of volatility update, this
-        value can be the expected precision (ehgf), or the posterior from the update
-        (standard).
+        The precision :math:`\pi_b` of the node to divide by once after summing the
+        precision-weighted PEs across children. Depending on the volatility update
+        schedule this is either the just-updated posterior precision (standard
+        scheme) or the marginal predicted precision (eHGF scheme).
 
     Returns
     -------
     posterior_mean :
         The new posterior mean.
-
-    Notes
-    -----
-    This update step is similar to the one used for the state node, except that it uses
-    the observed value instead of the mean of the child node, and the expected mean of
-    the parent node instead of the expected mean of the child node.
 
     See Also
     --------
@@ -108,8 +91,8 @@ def posterior_update_mean_continuous_node(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife
+       Sciences Publications, Ltd. https://doi.org/10.7554/elife.110174.1
 
     """
     # sum the prediction errors from both value and volatility coupling
@@ -142,15 +125,33 @@ def posterior_update_mean_continuous_node(
                 # Compute the derivative of the coupling function
                 coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
 
-            # expected precisions from the value children
+            # Coupling gain precision g_a. From the joint (x_a, x_b) Gaussian the
+            # exact marginal-mean gain is
+            #     g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
+            # accumulated across children and divided once by `node_precision` (π_b)
+            # after the loop — this is what makes the multi-child mean exact rather
+            # than a sum of independent RTS gains. For leaves and non-Gaussian
+            # children π_y = 0 and g_a collapses to π̃_a, recovering the canonical
+            # gain (π̃_a is what `child.expected_precision` stores).
+            child_node_type = edges[value_child_idx].node_type
+            child_is_gaussian_interior = child_node_type in (2, 6) and (
+                edges[value_child_idx].value_children is not None
+                or edges[value_child_idx].volatility_children is not None
+            )
+            child_expected_precision = attributes[value_child_idx]["expected_precision"]
+            if child_is_gaussian_interior:
+                child_precision = attributes[value_child_idx]["precision"]
+                pi_y = child_precision - child_expected_precision
+                child_cond = attributes[value_child_idx]["temp"][
+                    "conditional_expected_precision"
+                ]
+                gain_precision = child_cond * child_precision / (child_cond + pi_y)
+            else:
+                gain_precision = child_expected_precision
+
             # sum the precision weigthed prediction errors over all children
             value_precision_weigthed_prediction_error += (
-                (
-                    value_coupling
-                    * attributes[value_child_idx]["expected_precision"]
-                    * coupling_fn_prime
-                )
-                / node_precision
+                (value_coupling * gain_precision * coupling_fn_prime) / node_precision
             ) * value_prediction_error
 
     # Volatility coupling updates - update the mean of a volatility parent
