@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
@@ -40,10 +40,10 @@
     <link rel="stylesheet" type="text/css" href="_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="_static/documentation_options.js?v=1e30946d"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
@@ -203,11 +203,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -220,8 +227,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -232,8 +238,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -244,8 +249,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -334,11 +338,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -351,8 +362,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -363,8 +373,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -375,8 +384,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -544,7 +552,7 @@
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html#pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node" title="pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_mean_continuous_node</span></code></a>(...)</p></td>
-<td><p>Update the mean of a state node using the value prediction errors <a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html#rc0c1c3e2aefe-1" id="id1"><span>[Rc0c1c3e2aefe-1]</span></a>.</p></td>
+<td><p>Update the mean of a state node using value- and volatility-coupling PEs <a href="#id43"><span class="problematic" id="id1">[1]_</span></a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -652,7 +660,7 @@
 <td><p>Compute the expected mean of a continuous state node.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_precision.html#pyhgf.updates.prediction.continuous.predict_precision" title="pyhgf.updates.prediction.continuous.predict_precision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_precision</span></code></a>(attributes, edges, node_idx)</p></td>
-<td><p>Compute the expected precision of a continuous state node.</p></td>
+<td><p>Compute the predicted precisions of a continuous state node.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#pyhgf.updates.prediction.continuous.continuous_node_prediction" title="pyhgf.updates.prediction.continuous.continuous_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continuous_node_prediction</span></code></a>(attributes, ...)</p></td>
 <td><p>Update the expected mean and expected precision of a continuous node <a class="reference internal" href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#rad74659bc93e-1" id="id3"><span>[Rad74659bc93e-1]</span></a>.</p></td>
@@ -672,7 +680,7 @@
 <td><p>Predict the mean of the value level (external facing).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.predict_precision_value_level.html#pyhgf.updates.prediction.volatile.predict_precision_value_level" title="pyhgf.updates.prediction.volatile.predict_precision_value_level"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_precision_value_level</span></code></a>(attributes, ...)</p></td>
-<td><p>Predict the precision of the value level using the implicit volatility level.</p></td>
+<td><p>Predict the value-level precisions using the implicit volatility level.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.volatile_node_prediction.html#pyhgf.updates.prediction.volatile.volatile_node_prediction" title="pyhgf.updates.prediction.volatile.volatile_node_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">volatile_node_prediction</span></code></a>(attributes, ...)</p></td>
 <td><p>Update the expected mean and expected precision of a value-volatility node.</p></td>
@@ -833,7 +841,7 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction.html#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction" title="pyhgf.updates.vectorized.volatile.vectorized_layer_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_layer_prediction</span></code></a>(child_state, ...)</p></td>
-<td><p>Predict expected mean/precision for all nodes in child layer (volatile node).</p></td>
+<td><p>Predict expected mean/precision for all nodes in a volatile-node layer.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html#pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update" title="pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_layer_posterior_update</span></code></a>(layer, ...)</p></td>
 <td><p>Update the value-level posterior for all nodes in a parent layer.</p></td>
@@ -1284,8 +1292,8 @@ least the HGF instance as input after observation and returning surprise.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1319,7 +1327,7 @@ least the HGF instance as input after observation and returning surprise.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

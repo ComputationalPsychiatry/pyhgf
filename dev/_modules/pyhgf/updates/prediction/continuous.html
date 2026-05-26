@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
@@ -39,10 +39,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -982,8 +990,8 @@ window.runMermaid = runMermaid;</script>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_precision</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the expected precision of a continuous state node.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the predicted precisions of a continuous state node.</span>
 
 <span class="sd">    This is the *improved* (piHGF) prediction step, which marginalises over the parents&#39;</span>
 <span class="sd">    variational Gaussians rather than collapsing them to point estimates. Two additional</span>
@@ -997,49 +1005,54 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Both terms vanish in the limit of perfectly known parents, recovering the canonical</span>
 <span class="sd">    formula exactly.</span>
 
-<span class="sd">    The marginal predictive variance at time :math:`k` for a state node :math:`a`</span>
-<span class="sd">    with volatility parents :math:`\check a` and value parents :math:`b` is</span>
+<span class="sd">    Two predicted precisions are computed and stored on the node (see</span>
+<span class="sd">    :class:`pyhgf.typing.LayerState` for the notation table):</span>
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \mathrm{Var}\!\left[x_a^{(k)}\right] =</span>
-<span class="sd">            \frac{1}{\pi_a^{(k-1)}}</span>
-<span class="sd">            + t^{(k)}</span>
-<span class="sd">              \exp\!\left( \omega_a</span>
-<span class="sd">                + \sum_{j} \left(</span>
-<span class="sd">                    \kappa_{a,\check a_j}\, \hat{\mu}_{\check a_j}</span>
-<span class="sd">                    + \frac{\kappa_{a,\check a_j}^{2}}{2\, \hat{\pi}_{\check a_j}}</span>
-<span class="sd">                  \right)</span>
-<span class="sd">              \right)</span>
-<span class="sd">            + \sum_{b} \frac{</span>
-<span class="sd">                \left( t^{(k)}\, \alpha_{b,a}\, g&#39;(\hat{\mu}_b) \right)^{2}</span>
-<span class="sd">              }{ \hat{\pi}_b }.</span>
-
-<span class="sd">    The new term :math:`\kappa_{a,\check a_j}^{2} / (2\, \hat{\pi}_{\check a_j})`</span>
-<span class="sd">    inside the exponent is the Jensen-inequality contribution of a Gaussian-distributed</span>
-<span class="sd">    volatility parent through the convex :math:`\exp(\cdot)` non-linearity, available in</span>
-<span class="sd">    closed form. The new term :math:`(\alpha_{b,a}\, g&#39;(\hat{\mu}_b))^{2} / \hat{\pi}_b`</span>
-<span class="sd">    outside the exponent is the law-of-total-variance contribution of a</span>
-<span class="sd">    Gaussian-distributed value parent through the linearised coupling function. Both use</span>
-<span class="sd">    *predicted*, not posterior, parent precisions, keeping the prediction schedule</span>
-<span class="sd">    strictly top-down.</span>
-
-<span class="sd">    The expected precision is the inverse of the marginal predictive variance:</span>
+<span class="sd">        \frac{1}{\hat{\pi}_a^{(k)} = \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)},</span>
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \hat{\pi}_a^{(k)} = \mathrm{Var}\!\left[x_a^{(k)}\right]^{-1}.</span>
+<span class="sd">        \frac{1}{\tilde{\pi}_a^{(k)}}</span>
+<span class="sd">            \;=\; \frac{1}{\hat{\pi}_a^{(k)}}</span>
+<span class="sd">              + \sum_{b} \frac{ (t^{(k)} \alpha_{b,a} g&#39;(\hat{\mu}_b))^2 }</span>
+<span class="sd">                              { \tilde{\pi}_b },</span>
+
+<span class="sd">    with the (improved) phasic-plus-tonic log-volatility</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \Omega_a^{(k)} = t^{(k)} \exp\!\left(</span>
+<span class="sd">            \omega_a + \sum_{j} \left(</span>
+<span class="sd">                \kappa_{a,\check{a}_j} \hat{\mu}_{\check{a}_j}</span>
+<span class="sd">                + \frac{\kappa_{a,\check{a}_j}^2}{2 \hat{\pi}_{\check{a}_j}}</span>
+<span class="sd">            \right)</span>
+<span class="sd">        \right).</span>
+
+<span class="sd">    :math:`\hat{\pi}_a^{(k)}` is the *conditional* predicted precision</span>
+<span class="sd">    (``conditional_expected_precision``) — own variance plus volatility, without the</span>
+<span class="sd">    parent-uncertainty bleed-through; it is the precision that enters the parent&#39;s</span>
+<span class="sd">    Schur-complement posterior-step correction. :math:`\tilde{\pi}_a^{(k)}` is the</span>
+<span class="sd">    *marginal* predicted precision (``expected_precision``) — the inverse of the</span>
+<span class="sd">    marginal predictive variance, including the first-order Laplace value-coupling</span>
+<span class="sd">    term. The bleed-through uses each parent&#39;s marginal predicted precision</span>
+<span class="sd">    :math:`\tilde{\pi}_b`, which generalises the artifact&#39;s two-node derivation to</span>
+<span class="sd">    deep networks. The MGF correction</span>
+<span class="sd">    :math:`\kappa^2 / (2\, \hat{\pi}_{\check{a}_j})` inside the exponent is the</span>
+<span class="sd">    Jensen-inequality contribution of a Gaussian volatility parent through the</span>
+<span class="sd">    convex :math:`\exp(\cdot)` non-linearity. Both corrections use *predicted*, not</span>
+<span class="sd">    posterior, parent precisions, keeping the prediction schedule strictly top-down.</span>
 
 <span class="sd">    The *effective precision* :math:`\gamma_a^{(k)}` is defined relative to the</span>
-<span class="sd">    volatility-driven part of the variance only,</span>
+<span class="sd">    volatility-driven part of the marginal variance only,</span>
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \gamma_a^{(k)} = \Omega_a^{(k)}\, \hat{\pi}_a^{(k)},</span>
+<span class="sd">        \gamma_a^{(k)} = \Omega_a^{(k)} \, \tilde{\pi}_a^{(k)},</span>
 
-<span class="sd">    where :math:`\Omega_a^{(k)}` denotes the (improved) phasic + tonic volatility</span>
-<span class="sd">    contribution. This value is stored on the node for later use during the</span>
-<span class="sd">    posterior update.</span>
+<span class="sd">    and is consumed by the volatility-coupling posterior update at the volatility</span>
+<span class="sd">    parent.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1048,25 +1061,26 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        node.</span>
 <span class="sd">    edges :</span>
 <span class="sd">        The edges of the probabilistic network as a tuple of</span>
-<span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the number of</span>
-<span class="sd">        nodes. For each node, the index list value/volatility - parents/children.</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Index of the node that should be updated.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    expected_precision :</span>
-<span class="sd">        The new expected precision of the value parent.</span>
+<span class="sd">        The marginal predicted precision :math:`\tilde{\pi}_a^{(k)}`.</span>
+<span class="sd">    conditional_expected_precision :</span>
+<span class="sd">        The conditional predicted precision :math:`\hat{\pi}_a^{(k)}`.</span>
 <span class="sd">    effective_precision :</span>
-<span class="sd">        The effective_precision :math:`\gamma_a^{(k)}`. This value is stored in the</span>
-<span class="sd">        node for later use in the update steps.</span>
+<span class="sd">        The effective precision :math:`\gamma_a^{(k)}`; stored on the node for later</span>
+<span class="sd">        use in the volatility-coupling posterior update.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;</span>
-<span class="sd">       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).</span>
-<span class="sd">       arXiv. https://doi.org/10.48550/ARXIV.2305.10937</span>
-
+<span class="sd">       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife</span>
+<span class="sd">       Sciences Publications, Ltd. https://doi.org/10.7554/elife.110174.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
 
@@ -1103,7 +1117,8 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># piHGF Laplace value-coupling correction. The conditional mean of x_a is</span>
     <span class="c1"># linearised around μ̂_b via a first-order Taylor expansion of the coupling</span>
     <span class="c1"># function g; the resulting variance contribution from each value parent is</span>
-    <span class="c1"># (t · α · g&#39;(μ̂_b))² / π̂_b. The factor t arises because the value-parent</span>
+    <span class="c1"># (t · α · g&#39;(μ̂_b))² / π̃_b, using the parent&#39;s marginal predicted precision</span>
+    <span class="c1"># π̃_b (= `expected_precision`). The factor t arises because the value-parent</span>
     <span class="c1"># contribution to the mean is scaled by the time step in :func:`predict_mean`.</span>
     <span class="n">value_parents_idxs</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_parents</span>
     <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">predicted_volatility</span><span class="p">)</span>
@@ -1124,6 +1139,14 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">value_parent_idx</span>
             <span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
 
+    <span class="c1"># Conditional predicted precision π̂_a — precision of x_a given its value</span>
+    <span class="c1"># parents (own variance + volatility only), WITHOUT the parent-uncertainty</span>
+    <span class="c1"># value-coupling term. This is what the parent&#39;s posterior-step Schur complement</span>
+    <span class="c1"># acts on; substituting the marginal would double-count parent uncertainty.</span>
+    <span class="n">conditional_expected_precision</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
+    <span class="p">)</span>
+
     <span class="c1"># Estimate the new expected precision for the node by inverting the</span>
     <span class="c1"># marginal predictive variance (own variance + improved volatility term +</span>
     <span class="c1"># Laplace value-coupling term).</span>
@@ -1137,7 +1160,7 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># enters γ, since γ is consumed by the volatility-coupling posterior update.</span>
     <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
 
-    <span class="k">return</span> <span class="n">expected_precision</span><span class="p">,</span> <span class="n">effective_precision</span></div>
+    <span class="k">return</span> <span class="n">expected_precision</span><span class="p">,</span> <span class="n">conditional_expected_precision</span><span class="p">,</span> <span class="n">effective_precision</span></div>
 
 
 
@@ -1198,9 +1221,10 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Get the new expected mean</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">predict_mean</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">)</span>
 
-    <span class="c1"># Get the new expected precision and predicted volatility (Ω)</span>
-    <span class="n">expected_precision</span><span class="p">,</span> <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predict_precision</span><span class="p">(</span>
-        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span>
+    <span class="c1"># Get the new marginal (π̃) and conditional (π̂) predicted precisions and the</span>
+    <span class="c1"># effective precision γ.</span>
+    <span class="n">expected_precision</span><span class="p">,</span> <span class="n">conditional_expected_precision</span><span class="p">,</span> <span class="n">effective_precision</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">predict_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="c1"># Update this node&#39;s parameters</span>
@@ -1212,10 +1236,17 @@ window.runMermaid = runMermaid;</script>
         <span class="ow">and</span> <span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_parents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
     <span class="p">):</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+        <span class="c1"># A leaf has no random walk, so conditional == marginal == prior precision.</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;conditional_expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span>
+            <span class="n">node_idx</span>
+        <span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
 
     <span class="c1"># 2. regular continuous state node, or input with volatility parent</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_precision</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;conditional_expected_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">conditional_expected_precision</span>
+        <span class="p">)</span>
 
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;effective_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">effective_precision</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span>
@@ -1251,8 +1282,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1286,7 +1317,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

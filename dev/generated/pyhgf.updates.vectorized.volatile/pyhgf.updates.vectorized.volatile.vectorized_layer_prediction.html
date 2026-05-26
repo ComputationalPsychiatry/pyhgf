@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -40,10 +40,10 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -54,6 +54,8 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/logo_small.svg"/>
@@ -201,11 +203,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -218,8 +227,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -230,8 +238,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -242,8 +249,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -332,11 +338,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -349,8 +362,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -361,8 +373,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -373,8 +384,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -647,9 +657,25 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.vectorized.volatile.vectorized_layer_prediction">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_layer_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_has_constant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_volatility_parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_input_layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/prediction.html#vectorized_layer_prediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction" title="Link to this definition">#</a></dt>
-<dd><p>Predict expected mean/precision for all nodes in child layer (volatile node).</p>
-<p>This implements the full volatile node prediction with both value level
-and volatility level predictions.</p>
+<dd><p>Predict expected mean/precision for all nodes in a volatile-node layer.</p>
+<p>Computes both the value-level (external) and volatility-level (internal)
+predictions. Two predicted precisions of the value level are stored:</p>
+<div class="math notranslate nohighlight">
+\[\hat{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+    \right)^{-1}, \qquad
+\frac{1}{\tilde{\pi}_a^{(k)}} = \frac{1}{\hat{\pi}_a^{(k)}}
+    + \sum_b \frac{ (t^{(k)} \, \alpha_b \, g'(\hat{\mu}_b))^2 }
+                  { \tilde{\pi}_b },\]</div>
+<p>where <span class="math notranslate nohighlight">\(\hat{\pi}_a\)</span> (<code class="docutils literal notranslate"><span class="pre">conditional_expected_precision</span></code>) is the
+AR-plus-volatility chain precision without parent-uncertainty bleed-through and
+<span class="math notranslate nohighlight">\(\tilde{\pi}_a\)</span> (<code class="docutils literal notranslate"><span class="pre">expected_precision</span></code>) adds the first-order Laplace
+value-coupling contribution from each value parent. The bleed-through term uses
+the parent’s <em>marginal</em> predicted precision <span class="math notranslate nohighlight">\(\tilde{\pi}_b\)</span>
+(<code class="docutils literal notranslate"><span class="pre">parent_state.expected_precision</span></code>), which generalises the artifact’s
+two-node <span class="math notranslate nohighlight">\(\hat{\pi}_b\)</span> to deep networks by propagating each parent’s full
+marginal predictive variance. The volatility-coupling correction
+<span class="math notranslate nohighlight">\(\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})\)</span> enters <span class="math notranslate nohighlight">\(\Omega_a^{(k)}\)</span>
+inside the log-volatility exponent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -659,26 +685,28 @@ and volatility level predictions.</p>
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code> or <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents</span> <span class="pre">+</span> <span class="pre">1)</span></code>
 when the parent layer includes a constant input node.</p></li>
 <li><p><strong>params</strong> (<em>LayerParams</em>) – Layer parameters for the child layer.</p></li>
-<li><p><strong>time_step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Time step for the prediction.</p></li>
-<li><p><strong>coupling_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Coupling function applied to parent means (default: tanh).</p></li>
+<li><p><strong>time_step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Time step <span class="math notranslate nohighlight">\(t^{(k)}\)</span> for the prediction.</p></li>
+<li><p><strong>coupling_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Coupling function applied to parent means (default <a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.numpy.tanh.html#jax.numpy.tanh" title="(in JAX)"><code class="xref py py-func docutils literal notranslate"><span class="pre">jax.numpy.tanh()</span></code></a>).</p></li>
 <li><p><strong>parent_has_constant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the parent layer has a constant input node (mean = 1.0)
-appended to its activations.  The last column of <em>weights</em>
-carries the bias connections.</p></li>
+appended to its activations. The last column of <em>weights</em> carries the bias
+connections; its predicted precision is treated as infinite so it
+contributes zero to the value-coupling variance.</p></li>
 <li><p><strong>has_volatility_parent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True (default), the layer has an implied internal volatility parent
-whose state (mean_vol, precision_vol) is predicted and updated.
-If False, the volatility level is frozen: mean_vol and precision_vol
-are not propagated forward, and only tonic_volatility drives the
-expected precision for the value level.</p></li>
-<li><p><strong>is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the layer is treated as an observed input/leaf — it does not
+whose state (<code class="docutils literal notranslate"><span class="pre">mean_vol</span></code>, <code class="docutils literal notranslate"><span class="pre">precision_vol</span></code>) is predicted and updated.
+If False, the volatility level is frozen and only <code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code>
+drives the expected precision for the value level.</p></li>
+<li><p><strong>is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the layer is treated as an observed input/leaf: it does not
 undergo a Gaussian random walk between observations. The
 <code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code> contribution to the value-level expected precision
-is skipped and <code class="docutils literal notranslate"><span class="pre">expected_precision</span></code> is set to the prior precision,
-mirroring the continuous-node treatment in
+is skipped, <code class="docutils literal notranslate"><span class="pre">expected_precision</span></code> and <code class="docutils literal notranslate"><span class="pre">conditional_expected_precision</span></code>
+are both set to the prior precision, and the effective precision is
+zeroed — mirroring the continuous-node treatment in
 <a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#pyhgf.updates.prediction.continuous.continuous_node_prediction" title="pyhgf.updates.prediction.continuous.continuous_node_prediction"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction.continuous.continuous_node_prediction()</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Updated child layer state with expected values filled in.</p>
+<dd class="field-even"><p>Updated child layer state with predicted means and precisions populated
+for both the value and volatility levels.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>LayerState</p>
@@ -761,8 +789,8 @@ mirroring the continuous-node treatment in
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -796,7 +824,7 @@ mirroring the continuous-node treatment in
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

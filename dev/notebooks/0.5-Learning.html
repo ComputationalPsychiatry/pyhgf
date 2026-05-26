@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -40,10 +40,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -203,11 +203,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -220,8 +227,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -232,8 +238,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -244,8 +249,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -334,11 +338,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -351,8 +362,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -363,8 +373,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -375,8 +384,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -921,7 +929,7 @@ K_i = \frac{\pi_{\text{parent}_i}}{\pi_{\text{parent}_i} + \pi_{\text{child}}}
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/69f7f2fb108e6d13e47f916478a6cbb67185b56cee224e78296c9a56c85ecf90.png" src="../_images/69f7f2fb108e6d13e47f916478a6cbb67185b56cee224e78296c9a56c85ecf90.png" />
+<img alt="../_images/da08da294a3837d85b0965d4112f97cff7c232f7eecef5d844a4215ea2aa1ceb.png" src="../_images/da08da294a3837d85b0965d4112f97cff7c232f7eecef5d844a4215ea2aa1ceb.png" />
 </div>
 </div>
 </section>
@@ -1178,97 +1186,97 @@ Layers: 14  |  Nodes: 195
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.5357, acc=0.799 | test  loss=0.5101, acc=0.835
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch   0 | train loss=0.4870, acc=0.796 | test  loss=0.5101, acc=0.835
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.4828, acc=0.796 | test  loss=0.4635, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  10 | train loss=0.4112, acc=0.802 | test  loss=0.3963, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  20 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  30 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  40 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  50 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  60 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  70 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  80 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch  90 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 100 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 110 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 120 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 130 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 140 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 150 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 160 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 170 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 180 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 190 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 200 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 210 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 220 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 230 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 240 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 250 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 260 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 270 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 280 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 290 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.4827, acc=0.795 | test  loss=0.4640, acc=0.805
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 299 | train loss=0.4112, acc=0.805 | test  loss=0.3969, acc=0.805
 
 Saved 151 decision boundary snapshots
 </pre></div>
@@ -1299,7 +1307,7 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/451a1a04b3ce70352ebe87b0ca5bf5cd311fb1929d7208bb56e404bfc70d8b67.png" src="../_images/451a1a04b3ce70352ebe87b0ca5bf5cd311fb1929d7208bb56e404bfc70d8b67.png" />
+<img alt="../_images/3d3060567566ca5ab6bc1cbf6577fcdd0f180c515c574a53f3033d6cb98a27fa.png" src="../_images/3d3060567566ca5ab6bc1cbf6577fcdd0f180c515c574a53f3033d6cb98a27fa.png" />
 </div>
 </div>
 </section>
@@ -1371,7 +1379,7 @@ Saved 151 decision boundary snapshots
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon, 11 May 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 26 May 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
@@ -1384,7 +1392,7 @@ jaxlib: 0.4.31
 IPython   : 9.13.0
 jax       : 0.4.31
 matplotlib: 3.10.9
-numpy     : 2.4.4
+numpy     : 2.4.6
 pyhgf     : 0.2.12
 seaborn   : 0.13.2
 treescope : 0.1.10
@@ -1493,8 +1501,8 @@ Watermark: 2.6.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1528,7 +1536,7 @@ Watermark: 2.6.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

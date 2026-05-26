@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -40,10 +40,10 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -203,11 +203,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -220,8 +227,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -232,8 +238,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -244,8 +249,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -334,11 +338,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -351,8 +362,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -363,8 +373,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -375,8 +384,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -653,19 +661,31 @@
 <p>This is the vectorized equivalent of
 <a class="reference internal" href="../pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level" title="pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level()</span></code></a>.</p>
 <p>Implements the <em>posterior-step (smoothing) correction</em> of the relaxed HGF on
-value-coupling edges. Lifting the mean-field delta-collapse approximation
-<span class="math notranslate nohighlight">\(q(x_a, x_b) = q(x_a)\,q(x_b)\)</span> to a structured Gaussian on the value-coupling
-edge and applying the Schur complement yields the substitution</p>
+value-coupling edges, in its <strong>fully-corrected form</strong> that pairs with the
+prediction-step (marginal-precision) correction. Lifting the mean-field
+delta-collapse approximation <span class="math notranslate nohighlight">\(q(x_a, x_b) = q(x_a)\,q(x_b)\)</span> to a structured
+Gaussian on the value-coupling edge and applying the Schur complement to the joint
+precision matrix replaces the canonical child-precision factor by the harmonic
+combination</p>
 <div class="math notranslate nohighlight">
-\[\hat\pi_a^{(k)} \;\longmapsto\;
-\hat\pi_a^{(k)} \, \frac{\pi_a^{(k)} - \hat\pi_a^{(k)}}{\pi_a^{(k)}}\]</div>
-<p>in the canonical value-coupling contribution to <span class="math notranslate nohighlight">\(\pi_b^{(k)}\)</span>. The
-multiplicative factor <span class="math notranslate nohighlight">\((\pi_a - \hat\pi_a)/\pi_a \in [0, 1]\)</span> is the fraction
-of the child’s posterior precision attributable to bottom-up evidence (rather than
-to its own predicted prior). The same factor scales both the <span class="math notranslate nohighlight">\(g'^2\)</span> and the
-<span class="math notranslate nohighlight">\(g''\,\delta_a\)</span> contributions. Reduces to the canonical formula when the child
-is fully observed (<span class="math notranslate nohighlight">\(\pi_a \gg \hat\pi_a\)</span>); returns no update when the child
-gained no bottom-up information (<span class="math notranslate nohighlight">\(\pi_a = \hat\pi_a\)</span>).</p>
+\[\hat{\pi}_a^{(k)} \,\longmapsto\,
+\frac{\hat{\pi}_a^{(k)} \, \pi_y}{\hat{\pi}_a^{(k)} + \pi_y}, \qquad
+\pi_y = \pi_a^{(k)} - \tilde{\pi}_a^{(k)},\]</div>
+<p>in the value-coupling contribution to <span class="math notranslate nohighlight">\(\pi_b^{(k)}\)</span>. Here
+<span class="math notranslate nohighlight">\(\hat{\pi}_a\)</span> is the child’s <em>conditional</em> predicted precision (own variance
+plus volatility, without the parent-uncertainty bleed-through term
+<span class="math notranslate nohighlight">\(\alpha^2 g'^2 / \hat{\pi}_b\)</span>), stored as
+<code class="docutils literal notranslate"><span class="pre">child.conditional_expected_precision</span></code>, and <span class="math notranslate nohighlight">\(\tilde{\pi}_a\)</span> is its
+<em>marginal</em> predicted precision stored as <code class="docutils literal notranslate"><span class="pre">child.expected_precision</span></code>. The two
+coincide in the canonical limit (no prediction-step correction); once the
+prediction-step correction is in play they diverge, and the Schur complement
+acts on the conditional. Substituting the marginal here would double-count
+parent uncertainty.</p>
+<p>The same harmonic combination scales both the <span class="math notranslate nohighlight">\((\kappa g')^2\)</span> and the
+<span class="math notranslate nohighlight">\(\kappa g'' \, \delta_a\)</span> contributions. Reduces to the canonical formula
+when the child is fully observed (<span class="math notranslate nohighlight">\(\pi_y \to \infty\)</span>); returns no
+contribution when the child gained no bottom-up information
+(<span class="math notranslate nohighlight">\(\pi_y = 0\)</span>).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Unlike the standard continuous-state posterior updates elsewhere in the toolbox,
@@ -682,15 +702,15 @@ as the natural reference point for computing updates.</p>
 <li><p><strong>weights</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>) – Weight matrix connecting child to parent, shape
 <code class="docutils literal notranslate"><span class="pre">(n_children,</span> <span class="pre">n_parents)</span></code>.</p></li>
 <li><p><strong>coupling_fn_grad</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>) – Gradient of the coupling function.</p></li>
-<li><p><strong>child_is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child is the clamped observation leaf (binary or
-continuous output). In that case the paper’s Limit 3 applies
-(<code class="docutils literal notranslate"><span class="pre">π_a</span> <span class="pre">→</span> <span class="pre">∞</span></code>) and the smoothing correction reduces to the canonical
-contribution <code class="docutils literal notranslate"><span class="pre">π̂_a</span></code>. We bypass the <code class="docutils literal notranslate"><span class="pre">(π_a</span> <span class="pre">−</span> <span class="pre">π̂_a)/π_a</span></code> formula
-here because pyhgf’s leaf convention sets <code class="docutils literal notranslate"><span class="pre">π_a</span> <span class="pre">=</span> <span class="pre">π̂_a</span></code> for the
-binary PE and never updates <code class="docutils literal notranslate"><span class="pre">π_a</span></code> for a continuous leaf — neither
-signals “info gained”, so the smoothing form would incorrectly
-zero out the leaf’s contribution. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code> (interior
-child, full smoothing correction).</p></li>
+<li><p><strong>child_is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child is a clamped observation leaf (binary or continuous
+output). The paper’s Limit 3 (<span class="math notranslate nohighlight">\(\pi_a \to \infty\)</span>) applies and the
+smoothing correction reduces to the canonical predicted-precision factor.
+We short-circuit to <code class="docutils literal notranslate"><span class="pre">child.conditional_expected_precision</span></code> (which equals
+<code class="docutils literal notranslate"><span class="pre">child.expected_precision</span></code> for a leaf): pyhgf’s leaf convention sets
+<span class="math notranslate nohighlight">\(\pi_a = \tilde{\pi}_a\)</span> for the binary PE and never updates
+<span class="math notranslate nohighlight">\(\pi_a\)</span> for a continuous leaf, so <span class="math notranslate nohighlight">\(\pi_y = 0\)</span> and the
+harmonic-combination form would incorrectly zero out the contribution.
+Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code> (interior child, full smoothing correction).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -777,8 +797,8 @@ child, full smoothing correction).</p></li>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -812,7 +832,7 @@ child, full smoothing correction).</p></li>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

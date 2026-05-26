@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -40,10 +40,10 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -203,11 +203,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -220,8 +227,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -232,8 +238,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -244,8 +249,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -334,11 +338,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -351,8 +362,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -363,8 +373,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -375,8 +384,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -649,7 +657,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.prediction.continuous.predict_precision">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.updates.prediction.continuous.</span></span><span class="sig-name descname"><span class="pre">predict_precision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/prediction/continuous.html#predict_precision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.prediction.continuous.predict_precision" title="Link to this definition">#</a></dt>
-<dd><p>Compute the expected precision of a continuous state node.</p>
+<dd><p>Compute the predicted precisions of a continuous state node.</p>
 <p>This is the <em>improved</em> (piHGF) prediction step, which marginalises over the parents’
 variational Gaussians rather than collapsing them to point estimates. Two additional
 variance terms appear relative to the canonical (g)HGF formulation <a class="reference internal" href="#r0ee8b5514749-1" id="id1">[1]</a>:</p>
@@ -661,60 +669,64 @@ expansion of the coupling function.</p></li>
 </ul>
 <p>Both terms vanish in the limit of perfectly known parents, recovering the canonical
 formula exactly.</p>
-<p>The marginal predictive variance at time <span class="math notranslate nohighlight">\(k\)</span> for a state node <span class="math notranslate nohighlight">\(a\)</span>
-with volatility parents <span class="math notranslate nohighlight">\(\check a\)</span> and value parents <span class="math notranslate nohighlight">\(b\)</span> is</p>
+<p>Two predicted precisions are computed and stored on the node (see
+<code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.LayerState</span></code> for the notation table):</p>
 <div class="math notranslate nohighlight">
-\[\mathrm{Var}\!\left[x_a^{(k)}\right] =
-    \frac{1}{\pi_a^{(k-1)}}
-    + t^{(k)}
-      \exp\!\left( \omega_a
-        + \sum_{j} \left(
-            \kappa_{a,\check a_j}\, \hat{\mu}_{\check a_j}
-            + \frac{\kappa_{a,\check a_j}^{2}}{2\, \hat{\pi}_{\check a_j}}
-          \right)
-      \right)
-    + \sum_{b} \frac{
-        \left( t^{(k)}\, \alpha_{b,a}\, g'(\hat{\mu}_b) \right)^{2}
-      }{ \hat{\pi}_b }.\]</div>
-<p>The new term <span class="math notranslate nohighlight">\(\kappa_{a,\check a_j}^{2} / (2\, \hat{\pi}_{\check a_j})\)</span>
-inside the exponent is the Jensen-inequality contribution of a Gaussian-distributed
-volatility parent through the convex <span class="math notranslate nohighlight">\(\exp(\cdot)\)</span> non-linearity, available in
-closed form. The new term <span class="math notranslate nohighlight">\((\alpha_{b,a}\, g'(\hat{\mu}_b))^{2} / \hat{\pi}_b\)</span>
-outside the exponent is the law-of-total-variance contribution of a
-Gaussian-distributed value parent through the linearised coupling function. Both use
-<em>predicted</em>, not posterior, parent precisions, keeping the prediction schedule
-strictly top-down.</p>
-<p>The expected precision is the inverse of the marginal predictive variance:</p>
+\[\frac{1}{\hat{\pi}_a^{(k)} = \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)},\]</div>
 <div class="math notranslate nohighlight">
-\[\hat{\pi}_a^{(k)} = \mathrm{Var}\!\left[x_a^{(k)}\right]^{-1}.\]</div>
+\[\frac{1}{\tilde{\pi}_a^{(k)}}
+    \;=\; \frac{1}{\hat{\pi}_a^{(k)}}
+      + \sum_{b} \frac{ (t^{(k)} \alpha_{b,a} g'(\hat{\mu}_b))^2 }
+                      { \tilde{\pi}_b },\]</div>
+<p>with the (improved) phasic-plus-tonic log-volatility</p>
+<div class="math notranslate nohighlight">
+\[\Omega_a^{(k)} = t^{(k)} \exp\!\left(
+    \omega_a + \sum_{j} \left(
+        \kappa_{a,\check{a}_j} \hat{\mu}_{\check{a}_j}
+        + \frac{\kappa_{a,\check{a}_j}^2}{2 \hat{\pi}_{\check{a}_j}}
+    \right)
+\right).\]</div>
+<p><span class="math notranslate nohighlight">\(\hat{\pi}_a^{(k)}\)</span> is the <em>conditional</em> predicted precision
+(<code class="docutils literal notranslate"><span class="pre">conditional_expected_precision</span></code>) — own variance plus volatility, without the
+parent-uncertainty bleed-through; it is the precision that enters the parent’s
+Schur-complement posterior-step correction. <span class="math notranslate nohighlight">\(\tilde{\pi}_a^{(k)}\)</span> is the
+<em>marginal</em> predicted precision (<code class="docutils literal notranslate"><span class="pre">expected_precision</span></code>) — the inverse of the
+marginal predictive variance, including the first-order Laplace value-coupling
+term. The bleed-through uses each parent’s marginal predicted precision
+<span class="math notranslate nohighlight">\(\tilde{\pi}_b\)</span>, which generalises the artifact’s two-node derivation to
+deep networks. The MGF correction
+<span class="math notranslate nohighlight">\(\kappa^2 / (2\, \hat{\pi}_{\check{a}_j})\)</span> inside the exponent is the
+Jensen-inequality contribution of a Gaussian volatility parent through the
+convex <span class="math notranslate nohighlight">\(\exp(\cdot)\)</span> non-linearity. Both corrections use <em>predicted</em>, not
+posterior, parent precisions, keeping the prediction schedule strictly top-down.</p>
 <p>The <em>effective precision</em> <span class="math notranslate nohighlight">\(\gamma_a^{(k)}\)</span> is defined relative to the
-volatility-driven part of the variance only,</p>
+volatility-driven part of the marginal variance only,</p>
 <div class="math notranslate nohighlight">
-\[\gamma_a^{(k)} = \Omega_a^{(k)}\, \hat{\pi}_a^{(k)},\]</div>
-<p>where <span class="math notranslate nohighlight">\(\Omega_a^{(k)}\)</span> denotes the (improved) phasic + tonic volatility
-contribution. This value is stored on the node for later use during the
-posterior update.</p>
+\[\gamma_a^{(k)} = \Omega_a^{(k)} \, \tilde{\pi}_a^{(k)},\]</div>
+<p>and is consumed by the volatility-coupling posterior update at the volatility
+parent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – The attributes of the probabilistic network that contains the continuous state
 node.</p></li>
 <li><p><strong>edges</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><em>AdjacencyLists</em><em>, </em><em>...</em><em>]</em>) – The edges of the probabilistic network as a tuple of
-<code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.Indexes</span></code>. The tuple has the same length as the number of
-nodes. For each node, the index list value/volatility - parents/children.</p></li>
+<code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.typing.AdjacencyLists</span></code>. For each node, the entry lists its
+value/volatility parents and children.</p></li>
 <li><p><strong>node_idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index of the node that should be updated.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><em>expected_precision</em> – The new expected precision of the value parent.</p></li>
-<li><p><em>effective_precision</em> – The effective_precision <span class="math notranslate nohighlight">\(\gamma_a^{(k)}\)</span>. This value is stored in the
-node for later use in the update steps.</p></li>
+<li><p><em>expected_precision</em> – The marginal predicted precision <span class="math notranslate nohighlight">\(\tilde{\pi}_a^{(k)}\)</span>.</p></li>
+<li><p><em>conditional_expected_precision</em> – The conditional predicted precision <span class="math notranslate nohighlight">\(\hat{\pi}_a^{(k)}\)</span>.</p></li>
+<li><p><em>effective_precision</em> – The effective precision <span class="math notranslate nohighlight">\(\gamma_a^{(k)}\)</span>; stored on the node for later
+use in the volatility-coupling posterior update.</p></li>
 </ul>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>, <a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>, <a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>, <a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>]</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
@@ -722,8 +734,8 @@ node for later use in the update steps.</p></li>
 <div class="citation" id="r0ee8b5514749-1" role="doc-biblioentry">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;
-Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.10937">https://doi.org/10.48550/ARXIV.2305.10937</a></p>
+Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife
+Sciences Publications, Ltd. <a class="reference external" href="https://doi.org/10.7554/elife.110174.1">https://doi.org/10.7554/elife.110174.1</a></p>
 </div>
 </div>
 </dd></dl>
@@ -803,8 +815,8 @@ arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.1
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -838,7 +850,7 @@ arXiv. <a class="reference external" href="https://doi.org/10.48550/ARXIV.2305.1
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -39,10 +39,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -893,25 +901,28 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict expected mean and precision for a binary state node layer.</span>
 
-<span class="sd">    The expected mean is the sigmoid of the weighted parent predictions:</span>
+<span class="sd">    The expected mean is the sigmoid of the weighted, coupled parent predictions:</span>
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \\hat{\\mu}_b = \\sigma(W \\cdot g(\\hat{\\mu}_a))</span>
+<span class="sd">        \hat{\mu}_b = \sigma\!\left( W \, g(\hat{\mu}_a) \right),</span>
 
-<span class="sd">    The expected precision is the Bernoulli variance:</span>
+<span class="sd">    and the expected precision is the Bernoulli variance:</span>
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \\hat{\\pi}_b = \\hat{\\mu}_b (1 - \\hat{\\mu}_b)</span>
+<span class="sd">        \tilde{\pi}_b = \hat{\mu}_b \, (1 - \hat{\mu}_b).</span>
 
 <span class="sd">    .. note::</span>
 
-<span class="sd">        The ``expected_precision`` field actually stores the **variance**</span>
-<span class="sd">        (i.e. uncertainty) of the Bernoulli distribution.  Using this name</span>
-<span class="sd">        avoids the need for a separate posterior update step for binary nodes:</span>
-<span class="sd">        the continuous parent&#39;s posterior update can consume the binary</span>
-<span class="sd">        prediction error directly.</span>
+<span class="sd">        The ``expected_precision`` field actually stores the **variance** (i.e. the</span>
+<span class="sd">        uncertainty) of the Bernoulli distribution. Reusing this name avoids the</span>
+<span class="sd">        need for a separate posterior update step for binary nodes: the continuous</span>
+<span class="sd">        parent&#39;s posterior update can consume the binary prediction error directly.</span>
+<span class="sd">        Binary leaves carry no AR-volatility random walk, so the conditional</span>
+<span class="sd">        predicted precision :math:`\hat{\pi}_b` (``conditional_expected_precision``)</span>
+<span class="sd">        is set equal to :math:`\tilde{\pi}_b` — matching the paper&#39;s Limit 3 leaf</span>
+<span class="sd">        convention used by the parent&#39;s posterior-step (smoothing) update.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -920,14 +931,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    parent_state :</span>
 <span class="sd">        Current state of the parent layer (predictor).</span>
 <span class="sd">    weights :</span>
-<span class="sd">        Weight matrix connecting child to parent, shape ``(n_children, n_parents)`` or</span>
-<span class="sd">        ``(n_children, n_parents + 1)`` when the parent layer includes a constant input</span>
-<span class="sd">        node.</span>
+<span class="sd">        Weight matrix connecting child to parent, shape ``(n_children, n_parents)``</span>
+<span class="sd">        or ``(n_children, n_parents + 1)`` when the parent layer includes a</span>
+<span class="sd">        constant input node.</span>
 <span class="sd">    coupling_fn :</span>
-<span class="sd">        Coupling function applied to parent means (default: tanh).</span>
+<span class="sd">        Coupling function applied to parent means (default: :func:`jax.numpy.tanh`).</span>
 <span class="sd">    parent_has_constant :</span>
 <span class="sd">        If True, the parent layer has a constant input node (mean = 1.0)</span>
-<span class="sd">        appended to its activations.</span>
+<span class="sd">        appended to its activations; the corresponding column of *weights* carries</span>
+<span class="sd">        the bias connections and is treated as linearly coupled (:math:`g(1) = 1`).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -951,6 +963,10 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">child_state</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
         <span class="n">expected_mean</span><span class="o">=</span><span class="n">expected_mean</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
+        <span class="c1"># Binary leaves carry no AR-volatility random walk, so the conditional</span>
+        <span class="c1"># precision coincides with the marginal — matches the Limit 3 leaf</span>
+        <span class="c1"># convention used by the parent&#39;s posterior update.</span>
+        <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -982,8 +998,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1017,7 +1033,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

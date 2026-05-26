@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -40,10 +40,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -203,11 +203,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -220,8 +227,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -232,8 +238,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -244,8 +249,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -334,11 +338,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -351,8 +362,7 @@
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -363,8 +373,7 @@
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -375,8 +384,7 @@
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -716,7 +724,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/7436c1b99a13fe56efff948f479e479bcbda5387c220692925a2e5b6fa67a1c5.png" src="../_images/7436c1b99a13fe56efff948f479e479bcbda5387c220692925a2e5b6fa67a1c5.png" />
+<img alt="../_images/cb45c8b3044dc3530c85bf45a56f8aa9d0d651f698fdfd1207e9ce0c41abdb1c.png" src="../_images/cb45c8b3044dc3530c85bf45a56f8aa9d0d651f698fdfd1207e9ce0c41abdb1c.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -733,7 +741,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/6a71ef096d11b281f48cd03476598cd5f97d47a614c8700b5d923299dd127330.png" src="../_images/6a71ef096d11b281f48cd03476598cd5f97d47a614c8700b5d923299dd127330.png" />
+<img alt="../_images/e34de3457c742412c052e5d73b0559e3c376bf1905aa5478ffd754ac3f9e909b.png" src="../_images/e34de3457c742412c052e5d73b0559e3c376bf1905aa5478ffd754ac3f9e909b.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -765,7 +773,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/4fcdc7513041ef0bc7183d6b2742b5352b0b9d8f0e5eaa9268029cc6421d3533.png" src="../_images/4fcdc7513041ef0bc7183d6b2742b5352b0b9d8f0e5eaa9268029cc6421d3533.png" />
+<img alt="../_images/dd8f7cde3f5b1d1084707ac2a158c6c6cc5253198785676e0a1c8337e2f412fb.png" src="../_images/dd8f7cde3f5b1d1084707ac2a158c6c6cc5253198785676e0a1c8337e2f412fb.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -828,7 +836,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8eb453bb37593bbd3b2ffb8bd577247c749b73367286a5a80d21a32324d70762.png" src="../_images/8eb453bb37593bbd3b2ffb8bd577247c749b73367286a5a80d21a32324d70762.png" />
+<img alt="../_images/6197283284bf09293dec9fdfc327b6ceca129c92d15997099633c59d715788ef.png" src="../_images/6197283284bf09293dec9fdfc327b6ceca129c92d15997099633c59d715788ef.png" />
 </div>
 </div>
 <p>Notice how <span class="math notranslate nohighlight">\(\mu_1\)</span> is just drifting during the missing observation chuncks.</p>
@@ -851,7 +859,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/cfa5588eb8c0d71afb0098d269fb5a8749af15e57b1da941ed12f1a3db1fc20d.png" src="../_images/cfa5588eb8c0d71afb0098d269fb5a8749af15e57b1da941ed12f1a3db1fc20d.png" />
+<img alt="../_images/e42affed10cec6ecd7636d207f593a6dcd66ae4859c5b0beb53749c8ae3e1cb2.png" src="../_images/e42affed10cec6ecd7636d207f593a6dcd66ae4859c5b0beb53749c8ae3e1cb2.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -902,7 +910,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8718f3f53c4fd0650916992e7d1948aff699f058da698d404fc4e88110694a82.png" src="../_images/8718f3f53c4fd0650916992e7d1948aff699f058da698d404fc4e88110694a82.png" />
+<img alt="../_images/e896530e39f46eb49a5d5e912974964e9dde15528f74d3f3c8249fe6453f6b34.png" src="../_images/e896530e39f46eb49a5d5e912974964e9dde15528f74d3f3c8249fe6453f6b34.png" />
 </div>
 </div>
 </section>
@@ -960,7 +968,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/4455a9892fd22b005689587c2ceb97de81c28272be77bdc0ed5d0615558db107.png" src="../_images/4455a9892fd22b005689587c2ceb97de81c28272be77bdc0ed5d0615558db107.png" />
+<img alt="../_images/9407878ebadc6d8bde2eafa8ed5463929a990b637a66044ff97fc869d07b69ac.png" src="../_images/9407878ebadc6d8bde2eafa8ed5463929a990b637a66044ff97fc869d07b69ac.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>
@@ -975,7 +983,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon, 11 May 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 26 May 2026
 
 Python implementation: CPython
 Python version       : 3.12.3
@@ -988,7 +996,7 @@ jaxlib: 0.4.31
 IPython   : 9.13.0
 jax       : 0.4.31
 matplotlib: 3.10.9
-numpy     : 2.4.4
+numpy     : 2.4.6
 pyhgf     : 0.2.12
 seaborn   : 0.13.2
 
@@ -1079,8 +1087,8 @@ Watermark: 2.6.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1114,7 +1122,7 @@ Watermark: 2.6.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>

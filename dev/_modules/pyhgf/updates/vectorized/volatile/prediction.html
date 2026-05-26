@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=0790524f97105ba85085" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -39,10 +39,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=0790524f97105ba85085"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
     <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -895,10 +903,29 @@ window.runMermaid = runMermaid;</script>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict expected mean/precision for all nodes in child layer (volatile node).</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict expected mean/precision for all nodes in a volatile-node layer.</span>
 
-<span class="sd">    This implements the full volatile node prediction with both value level</span>
-<span class="sd">    and volatility level predictions.</span>
+<span class="sd">    Computes both the value-level (external) and volatility-level (internal)</span>
+<span class="sd">    predictions. Two predicted precisions of the value level are stored:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \hat{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}</span>
+<span class="sd">            \right)^{-1}, \qquad</span>
+<span class="sd">        \frac{1}{\tilde{\pi}_a^{(k)}} = \frac{1}{\hat{\pi}_a^{(k)}}</span>
+<span class="sd">            + \sum_b \frac{ (t^{(k)} \, \alpha_b \, g&#39;(\hat{\mu}_b))^2 }</span>
+<span class="sd">                          { \tilde{\pi}_b },</span>
+
+<span class="sd">    where :math:`\hat{\pi}_a` (``conditional_expected_precision``) is the</span>
+<span class="sd">    AR-plus-volatility chain precision without parent-uncertainty bleed-through and</span>
+<span class="sd">    :math:`\tilde{\pi}_a` (``expected_precision``) adds the first-order Laplace</span>
+<span class="sd">    value-coupling contribution from each value parent. The bleed-through term uses</span>
+<span class="sd">    the parent&#39;s *marginal* predicted precision :math:`\tilde{\pi}_b`</span>
+<span class="sd">    (``parent_state.expected_precision``), which generalises the artifact&#39;s</span>
+<span class="sd">    two-node :math:`\hat{\pi}_b` to deep networks by propagating each parent&#39;s full</span>
+<span class="sd">    marginal predictive variance. The volatility-coupling correction</span>
+<span class="sd">    :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})` enters :math:`\Omega_a^{(k)}`</span>
+<span class="sd">    inside the log-volatility exponent.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -913,31 +940,33 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    params :</span>
 <span class="sd">        Layer parameters for the child layer.</span>
 <span class="sd">    time_step :</span>
-<span class="sd">        Time step for the prediction.</span>
+<span class="sd">        Time step :math:`t^{(k)}` for the prediction.</span>
 <span class="sd">    coupling_fn :</span>
-<span class="sd">        Coupling function applied to parent means (default: tanh).</span>
+<span class="sd">        Coupling function applied to parent means (default :func:`jax.numpy.tanh`).</span>
 <span class="sd">    parent_has_constant :</span>
 <span class="sd">        If True, the parent layer has a constant input node (mean = 1.0)</span>
-<span class="sd">        appended to its activations.  The last column of *weights*</span>
-<span class="sd">        carries the bias connections.</span>
+<span class="sd">        appended to its activations. The last column of *weights* carries the bias</span>
+<span class="sd">        connections; its predicted precision is treated as infinite so it</span>
+<span class="sd">        contributes zero to the value-coupling variance.</span>
 <span class="sd">    has_volatility_parent :</span>
 <span class="sd">        If True (default), the layer has an implied internal volatility parent</span>
-<span class="sd">        whose state (mean_vol, precision_vol) is predicted and updated.</span>
-<span class="sd">        If False, the volatility level is frozen: mean_vol and precision_vol</span>
-<span class="sd">        are not propagated forward, and only tonic_volatility drives the</span>
-<span class="sd">        expected precision for the value level.</span>
+<span class="sd">        whose state (``mean_vol``, ``precision_vol``) is predicted and updated.</span>
+<span class="sd">        If False, the volatility level is frozen and only ``tonic_volatility``</span>
+<span class="sd">        drives the expected precision for the value level.</span>
 <span class="sd">    is_input_layer :</span>
-<span class="sd">        If True, the layer is treated as an observed input/leaf — it does not</span>
+<span class="sd">        If True, the layer is treated as an observed input/leaf: it does not</span>
 <span class="sd">        undergo a Gaussian random walk between observations. The</span>
 <span class="sd">        ``tonic_volatility`` contribution to the value-level expected precision</span>
-<span class="sd">        is skipped and ``expected_precision`` is set to the prior precision,</span>
-<span class="sd">        mirroring the continuous-node treatment in</span>
+<span class="sd">        is skipped, ``expected_precision`` and ``conditional_expected_precision``</span>
+<span class="sd">        are both set to the prior precision, and the effective precision is</span>
+<span class="sd">        zeroed — mirroring the continuous-node treatment in</span>
 <span class="sd">        :func:`pyhgf.updates.prediction.continuous.continuous_node_prediction`.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    LayerState</span>
-<span class="sd">        Updated child layer state with expected values filled in.</span>
+<span class="sd">        Updated child layer state with predicted means and precisions populated</span>
+<span class="sd">        for both the value and volatility levels.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
@@ -975,12 +1004,12 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># Append constant 1.0 for bias node before applying coupling_fn</span>
         <span class="n">parent_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_mean</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
     <span class="n">coupled_parents</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_mean</span><span class="p">)</span>
-    <span class="n">drift</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">coupled_parents</span><span class="p">)</span>
 
     <span class="c1"># Expected mean for value level</span>
     <span class="c1"># Note: autoconnection_strength = 0 for i.i.d. classification</span>
     <span class="c1"># (the previous observation should not bias the next prediction)</span>
-    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">drift</span>
+    <span class="c1"># Here we remove the influence of time_step on the expected mean.</span>
+    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">coupled_parents</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
         <span class="c1"># Total volatility includes contribution from internal volatility level</span>
@@ -1002,12 +1031,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
     <span class="p">)</span>
 
-    <span class="c1"># Laplace value-coupling correction. Marginalising over the value parents&#39;</span>
-    <span class="c1"># Gaussian yields, per child node i, the additional variance</span>
-    <span class="c1">#     Σ_j (t · W[i, j] · g&#39;(μ̂_j))² / π̂_j</span>
-    <span class="c1"># where g&#39; is the elementwise derivative of the coupling function and π̂_j</span>
-    <span class="c1"># is the parent&#39;s predicted precision. The constant-bias parent (if any)</span>
-    <span class="c1"># has infinite precision and therefore contributes zero.</span>
+    <span class="c1"># Laplace value-coupling correction. Linearising g at μ̂_b and marginalising</span>
+    <span class="c1"># over each parent&#39;s Gaussian yields, per child node i, the additional variance</span>
+    <span class="c1">#     Σ_j (t · W[i, j] · g&#39;(μ̂_j))² / π̃_j,</span>
+    <span class="c1"># using the parent&#39;s marginal predicted precision π̃_j (= `expected_precision`).</span>
+    <span class="c1"># The constant-bias parent (if any) has infinite precision and contributes zero.</span>
     <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
     <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
         <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">])])</span>
@@ -1015,26 +1043,40 @@ window.runMermaid = runMermaid;</script>
     <span class="n">weighted_grad</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="p">(</span><span class="n">time_step</span> <span class="o">*</span> <span class="n">g_prime</span><span class="p">)</span>
     <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weighted_grad</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="c1"># Expected precision for value level (inverse marginal predictive variance)</span>
-    <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span> <span class="o">+</span> <span class="n">value_coupling_variance</span>
+    <span class="c1"># Conditional predicted precision π̂_a — the precision of x_a given a specific</span>
+    <span class="c1"># value of x_b (own AR-plus-volatility variance only, no parent-uncertainty</span>
+    <span class="c1"># bleed-through). This is the precision that enters the joint (x_a, x_b)</span>
+    <span class="c1"># Gaussian&#39;s Schur complement at the parent&#39;s posterior-step (smoothing)</span>
+    <span class="c1"># correction; substituting π̃_a there would double-count parent uncertainty.</span>
+    <span class="n">conditional_expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
     <span class="p">)</span>
 
-    <span class="c1"># Effective precision for value level — only the volatility-driven part</span>
-    <span class="c1"># enters γ, since γ is consumed by the volatility-coupling posterior update.</span>
+    <span class="c1"># Marginal predicted precision π̃_a — inverse marginal predictive variance,</span>
+    <span class="c1"># adding the law-of-total-variance bleed-through to the conditional variance.</span>
+    <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">conditional_expected_precision</span> <span class="o">+</span> <span class="n">value_coupling_variance</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Effective precision γ — only the volatility-driven part enters γ, since γ</span>
+    <span class="c1"># is consumed by the volatility-coupling posterior update.</span>
     <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
 
     <span class="c1"># Input/leaf override: an observed layer with no value children does not</span>
     <span class="c1"># undergo a Gaussian random walk between observations, so the</span>
     <span class="c1"># tonic-volatility contribution to the value-level expected precision is</span>
-    <span class="c1"># dropped (matches the continuous-node treatment).</span>
+    <span class="c1"># dropped (matches the continuous-node treatment). The conditional and</span>
+    <span class="c1"># marginal coincide in this regime since both lose the volatility term and</span>
+    <span class="c1"># there is no parent-uncertainty bleed-through to apply.</span>
     <span class="k">if</span> <span class="n">is_input_layer</span><span class="p">:</span>
         <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>
+        <span class="n">conditional_expected_precision</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>
         <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">effective_precision</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">child_state</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
         <span class="n">expected_mean</span><span class="o">=</span><span class="n">expected_mean</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
+        <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">conditional_expected_precision</span><span class="p">,</span>
         <span class="n">effective_precision</span><span class="o">=</span><span class="n">effective_precision</span><span class="p">,</span>
         <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">expected_mean_vol</span><span class="p">,</span>
         <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">expected_precision_vol</span><span class="p">,</span>
@@ -1070,8 +1112,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=0790524f97105ba85085"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1105,7 +1147,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.18.0.
 </p></div>
       
     </div>
