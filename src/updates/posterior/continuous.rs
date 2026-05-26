@@ -24,7 +24,9 @@ fn lambert_w0(z: f64) -> f64 {
 /// of the relaxed HGF: the canonical child-precision factor is replaced by the
 /// harmonic combination
 ///
-///     π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```text
+/// π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```
 ///
 /// where π̂_a is the child's conditional predicted precision
 /// (`conditional_expected_precision`) and π̃_a its marginal predicted precision
@@ -120,7 +122,9 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
 ///
 /// The value-coupling branch uses the joint-Gaussian (RTS-smoother) gain
 ///
-///     g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```text
+/// g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```
 ///
 /// accumulated across children and divided once by `node_precision` (π_b) — this is
 /// what makes the multi-child mean exact rather than a sum of independent

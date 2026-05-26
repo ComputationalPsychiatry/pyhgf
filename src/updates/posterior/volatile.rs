@@ -12,7 +12,9 @@ use crate::model::Network;
 /// the joint `(x_a, x_b)` precision matrix replaces the canonical child-precision
 /// factor by the harmonic combination
 ///
-///     π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```text
+/// π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// ```
 ///
 /// where `π̂_a` is the child's *conditional* predicted precision
 /// (`conditional_expected_precision`: own variance plus volatility, without the
