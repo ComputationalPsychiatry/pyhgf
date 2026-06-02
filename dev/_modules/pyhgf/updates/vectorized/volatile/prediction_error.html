@@ -888,11 +888,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">correct order.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">lambert_w0</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span>
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># 1.  Prediction errors</span>
@@ -925,7 +927,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">value_pe</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">value_prediction_error</span><span class="o">=</span><span class="n">value_pe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">value_pe</span><span class="p">)</span></div>
 
 
 
@@ -960,7 +962,7 @@ window.runMermaid = runMermaid;</script>
         <span class="o">-</span> <span class="mf">1.0</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">volatility_pe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">volatility_pe</span><span class="p">)</span></div>
 
 
 
@@ -1022,7 +1024,8 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="n">posterior_mean_vol</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="n">precision_weighted_pe_vol</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
         <span class="n">mean_vol</span><span class="o">=</span><span class="n">posterior_mean_vol</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -1081,7 +1084,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
         <span class="n">mean_vol</span><span class="o">=</span><span class="n">posterior_mean_vol</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -1226,7 +1230,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">sig2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi1</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="n">pi2</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">mu2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">sig2</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
         <span class="n">mean_vol</span><span class="o">=</span><span class="n">posterior_mean_vol</span><span class="p">,</span>
     <span class="p">)</span></div>

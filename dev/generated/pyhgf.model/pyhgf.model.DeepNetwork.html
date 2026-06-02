@@ -512,9 +512,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.binary/pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error.html">pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_update.html">pyhgf.updates.vectorized.learning.vectorized_weight_update</a></li>
-</ul>
-<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.logp.html">pyhgf.distribution.logp</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.hgf_logp.html">pyhgf.distribution.hgf_logp</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.distribution/pyhgf.distribution.HGFLogpGradOp.html">pyhgf.distribution.HGFLogpGradOp</a></li>
@@ -728,19 +725,28 @@ to be more conservative against precision blow-up.</p></li>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_layer_stack</span></code>(layer_sizes[, kind, ...])</p></td>
 <td><p>Add multiple hidden layers at once.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y[, lr, learning_kind, params, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y, optimizer[, learning_kind, ...])</p></td>
 <td><p>Fit network to data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_layers</span></code>([layers, variables, mode, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(path)</p></td>
+<td><p>Read array leaves from <code class="docutils literal notranslate"><span class="pre">path</span></code> back into <code class="docutils literal notranslate"><span class="pre">self.state</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_layers</span></code>([layers, variables, mode, ...])</p></td>
 <td><p>Plot layer-wise parameter trajectories.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
 <td><p>Forward pass without learning.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
 <td><p>Reset the network state.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, seed])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code>(path)</p></td>
+<td><p>Serialise <code class="docutils literal notranslate"><span class="pre">self.state</span></code> array leaves to <code class="docutils literal notranslate"><span class="pre">path</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code>()</p></td>
+<td><p>Flatten <code class="docutils literal notranslate"><span class="pre">self.trajectories</span></code> into a wide-format <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, key])</p></td>
 <td><p>Initialise inter-layer weight matrices.</p></td>
 </tr>
 </tbody>

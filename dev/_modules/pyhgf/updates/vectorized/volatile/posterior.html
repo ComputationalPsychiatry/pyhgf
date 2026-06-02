@@ -882,13 +882,14 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">&quot;&quot;&quot;Vectorized posterior update for volatile node layers.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">grad</span> <span class="k">as</span> <span class="n">jgrad</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">vmap</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
 
 
 <div class="viewcode-block" id="vectorized_posterior_update_precision_value_level">
@@ -897,7 +898,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">child</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">coupling_fn_grad</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">child_is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the precision of the value level for all nodes in a layer.</span>
@@ -953,8 +954,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    weights :</span>
 <span class="sd">        Weight matrix connecting child to parent, shape</span>
 <span class="sd">        ``(n_children, n_parents)``.</span>
-<span class="sd">    coupling_fn_grad :</span>
-<span class="sd">        Gradient of the coupling function.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        Coupling function. First and second derivatives are computed inline</span>
+<span class="sd">        via ``jax.grad``.</span>
 <span class="sd">    child_is_input_layer :</span>
 <span class="sd">        If True, the child is a clamped observation leaf (binary or continuous</span>
 <span class="sd">        output). The paper&#39;s Limit 3 (:math:`\pi_a \to \infty`) applies and the</span>
@@ -971,6 +973,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    jnp.ndarray</span>
 <span class="sd">        Posterior precision for each node in the parent layer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coupling_fn_grad</span> <span class="o">=</span> <span class="n">jgrad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)</span>
+
     <span class="c1"># Coupling derivatives at parent expected means</span>
     <span class="n">coupling_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">coupling_fn_grad</span><span class="p">)(</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
 
@@ -1030,7 +1034,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">child</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">coupling_fn_grad</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">posterior_precision</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the mean of the value level for all nodes in a layer.</span>
@@ -1070,8 +1074,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    weights :</span>
 <span class="sd">        Weight matrix connecting child to parent, shape</span>
 <span class="sd">        ``(n_children, n_parents)``.</span>
-<span class="sd">    coupling_fn_grad :</span>
-<span class="sd">        Gradient of the coupling function.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        Coupling function. The first derivative is computed inline via</span>
+<span class="sd">        ``jax.grad``.</span>
 <span class="sd">    posterior_precision :</span>
 <span class="sd">        Already-updated value-level posterior precision :math:`\pi_b` for the</span>
 <span class="sd">        parent layer; the precision-weighted PE is divided by this once, after</span>
@@ -1083,7 +1088,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Posterior mean for each node in the parent layer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Coupling derivatives at parent expected means</span>
-    <span class="n">coupling_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">coupling_fn_grad</span><span class="p">)(</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
+    <span class="n">coupling_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">jgrad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
 
     <span class="c1"># Precision-weighted PE from children. From the joint Gaussian posterior over</span>
     <span class="c1"># (x_a, x_b), the per-child contribution is</span>
@@ -1122,7 +1127,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">child</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">coupling_fn_grad</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
     <span class="n">child_is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1143,8 +1148,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Weight matrix connecting child to parent, shape</span>
 <span class="sd">        ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``</span>
 <span class="sd">        when the parent layer includes a constant input node.</span>
-<span class="sd">    coupling_fn_grad :</span>
-<span class="sd">        Gradient of the coupling function.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        Coupling function. The first (and second, for the precision update)</span>
+<span class="sd">        derivatives are computed inline via ``jax.grad`` in the two helpers.</span>
 <span class="sd">    parent_has_constant :</span>
 <span class="sd">        If True, the last column of *weights* corresponds to the constant input node and</span>
 <span class="sd">        is stripped before computing the posterior update.</span>
@@ -1170,7 +1176,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">layer</span><span class="p">,</span>
             <span class="n">child</span><span class="p">,</span>
             <span class="n">weights</span><span class="p">,</span>
-            <span class="n">coupling_fn_grad</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="p">,</span>
             <span class="n">child_is_input_layer</span><span class="o">=</span><span class="n">child_is_input_layer</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="n">a_min</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">,</span>
@@ -1178,10 +1184,11 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
 
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">vectorized_posterior_update_mean_value_level</span><span class="p">(</span>
-        <span class="n">layer</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">coupling_fn_grad</span><span class="p">,</span> <span class="n">posterior_precision</span>
+        <span class="n">layer</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="p">,</span> <span class="n">posterior_precision</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="n">posterior_precision</span><span class="p">,</span>
         <span class="n">mean</span><span class="o">=</span><span class="n">posterior_mean</span><span class="p">,</span>
     <span class="p">)</span></div>

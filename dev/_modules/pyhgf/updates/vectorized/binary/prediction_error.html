@@ -882,7 +882,9 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">&quot;&quot;&quot;Vectorized prediction error for binary state node layers.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
 
 
 <div class="viewcode-block" id="vectorized_binary_prediction_error">
@@ -923,7 +925,8 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Posterior precision = expected precision for binary nodes</span>
     <span class="n">precision</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">value_pe</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">,</span>
     <span class="p">)</span></div>

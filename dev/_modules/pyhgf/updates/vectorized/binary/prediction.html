@@ -882,12 +882,13 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">&quot;&quot;&quot;Vectorized prediction for binary state node layers.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
 
 
 <div class="viewcode-block" id="vectorized_binary_prediction">
@@ -960,7 +961,8 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Binary variance = μ̂(1 − μ̂), stored as &quot;expected_precision&quot;</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">expected_mean</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">child_state</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">child_state</span><span class="p">,</span>
         <span class="n">expected_mean</span><span class="o">=</span><span class="n">expected_mean</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
         <span class="c1"># Binary leaves carry no AR-volatility random walk, so the conditional</span>

@@ -927,11 +927,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Upper bound applied to the value-level posterior precision write.</span>
 <span class="sd">        Default ``1e10``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Update precision first</span>
+    <span class="c1"># Update precision first. Clip both ends:</span>
+    <span class="c1">#   * upper bound at ``max_posterior_precision`` (precision blow-up guard);</span>
+    <span class="c1">#   * lower bound at the *expected* precision — the nonlinear g&#39;&#39; term in</span>
+    <span class="c1">#     the value-coupling contribution can swing strongly negative when a</span>
+    <span class="c1">#     child&#39;s PE flips sign.</span>
     <span class="n">precision_value</span> <span class="o">=</span> <span class="n">posterior_update_precision_value_level</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span>
     <span class="p">)</span>
-    <span class="n">precision_value</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">precision_value</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="p">)</span>
+    <span class="n">precision_value</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+        <span class="n">precision_value</span><span class="p">,</span>
+        <span class="n">a_min</span><span class="o">=</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span>
+        <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">precision_value</span>
 
     <span class="c1"># Update mean using new precision</span>
