@@ -3,12 +3,13 @@
 
 """Vectorized prediction for binary state node layers."""
 
+import dataclasses
 from typing import Callable
 
 import jax.numpy as jnp
 from jax.nn import sigmoid
 
-from pyhgf.typing import LayerState
+from pyhgf.typing.vectorised import LayerState
 
 
 def vectorized_binary_prediction(
@@ -79,7 +80,8 @@ def vectorized_binary_prediction(
     # Binary variance = μ̂(1 − μ̂), stored as "expected_precision"
     expected_precision = expected_mean * (1 - expected_mean)
 
-    return child_state._replace(
+    return dataclasses.replace(
+        child_state,
         expected_mean=expected_mean,
         expected_precision=expected_precision,
         # Binary leaves carry no AR-volatility random walk, so the conditional

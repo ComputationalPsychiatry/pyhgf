@@ -1,4 +1,5 @@
-from pyhgf.typing import LayerParams, LayerState, NetworkState
+from pyhgf.typing import LayerParams, LayerState
+from pyhgf.utils.vectorized_belief_propagation import prediction_pass as predict
 
 from .add_nodes import (
     add_binary_state,
@@ -23,7 +24,7 @@ __all__ = [
     "DeepNetwork",
     "LayerState",
     "LayerParams",
-    "NetworkState",
+    "predict",
     "add_nodes",
     "add_constant_state",
     "add_continuous_state",

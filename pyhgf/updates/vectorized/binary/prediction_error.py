@@ -3,7 +3,9 @@
 
 """Vectorized prediction error for binary state node layers."""
 
-from pyhgf.typing import LayerState
+import dataclasses
+
+from pyhgf.typing.vectorised import LayerState
 
 
 def vectorized_binary_prediction_error(
@@ -42,7 +44,8 @@ def vectorized_binary_prediction_error(
     # Posterior precision = expected precision for binary nodes
     precision = layer.expected_precision
 
-    return layer._replace(
+    return dataclasses.replace(
+        layer,
         value_prediction_error=value_pe,
         precision=precision,
     )

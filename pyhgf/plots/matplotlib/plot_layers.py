@@ -11,16 +11,19 @@ from pyhgf.typing import LayerState
 if TYPE_CHECKING:
     from pyhgf.model import DeepNetwork
 
-# 95% normal-approximation z-score used for the ``"mean_ci"`` band.
-_Z_95 = 1.959963984540054
 
-# Virtual variables that are computed from ``LayerState`` fields rather than
-# read directly. Each entry maps a name accepted in ``variables`` to a
-# function ``(LayerState) -> ndarray`` of shape (T, n_nodes).
+# Virtual variables computed from recorded ``LayerState`` fields rather than
+# read directly. Each entry maps a name accepted in ``variables`` to:
+#   * a tuple of required ``LayerState`` field names (must be in the
+#     ``record=...`` passed to ``fit``)
+#   * a function ``(dict[field, ndarray]) -> ndarray`` of shape (T, n_nodes)
 _DERIVED_VARIABLES = {
-    "PWPE": lambda layer: (
-        np.abs(np.asarray(layer.mean) - np.asarray(layer.expected_mean))
-        * np.asarray(layer.expected_precision)
+    "PWPE": (
+        ("mean", "expected_mean", "expected_precision"),
+        lambda d: (
+            np.abs(np.asarray(d["mean"]) - np.asarray(d["expected_mean"]))
+            * np.asarray(d["expected_precision"])
+        ),
     ),
 }
 
@@ -88,10 +91,10 @@ def plot_layers(
         ``LayerState`` field, if a layer index is out of range, or if *mode*
         is not one of ``"all"``/``"mean_ci"``.
     """
-    if network.trajectories is None:
+    if not network.trajectories:
         raise ValueError(
-            "Network has no trajectories. Call `fit(..., "
-            "record_trajectories=True)` before plotting."
+            "Network has no trajectories. Call `fit(..., record=(...))` "
+            "with the fields you want to plot before plotting."
         )
 
     # Normalise inputs ---------------------------------------------------
@@ -106,7 +109,7 @@ def plot_layers(
     else:
         layers = list(layers)
 
-    valid_fields = set(LayerState._fields)
+    valid_fields = set(LayerState.__dataclass_fields__.keys())
     valid_names = valid_fields | set(_DERIVED_VARIABLES)
     invalid_vars = [v for v in variables if v not in valid_names]
     if invalid_vars:
@@ -145,14 +148,32 @@ def plot_layers(
             )
 
     # Plot ---------------------------------------------------------------
+    # ``network.trajectories`` is now ``dict[field, tuple[(T, n_nodes), ...]]``
+    # indexed by layer position. Derived variables need their source fields to
+    # have been recorded; missing fields raise a helpful error here.
     for r, var in enumerate(variables):
         for c, layer_idx in enumerate(layers):
             ax = axs[r, c]
-            layer = network.trajectories.layers[layer_idx]
             if var in _DERIVED_VARIABLES:
-                data = np.asarray(_DERIVED_VARIABLES[var](layer))
+                required_fields, fn = _DERIVED_VARIABLES[var]
+                missing = [f for f in required_fields if f not in network.trajectories]
+                if missing:
+                    raise ValueError(
+                        f"Derived variable {var!r} requires {required_fields} "
+                        f"to be in ``record=...``; missing: {missing}."
+                    )
+                per_layer = {
+                    f: network.trajectories[f][layer_idx] for f in required_fields
+                }
+                data = np.asarray(fn(per_layer))
             else:
-                data = np.asarray(getattr(layer, var))
+                if var not in network.trajectories:
+                    raise ValueError(
+                        f"Variable {var!r} was not recorded. Pass "
+                        f"``record=(...{var!r}...)`` to ``fit``. "
+                        f"Recorded fields: {sorted(network.trajectories)}."
+                    )
+                data = np.asarray(network.trajectories[var][layer_idx])
             n_steps, n_nodes = data.shape
             time = np.arange(n_steps)
 
@@ -185,7 +206,7 @@ def plot_layers(
                 ax.plot(time, mean, **line_kwargs)
                 if n_nodes > 1:
                     sem = np.nanstd(data, axis=1, ddof=1) / np.sqrt(n_nodes)
-                    half = _Z_95 * sem
+                    half = 1.959963984540054 * sem
                     band_kwargs: dict[str, Any] = {"alpha": 0.25, "linewidth": 0}
                     if color is not None:
                         band_kwargs["color"] = color

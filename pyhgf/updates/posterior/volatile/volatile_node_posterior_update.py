@@ -46,11 +46,19 @@ def volatile_node_posterior_update(
         Upper bound applied to the value-level posterior precision write.
         Default ``1e10``.
     """
-    # Update precision first
+    # Update precision first. Clip both ends:
+    #   * upper bound at ``max_posterior_precision`` (precision blow-up guard);
+    #   * lower bound at the *expected* precision — the nonlinear g'' term in
+    #     the value-coupling contribution can swing strongly negative when a
+    #     child's PE flips sign.
     precision_value = posterior_update_precision_value_level(
         attributes, edges, node_idx
     )
-    precision_value = jnp.minimum(precision_value, max_posterior_precision)
+    precision_value = jnp.clip(
+        precision_value,
+        a_min=attributes[node_idx]["expected_precision"],
+        a_max=max_posterior_precision,
+    )
     attributes[node_idx]["precision"] = precision_value
 
     # Update mean using new precision
