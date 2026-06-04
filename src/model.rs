@@ -1204,7 +1204,7 @@ fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f
 impl Network {
 
     #[new]
-    #[pyo3(signature = (update_type="eHGF", max_posterior_precision=1e10))]
+    #[pyo3(signature = (update_type="unbounded", max_posterior_precision=1e10))]
     fn py_new(update_type: &str, max_posterior_precision: f64) -> Self {
         let mut net = Network::new(update_type);
         net.max_posterior_precision = max_posterior_precision;
