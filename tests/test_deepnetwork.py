@@ -1,7 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+import jax
 import jax.numpy as jnp
 import numpy as np
+import optax
 import pytest
 from pyhgf.rshgf import Network as RsNetwork
 
@@ -47,9 +49,12 @@ def test_fit():
                 .add_layer(size=n_h1)
                 .add_layer(size=n_h2)
                 .add_layer(size=n_input)
-                .weight_initialisation("xavier", seed=42)
+                .weight_initialisation("xavier", key=jax.random.key(42))
             )
-            dn.fit(x=x, y=y, lr=lr, learning_kind=kind)
+            # DeepNetwork takes an optax optimizer; the Rust backend below still
+            # takes the raw ``lr`` (a float, or "adam"), so don't clobber ``lr``.
+            optimizer = optax.adam(1e-3) if lr == "adam" else optax.sgd(lr)
+            dn.fit(x=x, y=y, optimizer=optimizer, learning_kind=kind)
             preds_dn = dn.predict(np.array([[0.5]]))
 
             # --- RsNetwork (Rust) ---
@@ -129,7 +134,7 @@ def test_predict():
         .add_layer(size=n_hidden)
         .add_layer(size=n_predictors)
     )
-    dn.fit(x=x_train, y=y_train, lr="adam")
+    dn.fit(x=x_train, y=y_train, optimizer=optax.adam(1e-3))
     preds = dn.predict(x_test)
 
     assert preds.shape == (3, n_targets)
@@ -145,7 +150,7 @@ def test_predict():
         .add_layer(size=n_hidden)
         .add_layer(size=n_predictors)
     )
-    dn_untrained.fit(x=x_train[:1], y=y_train[:1], lr=0.0)
+    dn_untrained.fit(x=x_train[:1], y=y_train[:1], optimizer=optax.sgd(0.0))
     assert not np.allclose(preds, dn_untrained.predict(x_test), atol=1e-3)
 
 
@@ -174,9 +179,8 @@ def test_weight_initialisation_strategies():
     for strategy in ["xavier", "he", "orthogonal", "sparse"]:
         # --- DeepNetwork ---
         dn = _build_network_dn()
-        dn.state = dn._init_state()
         before = np.asarray(dn.state.weights[0]).copy()
-        dn.weight_initialisation(strategy, seed=42)
+        dn.weight_initialisation(strategy, key=jax.random.key(42))
         after = np.asarray(dn.state.weights[0])
         assert not np.array_equal(before, after), (
             f"DeepNetwork/{strategy}: weights unchanged by weight_initialisation"
@@ -193,8 +197,7 @@ def test_weight_initialisation_deterministic():
     nets = []
     for _ in range(2):
         dn = _build_network_dn()
-        dn.state = dn._init_state()
-        dn.weight_initialisation("xavier", seed=123)
+        dn.weight_initialisation("xavier", key=jax.random.key(123))
         nets.append(dn)
 
     for w0, w1 in zip(nets[0].state.weights, nets[1].state.weights):
@@ -204,15 +207,14 @@ def test_weight_initialisation_deterministic():
 def test_weight_initialisation_invalid_strategy():
     """Invalid strategy raises ValueError."""
     dn = _build_network_dn()
-    dn.state = dn._init_state()
     with pytest.raises(ValueError):
-        dn.weight_initialisation("nonexistent", seed=0)
+        dn.weight_initialisation("nonexistent", key=jax.random.key(0))
 
 
 def test_weight_initialisation_single_layer():
     """Weight init on a single-layer network is a no-op."""
     dn = DeepNetwork().add_layer(size=3)
-    dn.weight_initialisation("xavier", seed=0)
+    dn.weight_initialisation("xavier", key=jax.random.key(0))
     assert dn.state is not None
     assert len(dn.state.weights) == 0
 
@@ -222,13 +224,16 @@ def test_reset():
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     x = np.random.randn(5, 3)
     y = np.random.randn(5, 2)
-    dn.fit(x, y, lr=0.1)
+    dn.fit(x, y, optimizer=optax.sgd(0.1))
     assert dn.state is not None
     assert dn.predictions is not None
 
     dn.reset()
-    assert dn._propagation_fn is None
-    assert dn._prediction_fn is None
+    # After reset, the optimiser state is dropped and the network is
+    # re-initialised to uniform weights. JIT caches live inside
+    # ``eqx.filter_jit`` now; no instance-side bookkeeping to check.
+    assert dn.opt_state is None
+    assert dn._optimizer is None
 
 
 def test_fully_connected_false():
@@ -238,7 +243,6 @@ def test_fully_connected_false():
         .add_layer(size=3)
         .add_layer(size=3, add_constant_input=False, fully_connected=False)
     )
-    dn.state = dn._init_state()
     # Weight matrix should be identity-like
     w = np.asarray(dn.state.weights[0])
     assert np.allclose(w, np.eye(3)), f"Expected identity weight matrix, got {w}"
@@ -287,7 +291,7 @@ def test_three_backends_binary_volatile():
             .add_layer(size=n_hidden)
             .add_layer(size=n_input, add_constant_input=False)
         )
-        dn.fit(x=x, y=y, lr=0.1)
+        dn.fit(x=x, y=y, optimizer=optax.sgd(0.1))
 
         # --- RsNetwork (Rust) ---
         rs = (
@@ -340,7 +344,7 @@ def test_three_backends_binary_volatile():
 
             rs_mean = float(rs.node_trajectories[node_idx]["mean"][-1])
             py_mean = float(net.last_attributes[node_idx]["mean"])
-            jax_mean = float(dn.state.layers[2].mean[i])
+            jax_mean = float(dn.state.layers[2].state.mean[i])
 
             assert np.allclose(py_mean, rs_mean, atol=atol_rs_py_local), (
                 f"{label}: hidden[{i}] mean: Python={py_mean} vs Rust={rs_mean}"
@@ -351,7 +355,7 @@ def test_three_backends_binary_volatile():
 
             rs_prec = float(rs.node_trajectories[node_idx]["precision"][-1])
             py_prec = float(net.last_attributes[node_idx]["precision"])
-            jax_prec = float(dn.state.layers[2].precision[i])
+            jax_prec = float(dn.state.layers[2].state.precision[i])
 
             assert np.allclose(py_prec, rs_prec, atol=atol_rs_py_local), (
                 f"{label}: hidden[{i}] precision: Python={py_prec} vs Rust={rs_prec}"
@@ -362,7 +366,7 @@ def test_three_backends_binary_volatile():
 
             rs_mean_vol = float(rs.node_trajectories[node_idx]["mean_vol"][-1])
             py_mean_vol = float(net.last_attributes[node_idx]["mean_vol"])
-            jax_mean_vol = float(dn.state.layers[2].mean_vol[i])
+            jax_mean_vol = float(dn.state.layers[2].state.mean_vol[i])
 
             assert np.allclose(py_mean_vol, rs_mean_vol, atol=atol_rs_py_local), (
                 f"{label}: hidden[{i}] mean_vol: Python={py_mean_vol} vs Rust={rs_mean_vol}"
@@ -373,7 +377,7 @@ def test_three_backends_binary_volatile():
 
             rs_prec_vol = float(rs.node_trajectories[node_idx]["precision_vol"][-1])
             py_prec_vol = float(net.last_attributes[node_idx]["precision_vol"])
-            jax_prec_vol = float(dn.state.layers[2].precision_vol[i])
+            jax_prec_vol = float(dn.state.layers[2].state.precision_vol[i])
 
             assert np.allclose(py_prec_vol, rs_prec_vol, atol=atol_rs_py_local), (
                 f"{label}: hidden[{i}] precision_vol: Python={py_prec_vol} vs Rust={rs_prec_vol}"
@@ -474,35 +478,49 @@ def test_add_layer_one_to_one_size_mismatch():
         )
 
 
-def test_fit_invalid_lr():
-    """Unknown lr string or learning_kind raises ValueError."""
+def test_fit_invalid_learning_kind():
+    """Unknown ``learning_kind`` raises ``ValueError``."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-    with pytest.raises(ValueError, match="Unknown lr value"):
-        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), lr="sgd")
     with pytest.raises(ValueError, match="Unknown kind"):
-        dn.fit(x=np.zeros((5, 3)), y=np.zeros((5, 2)), lr=0.1, learning_kind="kalman")
+        dn.fit(
+            x=np.zeros((5, 3)),
+            y=np.zeros((5, 2)),
+            optimizer=optax.sgd(0.1),
+            learning_kind="kalman",
+        )
 
 
 def test_fit_record_trajectories():
-    """fit(record_trajectories=True) stores trajectories."""
+    """fit(record=("expected_mean",)) stores the requested field's trajectory."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     x = np.random.randn(5, 3)
     y = np.random.randn(5, 2)
-    dn.fit(x=x, y=y, lr=0.1, record_trajectories=True)
+    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), record=("expected_mean",))
     assert dn.trajectories is not None
+    # New shape: dict[field, tuple[(T, n_nodes) per layer]]
+    assert set(dn.trajectories) == {"expected_mean"}
+    assert dn.trajectories["expected_mean"][0].shape == (5, 2)
+    assert dn.trajectories["expected_mean"][1].shape == (5, 3)
 
 
-def test_predict_before_fit():
-    """Predict() before fit() raises ValueError."""
+def test_predict_before_fit_works_on_uniform_weights():
+    """``predict()`` succeeds even before ``fit``."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-    with pytest.raises(ValueError, match="must be fit"):
-        dn.predict(np.zeros((5, 3)))
+    out = dn.predict(np.zeros((5, 3)))
+    assert out.shape == (5, 2)
+    assert np.all(np.isfinite(out))
+
+
+def test_predict_with_no_layers_raises():
+    """Calling ``predict`` on an empty builder raises ``ValueError``."""
+    with pytest.raises(ValueError, match="at least one layer"):
+        DeepNetwork().predict(np.zeros((5, 3)))
 
 
 def test_predict_1d_input():
     """Predict() with 1d input returns 1d output."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-    dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), lr=0.1)
+    dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), optimizer=optax.sgd(0.1))
     pred = dn.predict(np.array([0.1, 0.2, 0.3]))
     assert pred.ndim == 1
     assert pred.shape == (2,)
@@ -528,16 +546,22 @@ def test_fit_weight_update_false_freezes_weights():
         .add_layer(size=2)
         .add_layer(size=4)
         .add_layer(size=3)
-        .weight_initialisation("xavier", seed=42)
+        .weight_initialisation("xavier", key=jax.random.key(42))
     )
     weights_before = [np.asarray(w).copy() for w in dn.state.weights]
 
-    dn.fit(x=x, y=y, lr=0.1, weight_update=False)
+    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), weight_update=False)
     for before, after in zip(weights_before, dn.state.weights):
         assert np.array_equal(before, np.asarray(after))
 
-    # Adam state must also stay frozen (no step counter increment).
-    assert int(dn.state.adam_t) == 0
+    # Optimiser state must also stay frozen — opt_state is the fresh init
+    # (SGD's state is just a counter; should still be 0).
+    fresh = optax.sgd(0.1).init(dn.state.weights_tuple())
+    assert jax.tree_util.tree_all(
+        jax.tree_util.tree_map(
+            lambda a, b: bool(jnp.array_equal(a, b)), dn.opt_state, fresh
+        )
+    )
 
 
 def test_fit_weight_update_true_changes_weights():
@@ -551,10 +575,10 @@ def test_fit_weight_update_true_changes_weights():
         .add_layer(size=2)
         .add_layer(size=4)
         .add_layer(size=3)
-        .weight_initialisation("xavier", seed=42)
+        .weight_initialisation("xavier", key=jax.random.key(42))
     )
     weights_before = [np.asarray(w).copy() for w in dn.state.weights]
-    dn.fit(x=x, y=y, lr=0.1)
+    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1))
     assert any(
         not np.array_equal(before, np.asarray(after))
         for before, after in zip(weights_before, dn.state.weights)
@@ -572,15 +596,15 @@ def test_fit_weight_update_toggle_retraces():
         .add_layer(size=2)
         .add_layer(size=4)
         .add_layer(size=3)
-        .weight_initialisation("xavier", seed=42)
+        .weight_initialisation("xavier", key=jax.random.key(42))
     )
 
     # First call with weight_update=False — weights frozen
-    dn.fit(x=x, y=y, lr=0.1, weight_update=False)
+    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), weight_update=False)
     weights_after_frozen = [np.asarray(w).copy() for w in dn.state.weights]
 
     # Now flip to weight_update=True — must re-trace and actually update
-    dn.fit(x=x, y=y, lr=0.1, weight_update=True)
+    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), weight_update=True)
     assert any(
         not np.array_equal(before, np.asarray(after))
         for before, after in zip(weights_after_frozen, dn.state.weights)
@@ -616,12 +640,12 @@ def test_input_layer_invariant_to_tonic_volatility():
         net.fit(
             x=x,
             y=y,
-            lr=0.0,
+            optimizer=optax.sgd(0.0),
             learning_kind="standard",
-            record_trajectories=True,
+            record=("expected_precision",),
         )
         expected_precisions.append(
-            np.asarray(net.trajectories.layers[0].expected_precision)
+            np.asarray(net.trajectories["expected_precision"][0])
         )
 
     np.testing.assert_allclose(

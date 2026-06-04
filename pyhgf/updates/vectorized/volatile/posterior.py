@@ -3,20 +3,21 @@
 
 """Vectorized posterior update for volatile node layers."""
 
+import dataclasses
 from typing import Callable
 
 import jax.numpy as jnp
 from jax import grad as jgrad
 from jax import vmap
 
-from pyhgf.typing import LayerState
+from pyhgf.typing.vectorised import LayerState
 
 
 def vectorized_posterior_update_precision_value_level(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
-    coupling_fn_grad: Callable,
+    coupling_fn: Callable,
     child_is_input_layer: bool = False,
 ) -> jnp.ndarray:
     r"""Update the precision of the value level for all nodes in a layer.
@@ -72,8 +73,9 @@ def vectorized_posterior_update_precision_value_level(
     weights :
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)``.
-    coupling_fn_grad :
-        Gradient of the coupling function.
+    coupling_fn :
+        Coupling function. First and second derivatives are computed inline
+        via ``jax.grad``.
     child_is_input_layer :
         If True, the child is a clamped observation leaf (binary or continuous
         output). The paper's Limit 3 (:math:`\pi_a \to \infty`) applies and the
@@ -90,6 +92,8 @@ def vectorized_posterior_update_precision_value_level(
     jnp.ndarray
         Posterior precision for each node in the parent layer.
     """
+    coupling_fn_grad = jgrad(coupling_fn)
+
     # Coupling derivatives at parent expected means
     coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)
 
@@ -146,7 +150,7 @@ def vectorized_posterior_update_mean_value_level(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
-    coupling_fn_grad: Callable,
+    coupling_fn: Callable,
     posterior_precision: jnp.ndarray,
 ) -> jnp.ndarray:
     r"""Update the mean of the value level for all nodes in a layer.
@@ -186,8 +190,9 @@ def vectorized_posterior_update_mean_value_level(
     weights :
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)``.
-    coupling_fn_grad :
-        Gradient of the coupling function.
+    coupling_fn :
+        Coupling function. The first derivative is computed inline via
+        ``jax.grad``.
     posterior_precision :
         Already-updated value-level posterior precision :math:`\pi_b` for the
         parent layer; the precision-weighted PE is divided by this once, after
@@ -199,7 +204,7 @@ def vectorized_posterior_update_mean_value_level(
         Posterior mean for each node in the parent layer.
     """
     # Coupling derivatives at parent expected means
-    coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)
+    coupling_prime = vmap(jgrad(coupling_fn))(layer.expected_mean)
 
     # Precision-weighted PE from children. From the joint Gaussian posterior over
     # (x_a, x_b), the per-child contribution is
@@ -235,7 +240,7 @@ def vectorized_layer_posterior_update(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
-    coupling_fn_grad: Callable,
+    coupling_fn: Callable,
     parent_has_constant: bool = False,
     max_posterior_precision: float = 1e10,
     child_is_input_layer: bool = False,
@@ -256,8 +261,9 @@ def vectorized_layer_posterior_update(
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``
         when the parent layer includes a constant input node.
-    coupling_fn_grad :
-        Gradient of the coupling function.
+    coupling_fn :
+        Coupling function. The first (and second, for the precision update)
+        derivatives are computed inline via ``jax.grad`` in the two helpers.
     parent_has_constant :
         If True, the last column of *weights* corresponds to the constant input node and
         is stripped before computing the posterior update.
@@ -283,7 +289,7 @@ def vectorized_layer_posterior_update(
             layer,
             child,
             weights,
-            coupling_fn_grad,
+            coupling_fn,
             child_is_input_layer=child_is_input_layer,
         ),
         a_min=layer.expected_precision,
@@ -291,10 +297,11 @@ def vectorized_layer_posterior_update(
     )
 
     posterior_mean = vectorized_posterior_update_mean_value_level(
-        layer, child, weights, coupling_fn_grad, posterior_precision
+        layer, child, weights, coupling_fn, posterior_precision
     )
 
-    return layer._replace(
+    return dataclasses.replace(
+        layer,
         precision=posterior_precision,
         mean=posterior_mean,
     )

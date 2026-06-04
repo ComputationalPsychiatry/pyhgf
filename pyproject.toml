@@ -23,6 +23,8 @@ dependencies = [
     "jax>=0.4.26,<0.4.32",
     "jaxlib>=0.4.26,<0.4.32",
     "graphviz>=0.20.3",
+    "equinox>=0.11.10",
+    "optax>=0.2.5",
 ]
 
 [project.urls]
@@ -60,6 +62,7 @@ dev-dependencies = [
     "sphinx-proof>=0.2.1",
     "sphinxcontrib-mermaid>=1.0.0",
     "treescope>=0.1.9",
+    "bokeh>=3.4.0",
     "nbconvert>=7.16.6",
     "jupyterlab_myst>=2.4.2",
     "pre-commit>=4.3.0",

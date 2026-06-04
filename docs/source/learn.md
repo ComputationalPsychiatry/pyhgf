@@ -11,7 +11,7 @@ notebooks/0.1-Theory.ipynb
 notebooks/0.2-Creating_networks.ipynb
 notebooks/0.3-Generalised_filtering.ipynb
 notebooks/0.4-Planning_and_acting.ipynb
-notebooks/0.5-Learning.ipynb
+notebooks/0.5-Deep_learning.ipynb
 ```
 
 ```{toctree}

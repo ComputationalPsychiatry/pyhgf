@@ -9,11 +9,13 @@ update-type volatility posterior functions, and a combined driver that calls the
 correct order.
 """
 
+import dataclasses
+
 import jax.numpy as jnp
 from jax.nn import sigmoid
 
 from pyhgf.math import lambert_w0
-from pyhgf.typing import LayerParams, LayerState
+from pyhgf.typing.vectorised import LayerParams, LayerState
 
 # ---------------------------------------------------------------------------
 # 1.  Prediction errors
@@ -44,7 +46,7 @@ def vectorized_layer_value_prediction_error(
     """
     value_pe = layer.mean - layer.expected_mean
 
-    return layer._replace(value_prediction_error=value_pe)
+    return dataclasses.replace(layer, value_prediction_error=value_pe)
 
 
 def vectorized_layer_volatility_prediction_error(
@@ -76,7 +78,7 @@ def vectorized_layer_volatility_prediction_error(
         - 1.0
     )
 
-    return layer._replace(volatility_prediction_error=volatility_pe)
+    return dataclasses.replace(layer, volatility_prediction_error=volatility_pe)
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +137,8 @@ def vectorized_layer_volatility_posterior_standard(
     )
     posterior_mean_vol = layer.expected_mean_vol + precision_weighted_pe_vol
 
-    return layer._replace(
+    return dataclasses.replace(
+        layer,
         precision_vol=posterior_precision_vol,
         mean_vol=posterior_mean_vol,
     )
@@ -191,7 +194,8 @@ def vectorized_layer_volatility_posterior_ehgf(
         a_max=max_posterior_precision,
     )
 
-    return layer._replace(
+    return dataclasses.replace(
+        layer,
         precision_vol=posterior_precision_vol,
         mean_vol=posterior_mean_vol,
     )
@@ -333,7 +337,8 @@ def vectorized_layer_volatility_posterior_unbounded(
     sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2) ** 2
     posterior_precision_vol = jnp.minimum(1.0 / sig2, max_posterior_precision)
 
-    return layer._replace(
+    return dataclasses.replace(
+        layer,
         precision_vol=posterior_precision_vol,
         mean_vol=posterior_mean_vol,
     )

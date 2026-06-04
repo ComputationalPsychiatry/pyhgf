@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import optax
 import pytest
 from matplotlib.collections import LineCollection, PolyCollection
 
@@ -56,9 +57,10 @@ def test_plot_layers_pwpe_derived_variable(trained_deep_network):
     axs = trained_deep_network.plot_layers(variables="PWPE")
     assert axs.shape == (1, trained_deep_network.n_layers)
 
+    required, fn = _DERIVED_VARIABLES["PWPE"]
     for i in range(trained_deep_network.n_layers):
-        layer = trained_deep_network.trajectories.layers[i]
-        vals = np.asarray(_DERIVED_VARIABLES["PWPE"](layer))
+        per_layer = {f: trained_deep_network.trajectories[f][i] for f in required}
+        vals = np.asarray(fn(per_layer))
         finite = vals[np.isfinite(vals)]
         if finite.size:
             assert (finite >= 0).all()
@@ -89,8 +91,10 @@ def test_plot_layers_mean_ci_single_node_skips_band():
     x = rng.standard_normal((10, 3)).astype(np.float32)
     y = rng.standard_normal((10, 1)).astype(np.float32)
 
+    from pyhgf.typing.vectorised import RECORD_ALL
+
     net = DeepNetwork().add_layer(size=1).add_layer(size=4).add_layer(size=3)
-    net.fit(x=x, y=y, lr="adam", record_trajectories=True)
+    net.fit(x=x, y=y, optimizer=optax.adam(1e-3), record=RECORD_ALL)
 
     axs = net.plot_layers(layers=0, mode="mean_ci")
     ax = axs[0, 0]
@@ -169,5 +173,5 @@ def test_plot_layers_invalid_mode(trained_deep_network):
 def test_plot_layers_requires_trajectories():
     """Calling without recorded trajectories raises ValueError."""
     net = DeepNetwork().add_layer(size=2).add_layer(size=2)
-    with pytest.raises(ValueError, match="record_trajectories=True"):
+    with pytest.raises(ValueError, match="record="):
         net.plot_layers()

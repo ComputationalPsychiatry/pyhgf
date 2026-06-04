@@ -3,12 +3,13 @@
 
 """Vectorized prediction update for volatile node layers."""
 
+import dataclasses
 from typing import Callable
 
 import jax.numpy as jnp
 from jax import grad, vmap
 
-from pyhgf.typing import LayerParams, LayerState
+from pyhgf.typing.vectorised import LayerParams, LayerState
 
 
 def vectorized_layer_prediction(
@@ -192,7 +193,8 @@ def vectorized_layer_prediction(
         conditional_expected_precision = child_state.precision
         effective_precision = jnp.zeros_like(effective_precision)
 
-    return child_state._replace(
+    return dataclasses.replace(
+        child_state,
         expected_mean=expected_mean,
         expected_precision=expected_precision,
         conditional_expected_precision=conditional_expected_precision,

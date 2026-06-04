@@ -10,6 +10,7 @@ the cost of building/inferring them is paid once per test session.
 import jax.numpy as jnp
 import matplotlib
 import numpy as np
+import optax
 import pytest
 
 from pyhgf import load_data
@@ -156,13 +157,15 @@ def trained_deep_network():
     x = rng.standard_normal((20, 3)).astype(np.float32)
     y = rng.standard_normal((20, 2)).astype(np.float32)
 
+    from pyhgf.typing.vectorised import RECORD_ALL
+
     net = DeepNetwork().add_layer(size=2).add_layer(size=4).add_layer(size=3)
     net.fit(
         x=x,
         y=y,
-        lr=0.05,
+        optimizer=optax.sgd(0.05),
         learning_kind="precision_weighted",
-        record_trajectories=True,
+        record=RECORD_ALL,
     )
     return net
 

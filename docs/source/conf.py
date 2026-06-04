@@ -73,7 +73,7 @@ intersphinx_mapping = {
 autosummary_generate = True
 autodoc_typehints = "description"
 numpydoc_show_class_members = False
-autosummary_generate_overwrite = True   # always rewrite, never reuse stale stubs
+autosummary_generate_overwrite = True  # always rewrite, never reuse stale stubs
 
 # raise an error if the documentation does not build and exit the process
 # this should especially ensure that the notebooks run correctly
