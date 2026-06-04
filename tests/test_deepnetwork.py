@@ -51,9 +51,10 @@ def test_fit():
                 .add_layer(size=n_input)
                 .weight_initialisation("xavier", key=jax.random.key(42))
             )
-            if lr == "adam":
-                lr = optax.adam(1e-3)
-            dn.fit(x=x, y=y, optimizer=lr, learning_kind=kind)
+            # DeepNetwork takes an optax optimizer; the Rust backend below still
+            # takes the raw ``lr`` (a float, or "adam"), so don't clobber ``lr``.
+            optimizer = optax.adam(1e-3) if lr == "adam" else optax.sgd(lr)
+            dn.fit(x=x, y=y, optimizer=optimizer, learning_kind=kind)
             preds_dn = dn.predict(np.array([[0.5]]))
 
             # --- RsNetwork (Rust) ---
