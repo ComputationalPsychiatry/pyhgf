@@ -73,7 +73,7 @@ class Network:
 
     def __init__(
         self,
-        update_type: str = "eHGF",
+        update_type: str = "unbounded",
         max_posterior_precision: float = 1e10,
     ) -> None:
         """Initialize an empty neural network.
@@ -81,8 +81,8 @@ class Network:
         Parameters
         ----------
         update_type :
-            The type of update to perform for volatility coupling. Can be `"eHGF"`
-            (defaults), `"unbounded"` or `"standard"`. The unbounded approximation was
+            The type of update to perform for volatility coupling. Can be `"unbounded"`
+            (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
             recently introduced to avoid negative precisions updates, which greatly
             improve sampling performance. The eHGF update step was proposed as an
             alternative to the original definition in that it starts by updating the

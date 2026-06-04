@@ -34,7 +34,7 @@ class HGF(Network):
         self,
         n_levels: Optional[int] = 2,
         model_type: str = "continuous",
-        update_type: str = "eHGF",
+        update_type: str = "unbounded",
         initial_mean: dict = {
             "1": 0.0,
             "2": 0.0,
