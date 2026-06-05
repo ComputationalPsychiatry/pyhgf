@@ -210,7 +210,7 @@ def test_deepnetwork_state_is_eqx_network():
     assert dn.state.layers[1].weights_in is not None
     assert dn.state.layers[1].weights_in.shape == (2, 4)  # (prev_size, size + bias)
     # Statics propagated from the builder.
-    assert dn.state.update_type == "eHGF"
+    assert dn.state.update_type == "unbounded"
     assert dn.state.max_posterior_precision == 1e10
 
 

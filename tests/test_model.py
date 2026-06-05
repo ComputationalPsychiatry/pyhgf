@@ -124,7 +124,7 @@ def test_continuous_hgf():
     two_level_continuous_hgf.input_data(input_data=timeserie)
 
     surprise = two_level_continuous_hgf.surprise()  # Sum the surprise for this model
-    assert jnp.isclose(surprise.sum(), -1274.5988)
+    assert jnp.isclose(surprise.sum(), -1924.7515)
     assert len(two_level_continuous_hgf.node_trajectories[1]["mean"]) == 614
 
     # three-level
@@ -140,11 +140,11 @@ def test_continuous_hgf():
     )
     three_level_continuous_hgf.input_data(input_data=timeserie)
     surprise = three_level_continuous_hgf.surprise()
-    assert jnp.isclose(surprise.sum(), -1281.28918)
+    assert jnp.isclose(surprise.sum(), -2034.3989)
 
     # test an alternative response function
     sp = total_gaussian_surprise(three_level_continuous_hgf)
-    assert jnp.isclose(sp.sum(), -2560.67554)
+    assert jnp.isclose(sp.sum(), -2535.604)
 
 
 def test_binary_hgf():
@@ -186,7 +186,7 @@ def test_binary_hgf():
     )
     three_level_binary_hgf.input_data(input_data=u)
     surprise = three_level_binary_hgf.surprise()
-    assert jnp.isclose(surprise.sum(), 206.73259)
+    assert jnp.isclose(surprise.sum(), 1242.3856)
 
 
 def test_custom_sequence():

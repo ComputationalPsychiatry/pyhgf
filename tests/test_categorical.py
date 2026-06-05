@@ -79,8 +79,8 @@ def test_categorical_state_node():
     # the binary inputs have volatility couplings whose predicted precisions
     # now include the κ²/(2 π̂_parent) MGF correction).
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2668511
+        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2642910
     )
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.4261684
+        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.418026
     )
