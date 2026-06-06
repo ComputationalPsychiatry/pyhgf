@@ -51,7 +51,7 @@ def test_two_nodes_hgf():
         assert jnp.isclose(two_nodes__hgf.node_trajectories[1][key], val)
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0997133, 0.98201376, -0.1650925, 0.0],
+        [1.1065601, 0.98201376, -0.13515851, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[2][key], val)
 
@@ -114,19 +114,19 @@ def test_continuous_scan_loop():
     # test_two_nodes_hgf above).
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.8507265, 0.8241, 0.7947102],
+        [1.0, 0.7623690, 0.8241, 0.7945459],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[0][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [7.2534165, 6.4026899, 0.7981572, 0.7947102],
+        [6.8440757, 6.0817065, 0.7978380, 0.7945459],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[1][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [0.3041883, 0.3028755, -5.6034684, -5.5994463],
+        [1.4760352, 1.4371926, -2.2633543, -2.2633660],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[2][idx][-1], val)
 

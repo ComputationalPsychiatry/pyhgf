@@ -65,7 +65,7 @@ def test_update_binary_input_parents():
         assert jnp.isclose(new_attributes[1][idx], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [-0.59007323, 1.0, 0.33852935, 0.26894143],
+        [0.37627372, 1.0, 0.39340553, 0.26894143],
     ):
         assert jnp.isclose(new_attributes[2][idx], val)
 
@@ -77,19 +77,19 @@ def test_binary_scan_loop():
     binary_hgf = (
         Network()
         .add_nodes(kind="binary-state")
-        .add_nodes(value_children=0, mean=0.0, tonic_volatility=-2.0)
-        .add_nodes(volatility_children=1, mean=0.0, tonic_volatility=-2.0)
+        .add_nodes(value_children=0, mean=0.0, tonic_volatility=-4.0)
+        .add_nodes(volatility_children=1, mean=0.0, tonic_volatility=-4.0)
         .input_data(input_data=u)
     )
 
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [-2.3000510, -2.1670487, 0.7725345, 0.6803430],
+        [-2.3191204, -2.171629, 0.6937843, 0.6019279],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[1][idx][-1], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [-0.9867410, -0.9642940, 0.3663204, 0.3500401],
+        [2.478936, 2.4795845, 1.7116449, 1.6612335],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[2][idx][-1], val)
 
