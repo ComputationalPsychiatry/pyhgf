@@ -7,14 +7,13 @@ Each plotting function is tested in its own file under
 the cost of building/inferring them is paid once per test session.
 """
 
-import jax.numpy as jnp
 import matplotlib
 import numpy as np
 import optax
 import pytest
 
 from pyhgf import load_data
-from pyhgf.model import HGF, DeepNetwork, Network
+from pyhgf.model import DeepNetwork, Network
 
 # Ensure the test suite runs on headless CI runners.
 matplotlib.use("Agg")
@@ -34,29 +33,68 @@ def continuous_data():
 @pytest.fixture(scope="session")
 def two_level_continuous(continuous_data):
     """Build a 2-level continuous HGF fitted to the USD-CHF series."""
-    return HGF(
-        n_levels=2,
-        model_type="continuous",
-        initial_mean={"1": 1.04, "2": 1.0},
-        initial_precision={"1": 1e4, "2": 1e1},
-        tonic_volatility={"1": -13.0, "2": -2.0},
-        tonic_drift={"1": 0.0, "2": 0.0},
-        volatility_coupling={"1": 1.0},
-    ).input_data(input_data=continuous_data)
+    return (
+        Network()
+        .add_nodes(precision=1e4)
+        .add_nodes(
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 1.04,
+                "precision": 1e4,
+                "tonic_volatility": -13.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 1.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
+        .input_data(input_data=continuous_data)
+    )
 
 
 @pytest.fixture(scope="session")
 def three_level_continuous(continuous_data):
     """Build a 3-level continuous HGF fitted to the USD-CHF series."""
-    return HGF(
-        n_levels=3,
-        model_type="continuous",
-        initial_mean={"1": 1.04, "2": 1.0, "3": 1.0},
-        initial_precision={"1": 1e4, "2": 1e1, "3": 1e1},
-        tonic_volatility={"1": -13.0, "2": -2.0, "3": -2.0},
-        tonic_drift={"1": 0.0, "2": 0.0, "3": 0.0},
-        volatility_coupling={"1": 1.0, "2": 1.0},
-    ).input_data(input_data=continuous_data)
+    return (
+        Network()
+        .add_nodes(precision=1e4)
+        .add_nodes(
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 1.04,
+                "precision": 1e4,
+                "tonic_volatility": -13.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 1.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([2], [1.0]),
+            node_parameters={
+                "mean": 1.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
+        .input_data(input_data=continuous_data)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -74,31 +112,58 @@ def binary_data():
 @pytest.fixture(scope="session")
 def two_level_binary(binary_data):
     """Build a 2-level binary HGF fitted to the binary input series."""
-    return HGF(
-        n_levels=2,
-        model_type="binary",
-        initial_mean={"1": 0.0, "2": 0.5},
-        initial_precision={"1": 0.0, "2": 1e4},
-        tonic_volatility={"1": None, "2": -6.0},
-        tonic_drift={"1": None, "2": 0.0},
-        volatility_coupling={"1": None},
-        binary_precision=jnp.inf,
-    ).input_data(binary_data)
+    return (
+        Network()
+        .add_nodes(
+            kind="binary-state",
+            node_parameters={"mean": 0.0, "precision": 0.0},
+        )
+        .add_nodes(
+            kind="continuous-state",
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 0.5,
+                "precision": 1e4,
+                "tonic_volatility": -6.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
+        .input_data(binary_data)
+    )
 
 
 @pytest.fixture(scope="session")
 def three_level_binary(binary_data):
     """Build a 3-level binary HGF fitted to the binary input series."""
-    return HGF(
-        n_levels=3,
-        model_type="binary",
-        initial_mean={"1": 0.0, "2": 0.5, "3": 0.0},
-        initial_precision={"1": 0.0, "2": 1e4, "3": 1e1},
-        tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
-        tonic_drift={"1": None, "2": 0.0, "3": 0.0},
-        volatility_coupling={"1": None, "2": 1.0},
-        binary_precision=jnp.inf,
-    ).input_data(binary_data)
+    return (
+        Network()
+        .add_nodes(
+            kind="binary-state",
+            node_parameters={"mean": 0.0, "precision": 0.0},
+        )
+        .add_nodes(
+            kind="continuous-state",
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 0.5,
+                "precision": 1e4,
+                "tonic_volatility": -6.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 0.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
+        .input_data(binary_data)
+    )
 
 
 # ---------------------------------------------------------------------------

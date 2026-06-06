@@ -5,8 +5,12 @@ import numpy as np
 from pytest import raises
 
 from pyhgf import load_data
-from pyhgf.model import HGF, Network
-from pyhgf.response import total_gaussian_surprise
+from pyhgf.model import Network
+from pyhgf.response import (
+    first_level_binary_surprise,
+    first_level_gaussian_surprise,
+    total_gaussian_surprise,
+)
 from pyhgf.typing import UpdateSequence
 
 
@@ -111,35 +115,77 @@ def test_continuous_hgf():
 
     # two-level
     # ---------
-    two_level_continuous_hgf = HGF(
-        n_levels=2,
-        model_type="continuous",
-        initial_mean={"1": timeserie[0], "2": 0.0},
-        initial_precision={"1": 1e4, "2": 1e1},
-        tonic_volatility={"1": -3.0, "2": -3.0},
-        tonic_drift={"1": 0.0, "2": 0.0},
-        volatility_coupling={"1": 1.0},
+    two_level_continuous_hgf = (
+        Network()
+        .add_nodes(precision=1e4)
+        .add_nodes(
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": timeserie[0],
+                "precision": 1e4,
+                "tonic_volatility": -3.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 0.0,
+                "precision": 1e1,
+                "tonic_volatility": -3.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
     )
 
     two_level_continuous_hgf.input_data(input_data=timeserie)
 
-    surprise = two_level_continuous_hgf.surprise()  # Sum the surprise for this model
+    # Sum the surprise for this model
+    surprise = two_level_continuous_hgf.surprise(
+        response_function=first_level_gaussian_surprise
+    )
     assert jnp.isclose(surprise.sum(), -1924.7515)
     assert len(two_level_continuous_hgf.node_trajectories[1]["mean"]) == 614
 
     # three-level
     # -----------
-    three_level_continuous_hgf = HGF(
-        n_levels=3,
-        model_type="continuous",
-        initial_mean={"1": 1.04, "2": 1.0, "3": 1.0},
-        initial_precision={"1": 1e4, "2": 1e1, "3": 1e1},
-        tonic_volatility={"1": -13.0, "2": -2.0, "3": -2.0},
-        tonic_drift={"1": 0.0, "2": 0.0, "3": 0.0},
-        volatility_coupling={"1": 1.0, "2": 1.0},
+    three_level_continuous_hgf = (
+        Network()
+        .add_nodes(precision=1e4)
+        .add_nodes(
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 1.04,
+                "precision": 1e4,
+                "tonic_volatility": -13.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 1.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([2], [1.0]),
+            node_parameters={
+                "mean": 1.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
     )
     three_level_continuous_hgf.input_data(input_data=timeserie)
-    surprise = three_level_continuous_hgf.surprise()
+    surprise = three_level_continuous_hgf.surprise(
+        response_function=first_level_gaussian_surprise
+    )
     assert jnp.isclose(surprise.sum(), -2034.3989)
 
     # test an alternative response function
@@ -156,36 +202,65 @@ def test_binary_hgf():
 
     # two-level
     # ---------
-    two_level_binary_hgf = HGF(
-        n_levels=2,
-        model_type="binary",
-        initial_mean={"1": 0.0, "2": 0.5},
-        initial_precision={"1": 0.0, "2": 1e4},
-        tonic_volatility={"1": None, "2": -6.0},
-        tonic_drift={"1": None, "2": 0.0},
-        volatility_coupling={"1": None},
-        binary_precision=jnp.inf,
+    two_level_binary_hgf = (
+        Network()
+        .add_nodes(
+            kind="binary-state",
+            node_parameters={"mean": 0.0, "precision": 0.0},
+        )
+        .add_nodes(
+            kind="continuous-state",
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 0.5,
+                "precision": 1e4,
+                "tonic_volatility": -6.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
     )
 
     # Provide new observations
     two_level_binary_hgf = two_level_binary_hgf.input_data(u)
-    surprise = two_level_binary_hgf.surprise()
+    surprise = two_level_binary_hgf.surprise(
+        response_function=first_level_binary_surprise
+    )
     assert jnp.isclose(surprise.sum(), 215.58821)
 
     # three-level
     # -----------
-    three_level_binary_hgf = HGF(
-        n_levels=3,
-        model_type="binary",
-        initial_mean={"1": 0.0, "2": 0.5, "3": 0.0},
-        initial_precision={"1": 0.0, "2": 1e4, "3": 1e1},
-        tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
-        tonic_drift={"1": None, "2": 0.0, "3": 0.0},
-        volatility_coupling={"1": None, "2": 1.0},
-        binary_precision=jnp.inf,
+    three_level_binary_hgf = (
+        Network()
+        .add_nodes(
+            kind="binary-state",
+            node_parameters={"mean": 0.0, "precision": 0.0},
+        )
+        .add_nodes(
+            kind="continuous-state",
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 0.5,
+                "precision": 1e4,
+                "tonic_volatility": -6.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 0.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
     )
     three_level_binary_hgf.input_data(input_data=u)
-    surprise = three_level_binary_hgf.surprise()
+    surprise = three_level_binary_hgf.surprise(
+        response_function=first_level_binary_surprise
+    )
     assert jnp.isclose(surprise.sum(), 1242.3856)
 
 
@@ -196,15 +271,32 @@ def test_custom_sequence():
     ############################
     u, _ = load_data("binary")
 
-    three_level_binary_hgf = HGF(
-        n_levels=3,
-        model_type="binary",
-        initial_mean={"1": 0.0, "2": 0.5, "3": 0.0},
-        initial_precision={"1": 0.0, "2": 1e4, "3": 1e1},
-        tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
-        tonic_drift={"1": None, "2": 0.0, "3": 0.0},
-        volatility_coupling={"1": None, "2": 1.0},
-        binary_precision=jnp.inf,
+    three_level_binary_hgf = (
+        Network()
+        .add_nodes(
+            kind="binary-state",
+            node_parameters={"mean": 0.0, "precision": 0.0},
+        )
+        .add_nodes(
+            kind="continuous-state",
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 0.5,
+                "precision": 1e4,
+                "tonic_volatility": -6.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 0.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
     )
 
     # create a custom update series
@@ -339,15 +431,30 @@ def test_network_input_data_no_trajectories():
     """Test Network.input_data() with record_trajectories=False."""
     timeserie = load_data("continuous")
 
-    hgf = HGF(
-        n_levels=2,
-        model_type="continuous",
-        initial_mean={"1": 1.04, "2": 1.0},
-        initial_precision={"1": 1e4, "2": 1e1},
-        tonic_volatility={"1": -13.0, "2": -2.0},
-        tonic_drift={"1": 0.0, "2": 0.0},
-        volatility_coupling={"1": 1.0},
-    ).input_data(input_data=timeserie, record_trajectories=False)
+    hgf = (
+        Network()
+        .add_nodes(precision=1e4)
+        .add_nodes(
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 1.04,
+                "precision": 1e4,
+                "tonic_volatility": -13.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .add_nodes(
+            volatility_children=([1], [1.0]),
+            node_parameters={
+                "mean": 1.0,
+                "precision": 1e1,
+                "tonic_volatility": -2.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
+        .input_data(input_data=timeserie, record_trajectories=False)
+    )
 
     assert hgf.node_trajectories is None
     assert hgf.last_attributes is not None

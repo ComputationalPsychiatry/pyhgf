@@ -3,7 +3,7 @@
 import numpy as np
 
 from pyhgf import load_data
-from pyhgf.model import HGF
+from pyhgf.model import Network
 from pyhgf.response import binary_softmax, binary_softmax_inverse_temperature
 
 
@@ -13,13 +13,25 @@ def test_binary_responses():
 
     # two-level binary HGF
     # --------------------
-    two_level_binary_hgf = HGF(
-        n_levels=2,
-        model_type="binary",
-        initial_mean={"1": 0.5, "2": 0.0},
-        initial_precision={"1": 0.0, "2": 1.0},
-        tonic_volatility={"2": -6.0},
-    ).input_data(input_data=u)
+    two_level_binary_hgf = (
+        Network()
+        .add_nodes(
+            kind="binary-state",
+            node_parameters={"mean": 0.5, "precision": 0.0},
+        )
+        .add_nodes(
+            kind="continuous-state",
+            value_children=([0], [1.0]),
+            node_parameters={
+                "mean": 0.0,
+                "precision": 1.0,
+                "tonic_volatility": -6.0,
+                "tonic_drift": 0.0,
+            },
+        )
+        .create_belief_propagation_fn()
+        .input_data(input_data=u)
+    )
 
     # binary sofmax
     # -------------
