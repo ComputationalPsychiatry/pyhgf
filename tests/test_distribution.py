@@ -639,7 +639,7 @@ def test_pymc_sampling():
     )
 
     with pm.Model() as model:
-        tonic_volatility_2 = pm.Uniform("tonic_volatility_2", -10, 0)
+        tonic_volatility_2 = pm.Normal("tonic_volatility_2", 0.0, 5.0)
 
         pm.Potential(
             "hhgf_loglike",
@@ -652,13 +652,13 @@ def test_pymc_sampling():
     initial_point = model.initial_point()
 
     pointslogs = model.point_logps(initial_point)
-    assert pointslogs["tonic_volatility_2"] == -1.39
-    assert pointslogs["hhgf_loglike"] == 1770.24
+    assert pointslogs["tonic_volatility_2"] == -2.53
+    assert pointslogs["hhgf_loglike"] == 2026.13
 
     with model:
         idata = pm.sample(chains=2, cores=1, tune=1000)
 
-    assert -9.5 > az.summary(idata)["mean"].values[0] > -10.5
+    assert np.isclose(az.summary(idata)["mean"].values[0], -1.095, atol=0.2)
     assert az.summary(idata)["r_hat"].values[0] <= 1.02
 
     ##########
