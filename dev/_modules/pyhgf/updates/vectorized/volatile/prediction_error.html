@@ -1150,13 +1150,22 @@ window.runMermaid = runMermaid;</script>
     <span class="n">muhat_j</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span>
     <span class="n">pihat_j</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span>
 
-    <span class="c1"># Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om</span>
-    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">muhat_j</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="c1"># Quantities that would otherwise pass through ``exp`` of a large number are</span>
+    <span class="c1"># kept in log-space. ``v = exp(γ)`` is fine forward (saturating uses are</span>
+    <span class="c1"># stable) but ``0 · ∞ = NaN`` poisons the backward pass — a single non-finite</span>
+    <span class="c1"># gradient NaN-poisons the whole scan, which under NUTS forces step-size</span>
+    <span class="c1"># collapse and blows up the leapfrog count per sample, and under gradient</span>
+    <span class="c1"># learning kills the optimiser step. The ``sigmoid``/``logaddexp`` rewrites</span>
+    <span class="c1"># match the direct forms for every finite input and stay gradient-safe at the</span>
+    <span class="c1"># saturation limits. Mirrors ``continuous_node_posterior_update_unbounded``.</span>
+    <span class="n">log_t_k</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
+    <span class="n">log_al_aux</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span><span class="p">)</span>
 
-    <span class="c1"># Recompute v and w using muhat_j.  The w formula is written as</span>
-    <span class="c1"># 1/(1 + al_aux/v) so it stays finite when v_jm1 overflows to ∞ (→ 1).</span>
-    <span class="n">v_jm1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gamma_c</span><span class="p">)</span>
-    <span class="n">w_jm1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">al_aux</span> <span class="o">/</span> <span class="n">v_jm1</span><span class="p">)</span>
+    <span class="c1"># Canonical exponent at prediction: γ = log(t_k) + ka*muhat_j + om</span>
+    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">log_t_k</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">muhat_j</span> <span class="o">+</span> <span class="n">om</span>
+
+    <span class="c1"># w_jm1 = 1/(1 + al_aux/exp(γ)) = sigmoid(γ − log α).</span>
+    <span class="n">w_jm1</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">gamma_c</span> <span class="o">-</span> <span class="n">log_al_aux</span><span class="p">)</span>
     <span class="c1"># Volatility prediction error da_jm1 = pihat * be_aux - 1, with pihat the</span>
     <span class="c1"># *marginal* predicted precision. Written explicitly rather than as</span>
     <span class="c1"># be_aux/(al_aux+v_jm1) - 1: that identity only holds when al_aux is the</span>
@@ -1182,12 +1191,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">W_arg</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">log_W_arg</span><span class="p">,</span> <span class="n">log_float_max</span><span class="p">))</span>
     <span class="n">v_W</span> <span class="o">=</span> <span class="n">lambert_w0</span><span class="p">(</span><span class="n">W_arg</span><span class="p">)</span>
     <span class="n">y_star</span> <span class="o">=</span> <span class="n">gamma_c</span> <span class="o">+</span> <span class="n">v_W</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="n">pihat_y</span>
-    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span> <span class="o">-</span> <span class="n">om</span><span class="p">)</span> <span class="o">/</span> <span class="n">ka</span>
+    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">log_t_k</span> <span class="o">-</span> <span class="n">om</span><span class="p">)</span> <span class="o">/</span> <span class="n">ka</span>
 
-    <span class="c1"># Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).</span>
-    <span class="n">s2</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
-    <span class="n">w2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">al_aux</span> <span class="o">/</span> <span class="n">s2</span><span class="p">)</span>
-    <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">s2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="c1"># Log-space s2/w2/da2 — never materialise ``s2 = inf`` (0·∞ NaN gradients).</span>
+    <span class="n">log_s2</span> <span class="o">=</span> <span class="n">log_t_k</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="n">log_denom_s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">log_al_aux</span><span class="p">,</span> <span class="n">log_s2</span><span class="p">)</span>  <span class="c1"># = log(al_aux + s2)</span>
+    <span class="n">w2</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">log_s2</span> <span class="o">-</span> <span class="n">log_al_aux</span><span class="p">)</span>
+    <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_s</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
 
     <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span><span class="p">)</span>
     <span class="n">pi2_safe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
@@ -1199,24 +1209,33 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Fall back to Expansion 1 if Expansion 2 yields non-finite results —</span>
     <span class="c1"># matches MATLAB: &quot;if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1&quot;.</span>
+    <span class="c1"># Double-where masking: sanitise non-finite Expansion-2 results *before* the</span>
+    <span class="c1"># outer ``where`` so its VJP never does ``0 * NaN``.</span>
     <span class="n">exp2_finite</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">pi2_safe</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mu2_safe</span><span class="p">)</span>
-    <span class="n">pi2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span>
-    <span class="n">mu2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe</span><span class="p">,</span> <span class="n">mu1</span><span class="p">)</span>
+    <span class="n">pi2_safe_for_grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">mu2_safe_for_grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">pi2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe_for_grad</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span>
+    <span class="n">mu2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe_for_grad</span><span class="p">,</span> <span class="n">mu1</span><span class="p">)</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="c1"># Variational energy-based softmax blend (direct form, matches MATLAB)</span>
+    <span class="c1"># Variational energy-based softmax blend (log-space form, gradient-safe).</span>
+    <span class="c1"># ``ey = t_k * exp(ka*mu + om)`` materialises ``inf`` for large exponents and</span>
+    <span class="c1"># injects 0·∞ NaNs in the backward pass; ``logaddexp`` / ``exp(-positive)``</span>
+    <span class="c1"># stay bounded both ways.</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">ey1</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
+    <span class="n">log_ey1</span> <span class="o">=</span> <span class="n">log_t_k</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="n">log_denom_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">log_al_aux</span><span class="p">,</span> <span class="n">log_ey1</span><span class="p">)</span>  <span class="c1"># = log(al_aux + ey1)</span>
     <span class="n">I1</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey1</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey1</span><span class="p">)</span>
+        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_1</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_1</span><span class="p">)</span>
         <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 
-    <span class="n">ey2</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
+    <span class="n">log_ey2</span> <span class="o">=</span> <span class="n">log_t_k</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="n">log_denom_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">log_al_aux</span><span class="p">,</span> <span class="n">log_ey2</span><span class="p">)</span>
     <span class="n">I2</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey2</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey2</span><span class="p">)</span>
+        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_2</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_2</span><span class="p">)</span>
         <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu2</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 

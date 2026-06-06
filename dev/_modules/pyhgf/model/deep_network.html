@@ -979,7 +979,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
+        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
@@ -991,8 +991,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            matching the Rust backend and the Network class. This function is</span>
 <span class="sd">            applied to parent means before the weighted sum to predict child means.</span>
 <span class="sd">        update_type :</span>
-<span class="sd">            The type of volatility-level posterior update. Can be ``&quot;eHGF&quot;``</span>
-<span class="sd">            (default), ``&quot;standard&quot;`` or ``&quot;unbounded&quot;``. Matches the Network</span>
+<span class="sd">            The type of volatility-level posterior update. Can be ``&quot;unbounded&quot;``</span>
+<span class="sd">            (default), ``&quot;eHGF&quot;`` or ``&quot;standard&quot;``. Matches the Network</span>
 <span class="sd">            class and Rust backend.</span>
 <span class="sd">        max_posterior_precision :</span>
 <span class="sd">            Upper bound applied to every posterior precision write (value level and</span>
