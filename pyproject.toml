@@ -5,7 +5,7 @@ authors = [
     { name = "Nicolas Legrand", email = "nicolas.legrand@cas.au.dk" }
 ]
 license = "GPL-3.0"
-requires-python = ">=3.10,<=3.13"
+requires-python = ">=3.12"
 readme = "README.md"
 keywords = ["reinforcement learning", "predictive coding", "neural networks", "graphs", "variational inference", "active inference", "causal inference"]
 classifiers = [
@@ -18,8 +18,8 @@ dependencies = [
     "numpy>=2.0.0",
     "matplotlib>=3.4.0",
     "seaborn>=0.13.2",
-    "arviz>=0.21.0,<1.0.0",
-    "pymc>=5.25.1",
+    "arviz>=1.0.0",
+    "pymc>=6.0.0",
     "jax>=0.4.26,<0.4.32",
     "jaxlib>=0.4.26,<0.4.32",
     "graphviz>=0.20.3",
@@ -66,7 +66,7 @@ dev-dependencies = [
     "nbconvert>=7.16.6",
     "jupyterlab_myst>=2.4.2",
     "pre-commit>=4.3.0",
-    "ruff>=0.14.7"
+    "ruff>=0.14.7",
 ]
 
 [build-system]
