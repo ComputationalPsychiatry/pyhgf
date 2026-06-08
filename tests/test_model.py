@@ -1,9 +1,13 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+import importlib
+
 import jax.numpy as jnp
 import numpy as np
-from pytest import raises
+from pytest import raises, warns
 
+import pyhgf.model
+import pyhgf.model.hgf
 from pyhgf import load_data
 from pyhgf.model import Network
 from pyhgf.response import (
@@ -458,3 +462,13 @@ def test_network_input_data_no_trajectories():
 
     assert hgf.node_trajectories is None
     assert hgf.last_attributes is not None
+
+
+def test_hgf_class_is_deprecated():
+    """Loading the deprecated HGF module should display the warning."""
+    with warns(DeprecationWarning, match="deprecated"):
+        importlib.reload(pyhgf.model.hgf)
+
+    # accessing the removed `HGF` class from the package should also fail
+    with raises(ImportError, match="deprecated"):
+        pyhgf.model.HGF
