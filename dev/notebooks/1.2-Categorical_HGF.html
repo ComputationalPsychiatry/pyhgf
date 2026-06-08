@@ -596,7 +596,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/fa0a7b9eec5a9035321f1a72820dbe51e4e9119fe4c85bea023a27198ce7ae3e.png" src="../_images/fa0a7b9eec5a9035321f1a72820dbe51e4e9119fe4c85bea023a27198ce7ae3e.png" />
+<img alt="../_images/d13b16089f05300d822f56f623177eb056d122ce5d50d46adf0a17e1df2eb46d.png" src="../_images/d13b16089f05300d822f56f623177eb056d122ce5d50d46adf0a17e1df2eb46d.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -712,13 +712,13 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/c3918c4beaca61ac1176349d5c1a963f84ff6ba6f2a3a2b9adb95fc09cedcec6.png" src="../_images/c3918c4beaca61ac1176349d5c1a963f84ff6ba6f2a3a2b9adb95fc09cedcec6.png" />
+<img alt="../_images/57742708e3fc728e8f827bee7f49295b5f99375e635676eb6c6ad748f1a2ba80.png" src="../_images/57742708e3fc728e8f827bee7f49295b5f99375e635676eb6c6ad748f1a2ba80.png" />
 </div>
 </div>
 </section>
 <section id="inference-using-mcmc-sampling">
 <h3>Inference using MCMC sampling<a class="headerlink" href="#inference-using-mcmc-sampling" title="Link to this heading">#</a></h3>
-<p>In the binary and continuous HGF example, we have been using the <a class="reference internal" href="../generated/pyhgf.distribution/pyhgf.distribution.HGFDistribution.html#pyhgf.distribution.HGFDistribution" title="pyhgf.distribution.HGFDistribution"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.distribution.HGFDistribution</span></code></a> class to create a PyMC-compatible distribution of the HGF. This was possible when using the most standard models as we can easily write a pre-defined distribution that fits exactly the network specification. However, when using more exotic network structures, as this is the case here with the categorical state nodes where the number of nodes in the network grows with the number of categories, we need a more flexible approach that can let us wrap a PyMC distribution for every kind of network we can have.</p>
+<p>In the binary and continuous HGF example, we have been using the <code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.distribution.HGFDistribution</span></code> class to create a PyMC-compatible distribution of the HGF. This was possible when using the most standard models as we can easily write a pre-defined distribution that fits exactly the network specification. However, when using more exotic network structures, as this is the case here with the categorical state nodes where the number of nodes in the network grows with the number of categories, we need a more flexible approach that can let us wrap a PyMC distribution for every kind of network we can have.</p>
 <p>This is what we are doing below (see <a class="reference external" href="https://www.pymc-labs.io/blog-posts/jax-functions-in-pymc-3-quick-examples/">this blog post</a> and the <a class="reference external" href="https://www.pymc.io/projects/examples/en/latest/case_studies/wrapping_jax_function.html">PyMC documentation</a> on how to do that). First, we start by creating a function that computes the surprise of the model, here using the Kullback-Leibler divergences of the implied Dirichlet distributions.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -846,10 +846,10 @@ KL[P||Q] = \ln{\frac{\Gamma(\sum_{i=1}^k\alpha_{1i})}{\Gamma(\sum_{i=1}^k\alpha_
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sat, 06 Jun 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Mon, 08 Jun 2026
 
 Python implementation: CPython
-Python version       : 3.12.3
+Python version       : 3.12.13
 IPython version      : 9.14.1
 
 pyhgf : 0.2.12
@@ -861,7 +861,7 @@ jax       : 0.4.31
 matplotlib: 3.10.9
 numpy     : 2.4.6
 pyhgf     : 0.2.12
-pytensor  : 2.38.3
+pytensor  : 3.0.4
 seaborn   : 0.13.2
 
 Watermark: 2.6.0

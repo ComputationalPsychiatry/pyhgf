@@ -488,22 +488,21 @@
 </li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#distribution" id="id33">Distribution</a></p></li>
-<li><p><a class="reference internal" href="#model" id="id34">Model</a></p></li>
-<li><p><a class="reference internal" href="#plots" id="id35">Plots</a></p>
+<li><p><a class="reference internal" href="#model" id="id33">Model</a></p></li>
+<li><p><a class="reference internal" href="#plots" id="id34">Plots</a></p>
 <ul>
-<li><p><a class="reference internal" href="#matplotlib" id="id36">Matplotlib</a></p></li>
-<li><p><a class="reference internal" href="#graphviz" id="id37">Graphviz</a></p></li>
-<li><p><a class="reference internal" href="#networkx" id="id38">Networkx</a></p></li>
+<li><p><a class="reference internal" href="#matplotlib" id="id35">Matplotlib</a></p></li>
+<li><p><a class="reference internal" href="#graphviz" id="id36">Graphviz</a></p></li>
+<li><p><a class="reference internal" href="#networkx" id="id37">Networkx</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#response" id="id39">Response</a></p></li>
-<li><p><a class="reference internal" href="#utils" id="id40">Utils</a></p>
+<li><p><a class="reference internal" href="#response" id="id38">Response</a></p></li>
+<li><p><a class="reference internal" href="#utils" id="id39">Utils</a></p>
 <ul>
-<li><p><a class="reference internal" href="#weight-initialisation" id="id41">Weight initialisation</a></p></li>
+<li><p><a class="reference internal" href="#weight-initialisation" id="id40">Weight initialisation</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#math" id="id42">Math</a></p></li>
+<li><p><a class="reference internal" href="#math" id="id41">Math</a></p></li>
 </ul>
 </li>
 </ul>
@@ -552,7 +551,7 @@
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node.html#pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node" title="pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_update_mean_continuous_node</span></code></a>(...)</p></td>
-<td><p>Update the mean of a state node using value- and volatility-coupling PEs <a href="#id43"><span class="problematic" id="id1">[1]_</span></a>.</p></td>
+<td><p>Update the mean of a state node using value- and volatility-coupling PEs <a href="#id42"><span class="problematic" id="id1">[1]_</span></a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -898,75 +897,45 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 </section>
 </section>
 </section>
-<section id="distribution">
-<h2><a class="toc-backref" href="#id33" role="doc-backlink">Distribution</a><a class="headerlink" href="#distribution" title="Link to this heading">#</a></h2>
-<p>The Hierarchical Gaussian Filter as a PyMC distribution. This distribution can be
-embedded in models using PyMC&gt;=5.0.0.</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.distribution/pyhgf.distribution.logp.html#pyhgf.distribution.logp" title="pyhgf.distribution.logp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logp</span></code></a></p></td>
-<td><p>Compute the log-probability of a decision model under belief trajectories.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.distribution/pyhgf.distribution.hgf_logp.html#pyhgf.distribution.hgf_logp" title="pyhgf.distribution.hgf_logp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hgf_logp</span></code></a></p></td>
-<td><p>Compute log-probabilities of a batch of Hierarchical Gaussian Filters.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.distribution/pyhgf.distribution.HGFLogpGradOp.html#pyhgf.distribution.HGFLogpGradOp" title="pyhgf.distribution.HGFLogpGradOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HGFLogpGradOp</span></code></a></p></td>
-<td><p>Gradient Op for the HGF distribution.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.distribution/pyhgf.distribution.HGFDistribution.html#pyhgf.distribution.HGFDistribution" title="pyhgf.distribution.HGFDistribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HGFDistribution</span></code></a></p></td>
-<td><p>The HGF distribution PyMC &gt;= 5.0 compatible.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.distribution/pyhgf.distribution.HGFPointwise.html#pyhgf.distribution.HGFPointwise" title="pyhgf.distribution.HGFPointwise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HGFPointwise</span></code></a></p></td>
-<td><p>The HGF distribution returning pointwise log probability.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
 <section id="model">
-<h2><a class="toc-backref" href="#id34" role="doc-backlink">Model</a><a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
-<p>The main class is used to create a standard Hierarchical Gaussian Filter for binary or
-continuous inputs, with two or three levels. This class wraps the previous JAX modules
-and creates a standard node structure for these models.</p>
+<h2><a class="toc-backref" href="#id33" role="doc-backlink">Model</a><a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>The main classes used to create probabilistic networks for binary or continuous inputs.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.HGF.html#pyhgf.model.HGF" title="pyhgf.model.HGF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HGF</span></code></a></p></td>
-<td><p>The two-level and three-level Hierarchical Gaussian Filters (HGF).</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Network</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Network</span></code></a></p></td>
 <td><p>A predictive coding neural network.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeepNetwork</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeepNetwork</span></code></a></p></td>
 <td><p>Deep predictive coding network with vectorized operations.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_volatile_state.html#pyhgf.model.add_volatile_state" title="pyhgf.model.add_volatile_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_volatile_state</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_volatile_state.html#pyhgf.model.add_volatile_state" title="pyhgf.model.add_volatile_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_volatile_state</span></code></a></p></td>
 <td><p>Add a continuous state node with an implicit continuous volatility parent.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_continuous_state.html#pyhgf.model.add_continuous_state" title="pyhgf.model.add_continuous_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_continuous_state</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_continuous_state.html#pyhgf.model.add_continuous_state" title="pyhgf.model.add_continuous_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_continuous_state</span></code></a></p></td>
 <td><p>Add continuous state node(s) to a network.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_constant_state.html#pyhgf.model.add_constant_state" title="pyhgf.model.add_constant_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_constant_state</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_constant_state.html#pyhgf.model.add_constant_state" title="pyhgf.model.add_constant_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_constant_state</span></code></a></p></td>
 <td><p>Add constant-state (bias) node(s) to a network.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_binary_state.html#pyhgf.model.add_binary_state" title="pyhgf.model.add_binary_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_binary_state</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_binary_state.html#pyhgf.model.add_binary_state" title="pyhgf.model.add_binary_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_binary_state</span></code></a></p></td>
 <td><p>Add binary state node(s) to a network.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_ef_state.html#pyhgf.model.add_ef_state" title="pyhgf.model.add_ef_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_ef_state</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_ef_state.html#pyhgf.model.add_ef_state" title="pyhgf.model.add_ef_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_ef_state</span></code></a></p></td>
 <td><p>Add exponential family state node(s) to a network.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_categorical_state.html#pyhgf.model.add_categorical_state" title="pyhgf.model.add_categorical_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_categorical_state</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_categorical_state.html#pyhgf.model.add_categorical_state" title="pyhgf.model.add_categorical_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_categorical_state</span></code></a></p></td>
 <td><p>Add categorical state node(s) to a network.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_dp_state.html#pyhgf.model.add_dp_state" title="pyhgf.model.add_dp_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_dp_state</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.add_dp_state.html#pyhgf.model.add_dp_state" title="pyhgf.model.add_dp_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_dp_state</span></code></a></p></td>
 <td><p>Add a Dirichlet Process node to a network.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.get_couplings.html#pyhgf.model.get_couplings" title="pyhgf.model.get_couplings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_couplings</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.get_couplings.html#pyhgf.model.get_couplings" title="pyhgf.model.get_couplings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_couplings</span></code></a></p></td>
 <td><p>Transform coupling parameter into tuple of indexes and strenghts.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.update_parameters.html#pyhgf.model.update_parameters" title="pyhgf.model.update_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_parameters</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.update_parameters.html#pyhgf.model.update_parameters" title="pyhgf.model.update_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_parameters</span></code></a></p></td>
 <td><p>Update the default node parameters using keywords args and dictonary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.insert_nodes.html#pyhgf.model.insert_nodes" title="pyhgf.model.insert_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">insert_nodes</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model/pyhgf.model.insert_nodes.html#pyhgf.model.insert_nodes" title="pyhgf.model.insert_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">insert_nodes</span></code></a></p></td>
 <td><p>Insert a set of parametrised node in a network.</p></td>
 </tr>
 </tbody>
@@ -974,12 +943,12 @@ and creates a standard node structure for these models.</p>
 </div>
 </section>
 <section id="plots">
-<h2><a class="toc-backref" href="#id35" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id34" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <p>Plotting functionalities to visualize parameters trajectories and correlations after
 observing new data. We are currently fully supporting Graphviz for network structure and
 Matplotlib for time series visualization. NetworkX is also available for some functions.</p>
 <section id="matplotlib">
-<h3><a class="toc-backref" href="#id36" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id35" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html#pyhgf.plots.matplotlib.plot_trajectories" title="pyhgf.plots.matplotlib.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
@@ -999,7 +968,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="graphviz">
-<h3><a class="toc-backref" href="#id37" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id36" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html#pyhgf.plots.graphviz.plot_network" title="pyhgf.plots.graphviz.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
@@ -1013,7 +982,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="networkx">
-<h3><a class="toc-backref" href="#id38" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html#pyhgf.plots.networkx.plot_network" title="pyhgf.plots.networkx.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network[, figsize, node_size, ...])</p></td>
@@ -1025,7 +994,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </section>
 </section>
 <section id="response">
-<h2><a class="toc-backref" href="#id39" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id38" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
 <p>A collection of response functions. A response function is simply a callable taking at
 least the HGF instance as input after observation and returning surprise.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
@@ -1050,7 +1019,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="utils">
-<h2><a class="toc-backref" href="#id40" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id39" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
 <p>Utilities for manipulating neural networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1100,7 +1069,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </table>
 </div>
 <section id="weight-initialisation">
-<h3><a class="toc-backref" href="#id41" role="doc-backlink">Weight initialisation</a><a class="headerlink" href="#weight-initialisation" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id40" role="doc-backlink">Weight initialisation</a><a class="headerlink" href="#weight-initialisation" title="Link to this heading">#</a></h3>
 <p>Initialisation strategies for coupling weight matrices in predictive-coding networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1122,7 +1091,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </section>
 </section>
 <section id="math">
-<h2><a class="toc-backref" href="#id42" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id41" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
 <p>Math functions and probability densities.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1250,7 +1219,6 @@ least the HGF instance as input after observation and returning surprise.</p>
 </li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distribution">Distribution</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plots">Plots</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#matplotlib">Matplotlib</a></li>

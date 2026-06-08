@@ -321,30 +321,10 @@ Vectorized learning
 
     vectorized_weight_update
 
-Distribution
-************
-
-The Hierarchical Gaussian Filter as a PyMC distribution. This distribution can be
-embedded in models using PyMC>=5.0.0.
-
-.. currentmodule:: pyhgf.distribution
-
-.. autosummary::
-   :toctree: generated/pyhgf.distribution
-   :nosignatures:
-
-   logp
-   hgf_logp
-   HGFLogpGradOp
-   HGFDistribution
-   HGFPointwise
-
 Model
 *****
 
-The main class is used to create a standard Hierarchical Gaussian Filter for binary or
-continuous inputs, with two or three levels. This class wraps the previous JAX modules
-and creates a standard node structure for these models.
+The main classes used to create probabilistic networks for binary or continuous inputs.
 
 .. currentmodule:: pyhgf.model
 
@@ -352,7 +332,6 @@ and creates a standard node structure for these models.
    :toctree: generated/pyhgf.model
    :nosignatures:
 
-   HGF
    Network
    DeepNetwork
    add_volatile_state
