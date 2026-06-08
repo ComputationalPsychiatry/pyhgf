@@ -66,7 +66,7 @@ dev-dependencies = [
     "nbconvert>=7.16.6",
     "jupyterlab_myst>=2.4.2",
     "pre-commit>=4.3.0",
-    "ruff>=0.14.7"
+    "ruff>=0.14.7",
 ]
 
 [build-system]
