@@ -1,8 +1,12 @@
-use crate::model::Network;
 use crate::math::sufficient_statistics;
+use crate::model::Network;
 
 /// Updating an exponential family state node
-pub fn prediction_error_exponential_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
+pub fn prediction_error_exponential_state_node(
+    network: &mut Network,
+    node_idx: usize,
+    _time_step: f64,
+) {
     let mean = network.attributes.states[node_idx].mean;
     let nus = network.attributes.states[node_idx].nus;
 

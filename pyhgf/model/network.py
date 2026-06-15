@@ -180,7 +180,7 @@ class Network:
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
                 network=self,
-                update_type=self.volatility_updates,
+                volatility_updates=self.volatility_updates,
                 mean_field_updates=self.mean_field_updates,
             )
 
@@ -250,7 +250,7 @@ class Network:
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
                 network=self,
-                update_type=self.volatility_updates,
+                volatility_updates=self.volatility_updates,
                 mean_field_updates=self.mean_field_updates,
             )
         # create the learning sequence
@@ -466,7 +466,7 @@ class Network:
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
                 network=self,
-                update_type=self.volatility_updates,
+                volatility_updates=self.volatility_updates,
                 mean_field_updates=self.mean_field_updates,
             )
 

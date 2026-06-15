@@ -9,7 +9,7 @@ from pyhgf.typing import Edges
 
 from .posterior_update_volatility_level import (
     posterior_update_mean_volatility_level,
-    posterior_update_precision_volatility_level,
+    posterior_update_precision_volatility_level_ehgf,
 )
 
 
@@ -64,8 +64,10 @@ def volatile_node_posterior_update_ehgf(
     )
     attributes[node_idx]["mean_vol"] = mean_vol
 
-    # Then update precision
-    precision_vol = posterior_update_precision_volatility_level(attributes, node_idx)
+    # Then update precision (enhanced-HGF safe update)
+    precision_vol = posterior_update_precision_volatility_level_ehgf(
+        attributes, node_idx
+    )
     attributes[node_idx]["precision_vol"] = jnp.minimum(
         precision_vol, max_posterior_precision
     )

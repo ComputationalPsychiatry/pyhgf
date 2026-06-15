@@ -6,11 +6,7 @@ use crate::utils::set_coupling::set_coupling;
 /// Computes a gradient according to `learning_kind` (standard /
 /// precision_weighted / precision_ratio), then scales it by `lr` uniformly.
 /// When Adam state is present, the gradient is filtered through Adam instead.
-pub fn learning_weights(
-    network: &mut Network,
-    node_idx: usize,
-    _time_step: f64,
-) {
+pub fn learning_weights(network: &mut Network, node_idx: usize, _time_step: f64) {
     let is_binary = network.edges[node_idx].node_type == "binary-state";
 
     let n_parents = match &network.edges[node_idx].value_parents {
@@ -35,10 +31,7 @@ pub fn learning_weights(
 
     // --- per-parent update -------------------------------------------
     for i in 0..n_parents {
-        let parent_idx = network.edges[node_idx]
-            .value_parents
-            .as_ref()
-            .unwrap()[i];
+        let parent_idx = network.edges[node_idx].value_parents.as_ref().unwrap()[i];
 
         let coupling = network.attributes.vectors[node_idx]
             .value_coupling_parents

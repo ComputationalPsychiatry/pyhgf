@@ -55,13 +55,18 @@ def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -
 
 @partial(
     jit,
-    static_argnames=("edges", "node_idx", "update_type", "max_posterior_precision"),
+    static_argnames=(
+        "edges",
+        "node_idx",
+        "volatility_updates",
+        "max_posterior_precision",
+    ),
 )
 def volatile_node_prediction_error(
     attributes: dict,
     node_idx: int,
     edges: Edges,
-    update_type: str,
+    volatility_updates: str,
     max_posterior_precision: float = 1e10,
     **args,
 ) -> dict:
@@ -79,7 +84,7 @@ def volatile_node_prediction_error(
     edges :
         The edges of the probabilistic nodes as a tuple of
         :py:class:`pyhgf.typing.Indexes`.
-    update_type :
+    volatility_updates :
         The type of volatility-level posterior update. One of ``"eHGF"``,
         ``"standard"`` or ``"unbounded"``.
     max_posterior_precision :
@@ -97,20 +102,20 @@ def volatile_node_prediction_error(
 
     # 2. Posterior updates for the volatility parent -----------------------------------
     # ----------------------------------------------------------------------------------
-    if update_type == "unbounded":
+    if volatility_updates == "unbounded":
         attributes = volatile_node_posterior_update_unbounded(
             attributes=attributes,
             node_idx=node_idx,
             max_posterior_precision=max_posterior_precision,
         )
-    elif update_type == "eHGF":
+    elif volatility_updates == "eHGF":
         attributes = volatile_node_posterior_update_ehgf(
             attributes=attributes,
             edges=edges,
             node_idx=node_idx,
             max_posterior_precision=max_posterior_precision,
         )
-    elif update_type == "standard":
+    elif volatility_updates == "standard":
         attributes = volatile_node_volatility_posterior_update_standard(
             attributes=attributes,
             node_idx=node_idx,

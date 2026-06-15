@@ -239,7 +239,10 @@ mod tests {
             for r in 0..n {
                 norm_sq += w[r * m + c] * w[r * m + c];
             }
-            assert!((norm_sq - 1.0).abs() < 1e-10, "column {c} norm² = {norm_sq}");
+            assert!(
+                (norm_sq - 1.0).abs() < 1e-10,
+                "column {c} norm² = {norm_sq}"
+            );
         }
     }
 

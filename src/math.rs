@@ -17,9 +17,9 @@ pub fn sufficient_statistics(x: &f64) -> Vec<f64> {
 #[derive(Debug, Clone, Copy)]
 pub struct CouplingFn {
     /// The activation function $f(x)$.
-    pub f:   fn(f64) -> f64,
+    pub f: fn(f64) -> f64,
     /// The first derivative $f'(x)$.
-    pub df:  fn(f64) -> f64,
+    pub df: fn(f64) -> f64,
     /// The second derivative $f''(x)$.
     pub d2f: fn(f64) -> f64,
 }
@@ -29,57 +29,122 @@ pub struct CouplingFn {
 // ─── Linear ──────────────────────────────────────────────────────────────────
 
 /// Linear (identity) activation: $f(x) = x$.
-pub fn linear(x: f64) -> f64 { x }
+pub fn linear(x: f64) -> f64 {
+    x
+}
 /// First derivative of linear: $f'(x) = 1$.
-pub fn linear_d1(_x: f64) -> f64 { 1.0 }
+pub fn linear_d1(_x: f64) -> f64 {
+    1.0
+}
 /// Second derivative of linear: $f''(x) = 0$.
-pub fn linear_d2(_x: f64) -> f64 { 0.0 }
+pub fn linear_d2(_x: f64) -> f64 {
+    0.0
+}
 /// [`CouplingFn`] constant for the linear (identity) activation.
-pub const LINEAR: CouplingFn = CouplingFn { f: linear, df: linear_d1, d2f: linear_d2 };
+pub const LINEAR: CouplingFn = CouplingFn {
+    f: linear,
+    df: linear_d1,
+    d2f: linear_d2,
+};
 
 // ─── ReLU ────────────────────────────────────────────────────────────────────
 
 /// Rectified Linear Unit: $f(x) = \max(0, x)$.
-pub fn relu(x: f64) -> f64 { x.max(0.0) }
+pub fn relu(x: f64) -> f64 {
+    x.max(0.0)
+}
 /// First derivative of ReLU: $f'(x) = 1$ if $x > 0$, else $0$ (zero at $x = 0$).
-pub fn relu_d1(x: f64) -> f64 { if x > 0.0 { 1.0 } else { 0.0 } }
+pub fn relu_d1(x: f64) -> f64 {
+    if x > 0.0 {
+        1.0
+    } else {
+        0.0
+    }
+}
 /// Second derivative of ReLU: $f''(x) = 0$ (almost everywhere).
-pub fn relu_d2(_x: f64) -> f64 { 0.0 }
+pub fn relu_d2(_x: f64) -> f64 {
+    0.0
+}
 /// [`CouplingFn`] constant for the ReLU activation.
-pub const RELU: CouplingFn = CouplingFn { f: relu, df: relu_d1, d2f: relu_d2 };
+pub const RELU: CouplingFn = CouplingFn {
+    f: relu,
+    df: relu_d1,
+    d2f: relu_d2,
+};
 
 // ─── Sigmoid ─────────────────────────────────────────────────────────────────
 
 /// Sigmoid: $f(x) = 1 / (1 + e^{-x})$.
-pub fn sigmoid(x: f64) -> f64 { 1.0 / (1.0 + (-x).exp()) }
+pub fn sigmoid(x: f64) -> f64 {
+    1.0 / (1.0 + (-x).exp())
+}
 /// First derivative of sigmoid: $f'(x) = f(x)(1 - f(x))$.
-pub fn sigmoid_d1(x: f64) -> f64 { let s = sigmoid(x); s * (1.0 - s) }
+pub fn sigmoid_d1(x: f64) -> f64 {
+    let s = sigmoid(x);
+    s * (1.0 - s)
+}
 /// Second derivative of sigmoid: $f''(x) = f'(x)(1 - 2f(x))$.
-pub fn sigmoid_d2(x: f64) -> f64 { let s = sigmoid(x); sigmoid_d1(x) * (1.0 - 2.0 * s) }
+pub fn sigmoid_d2(x: f64) -> f64 {
+    let s = sigmoid(x);
+    sigmoid_d1(x) * (1.0 - 2.0 * s)
+}
 /// [`CouplingFn`] constant for the sigmoid activation.
-pub const SIGMOID: CouplingFn = CouplingFn { f: sigmoid, df: sigmoid_d1, d2f: sigmoid_d2 };
+pub const SIGMOID: CouplingFn = CouplingFn {
+    f: sigmoid,
+    df: sigmoid_d1,
+    d2f: sigmoid_d2,
+};
 
 // ─── Tanh ─────────────────────────────────────────────────────────────────────
 
 /// Hyperbolic tangent: $f(x) = \tanh(x)$.
-pub fn tanh(x: f64) -> f64 { x.tanh() }
+pub fn tanh(x: f64) -> f64 {
+    x.tanh()
+}
 /// First derivative of tanh: $f'(x) = 1 - \tanh^2(x)$.
-pub fn tanh_d1(x: f64) -> f64 { 1.0 - x.tanh().powi(2) }
+pub fn tanh_d1(x: f64) -> f64 {
+    1.0 - x.tanh().powi(2)
+}
 /// Second derivative of tanh: $f''(x) = -2\tanh(x)(1 - \tanh^2(x))$.
-pub fn tanh_d2(x: f64) -> f64 { let t = x.tanh(); -2.0 * t * (1.0 - t * t) }
+pub fn tanh_d2(x: f64) -> f64 {
+    let t = x.tanh();
+    -2.0 * t * (1.0 - t * t)
+}
 /// [`CouplingFn`] constant for the tanh activation.
-pub const TANH: CouplingFn = CouplingFn { f: tanh, df: tanh_d1, d2f: tanh_d2 };
+pub const TANH: CouplingFn = CouplingFn {
+    f: tanh,
+    df: tanh_d1,
+    d2f: tanh_d2,
+};
 
 // ─── Leaky ReLU ──────────────────────────────────────────────────────────────
 
 /// Leaky ReLU with fixed slope $\alpha = 0.01$: $f(x) = x$ if $x \ge 0$, else $0.01x$.
-pub fn leaky_relu(x: f64) -> f64 { if x >= 0.0 { x } else { 0.01 * x } }
+pub fn leaky_relu(x: f64) -> f64 {
+    if x >= 0.0 {
+        x
+    } else {
+        0.01 * x
+    }
+}
 /// First derivative of Leaky ReLU: $f'(x) = 1$ if $x \ge 0$, else $0.01$.
-pub fn leaky_relu_d1(x: f64) -> f64 { if x >= 0.0 { 1.0 } else { 0.01 } }
+pub fn leaky_relu_d1(x: f64) -> f64 {
+    if x >= 0.0 {
+        1.0
+    } else {
+        0.01
+    }
+}
 /// Second derivative of Leaky ReLU: $f''(x) = 0$ (almost everywhere).
-pub fn leaky_relu_d2(_x: f64) -> f64 { 0.0 }
+pub fn leaky_relu_d2(_x: f64) -> f64 {
+    0.0
+}
 /// [`CouplingFn`] constant for the Leaky ReLU activation.
-pub const LEAKY_RELU: CouplingFn = CouplingFn { f: leaky_relu, df: leaky_relu_d1, d2f: leaky_relu_d2 };
+pub const LEAKY_RELU: CouplingFn = CouplingFn {
+    f: leaky_relu,
+    df: leaky_relu_d1,
+    d2f: leaky_relu_d2,
+};
 
 // ─── PReLU ───────────────────────────────────────────────────────────────────
 
@@ -88,11 +153,25 @@ pub const LEAKY_RELU: CouplingFn = CouplingFn { f: leaky_relu, df: leaky_relu_d1
 /// Note: PReLU requires a free `alpha` parameter, so it cannot be stored in a
 /// `CouplingFn` constant. Use [`leaky_relu`] (fixed $\alpha = 0.01$) or
 /// [`LEAKY_RELU`] as the bundled variant.
-pub fn prelu(x: f64, alpha: f64) -> f64 { if x >= 0.0 { x } else { alpha * x } }
+pub fn prelu(x: f64, alpha: f64) -> f64 {
+    if x >= 0.0 {
+        x
+    } else {
+        alpha * x
+    }
+}
 /// First derivative of PReLU.
-pub fn prelu_d1(x: f64, alpha: f64) -> f64 { if x >= 0.0 { 1.0 } else { alpha } }
+pub fn prelu_d1(x: f64, alpha: f64) -> f64 {
+    if x >= 0.0 {
+        1.0
+    } else {
+        alpha
+    }
+}
 /// Second derivative of PReLU: $f''(x) = 0$ (almost everywhere).
-pub fn prelu_d2(_x: f64, _alpha: f64) -> f64 { 0.0 }
+pub fn prelu_d2(_x: f64, _alpha: f64) -> f64 {
+    0.0
+}
 
 // ─── GELU ────────────────────────────────────────────────────────────────────
 
@@ -101,13 +180,15 @@ pub fn prelu_d2(_x: f64, _alpha: f64) -> f64 { 0.0 }
 /// Abramowitz & Stegun §7.1.26 rational approximation; max error < 1.5 × 10⁻⁷.
 fn erfc(x: f64) -> f64 {
     let t = 1.0 / (1.0 + 0.3275911 * x.abs());
-    let poly = t * (0.254829592
-        + t * (-0.284496736
-        + t * (1.421413741
-        + t * (-1.453152027
-        + t * 1.061405429))));
+    let poly = t
+        * (0.254829592
+            + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
     let approx = poly * (-(x * x)).exp();
-    if x >= 0.0 { approx } else { 2.0 - approx }
+    if x >= 0.0 {
+        approx
+    } else {
+        2.0 - approx
+    }
 }
 
 /// GELU: $f(x) = x \cdot \Phi(x)$ where $\Phi$ is the standard-normal CDF.
@@ -126,7 +207,11 @@ pub fn gelu_d2(x: f64) -> f64 {
     pdf * (2.0 - x * x)
 }
 /// [`CouplingFn`] constant for the GELU activation.
-pub const GELU: CouplingFn = CouplingFn { f: gelu, df: gelu_d1, d2f: gelu_d2 };
+pub const GELU: CouplingFn = CouplingFn {
+    f: gelu,
+    df: gelu_d1,
+    d2f: gelu_d2,
+};
 
 // ─── Resolver ────────────────────────────────────────────────────────────────
 
@@ -148,12 +233,12 @@ pub const GELU: CouplingFn = CouplingFn { f: gelu, df: gelu_d1, d2f: gelu_d2 };
 /// Any unrecognised name falls back to [`LINEAR`].
 pub fn resolve_coupling_fn(name: &str) -> &'static CouplingFn {
     match name {
-        "relu"       => &RELU,
-        "sigmoid"    => &SIGMOID,
-        "tanh"       => &TANH,
+        "relu" => &RELU,
+        "sigmoid" => &SIGMOID,
+        "tanh" => &TANH,
         "leaky_relu" => &LEAKY_RELU,
-        "gelu"       => &GELU,
-        _            => &LINEAR,
+        "gelu" => &GELU,
+        _ => &LINEAR,
     }
 }
 
@@ -168,7 +253,10 @@ mod tests {
         assert!(
             (actual - expected).abs() < TOL,
             "{}: expected {:.10}, got {:.10} (diff = {:.2e})",
-            label, expected, actual, (actual - expected).abs()
+            label,
+            expected,
+            actual,
+            (actual - expected).abs()
         );
     }
 
@@ -177,15 +265,15 @@ mod tests {
     #[test]
     fn test_sufficient_statistics_positive() {
         let s = sufficient_statistics(&3.0);
-        assert_close(s[0], 3.0,  "sufficient_statistics[0] for x=3");
-        assert_close(s[1], 9.0,  "sufficient_statistics[1] for x=3");
+        assert_close(s[0], 3.0, "sufficient_statistics[0] for x=3");
+        assert_close(s[1], 9.0, "sufficient_statistics[1] for x=3");
     }
 
     #[test]
     fn test_sufficient_statistics_negative() {
         let s = sufficient_statistics(&-2.5);
         assert_close(s[0], -2.5, "sufficient_statistics[0] for x=-2.5");
-        assert_close(s[1],  6.25,"sufficient_statistics[1] for x=-2.5");
+        assert_close(s[1], 6.25, "sufficient_statistics[1] for x=-2.5");
     }
 
     #[test]
@@ -224,14 +312,14 @@ mod tests {
     fn test_sigmoid_positive_large() {
         // σ(+∞) → 1; σ(10) ≈ 0.9999546
         assert!(sigmoid(10.0) > 0.999, "sigmoid(10) should be > 0.999");
-        assert!(sigmoid(10.0) < 1.0,   "sigmoid(10) should be < 1");
+        assert!(sigmoid(10.0) < 1.0, "sigmoid(10) should be < 1");
     }
 
     #[test]
     fn test_sigmoid_negative_large() {
         // σ(−∞) → 0; σ(−10) ≈ 4.54e-5
         assert!(sigmoid(-10.0) < 0.001, "sigmoid(-10) should be < 0.001");
-        assert!(sigmoid(-10.0) > 0.0,   "sigmoid(-10) should be > 0");
+        assert!(sigmoid(-10.0) > 0.0, "sigmoid(-10) should be > 0");
     }
 
     #[test]
@@ -269,9 +357,9 @@ mod tests {
 
     #[test]
     fn test_tanh_bounds() {
-        assert!(tanh(20.0) <= 1.0,  "tanh(20) <= 1");
-        assert!(tanh(20.0) > 0.99,  "tanh(20) > 0.99");
-        assert!(tanh(-20.0) >= -1.0,  "tanh(-20) >= -1");
+        assert!(tanh(20.0) <= 1.0, "tanh(20) <= 1");
+        assert!(tanh(20.0) > 0.99, "tanh(20) > 0.99");
+        assert!(tanh(-20.0) >= -1.0, "tanh(-20) >= -1");
         assert!(tanh(-20.0) < -0.99, "tanh(-20) < -0.99");
     }
 
@@ -315,15 +403,18 @@ mod tests {
     fn test_prelu_alpha_zero() {
         // α=0 collapses to standard ReLU
         assert_close(prelu(-2.0, 0.0), 0.0, "prelu(-2, α=0) == relu");
-        assert_close(prelu(2.0, 0.0),  2.0, "prelu(2,  α=0) == relu");
+        assert_close(prelu(2.0, 0.0), 2.0, "prelu(2,  α=0) == relu");
     }
 
     #[test]
     fn test_prelu_matches_leaky_relu() {
         // prelu with α=0.01 must equal leaky_relu
         for &x in &[-5.0, -1.0, 0.0, 1.0, 5.0] {
-            assert_close(prelu(x, 0.01), leaky_relu(x),
-                &format!("prelu(α=0.01) == leaky_relu at x={}", x));
+            assert_close(
+                prelu(x, 0.01),
+                leaky_relu(x),
+                &format!("prelu(α=0.01) == leaky_relu at x={}", x),
+            );
         }
     }
 
@@ -345,7 +436,7 @@ mod tests {
     #[test]
     fn test_gelu_negative_large() {
         // For large negative x, Φ(x) → 0, so GELU(x) → 0
-        assert!( gelu(-10.0).abs() < 1e-4, "gelu(-10) ≈ 0" );
+        assert!(gelu(-10.0).abs() < 1e-4, "gelu(-10) ≈ 0");
     }
 
     #[test]
@@ -354,7 +445,9 @@ mod tests {
         let expected = 0.841_344_7;
         assert!(
             (gelu(1.0) - expected).abs() < 1e-5,
-            "gelu(1) expected ≈ {}, got {}", expected, gelu(1.0)
+            "gelu(1) expected ≈ {}, got {}",
+            expected,
+            gelu(1.0)
         );
     }
 
@@ -364,7 +457,9 @@ mod tests {
         let expected = -0.158_655_3;
         assert!(
             (gelu(-1.0) - expected).abs() < 1e-5,
-            "gelu(-1) expected ≈ {}, got {}", expected, gelu(-1.0)
+            "gelu(-1) expected ≈ {}, got {}",
+            expected,
+            gelu(-1.0)
         );
     }
 }

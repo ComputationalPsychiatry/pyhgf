@@ -41,8 +41,7 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
             let parent_expected_precision =
                 network.attributes.states[parent_idx].expected_precision;
             let psi = couplings.get(i).copied().unwrap_or(1.0);
-            let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn
-            {
+            let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
                 Some(cf) => ((cf.f)(parent_expected_mean), (cf.df)(parent_expected_mean)),
                 None => (parent_expected_mean, 1.0),
             };

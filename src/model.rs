@@ -1,14 +1,17 @@
-use std::collections::HashMap;
-use crate::utils::function_pointer::UpdateStep;
-use crate::utils::set_sequence::set_update_sequence;
-use crate::utils::beliefs_propagation::belief_propagation;
-use crate::utils::set_learning_sequence::build_learning_sequence;
-use crate::utils::weight_initialisation::weight_init_by_name;
-use crate::updates::observations::{set_predictors, set_observation};
 use crate::optimiser::AdamState;
+use crate::updates::observations::{set_observation, set_predictors};
+use crate::utils::beliefs_propagation::belief_propagation;
+use crate::utils::function_pointer::UpdateStep;
+use crate::utils::set_learning_sequence::build_learning_sequence;
+use crate::utils::set_sequence::set_update_sequence;
+use crate::utils::weight_initialisation::weight_init_by_name;
+use numpy::{PyArray, PyArray1, PyArrayMethods};
 use pyo3::types::PyTuple;
-use pyo3::{prelude::*, types::{PyList, PyDict}};
-use numpy::{PyArray1, PyArray, PyArrayMethods};
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyList},
+};
+use std::collections::HashMap;
 
 /// Accepts either a single int or a list of ints from Python.
 /// Allows `value_children=0` or `value_children=[0, 1]`.
@@ -30,11 +33,15 @@ impl<'a, 'py> FromPyObject<'a, 'py> for IntOrList {
 }
 
 impl From<Vec<usize>> for IntOrList {
-    fn from(v: Vec<usize>) -> Self { IntOrList::List(v) }
+    fn from(v: Vec<usize>) -> Self {
+        IntOrList::List(v)
+    }
 }
 
 impl From<usize> for IntOrList {
-    fn from(v: usize) -> Self { IntOrList::Single(v) }
+    fn from(v: usize) -> Self {
+        IntOrList::Single(v)
+    }
 }
 
 impl IntOrList {
@@ -48,7 +55,7 @@ impl IntOrList {
 
 #[derive(Debug, Clone)]
 #[pyclass(skip_from_py_object)]
-pub struct AdjacencyLists{
+pub struct AdjacencyLists {
     #[pyo3(get, set)]
     pub node_type: String,
     #[pyo3(get, set)]
@@ -254,15 +261,18 @@ impl NodeTrajectory {
         self.current_variance.push(s.current_variance);
         self.effective_precision.push(s.effective_precision);
         self.value_prediction_error.push(s.value_prediction_error);
-        self.volatility_prediction_error.push(s.volatility_prediction_error);
+        self.volatility_prediction_error
+            .push(s.volatility_prediction_error);
         self.mean_vol.push(s.mean_vol);
         self.expected_mean_vol.push(s.expected_mean_vol);
         self.precision_vol.push(s.precision_vol);
         self.expected_precision_vol.push(s.expected_precision_vol);
         self.tonic_volatility_vol.push(s.tonic_volatility_vol);
         self.tonic_drift_vol.push(s.tonic_drift_vol);
-        self.autoconnection_strength_vol.push(s.autoconnection_strength_vol);
-        self.volatility_coupling_internal.push(s.volatility_coupling_internal);
+        self.autoconnection_strength_vol
+            .push(s.autoconnection_strength_vol);
+        self.volatility_coupling_internal
+            .push(s.volatility_coupling_internal);
         self.effective_precision_vol.push(s.effective_precision_vol);
         self.nus.push(s.nus);
         self.lr.push(s.lr);
@@ -273,16 +283,20 @@ impl NodeTrajectory {
             self.xis.push(v.xis.clone());
         }
         if !v.value_coupling_parents.is_empty() {
-            self.value_coupling_parents.push(v.value_coupling_parents.clone());
+            self.value_coupling_parents
+                .push(v.value_coupling_parents.clone());
         }
         if !v.value_coupling_children.is_empty() {
-            self.value_coupling_children.push(v.value_coupling_children.clone());
+            self.value_coupling_children
+                .push(v.value_coupling_children.clone());
         }
         if !v.volatility_coupling_parents.is_empty() {
-            self.volatility_coupling_parents.push(v.volatility_coupling_parents.clone());
+            self.volatility_coupling_parents
+                .push(v.volatility_coupling_parents.clone());
         }
         if !v.volatility_coupling_children.is_empty() {
-            self.volatility_coupling_children.push(v.volatility_coupling_children.clone());
+            self.volatility_coupling_children
+                .push(v.volatility_coupling_children.clone());
         }
     }
 }
@@ -294,7 +308,7 @@ pub struct NodeTrajectories {
 
 #[derive(Debug)]
 #[pyclass]
-pub struct Network{
+pub struct Network {
     pub attributes: Attributes,
     pub edges: Vec<AdjacencyLists>,
     pub inputs: Vec<usize>,
@@ -319,24 +333,47 @@ pub struct Network{
 fn trajectory_fields_for_type(node_type: &str) -> &'static [&'static str] {
     match node_type {
         "binary-state" => &[
-            "observed", "mean", "expected_mean", "precision",
-            "expected_precision", "value_prediction_error",
+            "observed",
+            "mean",
+            "expected_mean",
+            "precision",
+            "expected_precision",
+            "value_prediction_error",
         ],
         "continuous-state" => &[
-            "mean", "expected_mean", "precision", "expected_precision",
-            "tonic_volatility", "tonic_drift", "autoconnection_strength",
-            "current_variance", "effective_precision",
-            "value_prediction_error", "volatility_prediction_error",
+            "mean",
+            "expected_mean",
+            "precision",
+            "expected_precision",
+            "tonic_volatility",
+            "tonic_drift",
+            "autoconnection_strength",
+            "current_variance",
+            "effective_precision",
+            "value_prediction_error",
+            "volatility_prediction_error",
         ],
         "volatile-state" => &[
-            "mean", "expected_mean", "precision", "expected_precision",
-            "tonic_volatility", "tonic_drift", "autoconnection_strength",
-            "current_variance", "effective_precision",
-            "value_prediction_error", "volatility_prediction_error",
-            "mean_vol", "expected_mean_vol", "precision_vol",
-            "expected_precision_vol", "tonic_volatility_vol",
-            "tonic_drift_vol", "autoconnection_strength_vol",
-            "volatility_coupling_internal", "effective_precision_vol",
+            "mean",
+            "expected_mean",
+            "precision",
+            "expected_precision",
+            "tonic_volatility",
+            "tonic_drift",
+            "autoconnection_strength",
+            "current_variance",
+            "effective_precision",
+            "value_prediction_error",
+            "volatility_prediction_error",
+            "mean_vol",
+            "expected_mean_vol",
+            "precision_vol",
+            "expected_precision_vol",
+            "tonic_volatility_vol",
+            "tonic_drift_vol",
+            "autoconnection_strength_vol",
+            "volatility_coupling_internal",
+            "effective_precision_vol",
             "observed",
         ],
         "ef-state" => &["mean", "nus"],
@@ -377,15 +414,21 @@ fn trajectory_field_ref<'a>(traj: &'a NodeTrajectory, field: &str) -> &'a Vec<f6
 
 // Core Rust methods (also callable from Python via chaining wrappers below)
 impl Network {
-
     pub fn new(volatility_updates: &str) -> Self {
         Network {
-            attributes: Attributes { states: Vec::new(), vectors: Vec::new(), fn_ptrs: Vec::new() },
+            attributes: Attributes {
+                states: Vec::new(),
+                vectors: Vec::new(),
+                fn_ptrs: Vec::new(),
+            },
             edges: Vec::new(),
             inputs: Vec::new(),
             volatility_updates: String::from(volatility_updates),
             mean_field_updates: false,
-            update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
+            update_sequence: UpdateSequence {
+                predictions: Vec::new(),
+                updates: Vec::new(),
+            },
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
             adam_state: None,
@@ -406,369 +449,410 @@ impl Network {
         coupling_fn: Option<String>,
         additional_parameters: Option<HashMap<String, f64>>,
     ) {
-        let coupling_fn_opt: Option<&'static crate::math::CouplingFn> = match coupling_fn.as_deref().unwrap_or("linear") {
-            "linear" => None,
-            name => Some(crate::math::resolve_coupling_fn(name)),
-        };
+        let coupling_fn_opt: Option<&'static crate::math::CouplingFn> =
+            match coupling_fn.as_deref().unwrap_or("linear") {
+                "linear" => None,
+                name => Some(crate::math::resolve_coupling_fn(name)),
+            };
         let value_parents = value_parents.map(|v| v.into_vec());
         let value_children = value_children.map(|v| v.into_vec());
         let volatility_parents = volatility_parents.map(|v| v.into_vec());
         let volatility_children = volatility_children.map(|v| v.into_vec());
 
-      for _ in 0..n_nodes {
-        let node_id = self.edges.len();
+        for _ in 0..n_nodes {
+            let node_id = self.edges.len();
 
-        let has_children = value_children.is_some() || volatility_children.is_some();
-        let has_parents = value_parents.is_some() || volatility_parents.is_some();
+            let has_children = value_children.is_some() || volatility_children.is_some();
+            let has_parents = value_parents.is_some() || volatility_parents.is_some();
 
-        let is_input = !has_children;
-        if is_input {
-            self.inputs.push(node_id);
-        }
-
-        // Update roots/leafs tracking
-        if !has_children {
-            self.roots.push(node_id);
-        }
-        if !has_parents && kind != "constant-state" {
-            self.leafs.push(node_id);
-        }
-        // Children that gain this node as a parent are no longer leafs
-        if let Some(ref vc) = value_children {
-            for &child_idx in vc {
-                self.leafs.retain(|&x| x != child_idx);
+            let is_input = !has_children;
+            if is_input {
+                self.inputs.push(node_id);
             }
-        }
-        if let Some(ref volc) = volatility_children {
-            for &child_idx in volc {
-                self.leafs.retain(|&x| x != child_idx);
+
+            // Update roots/leafs tracking
+            if !has_children {
+                self.roots.push(node_id);
             }
-        }
-        // Parents that gain this node as a child are no longer roots
-        if let Some(ref vp) = value_parents {
-            for &parent_idx in vp {
-                self.roots.retain(|&x| x != parent_idx);
+            if !has_parents && kind != "constant-state" {
+                self.leafs.push(node_id);
             }
-        }
-        if let Some(ref volp) = volatility_parents {
-            for &parent_idx in volp {
-                self.roots.retain(|&x| x != parent_idx);
-            }
-        }
-
-        let edges = AdjacencyLists {
-            node_type: String::from(kind),
-            learning_kind: String::from("precision_weighted"),
-            value_parents: value_parents.clone(),
-            value_children: value_children.clone(),
-            volatility_parents: volatility_parents.clone(),
-            volatility_children: volatility_children.clone(),
-        };
-
-        match kind {
-            "continuous-state" => {
-                let (autoconnection, tonic_vol) = if is_input { (0.0, 0.0) } else { (1.0, -4.0) };
-
-                let mut state = NodeState {
-                    mean: 0.0,
-                    expected_mean: 0.0,
-                    precision: 1.0,
-                    expected_precision: 1.0,
-                    tonic_volatility: tonic_vol,
-                    tonic_drift: 0.0,
-                    autoconnection_strength: autoconnection,
-                    current_variance: 1.0,
-                    ..Default::default()
-                };
-
-                // Apply additional_parameters overrides
-                if let Some(ref overrides) = additional_parameters {
-                    apply_overrides_continuous(&mut state, overrides);
+            // Children that gain this node as a parent are no longer leafs
+            if let Some(ref vc) = value_children {
+                for &child_idx in vc {
+                    self.leafs.retain(|&x| x != child_idx);
                 }
-
-                self.attributes.states.push(state);
-                self.edges.push(edges);
-
-                let mut vecs = NodeVectors::default();
-                let fns = NodeFnPtrs { coupling_fn: coupling_fn_opt };
-
-                if let Some(ref vp) = value_parents {
-                    vecs.value_coupling_parents = vec![1.0; vp.len()];
+            }
+            if let Some(ref volc) = volatility_children {
+                for &child_idx in volc {
+                    self.leafs.retain(|&x| x != child_idx);
                 }
-                if let Some(ref vc) = value_children {
-                    vecs.value_coupling_children = vec![1.0; vc.len()];
-                    for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
-                            match &mut child_edges.value_parents {
-                                Some(parents) => parents.push(node_id),
-                                None => child_edges.value_parents = Some(vec![node_id]),
+            }
+            // Parents that gain this node as a child are no longer roots
+            if let Some(ref vp) = value_parents {
+                for &parent_idx in vp {
+                    self.roots.retain(|&x| x != parent_idx);
+                }
+            }
+            if let Some(ref volp) = volatility_parents {
+                for &parent_idx in volp {
+                    self.roots.retain(|&x| x != parent_idx);
+                }
+            }
+
+            let edges = AdjacencyLists {
+                node_type: String::from(kind),
+                learning_kind: String::from("precision_weighted"),
+                value_parents: value_parents.clone(),
+                value_children: value_children.clone(),
+                volatility_parents: volatility_parents.clone(),
+                volatility_children: volatility_children.clone(),
+            };
+
+            match kind {
+                "continuous-state" => {
+                    let (autoconnection, tonic_vol) =
+                        if is_input { (0.0, 0.0) } else { (1.0, -4.0) };
+
+                    let mut state = NodeState {
+                        mean: 0.0,
+                        expected_mean: 0.0,
+                        precision: 1.0,
+                        expected_precision: 1.0,
+                        tonic_volatility: tonic_vol,
+                        tonic_drift: 0.0,
+                        autoconnection_strength: autoconnection,
+                        current_variance: 1.0,
+                        ..Default::default()
+                    };
+
+                    // Apply additional_parameters overrides
+                    if let Some(ref overrides) = additional_parameters {
+                        apply_overrides_continuous(&mut state, overrides);
+                    }
+
+                    self.attributes.states.push(state);
+                    self.edges.push(edges);
+
+                    let mut vecs = NodeVectors::default();
+                    let fns = NodeFnPtrs {
+                        coupling_fn: coupling_fn_opt,
+                    };
+
+                    if let Some(ref vp) = value_parents {
+                        vecs.value_coupling_parents = vec![1.0; vp.len()];
+                    }
+                    if let Some(ref vc) = value_children {
+                        vecs.value_coupling_children = vec![1.0; vc.len()];
+                        for &child_idx in vc {
+                            if let Some(child_edges) = self.edges.get_mut(child_idx) {
+                                match &mut child_edges.value_parents {
+                                    Some(parents) => parents.push(node_id),
+                                    None => child_edges.value_parents = Some(vec![node_id]),
+                                }
+                            }
+                            if child_idx < self.attributes.vectors.len() {
+                                self.attributes.vectors[child_idx]
+                                    .value_coupling_parents
+                                    .push(1.0);
                             }
                         }
-                        if child_idx < self.attributes.vectors.len() {
-                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
-                        }
                     }
-                }
-                if let Some(ref volp) = volatility_parents {
-                    vecs.volatility_coupling_parents = vec![1.0; volp.len()];
-                }
-                if let Some(ref volc) = volatility_children {
-                    vecs.volatility_coupling_children = vec![1.0; volc.len()];
-                    for &child_idx in volc {
-                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
-                            match &mut child_edges.volatility_parents {
-                                Some(parents) => parents.push(node_id),
-                                None => child_edges.volatility_parents = Some(vec![node_id]),
+                    if let Some(ref volp) = volatility_parents {
+                        vecs.volatility_coupling_parents = vec![1.0; volp.len()];
+                    }
+                    if let Some(ref volc) = volatility_children {
+                        vecs.volatility_coupling_children = vec![1.0; volc.len()];
+                        for &child_idx in volc {
+                            if let Some(child_edges) = self.edges.get_mut(child_idx) {
+                                match &mut child_edges.volatility_parents {
+                                    Some(parents) => parents.push(node_id),
+                                    None => child_edges.volatility_parents = Some(vec![node_id]),
+                                }
+                            }
+                            if child_idx < self.attributes.vectors.len() {
+                                self.attributes.vectors[child_idx]
+                                    .volatility_coupling_parents
+                                    .push(1.0);
                             }
                         }
-                        if child_idx < self.attributes.vectors.len() {
-                            self.attributes.vectors[child_idx].volatility_coupling_parents.push(1.0);
-                        }
                     }
+
+                    self.attributes.vectors.push(vecs);
+                    self.attributes.fn_ptrs.push(fns);
                 }
-
-                self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(fns);
-            }
-            "ef-state" => {
-                let state = NodeState {
-                    mean: 0.0,
-                    nus: 3.0,
-                    ..Default::default()
-                };
-                self.attributes.states.push(state);
-                self.edges.push(edges);
-                let vecs = NodeVectors {
-                    xis: vec![0.0, 1.0],
-                    ..Default::default()
-                };
-                self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs::default());
-            }
-            "volatile-state" => {
-                let volatile_edges = AdjacencyLists {
-                    node_type: String::from(kind),
-                    learning_kind: String::from("precision_weighted"),
-                    value_parents: value_parents.clone(),
-                    value_children: value_children.clone(),
-                    volatility_parents: None,
-                    volatility_children: None,
-                };
-
-                let mut state = NodeState {
-                    mean: 0.0,
-                    expected_mean: 0.0,
-                    precision: 1.0,
-                    expected_precision: 1.0,
-                    tonic_volatility: -4.0,
-                    tonic_drift: 0.0,
-                    autoconnection_strength: 0.0,
-                    current_variance: 1.0,
-                    mean_vol: 0.0,
-                    expected_mean_vol: 0.0,
-                    precision_vol: 1.0,
-                    expected_precision_vol: 1.0,
-                    tonic_volatility_vol: -4.0,
-                    tonic_drift_vol: 0.0,
-                    autoconnection_strength_vol: 1.0,
-                    volatility_coupling_internal: 1.0,
-                    effective_precision: 0.0,
-                    value_prediction_error: 0.0,
-                    volatility_prediction_error: 0.0,
-                    effective_precision_vol: 0.0,
-                    ..Default::default()
-                };
-
-                if let Some(ref overrides) = additional_parameters {
-                    apply_overrides_volatile(&mut state, overrides);
+                "ef-state" => {
+                    let state = NodeState {
+                        mean: 0.0,
+                        nus: 3.0,
+                        ..Default::default()
+                    };
+                    self.attributes.states.push(state);
+                    self.edges.push(edges);
+                    let vecs = NodeVectors {
+                        xis: vec![0.0, 1.0],
+                        ..Default::default()
+                    };
+                    self.attributes.vectors.push(vecs);
+                    self.attributes.fn_ptrs.push(NodeFnPtrs::default());
                 }
+                "volatile-state" => {
+                    let volatile_edges = AdjacencyLists {
+                        node_type: String::from(kind),
+                        learning_kind: String::from("precision_weighted"),
+                        value_parents: value_parents.clone(),
+                        value_children: value_children.clone(),
+                        volatility_parents: None,
+                        volatility_children: None,
+                    };
 
-                self.attributes.states.push(state);
-                self.edges.push(volatile_edges);
+                    let mut state = NodeState {
+                        mean: 0.0,
+                        expected_mean: 0.0,
+                        precision: 1.0,
+                        expected_precision: 1.0,
+                        tonic_volatility: -4.0,
+                        tonic_drift: 0.0,
+                        autoconnection_strength: 0.0,
+                        current_variance: 1.0,
+                        mean_vol: 0.0,
+                        expected_mean_vol: 0.0,
+                        precision_vol: 1.0,
+                        expected_precision_vol: 1.0,
+                        tonic_volatility_vol: -4.0,
+                        tonic_drift_vol: 0.0,
+                        autoconnection_strength_vol: 1.0,
+                        volatility_coupling_internal: 1.0,
+                        effective_precision: 0.0,
+                        value_prediction_error: 0.0,
+                        volatility_prediction_error: 0.0,
+                        effective_precision_vol: 0.0,
+                        ..Default::default()
+                    };
 
-                let mut vecs = NodeVectors::default();
+                    if let Some(ref overrides) = additional_parameters {
+                        apply_overrides_volatile(&mut state, overrides);
+                    }
 
-                if let Some(ref vp) = value_parents {
-                    vecs.value_coupling_parents = vec![1.0; vp.len()];
-                }
-                if let Some(ref vc) = value_children {
-                    vecs.value_coupling_children = vec![1.0; vc.len()];
-                    for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
-                            match &mut child_edges.value_parents {
-                                Some(parents) => parents.push(node_id),
-                                None => child_edges.value_parents = Some(vec![node_id]),
+                    self.attributes.states.push(state);
+                    self.edges.push(volatile_edges);
+
+                    let mut vecs = NodeVectors::default();
+
+                    if let Some(ref vp) = value_parents {
+                        vecs.value_coupling_parents = vec![1.0; vp.len()];
+                    }
+                    if let Some(ref vc) = value_children {
+                        vecs.value_coupling_children = vec![1.0; vc.len()];
+                        for &child_idx in vc {
+                            if let Some(child_edges) = self.edges.get_mut(child_idx) {
+                                match &mut child_edges.value_parents {
+                                    Some(parents) => parents.push(node_id),
+                                    None => child_edges.value_parents = Some(vec![node_id]),
+                                }
+                            }
+                            if child_idx < self.attributes.vectors.len() {
+                                self.attributes.vectors[child_idx]
+                                    .value_coupling_parents
+                                    .push(1.0);
                             }
                         }
-                        if child_idx < self.attributes.vectors.len() {
-                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
-                        }
                     }
+
+                    self.attributes.vectors.push(vecs);
+                    self.attributes.fn_ptrs.push(NodeFnPtrs {
+                        coupling_fn: coupling_fn_opt,
+                    });
                 }
+                "binary-state" => {
+                    let state = NodeState {
+                        observed: 1.0,
+                        mean: 0.0,
+                        expected_mean: 0.5,
+                        precision: 1.0,
+                        expected_precision: 1.0,
+                        value_prediction_error: 0.0,
+                        ..Default::default()
+                    };
+                    self.attributes.states.push(state);
+                    self.edges.push(edges);
 
-                self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
-            }
-            "binary-state" => {
-                let state = NodeState {
-                    observed: 1.0,
-                    mean: 0.0,
-                    expected_mean: 0.5,
-                    precision: 1.0,
-                    expected_precision: 1.0,
-                    value_prediction_error: 0.0,
-                    ..Default::default()
-                };
-                self.attributes.states.push(state);
-                self.edges.push(edges);
+                    let mut vecs = NodeVectors::default();
 
-                let mut vecs = NodeVectors::default();
-
-                if let Some(ref vp) = value_parents {
-                    vecs.value_coupling_parents = vec![1.0; vp.len()];
-                }
-                if let Some(ref vc) = value_children {
-                    vecs.value_coupling_children = vec![1.0; vc.len()];
-                    for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
-                            match &mut child_edges.value_parents {
-                                Some(parents) => parents.push(node_id),
-                                None => child_edges.value_parents = Some(vec![node_id]),
+                    if let Some(ref vp) = value_parents {
+                        vecs.value_coupling_parents = vec![1.0; vp.len()];
+                    }
+                    if let Some(ref vc) = value_children {
+                        vecs.value_coupling_children = vec![1.0; vc.len()];
+                        for &child_idx in vc {
+                            if let Some(child_edges) = self.edges.get_mut(child_idx) {
+                                match &mut child_edges.value_parents {
+                                    Some(parents) => parents.push(node_id),
+                                    None => child_edges.value_parents = Some(vec![node_id]),
+                                }
+                            }
+                            if child_idx < self.attributes.vectors.len() {
+                                self.attributes.vectors[child_idx]
+                                    .value_coupling_parents
+                                    .push(1.0);
                             }
                         }
-                        if child_idx < self.attributes.vectors.len() {
-                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
-                        }
                     }
+
+                    self.attributes.vectors.push(vecs);
+                    self.attributes.fn_ptrs.push(NodeFnPtrs {
+                        coupling_fn: coupling_fn_opt,
+                    });
                 }
+                "constant-state" => {
+                    // Constant state nodes are assumed to have mean = 1.0 and
+                    // precision = 1.0 (fully known bias). They are always wired to
+                    // their children linearly (no coupling function), regardless
+                    // of the layer's coupling_fn.
+                    //
+                    // ``expected_precision`` is set to infinity so that the piHGF
+                    // Laplace value-coupling term `(t · α · g'(µ̂))² / π̂_parent`
+                    // contributes zero for the bias parent — matching the JAX
+                    // vectorised backend, which concatenates an `inf` into the
+                    // parent-precision vector for the constant column. (The
+                    // posterior-level ``precision`` is kept at 1.0 because the
+                    // ``precision_ratio`` learning gain reads it directly.)
+                    let state = NodeState {
+                        mean: 1.0,
+                        expected_mean: 1.0,
+                        precision: 1.0,
+                        expected_precision: f64::INFINITY,
+                        ..Default::default()
+                    };
+                    self.attributes.states.push(state);
+                    self.edges.push(edges);
 
-                self.attributes.vectors.push(vecs);
-                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: coupling_fn_opt });
-            }
-            "constant-state" => {
-                // Constant state nodes are assumed to have mean = 1.0 and
-                // precision = 1.0 (fully known bias). They are always wired to
-                // their children linearly (no coupling function), regardless
-                // of the layer's coupling_fn.
-                //
-                // ``expected_precision`` is set to infinity so that the piHGF
-                // Laplace value-coupling term `(t · α · g'(µ̂))² / π̂_parent`
-                // contributes zero for the bias parent — matching the JAX
-                // vectorised backend, which concatenates an `inf` into the
-                // parent-precision vector for the constant column. (The
-                // posterior-level ``precision`` is kept at 1.0 because the
-                // ``precision_ratio`` learning gain reads it directly.)
-                let state = NodeState {
-                    mean: 1.0,
-                    expected_mean: 1.0,
-                    precision: 1.0,
-                    expected_precision: f64::INFINITY,
-                    ..Default::default()
-                };
-                self.attributes.states.push(state);
-                self.edges.push(edges);
+                    let mut vecs = NodeVectors::default();
 
-                let mut vecs = NodeVectors::default();
-
-                if let Some(ref vc) = value_children {
-                    vecs.value_coupling_children = vec![1.0; vc.len()];
-                    for &child_idx in vc {
-                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
-                            match &mut child_edges.value_parents {
-                                Some(parents) => parents.push(node_id),
-                                None => child_edges.value_parents = Some(vec![node_id]),
+                    if let Some(ref vc) = value_children {
+                        vecs.value_coupling_children = vec![1.0; vc.len()];
+                        for &child_idx in vc {
+                            if let Some(child_edges) = self.edges.get_mut(child_idx) {
+                                match &mut child_edges.value_parents {
+                                    Some(parents) => parents.push(node_id),
+                                    None => child_edges.value_parents = Some(vec![node_id]),
+                                }
+                            }
+                            if child_idx < self.attributes.vectors.len() {
+                                self.attributes.vectors[child_idx]
+                                    .value_coupling_parents
+                                    .push(1.0);
                             }
                         }
-                        if child_idx < self.attributes.vectors.len() {
-                            self.attributes.vectors[child_idx].value_coupling_parents.push(1.0);
-                        }
                     }
-                }
-                if let Some(ref volc) = volatility_children {
-                    vecs.volatility_coupling_children = vec![1.0; volc.len()];
-                    for &child_idx in volc {
-                        if let Some(child_edges) = self.edges.get_mut(child_idx) {
-                            match &mut child_edges.volatility_parents {
-                                Some(parents) => parents.push(node_id),
-                                None => child_edges.volatility_parents = Some(vec![node_id]),
+                    if let Some(ref volc) = volatility_children {
+                        vecs.volatility_coupling_children = vec![1.0; volc.len()];
+                        for &child_idx in volc {
+                            if let Some(child_edges) = self.edges.get_mut(child_idx) {
+                                match &mut child_edges.volatility_parents {
+                                    Some(parents) => parents.push(node_id),
+                                    None => child_edges.volatility_parents = Some(vec![node_id]),
+                                }
+                            }
+                            if child_idx < self.attributes.vectors.len() {
+                                self.attributes.vectors[child_idx]
+                                    .volatility_coupling_parents
+                                    .push(1.0);
                             }
                         }
-                        if child_idx < self.attributes.vectors.len() {
-                            self.attributes.vectors[child_idx].volatility_coupling_parents.push(1.0);
+                    }
+
+                    self.attributes.vectors.push(vecs);
+                    // Force constant-state nodes to use no coupling (identity)
+                    // regardless of what the caller passed.
+                    self.attributes
+                        .fn_ptrs
+                        .push(NodeFnPtrs { coupling_fn: None });
+                }
+                _ => {}
+            }
+
+            // Reciprocal updates: when value_parents or volatility_parents are
+            // specified, update each parent's children list so the parent knows
+            // about this new child.  (The reverse direction — value_children
+            // updating the child's parents — is already handled above.)
+            let vp_clone = self.edges[node_id].value_parents.clone();
+            let volp_clone = self.edges[node_id].volatility_parents.clone();
+
+            if let Some(ref vp) = vp_clone {
+                for &parent_idx in vp {
+                    // Skip if the parent node hasn't been created yet (it will
+                    // perform the reciprocal update via its own value_children).
+                    if parent_idx >= self.edges.len() {
+                        continue;
+                    }
+                    match &mut self.edges[parent_idx].value_children {
+                        Some(children) => {
+                            if !children.contains(&node_id) {
+                                children.push(node_id);
+                            }
                         }
+                        None => self.edges[parent_idx].value_children = Some(vec![node_id]),
+                    }
+                    // Add coupling strength on the parent side only if not already
+                    // present (the value_children branch in each node-type arm
+                    // already handles couplings for the child→parent direction).
+                    let parent_n_children = self.edges[parent_idx]
+                        .value_children
+                        .as_ref()
+                        .map(|c| c.len())
+                        .unwrap_or(0);
+                    let parent_coupling_len = self.attributes.vectors[parent_idx]
+                        .value_coupling_children
+                        .len();
+                    if parent_coupling_len < parent_n_children {
+                        self.attributes.vectors[parent_idx]
+                            .value_coupling_children
+                            .push(1.0);
                     }
                 }
-
-                self.attributes.vectors.push(vecs);
-                // Force constant-state nodes to use no coupling (identity)
-                // regardless of what the caller passed.
-                self.attributes.fn_ptrs.push(NodeFnPtrs { coupling_fn: None });
             }
-            _ => {}
-        }
-
-        // Reciprocal updates: when value_parents or volatility_parents are
-        // specified, update each parent's children list so the parent knows
-        // about this new child.  (The reverse direction — value_children
-        // updating the child's parents — is already handled above.)
-        let vp_clone = self.edges[node_id].value_parents.clone();
-        let volp_clone = self.edges[node_id].volatility_parents.clone();
-
-        if let Some(ref vp) = vp_clone {
-            for &parent_idx in vp {
-                // Skip if the parent node hasn't been created yet (it will
-                // perform the reciprocal update via its own value_children).
-                if parent_idx >= self.edges.len() { continue; }
-                match &mut self.edges[parent_idx].value_children {
-                    Some(children) => {
-                        if !children.contains(&node_id) {
-                            children.push(node_id);
-                        }
+            if let Some(ref volp) = volp_clone {
+                for &parent_idx in volp {
+                    if parent_idx >= self.edges.len() {
+                        continue;
                     }
-                    None => self.edges[parent_idx].value_children = Some(vec![node_id]),
-                }
-                // Add coupling strength on the parent side only if not already
-                // present (the value_children branch in each node-type arm
-                // already handles couplings for the child→parent direction).
-                let parent_n_children = self.edges[parent_idx]
-                    .value_children.as_ref().map(|c| c.len()).unwrap_or(0);
-                let parent_coupling_len = self.attributes.vectors[parent_idx]
-                    .value_coupling_children.len();
-                if parent_coupling_len < parent_n_children {
-                    self.attributes.vectors[parent_idx]
-                        .value_coupling_children.push(1.0);
-                }
-            }
-        }
-        if let Some(ref volp) = volp_clone {
-            for &parent_idx in volp {
-                if parent_idx >= self.edges.len() { continue; }
-                match &mut self.edges[parent_idx].volatility_children {
-                    Some(children) => {
-                        if !children.contains(&node_id) {
-                            children.push(node_id);
+                    match &mut self.edges[parent_idx].volatility_children {
+                        Some(children) => {
+                            if !children.contains(&node_id) {
+                                children.push(node_id);
+                            }
                         }
+                        None => self.edges[parent_idx].volatility_children = Some(vec![node_id]),
                     }
-                    None => self.edges[parent_idx].volatility_children = Some(vec![node_id]),
-                }
-                let parent_n_children = self.edges[parent_idx]
-                    .volatility_children.as_ref().map(|c| c.len()).unwrap_or(0);
-                let parent_coupling_len = self.attributes.vectors[parent_idx]
-                    .volatility_coupling_children.len();
-                if parent_coupling_len < parent_n_children {
-                    self.attributes.vectors[parent_idx]
-                        .volatility_coupling_children.push(1.0);
+                    let parent_n_children = self.edges[parent_idx]
+                        .volatility_children
+                        .as_ref()
+                        .map(|c| c.len())
+                        .unwrap_or(0);
+                    let parent_coupling_len = self.attributes.vectors[parent_idx]
+                        .volatility_coupling_children
+                        .len();
+                    if parent_coupling_len < parent_n_children {
+                        self.attributes.vectors[parent_idx]
+                            .volatility_coupling_children
+                            .push(1.0);
+                    }
                 }
             }
-        }
-      } // end for n_nodes
+        } // end for n_nodes
     }
 
     pub fn set_update_sequence(&mut self) {
         self.update_sequence = set_update_sequence(self);
     }
 
-    pub fn input_data(&mut self, input_data: Vec<Vec<f64>>, time_steps: Option<Vec<f64>>, record_trajectories: bool) {
+    pub fn input_data(
+        &mut self,
+        input_data: Vec<Vec<f64>>,
+        time_steps: Option<Vec<f64>>,
+        record_trajectories: bool,
+    ) {
         if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
             self.set_update_sequence();
         }
@@ -782,7 +866,9 @@ impl Network {
 
         if record_trajectories {
             for _ in 0..self.attributes.states.len() {
-                node_trajectories.nodes.push(NodeTrajectory::with_capacity(n_time));
+                node_trajectories
+                    .nodes
+                    .push(NodeTrajectory::with_capacity(n_time));
             }
         }
 
@@ -825,40 +911,68 @@ impl Network {
                     self.leafs.clone()
                 }
             }
-        }.into_iter()
-            .filter(|&idx| self.edges[idx].node_type != "constant-state")
-            .collect();
+        }
+        .into_iter()
+        .filter(|&idx| self.edges[idx].node_type != "constant-state")
+        .collect();
 
         let additional_parameters = {
             let mut params = additional_parameters.unwrap_or_default();
-            params.entry("autoconnection_strength".into()).or_insert(0.0);
+            params
+                .entry("autoconnection_strength".into())
+                .or_insert(0.0);
             Some(params)
         };
 
         for _ in 0..size {
             let vc = IntOrList::List(children.clone());
-            self.add_nodes(kind, 1, None, Some(vc), None, None, coupling_fn.clone(), additional_parameters.clone());
+            self.add_nodes(
+                kind,
+                1,
+                None,
+                Some(vc),
+                None,
+                None,
+                coupling_fn.clone(),
+                additional_parameters.clone(),
+            );
 
             let node_id = self.edges.len() - 1;
-            for v in self.attributes.vectors[node_id].value_coupling_children.iter_mut() {
+            for v in self.attributes.vectors[node_id]
+                .value_coupling_children
+                .iter_mut()
+            {
                 *v = coupling_strengths;
             }
             for &child_idx in &children {
-                if let Some(last) = self.attributes.vectors[child_idx].value_coupling_parents.last_mut() {
+                if let Some(last) = self.attributes.vectors[child_idx]
+                    .value_coupling_parents
+                    .last_mut()
+                {
                     *last = coupling_strengths;
                 }
             }
         }
 
         if add_constant_input {
-            let non_constant_children: Vec<usize> = children.iter()
+            let non_constant_children: Vec<usize> = children
+                .iter()
                 .filter(|&&idx| self.edges[idx].node_type != "constant-state")
                 .copied()
                 .collect();
 
             if !non_constant_children.is_empty() {
                 let vc = IntOrList::List(non_constant_children);
-                self.add_nodes("constant-state", 1, None, Some(vc), None, None, coupling_fn.clone(), None);
+                self.add_nodes(
+                    "constant-state",
+                    1,
+                    None,
+                    Some(vc),
+                    None,
+                    None,
+                    coupling_fn.clone(),
+                    None,
+                );
             }
         }
 
@@ -878,9 +992,25 @@ impl Network {
     ) {
         for (i, &size) in layer_sizes.iter().enumerate() {
             if i == 0 {
-                self.add_layer(size, kind, value_children.clone(), coupling_strengths, coupling_fn.clone(), additional_parameters.clone(), add_constant_input);
+                self.add_layer(
+                    size,
+                    kind,
+                    value_children.clone(),
+                    coupling_strengths,
+                    coupling_fn.clone(),
+                    additional_parameters.clone(),
+                    add_constant_input,
+                );
             } else {
-                self.add_layer(size, kind, None, coupling_strengths, coupling_fn.clone(), additional_parameters.clone(), add_constant_input);
+                self.add_layer(
+                    size,
+                    kind,
+                    None,
+                    coupling_strengths,
+                    coupling_fn.clone(),
+                    additional_parameters.clone(),
+                    add_constant_input,
+                );
             }
         }
     }
@@ -914,9 +1044,7 @@ impl Network {
         params: Option<&HashMap<String, f64>>,
         learning_kind: &str,
     ) {
-        if self.update_sequence.predictions.is_empty()
-            && self.update_sequence.updates.is_empty()
-        {
+        if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
             self.set_update_sequence();
         }
 
@@ -946,8 +1074,12 @@ impl Network {
                 .map(|v| v.value_coupling_parents.len())
                 .collect();
             let beta1 = params.and_then(|p| p.get("beta1").copied()).unwrap_or(0.9);
-            let beta2 = params.and_then(|p| p.get("beta2").copied()).unwrap_or(0.999);
-            let epsilon = params.and_then(|p| p.get("epsilon").copied()).unwrap_or(1e-8);
+            let beta2 = params
+                .and_then(|p| p.get("beta2").copied())
+                .unwrap_or(0.999);
+            let epsilon = params
+                .and_then(|p| p.get("epsilon").copied())
+                .unwrap_or(1e-8);
             let adam_lr = params.and_then(|p| p.get("lr").copied()).unwrap_or(1e-3);
             let mut adam = AdamState::new(&coupling_sizes, beta1, beta2, epsilon);
             adam.lr = Some(adam_lr);
@@ -970,7 +1102,9 @@ impl Network {
 
         if record_trajectories {
             for _ in 0..self.attributes.states.len() {
-                node_trajectories.nodes.push(NodeTrajectory::with_capacity(n_time));
+                node_trajectories
+                    .nodes
+                    .push(NodeTrajectory::with_capacity(n_time));
             }
         }
 
@@ -1088,18 +1222,14 @@ impl Network {
         // These form an implicit "layer -1" whose weights also need initialisation.
         {
             let first_layer = &self.layers[0];
-            let all_layer_nodes: std::collections::HashSet<usize> = self
-                .layers
-                .iter()
-                .flat_map(|l| l.iter().copied())
-                .collect();
+            let all_layer_nodes: std::collections::HashSet<usize> =
+                self.layers.iter().flat_map(|l| l.iter().copied()).collect();
 
             let mut pre_layer: Vec<usize> = Vec::new();
             for &node_idx in first_layer {
                 if let Some(ref vc) = self.edges[node_idx].value_children {
                     for &child_idx in vc {
-                        if !all_layer_nodes.contains(&child_idx)
-                            && !pre_layer.contains(&child_idx)
+                        if !all_layer_nodes.contains(&child_idx) && !pre_layer.contains(&child_idx)
                         {
                             let nt = &self.edges[child_idx].node_type;
                             if nt == "continuous-state"
@@ -1157,9 +1287,7 @@ impl Network {
             for (p_local, &parent_idx) in parent_nodes.iter().enumerate() {
                 for (c_local, &child_idx) in current_nodes.iter().enumerate() {
                     let w = weights[p_local * n_current + c_local];
-                    crate::utils::set_coupling::set_coupling(
-                        self, parent_idx, child_idx, w,
-                    );
+                    crate::utils::set_coupling::set_coupling(self, parent_idx, child_idx, w);
                 }
             }
         }
@@ -1205,10 +1333,13 @@ fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f
 // Python interface
 #[pymethods]
 impl Network {
-
     #[new]
     #[pyo3(signature = (volatility_updates="unbounded", max_posterior_precision=1e10, mean_field_updates=false))]
-    fn py_new(volatility_updates: &str, max_posterior_precision: f64, mean_field_updates: bool) -> Self {
+    fn py_new(
+        volatility_updates: &str,
+        max_posterior_precision: f64,
+        mean_field_updates: bool,
+    ) -> Self {
         let mut net = Network::new(volatility_updates);
         net.max_posterior_precision = max_posterior_precision;
         net.mean_field_updates = mean_field_updates;
@@ -1246,11 +1377,24 @@ impl Network {
                         map.insert(key_str, val);
                     }
                 }
-                if map.is_empty() { None } else { Some(map) }
+                if map.is_empty() {
+                    None
+                } else {
+                    Some(map)
+                }
             }
             None => None,
         };
-        slf.add_nodes(kind, n_nodes, value_parents, value_children, volatility_parents, volatility_children, coupling_fn, additional_parameters);
+        slf.add_nodes(
+            kind,
+            n_nodes,
+            value_parents,
+            value_children,
+            volatility_parents,
+            volatility_children,
+            coupling_fn,
+            additional_parameters,
+        );
         Ok(slf)
     }
 
@@ -1302,16 +1446,28 @@ impl Network {
                 py_dict.set_item("xis", PyArray::from_vec2(py, &traj.xis).unwrap())?;
             }
             if !traj.value_coupling_parents.is_empty() {
-                py_dict.set_item("value_coupling_parents", PyArray::from_vec2(py, &traj.value_coupling_parents).unwrap())?;
+                py_dict.set_item(
+                    "value_coupling_parents",
+                    PyArray::from_vec2(py, &traj.value_coupling_parents).unwrap(),
+                )?;
             }
             if !traj.value_coupling_children.is_empty() {
-                py_dict.set_item("value_coupling_children", PyArray::from_vec2(py, &traj.value_coupling_children).unwrap())?;
+                py_dict.set_item(
+                    "value_coupling_children",
+                    PyArray::from_vec2(py, &traj.value_coupling_children).unwrap(),
+                )?;
             }
             if !traj.volatility_coupling_parents.is_empty() {
-                py_dict.set_item("volatility_coupling_parents", PyArray::from_vec2(py, &traj.volatility_coupling_parents).unwrap())?;
+                py_dict.set_item(
+                    "volatility_coupling_parents",
+                    PyArray::from_vec2(py, &traj.volatility_coupling_parents).unwrap(),
+                )?;
             }
             if !traj.volatility_coupling_children.is_empty() {
-                py_dict.set_item("volatility_coupling_children", PyArray::from_vec2(py, &traj.volatility_coupling_children).unwrap())?;
+                py_dict.set_item(
+                    "volatility_coupling_children",
+                    PyArray::from_vec2(py, &traj.volatility_coupling_children).unwrap(),
+                )?;
             }
 
             py_list.append(py_dict)?;
@@ -1343,10 +1499,12 @@ impl Network {
     pub fn get_update_sequence<'py>(&self, py: Python<'py>) -> PyResult<Py<PyList>> {
         let py_list = PyList::empty(py);
 
-        for sequence in [&self.update_sequence.predictions, &self.update_sequence.updates] {
+        for sequence in [
+            &self.update_sequence.predictions,
+            &self.update_sequence.updates,
+        ] {
             for &(num, step) in sequence {
-                let py_func_name = step.name()
-                    .into_pyobject(py)?.into_any().unbind();
+                let py_func_name = step.name().into_pyobject(py)?.into_any().unbind();
                 let py_num = num.into_pyobject(py)?.into_any().unbind();
                 py_list.append(PyTuple::new(py, &[py_num, py_func_name])?)?;
             }
@@ -1375,11 +1533,23 @@ impl Network {
                         map.insert(key_str, val);
                     }
                 }
-                if map.is_empty() { None } else { Some(map) }
+                if map.is_empty() {
+                    None
+                } else {
+                    Some(map)
+                }
             }
             None => None,
         };
-        slf.add_layer(size, kind, value_children, coupling_strengths, coupling_fn, additional_parameters, add_constant_input);
+        slf.add_layer(
+            size,
+            kind,
+            value_children,
+            coupling_strengths,
+            coupling_fn,
+            additional_parameters,
+            add_constant_input,
+        );
         Ok(slf)
     }
 
@@ -1403,11 +1573,23 @@ impl Network {
                         map.insert(key_str, val);
                     }
                 }
-                if map.is_empty() { None } else { Some(map) }
+                if map.is_empty() {
+                    None
+                } else {
+                    Some(map)
+                }
             }
             None => None,
         };
-        slf.add_layer_stack(layer_sizes, kind, value_children, coupling_strengths, coupling_fn, additional_parameters, add_constant_input);
+        slf.add_layer_stack(
+            layer_sizes,
+            kind,
+            value_children,
+            coupling_strengths,
+            coupling_fn,
+            additional_parameters,
+            add_constant_input,
+        );
         Ok(slf)
     }
 
@@ -1432,9 +1614,10 @@ impl Network {
                     if s == "adam" {
                         None
                     } else {
-                        return Err(pyo3::exceptions::PyValueError::new_err(
-                            format!("Invalid lr string '{}'. Expected a non-negative float or 'adam'.", s),
-                        ));
+                        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                            "Invalid lr string '{}'. Expected a non-negative float or 'adam'.",
+                            s
+                        )));
                     }
                 } else {
                     Some(obj.extract::<f64>()?)
@@ -1475,12 +1658,25 @@ impl Network {
                         map.insert(key_str, val);
                     }
                 }
-                if map.is_empty() { None } else { Some(map) }
+                if map.is_empty() {
+                    None
+                } else {
+                    Some(map)
+                }
             }
             None => None,
         };
 
-        slf.fit(&x_data, &y_data, &x_idxs, &y_idxs, lr_option, record_trajectories, params_map.as_ref(), learning_kind);
+        slf.fit(
+            &x_data,
+            &y_data,
+            &x_idxs,
+            &y_idxs,
+            lr_option,
+            record_trajectories,
+            params_map.as_ref(),
+            learning_kind,
+        );
         Ok(slf)
     }
 
@@ -1492,9 +1688,7 @@ impl Network {
         inputs_x_idxs: Option<Vec<usize>>,
         inputs_y_idxs: Option<Vec<usize>>,
     ) -> PyResult<Py<numpy::PyArray2<f64>>> {
-        if slf.update_sequence.predictions.is_empty()
-            && slf.update_sequence.updates.is_empty()
-        {
+        if slf.update_sequence.predictions.is_empty() && slf.update_sequence.updates.is_empty() {
             slf.set_update_sequence();
         }
 
@@ -1517,10 +1711,13 @@ impl Network {
         let predictions = slf.predict(&x_data, &x_idxs, &y_idxs);
 
         let n_samples = predictions.len();
-        let n_outputs = if n_samples > 0 { predictions[0].len() } else { 0 };
+        let n_outputs = if n_samples > 0 {
+            predictions[0].len()
+        } else {
+            0
+        };
         let flat: Vec<f64> = predictions.into_iter().flatten().collect();
-        let array = numpy::PyArray1::from_vec(py, flat)
-            .reshape([n_samples, n_outputs])?;
+        let array = numpy::PyArray1::from_vec(py, flat).reshape([n_samples, n_outputs])?;
         Ok(array.into())
     }
 
@@ -1581,8 +1778,16 @@ mod tests {
     fn test_volatile_node_ehgf_matches_explicit() {
         let mut volatile_net = Network::new("eHGF");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
-            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
+        volatile_net.add_nodes(
+            "volatile-state",
+            1,
+            None,
+            Some(0.into()),
+            None,
+            None,
+            None,
+            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])),
+        );
         volatile_net.set_update_sequence();
 
         let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
@@ -1590,8 +1795,26 @@ mod tests {
 
         let mut explicit_net = Network::new("eHGF");
         explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
+        explicit_net.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            Some(0.into()),
+            None,
+            None,
+            None,
+            None,
+        );
+        explicit_net.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            None,
+            None,
+            Some(1.into()),
+            None,
+            None,
+        );
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None, true);
 
@@ -1602,8 +1825,16 @@ mod tests {
     fn test_volatile_node_standard_matches_explicit() {
         let mut volatile_net = Network::new("standard");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
-            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
+        volatile_net.add_nodes(
+            "volatile-state",
+            1,
+            None,
+            Some(0.into()),
+            None,
+            None,
+            None,
+            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])),
+        );
         volatile_net.set_update_sequence();
 
         let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
@@ -1611,8 +1842,26 @@ mod tests {
 
         let mut explicit_net = Network::new("standard");
         explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
+        explicit_net.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            Some(0.into()),
+            None,
+            None,
+            None,
+            None,
+        );
+        explicit_net.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            None,
+            None,
+            Some(1.into()),
+            None,
+            None,
+        );
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None, true);
 
@@ -1623,8 +1872,16 @@ mod tests {
     fn test_volatile_node_unbounded_matches_explicit() {
         let mut volatile_net = Network::new("unbounded");
         volatile_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        volatile_net.add_nodes("volatile-state", 1, None, Some(0.into()), None, None, None,
-            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])));
+        volatile_net.add_nodes(
+            "volatile-state",
+            1,
+            None,
+            Some(0.into()),
+            None,
+            None,
+            None,
+            Some(HashMap::from([("autoconnection_strength".into(), 1.0)])),
+        );
         volatile_net.set_update_sequence();
 
         let input_data: Vec<Vec<f64>> = (0..20).map(|i| vec![(i as f64) * 0.1]).collect();
@@ -1632,8 +1889,26 @@ mod tests {
 
         let mut explicit_net = Network::new("unbounded");
         explicit_net.add_nodes("continuous-state", 1, None, None, None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, Some(0.into()), None, None, None, None);
-        explicit_net.add_nodes("continuous-state", 1, None, None, None, Some(1.into()), None, None);
+        explicit_net.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            Some(0.into()),
+            None,
+            None,
+            None,
+            None,
+        );
+        explicit_net.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            None,
+            None,
+            Some(1.into()),
+            None,
+            None,
+        );
         explicit_net.set_update_sequence();
         explicit_net.input_data(input_data, None, true);
 
@@ -1664,7 +1939,10 @@ mod tests {
                 assert!(
                     (v - e).abs() < 1e-6,
                     "Value-level key '{}' mismatch at t={}: volatile={}, explicit={}",
-                    key, t, v, e
+                    key,
+                    t,
+                    v,
+                    e
                 );
             }
         }
@@ -1672,9 +1950,24 @@ mod tests {
         let exp2_traj = &explicit_net.node_trajectories.nodes[2];
         let vol_key_map: Vec<(&Vec<f64>, &Vec<f64>, &str, &str)> = vec![
             (&vol_traj.mean_vol, &exp2_traj.mean, "mean_vol", "mean"),
-            (&vol_traj.expected_mean_vol, &exp2_traj.expected_mean, "expected_mean_vol", "expected_mean"),
-            (&vol_traj.precision_vol, &exp2_traj.precision, "precision_vol", "precision"),
-            (&vol_traj.expected_precision_vol, &exp2_traj.expected_precision, "expected_precision_vol", "expected_precision"),
+            (
+                &vol_traj.expected_mean_vol,
+                &exp2_traj.expected_mean,
+                "expected_mean_vol",
+                "expected_mean",
+            ),
+            (
+                &vol_traj.precision_vol,
+                &exp2_traj.precision,
+                "precision_vol",
+                "precision",
+            ),
+            (
+                &vol_traj.expected_precision_vol,
+                &exp2_traj.expected_precision,
+                "expected_precision_vol",
+                "expected_precision",
+            ),
         ];
 
         for (vol, exp, vol_key, exp_key) in vol_key_map {
@@ -1682,7 +1975,11 @@ mod tests {
                 assert!(
                     (v - e).abs() < 1e-6,
                     "Vol-level key '{}' vs '{}' mismatch at t={}: volatile={}, explicit={}",
-                    vol_key, exp_key, t, v, e
+                    vol_key,
+                    exp_key,
+                    t,
+                    v,
+                    e
                 );
             }
         }
