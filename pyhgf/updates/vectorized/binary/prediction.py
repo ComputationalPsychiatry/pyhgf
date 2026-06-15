@@ -75,7 +75,10 @@ def vectorized_binary_prediction(
 
     # Sigmoid transform to get binary expected mean
     expected_mean = sigmoid(logit)
-    expected_mean = jnp.clip(expected_mean, 1e-6, 1 - 1e-6)
+    # Bound away from 0/1 to match the TAPAS HGF Toolbox (hgf_binary_level1.m): a
+    # looser bound lets the binary predicted precision collapse the level-2 update in
+    # high-volatility regimes and blow up the variance (esp. under the uHGF update).
+    expected_mean = jnp.clip(expected_mean, 1e-3, 1 - 1e-3)
 
     # Binary variance = μ̂(1 − μ̂), stored as "expected_precision"
     expected_precision = expected_mean * (1 - expected_mean)

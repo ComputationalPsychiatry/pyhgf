@@ -265,7 +265,7 @@ def test_binary_hgf():
     surprise = three_level_binary_hgf.surprise(
         response_function=first_level_binary_surprise
     )
-    assert jnp.isclose(surprise.sum(), 1242.3856)
+    assert jnp.isclose(surprise.sum(), 676.6092)
 
 
 def test_custom_sequence():
