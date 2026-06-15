@@ -74,3 +74,33 @@ def test_continuous_3_levels(volatility_updates, mean_field_updates):
     )
 
     _assert_backends_match(py_net, rs_net, 3, volatility_updates, label)
+
+
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_nonlinear_coupling(mean_field_updates):
+    """Test a 2-level continuous HGF with a non-linear (tanh) value coupling.
+
+    Exercises the non-linear coupling branches of the posterior precision and mean
+    updates (the ``grad`` / ``grad(grad(...))`` terms), for both the relaxed and the
+    mean-field schemes. The JAX (``jnp.tanh``) and Rust (``"tanh"``) backends must
+    agree.
+    """
+    import jax.numpy as jnp
+
+    timeseries = load_data("continuous")
+    label = f"nonlinear mean_field={mean_field_updates}"
+
+    py_net = (
+        PyNetwork(volatility_updates="standard", mean_field_updates=mean_field_updates)
+        .add_nodes()
+        .add_nodes(value_children=0, coupling_fn=(jnp.tanh,))
+        .input_data(input_data=timeseries)
+    )
+    rs_net = (
+        RsNetwork(volatility_updates="standard", mean_field_updates=mean_field_updates)
+        .add_nodes()
+        .add_nodes(value_children=0, coupling_fn="tanh")
+        .input_data(input_data=timeseries)
+    )
+
+    _assert_backends_match(py_net, rs_net, 2, "standard", label)
