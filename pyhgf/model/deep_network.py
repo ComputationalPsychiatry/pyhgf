@@ -98,8 +98,9 @@ class DeepNetwork:
         coupling_fn: Callable = lambda x: x,
         volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
+        precision_clipping_value: float = 1e-6,
     ):
-        """Initialize a VectorizedDeepNetwork.
+        r"""Initialize a VectorizedDeepNetwork.
 
         Parameters
         ----------
@@ -116,10 +117,19 @@ class DeepNetwork:
             volatility level). Defaults to ``1e10`` and is shared with the nodalised
             ``Network`` and the Rust backend. Increase it to relax the cap, or lower it
             to be more conservative against precision blow-up.
+        precision_clipping_value :
+            Bound applied to binary-layer predicted means
+            (``[v, 1 - v]``) so the implied binary precision
+            :math:`\hat{\mu}(1 - \hat{\mu})` never collapses. A larger value (e.g.
+            ``1e-3``, matching TAPAS) stabilises the forward filter in high-volatility
+            regimes; a very small value (default ``1e-6``) avoids flat, zero-gradient
+            plateaus that hurt gradient-based inference. Shared with the nodalised
+            ``Network`` and the Rust backend.
         """
         self.coupling_fn = coupling_fn
         self.volatility_updates = volatility_updates
         self.max_posterior_precision = float(max_posterior_precision)
+        self.precision_clipping_value = float(precision_clipping_value)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -395,6 +405,7 @@ class DeepNetwork:
             layers=tuple(elements),
             volatility_updates=self.volatility_updates,
             max_posterior_precision=self.max_posterior_precision,
+            precision_clipping_value=self.precision_clipping_value,
         )
 
     def weight_initialisation(

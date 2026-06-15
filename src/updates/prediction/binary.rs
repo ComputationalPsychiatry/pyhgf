@@ -12,10 +12,13 @@ pub fn prediction_binary_state_node(network: &mut Network, node_idx: usize, _tim
 
     // Sigmoid transform
     expected_mean = 1.0 / (1.0 + (-expected_mean).exp());
-    // Bound away from 0/1 to match the TAPAS HGF Toolbox (hgf_binary_level1.m): a
-    // looser bound lets the binary predicted precision collapse the level-2 update in
-    // high-volatility regimes and blow up the variance (esp. under the uHGF update).
-    expected_mean = expected_mean.clamp(1e-3, 1.0 - 1e-3);
+    // Bound away from 0/1 for numerical stability (configurable via
+    // `Network(precision_clipping_value=...)`): a larger value (e.g. 1e-3, matching the
+    // TAPAS HGF Toolbox) keeps the binary predicted precision from collapsing the
+    // level-2 update in high-volatility regimes; a very small value avoids flat,
+    // zero-gradient plateaus that hurt gradient-based inference.
+    let v = network.precision_clipping_value;
+    expected_mean = expected_mean.clamp(v, 1.0 - v);
 
     let state = &mut network.attributes.states[node_idx];
     state.expected_mean = expected_mean;

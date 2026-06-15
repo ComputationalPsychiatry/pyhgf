@@ -74,11 +74,14 @@ def binary_state_node_prediction(
     # eq. 80 in Weber et al., v2
     expected_mean = sigmoid(expected_mean)
 
-    # ensure that expected mean is within bounds for numerical stability
-    # (matches the TAPAS HGF Toolbox bound in hgf_binary_level1.m, which keeps the
-    # binary predicted precision from collapsing the level-2 update in high-volatility
-    # regimes and causing variance blow-up, esp. under the unbounded/uHGF update)
-    expected_mean = jnp.clip(expected_mean, 1e-3, 1 - 1e-3)
+    # ensure that expected mean is within bounds for numerical stability. The bound is
+    # configurable via ``Network(precision_clipping_value=...)``: a larger value (e.g.
+    # 1e-3, matching the TAPAS HGF Toolbox hgf_binary_level1.m) keeps the binary
+    # predicted precision from collapsing the level-2 update in high-volatility regimes
+    # (variance blow-up under the uHGF update); a very small value avoids flat,
+    # zero-gradient plateaus that hurt gradient-based inference.
+    clipping_value = attributes[-1]["precision_clipping_value"]
+    expected_mean = jnp.clip(expected_mean, clipping_value, 1 - clipping_value)
     attributes[node_idx]["expected_mean"] = expected_mean
 
     # Estimate the new expected precision from the new expected mean

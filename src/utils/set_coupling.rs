@@ -120,6 +120,7 @@ mod tests {
             roots: vec![1],
             leafs: vec![0],
             max_posterior_precision: 1e10,
+            precision_clipping_value: 1e-6,
         }
     }
 

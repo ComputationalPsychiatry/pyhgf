@@ -205,6 +205,7 @@ class Network(eqx.Module):
     layers: tuple
     volatility_updates: str = field(static=True)
     max_posterior_precision: float = field(static=True)
+    precision_clipping_value: float = field(static=True, default=1e-6)
 
     @property
     def n_layers(self) -> int:

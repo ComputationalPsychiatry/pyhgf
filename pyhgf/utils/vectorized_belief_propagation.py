@@ -87,6 +87,7 @@ def _predict_layer_from_parent(
     parent_has_constant: bool,
     *,
     time_step: float,
+    precision_clipping_value: float,
 ):
     """Predict a single ``Layer`` child from a parent view."""
     if child.kind == "binary":
@@ -96,6 +97,7 @@ def _predict_layer_from_parent(
             weights=parent_weights,
             coupling_fn=parent_coupling_fn,
             parent_has_constant=parent_has_constant,
+            precision_clipping_value=precision_clipping_value,
         )
     else:
         new_state = vectorized_layer_prediction(
@@ -191,7 +193,9 @@ def _predict_stack_from_parent(
     return dataclasses.replace(stack, state=new_full_state)
 
 
-def _topdown_predict(parent_elem, child_elem, *, time_step: float):
+def _topdown_predict(
+    parent_elem, child_elem, *, time_step: float, precision_clipping_value: float = 1e-6
+):
     """Predict ``child_elem`` from ``parent_elem``.
 
     Both can be Layer or LayerStack.
@@ -200,6 +204,7 @@ def _topdown_predict(parent_elem, child_elem, *, time_step: float):
         parent_elem
     )
     if isinstance(child_elem, LayerStack):
+        # LayerStacks are continuous/volatile only — the binary clip never applies.
         return _predict_stack_from_parent(
             child_elem,
             parent_state,
@@ -215,6 +220,7 @@ def _topdown_predict(parent_elem, child_elem, *, time_step: float):
         parent_coupling_fn,
         parent_has_const,
         time_step=time_step,
+        precision_clipping_value=precision_clipping_value,
     )
 
 
@@ -468,6 +474,7 @@ def propagation_step(
     n_elements = len(elements)
     max_posterior_precision = network.max_posterior_precision
     volatility_updates = network.volatility_updates
+    precision_clipping_value = network.precision_clipping_value
 
     # 1. Set predictors on the top element.
     elements[-1] = _set_top_predictors(elements[-1], x)
@@ -478,7 +485,10 @@ def propagation_step(
     # 3. Top-down prediction: predict each element from the one above.
     for i in range(n_elements - 1, 0, -1):
         elements[i - 1] = _topdown_predict(
-            elements[i], elements[i - 1], time_step=time_step
+            elements[i],
+            elements[i - 1],
+            time_step=time_step,
+            precision_clipping_value=precision_clipping_value,
         )
 
     # 4a. PE on the bottom (leaf) element.
@@ -610,6 +620,11 @@ def prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
     elements[-1] = _set_top_predictors(elements[-1], x)
 
     for i in range(n_elements - 1, 0, -1):
-        elements[i - 1] = _topdown_predict(elements[i], elements[i - 1], time_step=1.0)
+        elements[i - 1] = _topdown_predict(
+            elements[i],
+            elements[i - 1],
+            time_step=1.0,
+            precision_clipping_value=network.precision_clipping_value,
+        )
 
     return elements[0].state.expected_mean

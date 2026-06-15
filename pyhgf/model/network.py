@@ -76,8 +76,9 @@ class Network:
         volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
         mean_field_updates: bool = False,
+        precision_clipping_value: float = 1e-6,
     ) -> None:
-        """Initialize an empty neural network.
+        r"""Initialize an empty neural network.
 
         Parameters
         ----------
@@ -104,6 +105,15 @@ class Network:
             which lift the mean-field assumption on value-coupling edges via
             Schur-complement and Laplace/MGF corrections. If ``True``, use the original
             mean-field updates from [1]_.
+        precision_clipping_value :
+            Binary state nodes clip their predicted mean to
+            ``[precision_clipping_value, 1 - precision_clipping_value]`` so the implied
+            binary precision :math:`\hat{\mu}(1 - \hat{\mu})` never collapses to zero. A
+            larger value (e.g. ``1e-3``, matching the TAPAS HGF Toolbox) keeps the
+            forward filter stable in high-volatility regimes; a very small value
+            (default ``1e-6``) keeps the bound from creating flat, zero-gradient
+            plateaus that hurt gradient-based inference (HMC/NUTS, optimisation). Shared
+            with the vectorized JAX and Rust backends.
 
         References
         ----------
@@ -115,7 +125,12 @@ class Network:
         self.n_nodes: int = 0  # number of nodes in the network
         self.node_trajectories: dict = {}
         self.predictions: dict = {}
-        self.attributes: Attributes = {-1: {"time_step": 0.0}}
+        self.attributes: Attributes = {
+            -1: {
+                "time_step": 0.0,
+                "precision_clipping_value": float(precision_clipping_value),
+            }
+        }
         self.update_sequence: Optional[UpdateSequence] = None
         self.scan_fn: Optional[Callable] = None
         self.scan_fn_sample: Optional[Callable] = None
@@ -126,6 +141,7 @@ class Network:
         self.volatility_updates = volatility_updates
         self.mean_field_updates = mean_field_updates
         self.max_posterior_precision = float(max_posterior_precision)
+        self.precision_clipping_value = float(precision_clipping_value)
 
     @property
     def input_idxs(self):
