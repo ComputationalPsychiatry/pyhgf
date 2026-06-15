@@ -34,9 +34,18 @@ pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
             };
 
             if !contains_common {
+                let mf = network.mean_field_updates;
                 match edge.node_type.as_str() {
-                    "continuous-state" => predictions.push((idx, UpdateStep::PredictionContinuous)),
-                    "volatile-state" => predictions.push((idx, UpdateStep::PredictionVolatile)),
+                    "continuous-state" => predictions.push((
+                        idx,
+                        if mf { UpdateStep::PredictionContinuousMeanField }
+                        else   { UpdateStep::PredictionContinuous },
+                    )),
+                    "volatile-state" => predictions.push((
+                        idx,
+                        if mf { UpdateStep::PredictionVolatileMeanField }
+                        else   { UpdateStep::PredictionVolatile },
+                    )),
                     "binary-state" => predictions.push((idx, UpdateStep::PredictionBinary)),
                     _ => ()
                 }
@@ -77,22 +86,39 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
             })
             .collect();
 
+        let mf = network.mean_field_updates;
         for &idx in &eligible_po {
             let edge = &network.edges[idx];
             match edge.node_type.as_str() {
                 "continuous-state" => {
                     if edge.volatility_children.is_some() {
                         match network.volatility_updates.as_str() {
-                            "eHGF" => updates.push((idx, UpdateStep::PosteriorContinuousEhgf)),
+                            "eHGF" => updates.push((
+                                idx,
+                                if mf { UpdateStep::PosteriorContinuousEhgfMeanField }
+                                else   { UpdateStep::PosteriorContinuousEhgf },
+                            )),
                             "unbounded" => updates.push((idx, UpdateStep::PosteriorContinuousUnbounded)),
-                            _ => updates.push((idx, UpdateStep::PosteriorContinuous)),
+                            _ => updates.push((
+                                idx,
+                                if mf { UpdateStep::PosteriorContinuousMeanField }
+                                else   { UpdateStep::PosteriorContinuous },
+                            )),
                         }
                     } else {
-                        updates.push((idx, UpdateStep::PosteriorContinuous));
+                        updates.push((
+                            idx,
+                            if mf { UpdateStep::PosteriorContinuousMeanField }
+                            else   { UpdateStep::PosteriorContinuous },
+                        ));
                     }
                 }
                 "volatile-state" => {
-                    updates.push((idx, UpdateStep::PosteriorVolatile));
+                    updates.push((
+                        idx,
+                        if mf { UpdateStep::PosteriorVolatileMeanField }
+                        else   { UpdateStep::PosteriorVolatile },
+                    ));
                 }
                 _ => (),
             }

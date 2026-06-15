@@ -9,6 +9,8 @@ from pyhgf.updates.posterior.categorical import categorical_state_update
 from pyhgf.updates.posterior.continuous import (
     continuous_node_posterior_update,
     continuous_node_posterior_update_ehgf,
+    continuous_node_posterior_update_ehgf_mean_field,
+    continuous_node_posterior_update_mean_field,
     continuous_node_posterior_update_unbounded,
 )
 from pyhgf.updates.posterior.exponential import (
@@ -16,11 +18,18 @@ from pyhgf.updates.posterior.exponential import (
 )
 from pyhgf.updates.posterior.volatile import (
     volatile_node_posterior_update,
+    volatile_node_posterior_update_mean_field,
 )
 from pyhgf.updates.prediction.binary import binary_state_node_prediction
-from pyhgf.updates.prediction.continuous import continuous_node_prediction
+from pyhgf.updates.prediction.continuous import (
+    continuous_node_prediction,
+    continuous_node_prediction_mean_field,
+)
 from pyhgf.updates.prediction.dirichlet import dirichlet_node_prediction
-from pyhgf.updates.prediction.volatile import volatile_node_prediction
+from pyhgf.updates.prediction.volatile import (
+    volatile_node_prediction,
+    volatile_node_prediction_mean_field,
+)
 from pyhgf.updates.prediction_error.binary import binary_state_node_prediction_error
 from pyhgf.updates.prediction_error.categorical import (
     categorical_state_prediction_error,
@@ -39,7 +48,9 @@ if TYPE_CHECKING:
     from pyhgf.model import Network
 
 
-def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
+def get_update_sequence(
+    network: "Network", update_type: str, mean_field_updates: bool = False
+) -> UpdateSequence:
     """Generate an update sequence from the network's structure.
 
     This function return an optimized update sequence considering the edges of the
@@ -115,11 +126,21 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
                 if network.edges[idx].node_type == 1:
                     prediction_sequence.append((idx, binary_state_node_prediction))
                 elif network.edges[idx].node_type == 2:
-                    prediction_sequence.append((idx, continuous_node_prediction))
+                    prediction_sequence.append((
+                        idx,
+                        continuous_node_prediction_mean_field
+                        if mean_field_updates
+                        else continuous_node_prediction,
+                    ))
                 elif network.edges[idx].node_type == 4:
                     prediction_sequence.append((idx, dirichlet_node_prediction))
                 elif network.edges[idx].node_type == 6:
-                    prediction_sequence.append((idx, volatile_node_prediction))
+                    prediction_sequence.append((
+                        idx,
+                        volatile_node_prediction_mean_field
+                        if mean_field_updates
+                        else volatile_node_prediction,
+                    ))
 
         if not nodes_without_prediction:
             break
@@ -153,18 +174,38 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
             if all([i not in nodes_without_prediction_error for i in all_children]):
                 no_update = False
                 if network.edges[idx].node_type == 2:
+                    has_vol_children = (
+                        network.edges[idx].volatility_children is not None
+                    )
                     if update_type == "unbounded":
-                        if network.edges[idx].volatility_children is not None:
-                            update_fn = continuous_node_posterior_update_unbounded
-                        else:
-                            update_fn = continuous_node_posterior_update
+                        update_fn = (
+                            continuous_node_posterior_update_unbounded
+                            if has_vol_children
+                            else (
+                                continuous_node_posterior_update_mean_field
+                                if mean_field_updates
+                                else continuous_node_posterior_update
+                            )
+                        )
                     elif update_type == "eHGF":
-                        if network.edges[idx].volatility_children is not None:
-                            update_fn = continuous_node_posterior_update_ehgf
+                        if has_vol_children:
+                            update_fn = (
+                                continuous_node_posterior_update_ehgf_mean_field
+                                if mean_field_updates
+                                else continuous_node_posterior_update_ehgf
+                            )
                         else:
-                            update_fn = continuous_node_posterior_update
+                            update_fn = (
+                                continuous_node_posterior_update_mean_field
+                                if mean_field_updates
+                                else continuous_node_posterior_update
+                            )
                     elif update_type == "standard":
-                        update_fn = continuous_node_posterior_update
+                        update_fn = (
+                            continuous_node_posterior_update_mean_field
+                            if mean_field_updates
+                            else continuous_node_posterior_update
+                        )
                     else:
                         raise ValueError("Invalid update type.")
                     update_fn = Partial(
@@ -174,7 +215,9 @@ def get_update_sequence(network: "Network", update_type: str) -> UpdateSequence:
 
                 elif network.edges[idx].node_type == 6:
                     update_fn = Partial(
-                        volatile_node_posterior_update,
+                        volatile_node_posterior_update_mean_field
+                        if mean_field_updates
+                        else volatile_node_posterior_update,
                         max_posterior_precision=network.max_posterior_precision,
                     )
 

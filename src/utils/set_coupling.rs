@@ -93,6 +93,7 @@ mod tests {
             ],
             inputs: vec![0],
             volatility_updates: "standard".into(),
+            mean_field_updates: false,
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),

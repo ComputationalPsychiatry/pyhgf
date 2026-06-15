@@ -63,8 +63,8 @@ def predict_mean(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
 
     """
     time_step = attributes[-1]["time_step"]
@@ -107,7 +107,7 @@ def predict_mean(
 def predict_precision(
     attributes: dict, edges: Edges, node_idx: int
 ) -> tuple[Array, Array, Array]:
-    r"""Compute the predicted precisions of a continuous state node.
+    r"""Compute the predicted precisions of a continuous state node (no mean-field).
 
     This is the *improved* (piHGF) prediction step, which marginalises over the parents'
     variational Gaussians rather than collapsing them to point estimates. Two additional
@@ -195,8 +195,8 @@ def predict_precision(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife
-       Sciences Publications, Ltd. https://doi.org/10.7554/elife.110174.1
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     time_step = attributes[-1]["time_step"]
 
@@ -322,8 +322,8 @@ def continuous_node_prediction(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     # if this node has volatility parent(s), store the current variance
     # to be used by the posterior update if using unbounded approximation
@@ -355,6 +355,135 @@ def continuous_node_prediction(
         ]["precision"]
 
     # 2. regular continuous state node, or input with volatility parent
+    else:
+        attributes[node_idx]["expected_precision"] = expected_precision
+        attributes[node_idx]["temp"]["conditional_expected_precision"] = (
+            conditional_expected_precision
+        )
+
+    attributes[node_idx]["temp"]["effective_precision"] = effective_precision
+    attributes[node_idx]["expected_mean"] = expected_mean
+
+    return attributes
+
+
+@partial(jit, static_argnames=("edges", "node_idx"))
+def predict_precision_mean_field(
+    attributes: dict, edges: Edges, node_idx: int
+) -> tuple[Array, Array, Array]:
+    r"""Compute the expected precision of a continuous state node (mean-field).
+
+    The expected precision at time :math:`k` for a state node :math:`a` is given by
+    [1]_:
+
+    .. math::
+
+        \hat{\pi}_a^{(k)} = \frac{1}{\frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}}
+
+    where :math:`\Omega_a^{(k)}` is the *total predicted volatility*. This term is the
+    sum of the tonic (endogenous) and phasic (exogenous) volatility, such as:
+
+    .. math::
+
+        \Omega_a^{(k)} = t^{(k)}
+        \exp{ \left( \omega_a + \sum_{j=1}^{N_{vopa}} \kappa_j \hat{\mu}_a^{(k-1)} \right) }
+
+
+    with :math:`\kappa_j` the volatility coupling strength with the volatility parent
+    :math:`j`.
+
+    The *effective precision* :math:`\gamma_a^{(k)}` is given by:
+
+    .. math::
+
+        \gamma_a^{(k)} = \Omega_a^{(k)} \hat{\pi}_a^{(k)}
+
+    This value is also saved in the node for later use during the update steps.
+
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic network that contains the continuous state
+        node.
+    edges :
+        The edges of the probabilistic network as a tuple of
+        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the number of
+        nodes. For each node, the index list value/volatility - parents/children.
+    node_idx :
+        Index of the node that should be updated.
+
+    Returns
+    -------
+    expected_precision :
+        The new expected precision of the value parent.
+    effective_precision :
+        The effective_precision :math:`\gamma_a^{(k)}`. This value is stored in the
+        node for later use in the update steps.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
+       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+
+    """
+    time_step = attributes[-1]["time_step"]
+
+    volatility_parents_idxs = edges[node_idx].volatility_parents
+    total_volatility = attributes[node_idx]["tonic_volatility"]
+
+    if volatility_parents_idxs is not None:
+        for volatility_parents_idx, volatility_coupling in zip(
+            volatility_parents_idxs,
+            attributes[node_idx]["volatility_coupling_parents"],
+        ):
+            total_volatility += (
+                volatility_coupling
+                * attributes[volatility_parents_idx]["expected_mean"]
+            )
+
+    predicted_volatility = time_step * jnp.exp(total_volatility)
+    predicted_volatility = jnp.where(
+        predicted_volatility > 1e-128, predicted_volatility, jnp.nan
+    )
+
+    expected_precision = 1 / (
+        (1 / attributes[node_idx]["precision"]) + predicted_volatility
+    )
+    effective_precision = predicted_volatility * expected_precision
+
+    return expected_precision, expected_precision, effective_precision
+
+
+@partial(jit, static_argnames=("edges", "node_idx"))
+def continuous_node_prediction_mean_field(
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
+    """Mean-field (v0.2.11) prediction step for a continuous node.
+
+    Uses the simple v0.2.11 formula: no MGF correction on volatility total, no Laplace
+    value-coupling variance term.
+    """
+    attributes[node_idx]["temp"]["current_variance"] = (
+        1 / attributes[node_idx]["precision"]
+    )
+
+    expected_mean = predict_mean(attributes, edges, node_idx)
+
+    expected_precision, conditional_expected_precision, effective_precision = (
+        predict_precision_mean_field(attributes, edges, node_idx)
+    )
+
+    if (
+        (edges[node_idx].value_children is None)
+        and (edges[node_idx].volatility_children is None)
+        and (edges[node_idx].volatility_parents is None)
+    ):
+        attributes[node_idx]["expected_precision"] = attributes[node_idx]["precision"]
+        attributes[node_idx]["temp"]["conditional_expected_precision"] = attributes[
+            node_idx
+        ]["precision"]
     else:
         attributes[node_idx]["expected_precision"] = expected_precision
         attributes[node_idx]["temp"]["conditional_expected_precision"] = (

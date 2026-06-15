@@ -10,7 +10,9 @@ from pyhgf.typing import Edges
 
 from .posterior_update_value_level import (
     posterior_update_mean_value_level,
+    posterior_update_mean_value_level_mean_field,
     posterior_update_precision_value_level,
+    posterior_update_precision_value_level_mean_field,
 )
 from .posterior_update_volatility_level import (
     posterior_update_mean_volatility_level,
@@ -101,5 +103,51 @@ def volatile_node_volatility_posterior_update_standard(
         attributes, node_idx, precision_vol
     )
     attributes[node_idx]["mean_vol"] = mean_vol
+
+    return attributes
+
+
+@partial(jit, static_argnames=("edges", "node_idx", "max_posterior_precision"))
+def volatile_node_posterior_update_mean_field(
+    attributes: dict,
+    edges: Edges,
+    node_idx: int,
+    max_posterior_precision: float = 1e10,
+) -> dict:
+    """Update a volatile node and the implied volatility parent with mean-field.
+
+    Unlike the standard continuous-state posterior updates elsewhere in the toolbox,
+    the volatile-state updates use the *expected* mean (i.e. the prediction) as the
+    reference point rather than the posterior mean. This choice is made to better suit
+    deep learning networks where the prediction serves as the natural reference for
+    computing updates.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.Indexes`.
+    node_idx :
+        Pointer to the volatile node that needs to be updated.
+    max_posterior_precision :
+        Upper bound applied to the value-level posterior precision write.
+        Default ``1e10``.
+    """
+    precision_value = posterior_update_precision_value_level_mean_field(
+        attributes, edges, node_idx
+    )
+    precision_value = jnp.clip(
+        precision_value,
+        a_min=attributes[node_idx]["expected_precision"],
+        a_max=max_posterior_precision,
+    )
+    attributes[node_idx]["precision"] = precision_value
+
+    mean_value = posterior_update_mean_value_level_mean_field(
+        attributes, edges, node_idx, precision_value
+    )
+    attributes[node_idx]["mean"] = mean_value
 
     return attributes
