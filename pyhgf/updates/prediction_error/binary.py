@@ -20,6 +20,10 @@ def binary_state_node_prediction_error(
         The attributes of the probabilistic nodes.
     node_idx :
         Pointer to the binary state node.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
 
     Returns
     -------

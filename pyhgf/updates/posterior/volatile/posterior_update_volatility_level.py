@@ -15,6 +15,18 @@ def posterior_update_precision_volatility_level(
     """Update the precision of the volatility level.
 
     Uses the value level's volatility prediction error (internal coupling).
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision of the volatility level.
     """
     # Start with expected precision
     posterior_precision = attributes[node_idx]["expected_precision_vol"]
@@ -47,6 +59,18 @@ def posterior_update_precision_volatility_level_ehgf(
     recomputed from the volatility level's just-updated posterior mean (``mean_vol``)
     and the increment is floored at zero. Keeps the fused volatile-state node identical
     to the explicit continuous + volatility-parent construction under the eHGF.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision of the volatility level.
     """
     time_step = attributes[-1]["time_step"]
     mean_vol = attributes[node_idx]["mean_vol"]  # volatility-level posterior mean
@@ -89,6 +113,20 @@ def posterior_update_mean_volatility_level(
     """Update the mean of the volatility level.
 
     Uses the value level's volatility prediction error (internal coupling).
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+    node_precision :
+        The precision of the volatility level, used to weight the prediction error.
+
+    Returns
+    -------
+    posterior_mean :
+        The new posterior mean of the volatility level.
     """
     # Start with expected mean
     posterior_mean = attributes[node_idx]["expected_mean_vol"]

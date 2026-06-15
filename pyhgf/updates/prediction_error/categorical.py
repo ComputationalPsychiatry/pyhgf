@@ -19,17 +19,13 @@ def categorical_state_prediction_error(
     ----------
     attributes :
         The attributes of the probabilistic nodes.
-    .. note::
-        `"psis"` is the value coupling strength. It should have the same length as the
-        volatility parents' indexes. `"volatility_coupling"` is the volatility coupling
-        strength. It should have the same length as the volatility parents' indexes.
     node_idx :
         Pointer to the node that needs to be updated.
     edges :
         The edges of the probabilistic nodes as a tuple of
-        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node
-        number. For each node, the index lists the value and volatility parents and
-        children.
+        :py:class:`pyhgf.typing.AdjacencyLists`. The tuple has the same length as the
+        node number. For each node, the index lists the value and volatility parents
+        and children.
 
     Returns
     -------

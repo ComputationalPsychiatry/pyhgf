@@ -65,6 +65,18 @@ class DeepNetwork:
     implementation uses JAX matrix operations to update all nodes in a layer
     simultaneously.
 
+    Parameters
+    ----------
+    coupling_fn :
+        Coupling function applied between layers. Default is linear (identity). This
+        function is applied to parent means before the weighted sum to predict child
+        means.
+    volatility_updates :
+        The type of volatility-level posterior update. Can be ``"unbounded"``
+        (default), ``"eHGF"`` or ``"standard"``.
+    max_posterior_precision :
+        Upper bound applied to every posterior precision write. Defaults to ``1e10``.
+
     Examples
     --------
     >>> # Build a network with method chaining

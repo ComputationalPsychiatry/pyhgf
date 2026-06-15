@@ -11,7 +11,22 @@ def predict_precision_volatility_level(
     attributes: dict,
     node_idx: int,
 ) -> tuple[Array, Array]:
-    """Predict the precision of the implicit volatility level."""
+    """Predict the precision of the implicit volatility level.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+
+    Returns
+    -------
+    expected_precision_vol :
+        The expected (predicted) precision of the volatility level.
+    effective_precision_vol :
+        The effective precision of the volatility-level prediction.
+    """
     time_step = attributes[-1]["time_step"]
 
     # Get volatility level parameters
@@ -42,6 +57,22 @@ def predict_mean_value_level(
     """Predict the mean of the value level (external facing).
 
     This uses value parents if they exist.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+
+    Returns
+    -------
+    expected_mean :
+        The expected (predicted) mean of the value level.
     """
     time_step = attributes[-1]["time_step"]
 
@@ -213,6 +244,22 @@ def volatile_node_prediction(
     2. Value level (external facing)
 
     The volatility level predicts first, then affects the value level's precision.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+
+    Returns
+    -------
+    attributes :
+        The updated attributes of the probabilistic nodes.
     """
     # Store current variance for potential unbounded updates
     attributes[node_idx]["temp"]["current_variance"] = (
@@ -277,6 +324,26 @@ def predict_precision_value_level_mean_field(
     """Predict the precision of the value level using the implicit volatility level.
 
     The volatility level's mean modulates the value level's precision.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+
+    Returns
+    -------
+    expected_precision :
+        The expected (marginal) precision of the value level.
+    conditional_expected_precision :
+        The conditional predicted precision of the value level.
+    effective_precision :
+        The effective precision of the value-level prediction.
     """
     time_step = attributes[-1]["time_step"]
 
@@ -311,6 +378,22 @@ def volatile_node_prediction_mean_field(
     2. Value level (external facing)
 
     The volatility level predicts first, then affects the value level's precision.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node that will be updated.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+
+    Returns
+    -------
+    attributes :
+        The updated attributes of the probabilistic nodes.
     """
     attributes[node_idx]["temp"]["current_variance"] = (
         1 / attributes[node_idx]["precision"]

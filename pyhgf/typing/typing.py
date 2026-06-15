@@ -19,6 +19,26 @@ class AdjacencyLists(NamedTuple):
 
     The variable `coupling_fn` list the coupling functions between this nodes and the
     children nodes. If `None` is provided, a linear coupling is assumed.
+
+    Parameters
+    ----------
+    node_type :
+        The type of the state node (see the codes listed above).
+    value_parents :
+        Indexes to the value parents of the node, or `None` when the node has no
+        value parent.
+    volatility_parents :
+        Indexes to the volatility parents of the node, or `None` when the node has
+        no volatility parent.
+    value_children :
+        Indexes to the value children of the node, or `None` when the node has no
+        value child.
+    volatility_children :
+        Indexes to the volatility children of the node, or `None` when the node has
+        no volatility child.
+    coupling_fn :
+        The coupling functions between the node and its children. If `None` is
+        provided, a linear coupling is assumed.
     """
 
     node_type: int
@@ -40,7 +60,21 @@ Sequence = tuple[tuple[int, PjitFunction], ...]
 
 
 class UpdateSequence(NamedTuple):
-    """Set of update functions to apply to the network."""
+    """Set of update functions to apply to the network.
+
+    Parameters
+    ----------
+    prediction_steps :
+        The sequence of prediction steps applied top-down before observation.
+    update_steps :
+        The sequence of posterior and prediction-error update steps.
+    pre_prediction_steps :
+        Optional steps applied before the prediction steps.
+    post_update_steps :
+        Optional steps applied after the update steps.
+    action_steps :
+        Optional steps implementing an agent's action selection.
+    """
 
     prediction_steps: Sequence
     update_steps: Sequence
@@ -50,7 +84,17 @@ class UpdateSequence(NamedTuple):
 
 
 class LearningSequence(NamedTuple):
-    """Set of update functions to update the weights of a deep network."""
+    """Set of update functions to update the weights of a deep network.
+
+    Parameters
+    ----------
+    prediction_steps :
+        The sequence of prediction steps applied top-down before observation.
+    update_steps :
+        The sequence of posterior and prediction-error update steps.
+    learning_steps :
+        The sequence of weight-learning steps applied after the update steps.
+    """
 
     prediction_steps: Sequence
     update_steps: Sequence

@@ -281,8 +281,6 @@ def posterior_update_precision_continuous_node(
         children.
     node_idx :
         Pointer to the value parent node that will be updated.
-    time_step :
-        The time elapsed between this observation and the previous one.
 
     Returns
     -------
@@ -439,8 +437,6 @@ def precision_update_mean_field(attributes: dict, edges: Edges, node_idx: int) -
         children.
     node_idx :
         Pointer to the value parent node that will be updated.
-    time_step :
-        The time elapsed between this observation and the previous one.
 
     Returns
     -------
@@ -534,8 +530,6 @@ def posterior_update_precision_continuous_node_mean_field(
         children.
     node_idx :
         Pointer to the value parent node that will be updated.
-    time_step :
-        The time elapsed between this observation and the previous one.
 
     Returns
     -------
@@ -637,6 +631,22 @@ def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Arra
     The value-coupling contribution is identical to :func:`precision_update` (the
     relaxed posterior-step correction); the volatility-coupling contribution uses the
     enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the value parent node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision.
     """
     pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _smoothing_child_precision)
     pwpe += _volatility_coupling_pwpe(
@@ -654,6 +664,22 @@ def precision_update_ehgf_mean_field(
     The value-coupling contribution is identical to :func:`precision_update_mean_field`
     (no smoothing correction); the volatility-coupling contribution uses the enhanced-
     HGF safe update via :func:`_ehgf_volatility_precision_increment`.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the value parent node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision.
     """
     pwpe = _value_coupling_pwpe(
         attributes, edges, node_idx, _mean_field_child_precision
@@ -668,7 +694,24 @@ def precision_update_ehgf_mean_field(
 def posterior_update_precision_continuous_node_ehgf(
     attributes: dict, edges: Edges, node_idx: int
 ) -> float:
-    """Route to the relaxed enhanced-HGF precision or missing-value update."""
+    """Route to the relaxed enhanced-HGF precision or missing-value update.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the value parent node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision.
+    """
     return cond(
         _has_observations(attributes, edges, node_idx),
         Partial(precision_update_ehgf, edges=edges, node_idx=node_idx),
@@ -681,7 +724,24 @@ def posterior_update_precision_continuous_node_ehgf(
 def posterior_update_precision_continuous_node_ehgf_mean_field(
     attributes: dict, edges: Edges, node_idx: int
 ) -> float:
-    """Route to the enhanced-HGF precision update (mean-field) or the missing path."""
+    """Route to the enhanced-HGF precision update (mean-field) or the missing path.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the value parent node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision.
+    """
     return cond(
         _has_observations(attributes, edges, node_idx),
         Partial(precision_update_ehgf_mean_field, edges=edges, node_idx=node_idx),

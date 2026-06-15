@@ -187,7 +187,22 @@ def gaussian_predictive_distribution(
 
 
 def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Array:
-    """Gaussian density as defined by mean and precision."""
+    """Gaussian density as defined by mean and precision.
+
+    Parameters
+    ----------
+    x :
+        The point(s) at which the density is evaluated.
+    mean :
+        The mean of the Gaussian distribution.
+    precision :
+        The precision (inverse variance) of the Gaussian distribution.
+
+    Returns
+    -------
+    density :
+        The Gaussian density evaluated at `x`.
+    """
     return precision / jnp.sqrt(2 * jnp.pi) * jnp.exp(-precision / 2 * (x - mean) ** 2)
 
 
@@ -360,12 +375,40 @@ def binary_surprise_finite_precision(
 
 
 def sigmoid_inverse_temperature(x: ArrayLike, temperature: ArrayLike) -> Array:
-    """Compute the sigmoid response function with inverse temperature parameter."""
+    """Compute the sigmoid response function with inverse temperature parameter.
+
+    Parameters
+    ----------
+    x :
+        The input value(s), expected in the unit interval.
+    temperature :
+        The inverse temperature controlling the steepness of the sigmoid.
+
+    Returns
+    -------
+    response :
+        The transformed value(s).
+    """
     return (x**temperature) / (x**temperature + (1 - x) ** temperature)
 
 
 def parametrised_sigmoid(x: ArrayLike, theta: ArrayLike, phi: ArrayLike) -> Array:
-    r"""Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`."""
+    r"""Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`.
+
+    Parameters
+    ----------
+    x :
+        The point(s) at which the sigmoid is evaluated.
+    theta :
+        The location (inflexion point) :math:`\theta` of the sigmoid.
+    phi :
+        The slope :math:`\phi` of the sigmoid.
+
+    Returns
+    -------
+    value :
+        The sigmoid evaluated at `x`.
+    """
     return sigmoid(phi * (x - theta))
 
 
@@ -376,7 +419,29 @@ def smoothed_rectangular(
     theta_r: ArrayLike = 0.0,
     phi_r: ArrayLike = 1.0,
 ):
-    """Compute the smoothed rectangular weighting function :math:`b`."""
+    r"""Compute the smoothed rectangular weighting function :math:`b`.
+
+    The function is the product of a rising and a falling
+    :py:func:`parametrised_sigmoid`, producing a smooth rectangular window.
+
+    Parameters
+    ----------
+    x :
+        The point(s) at which the function is evaluated.
+    theta_l :
+        The location :math:`\theta` of the rising (left) sigmoid.
+    phi_l :
+        The slope :math:`\phi` of the rising (left) sigmoid.
+    theta_r :
+        The location :math:`\theta` of the falling (right) sigmoid.
+    phi_r :
+        The slope :math:`\phi` of the falling (right) sigmoid.
+
+    Returns
+    -------
+    value :
+        The smoothed rectangular weighting evaluated at `x`.
+    """
     return parametrised_sigmoid(x, theta_l, phi_l) * (
         1 - parametrised_sigmoid(x, theta_r, phi_r)
     )
@@ -401,6 +466,17 @@ def lambert_w0(z: ArrayLike) -> Array:
     where ``w = 0`` gives ``∂W/∂z = 1``). This avoids the NaN gradients that
     would otherwise arise when the Halley iterations' intermediate ``exp(w)``
     values overflow.
+
+    Parameters
+    ----------
+    z :
+        The argument(s) of the Lambert W function, expected to be ``>= 0``.
+
+    Returns
+    -------
+    w :
+        The principal branch :math:`W_0(z)` solving ``w * exp(w) = z``.
+
     """
     w = jnp.log(z + 1.0)
     for _ in range(6):

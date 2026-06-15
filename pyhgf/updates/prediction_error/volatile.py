@@ -17,6 +17,22 @@ def volatile_node_value_prediction_error(
     """Compute the value prediction error of the value level.
 
     This is used by external value parents (if any).
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node whose value prediction error is computed.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. Unused; kept for API compatibility
+        with callers that pass edges.
+
+    Returns
+    -------
+    attributes :
+        The updated attributes of the probabilistic nodes.
     """
     # Value PE for the value level
     value_prediction_error = (
@@ -33,6 +49,19 @@ def volatile_node_volatility_prediction_error(attributes: dict, node_idx: int) -
     """Compute the volatility prediction error for the implicit volatility level.
 
     This is computed from the value level's precision surprise.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the volatile-state node whose volatility prediction error is
+        computed.
+
+    Returns
+    -------
+    attributes :
+        The updated attributes of the probabilistic nodes.
     """
     # Get value level parameters
     expected_precision = attributes[node_idx]["expected_precision"]

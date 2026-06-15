@@ -58,8 +58,6 @@ def vectorized_weight_gradient(
         Current state of the parent layer.
     child_state :
         Current state of the child layer (with observations).
-    weights :
-        Current weight matrix (shape used only for output shape conformity).
     coupling_fn :
         Coupling function applied to parent means.
     kind :
