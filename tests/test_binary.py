@@ -98,7 +98,7 @@ def test_volatile_examples():
     """Test extrem conditions to ensure numerical stability."""
     # repeated identical observations
     hgf = (
-        Network(update_type="unbounded")
+        Network(volatility_updates="unbounded")
         .add_nodes(kind="binary-state")
         .add_nodes(value_children=[0], tonic_volatility=5.0)
     )
@@ -112,7 +112,7 @@ def test_volatile_examples():
 
     # repeated identical observations
     hgf = (
-        Network(update_type="unbounded")
+        Network(volatility_updates="unbounded")
         .add_nodes(kind="binary-state")
         .add_nodes(value_children=[0], tonic_volatility=5.0)
     )

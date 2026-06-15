@@ -82,7 +82,7 @@ def test_set_update_sequence():
 
     # a standard continuous HGF
     network2 = (
-        Network(update_type="standard")
+        Network(volatility_updates="standard")
         .add_nodes()
         .add_nodes(value_children=0)
         .add_nodes(volatility_children=1)
@@ -244,7 +244,7 @@ def test_learning():
 
     # fixed learning rate
     network = (
-        Network(update_type="unbounded")
+        Network(volatility_updates="unbounded")
         .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
         .add_nodes(
             value_children=[0, 1],
@@ -258,7 +258,7 @@ def test_learning():
 
     # Kalman-gain learning rule with a fixed step size
     network = (
-        Network(update_type="unbounded")
+        Network(volatility_updates="unbounded")
         .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
         .add_nodes(
             value_children=[0, 1],

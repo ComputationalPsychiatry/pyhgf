@@ -96,7 +96,7 @@ class DeepNetwork:
     def __init__(
         self,
         coupling_fn: Callable = lambda x: x,
-        update_type: str = "unbounded",
+        volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
     ):
         """Initialize a VectorizedDeepNetwork.
@@ -107,7 +107,7 @@ class DeepNetwork:
             Coupling function applied between layers. Default is linear (identity),
             matching the Rust backend and the Network class. This function is
             applied to parent means before the weighted sum to predict child means.
-        update_type :
+        volatility_updates :
             The type of volatility-level posterior update. Can be ``"unbounded"``
             (default), ``"eHGF"`` or ``"standard"``. Matches the Network
             class and Rust backend.
@@ -118,7 +118,7 @@ class DeepNetwork:
             to be more conservative against precision blow-up.
         """
         self.coupling_fn = coupling_fn
-        self.update_type = update_type
+        self.volatility_updates = volatility_updates
         self.max_posterior_precision = float(max_posterior_precision)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
@@ -393,7 +393,7 @@ class DeepNetwork:
 
         return Network(
             layers=tuple(elements),
-            update_type=self.update_type,
+            volatility_updates=self.volatility_updates,
             max_posterior_precision=self.max_posterior_precision,
         )
 

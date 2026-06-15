@@ -326,3 +326,162 @@ pub fn posterior_update_continuous_state_node_unbounded(network: &mut Network, n
     state.precision = posterior_precision;
     state.mean = posterior_mean;
 }
+
+// =============================================================================
+// Mean-field (v0.2.11) building blocks
+// =============================================================================
+
+/// Mean-field precision update from children.
+///
+/// Uses `expected_precision` directly as the child-precision factor.
+fn precision_update_from_children_mean_field(network: &Network, node_idx: usize) -> f64 {
+    let mut precision_wpe = 0.0;
+
+    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
+        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
+        let parent_mean = network.attributes.states[node_idx].mean;
+        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
+
+        for (i, &child_idx) in vc_idxs.iter().enumerate() {
+            let child_state = &network.attributes.states[child_idx];
+            let child_expected_precision = child_state.expected_precision;
+            let observed = child_state.observed;
+            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
+
+            let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
+                Some(cf) => {
+                    let g_prime = (cf.df)(parent_mean);
+                    let g_second = (cf.d2f)(parent_mean);
+                    let child_vape = child_state.value_prediction_error;
+                    (g_prime.powi(2), kappa * g_second * child_vape)
+                }
+                None => (1.0, 0.0),
+            };
+
+            precision_wpe += (child_expected_precision
+                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
+                * observed;
+        }
+    }
+
+    if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
+        let vol_coupling_strengths =
+            &network.attributes.vectors[node_idx].volatility_coupling_children;
+
+        for (i, &child_idx) in volc_idxs.iter().enumerate() {
+            let child_state = &network.attributes.states[child_idx];
+            let effective_precision = child_state.effective_precision;
+            let volatility_pe = child_state.volatility_prediction_error;
+            let observed = child_state.observed;
+            let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
+
+            precision_wpe += (0.5 * (kappa * effective_precision).powi(2)
+                + (kappa * effective_precision).powi(2) * volatility_pe
+                - 0.5 * kappa.powi(2) * effective_precision * volatility_pe)
+                * observed;
+        }
+    }
+
+    precision_wpe
+}
+
+/// Mean-field mean update from children.
+///
+/// Uses `expected_precision` directly as the value-coupling gain.
+fn mean_update_from_children_mean_field(
+    network: &Network,
+    node_idx: usize,
+    node_precision: f64,
+) -> f64 {
+    let mut value_pwpe = 0.0;
+    let mut volatility_pwpe = 0.0;
+
+    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
+        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
+        let parent_mean = network.attributes.states[node_idx].mean;
+        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
+
+        for (i, &child_idx) in vc_idxs.iter().enumerate() {
+            let child_state = &network.attributes.states[child_idx];
+            let child_expected_precision = child_state.expected_precision;
+            let child_vape = child_state.value_prediction_error * child_state.observed;
+            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
+
+            let coupling_fn_prime = match coupling_fn {
+                Some(cf) => (cf.df)(parent_mean),
+                None => 1.0,
+            };
+
+            value_pwpe +=
+                (kappa * coupling_fn_prime * child_expected_precision / node_precision)
+                    * child_vape;
+        }
+    }
+
+    if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
+        let vol_coupling_strengths =
+            &network.attributes.vectors[node_idx].volatility_coupling_children;
+
+        for (i, &child_idx) in volc_idxs.iter().enumerate() {
+            let child_state = &network.attributes.states[child_idx];
+            let effective_precision = child_state.effective_precision;
+            let volatility_pe = child_state.volatility_prediction_error;
+            let observed = child_state.observed;
+            let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
+
+            volatility_pwpe +=
+                (kappa * effective_precision * volatility_pe) / (2.0 * node_precision)
+                    * observed;
+        }
+    }
+
+    value_pwpe + volatility_pwpe
+}
+
+// =============================================================================
+// Mean-field posterior updates
+// =============================================================================
+
+pub fn posterior_update_continuous_state_node_mean_field(
+    network: &mut Network,
+    node_idx: usize,
+    _time_step: f64,
+) {
+    let expected_precision = network.attributes.states[node_idx].expected_precision;
+    let expected_mean = network.attributes.states[node_idx].expected_mean;
+    let max_posterior_precision = network.max_posterior_precision;
+
+    let precision_wpe = precision_update_from_children_mean_field(network, node_idx);
+    let posterior_precision = (expected_precision + precision_wpe)
+        .max(1e-128)
+        .min(max_posterior_precision);
+
+    let mean_wpe =
+        mean_update_from_children_mean_field(network, node_idx, posterior_precision);
+    let posterior_mean = expected_mean + mean_wpe;
+
+    let state = &mut network.attributes.states[node_idx];
+    state.precision = posterior_precision;
+    state.mean = posterior_mean;
+}
+
+pub fn posterior_update_continuous_state_node_ehgf_mean_field(
+    network: &mut Network,
+    node_idx: usize,
+    _time_step: f64,
+) {
+    let expected_precision = network.attributes.states[node_idx].expected_precision;
+    let expected_mean = network.attributes.states[node_idx].expected_mean;
+    let max_posterior_precision = network.max_posterior_precision;
+
+    let mean_wpe =
+        mean_update_from_children_mean_field(network, node_idx, expected_precision);
+    let posterior_mean = expected_mean + mean_wpe;
+    network.attributes.states[node_idx].mean = posterior_mean;
+
+    let precision_wpe = precision_update_from_children_mean_field(network, node_idx);
+    let posterior_precision = (expected_precision + precision_wpe)
+        .max(1e-128)
+        .min(max_posterior_precision);
+    network.attributes.states[node_idx].precision = posterior_precision;
+}

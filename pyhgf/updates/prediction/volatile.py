@@ -266,3 +266,90 @@ def volatile_node_prediction(
         attributes[node_idx]["temp"]["effective_precision"] = effective_precision
 
     return attributes
+
+
+@partial(jit, static_argnames=("edges", "node_idx"))
+def predict_precision_value_level_mean_field(
+    attributes: dict,
+    edges: Edges,
+    node_idx: int,
+) -> tuple[Array, Array, Array]:
+    """Predict the precision of the value level using the implicit volatility level.
+
+    The volatility level's mean modulates the value level's precision.
+    """
+    time_step = attributes[-1]["time_step"]
+
+    precision = attributes[node_idx]["precision"]
+    tonic_volatility = attributes[node_idx]["tonic_volatility"]
+    expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
+    volatility_coupling_internal = attributes[node_idx]["volatility_coupling_internal"]
+
+    total_volatility = tonic_volatility + (
+        volatility_coupling_internal * expected_mean_vol
+    )
+
+    predicted_volatility = time_step * jnp.exp(total_volatility)
+    predicted_volatility = jnp.where(
+        predicted_volatility > 1e-128, predicted_volatility, jnp.nan
+    )
+
+    expected_precision = 1 / ((1 / precision) + predicted_volatility)
+    effective_precision = predicted_volatility * expected_precision
+
+    return expected_precision, expected_precision, effective_precision
+
+
+@partial(jit, static_argnames=("edges", "node_idx"))
+def volatile_node_prediction_mean_field(
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
+    """Update the expected mean and expected precision of a value-volatility node.
+
+    This node has two internal levels:
+    1. Volatility level (implicit, internal)
+    2. Value level (external facing)
+
+    The volatility level predicts first, then affects the value level's precision.
+    """
+    attributes[node_idx]["temp"]["current_variance"] = (
+        1 / attributes[node_idx]["precision"]
+    )
+
+    # Volatility level prediction (unchanged — no relaxed changes here)
+    expected_precision_vol, effective_precision_vol = (
+        predict_precision_volatility_level(attributes, node_idx)
+    )
+
+    attributes[node_idx]["expected_mean_vol"] = attributes[node_idx]["mean_vol"]
+    attributes[node_idx]["expected_precision_vol"] = expected_precision_vol
+    attributes[node_idx]["temp"]["effective_precision_vol"] = effective_precision_vol
+
+    # Value level precision — mean_field: no MGF, no Laplace correction
+    expected_precision, conditional_expected_precision, effective_precision = (
+        predict_precision_value_level_mean_field(attributes, edges, node_idx)
+    )
+
+    expected_mean = predict_mean_value_level(attributes, edges, node_idx)
+    attributes[node_idx]["expected_mean"] = expected_mean
+
+    if (
+        (edges[node_idx].value_children is None)
+        and (edges[node_idx].volatility_children is None)
+        and (edges[node_idx].volatility_parents is None)
+    ):
+        attributes[node_idx]["expected_precision"] = attributes[node_idx]["precision"]
+        attributes[node_idx]["temp"]["conditional_expected_precision"] = attributes[
+            node_idx
+        ]["precision"]
+        attributes[node_idx]["temp"]["effective_precision"] = jnp.zeros_like(
+            effective_precision
+        )
+    else:
+        attributes[node_idx]["expected_precision"] = expected_precision
+        attributes[node_idx]["temp"]["conditional_expected_precision"] = (
+            conditional_expected_precision
+        )
+        attributes[node_idx]["temp"]["effective_precision"] = effective_precision
+
+    return attributes

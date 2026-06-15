@@ -45,8 +45,8 @@ def continuous_node_value_prediction_error(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
 
     """
     # value prediction error
@@ -95,8 +95,8 @@ def continuous_node_volatility_prediction_error(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
 
     """
     # compute the volatility prediction error (VOPE)
@@ -157,8 +157,8 @@ def continuous_node_prediction_error(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     # Store value prediction errors
     # -----------------------------

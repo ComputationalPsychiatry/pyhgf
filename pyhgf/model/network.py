@@ -73,14 +73,15 @@ class Network:
 
     def __init__(
         self,
-        update_type: str = "unbounded",
+        volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
+        mean_field_updates: bool = False,
     ) -> None:
         """Initialize an empty neural network.
 
         Parameters
         ----------
-        update_type :
+        volatility_updates :
             The type of update to perform for volatility coupling. Can be `"unbounded"`
             (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
             recently introduced to avoid negative precisions updates, which greatly
@@ -98,6 +99,17 @@ class Network:
             nodes). Defaults to ``1e10`` and is shared with the vectorized JAX and Rust
             backends. Increase it to relax the cap, or lower it to be more conservative
             against precision blow-up.
+        mean_field_updates :
+            If ``False`` (default), use the relaxed prediction and posterior updates,
+            which lift the mean-field assumption on value-coupling edges via
+            Schur-complement and Laplace/MGF corrections. If ``True``, use the original
+            mean-field updates from [1]_.
+
+        References
+        ----------
+        .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+          Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+          doi:10.7554/elife.110174.1
         """
         self.edges: Edges = ()
         self.n_nodes: int = 0  # number of nodes in the network
@@ -111,7 +123,8 @@ class Network:
         self.input_dim: list = []
         self.action_steps: Optional[Sequence] = None
         self.last_attributes: Optional[Attributes] = None
-        self.update_type = update_type
+        self.volatility_updates = volatility_updates
+        self.mean_field_updates = mean_field_updates
         self.max_posterior_precision = float(max_posterior_precision)
 
     @property
@@ -166,7 +179,9 @@ class Network:
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=self.update_type
+                network=self,
+                update_type=self.volatility_updates,
+                mean_field_updates=self.mean_field_updates,
             )
 
         # create the belief propagation function
@@ -234,7 +249,9 @@ class Network:
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=self.update_type
+                network=self,
+                update_type=self.volatility_updates,
+                mean_field_updates=self.mean_field_updates,
             )
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
@@ -448,7 +465,9 @@ class Network:
         # ensure the update sequence exists
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=self.update_type
+                network=self,
+                update_type=self.volatility_updates,
+                mean_field_updates=self.mean_field_updates,
             )
 
         # keep only prediction steps that are not on the predictor nodes

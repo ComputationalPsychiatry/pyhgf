@@ -203,7 +203,7 @@ class Network(eqx.Module):
     """
 
     layers: tuple
-    update_type: str = field(static=True)
+    volatility_updates: str = field(static=True)
     max_posterior_precision: float = field(static=True)
 
     @property

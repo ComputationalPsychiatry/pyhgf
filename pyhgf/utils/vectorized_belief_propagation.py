@@ -467,7 +467,7 @@ def propagation_step(
     elements = list(network.layers)
     n_elements = len(elements)
     max_posterior_precision = network.max_posterior_precision
-    update_type = network.update_type
+    update_type = network.volatility_updates
 
     # 1. Set predictors on the top element.
     elements[-1] = _set_top_predictors(elements[-1], x)

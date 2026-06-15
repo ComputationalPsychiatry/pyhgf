@@ -26,7 +26,7 @@ def _make_network_no_weights(layers: tuple) -> Network:
     """Test helper: build a Network with default statics."""
     return Network(
         layers=layers,
-        update_type="eHGF",
+        volatility_updates="eHGF",
         max_posterior_precision=1e10,
     )
 
@@ -139,7 +139,7 @@ def test_network_is_pytree_with_static_meta():
     net = _make_network_no_weights((layer,))
     leaves, treedef = jtu.tree_flatten(net)
     rebuilt = jtu.tree_unflatten(treedef, leaves)
-    assert rebuilt.update_type == "eHGF"
+    assert rebuilt.volatility_updates == "eHGF"
     assert rebuilt.max_posterior_precision == 1e10
     assert rebuilt.n_layers == 1
 
@@ -189,7 +189,7 @@ def test_serialisation_roundtrip(tmp_path):
     eqx.tree_serialise_leaves(str(path), net)
     restored = eqx.tree_deserialise_leaves(str(path), net)
     assert jnp.array_equal(restored.layers[0].weights_in, net.layers[0].weights_in)
-    assert restored.update_type == net.update_type
+    assert restored.volatility_updates == net.volatility_updates
 
 
 def test_deepnetwork_state_is_eqx_network():
@@ -210,7 +210,7 @@ def test_deepnetwork_state_is_eqx_network():
     assert dn.state.layers[1].weights_in is not None
     assert dn.state.layers[1].weights_in.shape == (2, 4)  # (prev_size, size + bias)
     # Statics propagated from the builder.
-    assert dn.state.update_type == "unbounded"
+    assert dn.state.volatility_updates == "unbounded"
     assert dn.state.max_posterior_precision == 1e10
 
 
@@ -529,7 +529,7 @@ def test_phase8_add_layer_stack_auto_collapses_into_layerstack():
     from pyhgf.typing.vectorised import LayerStack
 
     dn = (
-        DeepNetwork(coupling_fn=jax.nn.leaky_relu, update_type="unbounded")
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu, volatility_updates="unbounded")
         .add_layer(size=1, kind="binary")
         .add_layer(
             size=6,
@@ -565,7 +565,7 @@ def _phase8_build(scan, depth=5, width=6, seed=0):
     the unrolled twin.
     """
     net = (
-        DeepNetwork(coupling_fn=jax.nn.leaky_relu, update_type="unbounded")
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu, volatility_updates="unbounded")
         .add_layer(size=1, kind="binary")
         .add_layer(
             size=width,
