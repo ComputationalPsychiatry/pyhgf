@@ -26,7 +26,15 @@ impl AdamState {
     pub fn new(coupling_sizes: &[usize], beta1: f64, beta2: f64, epsilon: f64) -> Self {
         let m: Vec<Vec<f64>> = coupling_sizes.iter().map(|&n| vec![0.0; n]).collect();
         let v: Vec<Vec<f64>> = coupling_sizes.iter().map(|&n| vec![0.0; n]).collect();
-        AdamState { m, v, t: 0, beta1, beta2, epsilon, lr: None }
+        AdamState {
+            m,
+            v,
+            t: 0,
+            beta1,
+            beta2,
+            epsilon,
+            lr: None,
+        }
     }
 
     /// Increment the global timestep.  Call once at the start of each fit iteration.
@@ -42,13 +50,7 @@ impl AdamState {
     /// * `node_idx` / `parent_pos` — locate the m/v slot.
     /// * `gradient` — the raw gradient (before any learning-rate scaling).
     /// * `lr` — base learning rate.
-    pub fn step(
-        &mut self,
-        node_idx: usize,
-        parent_pos: usize,
-        gradient: f64,
-        lr: f64,
-    ) -> f64 {
+    pub fn step(&mut self, node_idx: usize, parent_pos: usize, gradient: f64, lr: f64) -> f64 {
         // Update biased first moment estimate
         self.m[node_idx][parent_pos] =
             self.beta1 * self.m[node_idx][parent_pos] + (1.0 - self.beta1) * gradient;

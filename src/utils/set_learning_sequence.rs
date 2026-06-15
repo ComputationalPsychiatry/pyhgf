@@ -30,7 +30,8 @@ pub fn build_learning_sequence(
         .iter()
         .filter_map(|&(idx, step)| {
             if step.name().contains("prediction_error") {
-                let is_learnable = edges.get(idx)
+                let is_learnable = edges
+                    .get(idx)
                     .map(|e| {
                         e.node_type == "continuous-state"
                             || e.node_type == "volatile-state"
@@ -65,7 +66,11 @@ mod tests {
         let mut edges = Vec::with_capacity(max_idx + 1);
         for i in 0..=max_idx {
             edges.push(AdjacencyLists {
-                node_type: if idxs.contains(&i) { String::from("continuous-state") } else { String::from("unknown") },
+                node_type: if idxs.contains(&i) {
+                    String::from("continuous-state")
+                } else {
+                    String::from("unknown")
+                },
                 learning_kind: String::from("precision_weighted"),
                 value_parents: None,
                 value_children: None,
@@ -217,7 +222,15 @@ mod tests {
     fn test_from_real_network_2layer() {
         let mut net = Network::new("eHGF");
         net.add_nodes("continuous-state", 2, None, None, None, None, None, None);
-        net.add_layer(2, "continuous-state", Some(vec![0, 1]), 1.0, None, None, true);
+        net.add_layer(
+            2,
+            "continuous-state",
+            Some(vec![0, 1]),
+            1.0,
+            None,
+            None,
+            true,
+        );
         net.set_update_sequence();
 
         let inputs_x = [2_usize, 3];
@@ -230,7 +243,11 @@ mod tests {
         );
 
         for (idx, _) in &seq.prediction_steps {
-            assert!(!inputs_x.contains(idx), "Predictor node {} should be filtered", idx);
+            assert!(
+                !inputs_x.contains(idx),
+                "Predictor node {} should be filtered",
+                idx
+            );
         }
 
         assert!(!seq.learning_steps.is_empty());

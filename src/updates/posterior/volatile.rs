@@ -127,7 +127,8 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
                 child_expected_precision
             };
 
-            value_pwpe += (kappa * coupling_fn_prime * gain_precision / node_precision) * child_state.value_prediction_error;
+            value_pwpe += (kappa * coupling_fn_prime * gain_precision / node_precision)
+                * child_state.value_prediction_error;
         }
     }
 
@@ -138,7 +139,11 @@ fn mean_update_value_level(network: &Network, node_idx: usize, node_precision: f
 // Posterior update
 // =============================================================================
 
-pub fn posterior_update_volatile_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {
+pub fn posterior_update_volatile_state_node(
+    network: &mut Network,
+    node_idx: usize,
+    _time_step: f64,
+) {
     // POSTERIOR UPDATE VALUE LEVEL
     let precision_value =
         precision_update_value_level(network, node_idx).min(network.max_posterior_precision);
@@ -207,8 +212,7 @@ fn mean_update_value_level_mean_field(
                 None => 1.0,
             };
 
-            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision
-                / node_precision)
+            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision)
                 * child_state.value_prediction_error;
         }
     }

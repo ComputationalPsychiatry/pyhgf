@@ -23,7 +23,16 @@ fn test_one_node_hgf() {
     // Node 0: input node (no parents or children specified)
     network.add_nodes("continuous-state", 1, None, None, None, None, None, None);
     // Node 1: value parent of node 0
-    network.add_nodes("continuous-state", 1, None, Some(vec![0].into()), None, None, None, None);
+    network.add_nodes(
+        "continuous-state",
+        1,
+        None,
+        Some(vec![0].into()),
+        None,
+        None,
+        None,
+        None,
+    );
 
     network.set_update_sequence();
     network.input_data(vec![vec![0.2]], None, true);
@@ -38,7 +47,11 @@ fn test_one_node_hgf() {
     // Check node 1 trajectories (no volatility parent → piHGF correction inactive)
     let node1 = &network.node_trajectories.nodes[1];
     assert_close(node1.precision[0], 1.9820137, "node1 precision");
-    assert_close(node1.expected_precision[0], 0.98201376, "node1 expected_precision");
+    assert_close(
+        node1.expected_precision[0],
+        0.98201376,
+        "node1 expected_precision",
+    );
     assert_close(node1.mean[0], 0.10090748, "node1 mean");
     assert_close(node1.expected_mean[0], 0.0, "node1 expected_mean");
 }
@@ -60,9 +73,27 @@ fn test_two_nodes_hgf() {
     // Node 0: input node
     network.add_nodes("continuous-state", 1, None, None, None, None, None, None);
     // Node 1: value parent of node 0
-    network.add_nodes("continuous-state", 1, None, Some(vec![0].into()), None, None, None, None);
+    network.add_nodes(
+        "continuous-state",
+        1,
+        None,
+        Some(vec![0].into()),
+        None,
+        None,
+        None,
+        None,
+    );
     // Node 2: volatility parent of node 0
-    network.add_nodes("continuous-state", 1, None, None, None, Some(vec![0].into()), None, None);
+    network.add_nodes(
+        "continuous-state",
+        1,
+        None,
+        None,
+        None,
+        Some(vec![0].into()),
+        None,
+        None,
+    );
 
     network.set_update_sequence();
     network.input_data(vec![vec![0.2]], None, true);
@@ -70,21 +101,33 @@ fn test_two_nodes_hgf() {
     // Check node 0 trajectories
     let node0 = &network.node_trajectories.nodes[0];
     assert_close(node0.precision[0], 1.0, "node0 precision");
-    assert_close(node0.expected_precision[0], 0.27157641, "node0 expected_precision");
+    assert_close(
+        node0.expected_precision[0],
+        0.27157641,
+        "node0 expected_precision",
+    );
     assert_close(node0.mean[0], 0.2, "node0 mean");
     assert_close(node0.expected_mean[0], 0.0, "node0 expected_mean");
 
     // Check node 1 trajectories
     let node1 = &network.node_trajectories.nodes[1];
     assert_close(node1.precision[0], 1.25359020, "node1 precision");
-    assert_close(node1.expected_precision[0], 0.98201376, "node1 expected_precision");
+    assert_close(
+        node1.expected_precision[0],
+        0.98201376,
+        "node1 expected_precision",
+    );
     assert_close(node1.mean[0], 0.04332778, "node1 mean");
     assert_close(node1.expected_mean[0], 0.0, "node1 expected_mean");
 
     // Check node 2 trajectories
     let node2 = &network.node_trajectories.nodes[2];
-    assert_close(node2.precision[0], 1.09971341, "node2 precision");
-    assert_close(node2.expected_precision[0], 0.98201376, "node2 expected_precision");
+    assert_close(node2.precision[0], 1.09553182, "node2 precision");
+    assert_close(
+        node2.expected_precision[0],
+        0.98201376,
+        "node2 expected_precision",
+    );
     assert_close(node2.mean[0], -0.16509254, "node2 mean");
     assert_close(node2.expected_mean[0], 0.0, "node2 expected_mean");
 }

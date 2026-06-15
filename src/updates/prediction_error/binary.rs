@@ -7,8 +7,7 @@ pub fn prediction_error_binary_state_node(network: &mut Network, node_idx: usize
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let observed = network.attributes.states[node_idx].observed;
 
-    let value_prediction_error =
-        (mean - expected_mean) * observed / expected_precision;
+    let value_prediction_error = (mean - expected_mean) * observed / expected_precision;
 
     let state = &mut network.attributes.states[node_idx];
     state.value_prediction_error = value_prediction_error;

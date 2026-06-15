@@ -26,14 +26,15 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
     let mean_vol = network.attributes.states[node_idx].mean_vol;
     let precision_vol = network.attributes.states[node_idx].precision_vol;
     let tonic_volatility_vol = network.attributes.states[node_idx].tonic_volatility_vol;
-    let volatility_coupling_internal = network.attributes.states[node_idx].volatility_coupling_internal;
+    let volatility_coupling_internal =
+        network.attributes.states[node_idx].volatility_coupling_internal;
 
     // Store current variance for unbounded updates
     let current_variance = 1.0 / precision;
 
     // ===================================================================
     // 1. PREDICT VOLATILITY LEVEL (implicit internal state)
-    // ===================================================================    
+    // ===================================================================
     let pvv_raw = time_step * tonic_volatility_vol.exp();
     let predicted_volatility_vol = if pvv_raw > 1e-128 { pvv_raw } else { f64::NAN };
     let expected_precision_vol = 1.0 / ((1.0 / precision_vol) + predicted_volatility_vol);
@@ -58,8 +59,7 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
             let parent_expected_precision =
                 network.attributes.states[parent_idx].expected_precision;
             let value_coupling_parent = couplings.get(i).copied().unwrap_or(1.0);
-            let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn
-            {
+            let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
                 Some(cf) => ((cf.f)(parent_expected_mean), (cf.df)(parent_expected_mean)),
                 None => (parent_expected_mean, 1.0),
             };
