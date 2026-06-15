@@ -861,7 +861,7 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 <td><p>Update the volatility level using the standard ordering.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_ehgf.html#pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_ehgf" title="pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_ehgf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_layer_volatility_posterior_ehgf</span></code></a>(...)</p></td>
-<td><p>EHGF volatility-level posterior update (mean first, then precision).</p></td>
+<td><p>EHGF volatility-level posterior update (mean first, then safe precision).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_unbounded.html#pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_unbounded" title="pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_unbounded"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_layer_volatility_posterior_unbounded</span></code></a>(...)</p></td>
 <td><p>Unbounded volatility-level posterior update (Lambert W₀ dual-quadratic).</p></td>
@@ -1038,7 +1038,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_input_idxs.html#pyhgf.utils.get_input_idxs" title="pyhgf.utils.get_input_idxs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_input_idxs</span></code></a>(edges)</p></td>
 <td><p>List all possible default inputs nodes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_update_sequence.html#pyhgf.utils.get_update_sequence" title="pyhgf.utils.get_update_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_update_sequence</span></code></a>(network, update_type[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.get_update_sequence.html#pyhgf.utils.get_update_sequence" title="pyhgf.utils.get_update_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_update_sequence</span></code></a>(network, volatility_updates)</p></td>
 <td><p>Generate an update sequence from the network's structure.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils/pyhgf.utils.learning.html#pyhgf.utils.learning" title="pyhgf.utils.learning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">learning</span></code></a>(attributes, inputs, inputs_x_idxs, ...)</p></td>

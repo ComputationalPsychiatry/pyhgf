@@ -9,21 +9,21 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 196.08)">
 <title>%3</title>
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-196.08 388.14,-196.08 388.14,4 -4,4"/>
-<!-- hgf_loglike -->
-<g id="node1" class="node">
-<title>hgf_loglike</title>
-<polygon fill="lightgrey" stroke="black" points="268.76,-23.74 268.76,-57.39 226.65,-81.19 167.1,-81.19 124.98,-57.39 124.98,-23.74 167.1,0.06 226.65,0.06 268.76,-23.74"/>
-<text text-anchor="middle" x="196.87" y="-51.86" font-family="Times,serif" font-size="14.00">hgf_loglike</text>
-<text text-anchor="middle" x="196.87" y="-36.86" font-family="Times,serif" font-size="14.00">~</text>
-<text text-anchor="middle" x="196.87" y="-21.86" font-family="Times,serif" font-size="14.00">Potential</text>
-</g>
 <!-- tonic_volatility_2 -->
-<g id="node2" class="node">
+<g id="node1" class="node">
 <title>tonic_volatility_2</title>
 <ellipse fill="none" stroke="black" cx="96.87" cy="-154.61" rx="96.75" ry="37.45"/>
 <text text-anchor="middle" x="96.87" y="-165.91" font-family="Times,serif" font-size="14.00">tonic_volatility_2</text>
 <text text-anchor="middle" x="96.87" y="-150.91" font-family="Times,serif" font-size="14.00">~</text>
 <text text-anchor="middle" x="96.87" y="-135.91" font-family="Times,serif" font-size="14.00">Normal</text>
+</g>
+<!-- hgf_loglike -->
+<g id="node3" class="node">
+<title>hgf_loglike</title>
+<polygon fill="lightgrey" stroke="black" points="268.76,-23.74 268.76,-57.39 226.65,-81.19 167.1,-81.19 124.98,-57.39 124.98,-23.74 167.1,0.06 226.65,0.06 268.76,-23.74"/>
+<text text-anchor="middle" x="196.87" y="-51.86" font-family="Times,serif" font-size="14.00">hgf_loglike</text>
+<text text-anchor="middle" x="196.87" y="-36.86" font-family="Times,serif" font-size="14.00">~</text>
+<text text-anchor="middle" x="196.87" y="-21.86" font-family="Times,serif" font-size="14.00">Potential</text>
 </g>
 <!-- tonic_volatility_2&#45;&gt;hgf_loglike -->
 <g id="edge1" class="edge">
@@ -32,7 +32,7 @@
 <polygon fill="black" stroke="black" points="159.15,-89.09 163.2,-79.29 153.93,-84.42 159.15,-89.09"/>
 </g>
 <!-- tonic_volatility -->
-<g id="node3" class="node">
+<g id="node2" class="node">
 <title>tonic_volatility</title>
 <ellipse fill="none" stroke="black" cx="297.87" cy="-154.61" rx="86.03" ry="37.45"/>
 <text text-anchor="middle" x="297.87" y="-165.91" font-family="Times,serif" font-size="14.00">tonic_volatility</text>

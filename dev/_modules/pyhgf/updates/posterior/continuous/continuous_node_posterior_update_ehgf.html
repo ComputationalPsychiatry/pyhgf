@@ -891,8 +891,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">posterior_update_mean_continuous_node_mean_field</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.posterior_update_precision_continuous_node</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">posterior_update_precision_continuous_node</span><span class="p">,</span>
-    <span class="n">posterior_update_precision_continuous_node_mean_field</span><span class="p">,</span>
+    <span class="n">posterior_update_precision_continuous_node_ehgf</span><span class="p">,</span>
+    <span class="n">posterior_update_precision_continuous_node_ehgf_mean_field</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -952,7 +952,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_mean</span>
 
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">posterior_update_precision_continuous_node</span><span class="p">(</span>
+    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">posterior_update_precision_continuous_node_ehgf</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span>
         <span class="n">edges</span><span class="p">,</span>
         <span class="n">node_idx</span><span class="p">,</span>
@@ -1025,7 +1025,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_mean</span>
 
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">posterior_update_precision_continuous_node_mean_field</span><span class="p">(</span>
+    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">posterior_update_precision_continuous_node_ehgf_mean_field</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span>
         <span class="n">edges</span><span class="p">,</span>
         <span class="n">node_idx</span><span class="p">,</span>

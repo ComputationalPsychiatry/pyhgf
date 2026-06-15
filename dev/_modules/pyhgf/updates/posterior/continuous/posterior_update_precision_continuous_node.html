@@ -880,6 +880,7 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">jit</span>
@@ -887,6 +888,200 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.tree_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Partial</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Edges</span>
+
+<span class="c1"># ----------------------------------------------------------------------------------</span>
+<span class="c1"># Shared building blocks</span>
+<span class="c1">#</span>
+<span class="c1"># The four &quot;observed value&quot; precision updates are the cross-product of two orthogonal</span>
+<span class="c1"># choices: the value-coupling factor (smoothing/relaxed vs. mean-field) and the</span>
+<span class="c1"># volatility-coupling increment (standard γ-formula vs. enhanced-HGF safe update). The</span>
+<span class="c1"># helpers below isolate each piece so the leaf updates are one-line compositions and</span>
+<span class="c1"># the routing functions share the observation check.</span>
+<span class="c1"># ----------------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether any value or volatility child reported an observation.</span>
+
+<span class="sd">    If all children are unobserved the node simply ages its precision via</span>
+<span class="sd">    :func:`precision_update_missing_values`; otherwise the regular prediction-error</span>
+<span class="sd">    integration applies.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">observations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
+            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
+            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">observations</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_smoothing_child_precision</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">value_child_idx</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Effective child precision under the relaxed posterior-step (smoothing) update.</span>
+
+<span class="sd">    The child-precision factor :math:`\hat{\pi}_a` is replaced by the harmonic</span>
+<span class="sd">    combination :math:`\hat{\pi}_a \pi_y / (\hat{\pi}_a + \pi_y)`, with</span>
+<span class="sd">    :math:`\pi_y = \pi_a - \tilde{\pi}_a`, but only for Gaussian *interior* children</span>
+<span class="sd">    (node types 2/6 that themselves have children). The Schur complement carries the</span>
+<span class="sd">    *conditional* predicted precision :math:`\hat{\pi}_a` (stored in ``temp``); using</span>
+<span class="sd">    the marginal would double-count parent uncertainty. All other cases — binary</span>
+<span class="sd">    (type 1), categorical (5), input/constant (0), exponential family (3), Dirichlet</span>
+<span class="sd">    (4), and any Gaussian leaf (types 2/6 with no children) — fall back to the</span>
+<span class="sd">    canonical predicted-precision factor :math:`\tilde{\pi}_a` (:math:`\pi_a \to \infty`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">child_node_type</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span>
+    <span class="n">child_is_gaussian_interior</span> <span class="o">=</span> <span class="n">child_node_type</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">or</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">child_is_gaussian_interior</span><span class="p">:</span>
+        <span class="c1"># π_y = π_a − π̃_a (bottom-up evidence precision, against the marginal).</span>
+        <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+        <span class="n">pi_y</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">-</span> <span class="n">child_expected_precision</span>
+        <span class="n">child_cond</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;conditional_expected_precision&quot;</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">child_cond</span> <span class="o">*</span> <span class="n">pi_y</span> <span class="o">/</span> <span class="p">(</span><span class="n">child_cond</span> <span class="o">+</span> <span class="n">pi_y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">child_expected_precision</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_mean_field_child_precision</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">value_child_idx</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Effective child precision under the mean-field update (no smoothing correction).</span>
+
+<span class="sd">    Always the canonical predicted precision :math:`\tilde{\pi}_a`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_value_coupling_pwpe</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">effective_precision_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Precision-weighted prediction error from value-coupled children.</span>
+
+<span class="sd">    Implements eq. 50 of [1]_: each child contributes</span>
+<span class="sd">    :math:`\pi_a (\kappa^2 g&#39;^2 - \kappa g&#39;&#39; \delta_a)`, with the child-precision</span>
+<span class="sd">    factor :math:`\pi_a` supplied by ``effective_precision_fn`` (smoothing or</span>
+<span class="sd">    mean-field). The :math:`g&#39;`/:math:`g&#39;&#39;` derivatives reduce to the linear case</span>
+<span class="sd">    (:math:`\kappa^2`, ``0``) when no coupling function is set.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;</span>
+<span class="sd">       Mathys, C. (2026). The generalized hierarchical Gaussian filter.</span>
+<span class="sd">       doi:10.7554/elife.110174.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pwpe</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pwpe</span>
+
+    <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
+        <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># linear coupling</span>
+            <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># non-linear coupling</span>
+            <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="p">)</span>
+            <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;value_prediction_error&quot;</span>
+            <span class="p">]</span>
+            <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">value_coupling</span>
+                <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                <span class="o">*</span> <span class="n">value_prediction_error</span>
+            <span class="p">)</span>
+
+        <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="n">effective_precision_fn</span><span class="p">(</span>
+            <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">value_child_idx</span>
+        <span class="p">)</span>
+
+        <span class="c1"># cancel the prediction error if the child value was not observed</span>
+        <span class="n">pwpe</span> <span class="o">+=</span> <span class="p">(</span>
+            <span class="n">effective_child_precision</span>
+            <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span> <span class="o">-</span> <span class="n">coupling_fn_second</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pwpe</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_standard_volatility_increment</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">volatility_child_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the standard HGF volatility-coupling precision increment.</span>
+
+<span class="sd">    With :math:`\gamma` the effective precision computed at the prediction step and</span>
+<span class="sd">    :math:`\Delta` the child&#39;s volatility prediction error, the increment is</span>
+<span class="sd">    :math:`\tfrac12 (\kappa \gamma)^2 + (\kappa \gamma)^2 \Delta - \tfrac12 \kappa^2</span>
+<span class="sd">    \gamma \Delta`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># volatility weigthed precision for the volatility child (γ)</span>
+    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+        <span class="s2">&quot;effective_precision&quot;</span>
+    <span class="p">]</span>
+
+    <span class="c1"># retrieve the volatility prediction error</span>
+    <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+        <span class="s2">&quot;volatility_prediction_error&quot;</span>
+    <span class="p">]</span>
+
+    <span class="c1"># cancel the prediction error if the child value was not observed</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span>
+        <span class="o">-</span> <span class="mf">0.5</span>
+        <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
+        <span class="o">*</span> <span class="n">effective_precision</span>
+        <span class="o">*</span> <span class="n">volatility_prediction_error</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_volatility_coupling_pwpe</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">increment_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Precision-weighted prediction error from volatility-coupled children.</span>
+
+<span class="sd">    Sums ``increment_fn`` (standard or enhanced-HGF) over the volatility children.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pwpe</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pwpe</span>
+
+    <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">increment_fn</span><span class="p">(</span>
+            <span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pwpe</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_finalize_precision</span><span class="p">(</span><span class="n">expected_precision</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">pwpe</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add the precision-weighted prediction error and clamp to a positive value.&quot;&quot;&quot;</span>
+    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">expected_precision</span> <span class="o">+</span> <span class="n">pwpe</span>
+    <span class="c1"># ensure the new precision is greater than 0</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">posterior_precision</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="posterior_update_precision_continuous_node">
@@ -993,26 +1188,12 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># as a function of time using the function precision_missing_values(). Otherwise,</span>
     <span class="c1"># we use regular HGF updates for value and volatility couplings.</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-
-    <span class="c1"># For all children, get the `observed` flag - if all these values are 0.0, the node</span>
-    <span class="c1"># has not received any observations and we should call precision_missing_values()</span>
-    <span class="n">observations</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
-    <span class="n">observations</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">observations</span><span class="p">))</span>
-
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">cond</span><span class="p">(</span>
-        <span class="n">observations</span><span class="p">,</span>
+    <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
+        <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">attributes</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">posterior_precision</span></div>
+    <span class="p">)</span></div>
 
 
 
@@ -1061,114 +1242,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       Mathys, C. (2026). The generalized hierarchical Gaussian filter.</span>
 <span class="sd">       doi:10.7554/elife.110174.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># sum the prediction errors from both value and volatility coupling</span>
-    <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-    <span class="c1"># Value coupling updates - update the precision of a value parent.</span>
-    <span class="c1"># eq. 50 of Weber et al. (2026), with the fully-corrected posterior-step</span>
-    <span class="c1"># (smoothing) correction: replace the canonical child-precision factor by</span>
-    <span class="c1">#     π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a.</span>
-    <span class="c1"># The same factor scales both the (κ g&#39;)² term and the κ g&#39;&#39;·δ_a term.</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
-            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># linear coupling</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
-                <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># non-linear coupling</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
-                    <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="p">)</span>
-                <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                    <span class="s2">&quot;value_prediction_error&quot;</span>
-                <span class="p">]</span>
-                <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">value_coupling</span>
-                    <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
-                    <span class="o">*</span> <span class="n">value_prediction_error</span>
-                <span class="p">)</span>
-
-            <span class="c1"># Effective child precision under the smoothing correction. The Schur</span>
-            <span class="c1"># derivation assumes a Gaussian-Gaussian value-coupling edge, so the</span>
-            <span class="c1"># correction is only valid when the child carries a Gaussian belief</span>
-            <span class="c1"># AND is an interior node (it must itself have run a Gaussian posterior</span>
-            <span class="c1"># update against information from below). All other cases — binary</span>
-            <span class="c1"># children (type 1), categorical (5), input/constant (0), exponential</span>
-            <span class="c1"># family (3), Dirichlet (4), and any Gaussian leaf (types 2/6 with no</span>
-            <span class="c1"># children of their own) — are clamped/non-Gaussian and fall back to</span>
-            <span class="c1"># the canonical predicted-precision factor π̃_a (π_a → ∞).</span>
-            <span class="n">child_node_type</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span>
-            <span class="n">child_is_gaussian_interior</span> <span class="o">=</span> <span class="n">child_node_type</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
-                <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="ow">or</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="p">)</span>
-            <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">child_is_gaussian_interior</span><span class="p">:</span>
-                <span class="c1"># π_y = π_a − π̃_a (bottom-up evidence precision, against the</span>
-                <span class="c1"># marginal). The Schur complement carries the *conditional* predicted</span>
-                <span class="c1"># precision π̂_a (stored in temp); using the marginal here would</span>
-                <span class="c1"># double-count parent uncertainty.</span>
-                <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
-                <span class="n">pi_y</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">-</span> <span class="n">child_expected_precision</span>
-                <span class="n">child_cond</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                    <span class="s2">&quot;conditional_expected_precision&quot;</span>
-                <span class="p">]</span>
-                <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="n">child_cond</span> <span class="o">*</span> <span class="n">pi_y</span> <span class="o">/</span> <span class="p">(</span><span class="n">child_cond</span> <span class="o">+</span> <span class="n">pi_y</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">effective_child_precision</span> <span class="o">=</span> <span class="n">child_expected_precision</span>
-
-            <span class="c1"># cancel the prediction error if the child value was not observed</span>
-            <span class="n">precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">effective_child_precision</span>
-                <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span> <span class="o">-</span> <span class="n">coupling_fn_second</span><span class="p">)</span>
-                <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
-            <span class="p">)</span>
-
-    <span class="c1"># Volatility coupling updates - update the precision of a volatility parent</span>
-    <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">],</span>
-        <span class="p">):</span>
-            <span class="c1"># volatility weigthed precision for the volatility child (γ)</span>
-            <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;effective_precision&quot;</span>
-            <span class="p">]</span>
-
-            <span class="c1"># retrieve the volatility prediction error</span>
-            <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;volatility_prediction_error&quot;</span>
-            <span class="p">]</span>
-
-            <span class="c1"># sum over all volatility children</span>
-            <span class="c1"># cancel the prediction error if the child value was not observed</span>
-            <span class="n">precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="o">*</span> <span class="n">volatility_prediction_error</span>
-                <span class="o">-</span> <span class="mf">0.5</span>
-                <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
-                <span class="o">*</span> <span class="n">effective_precision</span>
-                <span class="o">*</span> <span class="n">volatility_prediction_error</span>
-            <span class="p">)</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
-
-    <span class="c1"># Compute the new posterior precision</span>
-    <span class="c1"># using value prediction errors from both value and volatility coupling</span>
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">precision_weigthed_prediction_error</span>
+    <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_smoothing_child_precision</span><span class="p">)</span>
+    <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_standard_volatility_increment</span>
     <span class="p">)</span>
-
-    <span class="c1"># ensure the new precision is greater than 0</span>
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="n">posterior_precision</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">posterior_precision</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
 
 
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
@@ -1253,65 +1331,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        observed a new value. We then use the regular HGF update for volatility</span>
 <span class="sd">        coupling.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
-            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
-                <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span>
-                    <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="p">)</span>
-                <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                    <span class="s2">&quot;value_prediction_error&quot;</span>
-                <span class="p">]</span>
-                <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">value_coupling</span>
-                    <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
-                    <span class="o">*</span> <span class="n">value_prediction_error</span>
-                <span class="p">)</span>
-
-            <span class="n">precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
-                <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span> <span class="o">-</span> <span class="n">coupling_fn_second</span><span class="p">)</span>
-                <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
-            <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">],</span>
-        <span class="p">):</span>
-            <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;effective_precision&quot;</span>
-            <span class="p">]</span>
-            <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;volatility_prediction_error&quot;</span>
-            <span class="p">]</span>
-            <span class="n">precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-                <span class="o">*</span> <span class="n">volatility_prediction_error</span>
-                <span class="o">-</span> <span class="mf">0.5</span>
-                <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
-                <span class="o">*</span> <span class="n">effective_precision</span>
-                <span class="o">*</span> <span class="n">volatility_prediction_error</span>
-            <span class="p">)</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
-
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">precision_weigthed_prediction_error</span>
+    <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_mean_field_child_precision</span>
     <span class="p">)</span>
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="n">posterior_precision</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_standard_volatility_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">posterior_precision</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
 
 
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
@@ -1415,22 +1441,135 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       Publications, Ltd. https://doi.org/10.7554/elife.110174.1</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">observations</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
-    <span class="n">observations</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">observations</span><span class="p">))</span>
-
-    <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">cond</span><span class="p">(</span>
-        <span class="n">observations</span><span class="p">,</span>
+    <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
+        <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_mean_field</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">attributes</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">posterior_precision</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ehgf_volatility_precision_increment</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">volatility_child_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Enhanced-HGF &quot;safe&quot; volatility-coupling precision increment.</span>
+
+<span class="sd">    Implements the volatility-coupling precision update of the enhanced HGF (Mathys</span>
+<span class="sd">    et al.; TAPAS ``hgf_volatility_update`` ``&#39;ehgf&#39;`` branch). Two features</span>
+<span class="sd">    distinguish it from the standard increment:</span>
+
+<span class="sd">    1. The effective precision is **recomputed from the parent&#39;s just-updated</span>
+<span class="sd">       posterior mean** :math:`\mu_b^{(k)}` (the eHGF updates the mean first), rather</span>
+<span class="sd">       than reusing the prediction-step effective precision evaluated at</span>
+<span class="sd">       :math:`\hat{\mu}_b^{(k)}`.</span>
+<span class="sd">    2. The increment is **floored at zero**, which guarantees the posterior precision</span>
+<span class="sd">       never drops below the (positive) predicted precision and so cannot collapse to</span>
+<span class="sd">       a negative value / ``NaN``.</span>
+
+<span class="sd">    With :math:`\nu` the re-predicted child volatility, :math:`\hat{\pi}` the</span>
+<span class="sd">    re-predicted child precision (``expected_precision``),</span>
+<span class="sd">    :math:`\gamma = \nu \hat{\pi}` the ``effective_precision``,</span>
+<span class="sd">    :math:`w = (\nu - \sigma^{(k-1)}) \hat{\pi}` the volatility-error weight and</span>
+<span class="sd">    :math:`\Delta` the child&#39;s ``volatility_prediction_error``, the increment is</span>
+<span class="sd">    :math:`\max(0, \tfrac12 \kappa^2 \gamma (\gamma + w \Delta))`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
+    <span class="c1"># Parent posterior mean (the eHGF performs the mean update first).</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
+    <span class="c1"># Child posterior variance at the previous time step (σ = 1 / π).</span>
+    <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;current_variance&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Re-predict the child&#39;s volatility and precision from the parent posterior mean.</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+        <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="p">)</span>
+    <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">previous_variance</span> <span class="o">+</span> <span class="n">predicted_volatility</span><span class="p">)</span>
+    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
+    <span class="n">volatility_error_weight</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">predicted_volatility</span> <span class="o">-</span> <span class="n">previous_variance</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">expected_precision</span>
+    <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">(</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+            <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="o">**</span> <span class="mi">2</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">expected_precision</span> <span class="o">-</span> <span class="mf">1.0</span>
+
+    <span class="n">increment</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+        <span class="mf">0.0</span><span class="p">,</span>
+        <span class="mf">0.5</span>
+        <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
+        <span class="o">*</span> <span class="n">effective_precision</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">effective_precision</span> <span class="o">+</span> <span class="n">volatility_error_weight</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># cancel the contribution if the child value was not observed</span>
+    <span class="k">return</span> <span class="n">increment</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+
+
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">precision_update_ehgf</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enhanced-HGF precision update for observed values (relaxed value coupling).</span>
+
+<span class="sd">    The value-coupling contribution is identical to :func:`precision_update` (the</span>
+<span class="sd">    relaxed posterior-step correction); the volatility-coupling contribution uses the</span>
+<span class="sd">    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_smoothing_child_precision</span><span class="p">)</span>
+    <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_ehgf_volatility_precision_increment</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
+
+
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">precision_update_ehgf_mean_field</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enhanced-HGF precision update for observed values (mean-field value coupling).</span>
+
+<span class="sd">    The value-coupling contribution is identical to :func:`precision_update_mean_field`</span>
+<span class="sd">    (no smoothing correction); the volatility-coupling contribution uses the enhanced-</span>
+<span class="sd">    HGF safe update via :func:`_ehgf_volatility_precision_increment`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_mean_field_child_precision</span>
+    <span class="p">)</span>
+    <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
+        <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_ehgf_volatility_precision_increment</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
+
+
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_ehgf</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the relaxed enhanced-HGF precision or missing-value update.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
+        <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
+        <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_ehgf</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
+        <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
+        <span class="n">attributes</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_ehgf_mean_field</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the enhanced-HGF precision update (mean-field) or the missing path.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
+        <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
+        <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_ehgf_mean_field</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
+        <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
+        <span class="n">attributes</span><span class="p">,</span>
+    <span class="p">)</span>
 </pre></div>
 
                 </article>
