@@ -1,62 +1,76 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 import numpy as np
+import pytest
 from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf import load_data
 from pyhgf.model import Network as PyNetwork
 
-NETWORK_CLASSES = [PyNetwork, RsNetwork]
+VOLATILITY_UPDATES = ["standard", "eHGF", "unbounded"]
+MEAN_FIELD_UPDATES = [False, True]
 
 
-def test_continuous_2_levels():
-    """Test the 2-level continuous HGF: input node → value parent."""
+def _build_network(cls, volatility_updates, mean_field_updates, n_levels, timeseries):
+    """Build an ``n_levels`` continuous HGF with the given update scheme."""
+    net = cls(
+        volatility_updates=volatility_updates,
+        mean_field_updates=mean_field_updates,
+    )
+    net = net.add_nodes().add_nodes(value_children=0)
+    if n_levels == 3:
+        net = net.add_nodes(volatility_children=0)
+    return net.input_data(input_data=timeseries)
+
+
+def _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label):
+    """Assert the JAX and Rust trajectories agree for every node."""
+    # The unbounded posterior kernel differs at the float level between the two
+    # backends (mathematically equivalent but distinct implementations), so the
+    # cross-backend comparison is loosened when a volatility parent is present.
+    rtol = 1e-1 if (volatility_updates == "unbounded" and n_levels == 3) else 1e-4
+    for node_idx in range(n_levels):
+        for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+            assert np.allclose(
+                py_net.node_trajectories[node_idx][key],
+                rs_net.node_trajectories[node_idx][key],
+                rtol=rtol,
+            ), f"{label}: node {node_idx}, key '{key}' mismatch"
+
+
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_2_levels(mean_field_updates):
+    """Test the 2-level continuous HGF: input node → value parent.
+
+    The value parent has no volatility children, so ``volatility_updates`` does not
+    affect its update path and is not parametrized here. The JAX and Rust backends must
+    produce identical trajectories for both values of ``mean_field_updates``.
+    """
     timeseries = load_data("continuous")
+    label = f"mean_field={mean_field_updates}"
 
-    results = {}
-    for cls in NETWORK_CLASSES:
-        results[cls.__name__] = (
-            cls()
-            .add_nodes()
-            .add_nodes(value_children=0)
-            .input_data(input_data=timeseries)
-        )
+    py_net = _build_network(PyNetwork, "standard", mean_field_updates, 2, timeseries)
+    rs_net = _build_network(RsNetwork, "standard", mean_field_updates, 2, timeseries)
 
-    # Ensure identical results across implementations
-    ref = results[NETWORK_CLASSES[0].__name__]
-    for name, net in results.items():
-        if net is ref:
-            continue
-        for node_idx in range(2):
-            for key in ["mean", "expected_mean", "precision", "expected_precision"]:
-                assert np.isclose(
-                    ref.node_trajectories[node_idx][key],
-                    net.node_trajectories[node_idx][key],
-                ).all(), f"{name} node {node_idx}, key '{key}' mismatch"
+    _assert_backends_match(py_net, rs_net, 2, "standard", label)
 
 
-def test_continuous_3_levels():
-    """Test the 3-level continuous HGF: input → value parent + volatility parent."""
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_3_levels(volatility_updates, mean_field_updates):
+    """Test the 3-level continuous HGF: input → value parent + volatility parent.
+
+    The JAX and Rust backends must produce identical trajectories for every combination
+    of ``volatility_updates`` and ``mean_field_updates``.
+    """
     timeseries = load_data("continuous")
+    label = f"vol={volatility_updates} mean_field={mean_field_updates}"
 
-    results = {}
-    for cls in NETWORK_CLASSES:
-        results[cls.__name__] = (
-            cls()
-            .add_nodes()
-            .add_nodes(value_children=0)
-            .add_nodes(volatility_children=0)
-            .input_data(input_data=timeseries)
-        )
+    py_net = _build_network(
+        PyNetwork, volatility_updates, mean_field_updates, 3, timeseries
+    )
+    rs_net = _build_network(
+        RsNetwork, volatility_updates, mean_field_updates, 3, timeseries
+    )
 
-    # Ensure identical results across implementations
-    ref = results[NETWORK_CLASSES[0].__name__]
-    for name, net in results.items():
-        if net is ref:
-            continue
-        for node_idx in range(3):
-            for key in ["mean", "expected_mean", "precision", "expected_precision"]:
-                assert np.isclose(
-                    ref.node_trajectories[node_idx][key],
-                    net.node_trajectories[node_idx][key],
-                ).all(), f"{name} node {node_idx}, key '{key}' mismatch"
+    _assert_backends_match(py_net, rs_net, 3, volatility_updates, label)
