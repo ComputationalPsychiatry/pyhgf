@@ -82,7 +82,7 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
             match edge.node_type.as_str() {
                 "continuous-state" => {
                     if edge.volatility_children.is_some() {
-                        match network.update_type.as_str() {
+                        match network.volatility_updates.as_str() {
                             "eHGF" => updates.push((idx, UpdateStep::PosteriorContinuousEhgf)),
                             "unbounded" => updates.push((idx, UpdateStep::PosteriorContinuousUnbounded)),
                             _ => updates.push((idx, UpdateStep::PosteriorContinuous)),
@@ -117,7 +117,7 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
                     has_update = true;
                 }
                 ("volatile-state", _) => {
-                    match network.update_type.as_str() {
+                    match network.volatility_updates.as_str() {
                         "eHGF" => updates.push((idx, UpdateStep::PredictionErrorVolatileEhgf)),
                         "unbounded" => updates.push((idx, UpdateStep::PredictionErrorVolatileUnbounded)),
                         _ => updates.push((idx, UpdateStep::PredictionErrorVolatile)),

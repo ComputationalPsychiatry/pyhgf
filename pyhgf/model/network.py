@@ -73,14 +73,14 @@ class Network:
 
     def __init__(
         self,
-        update_type: str = "unbounded",
+        volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
     ) -> None:
         """Initialize an empty neural network.
 
         Parameters
         ----------
-        update_type :
+        volatility_updates :
             The type of update to perform for volatility coupling. Can be `"unbounded"`
             (defaults), `"eHGF"` or `"standard"`. The unbounded approximation was
             recently introduced to avoid negative precisions updates, which greatly
@@ -111,7 +111,7 @@ class Network:
         self.input_dim: list = []
         self.action_steps: Optional[Sequence] = None
         self.last_attributes: Optional[Attributes] = None
-        self.update_type = update_type
+        self.volatility_updates = volatility_updates
         self.max_posterior_precision = float(max_posterior_precision)
 
     @property
@@ -166,7 +166,7 @@ class Network:
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=self.update_type
+                network=self, update_type=self.volatility_updates
             )
 
         # create the belief propagation function
@@ -234,7 +234,7 @@ class Network:
         # create the update sequence if it does not already exist
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=self.update_type
+                network=self, update_type=self.volatility_updates
             )
         # create the learning sequence
         # all nodes except the prediction nodes should update their coupling strengths
@@ -448,7 +448,7 @@ class Network:
         # ensure the update sequence exists
         if self.update_sequence is None:
             self.update_sequence = get_update_sequence(
-                network=self, update_type=self.update_type
+                network=self, update_type=self.volatility_updates
             )
 
         # keep only prediction steps that are not on the predictor nodes

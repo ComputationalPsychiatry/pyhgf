@@ -285,7 +285,7 @@ def test_three_backends_binary_volatile():
 
         # --- DeepNetwork (JAX vectorized) ---
         dn = (
-            DeepNetwork(update_type=update_type)
+            DeepNetwork(volatility_updates=update_type)
             .add_layer(size=n_targets, kind="binary")
             .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
             .add_layer(size=n_hidden)
@@ -295,7 +295,7 @@ def test_three_backends_binary_volatile():
 
         # --- RsNetwork (Rust) ---
         rs = (
-            RsNetwork(update_type=update_type)
+            RsNetwork(volatility_updates=update_type)
             .add_nodes(kind="binary-state", n_nodes=n_targets)
             .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
             .add_layer(size=n_hidden)
@@ -313,7 +313,7 @@ def test_three_backends_binary_volatile():
 
         # --- Network (Python per-node) ---
         net = (
-            PyNetwork(update_type=update_type)
+            PyNetwork(volatility_updates=update_type)
             .add_nodes(kind="binary-state", n_nodes=n_targets)
             .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
             .add_nodes(kind="volatile-state", n_nodes=n_hidden, value_children=1)

@@ -39,7 +39,7 @@ def _assert_vol_level_match(
 def _build_volatile(cls, update_type, timeseries):
     """Build a volatile-state network with autoconnection for equivalence testing."""
     return (
-        cls(update_type=update_type)
+        cls(volatility_updates=update_type)
         .add_nodes()
         .add_nodes(
             kind="volatile-state",
@@ -53,7 +53,7 @@ def _build_volatile(cls, update_type, timeseries):
 def _build_explicit(cls, update_type, timeseries):
     """Build explicit continuous + volatility-parent network."""
     return (
-        cls(update_type=update_type)
+        cls(volatility_updates=update_type)
         .add_nodes()
         .add_nodes(value_children=0)
         .add_nodes(volatility_children=1)
@@ -138,7 +138,7 @@ def _run_volatile_input_invariance(cls, label):
     expected_precisions = []
     for omega in [-8.0, 0.0]:
         net = (
-            cls(update_type="unbounded")
+            cls(volatility_updates="unbounded")
             .add_nodes(
                 kind="volatile-state",
                 tonic_volatility=omega,

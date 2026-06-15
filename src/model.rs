@@ -298,7 +298,7 @@ pub struct Network{
     pub attributes: Attributes,
     pub edges: Vec<AdjacencyLists>,
     pub inputs: Vec<usize>,
-    pub update_type: String,
+    pub volatility_updates: String,
     pub update_sequence: UpdateSequence,
     pub node_trajectories: NodeTrajectories,
     pub layers: Vec<Vec<usize>>,
@@ -377,12 +377,12 @@ fn trajectory_field_ref<'a>(traj: &'a NodeTrajectory, field: &str) -> &'a Vec<f6
 // Core Rust methods (also callable from Python via chaining wrappers below)
 impl Network {
 
-    pub fn new(update_type: &str) -> Self {
+    pub fn new(volatility_updates: &str) -> Self {
         Network {
             attributes: Attributes { states: Vec::new(), vectors: Vec::new(), fn_ptrs: Vec::new() },
             edges: Vec::new(),
             inputs: Vec::new(),
-            update_type: String::from(update_type),
+            volatility_updates: String::from(volatility_updates),
             update_sequence: UpdateSequence { predictions: Vec::new(), updates: Vec::new() },
             node_trajectories: NodeTrajectories { nodes: Vec::new() },
             layers: Vec::new(),
@@ -1033,7 +1033,7 @@ impl Network {
             attributes: self.attributes.clone(),
             edges: self.edges.clone(),
             inputs: Vec::new(),
-            update_type: String::new(),
+            volatility_updates: String::new(),
             update_sequence: UpdateSequence {
                 predictions: Vec::new(),
                 updates: Vec::new(),
@@ -1204,9 +1204,9 @@ fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f
 impl Network {
 
     #[new]
-    #[pyo3(signature = (update_type="unbounded", max_posterior_precision=1e10))]
-    fn py_new(update_type: &str, max_posterior_precision: f64) -> Self {
-        let mut net = Network::new(update_type);
+    #[pyo3(signature = (volatility_updates="unbounded", max_posterior_precision=1e10))]
+    fn py_new(volatility_updates: &str, max_posterior_precision: f64) -> Self {
+        let mut net = Network::new(volatility_updates);
         net.max_posterior_precision = max_posterior_precision;
         net
     }
