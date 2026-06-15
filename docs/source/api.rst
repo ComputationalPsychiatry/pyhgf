@@ -9,6 +9,18 @@
 API
 ###
 
+Datasets
+********
+
+Helpers to load the example datasets shipped with the package.
+
+.. currentmodule:: pyhgf
+
+.. autosummary::
+   :toctree: generated/pyhgf
+
+   load_data
+
 Updates functions
 *****************
 
@@ -42,6 +54,7 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf
 
     continuous_node_posterior_update_ehgf
+    continuous_node_posterior_update_ehgf_mean_field
 
 .. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded
 
@@ -57,6 +70,7 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
 
     posterior_update_mean_continuous_node
+    posterior_update_mean_continuous_node_mean_field
 
 .. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
 
@@ -64,6 +78,14 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
 
     posterior_update_precision_continuous_node
+    posterior_update_precision_continuous_node_mean_field
+    posterior_update_precision_continuous_node_ehgf
+    posterior_update_precision_continuous_node_ehgf_mean_field
+    precision_update
+    precision_update_mean_field
+    precision_update_ehgf
+    precision_update_ehgf_mean_field
+    precision_update_missing_values
 
 .. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update
 
@@ -71,6 +93,7 @@ Continuous nodes
    :toctree: generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update
 
     continuous_node_posterior_update
+    continuous_node_posterior_update_mean_field
 
 Volatile nodes
 --------------
@@ -82,6 +105,8 @@ Volatile nodes
 
     posterior_update_precision_value_level
     posterior_update_mean_value_level
+    posterior_update_precision_value_level_mean_field
+    posterior_update_mean_value_level_mean_field
 
 .. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
 
@@ -90,6 +115,7 @@ Volatile nodes
 
     posterior_update_precision_volatility_level
     posterior_update_mean_volatility_level
+    posterior_update_precision_volatility_level_ehgf
 
 .. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update
 
@@ -97,6 +123,7 @@ Volatile nodes
    :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update
 
     volatile_node_posterior_update
+    volatile_node_posterior_update_mean_field
     volatile_node_volatility_posterior_update_standard
 
 .. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
@@ -148,7 +175,9 @@ Continuous nodes
 
     predict_mean
     predict_precision
+    predict_precision_mean_field
     continuous_node_prediction
+    continuous_node_prediction_mean_field
 
 Volatile nodes
 --------------
@@ -161,7 +190,9 @@ Volatile nodes
     predict_precision_volatility_level
     predict_mean_value_level
     predict_precision_value_level
+    predict_precision_value_level_mean_field
     volatile_node_prediction
+    volatile_node_prediction_mean_field
 
 Dirichlet processes
 -------------------
@@ -319,7 +350,7 @@ Vectorized learning
 .. autosummary::
    :toctree: generated/pyhgf.updates.vectorized.learning
 
-    vectorized_weight_update
+    vectorized_weight_gradient
 
 Model
 *****
@@ -364,6 +395,7 @@ Matplotlib
    plot_correlations
    plot_nodes
    plot_samples
+   plot_layers
 
 Graphviz
 ========
@@ -443,6 +475,32 @@ Initialisation strategies for coupling weight matrices in predictive-coding netw
    orthogonal_init
    sparse_init
 
+Sampling
+========
+
+Low-level helpers used when sampling from a network's generative distribution.
+
+.. currentmodule:: pyhgf.utils.sample
+
+.. autosummary::
+   :toctree: generated/pyhgf.utils.sample
+
+   single_sample
+
+Vectorized belief propagation
+=============================
+
+Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork`.
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autosummary::
+   :toctree: generated/pyhgf.utils.vectorized_belief_propagation
+
+   propagation_step
+   prediction_pass
+   run_scan
+
 Math
 ****
 
@@ -464,3 +522,37 @@ Math functions and probability densities.
     sigmoid_inverse_temperature
     parametrised_sigmoid
     smoothed_rectangular
+    lambert_w0
+
+Typing
+******
+
+Named tuples and PyTree containers describing the structure and state of
+probabilistic networks.
+
+Network structure
+=================
+
+.. currentmodule:: pyhgf.typing.typing
+
+.. autosummary::
+   :toctree: generated/pyhgf.typing.typing
+
+   AdjacencyLists
+   UpdateSequence
+   LearningSequence
+
+Vectorized networks
+===================
+
+.. currentmodule:: pyhgf.typing.vectorised
+
+.. autosummary::
+   :toctree: generated/pyhgf.typing.vectorised
+
+   LayerParams
+   LayerState
+   Layer
+   LayerStack
+   Network
+   stack_layers
