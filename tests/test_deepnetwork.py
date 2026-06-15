@@ -278,14 +278,14 @@ def test_three_backends_binary_volatile():
     atol_rs_py = 1e-6  # Rust vs Python (both float64)
     atol_jax = 1e-3  # JAX (float32) vs Rust
 
-    for update_type in ["standard", "eHGF", "unbounded"]:
-        label = f"update_type={update_type}"
-        atol_jax_local = 5e-2 if update_type == "unbounded" else atol_jax
-        atol_rs_py_local = 1e-2 if update_type == "unbounded" else atol_rs_py
+    for volatility_updates in ["standard", "eHGF", "unbounded"]:
+        label = f"volatility_updates={volatility_updates}"
+        atol_jax_local = 5e-2 if volatility_updates == "unbounded" else atol_jax
+        atol_rs_py_local = 1e-2 if volatility_updates == "unbounded" else atol_rs_py
 
         # --- DeepNetwork (JAX vectorized) ---
         dn = (
-            DeepNetwork(volatility_updates=update_type)
+            DeepNetwork(volatility_updates=volatility_updates)
             .add_layer(size=n_targets, kind="binary")
             .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
             .add_layer(size=n_hidden)
@@ -295,7 +295,7 @@ def test_three_backends_binary_volatile():
 
         # --- RsNetwork (Rust) ---
         rs = (
-            RsNetwork(volatility_updates=update_type)
+            RsNetwork(volatility_updates=volatility_updates)
             .add_nodes(kind="binary-state", n_nodes=n_targets)
             .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
             .add_layer(size=n_hidden)
@@ -313,7 +313,7 @@ def test_three_backends_binary_volatile():
 
         # --- Network (Python per-node) ---
         net = (
-            PyNetwork(volatility_updates=update_type)
+            PyNetwork(volatility_updates=volatility_updates)
             .add_nodes(kind="binary-state", n_nodes=n_targets)
             .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
             .add_nodes(kind="volatile-state", n_nodes=n_hidden, value_children=1)

@@ -39,10 +39,12 @@ def _assert_vol_level_match(
         ), f"{label}: Volatility-level key '{vol_key}' vs '{explicit_key}' mismatch"
 
 
-def _build_volatile(cls, update_type, timeseries, mean_field_updates=False):
+def _build_volatile(cls, volatility_updates, timeseries, mean_field_updates=False):
     """Build a volatile-state network with autoconnection for equivalence testing."""
     return (
-        cls(volatility_updates=update_type, mean_field_updates=mean_field_updates)
+        cls(
+            volatility_updates=volatility_updates, mean_field_updates=mean_field_updates
+        )
         .add_nodes()
         .add_nodes(
             kind="volatile-state",
@@ -53,10 +55,12 @@ def _build_volatile(cls, update_type, timeseries, mean_field_updates=False):
     )
 
 
-def _build_explicit(cls, update_type, timeseries, mean_field_updates=False):
+def _build_explicit(cls, volatility_updates, timeseries, mean_field_updates=False):
     """Build explicit continuous + volatility-parent network."""
     return (
-        cls(volatility_updates=update_type, mean_field_updates=mean_field_updates)
+        cls(
+            volatility_updates=volatility_updates, mean_field_updates=mean_field_updates
+        )
         .add_nodes()
         .add_nodes(value_children=0)
         .add_nodes(volatility_children=1)
@@ -64,7 +68,7 @@ def _build_explicit(cls, update_type, timeseries, mean_field_updates=False):
     )
 
 
-def _run_volatile_vs_explicit(update_type):
+def _run_volatile_vs_explicit(volatility_updates):
     """Test that volatile-state is equivalent to explicit continuous+vol-parent pair.
 
     Both the Python and Rust backends satisfy this equivalence: the value-level
@@ -73,28 +77,28 @@ def _run_volatile_vs_explicit(update_type):
     timeseries = load_data("continuous")
 
     for cls, label in [
-        (PyNetwork, f"{update_type} py"),
-        (RsNetwork, f"{update_type} rs"),
+        (PyNetwork, f"{volatility_updates} py"),
+        (RsNetwork, f"{volatility_updates} rs"),
     ]:
-        vol = _build_volatile(cls, update_type, timeseries)
-        exp = _build_explicit(cls, update_type, timeseries)
+        vol = _build_volatile(cls, volatility_updates, timeseries)
+        exp = _build_explicit(cls, volatility_updates, timeseries)
 
         _assert_value_level_match(vol, 0, exp, 0, f"{label} input")
         _assert_value_level_match(vol, 1, exp, 1, label)
         _assert_vol_level_match(vol, 1, exp, 2, label)
 
 
-def _run_explicit_cross_backend(update_type):
+def _run_explicit_cross_backend(volatility_updates):
     """Test that Python and Rust produce the same trajectories for explicit networks."""
     timeseries = load_data("continuous")
 
-    exp_py = _build_explicit(PyNetwork, update_type, timeseries)
-    exp_rs = _build_explicit(RsNetwork, update_type, timeseries)
+    exp_py = _build_explicit(PyNetwork, volatility_updates, timeseries)
+    exp_rs = _build_explicit(RsNetwork, volatility_updates, timeseries)
 
-    label = f"{update_type} py vs rs"
+    label = f"{volatility_updates} py vs rs"
     # Unbounded path: see docstring — Python and Rust use mathematically
     # equivalent but float-distinct unbounded posterior kernels.
-    rtol = 1e-1 if update_type == "unbounded" else 1e-4
+    rtol = 1e-1 if volatility_updates == "unbounded" else 1e-4
     _assert_value_level_match(exp_py, 0, exp_rs, 0, f"{label} input", rtol=rtol)
     _assert_value_level_match(exp_py, 1, exp_rs, 1, label, rtol=rtol)
 
@@ -201,8 +205,8 @@ def _assert_volatile_node_cross_backend(net_py, net_rs, node, label="", rtol=1e-
         ), f"{label}: key '{key}' mismatch"
 
 
-@pytest.mark.parametrize("update_type", UPDATE_TYPES)
-def test_volatile_mean_field_cross_backend(update_type):
+@pytest.mark.parametrize("volatility_updates", UPDATE_TYPES)
+def test_volatile_mean_field_cross_backend(volatility_updates):
     """JAX and Rust agree for volatile-state nodes with ``mean_field_updates=True``.
 
     Exercises the mean-field prediction and posterior paths of the volatile-state node
@@ -212,34 +216,34 @@ def test_volatile_mean_field_cross_backend(update_type):
     timeseries = load_data("continuous")
 
     vol_py = _build_volatile(
-        PyNetwork, update_type, timeseries, mean_field_updates=True
+        PyNetwork, volatility_updates, timeseries, mean_field_updates=True
     )
     vol_rs = _build_volatile(
-        RsNetwork, update_type, timeseries, mean_field_updates=True
+        RsNetwork, volatility_updates, timeseries, mean_field_updates=True
     )
 
     # Unbounded path: Python and Rust use mathematically equivalent but float-distinct
     # unbounded posterior kernels (see _run_explicit_cross_backend).
-    rtol = 1e-1 if update_type == "unbounded" else 1e-4
+    rtol = 1e-1 if volatility_updates == "unbounded" else 1e-4
     _assert_volatile_node_cross_backend(
-        vol_py, vol_rs, 1, f"{update_type} mean_field py vs rs", rtol=rtol
+        vol_py, vol_rs, 1, f"{volatility_updates} mean_field py vs rs", rtol=rtol
     )
 
 
-@pytest.mark.parametrize("update_type", UPDATE_TYPES)
-def test_explicit_mean_field_cross_backend(update_type):
+@pytest.mark.parametrize("volatility_updates", UPDATE_TYPES)
+def test_explicit_mean_field_cross_backend(volatility_updates):
     """JAX and Rust agree for explicit continuous+vol-parent with mean-field updates."""
     timeseries = load_data("continuous")
 
     exp_py = _build_explicit(
-        PyNetwork, update_type, timeseries, mean_field_updates=True
+        PyNetwork, volatility_updates, timeseries, mean_field_updates=True
     )
     exp_rs = _build_explicit(
-        RsNetwork, update_type, timeseries, mean_field_updates=True
+        RsNetwork, volatility_updates, timeseries, mean_field_updates=True
     )
 
-    label = f"{update_type} mean_field py vs rs"
-    rtol = 1e-1 if update_type == "unbounded" else 1e-4
+    label = f"{volatility_updates} mean_field py vs rs"
+    rtol = 1e-1 if volatility_updates == "unbounded" else 1e-4
     _assert_value_level_match(exp_py, 0, exp_rs, 0, f"{label} input", rtol=rtol)
     _assert_value_level_match(exp_py, 1, exp_rs, 1, label, rtol=rtol)
     _assert_value_level_match(exp_py, 2, exp_rs, 2, label, rtol=rtol)

@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 
 def get_update_sequence(
-    network: "Network", update_type: str, mean_field_updates: bool = False
+    network: "Network", volatility_updates: str, mean_field_updates: bool = False
 ) -> UpdateSequence:
     """Generate an update sequence from the network's structure.
 
@@ -62,7 +62,7 @@ def get_update_sequence(
     ----------
     network :
         A neural network, instance of :py:class:`pyhgf.model.network.Network`.
-    update_type :
+    volatility_updates :
         The type of update to perform for volatility coupling. Can be `"eHGF"`
         (defaults) or `"standard"`. The eHGF update step was proposed as an
         alternative to the original definition in that it starts by updating the
@@ -177,7 +177,7 @@ def get_update_sequence(
                     has_vol_children = (
                         network.edges[idx].volatility_children is not None
                     )
-                    if update_type == "unbounded":
+                    if volatility_updates == "unbounded":
                         update_fn = (
                             continuous_node_posterior_update_unbounded
                             if has_vol_children
@@ -187,7 +187,7 @@ def get_update_sequence(
                                 else continuous_node_posterior_update
                             )
                         )
-                    elif update_type == "eHGF":
+                    elif volatility_updates == "eHGF":
                         if has_vol_children:
                             update_fn = (
                                 continuous_node_posterior_update_ehgf_mean_field
@@ -200,7 +200,7 @@ def get_update_sequence(
                                 if mean_field_updates
                                 else continuous_node_posterior_update
                             )
-                    elif update_type == "standard":
+                    elif volatility_updates == "standard":
                         update_fn = (
                             continuous_node_posterior_update_mean_field
                             if mean_field_updates
@@ -307,7 +307,7 @@ def get_update_sequence(
                     elif network.edges[idx].node_type == 6:
                         update_fn = Partial(
                             volatile_node_prediction_error,
-                            update_type=update_type,
+                            volatility_updates=volatility_updates,
                             max_posterior_precision=network.max_posterior_precision,
                         )
 

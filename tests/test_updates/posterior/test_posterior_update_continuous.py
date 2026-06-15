@@ -62,7 +62,12 @@ def test_continuous_posterior_updates():
     assert jnp.isclose(new_attributes[1]["mean"], 0.5225494)
 
     # volatility update
+    # The enhanced-HGF precision update recomputes the effective precision from the
+    # node's posterior mean and the elapsed time, so ``time_step`` and the child's
+    # previous variance must be set (as in the unbounded block below).
     attributes, edges, _ = network.get_network()
+    attributes[-1]["time_step"] = 1.0
+    attributes[1]["temp"]["current_variance"] = 1.0
     attributes[1]["temp"]["effective_precision"] = 0.01798621006309986
     attributes[1]["temp"]["value_prediction_error"] = 0.5225493907928467
     attributes[1]["temp"]["volatility_prediction_error"] = -0.23639076948165894
@@ -74,7 +79,7 @@ def test_continuous_posterior_updates():
         attributes=attributes, node_idx=2, edges=edges
     )
     assert jnp.isclose(new_attributes[2]["mean"], -0.00212589)
-    assert jnp.isclose(new_attributes[2]["precision"], 1.0022112)
+    assert jnp.isclose(new_attributes[2]["precision"], 1.0022061)
 
     # unbounded updates ----------------------------------------------------------------
     # ----------------------------------------------------------------------------------

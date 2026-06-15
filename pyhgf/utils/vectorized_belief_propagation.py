@@ -223,7 +223,7 @@ def _topdown_predict(parent_elem, child_elem, *, time_step: float):
 # ---------------------------------------------------------------------------
 
 
-def _leaf_pe(layer: Layer, *, update_type: str, max_posterior_precision: float):
+def _leaf_pe(layer: Layer, *, volatility_updates: str, max_posterior_precision: float):
     """Compute the PE of the bottom layer (a ``Layer``; leaves can't be stacks)."""
     if layer.kind == "binary":
         new_state = vectorized_binary_prediction_error(layer=layer.state)
@@ -231,7 +231,7 @@ def _leaf_pe(layer: Layer, *, update_type: str, max_posterior_precision: float):
         new_state = vectorized_layer_prediction_error(
             layer=layer.state,
             params=layer.params,
-            update_type=update_type,
+            volatility_updates=volatility_updates,
             has_volatility_parent=layer.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
@@ -248,7 +248,7 @@ def _posterior_pe_layer(
     child_state,
     child_is_input_layer: bool,
     *,
-    update_type: str,
+    volatility_updates: str,
     max_posterior_precision: float,
 ):
     """Single-layer posterior update + PE."""
@@ -267,7 +267,7 @@ def _posterior_pe_layer(
         new_state = vectorized_layer_prediction_error(
             layer=new_state,
             params=parent.params,
-            update_type=update_type,
+            volatility_updates=volatility_updates,
             has_volatility_parent=parent.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
@@ -278,7 +278,7 @@ def _posterior_pe_stack(
     stack: LayerStack,
     child_state_init,
     *,
-    update_type: str,
+    volatility_updates: str,
     max_posterior_precision: float,
 ):
     """Bottom-up sweep over a ``LayerStack`` (posterior update + PE per slice).
@@ -305,7 +305,7 @@ def _posterior_pe_stack(
         new_state = vectorized_layer_prediction_error(
             layer=new_state,
             params=slice_params,
-            update_type=update_type,
+            volatility_updates=volatility_updates,
             has_volatility_parent=stack.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
@@ -323,7 +323,7 @@ def _bottomup_posterior_pe(
     parent_elem,
     child_elem,
     *,
-    update_type: str,
+    volatility_updates: str,
     max_posterior_precision: float,
 ):
     """Posterior update + PE for ``parent_elem`` using ``child_elem`` below."""
@@ -332,14 +332,14 @@ def _bottomup_posterior_pe(
         return _posterior_pe_stack(
             parent_elem,
             child_state,
-            update_type=update_type,
+            volatility_updates=volatility_updates,
             max_posterior_precision=max_posterior_precision,
         )
     return _posterior_pe_layer(
         parent_elem,
         child_state,
         child_is_input_layer,
-        update_type=update_type,
+        volatility_updates=volatility_updates,
         max_posterior_precision=max_posterior_precision,
     )
 
@@ -467,7 +467,7 @@ def propagation_step(
     elements = list(network.layers)
     n_elements = len(elements)
     max_posterior_precision = network.max_posterior_precision
-    update_type = network.volatility_updates
+    volatility_updates = network.volatility_updates
 
     # 1. Set predictors on the top element.
     elements[-1] = _set_top_predictors(elements[-1], x)
@@ -484,7 +484,7 @@ def propagation_step(
     # 4a. PE on the bottom (leaf) element.
     elements[0] = _leaf_pe(
         elements[0],
-        update_type=update_type,
+        volatility_updates=volatility_updates,
         max_posterior_precision=max_posterior_precision,
     )
 
@@ -493,7 +493,7 @@ def propagation_step(
         elements[i] = _bottomup_posterior_pe(
             elements[i],
             elements[i - 1],
-            update_type=update_type,
+            volatility_updates=volatility_updates,
             max_posterior_precision=max_posterior_precision,
         )
 

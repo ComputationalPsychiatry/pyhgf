@@ -12,8 +12,8 @@ from .posterior_update_mean_continuous_node import (
     posterior_update_mean_continuous_node_mean_field,
 )
 from .posterior_update_precision_continuous_node import (
-    posterior_update_precision_continuous_node,
-    posterior_update_precision_continuous_node_mean_field,
+    posterior_update_precision_continuous_node_ehgf,
+    posterior_update_precision_continuous_node_ehgf_mean_field,
 )
 
 
@@ -71,7 +71,7 @@ def continuous_node_posterior_update_ehgf(
     )
     attributes[node_idx]["mean"] = posterior_mean
 
-    posterior_precision = posterior_update_precision_continuous_node(
+    posterior_precision = posterior_update_precision_continuous_node_ehgf(
         attributes,
         edges,
         node_idx,
@@ -143,7 +143,7 @@ def continuous_node_posterior_update_ehgf_mean_field(
     )
     attributes[node_idx]["mean"] = posterior_mean
 
-    posterior_precision = posterior_update_precision_continuous_node_mean_field(
+    posterior_precision = posterior_update_precision_continuous_node_ehgf_mean_field(
         attributes,
         edges,
         node_idx,
