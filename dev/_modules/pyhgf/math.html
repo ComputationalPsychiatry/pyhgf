@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.math</span></li>
   </ul>
 </nav>
@@ -1077,7 +1080,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="gaussian_density">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.gaussian_density.html#pyhgf.math.gaussian_density">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">gaussian_density</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian density as defined by mean and precision.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian density as defined by mean and precision.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The point(s) at which the density is evaluated.</span>
+<span class="sd">    mean :</span>
+<span class="sd">        The mean of the Gaussian distribution.</span>
+<span class="sd">    precision :</span>
+<span class="sd">        The precision (inverse variance) of the Gaussian distribution.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    density :</span>
+<span class="sd">        The Gaussian density evaluated at `x`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">precision</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">precision</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
 
 
@@ -1265,7 +1283,20 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="sigmoid_inverse_temperature">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.sigmoid_inverse_temperature.html#pyhgf.math.sigmoid_inverse_temperature">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sigmoid_inverse_temperature</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the sigmoid response function with inverse temperature parameter.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the sigmoid response function with inverse temperature parameter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The input value(s), expected in the unit interval.</span>
+<span class="sd">    temperature :</span>
+<span class="sd">        The inverse temperature controlling the steepness of the sigmoid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    response :</span>
+<span class="sd">        The transformed value(s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="n">temperature</span><span class="p">)</span></div>
 
 
@@ -1273,7 +1304,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="parametrised_sigmoid">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.parametrised_sigmoid.html#pyhgf.math.parametrised_sigmoid">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">phi</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The point(s) at which the sigmoid is evaluated.</span>
+<span class="sd">    theta :</span>
+<span class="sd">        The location (inflexion point) :math:`\theta` of the sigmoid.</span>
+<span class="sd">    phi :</span>
+<span class="sd">        The slope :math:`\phi` of the sigmoid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value :</span>
+<span class="sd">        The sigmoid evaluated at `x`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">theta</span><span class="p">))</span></div>
 
 
@@ -1287,13 +1333,37 @@ window.runMermaid = runMermaid;</script>
     <span class="n">theta_r</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">phi_r</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the smoothed rectangular weighting function :math:`b`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the smoothed rectangular weighting function :math:`b`.</span>
+
+<span class="sd">    The function is the product of a rising and a falling</span>
+<span class="sd">    :py:func:`parametrised_sigmoid`, producing a smooth rectangular window.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The point(s) at which the function is evaluated.</span>
+<span class="sd">    theta_l :</span>
+<span class="sd">        The location :math:`\theta` of the rising (left) sigmoid.</span>
+<span class="sd">    phi_l :</span>
+<span class="sd">        The slope :math:`\phi` of the rising (left) sigmoid.</span>
+<span class="sd">    theta_r :</span>
+<span class="sd">        The location :math:`\theta` of the falling (right) sigmoid.</span>
+<span class="sd">    phi_r :</span>
+<span class="sd">        The slope :math:`\phi` of the falling (right) sigmoid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value :</span>
+<span class="sd">        The smoothed rectangular weighting evaluated at `x`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">theta_l</span><span class="p">,</span> <span class="n">phi_l</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
         <span class="mi">1</span> <span class="o">-</span> <span class="n">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">theta_r</span><span class="p">,</span> <span class="n">phi_r</span><span class="p">)</span>
     <span class="p">)</span></div>
 
 
 
+<div class="viewcode-block" id="lambert_w0">
+<a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.lambert_w0.html#pyhgf.math.lambert_w0">[docs]</a>
 <span class="nd">@custom_jvp</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">lambert_w0</span><span class="p">(</span><span class="n">z</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Principal branch of the Lambert W function for z &gt;= 0.</span>
@@ -1313,6 +1383,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    where ``w = 0`` gives ``∂W/∂z = 1``). This avoids the NaN gradients that</span>
 <span class="sd">    would otherwise arise when the Halley iterations&#39; intermediate ``exp(w)``</span>
 <span class="sd">    values overflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z :</span>
+<span class="sd">        The argument(s) of the Lambert W function, expected to be ``&gt;= 0``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    w :</span>
+<span class="sd">        The principal branch :math:`W_0(z)` solving ``w * exp(w) = z``.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
@@ -1321,7 +1402,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">f1</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
         <span class="n">f2</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">f1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">f1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">f</span> <span class="o">*</span> <span class="n">f2</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">w</span>
+    <span class="k">return</span> <span class="n">w</span></div>
+
 
 
 <span class="nd">@lambert_w0</span><span class="o">.</span><span class="n">defjvp</span>

@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.vectorized.binary.prediction</span></li>
   </ul>
 </nav>
@@ -899,7 +902,6 @@ window.runMermaid = runMermaid;</script>
     <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict expected mean and precision for a binary state node layer.</span>
 
@@ -957,14 +959,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Sigmoid transform to get binary expected mean</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">logit</span><span class="p">)</span>
-    <span class="c1"># Bound away from 0/1 for numerical stability (configurable via</span>
-    <span class="c1"># ``DeepNetwork(precision_clipping_value=...)``): a larger value (e.g. 1e-3,</span>
-    <span class="c1"># matching the TAPAS HGF Toolbox) keeps the binary predicted precision from</span>
-    <span class="c1"># collapsing the level-2 update in high-volatility regimes; a very small value</span>
-    <span class="c1"># avoids flat, zero-gradient plateaus that hurt gradient-based inference.</span>
-    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
-        <span class="n">expected_mean</span><span class="p">,</span> <span class="n">precision_clipping_value</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">precision_clipping_value</span>
-    <span class="p">)</span>
+    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
 
     <span class="c1"># Binary variance = μ̂(1 − μ̂), stored as &quot;expected_precision&quot;</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">expected_mean</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>

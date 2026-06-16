@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.posterior.volatile.posterior_update_volatility_level</span></li>
   </ul>
 </nav>
@@ -896,6 +899,18 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the precision of the volatility level.</span>
 
 <span class="sd">    Uses the value level&#39;s volatility prediction error (internal coupling).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the volatile-state node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision of the volatility level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Start with expected precision</span>
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span>
@@ -917,6 +932,8 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="posterior_update_precision_volatility_level_ehgf">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level/pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_precision_volatility_level_ehgf.html#pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_precision_volatility_level_ehgf">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;node_idx&quot;</span><span class="p">,))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_volatility_level_ehgf</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -929,6 +946,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    recomputed from the volatility level&#39;s just-updated posterior mean (``mean_vol``)</span>
 <span class="sd">    and the increment is floored at zero. Keeps the fused volatile-state node identical</span>
 <span class="sd">    to the explicit continuous + volatility-parent construction under the eHGF.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the volatile-state node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision of the volatility level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
     <span class="n">mean_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean_vol&quot;</span><span class="p">]</span>  <span class="c1"># volatility-level posterior mean</span>
@@ -959,7 +988,8 @@ window.runMermaid = runMermaid;</script>
         <span class="o">*</span> <span class="n">effective_precision</span>
         <span class="o">*</span> <span class="p">(</span><span class="n">effective_precision</span> <span class="o">+</span> <span class="n">volatility_error_weight</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">increment</span>
+    <span class="k">return</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">increment</span></div>
+
 
 
 <div class="viewcode-block" id="posterior_update_mean_volatility_level">
@@ -973,6 +1003,20 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the mean of the volatility level.</span>
 
 <span class="sd">    Uses the value level&#39;s volatility prediction error (internal coupling).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the volatile-state node that will be updated.</span>
+<span class="sd">    node_precision :</span>
+<span class="sd">        The precision of the volatility level, used to weight the prediction error.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_mean :</span>
+<span class="sd">        The new posterior mean of the volatility level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Start with expected mean</span>
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span>

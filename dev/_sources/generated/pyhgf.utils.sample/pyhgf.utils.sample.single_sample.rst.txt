@@ -1,0 +1,6 @@
+﻿pyhgf.utils.sample.single\_sample
+=================================
+
+.. currentmodule:: pyhgf.utils.sample
+
+.. autofunction:: single_sample

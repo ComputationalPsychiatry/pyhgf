@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.volatile.posterior\_update\_value\_level.posterior\_update\_precision\_value\_level\_mean\_field
+========================================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_value_level
+
+.. autofunction:: posterior_update_precision_value_level_mean_field

@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.prediction_error.continuous</span></li>
   </ul>
 </nav>
@@ -1015,22 +1018,23 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    See [1]_ for more details.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    attributes :</span>
-<span class="sd">        The attributes of the probabilistic nodes.</span>
 <span class="sd">    .. note::</span>
 <span class="sd">        The parameter structure also incorporates the value and volatility coupling</span>
 <span class="sd">        strength with children and parents (i.e. `&quot;value_coupling_parents&quot;`,</span>
 <span class="sd">        `&quot;value_coupling_children&quot;`, `&quot;volatility_coupling_parents&quot;`,</span>
 <span class="sd">        `&quot;volatility_coupling_children&quot;`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the continuous node.</span>
 <span class="sd">    edges :</span>
 <span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
-<span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node</span>
-<span class="sd">        number. For each node, the index lists the value and volatility parents and</span>
-<span class="sd">        children.</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. The tuple has the same length as the</span>
+<span class="sd">        node number. For each node, the index lists the value and volatility parents</span>
+<span class="sd">        and children.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>

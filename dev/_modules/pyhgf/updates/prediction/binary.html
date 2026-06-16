@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.prediction.binary</span></li>
   </ul>
 </nav>
@@ -935,8 +938,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node</span>
 <span class="sd">        number. For each node, the index lists the value and volatility parents and</span>
 <span class="sd">        children.</span>
-<span class="sd">    time_step :</span>
-<span class="sd">        The interval between the previous time point and the current time point.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the binary state node.</span>
 
@@ -955,14 +956,8 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># eq. 80 in Weber et al., v2</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">)</span>
 
-    <span class="c1"># ensure that expected mean is within bounds for numerical stability. The bound is</span>
-    <span class="c1"># configurable via ``Network(precision_clipping_value=...)``: a larger value (e.g.</span>
-    <span class="c1"># 1e-3, matching the TAPAS HGF Toolbox hgf_binary_level1.m) keeps the binary</span>
-    <span class="c1"># predicted precision from collapsing the level-2 update in high-volatility regimes</span>
-    <span class="c1"># (variance blow-up under the uHGF update); a very small value avoids flat,</span>
-    <span class="c1"># zero-gradient plateaus that hurt gradient-based inference.</span>
-    <span class="n">clipping_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">]</span>
-    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="n">clipping_value</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">clipping_value</span><span class="p">)</span>
+    <span class="c1"># ensure that expected mean is within bounds for numerical stability</span>
+    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span>
 
     <span class="c1"># Estimate the new expected precision from the new expected mean</span>

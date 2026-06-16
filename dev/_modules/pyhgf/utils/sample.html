@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.utils.sample</span></li>
   </ul>
 </nav>
@@ -895,7 +898,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="sample">
-<a class="viewcode-back" href="../../../generated/pyhgf.utils/pyhgf.utils.sample.html#pyhgf.utils.sample">[docs]</a>
+<a class="viewcode-back" href="../../../generated/pyhgf.utils/pyhgf.utils.sample.html#pyhgf.utils.sample.sample">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="s2">&quot;Network&quot;</span><span class="p">,</span>
     <span class="n">time_steps</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
@@ -955,6 +958,8 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="single_sample">
+<a class="viewcode-back" href="../../../generated/pyhgf.utils.sample/pyhgf.utils.sample.single_sample.html#pyhgf.utils.sample.single_sample">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;sample_scan_fn&quot;</span><span class="p">,</span> <span class="s2">&quot;values_tuple&quot;</span><span class="p">,</span> <span class="s2">&quot;observed_tuple&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">single_sample</span><span class="p">(</span>
     <span class="n">rng_key</span><span class="p">,</span>
@@ -964,7 +969,28 @@ window.runMermaid = runMermaid;</script>
     <span class="n">values_tuple</span><span class="p">,</span>
     <span class="n">observed_tuple</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Attributes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform a single prediction using the provided RNG key.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform a single prediction using the provided RNG key.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rng_key :</span>
+<span class="sd">        The JAX pseudo-random number generator key used to draw the sample.</span>
+<span class="sd">    initial_state :</span>
+<span class="sd">        The initial attributes of the probabilistic network.</span>
+<span class="sd">    time_steps :</span>
+<span class="sd">        The time steps at which the network is sampled.</span>
+<span class="sd">    sample_scan_fn :</span>
+<span class="sd">        The scan function performing one belief-propagation step while sampling.</span>
+<span class="sd">    values_tuple :</span>
+<span class="sd">        The per-input values fed to the network during sampling.</span>
+<span class="sd">    observed_tuple :</span>
+<span class="sd">        The per-input observation masks indicating whether each value was observed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    node_trajectories :</span>
+<span class="sd">        The sampled node trajectories over the requested time steps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Split the RNG key for each time step.</span>
     <span class="n">rng_keys</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_key</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">time_steps</span><span class="p">))</span>
     <span class="n">inputs</span> <span class="o">=</span> <span class="p">(</span><span class="n">values_tuple</span><span class="p">,</span> <span class="n">observed_tuple</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">,</span> <span class="n">rng_keys</span><span class="p">)</span>
@@ -974,7 +1000,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">_</span><span class="p">,</span> <span class="n">node_trajectories</span> <span class="o">=</span> <span class="n">scan</span><span class="p">(</span><span class="n">sample_scan_fn</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
 
     <span class="c1"># Return only the node trajectories.</span>
-    <span class="k">return</span> <span class="n">node_trajectories</span>
+    <span class="k">return</span> <span class="n">node_trajectories</span></div>
+
 </pre></div>
 
                 </article>

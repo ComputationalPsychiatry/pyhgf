@@ -1,0 +1,32 @@
+﻿pyhgf.typing.typing.LearningSequence
+====================================
+
+.. currentmodule:: pyhgf.typing.typing
+
+.. autoclass:: LearningSequence
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LearningSequence.__init__
+      ~LearningSequence.count
+      ~LearningSequence.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LearningSequence.learning_steps
+      ~LearningSequence.prediction_steps
+      ~LearningSequence.update_steps
+   
+   

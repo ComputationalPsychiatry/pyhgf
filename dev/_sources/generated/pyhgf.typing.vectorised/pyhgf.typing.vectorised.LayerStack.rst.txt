@@ -1,0 +1,36 @@
+﻿pyhgf.typing.vectorised.LayerStack
+==================================
+
+.. currentmodule:: pyhgf.typing.vectorised
+
+.. autoclass:: LayerStack
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LayerStack.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LayerStack.state
+      ~LayerStack.params
+      ~LayerStack.weights_in
+      ~LayerStack.coupling_fn
+      ~LayerStack.add_constant_input
+      ~LayerStack.has_volatility_parent
+      ~LayerStack.fully_connected
+      ~LayerStack.kind
+      ~LayerStack.n_layers
+   
+   

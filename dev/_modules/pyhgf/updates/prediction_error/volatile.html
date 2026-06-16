@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.prediction_error.volatile</span></li>
   </ul>
 </nav>
@@ -898,6 +901,22 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the value prediction error of the value level.</span>
 
 <span class="sd">    This is used by external value parents (if any).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the volatile-state node whose value prediction error is computed.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. Unused; kept for API compatibility</span>
+<span class="sd">        with callers that pass edges.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The updated attributes of the probabilistic nodes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Value PE for the value level</span>
     <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
@@ -917,6 +936,19 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the volatility prediction error for the implicit volatility level.</span>
 
 <span class="sd">    This is computed from the value level&#39;s precision surprise.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the volatile-state node whose volatility prediction error is</span>
+<span class="sd">        computed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The updated attributes of the probabilistic nodes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Get value level parameters</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>

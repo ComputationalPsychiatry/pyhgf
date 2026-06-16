@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.prediction\_pass
+============================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: prediction_pass

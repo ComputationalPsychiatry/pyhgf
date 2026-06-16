@@ -1,0 +1,6 @@
+﻿pyhgf.math.lambert\_w0
+======================
+
+.. currentmodule:: pyhgf.math
+
+.. autodata:: lambert_w0

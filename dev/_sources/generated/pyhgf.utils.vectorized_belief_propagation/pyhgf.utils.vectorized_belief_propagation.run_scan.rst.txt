@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.run\_scan
+=====================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: run_scan

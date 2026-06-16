@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.model.add_nodes</span></li>
   </ul>
 </nav>
@@ -907,7 +910,40 @@ window.runMermaid = runMermaid;</script>
     <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">],</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add continuous state node(s) to a network.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add continuous state node(s) to a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    value_parents :</span>
+<span class="sd">        The value parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_parents :</span>
+<span class="sd">        The volatility parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_children :</span>
+<span class="sd">        The volatility children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults.</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        node defaults.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        The coupling function(s) between the node(s) and their value children.</span>
+<span class="sd">        ``None`` implies linear coupling.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">2</span>
 
     <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span>
@@ -969,10 +1005,36 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    volatility parent modulates the child&#39;s precision, enabling dynamic learning rates</span>
 <span class="sd">    in predictive coding networks with fewer explicit nodes.</span>
 
-<span class="sd">    note::</span>
+<span class="sd">    .. note::</span>
 <span class="sd">        Parameters relative to the volatility level (e.g., &quot;mean_vol&quot;,</span>
 <span class="sd">        &quot;expected_mean_vol&quot;, etc.) are included in the node&#39;s attributes using the</span>
 <span class="sd">        suffix &quot;_vol&quot;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    value_parents :</span>
+<span class="sd">        The value parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults.</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        node defaults.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        The coupling function(s) between the node(s) and their value children.</span>
+<span class="sd">        ``None`` implies linear coupling.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">6</span>
 
@@ -1047,6 +1109,29 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    bias). They are always wired to their children linearly (``coupling_fn`` is forced</span>
 <span class="sd">    to ``None``), have no prediction or update steps, and can only have children, never</span>
 <span class="sd">    parents.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_children :</span>
+<span class="sd">        The volatility children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        The coupling function(s) between the node(s) and their value children.</span>
+<span class="sd">        Forced to ``None`` (linear) for constant-state nodes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Validate that constant-state nodes cannot have volatility children</span>
     <span class="k">if</span> <span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1104,7 +1189,37 @@ window.runMermaid = runMermaid;</script>
     <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add binary state node(s) to a network.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add binary state node(s) to a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    value_parents :</span>
+<span class="sd">        The value parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_parents :</span>
+<span class="sd">        The volatility parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_children :</span>
+<span class="sd">        The volatility children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults.</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        node defaults.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># define the type of node that is created</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">1</span>
 
@@ -1148,7 +1263,28 @@ window.runMermaid = runMermaid;</script>
     <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">value_children</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add exponential family state node(s) to a network.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add exponential family state node(s) to a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults.</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        node defaults.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">3</span>
 
     <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span>
@@ -1231,7 +1367,26 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_categorical_state</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add categorical state node(s) to a network.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add categorical state node(s) to a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults (e.g.</span>
+<span class="sd">        ``n_categories``).</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        node defaults.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">5</span>
 
     <span class="k">if</span> <span class="s2">&quot;n_categories&quot;</span> <span class="ow">in</span> <span class="n">node_parameters</span><span class="p">:</span>
@@ -1292,7 +1447,26 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_dp_state</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a Dirichlet Process node to a network.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a Dirichlet Process node to a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults (e.g.</span>
+<span class="sd">        ``batch_size``).</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        node defaults.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">node_type</span> <span class="o">=</span> <span class="mi">4</span>
 
     <span class="k">if</span> <span class="s2">&quot;batch_size&quot;</span> <span class="ow">in</span> <span class="n">additional_parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1340,7 +1514,26 @@ window.runMermaid = runMermaid;</script>
     <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
     <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform coupling parameter into tuple of indexes and strenghts.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform coupling parameter into tuple of indexes and strenghts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value_parents :</span>
+<span class="sd">        The value parents, given as a node index, a list of indexes, or a tuple of</span>
+<span class="sd">        indexes and coupling strengths.</span>
+<span class="sd">    volatility_parents :</span>
+<span class="sd">        The volatility parents, in the same format as `value_parents`.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children, in the same format as `value_parents`.</span>
+<span class="sd">    volatility_children :</span>
+<span class="sd">        The volatility children, in the same format as `value_parents`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    couplings :</span>
+<span class="sd">        A tuple of ``(indexes, strengths)`` pairs for the value parents, volatility</span>
+<span class="sd">        parents, value children and volatility children, in that order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">couplings</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">indexes</span> <span class="ow">in</span> <span class="p">[</span>
         <span class="n">value_parents</span><span class="p">,</span>
@@ -1371,7 +1564,23 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_parameters</span><span class="p">(</span>
     <span class="n">node_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">default_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">additional_parameters</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the default node parameters using keywords args and dictonary.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the default node parameters using keywords args and dictonary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        A dictionary of parameters overriding the node defaults.</span>
+<span class="sd">    default_parameters :</span>
+<span class="sd">        The dictionary of default parameters for the node.</span>
+<span class="sd">    additional_parameters :</span>
+<span class="sd">        Additional parameters passed as keyword arguments, validated against the</span>
+<span class="sd">        default parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    parameters :</span>
+<span class="sd">        The merged dictionary of node parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">additional_parameters</span><span class="p">):</span>
         <span class="c1"># ensure that all passed values are valid keys</span>
         <span class="n">invalid_keys</span> <span class="o">=</span> <span class="p">[</span>
@@ -1413,7 +1622,40 @@ window.runMermaid = runMermaid;</script>
     <span class="n">volatility_children</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert a set of parametrised node in a network.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert a set of parametrised node in a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The neural network to which the node(s) are added.</span>
+<span class="sd">    n_nodes :</span>
+<span class="sd">        The number of identical node(s) to add.</span>
+<span class="sd">    node_type :</span>
+<span class="sd">        The integer code of the node type (see</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`).</span>
+<span class="sd">    node_parameters :</span>
+<span class="sd">        The dictionary of attributes assigned to each new node.</span>
+<span class="sd">    value_parents :</span>
+<span class="sd">        The value parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_parents :</span>
+<span class="sd">        The volatility parents of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    value_children :</span>
+<span class="sd">        The value children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    volatility_children :</span>
+<span class="sd">        The volatility children of the node(s), as a tuple of indexes and coupling</span>
+<span class="sd">        strengths.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        The coupling function(s) between the node(s) and their value children.</span>
+<span class="sd">        ``None`` implies linear coupling.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The updated neural network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># ensure that the set of coupling functions match with the number of child nodes</span>
     <span class="k">if</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">value_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

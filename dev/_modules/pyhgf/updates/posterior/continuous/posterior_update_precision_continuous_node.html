@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node</span></li>
   </ul>
 </nav>
@@ -1162,8 +1165,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        children.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the value parent node that will be updated.</span>
-<span class="sd">    time_step :</span>
-<span class="sd">        The time elapsed between this observation and the previous one.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1197,6 +1198,8 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="precision_update">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute new precision in the case of observed values.</span>
@@ -1246,9 +1249,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_standard_volatility_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="precision_update_missing_values">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_missing_values.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_missing_values">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_missing_values</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
@@ -1303,9 +1309,12 @@ window.runMermaid = runMermaid;</script>
         <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">posterior_precision_missing_values</span>
+    <span class="k">return</span> <span class="n">posterior_precision_missing_values</span></div>
 
 
+
+<div class="viewcode-block" id="precision_update_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_mean_field">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_mean_field</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute new precision in the case of observed values.</span>
@@ -1321,8 +1330,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        children.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the value parent node that will be updated.</span>
-<span class="sd">    time_step :</span>
-<span class="sd">        The time elapsed between this observation and the previous one.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1337,9 +1344,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_standard_volatility_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="posterior_update_precision_continuous_node_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_mean_field">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -1416,8 +1426,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        children.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the value parent node that will be updated.</span>
-<span class="sd">    time_step :</span>
-<span class="sd">        The time elapsed between this observation and the previous one.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1446,7 +1454,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_mean_field</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">attributes</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="p">)</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_ehgf_volatility_precision_increment</span><span class="p">(</span>
@@ -1512,6 +1521,8 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">increment</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
 
 
+<div class="viewcode-block" id="precision_update_ehgf">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_ehgf</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Enhanced-HGF precision update for observed values (relaxed value coupling).</span>
@@ -1519,14 +1530,33 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    The value-coupling contribution is identical to :func:`precision_update` (the</span>
 <span class="sd">    relaxed posterior-step correction); the volatility-coupling contribution uses the</span>
 <span class="sd">    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value parent node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_smoothing_child_precision</span><span class="p">)</span>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_ehgf_volatility_precision_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="precision_update_ehgf_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf_mean_field">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_ehgf_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
@@ -1536,6 +1566,22 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    The value-coupling contribution is identical to :func:`precision_update_mean_field`</span>
 <span class="sd">    (no smoothing correction); the volatility-coupling contribution uses the enhanced-</span>
 <span class="sd">    HGF safe update via :func:`_ehgf_volatility_precision_increment`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value parent node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_mean_field_child_precision</span>
@@ -1543,33 +1589,74 @@ window.runMermaid = runMermaid;</script>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_ehgf_volatility_precision_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="posterior_update_precision_continuous_node_ehgf">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_ehgf</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the relaxed enhanced-HGF precision or missing-value update.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the relaxed enhanced-HGF precision or missing-value update.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value parent node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
         <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_ehgf</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">attributes</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="posterior_update_precision_continuous_node_ehgf_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf_mean_field">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_ehgf_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the enhanced-HGF precision update (mean-field) or the missing path.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the enhanced-HGF precision update (mean-field) or the missing path.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value parent node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
         <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_ehgf_mean_field</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_missing_values</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
         <span class="n">attributes</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="p">)</span></div>
+
 </pre></div>
 
                 </article>

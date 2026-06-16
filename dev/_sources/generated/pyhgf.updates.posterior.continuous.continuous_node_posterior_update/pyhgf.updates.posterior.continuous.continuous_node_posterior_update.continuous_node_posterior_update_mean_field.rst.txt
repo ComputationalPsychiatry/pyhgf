@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.continuous.continuous\_node\_posterior\_update.continuous\_node\_posterior\_update\_mean\_field
+=======================================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.continuous_node_posterior_update
+
+.. autofunction:: continuous_node_posterior_update_mean_field

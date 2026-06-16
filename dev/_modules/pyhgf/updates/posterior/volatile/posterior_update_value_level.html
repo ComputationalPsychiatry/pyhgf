@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.posterior.volatile.posterior_update_value_level</span></li>
   </ul>
 </nav>
@@ -1130,6 +1133,8 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="posterior_update_precision_value_level_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level_mean_field.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level_mean_field">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_value_level_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -1147,6 +1152,22 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        at the *expected* mean (i.e. the prediction) rather than the posterior</span>
 <span class="sd">        mean. This choice is made to better suit deep learning networks where the</span>
 <span class="sd">        prediction serves as the natural reference point for computing updates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value level node that will be updated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_precision :</span>
+<span class="sd">        The new posterior precision of the value level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
 
@@ -1174,9 +1195,12 @@ window.runMermaid = runMermaid;</script>
                     <span class="o">-</span> <span class="n">value_coupling</span> <span class="o">*</span> <span class="n">coupling_fn_second</span> <span class="o">*</span> <span class="n">value_pe</span>
                 <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">posterior_precision</span>
+    <span class="k">return</span> <span class="n">posterior_precision</span></div>
 
 
+
+<div class="viewcode-block" id="posterior_update_mean_value_level_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level_mean_field.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level_mean_field">[docs]</a>
 <span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_mean_value_level_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -1195,6 +1219,25 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        at the *expected* mean (i.e. the prediction) rather than the posterior</span>
 <span class="sd">        mean. This choice is made to better suit deep learning networks where the</span>
 <span class="sd">        prediction serves as the natural reference point for computing updates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value level node that will be updated.</span>
+<span class="sd">    node_precision :</span>
+<span class="sd">        The precision of the node, used to divide the summed precision-weighted</span>
+<span class="sd">        prediction errors.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_mean :</span>
+<span class="sd">        The new posterior mean of the value level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
     <span class="n">value_precision_weighted_pe</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -1223,7 +1266,8 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">posterior_mean</span> <span class="o">+=</span> <span class="n">value_precision_weighted_pe</span>
 
-    <span class="k">return</span> <span class="n">posterior_mean</span>
+    <span class="k">return</span> <span class="n">posterior_mean</span></div>
+
 </pre></div>
 
                 </article>

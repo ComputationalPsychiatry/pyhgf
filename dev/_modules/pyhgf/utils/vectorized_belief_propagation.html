@@ -1,0 +1,1629 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyhgf.utils.vectorized_belief_propagation &#8212; pyhgf 0.2.12 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+
+    <script src="../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/utils/vectorized_belief_propagation';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.utils.vectorized_belief_propagation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pyhgf.utils.vectorized_belief_propagation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
+<span class="c1"># Author: Aleksandrs Baskakovs &lt;aleks@cas.au.dk&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;Vectorized belief propagation step for deep predictive coding networks.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">Network</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.binary</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">vectorized_binary_prediction</span><span class="p">,</span>
+    <span class="n">vectorized_binary_prediction_error</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorized_weight_gradient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.volatile</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">vectorized_layer_posterior_update</span><span class="p">,</span>
+    <span class="n">vectorized_layer_prediction</span><span class="p">,</span>
+    <span class="n">vectorized_layer_prediction_error</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Element-shape helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_bottom_slice</span><span class="p">(</span><span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ``(state, params, weights_in)`` of the *bottommost* stack slice.&quot;&quot;&quot;</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_top_slice</span><span class="p">(</span><span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ``(state, params, weights_in)`` of the *topmost* stack slice.&quot;&quot;&quot;</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parent_view</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a parent.</span>
+
+<span class="sd">    Returns ``(state, weights_in, coupling_fn, add_constant_input)``. The four pieces</span>
+<span class="sd">    ``propagation_step`` needs to predict a child below.</span>
+
+<span class="sd">    For a ``LayerStack``, the parent is the *bottommost* slice (the slice closest to the</span>
+<span class="sd">    child below the stack).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">_bottom_slice</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">add_constant_input</span>
+    <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">add_constant_input</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_child_view</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a child.</span>
+
+<span class="sd">    Returns ``(state, kind, is_input_layer)``. What&#39;s needed when something above is</span>
+<span class="sd">    doing a posterior update or computing PE-driven weight grads using this element&#39;s</span>
+<span class="sd">    state as the child.</span>
+
+<span class="sd">    For a ``LayerStack``, the child role is filled by the *topmost* slice (the slice</span>
+<span class="sd">    closest to the parent above the stack).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_top_slice</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="kc">False</span>  <span class="c1"># interior; never an input layer</span>
+    <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">is_input_layer</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Top-down prediction</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_predict_layer_from_parent</span><span class="p">(</span>
+    <span class="n">child</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span>
+    <span class="n">parent_state</span><span class="p">,</span>
+    <span class="n">parent_weights</span><span class="p">,</span>
+    <span class="n">parent_coupling_fn</span><span class="p">,</span>
+    <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict a single ``Layer`` child from a parent view.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_binary_prediction</span><span class="p">(</span>
+            <span class="n">child_state</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">parent_weights</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent_coupling_fn</span><span class="p">,</span>
+            <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent_has_constant</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction</span><span class="p">(</span>
+            <span class="n">child_state</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">parent_weights</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent_coupling_fn</span><span class="p">,</span>
+            <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent_has_constant</span><span class="p">,</span>
+            <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
+            <span class="n">is_input_layer</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">is_input_layer</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_predict_stack_from_parent</span><span class="p">(</span>
+    <span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span>
+    <span class="n">parent_state</span><span class="p">,</span>
+    <span class="n">parent_weights</span><span class="p">,</span>
+    <span class="n">parent_coupling_fn</span><span class="p">,</span>
+    <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-down sweep over a ``LayerStack``.</span>
+
+<span class="sd">    Step 1 (boundary): predict the topmost slice from the external parent. Using the</span>
+<span class="sd">    parent&#39;s coupling/weights/bias (which may differ from the stack&#39;s. For ``(L, S)``</span>
+<span class="sd">    they&#39;re the layer&#39;s; for ``(S, S)`` they&#39;re the parent stack&#39;s bottommost slice).</span>
+
+<span class="sd">    Step 2 (scan): predict slice ``k`` from slice ``k+1`` for ``k = N-2 ... 0``</span>
+<span class="sd">    using ``stack.weights_in[k+1]`` and the stack&#39;s own coupling_fn / bias.</span>
+<span class="sd">    Scan in reverse so the carry threads top-to-bottom through the stack.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">top_slice_state</span><span class="p">,</span> <span class="n">top_slice_params</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_top_slice</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span>
+    <span class="n">new_top_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction</span><span class="p">(</span>
+        <span class="n">child_state</span><span class="o">=</span><span class="n">top_slice_state</span><span class="p">,</span>
+        <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">parent_weights</span><span class="p">,</span>
+        <span class="n">params</span><span class="o">=</span><span class="n">top_slice_params</span><span class="p">,</span>
+        <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent_coupling_fn</span><span class="p">,</span>
+        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent_has_constant</span><span class="p">,</span>
+        <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
+        <span class="n">is_input_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">n_layers</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Degenerate: stack with a single slice. Just write the new state.</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">new_top_state</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+    <span class="c1"># xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.</span>
+    <span class="c1"># At step k, body(parent_state, xs[k]) → predict slice k. The &quot;parent&#39;s</span>
+    <span class="c1"># weights&quot; used to predict slice k come from slice k+1 — i.e. stack.weights_in[k+1].</span>
+    <span class="n">xs_child_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+    <span class="n">xs_child_params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">xs_parent_weights</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># shape (n-1, ...)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">parent_state_carry</span><span class="p">,</span> <span class="n">k_data</span><span class="p">):</span>
+        <span class="n">child_state</span><span class="p">,</span> <span class="n">child_params</span><span class="p">,</span> <span class="n">parent_weights_k</span> <span class="o">=</span> <span class="n">k_data</span>
+        <span class="n">new_child_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction</span><span class="p">(</span>
+            <span class="n">child_state</span><span class="o">=</span><span class="n">child_state</span><span class="p">,</span>
+            <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state_carry</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">parent_weights_k</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">child_params</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+            <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
+            <span class="n">is_input_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_child_state</span><span class="p">,</span> <span class="n">new_child_state</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">new_states_below</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+        <span class="n">body</span><span class="p">,</span>
+        <span class="n">init</span><span class="o">=</span><span class="n">new_top_state</span><span class="p">,</span>
+        <span class="n">xs</span><span class="o">=</span><span class="p">(</span><span class="n">xs_child_state</span><span class="p">,</span> <span class="n">xs_child_params</span><span class="p">,</span> <span class="n">xs_parent_weights</span><span class="p">),</span>
+        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># new_states_below has shape (n-1, ...) for slices 0..n-2;</span>
+    <span class="c1"># new_top_state is for slice n-1. Concatenate along axis 0.</span>
+    <span class="n">new_full_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">below</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">below</span><span class="p">,</span> <span class="n">top</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">new_states_below</span><span class="p">,</span>
+        <span class="n">new_top_state</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_full_state</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_topdown_predict</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict ``child_elem`` from ``parent_elem``.</span>
+
+<span class="sd">    Both can be Layer or LayerStack.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parent_state</span><span class="p">,</span> <span class="n">parent_weights</span><span class="p">,</span> <span class="n">parent_coupling_fn</span><span class="p">,</span> <span class="n">parent_has_const</span> <span class="o">=</span> <span class="n">_parent_view</span><span class="p">(</span>
+        <span class="n">parent_elem</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child_elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_predict_stack_from_parent</span><span class="p">(</span>
+            <span class="n">child_elem</span><span class="p">,</span>
+            <span class="n">parent_state</span><span class="p">,</span>
+            <span class="n">parent_weights</span><span class="p">,</span>
+            <span class="n">parent_coupling_fn</span><span class="p">,</span>
+            <span class="n">parent_has_const</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_predict_layer_from_parent</span><span class="p">(</span>
+        <span class="n">child_elem</span><span class="p">,</span>
+        <span class="n">parent_state</span><span class="p">,</span>
+        <span class="n">parent_weights</span><span class="p">,</span>
+        <span class="n">parent_coupling_fn</span><span class="p">,</span>
+        <span class="n">parent_has_const</span><span class="p">,</span>
+        <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Leaf PE (bottom element of the network)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_leaf_pe</span><span class="p">(</span><span class="n">layer</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the PE of the bottom layer (a ``Layer``; leaves can&#39;t be stacks).&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_binary_prediction_error</span><span class="p">(</span><span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction_error</span><span class="p">(</span>
+            <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Bottom-up posterior + PE</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_posterior_pe_layer</span><span class="p">(</span>
+    <span class="n">parent</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span>
+    <span class="n">child_state</span><span class="p">,</span>
+    <span class="n">child_is_input_layer</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single-layer posterior update + PE.&quot;&quot;&quot;</span>
+    <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_posterior_update</span><span class="p">(</span>
+        <span class="n">layer</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+        <span class="n">child</span><span class="o">=</span><span class="n">child_state</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">weights_in</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+        <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="n">child_is_input_layer</span><span class="o">=</span><span class="n">child_is_input_layer</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_binary_prediction_error</span><span class="p">(</span><span class="n">layer</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction_error</span><span class="p">(</span>
+            <span class="n">layer</span><span class="o">=</span><span class="n">new_state</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_posterior_pe_stack</span><span class="p">(</span>
+    <span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span>
+    <span class="n">child_state_init</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bottom-up sweep over a ``LayerStack`` (posterior update + PE per slice).</span>
+
+<span class="sd">    Scan forward from slice 0 (bottommost) to slice N-1 (topmost). The carry is the</span>
+<span class="sd">    just-PE&#39;d child state below the current slice; on the first iteration it&#39;s the</span>
+<span class="sd">    external ``child_state_init``.</span>
+
+<span class="sd">    ``child_is_input_layer=False`` throughout — Phase 8 v1 requires the layer below a</span>
+<span class="sd">    stack to be non-leaf, so the boundary is interior.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">child_carry_state</span><span class="p">,</span> <span class="n">slice_data</span><span class="p">):</span>
+        <span class="n">slice_state</span><span class="p">,</span> <span class="n">slice_params</span><span class="p">,</span> <span class="n">slice_weights</span> <span class="o">=</span> <span class="n">slice_data</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_posterior_update</span><span class="p">(</span>
+            <span class="n">layer</span><span class="o">=</span><span class="n">slice_state</span><span class="p">,</span>
+            <span class="n">child</span><span class="o">=</span><span class="n">child_carry_state</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">slice_weights</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+            <span class="n">child_is_input_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction_error</span><span class="p">(</span>
+            <span class="n">layer</span><span class="o">=</span><span class="n">new_state</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">slice_params</span><span class="p">,</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">new_state</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">new_full_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+        <span class="n">body</span><span class="p">,</span>
+        <span class="n">init</span><span class="o">=</span><span class="n">child_state_init</span><span class="p">,</span>
+        <span class="n">xs</span><span class="o">=</span><span class="p">(</span><span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_full_state</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_bottomup_posterior_pe</span><span class="p">(</span>
+    <span class="n">parent_elem</span><span class="p">,</span>
+    <span class="n">child_elem</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Posterior update + PE for ``parent_elem`` using ``child_elem`` below.&quot;&quot;&quot;</span>
+    <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">child_is_input_layer</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_posterior_pe_stack</span><span class="p">(</span>
+            <span class="n">parent_elem</span><span class="p">,</span>
+            <span class="n">child_state</span><span class="p">,</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_posterior_pe_layer</span><span class="p">(</span>
+        <span class="n">parent_elem</span><span class="p">,</span>
+        <span class="n">child_state</span><span class="p">,</span>
+        <span class="n">child_is_input_layer</span><span class="p">,</span>
+        <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+        <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Weight gradients</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_grad_layer</span><span class="p">(</span><span class="n">parent</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-Layer weight gradient (same shape as ``parent.weights_in``).&quot;&quot;&quot;</span>
+    <span class="n">child_state</span><span class="p">,</span> <span class="n">child_kind</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vectorized_weight_gradient</span><span class="p">(</span>
+        <span class="n">parent_state</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+        <span class="n">child_state</span><span class="o">=</span><span class="n">child_state</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+        <span class="n">child_is_binary</span><span class="o">=</span><span class="p">(</span><span class="n">child_kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_grad_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-slice weight gradients for a ``LayerStack``.</span>
+
+<span class="sd">    The child of slice 0 is the layer below the stack (``child_elem``); the child of</span>
+<span class="sd">    slice k&gt;0 is slice k-1 within the stack. Pre-pend the external child&#39;s state to the</span>
+<span class="sd">    stack&#39;s state along axis 0 to form an ``(N+1, ...)`` array, then ``vmap`` the per-</span>
+<span class="sd">    slice grad over the N parent slices and the N child slots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
+
+    <span class="n">combined_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">s</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">child_state</span><span class="p">,</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># parent_states[k] = stack.state[k]; child_states[k] = combined[k]</span>
+    <span class="n">parent_states</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span>
+    <span class="n">child_states</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">combined_state</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">per_slice</span><span class="p">(</span><span class="n">parent_state</span><span class="p">,</span> <span class="n">child_state_for_slice</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">vectorized_weight_gradient</span><span class="p">(</span>
+            <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state</span><span class="p">,</span>
+            <span class="n">child_state</span><span class="o">=</span><span class="n">child_state_for_slice</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+            <span class="n">child_is_binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">per_slice</span><span class="p">)(</span><span class="n">parent_states</span><span class="p">,</span> <span class="n">child_states</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_weight_grad</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weight gradient for ``parent_elem.weights_in``.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_grad_stack</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_grad_layer</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Element-level state writeback (for clamping x/y at the boundaries)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_top_predictors</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clamp ``expected_mean`` and ``mean`` of the top element to ``x``.</span>
+
+<span class="sd">    The top element must be a ``Layer`` (input layer).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Top of network must be a Layer, not a LayerStack.&quot;</span><span class="p">)</span>
+    <span class="n">new_state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">expected_mean</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_bottom_observations</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clamp ``mean`` of the bottom element to ``y``.</span>
+
+<span class="sd">    Must be a ``Layer`` (leaf).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Bottom of network must be a Layer, not a LayerStack.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">new_state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_writeback_weights</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">new_w</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace ``weights_in`` on a Layer or LayerStack with ``new_w``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">weights_in</span><span class="o">=</span><span class="n">new_w</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Top-level propagation step</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="propagation_step">
+<a class="viewcode-back" href="../../../generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.propagation_step.html#pyhgf.utils.vectorized_belief_propagation.propagation_step">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">propagation_step</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single propagation step through the network.</span>
+
+<span class="sd">    Belief-propagation sweep (top-down prediction → leaf PE → interleaved</span>
+<span class="sd">    posterior/PE bottom-up) followed by an optional weight-learning phase. Each step</span>
+<span class="sd">    dispatches per element on ``Layer`` vs ``LayerStack``:</span>
+
+<span class="sd">    * ``Layer`` → standard per-layer kernel call (unrolled).</span>
+<span class="sd">    * ``LayerStack`` → ``jax.lax.scan`` over the stack&#39;s slices.</span>
+
+<span class="sd">    Top and bottom elements must be ``Layer``s. A ``LayerStack``&#39;s child below (and</span>
+<span class="sd">    parent above) can themselves be ``Layer`` or ``LayerStack``; the stack-stack case</span>
+<span class="sd">    requires the boundary widths to match.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The current vectorised network state.</span>
+<span class="sd">    opt_state :</span>
+<span class="sd">        The current optax optimiser state.</span>
+<span class="sd">    inputs :</span>
+<span class="sd">        A tuple ``(x, y)`` with the predictors set on the top element and the</span>
+<span class="sd">        observations clamped on the bottom element.</span>
+<span class="sd">    optimizer :</span>
+<span class="sd">        The optax optimiser used for the weight-learning phase.</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        The time elapsed since the previous step.</span>
+<span class="sd">    learning_kind :</span>
+<span class="sd">        The weight-gradient mode passed to</span>
+<span class="sd">        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.</span>
+<span class="sd">    weight_update :</span>
+<span class="sd">        Whether to apply the weight-learning phase after belief propagation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    carry :</span>
+<span class="sd">        A tuple ``((network, opt_state), surprise)`` where `network` and</span>
+<span class="sd">        `opt_state` are updated and `surprise` is the step&#39;s surprise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">inputs</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+    <span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span>
+    <span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">volatility_updates</span>
+
+    <span class="c1"># 1. Set predictors on the top element.</span>
+    <span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_set_top_predictors</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="c1"># 2. Clamp observations on the bottom element.</span>
+    <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_set_bottom_observations</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="c1"># 3. Top-down prediction: predict each element from the one above.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_topdown_predict</span><span class="p">(</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 4a. PE on the bottom (leaf) element.</span>
+    <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_leaf_pe</span><span class="p">(</span>
+        <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+        <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 4b. Interleaved bottom-up: posterior + PE on every interior element.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_bottomup_posterior_pe</span><span class="p">(</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 5. Weight learning — same optax flow as before, but element-shaped grads.</span>
+    <span class="k">if</span> <span class="n">weight_update</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">)</span>
+        <span class="n">grads_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>  <span class="c1"># bottom element has no weights_in</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elements</span><span class="p">):</span>
+            <span class="n">grads_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_weight_grad</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span><span class="p">))</span>
+        <span class="n">grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">grads_list</span><span class="p">)</span>
+
+        <span class="n">updates</span><span class="p">,</span> <span class="n">new_opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+        <span class="n">new_weights</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">new_w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_weights</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">new_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_writeback_weights</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_w</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_opt_state</span> <span class="o">=</span> <span class="n">opt_state</span>
+
+    <span class="n">new_network</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+    <span class="n">output_pred</span> <span class="o">=</span> <span class="n">new_network</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">new_network</span><span class="p">,</span> <span class="n">new_opt_state</span><span class="p">),</span> <span class="n">output_pred</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Scan driver + prediction-only sweep (unchanged contract)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="run_scan">
+<a class="viewcode-back" href="../../../generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html#pyhgf.utils.vectorized_belief_propagation.run_scan">[docs]</a>
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_scan</span><span class="p">(</span>
+    <span class="n">init_carry</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">record</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run ``jax.lax.scan`` over the belief-propagation step.</span>
+
+<span class="sd">    Decorated with ``eqx.filter_jit``: arrays in ``init_carry`` / ``inputs``</span>
+<span class="sd">    are dynamic; ``optimizer`` / ``learning_kind`` / ``weight_update`` /</span>
+<span class="sd">    ``record`` / ``time_step`` are static and form the JIT cache key.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    init_carry :</span>
+<span class="sd">        The initial scan carry, a tuple ``(network, opt_state)``.</span>
+<span class="sd">    inputs :</span>
+<span class="sd">        The per-step inputs scanned over, a tuple of predictor/observation arrays</span>
+<span class="sd">        with a leading time axis.</span>
+<span class="sd">    optimizer :</span>
+<span class="sd">        The optax optimiser used for the weight-learning phase.</span>
+<span class="sd">    learning_kind :</span>
+<span class="sd">        The weight-gradient mode passed to</span>
+<span class="sd">        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.</span>
+<span class="sd">    weight_update :</span>
+<span class="sd">        Whether to apply the weight-learning phase at every step.</span>
+<span class="sd">    record :</span>
+<span class="sd">        Tuple of ``LayerState`` field names to record at every time step (e.g.</span>
+<span class="sd">        ``(&quot;expected_mean&quot;, &quot;precision&quot;)``). An empty tuple disables recording. The scan</span>
+<span class="sd">        output is just the per-step ``output_pred``. With a non-empty tuple, the</span>
+<span class="sd">        per-step output is ``(traj_step, output_pred)`` where ``traj_step`` is</span>
+<span class="sd">        ``dict[field_name, tuple[Array, ...]]`` (one per-element array per field, with</span>
+<span class="sd">        ``LayerStack`` elements contributing arrays of shape ``(N, n_nodes)``). After</span>
+<span class="sd">        ``scan`` stacks across time, each leaf carries a leading ``(T,)`` axis.</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        Uniform inference time step :math:`\\Delta t` passed to every</span>
+<span class="sd">        ``propagation_step`` call. Defaults to ``1.0``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ``((final_network, final_opt_state), step_output)`` where ``step_output`` is either</span>
+<span class="sd">    the stacked predictions alone (``record == ()``) or a</span>
+<span class="sd">    ``(stacked_traj, stacked_predictions)`` tuple.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_scan_body</span><span class="p">(</span><span class="n">carry</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+        <span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">carry</span>
+        <span class="p">(</span><span class="n">new_network</span><span class="p">,</span> <span class="n">new_opt_state</span><span class="p">),</span> <span class="n">pred</span> <span class="o">=</span> <span class="n">propagation_step</span><span class="p">(</span>
+            <span class="n">network</span><span class="p">,</span>
+            <span class="n">opt_state</span><span class="p">,</span>
+            <span class="n">xs</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">weight_update</span><span class="o">=</span><span class="n">weight_update</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">record</span><span class="p">:</span>
+            <span class="n">traj_step</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">field</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">_state_for_record</span><span class="p">(</span><span class="n">elem</span><span class="p">),</span> <span class="n">field</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">new_network</span><span class="o">.</span><span class="n">layers</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">record</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">new_network</span><span class="p">,</span> <span class="n">new_opt_state</span><span class="p">),</span> <span class="p">(</span><span class="n">traj_step</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">new_network</span><span class="p">,</span> <span class="n">new_opt_state</span><span class="p">),</span> <span class="n">pred</span>
+
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">_scan_body</span><span class="p">,</span> <span class="n">init_carry</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_state_for_record</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``LayerState`` to read trajectory fields from.</span>
+
+<span class="sd">    For a ``Layer`` this is ``elem.state`` (shape ``(n_nodes,)`` per field). For a</span>
+<span class="sd">    ``LayerStack`` it&#39;s the stacked state (shape ``(N, n_nodes)`` per field) — the user</span>
+<span class="sd">    gets the whole stack&#39;s trajectory in one block.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">state</span>
+
+
+<div class="viewcode-block" id="prediction_pass">
+<a class="viewcode-back" href="../../../generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_pass.html#pyhgf.utils.vectorized_belief_propagation.prediction_pass">[docs]</a>
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prediction_pass</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward-only sweep through the network (no PE / posterior / learning).</span>
+
+<span class="sd">    Sets predictors on the top element and runs the top-down prediction pass; returns</span>
+<span class="sd">    the bottom element&#39;s ``expected_mean``. Used by</span>
+<span class="sd">    :meth:`pyhgf.model.DeepNetwork.predict`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The current vectorised network state.</span>
+<span class="sd">    x :</span>
+<span class="sd">        The predictors set on the top element.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    expected_mean :</span>
+<span class="sd">        The bottom element&#39;s ``expected_mean`` after the forward sweep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+
+    <span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_set_top_predictors</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_topdown_predict</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">time_step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2026, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

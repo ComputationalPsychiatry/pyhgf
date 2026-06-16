@@ -1,0 +1,36 @@
+﻿pyhgf.typing.vectorised.Network
+===============================
+
+.. currentmodule:: pyhgf.typing.vectorised
+
+.. autoclass:: Network
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Network.__init__
+      ~Network.get_layer_sizes
+      ~Network.weights_tuple
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Network.n_layers
+      ~Network.n_total_slices
+      ~Network.params
+      ~Network.weights
+      ~Network.layers
+      ~Network.volatility_updates
+      ~Network.max_posterior_precision
+   
+   

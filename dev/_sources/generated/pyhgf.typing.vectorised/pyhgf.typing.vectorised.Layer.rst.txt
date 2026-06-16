@@ -1,0 +1,36 @@
+﻿pyhgf.typing.vectorised.Layer
+=============================
+
+.. currentmodule:: pyhgf.typing.vectorised
+
+.. autoclass:: Layer
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Layer.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Layer.state
+      ~Layer.params
+      ~Layer.weights_in
+      ~Layer.coupling_fn
+      ~Layer.add_constant_input
+      ~Layer.has_volatility_parent
+      ~Layer.is_input_layer
+      ~Layer.fully_connected
+      ~Layer.kind
+   
+   

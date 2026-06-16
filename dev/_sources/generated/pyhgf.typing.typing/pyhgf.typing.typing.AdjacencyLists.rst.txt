@@ -1,0 +1,35 @@
+﻿pyhgf.typing.typing.AdjacencyLists
+==================================
+
+.. currentmodule:: pyhgf.typing.typing
+
+.. autoclass:: AdjacencyLists
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AdjacencyLists.__init__
+      ~AdjacencyLists.count
+      ~AdjacencyLists.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AdjacencyLists.coupling_fn
+      ~AdjacencyLists.node_type
+      ~AdjacencyLists.value_children
+      ~AdjacencyLists.value_parents
+      ~AdjacencyLists.volatility_children
+      ~AdjacencyLists.volatility_parents
+   
+   

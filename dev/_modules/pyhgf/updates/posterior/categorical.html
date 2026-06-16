@@ -859,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.posterior.categorical</span></li>
   </ul>
 </nav>
@@ -905,17 +908,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ----------</span>
 <span class="sd">    attributes :</span>
 <span class="sd">        The attributes of the probabilistic nodes.</span>
-<span class="sd">    .. note::</span>
-<span class="sd">        `&quot;psis&quot;` is the value coupling strength. It should have the same length as the</span>
-<span class="sd">        volatility parents&#39; indexes. `&quot;volatility_coupling&quot;` is the volatility coupling</span>
-<span class="sd">        strength. It should have the same length as the volatility parents&#39; indexes.</span>
 <span class="sd">    node_idx :</span>
 <span class="sd">        Pointer to the node that needs to be updated.</span>
 <span class="sd">    edges :</span>
 <span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
-<span class="sd">        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node</span>
-<span class="sd">        number. For each node, the index lists the value and volatility parents and</span>
-<span class="sd">        children.</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. The tuple has the same length as the</span>
+<span class="sd">        node number. For each node, the index lists the value and volatility parents</span>
+<span class="sd">        and children.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
