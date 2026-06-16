@@ -18,6 +18,7 @@ def vectorized_binary_prediction(
     weights: jnp.ndarray,
     coupling_fn: Callable,
     parent_has_constant: bool = False,
+    precision_clipping_value: float = 1e-6,
 ) -> LayerState:
     r"""Predict expected mean and precision for a binary state node layer.
 
@@ -75,7 +76,14 @@ def vectorized_binary_prediction(
 
     # Sigmoid transform to get binary expected mean
     expected_mean = sigmoid(logit)
-    expected_mean = jnp.clip(expected_mean, 1e-6, 1 - 1e-6)
+    # Bound away from 0/1 for numerical stability (configurable via
+    # ``DeepNetwork(precision_clipping_value=...)``): a larger value (e.g. 1e-3,
+    # matching the TAPAS HGF Toolbox) keeps the binary predicted precision from
+    # collapsing the level-2 update in high-volatility regimes; a very small value
+    # avoids flat, zero-gradient plateaus that hurt gradient-based inference.
+    expected_mean = jnp.clip(
+        expected_mean, precision_clipping_value, 1 - precision_clipping_value
+    )
 
     # Binary variance = μ̂(1 − μ̂), stored as "expected_precision"
     expected_precision = expected_mean * (1 - expected_mean)

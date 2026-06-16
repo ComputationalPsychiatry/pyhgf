@@ -30,16 +30,31 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           uv venv .venv   # create a uv-managed virtualenv
 
-      # 3. Install dependencies and build the documentation
+      # 3. Restore executed-notebook cache (myst-nb nb_execution_mode = "cache").
+      # Only notebooks whose content changed are re-executed; a change to the pyhgf
+      # source invalidates the cache so notebooks re-run against the new behaviour.
+      - name: Cache executed notebooks
+        uses: actions/cache@v4
+        with:
+          path: docs/build/.jupyter_cache
+          key: jupyter-cache-${{ hashFiles('docs/source/notebooks/**/*.ipynb', 'pyhgf/**/*.py', 'src/**/*.rs') }}
+          restore-keys: |
+            jupyter-cache-
+
+      # 4. Install dependencies and build the documentation
       - name: Install dependencies and build docs
         run: |
           sudo apt-get install graphviz
           uv sync --dev
           uv run python -m ipykernel install --user --name=pyhgf --display-name "Python (pyhgf)"
           uv run maturin develop --release
+          # NOTE: must stay at -j 1. Parallel builds fail because the sphinx_proof /
+          # sphinx_exercise domains don't implement merge_domaindata, and forking
+          # parallel workers with JAX loaded risks a deadlock. Speed comes from the
+          # notebook execution cache (nb_execution_mode = "cache") instead.
           uv run sphinx-build -j 1 -T -b html docs/source docs/build/html
 
-      # 4. Deploy the documentation for the 'release' event
+      # 5. Deploy the documentation for the 'release' event
       - name: Deploy Stable 🚀
         if: github.event_name == 'release'
         uses: JamesIves/github-pages-deploy-action@v4
@@ -47,7 +62,7 @@ jobs:
           folder: docs/build/html
           branch: gh-pages
 
-      # 5. Deploy the documentation for pull requests (Dev version)
+      # 6. Deploy the documentation for pull requests (Dev version)
       - name: Deploy Dev 🚀
         if: github.event_name == 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4

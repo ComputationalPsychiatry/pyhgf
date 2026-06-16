@@ -23,6 +23,9 @@ release = pyhgf.__version__
 
 nb_execution_timeout = 300
 
+# Cache notebook outputs so unchanged notebooks are not re-executed on every build.
+nb_execution_mode = "cache"
+
 image_scrapers = ("matplotlib",)
 
 bibtex_bibfiles = ["refs.bib"]

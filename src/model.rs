@@ -327,6 +327,12 @@ pub struct Network {
     /// continuous/volatile nodes and the implicit volatility level for volatile
     /// nodes). Defaults to ``1e10`` and is shared with the JAX backends.
     pub max_posterior_precision: f64,
+    /// Bound applied to binary predicted means (`[v, 1 - v]`) so the implied binary
+    /// precision never collapses. A larger value (e.g. 1e-3, matching TAPAS) stabilises
+    /// the forward filter in high-volatility regimes; a very small value (default 1e-6)
+    /// avoids flat, zero-gradient plateaus that hurt gradient-based inference. Shared
+    /// with the JAX backends.
+    pub precision_clipping_value: f64,
 }
 
 /// Helper: get the list of trajectory field names to export for a given node type.
@@ -435,6 +441,7 @@ impl Network {
             roots: Vec::new(),
             leafs: Vec::new(),
             max_posterior_precision: 1e10,
+            precision_clipping_value: 1e-6,
         }
     }
 
@@ -1181,6 +1188,7 @@ impl Network {
             roots: Vec::new(),
             leafs: Vec::new(),
             max_posterior_precision: self.max_posterior_precision,
+            precision_clipping_value: self.precision_clipping_value,
         };
 
         x.iter()
@@ -1334,21 +1342,28 @@ fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f
 #[pymethods]
 impl Network {
     #[new]
-    #[pyo3(signature = (volatility_updates="unbounded", max_posterior_precision=1e10, mean_field_updates=false))]
+    #[pyo3(signature = (volatility_updates="unbounded", max_posterior_precision=1e10, mean_field_updates=false, precision_clipping_value=1e-6))]
     fn py_new(
         volatility_updates: &str,
         max_posterior_precision: f64,
         mean_field_updates: bool,
+        precision_clipping_value: f64,
     ) -> Self {
         let mut net = Network::new(volatility_updates);
         net.max_posterior_precision = max_posterior_precision;
         net.mean_field_updates = mean_field_updates;
+        net.precision_clipping_value = precision_clipping_value;
         net
     }
 
     #[getter]
     fn get_max_posterior_precision(&self) -> f64 {
         self.max_posterior_precision
+    }
+
+    #[getter]
+    fn get_precision_clipping_value(&self) -> f64 {
+        self.precision_clipping_value
     }
 
     #[setter]
