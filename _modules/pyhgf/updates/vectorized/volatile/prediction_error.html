@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.vectorized.volatile.prediction_error &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.updates.vectorized.volatile.prediction_error &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -851,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.vectorized.volatile.prediction_error</span></li>
   </ul>
 </nav>
@@ -876,15 +887,17 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">This module mirrors :mod:`pyhgf.updates.prediction_error.volatile` for vectorized</span>
 <span class="sd">layers: it provides separate value and volatility prediction-error functions, per-</span>
-<span class="sd">update-type volatility posterior functions, and a combined driver that calls them in</span>
-<span class="sd">the correct order.</span>
+<span class="sd">update-type volatility posterior functions, and a combined driver that calls them in the</span>
+<span class="sd">correct order.</span>
 <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.math</span><span class="w"> </span><span class="kn">import</span> <span class="n">lambert_w0</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span>
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># 1.  Prediction errors</span>
@@ -917,7 +930,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">value_pe</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">value_prediction_error</span><span class="o">=</span><span class="n">value_pe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">value_pe</span><span class="p">)</span></div>
 
 
 
@@ -952,7 +965,7 @@ window.runMermaid = runMermaid;</script>
         <span class="o">-</span> <span class="mf">1.0</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">volatility_pe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">volatility_pe</span><span class="p">)</span></div>
 
 
 
@@ -993,15 +1006,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    --------</span>
 <span class="sd">    :mod:`pyhgf.updates.posterior.volatile.posterior_update_volatility_level`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">volatility_pe</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">volatility_prediction_error</span>
-    <span class="n">vol_coupling</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span>
-    <span class="n">eff_prec</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">effective_precision</span>
+    <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">volatility_prediction_error</span>
+    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span>
+    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">effective_precision</span>
 
     <span class="c1"># Precision first</span>
     <span class="n">precision_vol_contrib</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">eff_prec</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="o">+</span> <span class="p">((</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">eff_prec</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">volatility_pe</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eff_prec</span> <span class="o">*</span> <span class="n">volatility_pe</span>
+        <span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">((</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">volatility_prediction_error</span>
+        <span class="o">-</span> <span class="mf">0.5</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">effective_precision</span>
+        <span class="o">*</span> <span class="n">volatility_prediction_error</span>
     <span class="p">)</span>
     <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
         <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="n">precision_vol_contrib</span><span class="p">,</span>
@@ -1009,12 +1026,13 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
 
     <span class="c1"># Mean using updated precision</span>
-    <span class="n">precision_weighted_pe_vol</span> <span class="o">=</span> <span class="p">(</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">eff_prec</span> <span class="o">*</span> <span class="n">volatility_pe</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mf">2.0</span> <span class="o">*</span> <span class="n">posterior_precision_vol</span>
-    <span class="p">)</span>
+    <span class="n">precision_weighted_pe_vol</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">posterior_precision_vol</span><span class="p">)</span>
     <span class="n">posterior_mean_vol</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="n">precision_weighted_pe_vol</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
         <span class="n">mean_vol</span><span class="o">=</span><span class="n">posterior_mean_vol</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -1026,13 +1044,15 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_volatility_posterior_ehgf</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;EHGF volatility-level posterior update (mean first, then precision).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;EHGF volatility-level posterior update (mean first, then safe precision).</span>
 
 <span class="sd">    The eHGF update differs from the standard update in that it updates the</span>
 <span class="sd">    **mean first** using the expected precision as an approximation, and then</span>
-<span class="sd">    updates the precision.</span>
+<span class="sd">    applies the safe precision update: the effective precision is recomputed from</span>
+<span class="sd">    the just-updated posterior mean and the increment is floored at zero.</span>
 
 <span class="sd">    This is the vectorized equivalent of</span>
 <span class="sd">    :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf.volatile_node_posterior_update_ehgf`.</span>
@@ -1042,7 +1062,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    layer :</span>
 <span class="sd">        Current layer state with ``volatility_prediction_error`` set.</span>
 <span class="sd">    params :</span>
-<span class="sd">        Layer parameters (provides ``volatility_coupling``).</span>
+<span class="sd">        Layer parameters (provides ``volatility_coupling`` and ``tonic_volatility``).</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        Current time step (needed to recompute the effective precision and to</span>
+<span class="sd">        reconstruct the pre-prediction variance).</span>
 <span class="sd">    max_posterior_precision :</span>
 <span class="sd">        Upper bound applied to the volatility-level posterior precision.</span>
 <span class="sd">        Default ``1e10``.</span>
@@ -1052,28 +1075,60 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    LayerState</span>
 <span class="sd">        Updated layer state with ``precision_vol`` and ``mean_vol`` set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">volatility_pe</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">volatility_prediction_error</span>
-    <span class="n">vol_coupling</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span>
-    <span class="n">eff_prec</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">effective_precision</span>
+    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
 
     <span class="c1"># Mean first using expected_precision_vol as approximation</span>
-    <span class="n">precision_weighted_pe_vol</span> <span class="o">=</span> <span class="p">(</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">eff_prec</span> <span class="o">*</span> <span class="n">volatility_pe</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mf">2.0</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span>
-    <span class="p">)</span>
+    <span class="n">precision_weighted_pe_vol</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">volatility_coupling</span>
+        <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">effective_precision</span>
+        <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">volatility_prediction_error</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span><span class="p">)</span>
     <span class="n">posterior_mean_vol</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="n">precision_weighted_pe_vol</span>
 
-    <span class="c1"># Then precision</span>
-    <span class="n">precision_vol_contrib</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">eff_prec</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="o">+</span> <span class="p">((</span><span class="n">vol_coupling</span> <span class="o">*</span> <span class="n">eff_prec</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">volatility_pe</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eff_prec</span> <span class="o">*</span> <span class="n">volatility_pe</span>
+    <span class="c1"># Safe precision update: recompute the effective precision from the posterior</span>
+    <span class="c1"># mean (``posterior_mean_vol``) and floor the increment at zero. Mirrors</span>
+    <span class="c1"># ``_ehgf_volatility_precision_increment`` in the node-based backend.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Reconstruct the value level&#39;s previous variance (= 1/precision_prev) exactly:</span>
+    <span class="c1">#   1/conditional_expected_precision = 1/precision_prev + predicted_volatility,</span>
+    <span class="c1"># so subtracting predicted_volatility cancels back to 1/precision_prev.</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+        <span class="n">tonic_volatility</span>
+        <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span>
+        <span class="o">+</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">conditional_expected_precision</span> <span class="o">-</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="mf">1e-128</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Re-predict the value level&#39;s volatility and precision from the posterior mean.</span>
+    <span class="n">repredicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+        <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">posterior_mean_vol</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="p">)</span>
+    <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">previous_variance</span> <span class="o">+</span> <span class="n">repredicted_volatility</span><span class="p">)</span>
+    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">repredicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
+    <span class="n">volatility_error_weight</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">repredicted_volatility</span> <span class="o">-</span> <span class="n">previous_variance</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">expected_precision</span>
+    <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">expected_precision</span> <span class="o">-</span> <span class="mf">1.0</span>
+
+    <span class="n">precision_vol_contrib</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+        <span class="mf">0.0</span><span class="p">,</span>
+        <span class="mf">0.5</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">effective_precision</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">effective_precision</span> <span class="o">+</span> <span class="n">volatility_error_weight</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
         <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="n">precision_vol_contrib</span><span class="p">,</span>
         <span class="n">a_max</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
         <span class="n">mean_vol</span><span class="o">=</span><span class="n">posterior_mean_vol</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -1115,38 +1170,64 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    LayerState</span>
 <span class="sd">        Updated layer state with ``precision_vol`` and ``mean_vol`` set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ka</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span>
-    <span class="n">om</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
+    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
 
-    <span class="c1"># Reconstruct al_aux = 1/pi_prev_jm1 from the predicted state.</span>
-    <span class="c1"># Kept consistent with vectorized_layer_prediction (no clipping) so the</span>
-    <span class="c1"># subtraction cancels exactly: 1/pihat_jm1 - predicted_volatility = 1/pi_prev_jm1.</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">om</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span><span class="p">)</span>
-    <span class="n">al_aux</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">-</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="mf">1e-128</span><span class="p">)</span>
+    <span class="c1"># Reconstruct previous_variance = 1/pi_prev_jm1 exactly from the *conditional* predicted</span>
+    <span class="c1"># precision. The prediction step sets</span>
+    <span class="c1">#     1/conditional_expected_precision = 1/precision_prev + predicted_volatility,</span>
+    <span class="c1"># where predicted_volatility carries the full log-volatility exponent, including</span>
+    <span class="c1"># the MGF correction volatility_coupling^2 / (2 * pihat_vol). Subtracting the same</span>
+    <span class="c1"># predicted_volatility cancels back to 1/precision_prev. Using the marginal</span>
+    <span class="c1"># expected_precision here would leave the value-coupling variance behind, and</span>
+    <span class="c1"># omitting the MGF term would leave that behind — both were latent errors that</span>
+    <span class="c1"># only surfaced once value coupling shifted the operating point.</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+        <span class="n">tonic_volatility</span>
+        <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span>
+        <span class="o">+</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">conditional_expected_precision</span> <span class="o">-</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="mf">1e-128</span>
+    <span class="p">)</span>
     <span class="n">be_aux</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
-    <span class="n">muhat_j</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span>
-    <span class="n">pihat_j</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span>
+    <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_mean_vol</span>
+    <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision_vol</span>
 
-    <span class="c1"># Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om</span>
-    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">muhat_j</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="c1"># Quantities that would otherwise pass through ``exp`` of a large number are</span>
+    <span class="c1"># kept in log-space. ``v = exp(γ)`` is fine forward (saturating uses are</span>
+    <span class="c1"># stable) but ``0 · ∞ = NaN`` poisons the backward pass — a single non-finite</span>
+    <span class="c1"># gradient NaN-poisons the whole scan, which under NUTS forces step-size</span>
+    <span class="c1"># collapse and blows up the leapfrog count per sample, and under gradient</span>
+    <span class="c1"># learning kills the optimiser step. The ``sigmoid``/``logaddexp`` rewrites</span>
+    <span class="c1"># match the direct forms for every finite input and stay gradient-safe at the</span>
+    <span class="c1"># saturation limits. Mirrors ``continuous_node_posterior_update_unbounded``.</span>
+    <span class="n">log_time_step</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
+    <span class="n">log_previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_variance</span><span class="p">)</span>
 
-    <span class="c1"># Recompute v and w using muhat_j.  The w formula is written as</span>
-    <span class="c1"># 1/(1 + al_aux/v) so it stays finite when v_jm1 overflows to ∞ (→ 1).</span>
-    <span class="n">v_jm1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gamma_c</span><span class="p">)</span>
-    <span class="n">w_jm1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">al_aux</span> <span class="o">/</span> <span class="n">v_jm1</span><span class="p">)</span>
-    <span class="n">da_jm1</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">v_jm1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="c1"># Canonical exponent at prediction: γ = log(time_step) + volatility_coupling*expected_mean_vol + tonic_volatility</span>
+    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+
+    <span class="c1"># w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α).</span>
+    <span class="n">w_jm1</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">gamma_c</span> <span class="o">-</span> <span class="n">log_previous_variance</span><span class="p">)</span>
+    <span class="c1"># Volatility prediction error da_jm1 = pihat * be_aux - 1, with pihat the</span>
+    <span class="c1"># *marginal* predicted precision. Written explicitly rather than as</span>
+    <span class="c1"># be_aux/(previous_variance+v_jm1) - 1: that identity only holds when previous_variance is the</span>
+    <span class="c1"># reconstruction 1/expected_precision - v_jm1, which is no longer the case now</span>
+    <span class="c1"># that previous_variance is the exact 1/precision_prev.</span>
+    <span class="n">da_jm1</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">expected_precision</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">-</span> <span class="mf">1.0</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Expansion 1: quadratic at the prediction (prior mean)</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">pi1</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w_jm1</span><span class="p">)</span>
-    <span class="n">mu1</span> <span class="o">=</span> <span class="n">muhat_j</span> <span class="o">+</span> <span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi1</span><span class="p">))</span> <span class="o">*</span> <span class="n">da_jm1</span>
+    <span class="n">pi1</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w_jm1</span><span class="p">)</span>
+    <span class="n">mu1</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi1</span><span class="p">))</span> <span class="o">*</span> <span class="n">da_jm1</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Expansion 2: quadratic at the Lambert W₀ approximate mode</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">pihat_y</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">/</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">pihat_y</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">/</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
 
     <span class="c1"># Compute W_arg in log-space and cap at log(float_max) — matches MATLAB&#39;s</span>
     <span class="c1"># &quot;W_arg = exp(min(log_W_arg, log(realmax)))&quot;.</span>
@@ -1155,42 +1236,65 @@ window.runMermaid = runMermaid;</script>
     <span class="n">W_arg</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">log_W_arg</span><span class="p">,</span> <span class="n">log_float_max</span><span class="p">))</span>
     <span class="n">v_W</span> <span class="o">=</span> <span class="n">lambert_w0</span><span class="p">(</span><span class="n">W_arg</span><span class="p">)</span>
     <span class="n">y_star</span> <span class="o">=</span> <span class="n">gamma_c</span> <span class="o">+</span> <span class="n">v_W</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="n">pihat_y</span>
-    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span> <span class="o">-</span> <span class="n">om</span><span class="p">)</span> <span class="o">/</span> <span class="n">ka</span>
+    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">log_time_step</span> <span class="o">-</span> <span class="n">tonic_volatility</span><span class="p">)</span> <span class="o">/</span> <span class="n">volatility_coupling</span>
 
-    <span class="c1"># Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).</span>
-    <span class="n">s2</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
-    <span class="n">w2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">al_aux</span> <span class="o">/</span> <span class="n">s2</span><span class="p">)</span>
-    <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">s2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="c1"># Log-space s2/w2/da2 — never materialise ``s2 = inf`` (0·∞ NaN gradients).</span>
+    <span class="n">log_s2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_denom_s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span>
+        <span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_s2</span>
+    <span class="p">)</span>  <span class="c1"># = log(previous_variance + s2)</span>
+    <span class="n">w2</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">log_s2</span> <span class="o">-</span> <span class="n">log_previous_variance</span><span class="p">)</span>
+    <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_s</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
 
-    <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span><span class="p">)</span>
+    <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span>
+    <span class="p">)</span>
     <span class="n">pi2_safe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">pi2_full</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w2</span><span class="p">),</span>
+        <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w2</span><span class="p">),</span>
         <span class="n">pi2_full</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">mu2_safe</span> <span class="o">=</span> <span class="n">x_star</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">da2</span> <span class="o">-</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_star</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">))</span> <span class="o">/</span> <span class="n">pi2_safe</span>
+    <span class="n">mu2_safe</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">x_star</span>
+        <span class="o">+</span> <span class="p">(</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">da2</span>
+            <span class="o">-</span> <span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_star</span> <span class="o">-</span> <span class="n">expected_mean_vol</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">/</span> <span class="n">pi2_safe</span>
+    <span class="p">)</span>
 
     <span class="c1"># Fall back to Expansion 1 if Expansion 2 yields non-finite results —</span>
     <span class="c1"># matches MATLAB: &quot;if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1&quot;.</span>
+    <span class="c1"># Double-where masking: sanitise non-finite Expansion-2 results *before* the</span>
+    <span class="c1"># outer ``where`` so its VJP never does ``0 * NaN``.</span>
     <span class="n">exp2_finite</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">pi2_safe</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mu2_safe</span><span class="p">)</span>
-    <span class="n">pi2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span>
-    <span class="n">mu2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe</span><span class="p">,</span> <span class="n">mu1</span><span class="p">)</span>
+    <span class="n">pi2_safe_for_grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">mu2_safe_for_grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">pi2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe_for_grad</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span>
+    <span class="n">mu2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe_for_grad</span><span class="p">,</span> <span class="n">mu1</span><span class="p">)</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="c1"># Variational energy-based softmax blend (direct form, matches MATLAB)</span>
+    <span class="c1"># Variational energy-based softmax blend (log-space form, gradient-safe).</span>
+    <span class="c1"># ``ey = time_step * exp(volatility_coupling*mu + tonic_volatility)`` materialises ``inf`` for large exponents and</span>
+    <span class="c1"># injects 0·∞ NaNs in the backward pass; ``logaddexp`` / ``exp(-positive)``</span>
+    <span class="c1"># stay bounded both ways.</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">ey1</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
+    <span class="n">log_ey1</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_denom_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span>
+        <span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_ey1</span>
+    <span class="p">)</span>  <span class="c1"># = log(previous_variance + ey1)</span>
     <span class="n">I1</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey1</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey1</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_1</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_1</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">expected_mean_vol</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 
-    <span class="n">ey2</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
+    <span class="n">log_ey2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_denom_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_ey2</span><span class="p">)</span>
     <span class="n">I2</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey2</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey2</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu2</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_2</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_2</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu2</span> <span class="o">-</span> <span class="n">expected_mean_vol</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 
     <span class="c1"># Stable sigmoid matches b = 1/(1 + exp(I1 - I2)) without NaN at ±∞.</span>
@@ -1203,7 +1307,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">sig2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi1</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="n">pi2</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">mu2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="n">posterior_precision_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">sig2</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">layer</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer</span><span class="p">,</span>
         <span class="n">precision_vol</span><span class="o">=</span><span class="n">posterior_precision_vol</span><span class="p">,</span>
         <span class="n">mean_vol</span><span class="o">=</span><span class="n">posterior_mean_vol</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -1220,7 +1325,7 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_prediction_error</span><span class="p">(</span>
     <span class="n">layer</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
-    <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
+    <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
@@ -1230,7 +1335,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    This is the vectorized equivalent of</span>
 <span class="sd">    :func:`pyhgf.updates.prediction_error.volatile.volatile_node_prediction_error`.</span>
 <span class="sd">    It first computes value and volatility prediction errors, then dispatches to</span>
-<span class="sd">    the appropriate volatility-level posterior update depending on *update_type*.</span>
+<span class="sd">    the appropriate volatility-level posterior update depending on *volatility_updates*.</span>
 
 <span class="sd">    Parent-count normalisation is applied in the prediction step (drift divided by</span>
 <span class="sd">    ``n_parents``), so the PE is the plain residual ``mean - expected_mean``.</span>
@@ -1241,10 +1346,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Current layer with ``mean`` and ``expected_mean`` set.</span>
 <span class="sd">    params :</span>
 <span class="sd">        Layer parameters (needed by all volatility posterior updates).</span>
-<span class="sd">    update_type :</span>
+<span class="sd">    volatility_updates :</span>
 <span class="sd">        One of ``&quot;eHGF&quot;`` (default), ``&quot;standard&quot;``, or ``&quot;unbounded&quot;``.</span>
 <span class="sd">    time_step :</span>
-<span class="sd">        Current time step.  Only required when ``update_type=&quot;unbounded&quot;``.</span>
+<span class="sd">        Current time step.  Only required when ``volatility_updates=&quot;unbounded&quot;``.</span>
 <span class="sd">    has_volatility_parent :</span>
 <span class="sd">        If True (default), compute the volatility prediction error and apply</span>
 <span class="sd">        the volatility-level posterior update (mean_vol, precision_vol).</span>
@@ -1268,15 +1373,15 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># 2. Volatility prediction error and posterior update</span>
     <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_prediction_error</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">volatility_updates</span> <span class="o">==</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">:</span>
         <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_ehgf</span><span class="p">(</span>
-            <span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span>
+            <span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">volatility_updates</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
         <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_standard</span><span class="p">(</span>
             <span class="n">layer</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">update_type</span> <span class="o">==</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">volatility_updates</span> <span class="o">==</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">:</span>
         <span class="n">layer</span> <span class="o">=</span> <span class="n">vectorized_layer_volatility_posterior_unbounded</span><span class="p">(</span>
             <span class="n">layer</span><span class="p">,</span>
             <span class="n">params</span><span class="p">,</span>
@@ -1315,8 +1420,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1350,7 +1455,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>

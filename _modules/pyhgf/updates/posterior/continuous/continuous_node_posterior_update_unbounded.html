@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -850,6 +858,9 @@ window.runMermaid = runMermaid;</script>
     </li>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
     
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded</span></li>
   </ul>
@@ -945,29 +956,40 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Updated precision and mean of the node.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">volatility_child_idx</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
-    <span class="n">t_k</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
+    <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
 
-    <span class="n">ka</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">om</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
+    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
 
-    <span class="n">al_aux</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+    <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;current_variance&quot;</span><span class="p">],</span> <span class="mf">1e-128</span>
-    <span class="p">)</span>  <span class="c1"># 1/pi_prev_jm1</span>
+    <span class="p">)</span>  <span class="c1"># previous-step variance (= 1 / precision at the previous step)</span>
     <span class="n">be_aux</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
         <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
-    <span class="n">muhat_j</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-    <span class="n">pihat_j</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Canonical exponent at prediction: y = log(t_k) + ka*muhat_j + om</span>
-    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">t_k</span><span class="p">)</span> <span class="o">+</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">muhat_j</span> <span class="o">+</span> <span class="n">om</span>
+    <span class="c1"># All quantities are kept in log-space whenever they would otherwise pass</span>
+    <span class="c1"># through ``exp`` of a potentially large number. Forming ``v = exp(γ)``</span>
+    <span class="c1"># explicitly is correct in the forward pass (downstream uses are</span>
+    <span class="c1"># saturation-stable, e.g. ``1/(1 + α/v) → 1`` as ``v → ∞``) but corrupts</span>
+    <span class="c1"># the backward pass: the local partial of the saturating expression is</span>
+    <span class="c1"># ``0`` while ``d v / d γ = exp(γ) = ∞``, and ``0 · ∞ = NaN``. We rewrite</span>
+    <span class="c1"># every such occurrence using ``sigmoid``/``logaddexp`` so neither the</span>
+    <span class="c1"># forward nor the backward ever materialises ``inf``.</span>
+    <span class="n">log_time_step</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
+    <span class="n">log_previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_variance</span><span class="p">)</span>
 
-    <span class="c1"># Recompute v and w using muhat_j. The w formula is written as</span>
-    <span class="c1"># 1/(1 + al_aux/v) so it stays finite when v_jm1 overflows to ∞ (→ 1).</span>
-    <span class="n">v_jm1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gamma_c</span><span class="p">)</span>
-    <span class="n">w_jm1</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">al_aux</span> <span class="o">/</span> <span class="n">v_jm1</span><span class="p">)</span>
+    <span class="c1"># Canonical exponent at prediction: γ = log(time_step) + volatility_coupling*expected_mean + tonic_volatility</span>
+    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">expected_mean</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+
+    <span class="c1"># w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α). Matches the original</span>
+    <span class="c1"># ``1/(1 + previous_variance/v_jm1)`` exactly for every finite γ, and stays</span>
+    <span class="c1"># gradient-safe when γ → ±∞.</span>
+    <span class="n">w_jm1</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">gamma_c</span> <span class="o">-</span> <span class="n">log_previous_variance</span><span class="p">)</span>
 
     <span class="c1"># Volatility prediction error: da_jm1 = pihat_jm1 * be_aux - 1, with</span>
     <span class="c1"># pihat_jm1 = child&#39;s expected_precision (set in the prediction step at</span>
@@ -977,13 +999,13 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Expansion 1: quadratic at the prediction (prior mean)</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">pi1</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w_jm1</span><span class="p">)</span>
-    <span class="n">mu1</span> <span class="o">=</span> <span class="n">muhat_j</span> <span class="o">+</span> <span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi1</span><span class="p">))</span> <span class="o">*</span> <span class="n">da_jm1</span>
+    <span class="n">pi1</span> <span class="o">=</span> <span class="n">expected_precision</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w_jm1</span><span class="p">)</span>
+    <span class="n">mu1</span> <span class="o">=</span> <span class="n">expected_mean</span> <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi1</span><span class="p">))</span> <span class="o">*</span> <span class="n">da_jm1</span>
 
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Expansion 2: quadratic at the Lambert W0 approximate mode</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">pihat_y</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">/</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">pihat_y</span> <span class="o">=</span> <span class="n">expected_precision</span> <span class="o">/</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
 
     <span class="c1"># Compute W_arg in log-space and cap at log(float_max) — matches MATLAB&#39;s</span>
     <span class="c1"># &quot;W_arg = exp(min(log_W_arg, log(realmax)))&quot;.</span>
@@ -992,42 +1014,84 @@ window.runMermaid = runMermaid;</script>
     <span class="n">W_arg</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">log_W_arg</span><span class="p">,</span> <span class="n">log_float_max</span><span class="p">))</span>
     <span class="n">v_W</span> <span class="o">=</span> <span class="n">lambert_w0</span><span class="p">(</span><span class="n">W_arg</span><span class="p">)</span>
     <span class="n">y_star</span> <span class="o">=</span> <span class="n">gamma_c</span> <span class="o">+</span> <span class="n">v_W</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="n">pihat_y</span>
-    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">t_k</span><span class="p">)</span> <span class="o">-</span> <span class="n">om</span><span class="p">)</span> <span class="o">/</span> <span class="n">ka</span>
+    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">log_time_step</span> <span class="o">-</span> <span class="n">tonic_volatility</span><span class="p">)</span> <span class="o">/</span> <span class="n">volatility_coupling</span>
 
-    <span class="c1"># Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).</span>
-    <span class="n">s2</span> <span class="o">=</span> <span class="n">t_k</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
-    <span class="n">w2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">al_aux</span> <span class="o">/</span> <span class="n">s2</span><span class="p">)</span>
-    <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">s2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="c1"># Log-space form of s2, w2, da2 — equivalent to the original</span>
+    <span class="c1">#   s2 = time_step * exp(volatility_coupling*x_star + tonic_volatility)</span>
+    <span class="c1">#   w2 = 1 / (1 + previous_variance / s2)</span>
+    <span class="c1">#   da2 = be_aux / (previous_variance + s2) - 1</span>
+    <span class="c1"># but without ever materialising ``s2 = inf`` in the forward pass, which</span>
+    <span class="c1"># would inject NaN gradients via 0·∞.</span>
+    <span class="n">log_s2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_denom_s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span>
+        <span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_s2</span>
+    <span class="p">)</span>  <span class="c1"># = log(previous_variance + s2)</span>
+    <span class="n">w2</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">log_s2</span> <span class="o">-</span> <span class="n">log_previous_variance</span><span class="p">)</span>
+    <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_s</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
 
-    <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span><span class="p">)</span>
+    <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">expected_precision</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span>
+    <span class="p">)</span>
     <span class="n">pi2_safe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">pi2_full</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">pihat_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w2</span><span class="p">),</span>
+        <span class="n">expected_precision</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w2</span><span class="p">),</span>
         <span class="n">pi2_full</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">mu2_safe</span> <span class="o">=</span> <span class="n">x_star</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">da2</span> <span class="o">-</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_star</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">))</span> <span class="o">/</span> <span class="n">pi2_safe</span>
+    <span class="n">mu2_safe</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">x_star</span>
+        <span class="o">+</span> <span class="p">(</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">da2</span>
+            <span class="o">-</span> <span class="n">expected_precision</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_star</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">/</span> <span class="n">pi2_safe</span>
+    <span class="p">)</span>
 
     <span class="c1"># Fall back to Expansion 1 if Expansion 2 yields non-finite results —</span>
     <span class="c1"># matches MATLAB: &quot;if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1&quot;.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Double-where masking: replace any non-finite ``pi2_safe`` / ``mu2_safe``</span>
+    <span class="c1"># with safe constants *before* they enter the outer ``where``. The bare</span>
+    <span class="c1"># form ``jnp.where(c, pi2_safe, pi1)`` is correct in the forward pass but</span>
+    <span class="c1"># poisons the backward pass: ``where``&#39;s VJP routes a zero cotangent into</span>
+    <span class="c1"># the masked-out branch, and ``0 * NaN = NaN`` in IEEE-754 — so a single</span>
+    <span class="c1"># non-finite intermediate at any scan step turns the whole gradient into</span>
+    <span class="c1"># NaN, which forces NUTS to reject the trajectory and adapt the step size</span>
+    <span class="c1"># downward, blowing up the number of leapfrog evaluations per sample.</span>
     <span class="n">exp2_finite</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">pi2_safe</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mu2_safe</span><span class="p">)</span>
-    <span class="n">pi2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span>
-    <span class="n">mu2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe</span><span class="p">,</span> <span class="n">mu1</span><span class="p">)</span>
+    <span class="n">pi2_safe_for_grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">mu2_safe_for_grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">pi2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">pi2_safe_for_grad</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span>
+    <span class="n">mu2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exp2_finite</span><span class="p">,</span> <span class="n">mu2_safe_for_grad</span><span class="p">,</span> <span class="n">mu1</span><span class="p">)</span>
 
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="c1"># Variational energy-based softmax blend (direct form, matches MATLAB)</span>
+    <span class="c1"># Variational energy-based softmax blend (direct form, matches MATLAB).</span>
+    <span class="c1">#</span>
+    <span class="c1"># The original form is</span>
+    <span class="c1">#     ey  = time_step * exp(volatility_coupling*mu + tonic_volatility)</span>
+    <span class="c1">#     I   = -0.5 * log(previous_variance + ey) - 0.5 * be_aux / (previous_variance + ey) - ...</span>
+    <span class="c1"># which materialises ``ey = inf`` for large ``volatility_coupling*mu + tonic_volatility`` and then</span>
+    <span class="c1"># injects 0·∞ NaNs in the backward pass even though the forward saturates</span>
+    <span class="c1"># cleanly. The log-space rewrite below is mathematically identical for</span>
+    <span class="c1"># every finite input and stays gradient-safe at the saturation limits:</span>
+    <span class="c1"># ``logaddexp`` and ``exp(-positive)`` are both bounded forward and</span>
+    <span class="c1"># backward.</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">ey1</span> <span class="o">=</span> <span class="n">t_k</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
+    <span class="n">log_ey1</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_denom_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span>
+        <span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_ey1</span>
+    <span class="p">)</span>  <span class="c1"># = log(previous_variance + ey1)</span>
     <span class="n">I1</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey1</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey1</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_1</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_1</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">expected_precision</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 
-    <span class="n">ey2</span> <span class="o">=</span> <span class="n">t_k</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ka</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">om</span><span class="p">)</span>
+    <span class="n">log_ey2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_denom_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_ey2</span><span class="p">)</span>
     <span class="n">I2</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey2</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">/</span> <span class="p">(</span><span class="n">al_aux</span> <span class="o">+</span> <span class="n">ey2</span><span class="p">)</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">pihat_j</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu2</span> <span class="o">-</span> <span class="n">muhat_j</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_2</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_2</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">expected_precision</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu2</span> <span class="o">-</span> <span class="n">expected_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 
     <span class="c1"># Stable sigmoid matches b = 1/(1 + exp(I1 - I2)) without NaN at ±∞.</span>
@@ -1071,8 +1135,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1106,7 +1170,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>

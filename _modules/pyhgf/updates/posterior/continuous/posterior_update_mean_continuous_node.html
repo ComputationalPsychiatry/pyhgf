@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -851,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node</span></li>
   </ul>
 </nav>
@@ -887,7 +898,198 @@ window.runMermaid = runMermaid;</script>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">node_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the mean of a state node using the value prediction errors [1]_.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Continuous mean update without mean-field approximation.</span>
+
+<span class="sd">    1. Mean update from value coupling</span>
+<span class="sd">    ----------------------------------</span>
+
+<span class="sd">    Each value child :math:`j` contributes</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \Delta \mu_b \;\mathrel{+}=\;</span>
+<span class="sd">            \frac{\kappa_j \, g&#39;_{j,b}(\mu_b^{(k-1)}) \, g_{a,j}}{\pi_b} \, \delta_j^{(k)},</span>
+<span class="sd">            \qquad</span>
+<span class="sd">        g_{a,j} \,=\, \frac{\hat{\pi}_j^{(k)} \, \pi_j^{(k)}}{\hat{\pi}_j^{(k)} + \pi_{y,j}},</span>
+<span class="sd">            \qquad</span>
+<span class="sd">        \pi_{y,j} \,=\, \pi_j^{(k)} - \tilde{\pi}_j^{(k)},</span>
+
+<span class="sd">    where :math:`\kappa_j` is the value-coupling strength, :math:`g&#39;_{j,b}` is the</span>
+<span class="sd">    derivative of the coupling function (1 for linear coupling),</span>
+<span class="sd">    :math:`\hat{\pi}_j` is the child&#39;s *conditional* predicted precision (stored as</span>
+<span class="sd">    ``child.temp[&quot;conditional_expected_precision&quot;]``), :math:`\tilde{\pi}_j` its</span>
+<span class="sd">    *marginal* predicted precision (``child.expected_precision``), and</span>
+<span class="sd">    :math:`\delta_j^{(k)}` is the value prediction error computed by</span>
+<span class="sd">    :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.</span>
+<span class="sd">    The smoothing form :math:`g_{a,j}` is the joint-Gaussian (RTS-smoother) gain</span>
+<span class="sd">    derived from the structured-Gaussian variational posterior on the value-coupling</span>
+<span class="sd">    edge; for leaves and non-Gaussian children :math:`\pi_{y,j} = 0` and</span>
+<span class="sd">    :math:`g_{a,j}` collapses to the marginal :math:`\tilde{\pi}_j`, recovering the</span>
+<span class="sd">    canonical gain :math:`\hat{\pi}_j \, \pi_j / \pi_j = \tilde{\pi}_j`.</span>
+
+<span class="sd">    2. Mean update from volatility coupling</span>
+<span class="sd">    ---------------------------------------</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \Delta \mu_b \mathrel{+}= \frac{1}{2 \, \pi_b}</span>
+<span class="sd">            \sum_{j} \kappa_j \, \gamma_j^{(k)} \, \Delta_j^{(k)},</span>
+
+<span class="sd">    where :math:`\kappa_j` is the volatility-coupling strength between the</span>
+<span class="sd">    volatility parent and the volatility child :math:`j`,</span>
+<span class="sd">    :math:`\gamma_j^{(k)} = \Omega_j^{(k)} \, \tilde{\pi}_j^{(k)}` is the effective</span>
+<span class="sd">    precision of the prediction (computed in the prediction step,</span>
+<span class="sd">    :py:func:`pyhgf.updates.prediction.predict_precision`), and the volatility</span>
+<span class="sd">    prediction error is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \Delta_j^{(k)} = \frac{\tilde{\pi}_j^{(k)}}{\pi_j^{(k)}} +</span>
+<span class="sd">            \tilde{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    attributes :</span>
+<span class="sd">        The attributes of the probabilistic nodes.</span>
+<span class="sd">    edges :</span>
+<span class="sd">        The edges of the probabilistic nodes as a tuple of</span>
+<span class="sd">        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its</span>
+<span class="sd">        value/volatility parents and children.</span>
+<span class="sd">    node_idx :</span>
+<span class="sd">        Pointer to the value parent node that will be updated.</span>
+<span class="sd">    node_precision :</span>
+<span class="sd">        The precision :math:`\pi_b` of the node to divide by once after summing the</span>
+<span class="sd">        precision-weighted PEs across children. Depending on the volatility update</span>
+<span class="sd">        schedule this is either the just-updated posterior precision (standard</span>
+<span class="sd">        scheme) or the marginal predicted precision (eHGF scheme).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    posterior_mean :</span>
+<span class="sd">        The new posterior mean.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    posterior_update_precision_continuous_node</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># sum the prediction errors from both value and volatility coupling</span>
+    <span class="p">(</span>
+        <span class="n">value_precision_weigthed_prediction_error</span><span class="p">,</span>
+        <span class="n">volatility_precision_weigthed_prediction_error</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Value coupling updates - update the mean of a value parent</span>
+    <span class="c1"># ----------------------------------------------------------</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
+            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="c1"># get the value prediction error (VAPE)</span>
+            <span class="c1"># if this is jnp.nan (no observation) set the VAPE to 0.0</span>
+            <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;value_prediction_error&quot;</span>
+            <span class="p">]</span>
+
+            <span class="c1"># cancel the prediction error if the child value was not observed</span>
+            <span class="n">value_prediction_error</span> <span class="o">*=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+
+            <span class="c1"># get differential of coupling function with value children</span>
+            <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># linear coupling</span>
+                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># non-linear coupling</span>
+                <span class="c1"># Compute the derivative of the coupling function</span>
+                <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+
+            <span class="c1"># Coupling gain precision g_a. From the joint (x_a, x_b) Gaussian the</span>
+            <span class="c1"># exact marginal-mean gain is</span>
+            <span class="c1">#     g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,</span>
+            <span class="c1"># accumulated across children and divided once by `node_precision` (π_b)</span>
+            <span class="c1"># after the loop — this is what makes the multi-child mean exact rather</span>
+            <span class="c1"># than a sum of independent RTS gains. For leaves and non-Gaussian</span>
+            <span class="c1"># children π_y = 0 and g_a collapses to π̃_a, recovering the canonical</span>
+            <span class="c1"># gain (π̃_a is what `child.expected_precision` stores).</span>
+            <span class="n">child_node_type</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span>
+            <span class="n">child_is_gaussian_interior</span> <span class="o">=</span> <span class="n">child_node_type</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">child_is_gaussian_interior</span><span class="p">:</span>
+                <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+                <span class="n">pi_y</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">-</span> <span class="n">child_expected_precision</span>
+                <span class="n">child_cond</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+                    <span class="s2">&quot;conditional_expected_precision&quot;</span>
+                <span class="p">]</span>
+                <span class="n">gain_precision</span> <span class="o">=</span> <span class="n">child_cond</span> <span class="o">*</span> <span class="n">child_precision</span> <span class="o">/</span> <span class="p">(</span><span class="n">child_cond</span> <span class="o">+</span> <span class="n">pi_y</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gain_precision</span> <span class="o">=</span> <span class="n">child_expected_precision</span>
+
+            <span class="c1"># sum the precision weigthed prediction errors over all children</span>
+            <span class="n">value_precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">value_coupling</span> <span class="o">*</span> <span class="n">gain_precision</span> <span class="o">*</span> <span class="n">coupling_fn_prime</span><span class="p">)</span> <span class="o">/</span> <span class="n">node_precision</span>
+            <span class="p">)</span> <span class="o">*</span> <span class="n">value_prediction_error</span>
+
+    <span class="c1"># Volatility coupling updates - update the mean of a volatility parent</span>
+    <span class="c1"># --------------------------------------------------------------------</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">],</span>
+        <span class="p">):</span>
+            <span class="c1"># get the volatility prediction error (VOPE)</span>
+            <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;volatility_prediction_error&quot;</span>
+            <span class="p">]</span>
+
+            <span class="c1"># retrieve the effective precision (γ)</span>
+            <span class="c1"># computed during the prediction step</span>
+            <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;effective_precision&quot;</span>
+            <span class="p">]</span>
+
+            <span class="c1"># the precision weigthed prediction error</span>
+            <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span>
+            <span class="p">)</span>
+
+            <span class="c1"># weight using the node&#39;s precision</span>
+            <span class="n">precision_weigthed_prediction_error</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">node_precision</span><span class="p">)</span>
+
+            <span class="c1"># cancel the prediction error if the child value was not observed</span>
+            <span class="n">precision_weigthed_prediction_error</span> <span class="o">*=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span>
+                <span class="s2">&quot;observed&quot;</span>
+            <span class="p">]</span>
+
+            <span class="c1"># aggregate over volatility children</span>
+            <span class="n">volatility_precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">precision_weigthed_prediction_error</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Compute the new posterior mean</span>
+    <span class="c1"># using value prediction errors from both value and volatility coupling</span>
+    <span class="n">posterior_mean</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">value_precision_weigthed_prediction_error</span>
+        <span class="o">+</span> <span class="n">volatility_precision_weigthed_prediction_error</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">posterior_mean</span></div>
+
+
+
+<div class="viewcode-block" id="posterior_update_mean_continuous_node_mean_field">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node_mean_field">[docs]</a>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_mean_continuous_node_mean_field</span><span class="p">(</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
+    <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">node_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Continuous mean update with mean-field approximation [1]_.</span>
 
 <span class="sd">    1. Mean update from value coupling.</span>
 
@@ -985,38 +1187,27 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       arXiv. https://doi.org/10.48550/ARXIV.2305.10937</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># sum the prediction errors from both value and volatility coupling</span>
     <span class="p">(</span>
         <span class="n">value_precision_weigthed_prediction_error</span><span class="p">,</span>
         <span class="n">volatility_precision_weigthed_prediction_error</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
-    <span class="c1"># Value coupling updates - update the mean of a value parent</span>
-    <span class="c1"># ----------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
             <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="p">):</span>
-            <span class="c1"># get the value prediction error (VAPE)</span>
-            <span class="c1"># if this is jnp.nan (no observation) set the VAPE to 0.0</span>
             <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
                 <span class="s2">&quot;value_prediction_error&quot;</span>
             <span class="p">]</span>
-
-            <span class="c1"># cancel the prediction error if the child value was not observed</span>
             <span class="n">value_prediction_error</span> <span class="o">*=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
 
-            <span class="c1"># get differential of coupling function with value children</span>
-            <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># linear coupling</span>
+            <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># non-linear coupling</span>
-                <span class="c1"># Compute the derivative of the coupling function</span>
+            <span class="k">else</span><span class="p">:</span>
                 <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
 
-            <span class="c1"># expected precisions from the value children</span>
-            <span class="c1"># sum the precision weigthed prediction errors over all children</span>
             <span class="n">value_precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
                 <span class="p">(</span>
                     <span class="n">value_coupling</span>
@@ -1026,44 +1217,28 @@ window.runMermaid = runMermaid;</script>
                 <span class="o">/</span> <span class="n">node_precision</span>
             <span class="p">)</span> <span class="o">*</span> <span class="n">value_prediction_error</span>
 
-    <span class="c1"># Volatility coupling updates - update the mean of a volatility parent</span>
-    <span class="c1"># --------------------------------------------------------------------</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
             <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">],</span>
         <span class="p">):</span>
-            <span class="c1"># get the volatility prediction error (VOPE)</span>
             <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
                 <span class="s2">&quot;volatility_prediction_error&quot;</span>
             <span class="p">]</span>
-
-            <span class="c1"># retrieve the effective precision (γ)</span>
-            <span class="c1"># computed during the prediction step</span>
             <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
                 <span class="s2">&quot;effective_precision&quot;</span>
             <span class="p">]</span>
-
-            <span class="c1"># the precision weigthed prediction error</span>
             <span class="n">precision_weigthed_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span>
             <span class="p">)</span>
-
-            <span class="c1"># weight using the node&#39;s precision</span>
             <span class="n">precision_weigthed_prediction_error</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">node_precision</span><span class="p">)</span>
-
-            <span class="c1"># cancel the prediction error if the child value was not observed</span>
             <span class="n">precision_weigthed_prediction_error</span> <span class="o">*=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span>
                 <span class="s2">&quot;observed&quot;</span>
             <span class="p">]</span>
-
-            <span class="c1"># aggregate over volatility children</span>
             <span class="n">volatility_precision_weigthed_prediction_error</span> <span class="o">+=</span> <span class="p">(</span>
                 <span class="n">precision_weigthed_prediction_error</span>
             <span class="p">)</span>
 
-    <span class="c1"># Compute the new posterior mean</span>
-    <span class="c1"># using value prediction errors from both value and volatility coupling</span>
     <span class="n">posterior_mean</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
         <span class="o">+</span> <span class="n">value_precision_weigthed_prediction_error</span>
@@ -1101,8 +1276,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1136,7 +1311,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>

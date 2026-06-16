@@ -17,9 +17,12 @@
       ~DeepNetwork.add_layer
       ~DeepNetwork.add_layer_stack
       ~DeepNetwork.fit
+      ~DeepNetwork.load
       ~DeepNetwork.plot_layers
       ~DeepNetwork.predict
       ~DeepNetwork.reset
+      ~DeepNetwork.save
+      ~DeepNetwork.to_pandas
       ~DeepNetwork.weight_initialisation
    
    

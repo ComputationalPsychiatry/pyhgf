@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.math &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.math &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -851,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.math</span></li>
   </ul>
 </nav>
@@ -874,7 +885,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">custom_jvp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmoid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">digamma</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">gammaln</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">jax.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
@@ -888,7 +899,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] https://en.wikipedia.org/wiki/Exponential_family</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
@@ -913,7 +923,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        xis :</span>
 <span class="sd">            The sufficient statistics.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">mean</span><span class="p">,</span>
@@ -942,7 +951,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        means, covariance :</span>
 <span class="sd">            The parameters of the distribution (mean and covariance).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="n">xis</span><span class="p">[:</span><span class="n">dimension</span><span class="p">]</span>
         <span class="n">covariance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dimension</span><span class="p">,</span> <span class="n">dimension</span><span class="p">))</span>
@@ -963,7 +971,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    .. [1] https://en.wikipedia.org/wiki/Exponential_family</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
@@ -988,7 +995,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        xis :</span>
 <span class="sd">            The sufficient statistics.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="n">mean</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">variance</span><span class="p">])</span>
 
@@ -1010,7 +1016,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        mean, variance :</span>
 <span class="sd">            The parameters of the distribution (mean and variance).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="n">xis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">variance</span> <span class="o">=</span> <span class="n">xis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">mean</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -1060,7 +1065,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       statistic time series for active inference. In Communications in Computer and</span>
 <span class="sd">       Information Science. Active Inference (pp. 52–58).</span>
 <span class="sd">       doi:10.1007/978-3-030-64919-7_7</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">nu</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">xi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">xi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)))</span>
@@ -1076,7 +1080,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="gaussian_density">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.gaussian_density.html#pyhgf.math.gaussian_density">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">gaussian_density</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian density as defined by mean and precision.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gaussian density as defined by mean and precision.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The point(s) at which the density is evaluated.</span>
+<span class="sd">    mean :</span>
+<span class="sd">        The mean of the Gaussian distribution.</span>
+<span class="sd">    precision :</span>
+<span class="sd">        The precision (inverse variance) of the Gaussian distribution.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    density :</span>
+<span class="sd">        The Gaussian density evaluated at `x`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">precision</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">precision</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
 
 
@@ -1121,7 +1140,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &gt;&gt;&gt; from pyhgf.binary import binary_surprise</span>
 <span class="sd">    &gt;&gt;&gt; binary_surprise(x=1.0, expected_mean=0.7)</span>
 <span class="sd">    `Array(0.35667497, dtype=float32, weak_type=True)`</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">clipping</span><span class="p">:</span>
         <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
@@ -1170,7 +1188,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &gt;&gt;&gt; from pyhgf.math import gaussian_surprise</span>
 <span class="sd">    &gt;&gt;&gt; gaussian_surprise(x=2.0, expected_mean=0.0, expected_precision=1.0)</span>
 <span class="sd">    `Array(2.9189386, dtype=float32, weak_type=True)`</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
         <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
@@ -1255,7 +1272,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    surprise :</span>
 <span class="sd">        The binary surprise under finite precision.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
         <span class="n">expected_mean</span> <span class="o">*</span> <span class="n">gaussian_density</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">eta1</span><span class="p">,</span> <span class="n">expected_precision</span><span class="p">)</span>
@@ -1267,7 +1283,20 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="sigmoid_inverse_temperature">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.sigmoid_inverse_temperature.html#pyhgf.math.sigmoid_inverse_temperature">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sigmoid_inverse_temperature</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the sigmoid response function with inverse temperature parameter.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the sigmoid response function with inverse temperature parameter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The input value(s), expected in the unit interval.</span>
+<span class="sd">    temperature :</span>
+<span class="sd">        The inverse temperature controlling the steepness of the sigmoid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    response :</span>
+<span class="sd">        The transformed value(s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="n">temperature</span><span class="p">)</span></div>
 
 
@@ -1275,7 +1304,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="parametrised_sigmoid">
 <a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.parametrised_sigmoid.html#pyhgf.math.parametrised_sigmoid">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">phi</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the sigmoid parametrised by :math:`\phi` and :math:`\theta`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The point(s) at which the sigmoid is evaluated.</span>
+<span class="sd">    theta :</span>
+<span class="sd">        The location (inflexion point) :math:`\theta` of the sigmoid.</span>
+<span class="sd">    phi :</span>
+<span class="sd">        The slope :math:`\phi` of the sigmoid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value :</span>
+<span class="sd">        The sigmoid evaluated at `x`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">theta</span><span class="p">))</span></div>
 
 
@@ -1289,18 +1333,67 @@ window.runMermaid = runMermaid;</script>
     <span class="n">theta_r</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">phi_r</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the smoothed rectangular weighting function :math:`b`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the smoothed rectangular weighting function :math:`b`.</span>
+
+<span class="sd">    The function is the product of a rising and a falling</span>
+<span class="sd">    :py:func:`parametrised_sigmoid`, producing a smooth rectangular window.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The point(s) at which the function is evaluated.</span>
+<span class="sd">    theta_l :</span>
+<span class="sd">        The location :math:`\theta` of the rising (left) sigmoid.</span>
+<span class="sd">    phi_l :</span>
+<span class="sd">        The slope :math:`\phi` of the rising (left) sigmoid.</span>
+<span class="sd">    theta_r :</span>
+<span class="sd">        The location :math:`\theta` of the falling (right) sigmoid.</span>
+<span class="sd">    phi_r :</span>
+<span class="sd">        The slope :math:`\phi` of the falling (right) sigmoid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value :</span>
+<span class="sd">        The smoothed rectangular weighting evaluated at `x`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">theta_l</span><span class="p">,</span> <span class="n">phi_l</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
         <span class="mi">1</span> <span class="o">-</span> <span class="n">parametrised_sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">theta_r</span><span class="p">,</span> <span class="n">phi_r</span><span class="p">)</span>
     <span class="p">)</span></div>
 
 
 
+<div class="viewcode-block" id="lambert_w0">
+<a class="viewcode-back" href="../../generated/pyhgf.math/pyhgf.math.lambert_w0.html#pyhgf.math.lambert_w0">[docs]</a>
+<span class="nd">@custom_jvp</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">lambert_w0</span><span class="p">(</span><span class="n">z</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Principal branch of the Lambert W function for z &gt;= 0.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Principal branch of the Lambert W function for z &gt;= 0.</span>
 
 <span class="sd">    Solves ``w * exp(w) = z`` via 6 Halley iterations, which yields machine</span>
 <span class="sd">    precision for all z &gt;= 0.</span>
+
+<span class="sd">    A custom JVP is attached so that reverse-mode autodiff does not backprop</span>
+<span class="sd">    through the Halley iterations. The implicit relation ``w * exp(w) = z``</span>
+<span class="sd">    yields the closed-form derivative</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \frac{\partial W}{\partial z} = \frac{1}{e^{w}\,(1 + w)},</span>
+
+<span class="sd">    which is well-defined for all ``z &gt;= 0`` (in particular at ``z = 0``,</span>
+<span class="sd">    where ``w = 0`` gives ``∂W/∂z = 1``). This avoids the NaN gradients that</span>
+<span class="sd">    would otherwise arise when the Halley iterations&#39; intermediate ``exp(w)``</span>
+<span class="sd">    values overflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z :</span>
+<span class="sd">        The argument(s) of the Lambert W function, expected to be ``&gt;= 0``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    w :</span>
+<span class="sd">        The principal branch :math:`W_0(z)` solving ``w * exp(w) = z``.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
@@ -1309,7 +1402,18 @@ window.runMermaid = runMermaid;</script>
         <span class="n">f1</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
         <span class="n">f2</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">f1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">f1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">f</span> <span class="o">*</span> <span class="n">f2</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">w</span>
+    <span class="k">return</span> <span class="n">w</span></div>
+
+
+
+<span class="nd">@lambert_w0</span><span class="o">.</span><span class="n">defjvp</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_lambert_w0_jvp</span><span class="p">(</span><span class="n">primals</span><span class="p">,</span> <span class="n">tangents</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">z</span><span class="p">,)</span> <span class="o">=</span> <span class="n">primals</span>
+    <span class="p">(</span><span class="n">z_dot</span><span class="p">,)</span> <span class="o">=</span> <span class="n">tangents</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">lambert_w0</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="c1"># ∂W/∂z = 1 / (exp(w) * (1 + w)); safe at z = 0 (w = 0 → 1).</span>
+    <span class="n">tangent_out</span> <span class="o">=</span> <span class="n">z_dot</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">w</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">w</span><span class="p">,</span> <span class="n">tangent_out</span>
 </pre></div>
 
                 </article>
@@ -1339,8 +1443,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1374,7 +1478,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>

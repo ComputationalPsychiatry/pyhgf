@@ -1,6 +1,0 @@
-﻿pyhgf.utils.predict\_step
-=========================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: predict_step

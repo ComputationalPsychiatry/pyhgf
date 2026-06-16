@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.network &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.model.network &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -850,6 +858,9 @@ window.runMermaid = runMermaid;</script>
     </li>
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
     
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.model.network</span></li>
   </ul>
@@ -923,6 +934,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    This is the core class to define and manipulate neural networks, that consists in</span>
 <span class="sd">    1. attributes, 2. structure and 3. update sequences.</span>
 
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    volatility_updates :</span>
+<span class="sd">        The type of update to perform for volatility coupling. Can be ``&quot;unbounded&quot;``</span>
+<span class="sd">        (default), ``&quot;eHGF&quot;`` or ``&quot;standard&quot;``.</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to every posterior precision write. Defaults to ``1e10``.</span>
+<span class="sd">    mean_field_updates :</span>
+<span class="sd">        If ``False`` (default), use the relaxed prediction and posterior updates. If</span>
+<span class="sd">        ``True``, use the original mean-field updates.</span>
+
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    attributes :</span>
@@ -942,23 +964,24 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    scan_fn :</span>
 <span class="sd">        The function that is passed to :py:func:`jax.lax.scan`. This is a pre-</span>
 <span class="sd">        parametrized version of :py:func:`pyhgf.networks.beliefs_propagation`.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Network.__init__">
 <a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
+        <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
+        <span class="n">mean_field_updates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an empty neural network.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize an empty neural network.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        update_type :</span>
-<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;eHGF&quot;`</span>
-<span class="sd">            (defaults), `&quot;unbounded&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
+<span class="sd">        volatility_updates :</span>
+<span class="sd">            The type of update to perform for volatility coupling. Can be `&quot;unbounded&quot;`</span>
+<span class="sd">            (defaults), `&quot;eHGF&quot;` or `&quot;standard&quot;`. The unbounded approximation was</span>
 <span class="sd">            recently introduced to avoid negative precisions updates, which greatly</span>
 <span class="sd">            improve sampling performance. The eHGF update step was proposed as an</span>
 <span class="sd">            alternative to the original definition in that it starts by updating the</span>
@@ -974,13 +997,37 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            nodes). Defaults to ``1e10`` and is shared with the vectorized JAX and Rust</span>
 <span class="sd">            backends. Increase it to relax the cap, or lower it to be more conservative</span>
 <span class="sd">            against precision blow-up.</span>
+<span class="sd">        mean_field_updates :</span>
+<span class="sd">            If ``False`` (default), use the relaxed prediction and posterior updates,</span>
+<span class="sd">            which lift the mean-field assumption on value-coupling edges via</span>
+<span class="sd">            Schur-complement and Laplace/MGF corrections. If ``True``, use the original</span>
+<span class="sd">            mean-field updates from [1]_.</span>
+<span class="sd">        precision_clipping_value :</span>
+<span class="sd">            Binary state nodes clip their predicted mean to</span>
+<span class="sd">            ``[precision_clipping_value, 1 - precision_clipping_value]`` so the implied</span>
+<span class="sd">            binary precision :math:`\hat{\mu}(1 - \hat{\mu})` never collapses to zero. A</span>
+<span class="sd">            larger value (e.g. ``1e-3``, matching the TAPAS HGF Toolbox) keeps the</span>
+<span class="sd">            forward filter stable in high-volatility regimes; a very small value</span>
+<span class="sd">            (default ``1e-6``) keeps the bound from creating flat, zero-gradient</span>
+<span class="sd">            plateaus that hurt gradient-based inference (HMC/NUTS, optimisation). Shared</span>
+<span class="sd">            with the vectorized JAX and Rust backends.</span>
 
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;</span>
+<span class="sd">          Mathys, C. (2026). The generalized hierarchical Gaussian filter.</span>
+<span class="sd">          doi:10.7554/elife.110174.1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span> <span class="o">=</span> <span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of nodes in the network</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                <span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UpdateSequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn_sample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -988,8 +1035,10 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">action_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Attributes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">volatility_updates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_field_updates</span> <span class="o">=</span> <span class="n">mean_field_updates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>
@@ -1036,7 +1085,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        sampling_fn :</span>
 <span class="sd">            If `True`, also create a generative sampling function. This is used for</span>
 <span class="sd">            generative sampling of the network. Defaults to `False`.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get the dimension of the input nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
@@ -1045,7 +1093,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># create the update sequence if it does not already exist</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
-                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+                <span class="n">mean_field_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_field_updates</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># create the belief propagation function</span>
@@ -1105,7 +1155,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Dictionary of Adam hyper-parameters (used only when ``lr=&quot;adam&quot;``):</span>
 <span class="sd">            ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``</span>
 <span class="sd">            (default 1e-8), and ``lr`` (default 1e-3, the Adam step size).</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># get the dimension of the input nodes</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
@@ -1114,7 +1163,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># create the update sequence if it does not already exist</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
-                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+                <span class="n">mean_field_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_field_updates</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="c1"># create the learning sequence</span>
         <span class="c1"># all nodes except the prediction nodes should update their coupling strengths</span>
@@ -1252,7 +1303,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            usage and speeds up training.</span>
 <span class="sd">        overwrite :</span>
 <span class="sd">            If `True`, create a new belief propagation function.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
@@ -1322,7 +1372,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        predictions :</span>
 <span class="sd">            An array of shape ``(n_samples, len(inputs_y_idxs))`` containing the</span>
 <span class="sd">            ``expected_mean`` of each target node at every time step.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
@@ -1330,7 +1379,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># ensure the update sequence exists</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span> <span class="o">=</span> <span class="n">get_update_sequence</span><span class="p">(</span>
-                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">update_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
+                <span class="n">network</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+                <span class="n">mean_field_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_field_updates</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># keep only prediction steps that are not on the predictor nodes</span>
@@ -1403,7 +1454,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            step (accessible via ``self.node_trajectories``).  If False, only</span>
 <span class="sd">            the final state is kept, which significantly reduces memory usage</span>
 <span class="sd">            and speeds up training.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">rng_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># get one key for each time step</span>
@@ -1480,8 +1530,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Array of time steps.</span>
 <span class="sd">        rng_key :</span>
 <span class="sd">            Random number generator key, by default PRNGKey(0).</span>
-
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">time_steps</span><span class="o">=</span><span class="n">time_steps</span><span class="p">,</span> <span class="n">n_predictions</span><span class="o">=</span><span class="n">n_predictions</span><span class="p">,</span> <span class="n">rng_key</span><span class="o">=</span><span class="n">rng_key</span>
@@ -1540,7 +1588,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        rng_keys :</span>
 <span class="sd">            Optional. A random key for the random number generator. This is only used</span>
 <span class="sd">            when an action function is provided.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">rng_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># get one key for each time step</span>
@@ -1684,7 +1731,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        **kwargs :</span>
 <span class="sd">            Additional keyword parameters will be passed and overwrite the node</span>
 <span class="sd">            attributes.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
             <span class="s2">&quot;dp-state&quot;</span><span class="p">,</span>
@@ -1821,7 +1867,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        structure_df :</span>
 <span class="sd">            Pandas data frame with the time series of sufficient statistics and</span>
 <span class="sd">            the surprise of each node in the structure.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
@@ -1856,7 +1901,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        -------</span>
 <span class="sd">        surprise :</span>
 <span class="sd">            The model&#39;s surprise given the input data and the response function.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">response_function</span><span class="p">(</span>
             <span class="n">hgf</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
@@ -1893,7 +1937,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            functions, a coupling function should be indicated for all the parent nodes.</span>
 <span class="sd">            If no coupling function is stated, the relationship between nodes is assumed</span>
 <span class="sd">            linear.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">add_edges</span><span class="p">(</span>
             <span class="n">attributes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
@@ -1957,8 +2000,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1992,7 +2035,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>

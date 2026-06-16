@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.vectorized.learning &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.updates.vectorized.learning &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -851,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.vectorized.learning</span></li>
   </ul>
 </nav>
@@ -874,36 +885,32 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">&quot;&quot;&quot;Vectorized weight learning for deep predictive coding networks.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
 
 
-<div class="viewcode-block" id="vectorized_weight_update">
-<a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_update.html#pyhgf.updates.vectorized.learning.vectorized_weight_update">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">vectorized_weight_update</span><span class="p">(</span>
+<div class="viewcode-block" id="vectorized_weight_gradient">
+<a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vectorized_weight_gradient</span><span class="p">(</span>
     <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
-    <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
-    <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">child_is_binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">adam_m</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">adam_v</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">adam_t</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="n">adam_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
-    <span class="n">adam_beta1</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
-    <span class="n">adam_beta2</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.999</span><span class="p">,</span>
-    <span class="n">adam_epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Unified weight update for vectorized layers.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Per-layer weight gradient for the vectorised deep network.</span>
 
-<span class="sd">    The gradient is first computed according to *kind*, then scaled by *lr*</span>
-<span class="sd">    (uniformly across all modes):</span>
+<span class="sd">    Returns the *descent* gradient for the weight matrix. Sign-flipped from the natural</span>
+<span class="sd">    &quot;ascent&quot; formulation so it composes with standard optax (`apply_updates(weights,</span>
+<span class="sd">    updates)` performs ``weights + updates``; `optax.sgd(lr).update(grad, state, w)`</span>
+<span class="sd">    returns ``-lr * grad``; together they reproduce the legacy ``weights + lr * g``</span>
+<span class="sd">    rule with ``g = -grad``).</span>
+
+<span class="sd">    The gradient is computed according to *kind*:</span>
 
 <span class="sd">    - **standard** (``kind=&quot;standard&quot;``):</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent})`</span>
@@ -911,34 +918,23 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`</span>
 <span class="sd">    - **precision_ratio** (``kind=&quot;precision_ratio&quot;``): Kalman-gain-style gain</span>
 <span class="sd">      using the parent&#39;s expected precision in the numerator.</span>
-<span class="sd">      :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`</span>
+<span class="sd">      :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`,</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`</span>
-<span class="sd">    - **map_natural** (``kind=&quot;map_natural&quot;``): MAP weight update derived from</span>
-<span class="sd">      the predictive-coding free energy with a Gaussian weight prior whose</span>
-<span class="sd">      precision is the parent layer&#39;s expected precision. Combines child</span>
-<span class="sd">      precision (numerator) with the parent prior plus per-weight Fisher</span>
-<span class="sd">      curvature :math:`g(\text{parent})^2` (denominator), giving a bounded,</span>
-<span class="sd">      curvature-aware update that uses both precisions.</span>
+<span class="sd">    - **map_natural** (``kind=&quot;map_natural&quot;``): MAP weight update from the</span>
+<span class="sd">      predictive-coding free energy with a Gaussian weight prior whose</span>
+<span class="sd">      precision is the parent&#39;s expected precision; combines child precision</span>
+<span class="sd">      (numerator) with parent prior plus per-weight Fisher curvature</span>
+<span class="sd">      :math:`g(\text{parent})^2` (denominator).</span>
 <span class="sd">      Gaussian child:</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child} \cdot g(\text{parent})^2)`.</span>
-<span class="sd">      Binary child (drop the redundant :math:`\pi_\text{child}` factor since</span>
-<span class="sd">      the Bernoulli Fisher cancels through the sigmoid):</span>
+<span class="sd">      Binary child:</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) / (\pi_\text{parent} + g(\text{parent})^2)`.</span>
 <span class="sd">    - **pure_natural** (``kind=&quot;pure_natural&quot;``): Riemannian natural gradient</span>
-<span class="sd">      under the parent&#39;s precision metric — uses both precisions with no</span>
-<span class="sd">      curvature term, no extra hyperparameter.</span>
+<span class="sd">      under the parent&#39;s precision metric.</span>
 <span class="sd">      Gaussian child:</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / \pi_\text{parent}`.</span>
 <span class="sd">      Binary child:</span>
 <span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) / \pi_\text{parent}`.</span>
-<span class="sd">      Not bounded — risks blowing up when :math:`\pi_\text{parent}` is small.</span>
-
-<span class="sd">    *lr* controls how the gradient is applied (same semantics for all five</span>
-<span class="sd">    kinds):</span>
-
-<span class="sd">    - **float ≥ 0**: :math:`\Delta w = g \cdot \text{lr}`</span>
-<span class="sd">    - ``&quot;adam&quot;``: gradient filtered through the Adam optimiser</span>
-<span class="sd">      (Kingma &amp; Ba, 2015); step size controlled by *adam_lr*.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -946,61 +942,29 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Current state of the parent layer.</span>
 <span class="sd">    child_state :</span>
 <span class="sd">        Current state of the child layer (with observations).</span>
-<span class="sd">    weights :</span>
-<span class="sd">        Current weight matrix, shape ``(n_children, n_parents)`` or</span>
-<span class="sd">        ``(n_children, n_parents + 1)`` when the parent layer includes</span>
-<span class="sd">        a constant input node.</span>
 <span class="sd">    coupling_fn :</span>
 <span class="sd">        Coupling function applied to parent means.</span>
 <span class="sd">    kind :</span>
-<span class="sd">        Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
-<span class="sd">        ``&quot;precision_ratio&quot;``, ``&quot;map_natural&quot;``, or ``&quot;pure_natural&quot;``.</span>
-<span class="sd">    lr :</span>
-<span class="sd">        How the gradient is applied: a non-negative float for direct scaling,</span>
-<span class="sd">        or ``&quot;adam&quot;`` for the Adam optimiser.  Applied uniformly across all</span>
-<span class="sd">        *kind* values, including ``&quot;precision_ratio&quot;``.</span>
+<span class="sd">        Gradient computation mode.</span>
 <span class="sd">    parent_has_constant :</span>
-<span class="sd">        If True, the parent layer has a constant input node. Constant nodes are assumed</span>
-<span class="sd">        to have mean = 1.0 and precision = 1.0 (fully known bias), and are concatenated</span>
-<span class="sd">        to the coupled parent vector after ``coupling_fn`` is applied so the bias entry</span>
-<span class="sd">        is unconditionally linear regardless of the coupling function.</span>
+<span class="sd">        If True, the parent layer has a constant input node (mean = 1.0,</span>
+<span class="sd">        precision = 1.0) appended to its activations after coupling.</span>
 <span class="sd">    child_is_binary :</span>
-<span class="sd">        If True, the child layer is a binary node.  In ``&quot;precision_weighted&quot;``</span>
-<span class="sd">        mode the precision multiplication is skipped because the Bernoulli</span>
-<span class="sd">        variance is already embedded in the binary prediction-error formula.</span>
-<span class="sd">    adam_m :</span>
-<span class="sd">        First moment estimate for Adam, same shape as *weights*.</span>
-<span class="sd">        Required when ``lr=&quot;adam&quot;``.</span>
-<span class="sd">    adam_v :</span>
-<span class="sd">        Second moment estimate for Adam, same shape as *weights*.</span>
-<span class="sd">        Required when ``lr=&quot;adam&quot;``.</span>
-<span class="sd">    adam_t :</span>
-<span class="sd">        Global Adam timestep (already incremented for this step).</span>
-<span class="sd">    adam_lr :</span>
-<span class="sd">        Adam step size.  Only used when ``lr=&quot;adam&quot;``.</span>
-<span class="sd">    adam_beta1 :</span>
-<span class="sd">        Exponential decay rate for the first moment.</span>
-<span class="sd">    adam_beta2 :</span>
-<span class="sd">        Exponential decay rate for the second moment.</span>
-<span class="sd">    adam_epsilon :</span>
-<span class="sd">        Small constant for numerical stability.</span>
+<span class="sd">        If True, the child layer is a binary node — drops the redundant</span>
+<span class="sd">        precision factor in ``precision_weighted`` / ``map_natural`` /</span>
+<span class="sd">        ``pure_natural`` modes (Bernoulli Fisher cancels through sigmoid).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    new_weights :</span>
-<span class="sd">        Updated weight matrix.</span>
-<span class="sd">    new_adam_m :</span>
-<span class="sd">        Updated first moment (or *None* when Adam is not used).</span>
-<span class="sd">    new_adam_v :</span>
-<span class="sd">        Updated second moment (or *None* when Adam is not used).</span>
+<span class="sd">    grad :</span>
+<span class="sd">        Descent gradient, same shape as ``weights``. NaN / inf entries are</span>
+<span class="sd">        zeroed out so optax does not propagate them through its moment</span>
+<span class="sd">        accumulators.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If *kind* is not one of ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``,</span>
-<span class="sd">        ``&quot;precision_ratio&quot;``, ``&quot;map_natural&quot;``, or ``&quot;pure_natural&quot;``.</span>
-<span class="sd">    ValueError</span>
-<span class="sd">        If *lr* is a string other than ``&quot;adam&quot;``.</span>
+<span class="sd">        If *kind* is unrecognised.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_valid_kinds</span> <span class="o">=</span> <span class="p">(</span>
         <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
@@ -1011,18 +975,13 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_valid_kinds</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected one of </span><span class="si">{</span><span class="n">_valid_kinds</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">lr</span> <span class="o">!=</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unknown lr value &#39;</span><span class="si">{</span><span class="n">lr</span><span class="si">}</span><span class="s2">&#39;. Expected a non-negative float or &#39;adam&#39;.&quot;</span>
-        <span class="p">)</span>
 
-    <span class="c1"># Prediction error at child layer</span>
+    <span class="c1"># Prediction error at the child layer.</span>
     <span class="n">pe</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
 
-    <span class="c1"># Coupled parent activation. The coupling is applied to the parent&#39;s actual</span>
-    <span class="c1"># activations only; the constant bias node is always wired in linearly</span>
-    <span class="c1"># (g(1) = 1) regardless of coupling_fn, so the bias entry is appended to the</span>
-    <span class="c1"># coupled vector untouched.</span>
+    <span class="c1"># Coupled parent activation. The constant bias node is wired in linearly</span>
+    <span class="c1"># (g(1) = 1) regardless of coupling_fn, so the bias entry is appended</span>
+    <span class="c1"># after the coupling has been applied to the activations.</span>
     <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
         <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">coupled_parent</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
@@ -1030,69 +989,43 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Base outer product: PE ⊗ g(parent)</span>
     <span class="n">gradient</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
 
-    <span class="c1"># Compute the gradient according to *kind*</span>
+    <span class="c1"># Specialise by kind.</span>
     <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;precision_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;map_natural&quot;</span><span class="p">,</span> <span class="s2">&quot;pure_natural&quot;</span><span class="p">):</span>
-        <span class="c1"># All three rules need the parent&#39;s expected precision, optionally</span>
-        <span class="c1"># extended with a 1.0 entry for the constant bias node.</span>
         <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
         <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
-            <span class="c1"># Constant state nodes are assumed to have mean = 1.0 and</span>
-            <span class="c1"># precision = 1.0 (fully known bias).</span>
+            <span class="c1"># Constant state nodes have precision = 1.0 (fully known bias).</span>
             <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
 
     <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_ratio&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
         <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="p">(</span>
             <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">kalman_gain</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">kalman_gain</span>
     <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;map_natural&quot;</span><span class="p">:</span>
-        <span class="c1"># MAP weight update: free-energy gradient with a Gaussian weight prior</span>
-        <span class="c1"># whose precision equals the parent&#39;s expected precision.</span>
-        <span class="c1"># Denominator includes the per-weight Fisher curvature g(parent)**2.</span>
         <span class="k">if</span> <span class="n">child_is_binary</span><span class="p">:</span>
-            <span class="c1"># Bernoulli Fisher cancels through sigmoid → drop child precision.</span>
             <span class="n">gain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
                 <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
                 <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span>
             <span class="p">)</span>
-        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">gain</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">gain</span>
     <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;pure_natural&quot;</span><span class="p">:</span>
-        <span class="c1"># Riemannian natural gradient under the parent&#39;s precision metric.</span>
-        <span class="c1"># No bounding term — can blow up if parent_precision is small.</span>
         <span class="k">if</span> <span class="n">child_is_binary</span><span class="p">:</span>
             <span class="n">gain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">gain</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">gain</span>
     <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_weighted&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
-        <span class="n">gradient</span> <span class="o">*=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
 
-    <span class="c1"># Apply *lr* uniformly across all kinds</span>
-    <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">adam_m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">adam_v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span>
-            <span class="s2">&quot;adam_m and adam_v must be provided when lr=&#39;adam&#39;&quot;</span>
-        <span class="p">)</span>
-        <span class="n">new_m</span> <span class="o">=</span> <span class="n">adam_beta1</span> <span class="o">*</span> <span class="n">adam_m</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span>
-        <span class="n">new_v</span> <span class="o">=</span> <span class="n">adam_beta2</span> <span class="o">*</span> <span class="n">adam_v</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta2</span><span class="p">)</span> <span class="o">*</span> <span class="n">gradient</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">m_hat</span> <span class="o">=</span> <span class="n">new_m</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta1</span><span class="o">**</span><span class="n">adam_t</span><span class="p">)</span>
-        <span class="n">v_hat</span> <span class="o">=</span> <span class="n">new_v</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">adam_beta2</span><span class="o">**</span><span class="n">adam_t</span><span class="p">)</span>
-        <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">adam_lr</span> <span class="o">*</span> <span class="n">m_hat</span> <span class="o">/</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">v_hat</span><span class="p">)</span> <span class="o">+</span> <span class="n">adam_epsilon</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">lr</span><span class="p">)</span>
-        <span class="n">new_m</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">new_v</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Zero out NaN/inf so optax moments stay finite.</span>
+    <span class="n">gradient</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">gradient</span><span class="p">)</span> <span class="o">|</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">gradient</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">gradient</span><span class="p">)</span>
 
-    <span class="c1"># Guard against NaN / inf</span>
-    <span class="n">coupling_delta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="n">jnp</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">coupling_delta</span><span class="p">)</span> <span class="o">|</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">coupling_delta</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">coupling_delta</span>
-    <span class="p">)</span>
-
-    <span class="n">new_weights</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">+</span> <span class="n">coupling_delta</span>
-    <span class="n">new_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">new_weights</span><span class="p">),</span> <span class="n">weights</span><span class="p">,</span> <span class="n">new_weights</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">new_weights</span><span class="p">,</span> <span class="n">new_m</span><span class="p">,</span> <span class="n">new_v</span></div>
+    <span class="c1"># Negate: HGF&#39;s natural formulation produces an ascent gradient; optax</span>
+    <span class="c1"># expects descent. The combination ``apply_updates(w, sgd(lr).update(grad))``</span>
+    <span class="c1"># reproduces ``w + lr * (-(-grad)) = w + lr * g`` matching legacy.</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">gradient</span></div>
 
 </pre></div>
 
@@ -1123,8 +1056,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1158,7 +1091,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>

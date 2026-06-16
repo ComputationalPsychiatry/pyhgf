@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.model.deep_network &#8212; pyhgf 0.2.12 documentation</title>
+    <title>pyhgf.model.deep_network &#8212; pyhgf 0.3.0 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
 
-    <script src="../../../_static/documentation_options.js?v=1e30946d"></script>
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -634,11 +634,18 @@ window.runMermaid = runMermaid;</script>
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -651,8 +658,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -663,8 +669,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -675,8 +680,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
       
@@ -763,11 +767,18 @@ window.runMermaid = runMermaid;</script>
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -780,8 +791,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
         <li class="nav-item">
           
@@ -792,8 +802,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Twitter</span></a>
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
         </li>
         <li class="nav-item">
           
@@ -804,8 +813,7 @@ window.runMermaid = runMermaid;</script>
           
           
           
-          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">Pypi</span></a>
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
         </li>
 </ul></div>
         
@@ -851,6 +859,9 @@ window.runMermaid = runMermaid;</script>
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.model.deep_network</span></li>
   </ul>
 </nav>
@@ -874,24 +885,31 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">&quot;&quot;&quot;Vectorized deep predictive coding network.</span>
 
-<span class="sd">This module provides a vectorized implementation of deep HGF networks that uses</span>
-<span class="sd">layer-wise matrix operations instead of per-node updates.</span>
+<span class="sd">This module provides a vectorized implementation of deep HGF networks that uses layer-</span>
+<span class="sd">wise matrix operations instead of per-node updates.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span><span class="p">,</span> <span class="n">NetworkState</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.binary</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorized_binary_prediction</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.volatile</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">vectorized_layer_prediction</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Layer</span><span class="p">,</span>
+    <span class="n">LayerParams</span><span class="p">,</span>
+    <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">Network</span><span class="p">,</span>
+    <span class="n">stack_layers</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="n">propagation_step</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="n">prediction_pass</span><span class="p">,</span> <span class="n">run_scan</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.weight_initialisation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">he_init</span><span class="p">,</span>
     <span class="n">orthogonal_init</span><span class="p">,</span>
@@ -907,9 +925,15 @@ window.runMermaid = runMermaid;</script>
     <span class="s2">&quot;autoconnection_strength_vol&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="c1"># Names of fields that can be overridden per layer.</span>
-<span class="n">_LAYER_STATE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
-<span class="n">_LAYER_PARAM_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">LayerParams</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
+<span class="c1"># Names of fields that can be overridden per layer (eqx.Modules expose dataclass fields).</span>
+<span class="n">_LAYER_STATE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="n">_LAYER_PARAM_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">LayerParams</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<span class="c1"># Minimum identical-layer count for ``add_layer_stack`` to auto-collapse the</span>
+<span class="c1"># block into a ``LayerStack`` (i.e. switch the propagation kernels to</span>
+<span class="c1"># ``jax.lax.scan``). Below this, the savings on JIT trace cost don&#39;t</span>
+<span class="c1"># outweigh the scan setup overhead.</span>
+<span class="n">_SCAN_AUTO_THRESHOLD</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">_LAYER_OVERRIDE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_LAYER_STATE_FIELDS</span> <span class="o">|</span> <span class="n">_LAYER_PARAM_FIELDS</span>
 
 
@@ -924,6 +948,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Unlike the standard DeepNetwork which uses per-node updates with Python loops, this</span>
 <span class="sd">    implementation uses JAX matrix operations to update all nodes in a layer</span>
 <span class="sd">    simultaneously.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        Coupling function applied between layers. Default is linear (identity). This</span>
+<span class="sd">        function is applied to parent means before the weighted sum to predict child</span>
+<span class="sd">        means.</span>
+<span class="sd">    volatility_updates :</span>
+<span class="sd">        The type of volatility-level posterior update. Can be ``&quot;unbounded&quot;``</span>
+<span class="sd">        (default), ``&quot;eHGF&quot;`` or ``&quot;standard&quot;``.</span>
+<span class="sd">    max_posterior_precision :</span>
+<span class="sd">        Upper bound applied to every posterior precision write. Defaults to ``1e10``.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -958,10 +994,11 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
-        <span class="n">update_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eHGF&quot;</span><span class="p">,</span>
+        <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
+        <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -969,19 +1006,28 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Coupling function applied between layers. Default is linear (identity),</span>
 <span class="sd">            matching the Rust backend and the Network class. This function is</span>
 <span class="sd">            applied to parent means before the weighted sum to predict child means.</span>
-<span class="sd">        update_type :</span>
-<span class="sd">            The type of volatility-level posterior update. Can be ``&quot;eHGF&quot;``</span>
-<span class="sd">            (default), ``&quot;standard&quot;`` or ``&quot;unbounded&quot;``. Matches the Network</span>
+<span class="sd">        volatility_updates :</span>
+<span class="sd">            The type of volatility-level posterior update. Can be ``&quot;unbounded&quot;``</span>
+<span class="sd">            (default), ``&quot;eHGF&quot;`` or ``&quot;standard&quot;``. Matches the Network</span>
 <span class="sd">            class and Rust backend.</span>
 <span class="sd">        max_posterior_precision :</span>
 <span class="sd">            Upper bound applied to every posterior precision write (value level and</span>
 <span class="sd">            volatility level). Defaults to ``1e10`` and is shared with the nodalised</span>
 <span class="sd">            ``Network`` and the Rust backend. Increase it to relax the cap, or lower it</span>
 <span class="sd">            to be more conservative against precision blow-up.</span>
+<span class="sd">        precision_clipping_value :</span>
+<span class="sd">            Bound applied to binary-layer predicted means</span>
+<span class="sd">            (``[v, 1 - v]``) so the implied binary precision</span>
+<span class="sd">            :math:`\hat{\mu}(1 - \hat{\mu})` never collapses. A larger value (e.g.</span>
+<span class="sd">            ``1e-3``, matching TAPAS) stabilises the forward filter in high-volatility</span>
+<span class="sd">            regimes; a very small value (default ``1e-6``) avoids flat, zero-gradient</span>
+<span class="sd">            plateaus that hurt gradient-based inference. Shared with the nodalised</span>
+<span class="sd">            ``Network`` and the Rust backend.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span> <span class="o">=</span> <span class="n">update_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">volatility_updates</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.</span>
@@ -991,16 +1037,17 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># per-layer coupling functions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NetworkState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NetworkState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_max_posterior_precision</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="c1"># Indices of consecutive layers to collapse into a ``LayerStack`` at</span>
+        <span class="c1"># ``_init_state`` time. Each entry is a ``(start, end_exclusive)`` half-</span>
+        <span class="c1"># open interval over ``self.layer_sizes``, populated automatically by</span>
+        <span class="c1"># ``add_layer_stack`` when ≥ ``_SCAN_AUTO_THRESHOLD`` identical layers</span>
+        <span class="c1"># sit on a compatible (matching-width, non-binary) layer below.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_blocks</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Network</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Network</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer</span><span class="p">(</span>
@@ -1101,6 +1148,14 @@ window.runMermaid = runMermaid;</script>
             <span class="n">coupling_fn</span> <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">volatility_parent</span><span class="p">)</span>
+        <span class="c1"># Eagerly rebuild the Network so ``self.state`` is always queryable</span>
+        <span class="c1"># after construction. Cheap for typical depths; only triggers fresh</span>
+        <span class="c1"># array allocations, no JIT trace.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
+        <span class="c1"># Optimiser state&#39;s shape depends on the weights tuple, so invalidate</span>
+        <span class="c1"># any previously initialised ``opt_state``.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer_stack</span><span class="p">(</span>
@@ -1113,6 +1168,15 @@ window.runMermaid = runMermaid;</script>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple hidden layers at once.</span>
+
+<span class="sd">        When the block contains ≥ ``_SCAN_AUTO_THRESHOLD`` (currently 5) identical</span>
+<span class="sd">        layers sitting on a matching-width non-binary layer below, the layers are</span>
+<span class="sd">        automatically collapsed into a single ``LayerStack`` at network-build time, and</span>
+<span class="sd">        the propagation kernels ``jax.lax.scan`` over them with a single trace.</span>
+
+<span class="sd">        If any eligibility condition is not met (mixed sizes, fewer than 5 layers, width</span>
+<span class="sd">        mismatch with the layer below, direct binary-leaf adjacency, or no layer below),</span>
+<span class="sd">        the layers are simply added one by one the usual way.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1138,6 +1202,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        VectorizedDeepNetwork</span>
 <span class="sd">            Self for method chaining.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">auto_scan</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_SCAN_AUTO_THRESHOLD</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">layer_sizes</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
                 <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
@@ -1147,28 +1220,23 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">auto_scan</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scan_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)))</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NetworkState</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize network state with uniform weights.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize network with uniform weights, as an Equinox ``Network`` PyTree.</span>
 
-<span class="sd">        All inter-layer weights are set to ``1.0``, matching the DeepNetwork and</span>
-<span class="sd">        Rust backends.  Use :meth:`weight_initialisation` after construction to</span>
-<span class="sd">        apply Xavier, He, orthogonal, or sparse initialisation.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        NetworkState</span>
-<span class="sd">            Initialized network state.</span>
+<span class="sd">        All inter-layer weights are set to ``1.0``. Use :meth:`weight_initialisation`</span>
+<span class="sd">        after construction to apply Xavier, He, orthogonal, or sparse initialisation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">):</span>
             <span class="n">overrides</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_overrides</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-            <span class="c1"># Layer state with per-layer overrides (broadcast scalar -&gt; (n_nodes,))</span>
+            <span class="c1"># Per-layer state with overrides (broadcast scalar -&gt; (n_nodes,))</span>
             <span class="n">state</span> <span class="o">=</span> <span class="n">LayerState</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
             <span class="n">state_overrides</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">k</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
@@ -1176,46 +1244,73 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_LAYER_STATE_FIELDS</span>
             <span class="p">}</span>
             <span class="k">if</span> <span class="n">state_overrides</span><span class="p">:</span>
-                <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="o">**</span><span class="n">state_overrides</span><span class="p">)</span>
-            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">**</span><span class="n">state_overrides</span><span class="p">)</span>
 
-            <span class="c1"># Layer parameters with defaults overridden per layer</span>
+            <span class="c1"># Per-layer params with overrides</span>
             <span class="n">param_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">_LAYER_PARAM_DEFAULTS</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_LAYER_PARAM_FIELDS</span><span class="p">:</span>
                     <span class="n">param_kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
-            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LayerParams</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">))</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">LayerParams</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
 
-            <span class="c1"># Create weights connecting to next layer (if not first layer)</span>
-            <span class="c1"># weights[i-1] connects layer[i-1] (child) to layer[i] (parent)</span>
-            <span class="c1"># If the parent layer has add_constant_input=True, an extra column</span>
-            <span class="c1"># is appended for the bias node (constant mean = 1.0).</span>
+            <span class="c1"># `weights_in` lives on the parent (this Layer); layer 0 has none.</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">prev_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
                 <span class="n">n_parent_cols</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
-                    <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">)))</span>
+                    <span class="n">weights_in</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">))</span>
+                    <span class="n">weights_in</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">weights_in</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Adam moment buffers (zeros, same shapes as weights)</span>
-        <span class="n">adam_m</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">)</span>
-        <span class="n">adam_v</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">)</span>
+            <span class="n">coupling_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Layer</span><span class="p">(</span>
+                    <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+                    <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                    <span class="n">weights_in</span><span class="o">=</span><span class="n">weights_in</span><span class="p">,</span>
+                    <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
+                    <span class="n">add_constant_input</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">has_volatility_parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">is_input_layer</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="n">fully_connected</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">NetworkState</span><span class="p">(</span>
-            <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">layers</span><span class="p">),</span>
-            <span class="n">weights</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">weights</span><span class="p">),</span>
-            <span class="n">params</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
-            <span class="n">time_step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-            <span class="n">adam_m</span><span class="o">=</span><span class="n">adam_m</span><span class="p">,</span>
-            <span class="n">adam_v</span><span class="o">=</span><span class="n">adam_v</span><span class="p">,</span>
-            <span class="n">adam_t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="c1"># Collapse any registered scan blocks (auto-registered by</span>
+        <span class="c1"># ``add_layer_stack`` when N≥_SCAN_AUTO_THRESHOLD identical layers were</span>
+        <span class="c1"># added) into ``LayerStack`` elements. Blocks are appended in order,</span>
+        <span class="c1"># so no sorting is needed.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_blocks</span><span class="p">:</span>
+            <span class="n">elements</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">block_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_blocks</span><span class="p">)</span>
+            <span class="n">next_block</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">block_iter</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">next_block</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="n">next_block</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">next_block</span>
+                    <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stack_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]))</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="n">end</span>
+                    <span class="n">next_block</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">block_iter</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">elements</span> <span class="o">=</span> <span class="n">layers</span>
+
+        <span class="k">return</span> <span class="n">Network</span><span class="p">(</span>
+            <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">),</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+            <span class="n">precision_clipping_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_initialisation</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise inter-layer weight matrices.</span>
@@ -1223,24 +1318,25 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        strategy :</span>
-<span class="sd">            Initialisation strategy.  One of ``&quot;xavier&quot;``, ``&quot;he&quot;``,</span>
-<span class="sd">            ``&quot;orthogonal&quot;``, or ``&quot;sparse&quot;``.  If *None*, weights are left</span>
-<span class="sd">            unchanged (all ``1.0``).</span>
-<span class="sd">        seed :</span>
-<span class="sd">            Optional random seed passed to the initialisation function.</span>
+<span class="sd">            Initialisation strategy. One of ``&quot;xavier&quot;``, ``&quot;he&quot;``, ``&quot;orthogonal&quot;``, or</span>
+<span class="sd">            ``&quot;sparse&quot;``. If *None*, weights are left unchanged (all ``1.0``).</span>
+<span class="sd">        key :</span>
+<span class="sd">            ``jax.random.PRNGKey`` controlling the randomness. Defaults to</span>
+<span class="sd">            ``jax.random.key(0)``. Replaces the legacy ``seed: int`` argument</span>
+<span class="sd">            (breaking change).</span>
 <span class="sd">        **kwargs</span>
-<span class="sd">            Extra keyword arguments forwarded to the initialisation function</span>
-<span class="sd">            (e.g. ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).</span>
+<span class="sd">            Extra keyword arguments forwarded to the initialisation function (e.g.</span>
+<span class="sd">            ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        VectorizedDeepNetwork</span>
+<span class="sd">        DeepNetwork</span>
 <span class="sd">            Self for method chaining.</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If the strategy name is not recognised.</span>
+<span class="sd">            If the strategy name is not recognised or no layer has been added.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">strategy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
@@ -1253,7 +1349,9 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Add at least one layer before calling weight_initialisation.&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">_init_fns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;xavier&quot;</span><span class="p">:</span> <span class="n">xavier_init</span><span class="p">,</span>
@@ -1263,183 +1361,50 @@ window.runMermaid = runMermaid;</script>
         <span class="p">}</span>
         <span class="n">init_fn</span> <span class="o">=</span> <span class="n">_init_fns</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span>
 
-        <span class="n">new_weights</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_weights</span><span class="p">):</span>
-            <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span>  <span class="c1"># (prev_size, size)</span>
-            <span class="n">flat</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="n">new_weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="c1"># Convert the JAX PRNG key to a single integer seed for the</span>
+        <span class="c1"># numpy-backed init helpers.</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">NetworkState</span><span class="p">(</span>
-            <span class="n">layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span>
-            <span class="n">weights</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_weights</span><span class="p">),</span>
-            <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
-            <span class="n">time_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">time_step</span><span class="p">,</span>
-            <span class="n">adam_m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">adam_m</span><span class="p">,</span>
-            <span class="n">adam_v</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">adam_v</span><span class="p">,</span>
-            <span class="n">adam_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">adam_t</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerStack</span>
+
+        <span class="n">new_elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_elements</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+                <span class="c1"># Stack has weights_in shape (N, n_child, n_parent[+1]). Use</span>
+                <span class="c1"># the same seed for every slice — matches the unrolled init&#39;s</span>
+                <span class="c1"># &quot;same seed across all layers&quot; semantics (necessary for</span>
+                <span class="c1"># byte-parity with the unrolled path; the underlying &quot;all</span>
+                <span class="c1"># layers identical at init&quot; pattern is a separate concern).</span>
+                <span class="n">n_slices</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span>
+                <span class="n">flat</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">per_slice</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span><span class="p">))</span>
+                <span class="n">new_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span>
+                    <span class="n">per_slice</span><span class="p">,</span> <span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span>
+                <span class="n">flat</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">new_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">new_elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">weights_in</span><span class="o">=</span><span class="n">new_weights</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_elements</span><span class="p">))</span>
         <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_propagation_fn</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
-        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the jitted propagation function.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        lr :</span>
-<span class="sd">            How the gradient is applied: a non-negative float for direct scaling, or</span>
-<span class="sd">            ``&quot;adam&quot;`` for the Adam optimiser.</span>
-<span class="sd">        learning_kind :</span>
-<span class="sd">            Gradient computation mode: ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;``</span>
-<span class="sd">            (default), or ``&quot;precision_ratio&quot;``.</span>
-<span class="sd">        params :</span>
-<span class="sd">            Hyper-parameters for the Adam optimiser (``beta1``, ``beta2``, ``epsilon``,</span>
-<span class="sd">            ``lr``). Only used when ``lr=&quot;adam&quot;``.</span>
-<span class="sd">        record_trajectories :</span>
-<span class="sd">            If True, the scan output includes the full ``NetworkState`` at every time</span>
-<span class="sd">            step (useful for inspection but significantly slower). If False (default),</span>
-<span class="sd">            only predictions are accumulated.</span>
-<span class="sd">        weight_update :</span>
-<span class="sd">            If ``True`` (default), the learning phase updates the weights at the</span>
-<span class="sd">            end of each step. If ``False``, weights are frozen — the network</span>
-<span class="sd">            performs inference only.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Callable</span>
-<span class="sd">            JIT-compiled propagation function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Per-layer coupling functions and their gradients.</span>
-        <span class="c1"># coupling_fns[i] is applied to layer[i].expected_mean when layer[i]</span>
-        <span class="c1"># acts as a parent (i.e. when predicting layer[i-1]).</span>
-        <span class="n">coupling_fns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span>
-        <span class="n">coupling_fn_grads</span> <span class="o">=</span> <span class="p">[</span><span class="n">jax</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">fn</span><span class="p">:</span> <span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">coupling_fns</span><span class="p">]</span>
-        <span class="n">add_constant_inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span>  <span class="c1"># captured for bias updates</span>
-        <span class="n">layer_kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span>
-        <span class="n">update_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_type</span>
-        <span class="n">volatility_parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span>
-        <span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span>
-
-        <span class="c1"># Resolve Adam hyper-parameters when lr=&quot;adam&quot;.</span>
-        <span class="k">if</span> <span class="n">lr</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
-            <span class="n">adam_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta1&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">),</span>
-                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beta2&quot;</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
-                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;epsilon&quot;</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">),</span>
-                <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr&quot;</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">adam_params</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">NetworkState</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
-                <span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span> <span class="o">=</span> <span class="n">propagation_step</span><span class="p">(</span>
-                    <span class="n">state</span><span class="p">,</span>
-                    <span class="n">inputs</span><span class="p">,</span>
-                    <span class="n">coupling_fns</span><span class="p">,</span>
-                    <span class="n">coupling_fn_grads</span><span class="p">,</span>
-                    <span class="n">add_constant_inputs</span><span class="p">,</span>
-                    <span class="n">lr</span><span class="p">,</span>
-                    <span class="n">layer_kinds</span><span class="p">,</span>
-                    <span class="n">adam_params</span><span class="p">,</span>
-                    <span class="n">update_type</span><span class="p">,</span>
-                    <span class="n">volatility_parents</span><span class="p">,</span>
-                    <span class="n">learning_kind</span><span class="p">,</span>
-                    <span class="n">weight_update</span><span class="p">,</span>
-                    <span class="n">max_posterior_precision</span><span class="p">,</span>
-                <span class="p">)</span>
-                <span class="k">return</span> <span class="n">new_state</span><span class="p">,</span> <span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">output_pred</span><span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">NetworkState</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">propagation_step</span><span class="p">(</span>
-                    <span class="n">state</span><span class="p">,</span>
-                    <span class="n">inputs</span><span class="p">,</span>
-                    <span class="n">coupling_fns</span><span class="p">,</span>
-                    <span class="n">coupling_fn_grads</span><span class="p">,</span>
-                    <span class="n">add_constant_inputs</span><span class="p">,</span>
-                    <span class="n">lr</span><span class="p">,</span>
-                    <span class="n">layer_kinds</span><span class="p">,</span>
-                    <span class="n">adam_params</span><span class="p">,</span>
-                    <span class="n">update_type</span><span class="p">,</span>
-                    <span class="n">volatility_parents</span><span class="p">,</span>
-                    <span class="n">learning_kind</span><span class="p">,</span>
-                    <span class="n">weight_update</span><span class="p">,</span>
-                    <span class="n">max_posterior_precision</span><span class="p">,</span>
-                <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_step</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_prediction_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the jitted prediction function (forward pass only).</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Callable</span>
-<span class="sd">            JIT-compiled prediction function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">coupling_fns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span>
-        <span class="n">add_constant_inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span>
-        <span class="n">layer_kinds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span>
-        <span class="n">volatility_parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">prediction_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">NetworkState</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Forward prediction without learning.&quot;&quot;&quot;</span>
-            <span class="n">layers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">params</span>
-
-            <span class="n">n_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
-
-            <span class="c1"># Set input</span>
-            <span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">expected_mean</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
-
-            <span class="c1"># Top-down prediction</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">layer_kinds</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
-                    <span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vectorized_binary_prediction</span><span class="p">(</span>
-                        <span class="n">child_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-                        <span class="n">parent_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                        <span class="n">weights</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-                        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction</span><span class="p">(</span>
-                        <span class="n">child_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-                        <span class="n">parent_state</span><span class="o">=</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                        <span class="n">weights</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-                        <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-                        <span class="n">time_step</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">time_step</span><span class="p">,</span>
-                        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                        <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">volatility_parents</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-                    <span class="p">)</span>
-
-            <span class="c1"># Return output layer expected mean</span>
-            <span class="k">return</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">expected_mean</span>
-
-        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">prediction_step</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-        <span class="n">lr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
-        <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">record_trajectories</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">record</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit network to data.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fit network to data.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1447,83 +1412,74 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Input data, shape (n_samples, n_input_features).</span>
 <span class="sd">        y :</span>
 <span class="sd">            Target data, shape (n_samples, n_output_features).</span>
-<span class="sd">        lr :</span>
-<span class="sd">            How the gradient is applied:</span>
-
-<span class="sd">            - **float ≥ 0** — direct scaling of the gradient.</span>
-<span class="sd">            - ``&quot;adam&quot;`` (default) — Adam optimiser; step size set by ``params[&quot;lr&quot;]``</span>
-<span class="sd">            (default 1e-3).</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Any ``optax.GradientTransformation`` — e.g. ``optax.sgd(0.2)``,</span>
+<span class="sd">            ``optax.adam(1e-3)``, or any chain. Migration from the legacy</span>
+<span class="sd">            ``lr=`` API: ``lr=0.2`` → ``optimizer=optax.sgd(0.2)``,</span>
+<span class="sd">            ``lr=&quot;adam&quot;`` → ``optimizer=optax.adam(1e-3)``.</span>
 <span class="sd">        learning_kind :</span>
-<span class="sd">            Gradient computation mode:</span>
-
-<span class="sd">            - ``&quot;precision_weighted&quot;`` (default) — gradient is weighted by the child</span>
-<span class="sd">            layer&#39;s posterior precision before applying *lr*.</span>
-<span class="sd">            - ``&quot;standard&quot;`` — raw prediction-error outer product, no precision</span>
-<span class="sd">            weighting.</span>
-<span class="sd">            - ``&quot;precision_ratio&quot;`` — Kalman-gain rule.</span>
-<span class="sd">        params :</span>
-<span class="sd">            Hyper-parameters for the Adam optimiser: ``beta1`` (default 0.9), ``beta2``</span>
-<span class="sd">            (default 0.999), ``epsilon`` (default 1e-8), and ``lr`` (default 1e-3, the</span>
-<span class="sd">            Adam step size).</span>
-<span class="sd">        record_trajectories :</span>
-<span class="sd">            If True, record the full ``NetworkState`` at every time step (accessible</span>
-<span class="sd">            via ``self.trajectories``).  This is useful for inspection but significantly</span>
-<span class="sd">            increases memory usage and slows training. Default is False.</span>
+<span class="sd">            Gradient computation mode passed to</span>
+<span class="sd">            :func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient`:</span>
+<span class="sd">            ``&quot;standard&quot;``, ``&quot;precision_weighted&quot;`` (default),</span>
+<span class="sd">            ``&quot;precision_ratio&quot;``, ``&quot;map_natural&quot;``, or ``&quot;pure_natural&quot;``.</span>
+<span class="sd">        record :</span>
+<span class="sd">            Tuple of ``LayerState`` field names to record at every time step,</span>
+<span class="sd">            e.g. ``(&quot;expected_mean&quot;, &quot;precision&quot;)``. ``None`` (default) skips</span>
+<span class="sd">            recording. Use the :data:`~pyhgf.typing.RECORD_ALL` constant</span>
+<span class="sd">            for the legacy &quot;record everything&quot; behaviour. The result lands in</span>
+<span class="sd">            ``self.trajectories`` as ``dict[field_name, tuple[Array, ...]]``</span>
+<span class="sd">            where each per-layer array has a leading ``(T,)`` axis.</span>
 <span class="sd">        weight_update :</span>
-<span class="sd">            If ``True`` (default), the learning phase updates the network&#39;s</span>
-<span class="sd">            weights at the end of each step. Set to ``False`` to freeze the</span>
-<span class="sd">            weights and run only the inference (prediction → PE → posterior)</span>
-<span class="sd">            cycle — useful for evaluating a fixed model on new data while</span>
-<span class="sd">            still recording trajectories.</span>
+<span class="sd">            If True (default), the learning phase updates weights each step. If False,</span>
+<span class="sd">            weights and ``opt_state`` are frozen. Useful for evaluating a fixed model on</span>
+<span class="sd">            new data while still recording trajectories.</span>
+<span class="sd">        time_step :</span>
+<span class="sd">            Uniform inference time step :math:`\\Delta t` applied at every</span>
+<span class="sd">            ``propagation_step``. Replaces the legacy ``net.state.time_step``</span>
+<span class="sd">            attribute (``NetworkState`` no longer carries it). Default ``1.0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        VectorizedDeepNetwork</span>
-<span class="sd">            Self with updated state.</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If *learning_kind* or *lr* is an unrecognised value.</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Self with updated state and optimiser state.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Initialize state if needed</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling fit.&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Recreate (and retrace) the propagation fn when settings change</span>
-        <span class="n">needs_retrace</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">!=</span> <span class="n">lr</span>
-            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">!=</span> <span class="n">learning_kind</span>
-            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">!=</span> <span class="n">record_trajectories</span>
-            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">!=</span> <span class="n">weight_update</span>
-            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_max_posterior_precision</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">needs_retrace</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_propagation_fn</span><span class="p">(</span>
-                <span class="n">lr</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">record_trajectories</span><span class="p">,</span> <span class="n">weight_update</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="n">lr</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="n">learning_kind</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="n">record_trajectories</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">=</span> <span class="n">weight_update</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_max_posterior_precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span>
+        <span class="c1"># Normalise + validate ``record``. A ``None`` or empty tuple disables</span>
+        <span class="c1"># recording. Otherwise each name must be a real ``LayerState`` field.</span>
+        <span class="n">record_tuple</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">record</span><span class="p">)</span> <span class="k">if</span> <span class="n">record</span> <span class="k">else</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="n">record_tuple</span><span class="p">:</span>
+            <span class="n">valid_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">invalid</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">record_tuple</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_fields</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">invalid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unknown record field(s) </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2">. Valid: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_fields</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
 
-        <span class="c1"># Convert to JAX arrays</span>
+        <span class="c1"># Initialise opt_state on first fit, or when the optimiser changes.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
-        <span class="c1"># Run scan over data</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">record_trajectories</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">)</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-            <span class="p">)</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">),</span> <span class="n">step_output</span> <span class="o">=</span> <span class="n">run_scan</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+            <span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">weight_update</span><span class="p">,</span>
+            <span class="n">record_tuple</span><span class="p">,</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">record_tuple</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">step_output</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">step_output</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -1544,37 +1500,69 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Predictions, shape (n_samples, n_output_features) or (n_output_features,).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Network must be fit before predicting.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling predict.&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_prediction_fn</span><span class="p">()</span>
-
-        <span class="n">prediction_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-        <span class="c1"># Handle single sample vs batch</span>
+        <span class="c1"># Handle single sample vs batch.</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">prediction_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Vectorize over samples</span>
-            <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">xi</span><span class="p">:</span> <span class="n">prediction_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">xi</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">prediction_pass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">xi</span><span class="p">:</span> <span class="n">prediction_pass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">xi</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the network state.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        VectorizedDeepNetwork</span>
-<span class="sd">            Self with reset state.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the network state.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_state</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_fn</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_lr</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_learning_kind</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_record_trajectories</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_propagation_weight_update</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_prediction_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialise ``self.state`` array leaves to ``path``.</span>
+
+<span class="sd">        Only the network&#39;s array content is written (weights and layer states). Static</span>
+<span class="sd">        fields (kinds, flags, coupling functions) and the optimiser state are *not*</span>
+<span class="sd">        persisted. The user is expected to rebuild the same topology before calling</span>
+<span class="sd">        :meth:`load`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before saving.&quot;</span><span class="p">)</span>
+        <span class="n">eqx</span><span class="o">.</span><span class="n">tree_serialise_leaves</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read array leaves from ``path`` back into ``self.state``.</span>
+
+<span class="sd">        ``self.state`` must already exist with the same treedef (same layer topology).</span>
+<span class="sd">        Typically by recreating the builder before calling ``load``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Recreate the builder topology (add_layer …) before load().&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">tree_deserialise_leaves</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="c1"># The optimiser state&#39;s shape depends on the loaded weights — clear it.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flatten ``self.trajectories`` into a wide-format ``pd.DataFrame``.</span>
+
+<span class="sd">        Returns one row per recorded time step and one column per</span>
+<span class="sd">        ``(layer, node, field)`` triple, named ``L{layer}_N{node}_{field}``. Only the</span>
+<span class="sd">        fields that were passed to ``fit(record=...)`` appear.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No recorded trajectories. Pass ``record=(...)`` to ``fit``.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">columns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">per_layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">layer_idx</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">per_layer</span><span class="p">):</span>
+                <span class="n">arr_np</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>  <span class="c1"># (T, n_nodes)</span>
+                <span class="k">for</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">arr_np</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">columns</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;L</span><span class="si">{</span><span class="n">layer_idx</span><span class="si">}</span><span class="s2">_N</span><span class="si">{</span><span class="n">node_idx</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr_np</span><span class="p">[:,</span> <span class="n">node_idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">plot_layers</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1684,8 +1672,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1719,7 +1707,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
 </p></div>
       
     </div>
