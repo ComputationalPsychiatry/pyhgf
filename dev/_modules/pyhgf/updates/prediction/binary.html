@@ -955,8 +955,14 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># eq. 80 in Weber et al., v2</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">)</span>
 
-    <span class="c1"># ensure that expected mean is within bounds for numerical stability</span>
-    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
+    <span class="c1"># ensure that expected mean is within bounds for numerical stability. The bound is</span>
+    <span class="c1"># configurable via ``Network(precision_clipping_value=...)``: a larger value (e.g.</span>
+    <span class="c1"># 1e-3, matching the TAPAS HGF Toolbox hgf_binary_level1.m) keeps the binary</span>
+    <span class="c1"># predicted precision from collapsing the level-2 update in high-volatility regimes</span>
+    <span class="c1"># (variance blow-up under the uHGF update); a very small value avoids flat,</span>
+    <span class="c1"># zero-gradient plateaus that hurt gradient-based inference.</span>
+    <span class="n">clipping_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">]</span>
+    <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_mean</span><span class="p">,</span> <span class="n">clipping_value</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">clipping_value</span><span class="p">)</span>
     <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_mean</span>
 
     <span class="c1"># Estimate the new expected precision from the new expected mean</span>

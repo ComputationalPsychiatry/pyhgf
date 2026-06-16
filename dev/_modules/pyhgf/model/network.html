@@ -959,8 +959,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
         <span class="n">mean_field_updates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an empty neural network.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize an empty neural network.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -987,6 +988,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            which lift the mean-field assumption on value-coupling edges via</span>
 <span class="sd">            Schur-complement and Laplace/MGF corrections. If ``True``, use the original</span>
 <span class="sd">            mean-field updates from [1]_.</span>
+<span class="sd">        precision_clipping_value :</span>
+<span class="sd">            Binary state nodes clip their predicted mean to</span>
+<span class="sd">            ``[precision_clipping_value, 1 - precision_clipping_value]`` so the implied</span>
+<span class="sd">            binary precision :math:`\hat{\mu}(1 - \hat{\mu})` never collapses to zero. A</span>
+<span class="sd">            larger value (e.g. ``1e-3``, matching the TAPAS HGF Toolbox) keeps the</span>
+<span class="sd">            forward filter stable in high-volatility regimes; a very small value</span>
+<span class="sd">            (default ``1e-6``) keeps the bound from creating flat, zero-gradient</span>
+<span class="sd">            plateaus that hurt gradient-based inference (HMC/NUTS, optimisation). Shared</span>
+<span class="sd">            with the vectorized JAX and Rust backends.</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
@@ -998,7 +1008,12 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># number of nodes in the network</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span> <span class="o">=</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span> <span class="n">Attributes</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;time_step&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                <span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_sequence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UpdateSequence</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_fn_sample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1008,7 +1023,8 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Attributes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">volatility_updates</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_field_updates</span> <span class="o">=</span> <span class="n">mean_field_updates</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>

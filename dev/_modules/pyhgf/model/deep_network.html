@@ -981,8 +981,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
         <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
+        <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -999,10 +1000,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            volatility level). Defaults to ``1e10`` and is shared with the nodalised</span>
 <span class="sd">            ``Network`` and the Rust backend. Increase it to relax the cap, or lower it</span>
 <span class="sd">            to be more conservative against precision blow-up.</span>
+<span class="sd">        precision_clipping_value :</span>
+<span class="sd">            Bound applied to binary-layer predicted means</span>
+<span class="sd">            (``[v, 1 - v]``) so the implied binary precision</span>
+<span class="sd">            :math:`\hat{\mu}(1 - \hat{\mu})` never collapses. A larger value (e.g.</span>
+<span class="sd">            ``1e-3``, matching TAPAS) stabilises the forward filter in high-volatility</span>
+<span class="sd">            regimes; a very small value (default ``1e-6``) avoids flat, zero-gradient</span>
+<span class="sd">            plateaus that hurt gradient-based inference. Shared with the nodalised</span>
+<span class="sd">            ``Network`` and the Rust backend.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">volatility_updates</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.</span>
@@ -1279,6 +1289,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">),</span>
             <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
             <span class="n">max_posterior_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+            <span class="n">precision_clipping_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_initialisation</span><span class="p">(</span>
