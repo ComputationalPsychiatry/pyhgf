@@ -468,6 +468,31 @@ def propagation_step(
     Top and bottom elements must be ``Layer``s. A ``LayerStack``'s child below (and
     parent above) can themselves be ``Layer`` or ``LayerStack``; the stack-stack case
     requires the boundary widths to match.
+
+    Parameters
+    ----------
+    network :
+        The current vectorised network state.
+    opt_state :
+        The current optax optimiser state.
+    inputs :
+        A tuple ``(x, y)`` with the predictors set on the top element and the
+        observations clamped on the bottom element.
+    optimizer :
+        The optax optimiser used for the weight-learning phase.
+    time_step :
+        The time elapsed since the previous step.
+    learning_kind :
+        The weight-gradient mode passed to
+        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.
+    weight_update :
+        Whether to apply the weight-learning phase after belief propagation.
+
+    Returns
+    -------
+    carry :
+        A tuple ``((network, opt_state), surprise)`` where `network` and
+        `opt_state` are updated and `surprise` is the step's surprise.
     """
     x, y = inputs
     elements = list(network.layers)
@@ -552,6 +577,18 @@ def run_scan(
 
     Parameters
     ----------
+    init_carry :
+        The initial scan carry, a tuple ``(network, opt_state)``.
+    inputs :
+        The per-step inputs scanned over, a tuple of predictor/observation arrays
+        with a leading time axis.
+    optimizer :
+        The optax optimiser used for the weight-learning phase.
+    learning_kind :
+        The weight-gradient mode passed to
+        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.
+    weight_update :
+        Whether to apply the weight-learning phase at every step.
     record :
         Tuple of ``LayerState`` field names to record at every time step (e.g.
         ``("expected_mean", "precision")``). An empty tuple disables recording. The scan
@@ -613,6 +650,18 @@ def prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
     Sets predictors on the top element and runs the top-down prediction pass; returns
     the bottom element's ``expected_mean``. Used by
     :meth:`pyhgf.model.DeepNetwork.predict`.
+
+    Parameters
+    ----------
+    network :
+        The current vectorised network state.
+    x :
+        The predictors set on the top element.
+
+    Returns
+    -------
+    expected_mean :
+        The bottom element's ``expected_mean`` after the forward sweep.
     """
     elements = list(network.layers)
     n_elements = len(elements)

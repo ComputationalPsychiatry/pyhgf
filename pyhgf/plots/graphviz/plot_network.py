@@ -145,7 +145,11 @@ def plot_deep_network(
     Parameters
     ----------
     deep_network :
-    layers :
+        The deep network whose structure is plotted.
+    filename :
+        If provided, the rendered graph is saved to this file.
+    view :
+        Whether to open the rendered graph in the default viewer.
 
     Returns
     -------

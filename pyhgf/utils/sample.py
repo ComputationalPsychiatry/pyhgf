@@ -82,7 +82,28 @@ def single_sample(
     values_tuple,
     observed_tuple,
 ) -> Attributes:
-    """Perform a single prediction using the provided RNG key."""
+    """Perform a single prediction using the provided RNG key.
+
+    Parameters
+    ----------
+    rng_key :
+        The JAX pseudo-random number generator key used to draw the sample.
+    initial_state :
+        The initial attributes of the probabilistic network.
+    time_steps :
+        The time steps at which the network is sampled.
+    sample_scan_fn :
+        The scan function performing one belief-propagation step while sampling.
+    values_tuple :
+        The per-input values fed to the network during sampling.
+    observed_tuple :
+        The per-input observation masks indicating whether each value was observed.
+
+    Returns
+    -------
+    node_trajectories :
+        The sampled node trajectories over the requested time steps.
+    """
     # Split the RNG key for each time step.
     rng_keys = random.split(rng_key, num=len(time_steps))
     inputs = (values_tuple, observed_tuple, time_steps, rng_keys)

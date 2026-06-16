@@ -50,6 +50,17 @@ class Network:
     This is the core class to define and manipulate neural networks, that consists in
     1. attributes, 2. structure and 3. update sequences.
 
+    Parameters
+    ----------
+    volatility_updates :
+        The type of update to perform for volatility coupling. Can be ``"unbounded"``
+        (default), ``"eHGF"`` or ``"standard"``.
+    max_posterior_precision :
+        Upper bound applied to every posterior precision write. Defaults to ``1e10``.
+    mean_field_updates :
+        If ``False`` (default), use the relaxed prediction and posterior updates. If
+        ``True``, use the original mean-field updates.
+
     Attributes
     ----------
     attributes :

@@ -14,7 +14,40 @@ from jax import Array
 
 
 class LayerState(eqx.Module):
-    """Vectorised per-layer state, as an ``eqx.Module``."""
+    """Vectorised per-layer state, as an ``eqx.Module``.
+
+    Each field is an array with one entry per node in the layer.
+
+    Parameters
+    ----------
+    mean :
+        The posterior mean of the value level.
+    precision :
+        The posterior precision of the value level.
+    expected_mean :
+        The predicted (expected) mean of the value level.
+    expected_precision :
+        The marginal predicted precision of the value level.
+    conditional_expected_precision :
+        The conditional predicted precision of the value level used by the
+        structured-Gaussian (smoothing) update.
+    effective_precision :
+        The effective precision of the value-level prediction.
+    value_prediction_error :
+        The value prediction error of the value level.
+    mean_vol :
+        The posterior mean of the volatility level.
+    precision_vol :
+        The posterior precision of the volatility level.
+    expected_mean_vol :
+        The predicted (expected) mean of the volatility level.
+    expected_precision_vol :
+        The marginal predicted precision of the volatility level.
+    effective_precision_vol :
+        The effective precision of the volatility-level prediction.
+    volatility_prediction_error :
+        The volatility prediction error of the volatility level.
+    """
 
     # Value level (external)
     mean: Array
@@ -53,7 +86,21 @@ class LayerState(eqx.Module):
 
 
 class LayerParams(eqx.Module):
-    """Per-layer static parameters."""
+    """Per-layer static parameters.
+
+    Each field is an array with one entry per node in the layer.
+
+    Parameters
+    ----------
+    tonic_volatility :
+        The tonic (baseline) volatility of the value level.
+    tonic_volatility_vol :
+        The tonic (baseline) volatility of the volatility level.
+    volatility_coupling :
+        The volatility-coupling strength between the value and volatility levels.
+    autoconnection_strength_vol :
+        The autoconnection (self-coupling) strength of the volatility level.
+    """
 
     tonic_volatility: Array
     tonic_volatility_vol: Array
@@ -85,6 +132,28 @@ class Layer(eqx.Module):
     (parent). The bottom layer (index 0) has ``weights_in=None`` because no layer sits
     below it. Shape: ``(n_child, n_self[+1])``; the optional ``+1`` column carries the
     bias when ``add_constant_input=True``.
+
+    Parameters
+    ----------
+    state :
+        The per-layer state (see :py:class:`LayerState`).
+    params :
+        The per-layer static parameters (see :py:class:`LayerParams`).
+    weights_in :
+        The matrix connecting the layer below (child) into this layer, or `None`
+        for the bottom layer.
+    coupling_fn :
+        The coupling function applied to the incoming weights.
+    add_constant_input :
+        Whether a constant (bias) input column is appended to the weights.
+    has_volatility_parent :
+        Whether the layer has a volatility parent.
+    is_input_layer :
+        Whether the layer is the input (bottom) layer of the network.
+    fully_connected :
+        Whether the incoming weights are fully connected.
+    kind :
+        The kind of layer, either ``"volatile"`` or ``"binary"``.
     """
 
     state: LayerState
@@ -113,6 +182,28 @@ class LayerStack(eqx.Module):
     width (so ``weights_in[0]`` shape matches).
     * ``weights_in[k]`` for k > 0 is a square ``(W, W+bias)`` block connecting slice k
     (parent) to slice k-1 (child) within the stack.
+
+    Parameters
+    ----------
+    state :
+        The stacked per-layer state, each field with a leading ``(N,)`` axis.
+    params :
+        The stacked per-layer static parameters, each field with a leading
+        ``(N,)`` axis.
+    weights_in :
+        The stacked incoming weight matrices, shape ``(N, n_child, n_self[+1])``.
+    coupling_fn :
+        The coupling function shared by all stacked layers.
+    add_constant_input :
+        Whether a constant (bias) input column is appended to the weights.
+    has_volatility_parent :
+        Whether the layers have a volatility parent.
+    fully_connected :
+        Whether the incoming weights are fully connected.
+    kind :
+        The kind of layer, either ``"volatile"`` or ``"binary"``.
+    n_layers :
+        The number of stacked layers ``N``.
     """
 
     state: LayerState  # each field shape: (N, n_nodes)
@@ -133,6 +224,16 @@ def stack_layers(layers: list) -> LayerStack:
     add_constant_input, has_volatility_parent, fully_connected) and have ``weights_in``
     of identical shape. Static fields are taken from the first layer; arrays are stacked
     along a new axis 0.
+
+    Parameters
+    ----------
+    layers :
+        The list of identical ``Layer`` instances to stack.
+
+    Returns
+    -------
+    layer_stack :
+        The combined :py:class:`LayerStack`.
     """
     if not layers:
         raise ValueError("Cannot stack an empty list of Layers.")
@@ -200,6 +301,16 @@ class Network(eqx.Module):
     ``Network`` in the scan carry; it is not part of the network PyTree.
 
     ``layers`` is a mixed tuple of ``Layer`` and ``LayerStack`` elements.
+
+    Parameters
+    ----------
+    layers :
+        A mixed tuple of ``Layer`` and ``LayerStack`` elements, ordered from the
+        bottom (input) layer to the top.
+    volatility_updates :
+        The volatility update scheme, e.g. ``"unbounded"``.
+    max_posterior_precision :
+        The maximum posterior precision used to clip the precision updates.
     """
 
     layers: tuple

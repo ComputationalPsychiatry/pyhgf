@@ -54,8 +54,6 @@ def binary_state_node_prediction(
         :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node
         number. For each node, the index lists the value and volatility parents and
         children.
-    time_step :
-        The interval between the previous time point and the current time point.
     node_idx :
         Pointer to the binary state node.
 

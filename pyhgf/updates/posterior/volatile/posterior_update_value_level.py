@@ -262,6 +262,22 @@ def posterior_update_precision_value_level_mean_field(
         at the *expected* mean (i.e. the prediction) rather than the posterior
         mean. This choice is made to better suit deep learning networks where the
         prediction serves as the natural reference point for computing updates.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the value level node that will be updated.
+
+    Returns
+    -------
+    posterior_precision :
+        The new posterior precision of the value level.
     """
     posterior_precision = attributes[node_idx]["expected_precision"]
 
@@ -310,6 +326,25 @@ def posterior_update_mean_value_level_mean_field(
         at the *expected* mean (i.e. the prediction) rather than the posterior
         mean. This choice is made to better suit deep learning networks where the
         prediction serves as the natural reference point for computing updates.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`. For each node, the entry lists its
+        value/volatility parents and children.
+    node_idx :
+        Pointer to the value level node that will be updated.
+    node_precision :
+        The precision of the node, used to divide the summed precision-weighted
+        prediction errors.
+
+    Returns
+    -------
+    posterior_mean :
+        The new posterior mean of the value level.
     """
     posterior_mean = attributes[node_idx]["expected_mean"]
     value_precision_weighted_pe = 0.0

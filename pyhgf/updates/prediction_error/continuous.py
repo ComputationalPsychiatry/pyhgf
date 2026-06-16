@@ -128,22 +128,23 @@ def continuous_node_prediction_error(
 
     See [1]_ for more details.
 
-    Parameters
-    ----------
-    attributes :
-        The attributes of the probabilistic nodes.
     .. note::
         The parameter structure also incorporates the value and volatility coupling
         strength with children and parents (i.e. `"value_coupling_parents"`,
         `"value_coupling_children"`, `"volatility_coupling_parents"`,
         `"volatility_coupling_children"`).
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
     node_idx :
         Pointer to the continuous node.
     edges :
         The edges of the probabilistic nodes as a tuple of
-        :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as the node
-        number. For each node, the index lists the value and volatility parents and
-        children.
+        :py:class:`pyhgf.typing.AdjacencyLists`. The tuple has the same length as the
+        node number. For each node, the index lists the value and volatility parents
+        and children.
 
     Returns
     -------
