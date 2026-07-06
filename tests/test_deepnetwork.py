@@ -1,5 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+import dataclasses
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -658,3 +660,42 @@ def test_input_layer_invariant_to_tonic_volatility():
         ),
     )
     np.testing.assert_allclose(expected_precisions[0], 5.0, rtol=1e-5)
+
+
+def test_constant_input_is_linearly_coupled():
+    """The bias enters predictions linearly, whatever the coupling function.
+
+    A Linear -> GELU -> Linear network with bias columns must compute
+    ``W1 @ gelu(W2 @ x + b2) + b1``: the constant bias node is wired in
+    linearly (``g(1) = 1``), the same convention as the weight-learning step,
+    the per-node backend, and the Rust backend (both force constant-state
+    nodes to identity coupling). Applying the coupling function to the
+    constant node would instead scale every bias by ``gelu(1)`` (~0.84), so
+    the network would learn against a different forward function than the one
+    it computes.
+    """
+    rng = np.random.default_rng(3)
+    d, h = 4, 6
+    w1 = jnp.asarray(rng.normal(size=(d, h)))
+    b1 = jnp.asarray(rng.normal(size=(d,)))
+    w2 = jnp.asarray(rng.normal(size=(h, d)))
+    b2 = jnp.asarray(rng.normal(size=(h,)))
+    x = jnp.asarray(rng.normal(size=(d,)))
+
+    net = (
+        DeepNetwork()
+        .add_layer(size=d)  # output layer
+        .add_layer(size=h, coupling_fn=jax.nn.gelu)  # hidden, GELU coupling
+        .add_layer(size=d)  # input layer
+    )
+    elements = list(net.state.layers)
+    elements[1] = dataclasses.replace(
+        elements[1], weights_in=jnp.concatenate([w1, b1[:, None]], axis=1)
+    )
+    elements[2] = dataclasses.replace(
+        elements[2], weights_in=jnp.concatenate([w2, b2[:, None]], axis=1)
+    )
+    net.state = dataclasses.replace(net.state, layers=tuple(elements))
+
+    expected = w1 @ jax.nn.gelu(w2 @ x + b2) + b1
+    np.testing.assert_allclose(net.predict(x), expected, rtol=1e-5, atol=1e-6)

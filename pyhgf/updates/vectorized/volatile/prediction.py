@@ -65,9 +65,11 @@ def vectorized_layer_prediction(
         Coupling function applied to parent means (default :func:`jax.numpy.tanh`).
     parent_has_constant :
         If True, the parent layer has a constant input node (mean = 1.0)
-        appended to its activations. The last column of *weights* carries the bias
-        connections; its predicted precision is treated as infinite so it
-        contributes zero to the value-coupling variance.
+        appended to its activations. The last column of *weights* carries the
+        bias connections and is treated as linearly coupled (:math:`g(1) = 1`),
+        regardless of *coupling_fn*; the constant node's derivative is zero and
+        its predicted precision is infinite, so it contributes nothing to the
+        value-coupling variance.
     has_volatility_parent :
         If True (default), the layer has an implied internal volatility parent
         whose state (``mean_vol``, ``precision_vol``) is predicted and updated.
@@ -119,11 +121,14 @@ def vectorized_layer_prediction(
     # Mean prediction via matrix multiply
     # weights shape: (n_children, n_parents) or (n_children, n_parents + 1)
     # parent_state.expected_mean shape: (n_parents,)
-    parent_mean = parent_state.expected_mean
+    # Apply coupling to the parent activations only; the constant bias node is
+    # always wired in linearly (g(1) = 1) regardless of coupling_fn — the same
+    # convention as the binary prediction, the weight-learning step, the
+    # per-node backend, and the Rust backend (constant-state nodes are forced
+    # to identity coupling).
+    coupled_parents = coupling_fn(parent_state.expected_mean)
     if parent_has_constant:
-        # Append constant 1.0 for bias node before applying coupling_fn
-        parent_mean = jnp.concatenate([parent_mean, jnp.ones(1)])
-    coupled_parents = coupling_fn(parent_mean)
+        coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
 
     # Expected mean for value level
     # Note: autoconnection_strength = 0 for i.i.d. classification
@@ -157,9 +162,11 @@ def vectorized_layer_prediction(
     # using the parent's marginal predicted precision π̃_j (= `expected_precision`).
     # The constant-bias parent (if any) has infinite precision and contributes zero.
     parent_precision = parent_state.expected_precision
+    g_prime = vmap(grad(coupling_fn))(parent_state.expected_mean)
     if parent_has_constant:
+        # The constant node never varies: zero derivative, infinite precision.
         parent_precision = jnp.concatenate([parent_precision, jnp.array([jnp.inf])])
-    g_prime = vmap(grad(coupling_fn))(parent_mean)
+        g_prime = jnp.concatenate([g_prime, jnp.zeros(1)])
     weighted_grad = weights * (time_step * g_prime)
     value_coupling_variance = jnp.sum(weighted_grad**2 / parent_precision, axis=-1)
 
