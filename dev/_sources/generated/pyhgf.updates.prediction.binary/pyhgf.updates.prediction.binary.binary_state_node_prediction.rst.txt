@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction.binary.binary\_state\_node\_prediction
+===============================================================
+
+.. currentmodule:: pyhgf.updates.prediction.binary
+
+.. autofunction:: binary_state_node_prediction

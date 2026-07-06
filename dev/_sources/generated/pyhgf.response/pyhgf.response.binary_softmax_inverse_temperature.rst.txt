@@ -1,0 +1,6 @@
+﻿pyhgf.response.binary\_softmax\_inverse\_temperature
+====================================================
+
+.. currentmodule:: pyhgf.response
+
+.. autofunction:: binary_softmax_inverse_temperature

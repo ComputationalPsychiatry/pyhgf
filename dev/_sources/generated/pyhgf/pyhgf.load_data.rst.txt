@@ -1,0 +1,6 @@
+﻿pyhgf.load\_data
+================
+
+.. currentmodule:: pyhgf
+
+.. autofunction:: load_data

@@ -1,0 +1,6 @@
+﻿pyhgf.math.parametrised\_sigmoid
+================================
+
+.. currentmodule:: pyhgf.math
+
+.. autofunction:: parametrised_sigmoid

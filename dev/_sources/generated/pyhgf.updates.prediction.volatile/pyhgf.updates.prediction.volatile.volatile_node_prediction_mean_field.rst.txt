@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction.volatile.volatile\_node\_prediction\_mean\_field
+=========================================================================
+
+.. currentmodule:: pyhgf.updates.prediction.volatile
+
+.. autofunction:: volatile_node_prediction_mean_field

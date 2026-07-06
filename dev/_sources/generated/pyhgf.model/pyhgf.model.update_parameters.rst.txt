@@ -1,0 +1,6 @@
+﻿pyhgf.model.update\_parameters
+==============================
+
+.. currentmodule:: pyhgf.model
+
+.. autofunction:: update_parameters

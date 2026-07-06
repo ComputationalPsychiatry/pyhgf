@@ -1,0 +1,32 @@
+﻿pyhgf.typing.vectorised.LayerParams
+===================================
+
+.. currentmodule:: pyhgf.typing.vectorised
+
+.. autoclass:: LayerParams
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LayerParams.__init__
+      ~LayerParams.create
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LayerParams.tonic_volatility
+      ~LayerParams.tonic_volatility_vol
+      ~LayerParams.volatility_coupling
+      ~LayerParams.autoconnection_strength_vol
+   
+   

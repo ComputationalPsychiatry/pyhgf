@@ -1,0 +1,6 @@
+﻿pyhgf.updates.posterior.continuous.posterior\_update\_precision\_continuous\_node.posterior\_update\_precision\_continuous\_node
+================================================================================================================================
+
+.. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node
+
+.. autofunction:: posterior_update_precision_continuous_node

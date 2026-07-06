@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction.continuous.predict\_precision\_mean\_field
+===================================================================
+
+.. currentmodule:: pyhgf.updates.prediction.continuous
+
+.. autofunction:: predict_precision_mean_field

@@ -1,0 +1,6 @@
+﻿pyhgf.plots.matplotlib.plot\_layers
+===================================
+
+.. currentmodule:: pyhgf.plots.matplotlib
+
+.. autofunction:: plot_layers

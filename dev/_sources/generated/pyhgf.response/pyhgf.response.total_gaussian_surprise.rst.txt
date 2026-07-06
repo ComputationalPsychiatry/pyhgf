@@ -1,0 +1,6 @@
+﻿pyhgf.response.total\_gaussian\_surprise
+========================================
+
+.. currentmodule:: pyhgf.response
+
+.. autofunction:: total_gaussian_surprise

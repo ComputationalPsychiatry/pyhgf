@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorized.volatile.vectorized\_posterior\_update\_mean\_value\_level
+===================================================================================
+
+.. currentmodule:: pyhgf.updates.vectorized.volatile
+
+.. autofunction:: vectorized_posterior_update_mean_value_level

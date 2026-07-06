@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.propagation\_step
+=============================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: propagation_step

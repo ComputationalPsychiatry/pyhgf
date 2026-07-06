@@ -1,0 +1,41 @@
+﻿pyhgf.typing.vectorised.LayerState
+==================================
+
+.. currentmodule:: pyhgf.typing.vectorised
+
+.. autoclass:: LayerState
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LayerState.__init__
+      ~LayerState.create
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LayerState.mean
+      ~LayerState.precision
+      ~LayerState.expected_mean
+      ~LayerState.expected_precision
+      ~LayerState.conditional_expected_precision
+      ~LayerState.effective_precision
+      ~LayerState.value_prediction_error
+      ~LayerState.mean_vol
+      ~LayerState.precision_vol
+      ~LayerState.expected_mean_vol
+      ~LayerState.expected_precision_vol
+      ~LayerState.effective_precision_vol
+      ~LayerState.volatility_prediction_error
+   
+   

@@ -1,0 +1,6 @@
+﻿pyhgf.updates.prediction\_error.volatile.volatile\_node\_prediction\_error
+==========================================================================
+
+.. currentmodule:: pyhgf.updates.prediction_error.volatile
+
+.. autofunction:: volatile_node_prediction_error
