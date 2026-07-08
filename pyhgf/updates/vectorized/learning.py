@@ -9,6 +9,55 @@ import jax.numpy as jnp
 
 from pyhgf.typing.vectorised import LayerState
 
+# Default Tikhonov damping for the categorical (softmax) natural gradient. The
+# multinomial Fisher diag(p) - p pᵀ is singular and its inverse amplifies the
+# error by 1/p, which diverges for a class the model deems near-impossible.
+# Adding lambda to the diagonal caps that amplification at ~1/lambda. Because p
+# is a probability, this bound is scale-free: lambda = 1e-2 treats classes below
+# ~1% probability as ~1% for curvature purposes.
+CATEGORICAL_NATURAL_DAMPING: float = 1e-2
+
+
+def _softmax_fisher_inverse(
+    p: jnp.ndarray, pe: jnp.ndarray, damping: float
+) -> jnp.ndarray:
+    r"""Apply the damped inverse multinomial Fisher to a residual.
+
+    Solves :math:`(\mathrm{diag}(p) + \lambda I - p p^\top)\,x = \delta` for
+    ``x``, the softmax (categorical) natural gradient's output-side
+    preconditioning of the value prediction error :math:`\delta` (``pe``). The
+    rank-one term :math:`p p^\top` is inverted in closed form by Sherman-Morrison
+    on the damped diagonal :math:`D = \mathrm{diag}(p) + \lambda I`:
+
+    .. math::
+
+        x = D^{-1} \delta + \frac{D^{-1} p \; (p^\top D^{-1} \delta)}{1 - p^\top D^{-1} p}.
+
+    With ``damping`` :math:`> 0` the denominator lies in ``(0, 1)`` (because
+    :math:`p^\top D^{-1} p = \sum_k p_k^2 / (p_k + \lambda) < \sum_k p_k = 1`),
+    so the solve is always well-conditioned.
+
+    Parameters
+    ----------
+    p :
+        Predicted class probabilities (softmax output), shape ``(n_classes,)``.
+    pe :
+        Prediction error, the zero-sum residual ``one_hot - p``.
+    damping :
+        Tikhonov damping added to the Fisher diagonal.
+
+    Returns
+    -------
+    x :
+        The preconditioned residual, shape ``(n_classes,)``.
+    """
+    d = 1.0 / (p + damping)  # diagonal of D^{-1}
+    dinv_pe = d * pe
+    dinv_p = d * p
+    denom = 1.0 - jnp.sum(p * dinv_p)  # 1 - pᵀ D^{-1} p
+    coef = jnp.sum(p * dinv_pe) / denom  # (pᵀ D^{-1} pe) / denom
+    return dinv_pe + dinv_p * coef
+
 
 def vectorized_weight_gradient(
     parent_state: LayerState,
@@ -17,6 +66,8 @@ def vectorized_weight_gradient(
     kind: str = "precision_weighted",
     parent_has_constant: bool = False,
     child_is_binary: bool = False,
+    child_is_categorical: bool = False,
+    categorical_damping: float = CATEGORICAL_NATURAL_DAMPING,
 ) -> jnp.ndarray:
     r"""Per-layer weight gradient for the vectorised deep network.
 
