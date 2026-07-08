@@ -16,13 +16,20 @@
       ~DeepNetwork.__init__
       ~DeepNetwork.add_layer
       ~DeepNetwork.add_layer_stack
+      ~DeepNetwork.batch_update
       ~DeepNetwork.fit
+      ~DeepNetwork.from_configs
+      ~DeepNetwork.from_dict
+      ~DeepNetwork.input_error
       ~DeepNetwork.load
       ~DeepNetwork.plot_layers
       ~DeepNetwork.predict
+      ~DeepNetwork.predict_states
+      ~DeepNetwork.prediction
       ~DeepNetwork.reset
       ~DeepNetwork.save
       ~DeepNetwork.to_pandas
+      ~DeepNetwork.update
       ~DeepNetwork.weight_initialisation
    
    
