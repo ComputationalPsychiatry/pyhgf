@@ -969,6 +969,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
@@ -991,7 +992,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">vectorized_categorical_prediction</span><span class="p">,</span>
     <span class="n">vectorized_categorical_prediction_error</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="n">vectorized_weight_gradient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">vectorized_weight_gradient</span><span class="p">,</span>
+    <span class="n">vectorized_weight_gradient_factors</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.volatile</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">vectorized_layer_posterior_update</span><span class="p">,</span>
     <span class="n">vectorized_layer_prediction</span><span class="p">,</span>
@@ -1426,6 +1430,55 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">_grad_layer</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_factor_layer</span><span class="p">(</span><span class="n">parent</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-Layer gradient factors ``(u, v)`` — see the factor kernel.&quot;&quot;&quot;</span>
+    <span class="n">child_state</span><span class="p">,</span> <span class="n">child_kind</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vectorized_weight_gradient_factors</span><span class="p">(</span>
+        <span class="n">parent_state</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+        <span class="n">child_state</span><span class="o">=</span><span class="n">child_state</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+        <span class="n">child_is_binary</span><span class="o">=</span><span class="p">(</span><span class="n">child_kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_factor_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-slice gradient factors for a ``LayerStack``.</span>
+
+<span class="sd">    Same slicing as :func:`_grad_stack`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
+    <span class="n">child_state</span> <span class="o">=</span> <span class="n">_match_child_vol_structure</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">)</span>
+
+    <span class="n">combined_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">s</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">child_state</span><span class="p">,</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parent_states</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span>
+    <span class="n">child_states</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">combined_state</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">per_slice</span><span class="p">(</span><span class="n">parent_state</span><span class="p">,</span> <span class="n">child_state_for_slice</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">vectorized_weight_gradient_factors</span><span class="p">(</span>
+            <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state</span><span class="p">,</span>
+            <span class="n">child_state</span><span class="o">=</span><span class="n">child_state_for_slice</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+            <span class="n">child_is_binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">per_slice</span><span class="p">)(</span><span class="n">parent_states</span><span class="p">,</span> <span class="n">child_states</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_weight_factor</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gradient factors for ``parent_elem.weights_in``.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_factor_stack</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_factor_layer</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+
+
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># Element-level state writeback (for clamping x/y at the boundaries)</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -1668,6 +1721,480 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">state</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_prediction_sweep</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-down prediction sweep, returning the updated network.</span>
+
+<span class="sd">    Clamps the predictors on the top element and predicts every element from the one</span>
+<span class="sd">    above. No prediction errors, posterior updates, or weight learning are performed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+
+    <span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_set_top_predictors</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_topdown_predict</span><span class="p">(</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_update_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bottom-up prediction-error + posterior-update sweep, returning the network.</span>
+
+<span class="sd">    Clamps the observations on the bottom element, computes the leaf prediction error,</span>
+<span class="sd">    then performs the interleaved posterior-update + PE for every interior element, in</span>
+<span class="sd">    bottom-up order. Belief states are updated; inter-layer weights are not.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+
+    <span class="c1"># Clamp observations and compute the leaf prediction error.</span>
+    <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_set_bottom_observations</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">_leaf_pe</span><span class="p">(</span>
+        <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">volatility_updates</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+        <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Interleaved bottom-up posterior + PE on every interior element.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_bottomup_posterior_pe</span><span class="p">(</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled top-down prediction sweep.</span>
+
+<span class="sd">    See :func:`_prediction_sweep`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled bottom-up PE + posterior sweep.</span>
+
+<span class="sd">    See :func:`_update_sweep`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_update_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_input_prediction_error</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Prediction error routed to the network&#39;s input (top) layer.</span>
+
+<span class="sd">    The bottom-up sweep (:func:`_update_sweep`) never touches the top layer:</span>
+<span class="sd">    its values are clamped to the predictors ``x``, so it receives no</span>
+<span class="sd">    posterior update and no prediction error. This function computes the</span>
+<span class="sd">    error message the top layer *would* receive from the layer below it —</span>
+<span class="sd">    the same confidence-weighted quantity that drives the posterior mean</span>
+<span class="sd">    shift of every interior layer:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \varepsilon_x = g&#39;(\hat{\mu}_x) \odot W^\top (g_a \, \delta_a),</span>
+
+<span class="sd">    where :math:`\delta_a` is the child layer&#39;s value prediction error,</span>
+<span class="sd">    :math:`g_a` its smoothing gain (the same gain used by</span>
+<span class="sd">    :func:`pyhgf.updates.vectorized.volatile.posterior.vectorized_posterior_update_mean_value_level`),</span>
+<span class="sd">    :math:`W` the weight matrix connecting the child into the top layer</span>
+<span class="sd">    (bias column excluded), and :math:`g&#39;` the derivative of the top layer&#39;s</span>
+<span class="sd">    coupling function at the clamped predictors.</span>
+
+<span class="sd">    With unit precisions and an identity coupling this reduces to</span>
+<span class="sd">    :math:`W^\top \delta_a` — the error multiplied back through the weights.</span>
+<span class="sd">    Because prediction errors follow the ``observed - predicted`` convention,</span>
+<span class="sd">    the result is the *negative* of the gradient of a squared-error loss with</span>
+<span class="sd">    respect to the predictors.</span>
+
+<span class="sd">    Must be called after the update sweep, so the child layer carries its</span>
+<span class="sd">    posterior prediction error.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The network state, after :func:`_update_sweep`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    jnp.ndarray</span>
+<span class="sd">        The prediction error at the top layer, shape ``(n_input_features,)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Top of network must be a Layer, not a LayerStack.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">top</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The network has a single layer: there is no layer below the &quot;</span>
+            <span class="s2">&quot;input layer to route an error from.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">top</span><span class="o">.</span><span class="n">weights_in</span>
+    <span class="k">if</span> <span class="n">top</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">:</span>
+        <span class="c1"># The bias column connects the constant node, not a real input.</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Smoothing gain of the child layer — identical to the gain used by the</span>
+    <span class="c1"># interior posterior mean update, so the top layer sees exactly the</span>
+    <span class="c1"># message any interior layer would see.</span>
+    <span class="n">pi_y</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span>
+    <span class="n">gain</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">child_state</span><span class="o">.</span><span class="n">conditional_expected_precision</span>
+        <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>
+        <span class="o">/</span> <span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">conditional_expected_precision</span> <span class="o">+</span> <span class="n">pi_y</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">coupling_prime</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">top</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">gain</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">value_prediction_error</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">coupling_prime</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">input_prediction_error</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled prediction error at the input (top) layer.</span>
+
+<span class="sd">    See :func:`_input_prediction_error`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_input_prediction_error</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_weight_gradients</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-element weight gradients, without applying them.</span>
+
+<span class="sd">    Must run *after* :func:`_update_sweep`, so the per-layer states already carry their</span>
+<span class="sd">    prediction errors / posteriors. Returns one gradient per element, matched 1:1 to</span>
+<span class="sd">    ``network.layers`` (``None`` for the bottom element, which has no incoming weights).</span>
+<span class="sd">    Gradients are in descent form, ready for optax.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">layers</span>
+    <span class="n">grads_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>  <span class="c1"># bottom element has no weights_in</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)):</span>
+        <span class="n">grads_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_weight_grad</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">grads_list</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_weight_updates</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">grads</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One optimiser step on every ``weights_in``, from precomputed gradients.&quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">)</span>
+
+    <span class="n">updates</span><span class="p">,</span> <span class="n">new_opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+    <span class="n">new_weights</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">new_w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_weights</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">new_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_writeback_weights</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">new_w</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">)),</span> <span class="n">new_opt_state</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_learn_sweep</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weight-learning phase: PE-driven gradients + an optimiser step.</span>
+
+<span class="sd">    Mirrors the weight-update block of :func:`propagation_step`. Must run *after*</span>
+<span class="sd">    :func:`_update_sweep`, so the per-layer states already carry their prediction errors</span>
+<span class="sd">    / posteriors. Updates ``weights_in`` on every element that has them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="n">_weight_gradients</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_apply_weight_updates</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">learn_sweep</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled weight-learning phase.</span>
+
+<span class="sd">    See :func:`_learn_sweep`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_learn_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Pure per-sample step + batch-synchronous learning</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="c1"># The state fields that carry information from one sample to the next. Every</span>
+<span class="c1"># other field is rewritten by the sweeps: expected means and precisions come</span>
+<span class="c1"># from the prediction sweep, posterior means are rebuilt as expected mean +</span>
+<span class="c1"># correction. What persists is the confidence side — the value-level</span>
+<span class="c1"># posterior precision (each prediction reads the previous one) and the</span>
+<span class="c1"># volatility level&#39;s belief.</span>
+<span class="n">_CARRIED_FIELDS</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="s2">&quot;mean_vol&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_vol&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_confidence_increments</span><span class="p">(</span><span class="n">before</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">after</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-element change of the carried confidence fields, ``after - before``.</span>
+
+<span class="sd">    Returns one ``dict`` per element, keyed by field name. For a ``Layer``</span>
+<span class="sd">    each entry has shape ``(n_nodes,)``; for a ``LayerStack``,</span>
+<span class="sd">    ``(n_slices, n_nodes)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># ``mean_vol``/``precision_vol`` are ``None`` on layers without a volatility</span>
+    <span class="c1"># parent — there is no volatility confidence to carry, so skip them.</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="n">field</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">elem_after</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="o">-</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">elem_before</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">_CARRIED_FIELDS</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">elem_before</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">elem_before</span><span class="p">,</span> <span class="n">elem_after</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="n">after</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_confidence_increments</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">increments</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add confidence increments (see :func:`_confidence_increments`) to a network.</span>
+
+<span class="sd">    Used by :func:`batch_step` to carry the batch-averaged confidence change into the</span>
+<span class="sd">    state used by the next batch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_elements</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">elem</span><span class="p">,</span> <span class="n">inc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="n">increments</span><span class="p">):</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="n">field</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="o">+</span> <span class="n">inc</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">_CARRIED_FIELDS</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">inc</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="n">new_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_elements</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_step</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One full local learning step for one sample, as a pure function.</span>
+
+<span class="sd">    Runs the prediction sweep (clamp ``x`` on top, predict downward) and the</span>
+<span class="sd">    update sweep (clamp ``y`` at the bottom, compute errors and correct</span>
+<span class="sd">    beliefs upward), then reads out everything a caller needs without</span>
+<span class="sd">    mutating anything:</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The state template. Not modified; every call starting from the same</span>
+<span class="sd">        template sees the same weights and the same confidences, which is</span>
+<span class="sd">        what makes this function safe to ``jax.vmap`` over a batch of</span>
+<span class="sd">        samples.</span>
+<span class="sd">    x :</span>
+<span class="sd">        Predictors clamped on the top layer, shape ``(n_input_features,)``.</span>
+<span class="sd">    y :</span>
+<span class="sd">        Observations clamped on the bottom layer, shape</span>
+<span class="sd">        ``(n_output_features,)``.</span>
+<span class="sd">    learning_kind :</span>
+<span class="sd">        Weight-gradient mode, as in</span>
+<span class="sd">        :func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        Inference time step for the prediction sweep.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    input_error :</span>
+<span class="sd">        The prediction error at the input (top) layer — see</span>
+<span class="sd">        :func:`input_prediction_error`.</span>
+<span class="sd">    grads :</span>
+<span class="sd">        Per-element weight gradients (descent form, ``None`` for the bottom</span>
+<span class="sd">        element). Average these across a batch and apply once.</span>
+<span class="sd">    increments :</span>
+<span class="sd">        Per-element change of the carried confidence fields (value-level</span>
+<span class="sd">        posterior precision and the volatility level), relative to the</span>
+<span class="sd">        template. Average these across a batch and apply once with</span>
+<span class="sd">        :func:`apply_confidence_increments`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">updated</span> <span class="o">=</span> <span class="n">_update_sweep</span><span class="p">(</span><span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">),</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_input_prediction_error</span><span class="p">(</span><span class="n">updated</span><span class="p">),</span>
+        <span class="n">_weight_gradients</span><span class="p">(</span><span class="n">updated</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">),</span>
+        <span class="n">_confidence_increments</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">updated</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_batch_step</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">opt_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">update_confidences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One batch-synchronous learning step over many samples at once.</span>
+
+<span class="sd">    Every sample in the batch is processed from the *same* state template —</span>
+<span class="sd">    same weights, same confidences — through the same sweeps as</span>
+<span class="sd">    :func:`sample_step`, under ``jax.vmap``, so samples are exchangeable and</span>
+<span class="sd">    nothing depends on their order. The per-sample results are then averaged</span>
+<span class="sd">    and applied once, so the batch counts as a single observation:</span>
+
+<span class="sd">    * weight gradients → one optimiser step (skipped when ``optimizer`` is</span>
+<span class="sd">      ``None``);</span>
+<span class="sd">    * confidence increments → added to the carried fields (skipped when</span>
+<span class="sd">      ``update_confidences`` is ``False``, e.g. to keep confidences pinned</span>
+<span class="sd">      during backprop-parity comparisons).</span>
+
+<span class="sd">    Averaging (rather than summing) makes the result invariant to repeating</span>
+<span class="sd">    the batch: the same samples twice produce the same step.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The state template shared by every sample in the batch.</span>
+<span class="sd">    opt_state :</span>
+<span class="sd">        The optimiser state, or ``None`` when ``optimizer`` is ``None``.</span>
+<span class="sd">    x :</span>
+<span class="sd">        Predictors, shape ``(batch, n_input_features)``.</span>
+<span class="sd">    y :</span>
+<span class="sd">        Observations, shape ``(batch, n_output_features)``.</span>
+<span class="sd">    optimizer :</span>
+<span class="sd">        Optax optimiser for the weight step. ``None`` freezes the weights.</span>
+<span class="sd">    learning_kind :</span>
+<span class="sd">        Weight-gradient mode.</span>
+<span class="sd">    update_confidences :</span>
+<span class="sd">        Whether to carry the batch-averaged confidence increments into the</span>
+<span class="sd">        returned network.</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        Inference time step, applied once per batch.</span>
+<span class="sd">    predicted :</span>
+<span class="sd">        Optional per-sample predicted states from</span>
+<span class="sd">        :func:`batched_prediction_states` (one batched ``LayerState`` per</span>
+<span class="sd">        element). When given, the internal prediction sweep is skipped and</span>
+<span class="sd">        the update starts from these states — the forward pass a caller has</span>
+<span class="sd">        already run is not repeated. ``x`` is ignored in that case.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The template advanced by one batch: new weights and, if requested,</span>
+<span class="sd">        new confidences. Everything else is untouched (it is rewritten by</span>
+<span class="sd">        the sweeps on the next call anyway).</span>
+<span class="sd">    opt_state :</span>
+<span class="sd">        The advanced optimiser state (``None`` if no optimiser was given).</span>
+<span class="sd">    input_errors :</span>
+<span class="sd">        Per-sample prediction errors at the input layer, shape</span>
+<span class="sd">        ``(batch, n_input_features)`` — the messages a caller passes to</span>
+<span class="sd">        whatever sits behind this network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Each sample contributes only its two gradient factors (small vectors);</span>
+    <span class="c1"># the batch-mean gradient is then one contraction per weight matrix. This</span>
+    <span class="c1"># avoids materialising one weight-matrix-sized gradient per sample under</span>
+    <span class="c1"># vmap — the same arithmetic, a batch factor less memory traffic. Every</span>
+    <span class="c1"># gradient kind is separable, so this is the only path.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finish_sample</span><span class="p">(</span><span class="n">swept</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">yi</span><span class="p">):</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="n">_update_sweep</span><span class="p">(</span><span class="n">swept</span><span class="p">,</span> <span class="n">yi</span><span class="p">)</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+                <span class="o">+</span> <span class="p">[</span>
+                    <span class="n">_weight_factor</span><span class="p">(</span>
+                        <span class="n">updated</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">updated</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">updated</span><span class="o">.</span><span class="n">layers</span><span class="p">))</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">_input_prediction_error</span><span class="p">(</span><span class="n">updated</span><span class="p">),</span>
+            <span class="n">_confidence_increments</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">updated</span><span class="p">),</span>
+            <span class="n">factors</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">predicted</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">per_sample</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">yi</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">finish_sample</span><span class="p">(</span>
+                <span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">),</span> <span class="n">yi</span>
+            <span class="p">)</span>
+
+        <span class="n">input_errors</span><span class="p">,</span> <span class="n">increments</span><span class="p">,</span> <span class="n">factors</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">per_sample</span><span class="p">)(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Rebuild each sample&#39;s network around the shared (unbatched) weights</span>
+        <span class="c1"># and static fields; only the layer states carry a batch axis.</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">per_sample_predicted</span><span class="p">(</span><span class="n">states_i</span><span class="p">,</span> <span class="n">yi</span><span class="p">):</span>
+            <span class="n">swept</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                <span class="n">network</span><span class="p">,</span>
+                <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
+                    <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state_i</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">elem</span><span class="p">,</span> <span class="n">state_i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="n">states_i</span><span class="p">)</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">finish_sample</span><span class="p">(</span><span class="n">swept</span><span class="p">,</span> <span class="n">yi</span><span class="p">)</span>
+
+        <span class="n">input_errors</span><span class="p">,</span> <span class="n">increments</span><span class="p">,</span> <span class="n">factors</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">per_sample_predicted</span><span class="p">)(</span>
+            <span class="n">predicted</span><span class="p">,</span> <span class="n">y</span>
+        <span class="p">)</span>
+
+    <span class="n">new_network</span> <span class="o">=</span> <span class="n">network</span>
+    <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mean_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_contract_factors</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">)</span>
+        <span class="n">new_network</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">_apply_weight_updates</span><span class="p">(</span>
+            <span class="n">new_network</span><span class="p">,</span> <span class="n">mean_grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">update_confidences</span><span class="p">:</span>
+        <span class="n">mean_increments</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">increments</span><span class="p">)</span>
+        <span class="n">new_network</span> <span class="o">=</span> <span class="n">apply_confidence_increments</span><span class="p">(</span><span class="n">new_network</span><span class="p">,</span> <span class="n">mean_increments</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">input_errors</span>
+
+
+<span class="c1"># The compiled entry point. The implementation stays callable unjitted so a</span>
+<span class="c1"># larger compiled program (a fused pipeline step) can inline it.</span>
+<span class="n">batch_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">_batch_step</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_contract_factors</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch-mean gradient from stacked per-sample factors.</span>
+
+<span class="sd">    ``factors`` is ``None`` for the bottom element, or a ``(u, v)`` pair with</span>
+<span class="sd">    a leading batch axis: ``(batch, n_children)`` and ``(batch, n_parents)``</span>
+<span class="sd">    for a ``Layer``; ``(batch, n_slices, ...)`` for a ``LayerStack``. The</span>
+<span class="sd">    mean over samples of ``u ⊗ v`` is computed as a single contraction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">factors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">factors</span>
+    <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bi,bj-&gt;ij&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bni,bnj-&gt;nij&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="prediction_pass">
 <a class="viewcode-back" href="../../../generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_pass.html#pyhgf.utils.vectorized_belief_propagation.prediction_pass">[docs]</a>
 <span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
@@ -1690,21 +2217,72 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    expected_mean :</span>
 <span class="sd">        The bottom element&#39;s ``expected_mean`` after the forward sweep.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
-    <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span></div>
 
-    <span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_set_top_predictors</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_topdown_predict</span><span class="p">(</span>
-            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-            <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
-            <span class="n">time_step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-            <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
-        <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span></div>
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">batched_prediction_pass</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward-only sweep for a batch of samples, compiled once and reused.</span>
 
+<span class="sd">    The batched equivalent of :func:`prediction_pass`: every row of ``x`` is</span>
+<span class="sd">    an independent sample swept from the same network state. Used by</span>
+<span class="sd">    :meth:`pyhgf.model.DeepNetwork.predict` so repeated batched calls hit</span>
+<span class="sd">    the compilation cache instead of rebuilding the batching wrapper.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The current vectorised network state.</span>
+<span class="sd">    x :</span>
+<span class="sd">        Predictors, shape ``(batch, n_input_features)``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    expected_mean :</span>
+<span class="sd">        The bottom element&#39;s ``expected_mean`` per sample, shape</span>
+<span class="sd">        ``(batch, n_output_features)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">xi</span><span class="p">:</span> <span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span>
+    <span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">batched_prediction_states</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batched forward sweep returning the per-sample swept states.</span>
+
+<span class="sd">    Like :func:`batched_prediction_pass`, but keeps what the sweep computed:</span>
+<span class="sd">    one batched ``LayerState`` per element (each field with a leading batch</span>
+<span class="sd">    axis). Passing these to :func:`batch_step` as ``predicted`` lets the</span>
+<span class="sd">    learning step start directly from them instead of repeating the forward</span>
+<span class="sd">    sweep — the weights and static fields are not duplicated per sample,</span>
+<span class="sd">    only the layer states are.</span>
+
+<span class="sd">    The states are the *only* output: the per-sample predictions are read</span>
+<span class="sd">    from the bottom element&#39;s ``expected_mean`` after the call. Returning</span>
+<span class="sd">    that array alongside the states from the same compiled function produces</span>
+<span class="sd">    incorrect values under the vmap-of-jit composition on CPU, so callers</span>
+<span class="sd">    must read it from the returned states.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The current vectorised network state.</span>
+<span class="sd">    x :</span>
+<span class="sd">        Predictors, shape ``(batch, n_input_features)``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    states :</span>
+<span class="sd">        One batched ``LayerState`` per element, ordered as</span>
+<span class="sd">        ``network.layers``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">one</span><span class="p">(</span><span class="n">xi</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">one</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
 </pre></div>
 
                 </article>

@@ -974,7 +974,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
@@ -983,14 +983,26 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">resolve_coupling_fn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">VOLATILITY_STATE_FIELDS</span><span class="p">,</span>
     <span class="n">Layer</span><span class="p">,</span>
     <span class="n">LayerParams</span><span class="p">,</span>
     <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">Network</span><span class="p">,</span>
     <span class="n">stack_layers</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="n">prediction_pass</span><span class="p">,</span> <span class="n">run_scan</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">batch_step</span><span class="p">,</span>
+    <span class="n">batched_prediction_pass</span><span class="p">,</span>
+    <span class="n">batched_prediction_states</span><span class="p">,</span>
+    <span class="n">input_prediction_error</span><span class="p">,</span>
+    <span class="n">learn_sweep</span><span class="p">,</span>
+    <span class="n">prediction_pass</span><span class="p">,</span>
+    <span class="n">prediction_sweep</span><span class="p">,</span>
+    <span class="n">run_scan</span><span class="p">,</span>
+    <span class="n">update_sweep</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.weight_initialisation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">he_init</span><span class="p">,</span>
     <span class="n">orthogonal_init</span><span class="p">,</span>
@@ -1009,6 +1021,10 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># Names of fields that can be overridden per layer (eqx.Modules expose dataclass fields).</span>
 <span class="n">_LAYER_STATE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 <span class="n">_LAYER_PARAM_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">LayerParams</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="c1"># Volatility-level state fields, absent (``None``) on a layer without a</span>
+<span class="c1"># volatility parent — a state override for one of these on such a layer is</span>
+<span class="c1"># dropped rather than re-allocating the array.</span>
+<span class="n">_VOL_STATE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">VOLATILITY_STATE_FIELDS</span><span class="p">)</span>
 
 <span class="c1"># Minimum identical-layer count for ``add_layer_stack`` to auto-collapse the</span>
 <span class="c1"># block into a ``LayerStack`` (i.e. switch the propagation kernels to</span>
@@ -1128,8 +1144,192 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Network</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Per-sample input-layer errors from the last batch_update call,</span>
+        <span class="c1"># shape (batch, n_input_features).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_errors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_configs</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">configs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">LayerConfig</span><span class="p">],</span>
+        <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
+        <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
+        <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a network from a list of layer configurations.</span>
+
+<span class="sd">        Constructs a DeepNetwork by adding layers in order from a list of</span>
+<span class="sd">        :class:`LayerConfig` objects. This is useful for reproducible experiments,</span>
+<span class="sd">        hyperparameter sweeps, and programmatic model construction.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        configs : list[LayerConfig]</span>
+<span class="sd">            List of layer configurations, outermost (output) layer first.</span>
+<span class="sd">        coupling_fn : Optional[Callable | str], default None</span>
+<span class="sd">            Default coupling function applied between layers. Can be a callable</span>
+<span class="sd">            (e.g., ``jax.nn.gelu``) or a string name (e.g., ``&quot;gelu&quot;``).</span>
+<span class="sd">            Per-layer overrides in configs take precedence.</span>
+<span class="sd">        volatility_updates : str, default &quot;unbounded&quot;</span>
+<span class="sd">            The type of volatility-level posterior update.</span>
+<span class="sd">        max_posterior_precision : float, default 1e10</span>
+<span class="sd">            Upper bound applied to posterior precision writes.</span>
+<span class="sd">        precision_clipping_value : float, default 1e-6</span>
+<span class="sd">            Bound applied to binary-layer predicted means.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Fully constructed network with all layers added.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If any layer config is invalid or a coupling function name</span>
+<span class="sd">            is not recognized.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pyhgf.model import LayerConfig, DeepNetwork</span>
+<span class="sd">        &gt;&gt;&gt; configs = [</span>
+<span class="sd">        ...     LayerConfig(size=10),</span>
+<span class="sd">        ...     LayerConfig(size=20, coupling_fn=&quot;gelu&quot;),</span>
+<span class="sd">        ...     LayerConfig(size=15)</span>
+<span class="sd">        ... ]</span>
+<span class="sd">        &gt;&gt;&gt; net = DeepNetwork.from_configs(configs)</span>
+<span class="sd">        &gt;&gt;&gt; net.n_layers</span>
+<span class="sd">        3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">configs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;configs must not be empty&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Resolve the network-level coupling function</span>
+        <span class="n">net_coupling_fn</span> <span class="o">=</span> <span class="n">resolve_coupling_fn</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)</span>
+
+        <span class="c1"># Create the network with the resolved coupling function</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="n">net_coupling_fn</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">),</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+            <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">precision_clipping_value</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add layers in order</span>
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+            <span class="c1"># Resolve per-layer coupling function</span>
+            <span class="n">layer_coupling_fn</span> <span class="o">=</span> <span class="n">resolve_coupling_fn</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">layer_coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">layer_coupling_fn</span> <span class="o">=</span> <span class="n">net_coupling_fn</span>
+
+            <span class="c1"># Prepare per-layer parameter overrides</span>
+            <span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;tonic_volatility_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility_vol</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">volatility_coupling</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;volatility_coupling&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">volatility_coupling</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">autoconnection_strength_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;autoconnection_strength_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">autoconnection_strength_vol</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Add the layer</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+                <span class="n">add_constant_input</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
+                <span class="n">fully_connected</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">,</span>
+                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">layer_coupling_fn</span><span class="p">,</span>
+                <span class="n">volatility_parent</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">volatility_parent</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">overrides</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">net</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a network from a dictionary configuration.</span>
+
+<span class="sd">        Loads a network configuration from a dictionary (e.g., from JSON or YAML),</span>
+<span class="sd">        making it easy to version control and reproduce experiments.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        config : dict[str, Any]</span>
+<span class="sd">            Configuration dictionary with keys:</span>
+<span class="sd">            - &quot;layers&quot; (required): list of layer configs (each a dict or LayerConfig)</span>
+<span class="sd">            - &quot;coupling_fn&quot; (optional): default coupling function name or callable</span>
+<span class="sd">            - &quot;volatility_updates&quot; (optional): volatility update scheme</span>
+<span class="sd">            - &quot;max_posterior_precision&quot; (optional): precision upper bound</span>
+<span class="sd">            - &quot;precision_clipping_value&quot; (optional): binary-layer clipping bound</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Fully constructed network.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If &quot;layers&quot; is missing or invalid.</span>
+<span class="sd">        KeyError</span>
+<span class="sd">            If required layer fields are missing.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; config = {</span>
+<span class="sd">        ...     &quot;layers&quot;: [</span>
+<span class="sd">        ...         {&quot;size&quot;: 10},</span>
+<span class="sd">        ...         {&quot;size&quot;: 20, &quot;coupling_fn&quot;: &quot;gelu&quot;},</span>
+<span class="sd">        ...         {&quot;size&quot;: 15}</span>
+<span class="sd">        ...     ],</span>
+<span class="sd">        ...     &quot;coupling_fn&quot;: &quot;identity&quot;,</span>
+<span class="sd">        ...     &quot;volatility_updates&quot;: &quot;unbounded&quot;</span>
+<span class="sd">        ... }</span>
+<span class="sd">        &gt;&gt;&gt; net = DeepNetwork.from_dict(config)</span>
+<span class="sd">        &gt;&gt;&gt; net.n_layers</span>
+<span class="sd">        3</span>
+
+<span class="sd">        You can also save and load from JSON:</span>
+
+<span class="sd">        &gt;&gt;&gt; import json</span>
+<span class="sd">        &gt;&gt;&gt; json_str = json.dumps(config)</span>
+<span class="sd">        &gt;&gt;&gt; loaded_config = json.loads(json_str)</span>
+<span class="sd">        &gt;&gt;&gt; net = DeepNetwork.from_dict(loaded_config)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;layers&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;config must contain a &#39;layers&#39; key&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert layer dicts to LayerConfig objects</span>
+        <span class="n">layers_data</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;layers&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">layers_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;layers&#39; must not be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">LayerConfig</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">layer</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers_data</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Extract network-level parameters</span>
+        <span class="n">net_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="s2">&quot;coupling_fn&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;volatility_updates&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;max_posterior_precision&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_configs</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="o">**</span><span class="n">net_config</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1206,6 +1406,14 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_kinds</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Invalid layer kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;categorical&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span>
+            <span class="c1"># A softmax couples every node of the layer into one choice; that</span>
+            <span class="c1"># is only meaningful for the observed (bottom) layer, where the</span>
+            <span class="c1"># one-hot truth is clamped.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Categorical layers represent a single N-way choice and are &quot;</span>
+                <span class="s2">&quot;only supported as the output (bottom) layer — add it first.&quot;</span>
             <span class="p">)</span>
 
         <span class="n">invalid_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LAYER_OVERRIDE_FIELDS</span><span class="p">]</span>
@@ -1328,12 +1536,16 @@ window.runMermaid = runMermaid;</script>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">):</span>
             <span class="n">overrides</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_overrides</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-            <span class="c1"># Per-layer state with overrides (broadcast scalar -&gt; (n_nodes,))</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="n">LayerState</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+            <span class="c1"># Per-layer state with overrides (broadcast scalar -&gt; (n_nodes,)).</span>
+            <span class="c1"># Without a volatility parent the volatility fields are ``None``; a</span>
+            <span class="c1"># state override for one of them is dropped, since the frozen</span>
+            <span class="c1"># volatility level never reads it.</span>
+            <span class="n">has_vol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">LayerState</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">has_vol</span><span class="p">)</span>
             <span class="n">state_overrides</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">k</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_LAYER_STATE_FIELDS</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_LAYER_STATE_FIELDS</span> <span class="ow">and</span> <span class="p">(</span><span class="n">has_vol</span> <span class="ow">or</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_VOL_STATE_FIELDS</span><span class="p">)</span>
             <span class="p">}</span>
             <span class="k">if</span> <span class="n">state_overrides</span><span class="p">:</span>
                 <span class="n">state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">**</span><span class="n">state_overrides</span><span class="p">)</span>
@@ -1600,7 +1812,241 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># Handle single sample vs batch.</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">prediction_pass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">xi</span><span class="p">:</span> <span class="n">prediction_pass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">xi</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">batched_prediction_pass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the top-down prediction sweep only.</span>
+
+<span class="sd">        Clamps the predictors ``x`` on the input (top) layer, predicts every layer</span>
+<span class="sd">        from the one above, and writes the resulting beliefs back to ``self.state``.</span>
+<span class="sd">        No prediction errors, posterior updates, or weight learning are performed —</span>
+<span class="sd">        use :meth:`update` for the bottom-up belief update and :meth:`fit` for weight</span>
+<span class="sd">        learning.</span>
+
+<span class="sd">        Unlike :meth:`predict` (which returns the bottom layer&#39;s ``expected_mean`` and</span>
+<span class="sd">        leaves the network untouched), this advances and stores the network state, so</span>
+<span class="sd">        a subsequent :meth:`update` sees the predicted beliefs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Predictors clamped on the top layer, shape ``(n_input_features,)``. Single</span>
+<span class="sd">            sample only; use :meth:`predict` for a batched, read-only forward pass.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Self, with ``self.state`` advanced by the prediction sweep.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling prediction.&quot;</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;prediction() operates on a single sample (1D x); &quot;</span>
+                <span class="s2">&quot;use predict() for a batched read-only forward pass.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">prediction_sweep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the bottom-up prediction-error + posterior-update sweep.</span>
+
+<span class="sd">        Clamps the observations ``y`` on the output (bottom) layer, computes the leaf</span>
+<span class="sd">        prediction error, then performs the interleaved posterior-update + prediction-</span>
+<span class="sd">        error for every interior layer, in the correct bottom-up order. Belief states</span>
+<span class="sd">        (means and precisions) are always updated.</span>
+
+<span class="sd">        If an ``optimizer`` is supplied, a weight-learning phase runs *after* the belief</span>
+<span class="sd">        sweep: PE-driven gradients are formed and applied to every inter-layer weight</span>
+<span class="sd">        matrix, with the optimiser state held on ``self.opt_state``. With</span>
+<span class="sd">        ``optimizer=None`` (default) the weights are left unchanged, exactly as</span>
+<span class="sd">        :meth:`fit` would leave them with ``weight_update=False``.</span>
+
+<span class="sd">        Typically called right after :meth:`prediction`, which sets up the predicted</span>
+<span class="sd">        beliefs this sweep corrects, so a full local learning step without backprop is::</span>
+
+<span class="sd">            net.prediction(x).update(y, optimizer=optax.sgd(1e-2))</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        y :</span>
+<span class="sd">            Observations clamped on the bottom layer, shape ``(n_output_features,)``.</span>
+<span class="sd">            Single sample only.</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Optional ``optax.GradientTransformation``. If given, run the weight-learning</span>
+<span class="sd">            phase and update ``self.opt_state``. If ``None``, only beliefs are updated.</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            Weight-gradient mode used when ``optimizer`` is supplied. One of</span>
+<span class="sd">            ``&quot;standard&quot;`` or ``&quot;precision_weighted&quot;`` (default). Both are</span>
+<span class="sd">            strictly local. Each weight update reads only its own</span>
+<span class="sd">            connection&#39;s prediction error, activation, and precision.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Self, with ``self.state`` (and, if learning, ``self.opt_state``) advanced.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling update.&quot;</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;update() operates on a single sample (1D y).&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">update_sweep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Initialise opt_state on first use, or when the optimiser changes.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">learn_sweep</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_error</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prediction error at the input (top) layer.</span>
+
+<span class="sd">        The bottom-up sweep leaves the top layer untouched (its values are</span>
+<span class="sd">        clamped to the predictors), so this is the only way to read the error</span>
+<span class="sd">        message the input would receive from the layer below — the child</span>
+<span class="sd">        layer&#39;s prediction error, weighted by its confidence (precision) and</span>
+<span class="sd">        routed back through the connecting weights. Typical usage runs the</span>
+<span class="sd">        two sweeps first::</span>
+
+<span class="sd">            net.prediction(x).update(y)</span>
+<span class="sd">            error_at_input = net.input_error()</span>
+
+<span class="sd">        Because prediction errors follow the ``observed - predicted``</span>
+<span class="sd">        convention, the result is the negative of the gradient of a</span>
+<span class="sd">        squared-error loss with respect to the predictors.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jnp.ndarray</span>
+<span class="sd">            The prediction error at the top layer, shape</span>
+<span class="sd">            ``(n_input_features,)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling input_error.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">input_prediction_error</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_states</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Batched forward pass that also returns the per-sample swept states.</span>
+
+<span class="sd">        Returns the same predictions as :meth:`predict` on 2D input, plus the</span>
+<span class="sd">        per-sample layer states the sweep computed. Passing those states to</span>
+<span class="sd">        :meth:`batch_update` (as ``predicted``) skips its internal forward</span>
+<span class="sd">        sweep, so a caller that has already predicted does not pay for the</span>
+<span class="sd">        sweep twice.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Predictors, shape ``(batch, n_input_features)``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        predictions :</span>
+<span class="sd">            Shape ``(batch, n_output_features)``.</span>
+<span class="sd">        states :</span>
+<span class="sd">            One batched ``LayerState`` per element — an opaque value to hand</span>
+<span class="sd">            back to :meth:`batch_update`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling predict_states.&quot;</span><span class="p">)</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="n">batched_prediction_states</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">states</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">,</span> <span class="n">states</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">batch_update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+        <span class="n">update_confidences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;One batch-synchronous learning step over many samples at once.</span>
+
+<span class="sd">        Every sample in the batch is processed from the same state — same</span>
+<span class="sd">        weights, same confidences — in parallel; the per-sample weight</span>
+<span class="sd">        gradients and confidence changes are then *averaged* and applied</span>
+<span class="sd">        once, so the whole batch counts as a single observation. This</span>
+<span class="sd">        differs from :meth:`fit`, which scans samples sequentially and lets</span>
+<span class="sd">        the confidences adapt from one sample to the next (the natural mode</span>
+<span class="sd">        for a time series). Use this method when samples are exchangeable —</span>
+<span class="sd">        e.g. many token positions learned together.</span>
+
+<span class="sd">        The per-sample errors at the input layer are stored on</span>
+<span class="sd">        ``self.input_errors``, shape ``(batch, n_input_features)`` — see</span>
+<span class="sd">        :meth:`input_error` for their meaning and sign convention.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Predictors, shape ``(batch, n_input_features)``.</span>
+<span class="sd">        y :</span>
+<span class="sd">            Observations, shape ``(batch, n_output_features)``.</span>
+<span class="sd">        optimizer :</span>
+<span class="sd">            Optax optimiser for the weight step. ``None`` (default) freezes</span>
+<span class="sd">            the weights.</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            Weight-gradient mode, as in :meth:`fit`.</span>
+<span class="sd">        update_confidences :</span>
+<span class="sd">            If True (default), carry the batch-averaged change of the</span>
+<span class="sd">            confidence state (value-level precisions and the volatility</span>
+<span class="sd">            level) into ``self.state``. Set to False to keep confidences</span>
+<span class="sd">            pinned, e.g. for exact comparisons against backpropagation.</span>
+<span class="sd">        time_step :</span>
+<span class="sd">            Inference time step, applied once per batch.</span>
+<span class="sd">        predicted :</span>
+<span class="sd">            Optional per-sample predicted states from :meth:`predict_states`;</span>
+<span class="sd">            when given, the internal forward sweep is skipped and ``x`` is</span>
+<span class="sd">            ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Self, with ``self.state`` (and, if learning, ``self.opt_state``)</span>
+<span class="sd">            advanced by one batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling batch_update.&quot;</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;batch_update() operates on batches: x and y must be 2D &quot;</span>
+                <span class="s2">&quot;(batch, n_features).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_errors</span> <span class="o">=</span> <span class="n">batch_step</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">,</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">update_confidences</span><span class="o">=</span><span class="n">update_confidences</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
+            <span class="n">predicted</span><span class="o">=</span><span class="n">predicted</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the network state.&quot;&quot;&quot;</span>
