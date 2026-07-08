@@ -181,7 +181,13 @@ class DeepNetwork:
             Number of nodes in the layer.
         kind :
             Type of nodes in this layer. ``"volatile"`` (default) uses volatile nodes
-            with value and volatility levels. ``"binary"`` uses binary state nodes.
+            with value and volatility levels. ``"binary"`` uses binary state nodes (one
+            independent Bernoulli belief per node). ``"categorical"`` makes the whole
+            layer one joint choice over its ``size`` mutually-exclusive classes: the
+            expected mean is the softmax across the layer's nodes, and the observation
+            clamped during :meth:`fit` must be one-hot. Only valid as the output
+            (bottom) layer. See ``docs/source/notebooks/1.1-Binary_HGF.ipynb`` for the
+            binary case.
         add_constant_input :
             If `True`, add a bias term to the layer's predictions.
         fully_connected :
@@ -224,10 +230,11 @@ class DeepNetwork:
         _kind_aliases = {
             "volatile-state": "volatile",
             "binary-state": "binary",
+            "categorical-state": "categorical",
         }
         kind = _kind_aliases.get(kind, kind)
 
-        valid_kinds = {"volatile", "binary"}
+        valid_kinds = {"volatile", "binary", "categorical"}
         if kind not in valid_kinds:
             raise ValueError(
                 f"Invalid layer kind '{kind}'. Choose from {sorted(valid_kinds)}."
@@ -283,20 +290,21 @@ class DeepNetwork:
         """Add multiple hidden layers at once.
 
         When the block contains ≥ ``_SCAN_AUTO_THRESHOLD`` (currently 5) identical
-        layers sitting on a matching-width non-binary layer below, the layers are
+        layers sitting on a matching-width volatile layer below, the layers are
         automatically collapsed into a single ``LayerStack`` at network-build time, and
         the propagation kernels ``jax.lax.scan`` over them with a single trace.
 
         If any eligibility condition is not met (mixed sizes, fewer than 5 layers, width
-        mismatch with the layer below, direct binary-leaf adjacency, or no layer below),
-        the layers are simply added one by one the usual way.
+        mismatch with the layer below, direct binary- or categorical-leaf adjacency, or
+        no layer below), the layers are simply added one by one the usual way.
 
         Parameters
         ----------
         layer_sizes :
             List of layer sizes.
         kind :
-            Type of nodes for all layers (``"volatile"`` or ``"binary"``).
+            Type of nodes for all layers (``"volatile"``, ``"binary"``, or
+            ``"categorical"``).
         add_constant_input :
             If True, add a bias term to each layer's predictions.
         fully_connected :
@@ -320,7 +328,10 @@ class DeepNetwork:
             and len(set(layer_sizes)) == 1
             and len(self.layer_sizes) > 0
             and self.layer_sizes[-1] == layer_sizes[0]
-            and not (len(self.layer_sizes) == 1 and self.layer_kinds[0] == "binary")
+            and not (
+                len(self.layer_sizes) == 1
+                and self.layer_kinds[0] in ("binary", "categorical")
+            )
         )
 
         start = len(self.layer_sizes)

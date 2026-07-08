@@ -80,7 +80,11 @@ class LayerState(eqx.Module):
         nodes they hold no data and are skipped by every ``tree_map`` over the
         state (stacking, scanning, recording).
         """
-        vol = (lambda v: jnp.full(n_nodes, v)) if has_volatility_parent else (lambda v: None)
+        vol = (
+            (lambda v: jnp.full(n_nodes, v))
+            if has_volatility_parent
+            else (lambda v: None)
+        )
         return cls(
             mean=jnp.zeros(n_nodes),
             precision=jnp.ones(n_nodes),
@@ -178,7 +182,7 @@ class Layer(eqx.Module):
     fully_connected :
         Whether the incoming weights are fully connected.
     kind :
-        The kind of layer, either ``"volatile"`` or ``"binary"``.
+        The kind of layer, one of ``"volatile"``, ``"binary"``, or ``"categorical"``.
     """
 
     state: LayerState
@@ -189,7 +193,7 @@ class Layer(eqx.Module):
     has_volatility_parent: bool = field(static=True)
     is_input_layer: bool = field(static=True)
     fully_connected: bool = field(static=True)
-    kind: str = field(static=True)  # "volatile" | "binary"
+    kind: str = field(static=True)  # "volatile" | "binary" | "categorical"
 
 
 class LayerStack(eqx.Module):
@@ -226,7 +230,7 @@ class LayerStack(eqx.Module):
     fully_connected :
         Whether the incoming weights are fully connected.
     kind :
-        The kind of layer, either ``"volatile"`` or ``"binary"``.
+        The kind of layer, one of ``"volatile"``, ``"binary"``, or ``"categorical"``.
     n_layers :
         The number of stacked layers ``N``.
     """

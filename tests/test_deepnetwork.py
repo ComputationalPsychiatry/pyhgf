@@ -120,6 +120,74 @@ def test_add_layer_binary():
     assert net.n_layers == 2
 
 
+def test_add_layer_categorical():
+    """Test adding a categorical output layer (accepts the alias too)."""
+    net = (
+        DeepNetwork()
+        .add_layer(size=3, kind="categorical")
+        .add_layer(size=3, add_constant_input=False, fully_connected=False)
+    )
+    assert net.layer_kinds == ["categorical", "volatile"]
+    assert net.n_layers == 2
+
+    aliased = DeepNetwork().add_layer(size=3, kind="categorical-state")
+    assert aliased.layer_kinds == ["categorical"]
+
+
+def test_categorical_predict_is_softmax():
+    """A categorical output layer returns a per-sample softmax over the K classes."""
+    n_classes, n_input = 3, 2
+    net = (
+        DeepNetwork()
+        .add_layer(size=n_classes, kind="categorical")
+        .add_layer(size=8)
+        .add_layer(size=n_input, add_constant_input=False)
+        .weight_initialisation("he", key=jax.random.key(0))
+    )
+    out = np.asarray(net.predict(np.random.randn(10, n_input).astype(np.float32)))
+    assert out.shape == (10, n_classes)
+    # Softmax: non-negative and each row sums to one.
+    assert np.all(out >= 0)
+    assert np.allclose(out.sum(axis=1), 1.0, atol=1e-5)
+
+
+def test_categorical_learns_separable_classes():
+    """The categorical network fits three linearly separable Gaussian blobs.
+
+    One-hot labels are clamped on the size-K output layer; training drives the argmax
+    accuracy to one.
+    """
+    rng = np.random.default_rng(0)
+    centers = np.array([[0.0, 2.0], [-2.0, -1.0], [2.0, -1.0]], dtype=np.float32)
+    labels = np.repeat([0, 1, 2], 30)
+    x = (centers[labels] + rng.normal(scale=0.25, size=(90, 2))).astype(np.float32)
+    y_onehot = np.eye(3, dtype=np.float32)[labels]
+
+    net = DeepNetwork(coupling_fn=jax.nn.leaky_relu).add_layer(
+        size=3, kind="categorical"
+    )
+    for _ in range(4):
+        net.add_layer(size=16, tonic_volatility=-80.0, tonic_volatility_vol=-8.0)
+    net = net.add_layer(
+        size=2,
+        add_constant_input=False,
+        coupling_fn=lambda x: x,
+        expected_precision=10e9,
+    ).weight_initialisation("he", key=jax.random.key(0))
+
+    adam = optax.adam(1e-2)
+    for _ in range(40):
+        net.fit(
+            jnp.array(x),
+            jnp.array(y_onehot),
+            optimizer=adam,
+            learning_kind="standard",
+            time_step=0.001,
+        )
+    preds = np.asarray(net.predict(jnp.array(x)))
+    assert (preds.argmax(axis=1) == labels).mean() > 0.95
+
+
 def test_predict():
     """Test predict() shape, finiteness, determinism, and trained vs untrained."""
     n_targets, n_hidden, n_predictors = 2, 3, 4

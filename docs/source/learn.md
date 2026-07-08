@@ -101,7 +101,7 @@ Planning and acting by simulating forward trajectories in predictive coding netw
 :::{grid-item-card}  Deep learning
 :link: learning
 :link-type: ref
-:img-top: ./images/two_moons_training.gif
+:img-top: ./images/three_spirals_training.gif
 
 
 Learning in deep predictive coding networks using variational message passing for prospective configuration.
