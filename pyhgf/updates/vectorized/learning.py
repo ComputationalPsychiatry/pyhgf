@@ -26,31 +26,26 @@ def vectorized_weight_gradient(
     returns ``-lr * grad``; together they reproduce the legacy ``weights + lr * g``
     rule with ``g = -grad``).
 
-    The gradient is computed according to *kind*:
+    The two *kind* values share the same base term, the value prediction error
+    :math:`\delta = \mu_\text{child} - \hat{\mu}_\text{child}` times the coupled
+    parent activation :math:`a = g(\mu_\text{parent})`; they differ only in what
+    scales it. Both are strictly *local*: the update for one weight only reads
+    the prediction error and precision at its child and the activation at its
+    parent. No reduction over other parents or children in the layer.
 
-    - **standard** (``kind="standard"``):
-      :math:`g = \text{PE} \otimes g(\text{parent})`
-    - **precision_weighted** (``kind="precision_weighted"``):
-      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`
-    - **precision_ratio** (``kind="precision_ratio"``): Kalman-gain-style gain
-      using the parent's expected precision in the numerator.
-      :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`,
-      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`
-    - **map_natural** (``kind="map_natural"``): MAP weight update from the
-      predictive-coding free energy with a Gaussian weight prior whose
-      precision is the parent's expected precision; combines child precision
-      (numerator) with parent prior plus per-weight Fisher curvature
-      :math:`g(\text{parent})^2` (denominator).
-      Gaussian child:
-      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child} \cdot g(\text{parent})^2)`.
-      Binary child:
-      :math:`g = \text{PE} \otimes g(\text{parent}) / (\pi_\text{parent} + g(\text{parent})^2)`.
-    - **pure_natural** (``kind="pure_natural"``): Riemannian natural gradient
-      under the parent's precision metric.
-      Gaussian child:
-      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / \pi_\text{parent}`.
-      Binary child:
-      :math:`g = \text{PE} \otimes g(\text{parent}) / \pi_\text{parent}`.
+    - **standard** (``kind="standard"``) — the raw gradient of an *unweighted*
+      squared error, no metric:
+      :math:`g = \delta \otimes a`.
+      This coincides with the free-energy gradient only when the child precision
+      is one (e.g. the unit-precision output / categorical convention).
+
+    - **precision_weighted** (``kind="precision_weighted"``) — the free-energy
+      gradient weighted by the child's *posterior* precision:
+      :math:`g = \delta \otimes a \cdot \pi_\text{child}`.
+      This is the **backprop-parity** mode. A moved interior belief shifts by
+      (routed error) / posterior precision, so weighting by that same posterior
+      precision cancels the division and reproduces the backpropagated gradient
+      node-for-node at *any* precision setting, not only the pinned recipe.
 
     Parameters
     ----------
@@ -66,9 +61,9 @@ def vectorized_weight_gradient(
         If True, the parent layer has a constant input node (mean = 1.0,
         precision = 1.0) appended to its activations after coupling.
     child_is_binary :
-        If True, the child layer is a binary node — drops the redundant
-        precision factor in ``precision_weighted`` / ``map_natural`` /
-        ``pure_natural`` modes (Bernoulli Fisher cancels through sigmoid).
+        If True, the child layer is a binary node drops the redundant
+        precision factor in ``precision_weighted`` (the Bernoulli variance
+        cancels through the sigmoid in the gradient).
 
     Returns
     -------
@@ -82,63 +77,87 @@ def vectorized_weight_gradient(
     ValueError
         If *kind* is unrecognised.
     """
-    _valid_kinds = (
-        "standard",
-        "precision_weighted",
-        "precision_ratio",
-        "map_natural",
-        "pure_natural",
+    # Every kind is a rank-one product of a child-side and a parent-side factor
+    # (see :func:`vectorized_weight_gradient_factors`), so the full matrix is
+    # their outer product. The factor kernel is the single home of the per-kind
+    # geometry, the descent-sign flip, and the ``kind`` validation. NaN/inf are
+    # zeroed on the two factors there rather than on the assembled matrix; the
+    # two agree except for a finite×finite overflow to inf, which neither path
+    # special-cases.
+    u, v = vectorized_weight_gradient_factors(
+        parent_state,
+        child_state,
+        coupling_fn,
+        kind=kind,
+        parent_has_constant=parent_has_constant,
+        child_is_binary=child_is_binary,
     )
-    if kind not in _valid_kinds:
-        raise ValueError(f"Unknown kind '{kind}'. Expected one of {_valid_kinds}.")
+    return u[:, None] * v[None, :]
 
-    # Prediction error at the child layer.
+
+# Both weight-update kinds factorise into a child-side and a parent-side
+# vector (a rank-one product): pe (times, for precision_weighted, the child
+# posterior precision) on one side, the coupled parent activation on the
+# other. No reduction across other parents or children. Returning the two
+# factors lets a batched caller average over samples with one contraction
+# instead of materialising a weight-matrix-sized gradient per sample.
+SEPARABLE_KINDS: tuple = ("standard", "precision_weighted")
+
+
+def vectorized_weight_gradient_factors(
+    parent_state: LayerState,
+    child_state: LayerState,
+    coupling_fn: Callable,
+    kind: str = "precision_weighted",
+    parent_has_constant: bool = False,
+    child_is_binary: bool = False,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    r"""Child- and parent-side factors of the weight gradient.
+
+    For the separable gradient modes (:data:`SEPARABLE_KINDS`) the descent
+    gradient of :func:`vectorized_weight_gradient` is a rank-one product,
+    ``grad = u[:, None] * v[None, :]``. Returning the two vectors instead of
+    their product lets a batched caller average gradients over many samples
+    with a single contraction (``einsum('bi,bj->ij') / batch``). The same
+    arithmetic, but without materialising one weight-matrix-sized gradient
+    per sample, which is what dominates memory traffic at scale.
+
+    Non-finite entries are zeroed on the factors, matching the per-entry
+    zeroing of :func:`vectorized_weight_gradient` for vector-borne NaN/inf.
+
+    Parameters
+    ----------
+    parent_state, child_state, coupling_fn, kind, parent_has_constant, child_is_binary :
+        As in :func:`vectorized_weight_gradient`. *kind* must be one of
+        :data:`SEPARABLE_KINDS`.
+
+    Returns
+    -------
+    (u, v) :
+        Child-side factor, shape ``(n_children,)``, and parent-side factor,
+        shape ``(n_parents[+1],)``, such that ``u[:, None] * v[None, :]`` equals the
+        descent gradient.
+
+    Raises
+    ------
+    ValueError
+        If *kind* is unrecognised.
+    """
+    if kind not in SEPARABLE_KINDS:
+        raise ValueError(f"Unknown kind '{kind}'. Expected one of {SEPARABLE_KINDS}.")
+
     pe = child_state.mean - child_state.expected_mean
-
-    # Coupled parent activation. The constant bias node is wired in linearly
-    # (g(1) = 1) regardless of coupling_fn, so the bias entry is appended
-    # after the coupling has been applied to the activations.
     coupled_parent = coupling_fn(parent_state.mean)
     if parent_has_constant:
         coupled_parent = jnp.concatenate([coupled_parent, jnp.ones(1)])
 
-    # Base outer product: PE ⊗ g(parent)
-    gradient = pe[:, None] * coupled_parent[None, :]
+    u = pe
+    v = coupled_parent
+    if kind == "precision_weighted" and not child_is_binary:
+        u = u * child_state.precision  # posterior precision (backprop-parity gradient)
 
-    # Specialise by kind.
-    if kind in ("precision_ratio", "map_natural", "pure_natural"):
-        parent_precision = parent_state.expected_precision
-        if parent_has_constant:
-            # Constant state nodes have precision = 1.0 (fully known bias).
-            parent_precision = jnp.concatenate([parent_precision, jnp.ones(1)])
+    u = jnp.where(jnp.isfinite(u), u, 0.0)
+    v = jnp.where(jnp.isfinite(v), v, 0.0)
 
-    if kind == "precision_ratio" and not child_is_binary:
-        kalman_gain = parent_precision[None, :] / (
-            parent_precision[None, :] + child_state.expected_precision[:, None]
-        )
-        gradient = gradient * kalman_gain
-    elif kind == "map_natural":
-        if child_is_binary:
-            gain = 1.0 / (parent_precision[None, :] + coupled_parent[None, :] ** 2)
-        else:
-            gain = child_state.expected_precision[:, None] / (
-                parent_precision[None, :]
-                + child_state.expected_precision[:, None] * coupled_parent[None, :] ** 2
-            )
-        gradient = gradient * gain
-    elif kind == "pure_natural":
-        if child_is_binary:
-            gain = 1.0 / parent_precision[None, :]
-        else:
-            gain = child_state.expected_precision[:, None] / parent_precision[None, :]
-        gradient = gradient * gain
-    elif kind == "precision_weighted" and not child_is_binary:
-        gradient = gradient * child_state.precision[:, None]
-
-    # Zero out NaN/inf so optax moments stay finite.
-    gradient = jnp.where(jnp.isnan(gradient) | jnp.isinf(gradient), 0.0, gradient)
-
-    # Negate: HGF's natural formulation produces an ascent gradient; optax
-    # expects descent. The combination ``apply_updates(w, sgd(lr).update(grad))``
-    # reproduces ``w + lr * (-(-grad)) = w + lr * g`` matching legacy.
-    return -gradient
+    # Descent sign, folded into the child-side factor.
+    return -u, v

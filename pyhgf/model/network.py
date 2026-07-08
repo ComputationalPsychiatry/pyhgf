@@ -7,7 +7,7 @@ from typing import Callable, Optional, Union
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
-from jax import random, vmap
+from jax import Array, random, vmap
 from jax.lax import scan, switch
 from jax.tree_util import Partial
 from jax.typing import ArrayLike
@@ -259,11 +259,11 @@ class Network:
             `scan_fn` is already defined.
         lr :
             How the gradient is applied: a non-negative float for direct scaling, or
-            ``"adam"`` for the Adam optimiser.  Applied uniformly across all
-            *learning_kind* values, including ``"precision_ratio"``.
+            ``"adam"`` for the Adam optimiser. Applied uniformly across both
+            *learning_kind* values.
         learning_kind :
-            Gradient computation mode: ``"standard"``, ``"precision_weighted"``
-            (default), or ``"precision_ratio"``.
+            Gradient computation mode: ``"standard"`` or ``"precision_weighted"``
+            (default).
         params :
             Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
             ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``
@@ -403,8 +403,8 @@ class Network:
             How the gradient is applied: a non-negative float for direct scaling, or
             ``"adam"`` for the Adam optimiser.
         learning_kind :
-            Gradient computation mode: ``"standard"``, ``"precision_weighted"``
-            (default), or ``"precision_ratio"``.
+            Gradient computation mode: ``"standard"`` or ``"precision_weighted"``
+            (default).
         params :
             Dictionary of Adam hyper-parameters (used only when ``lr="adam"``):
             ``beta1`` (default 0.9), ``beta2`` (default 0.999), ``epsilon``
@@ -988,7 +988,7 @@ class Network:
         response_function: Callable,
         response_function_inputs: tuple = (),
         response_function_parameters: Optional[Union[tuple, ArrayLike, float]] = None,
-    ) -> float:
+    ) -> Array:
         """Surprise of the model conditioned by the response function.
 
         The surprise (negative log probability) depends on the input data, the model

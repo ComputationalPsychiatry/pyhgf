@@ -29,13 +29,12 @@ def test_fit():
         (None, None),  # linear (identity)
         ("tanh", (jnp.tanh,)),  # nonlinear
     ]
-    # (learning_kind, lr, label) — lr is now applied uniformly to all kinds,
-    # including "precision_ratio".  "adam" triggers the Adam optimiser on both backends.
+    # (learning_kind, lr, label) — lr is applied uniformly to all kinds.
+    # "adam" triggers the Adam optimiser on both backends.
     lr_variants = [
         ("precision_weighted", 0.1, "precision_weighted lr=0.1"),
         ("precision_weighted", "adam", "precision_weighted adam"),
         ("standard", 0.1, "standard lr=0.1"),
-        ("precision_ratio", 0.1, "precision_ratio lr=0.1"),
     ]
 
     for coupling_name, py_coupling_fn in coupling_variants:

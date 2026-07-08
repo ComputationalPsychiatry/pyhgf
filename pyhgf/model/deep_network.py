@@ -533,8 +533,9 @@ class DeepNetwork:
         learning_kind :
             Gradient computation mode passed to
             :func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient`:
-            ``"standard"``, ``"precision_weighted"`` (default),
-            ``"precision_ratio"``, ``"map_natural"``, or ``"pure_natural"``.
+            ``"standard"`` or ``"precision_weighted"`` (default). Both are
+            strictly local. Each weight update reads only its own
+            connection's prediction error, activation, and precision.
         record :
             Tuple of ``LayerState`` field names to record at every time step,
             e.g. ``("expected_mean", "precision")``. ``None`` (default) skips
