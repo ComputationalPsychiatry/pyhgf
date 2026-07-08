@@ -60,7 +60,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="pyhgf.math.Normal" href="pyhgf.math.Normal.html" />
-    <link rel="prev" title="pyhgf.utils.vectorized_belief_propagation.run_scan" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html" />
+    <link rel="prev" title="pyhgf.utils.vectorized_belief_propagation.batched_prediction_states" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -539,6 +539,7 @@
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
@@ -558,6 +559,29 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transplant/pyhgf.model.transplant.from_linear.html">pyhgf.model.transplant.from_linear</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transplant/pyhgf.model.transplant.from_feedforward.html">pyhgf.model.transplant.from_feedforward</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transplant/pyhgf.model.transplant.from_embedding.html">pyhgf.model.transplant.from_embedding</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html">pyhgf.model.builder.LayerConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.builder/pyhgf.model.builder.resolve_coupling_fn.html">pyhgf.model.builder.resolve_coupling_fn</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html">pyhgf.model.hybrid.PCModule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.DeepNetworkAdapter.html">pyhgf.model.hybrid.DeepNetworkAdapter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.EquinoxAdapter.html">pyhgf.model.hybrid.EquinoxAdapter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCSequential.html">pyhgf.model.hybrid.PCSequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.Residual.html">pyhgf.model.hybrid.Residual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.linear_adapter.html">pyhgf.model.hybrid.linear_adapter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.layer_norm_adapter.html">pyhgf.model.hybrid.layer_norm_adapter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.gelu_adapter.html">pyhgf.model.hybrid.gelu_adapter</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transformer/pyhgf.model.transformer.MultiHeadAttention.html">pyhgf.model.transformer.MultiHeadAttention</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transformer/pyhgf.model.transformer.HybridGPT.html">pyhgf.model.transformer.HybridGPT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transformer/pyhgf.model.transformer.hybrid_from_gpt.html">pyhgf.model.transformer.hybrid_from_gpt</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html">pyhgf.model.fused.FusedPipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.fused/pyhgf.model.fused.step_report.html">pyhgf.model.fused.step_report</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html">pyhgf.plots.matplotlib.plot_trajectories</a></li>
@@ -609,6 +633,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.propagation_step.html">pyhgf.utils.vectorized_belief_propagation.propagation_step</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_pass.html">pyhgf.utils.vectorized_belief_propagation.prediction_pass</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html">pyhgf.utils.vectorized_belief_propagation.run_scan</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_sweep.html">pyhgf.utils.vectorized_belief_propagation.prediction_sweep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.update_sweep.html">pyhgf.utils.vectorized_belief_propagation.update_sweep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.learn_sweep.html">pyhgf.utils.vectorized_belief_propagation.learn_sweep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.input_prediction_error.html">pyhgf.utils.vectorized_belief_propagation.input_prediction_error</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.sample_step.html">pyhgf.utils.vectorized_belief_propagation.sample_step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batch_step.html">pyhgf.utils.vectorized_belief_propagation.batch_step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_states</a></li>
 </ul>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.math.MultivariateNormal</a></li>
@@ -750,12 +783,12 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html"
+       href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyhgf.utils.vectorized_belief_propagation.run_scan</p>
+        <p class="prev-next-title">pyhgf.utils.vectorized_belief_propagation.batched_prediction_states</p>
       </div>
     </a>
     <a class="right-next"

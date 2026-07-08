@@ -1,0 +1,6 @@
+﻿pyhgf.model.hybrid.linear\_adapter
+==================================
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autofunction:: linear_adapter

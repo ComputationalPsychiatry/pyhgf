@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.update\_sweep
+=========================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: update_sweep

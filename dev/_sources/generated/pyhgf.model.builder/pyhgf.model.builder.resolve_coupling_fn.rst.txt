@@ -1,0 +1,6 @@
+﻿pyhgf.model.builder.resolve\_coupling\_fn
+=========================================
+
+.. currentmodule:: pyhgf.model.builder
+
+.. autofunction:: resolve_coupling_fn

@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.apply\_confidence\_increments
+=========================================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: apply_confidence_increments

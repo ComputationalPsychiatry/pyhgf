@@ -1,0 +1,23 @@
+﻿pyhgf.model.transformer.MultiHeadAttention
+==========================================
+
+.. currentmodule:: pyhgf.model.transformer
+
+.. autoclass:: MultiHeadAttention
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MultiHeadAttention.__init__
+      ~MultiHeadAttention.init_state
+   
+   
+
+   
+   
+   

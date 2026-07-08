@@ -1,0 +1,23 @@
+﻿pyhgf.model.hybrid.Residual
+===========================
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autoclass:: Residual
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Residual.__init__
+      ~Residual.init_state
+   
+   
+
+   
+   
+   

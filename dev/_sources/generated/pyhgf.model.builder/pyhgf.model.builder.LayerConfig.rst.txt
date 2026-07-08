@@ -1,0 +1,39 @@
+﻿pyhgf.model.builder.LayerConfig
+===============================
+
+.. currentmodule:: pyhgf.model.builder
+
+.. autoclass:: LayerConfig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LayerConfig.__init__
+      ~LayerConfig.from_dict
+      ~LayerConfig.to_dict
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LayerConfig.add_constant_input
+      ~LayerConfig.autoconnection_strength_vol
+      ~LayerConfig.coupling_fn
+      ~LayerConfig.fully_connected
+      ~LayerConfig.kind
+      ~LayerConfig.tonic_volatility
+      ~LayerConfig.tonic_volatility_vol
+      ~LayerConfig.volatility_coupling
+      ~LayerConfig.volatility_parent
+      ~LayerConfig.size
+   
+   

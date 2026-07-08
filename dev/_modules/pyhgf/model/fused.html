@@ -1,0 +1,1545 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyhgf.model.fused &#8212; pyhgf 0.3.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if ("False" === "True") {
+                                        addZoomToSvgs(d3.selectAll(""));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? mermaids_active.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/model/fused';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.model.fused</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pyhgf.model.fused</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
+
+<span class="sd">&quot;&quot;&quot;The pipeline executor: one compiled program per training step.</span>
+
+<span class="sd">The classes in :mod:`pyhgf.model.hybrid` and :mod:`pyhgf.model.transformer` *declare* a</span>
+<span class="sd">model — which slots learn, which are frozen, how parts nest. :class:`FusedPipeline`</span>
+<span class="sd">runs such a part tree: every part&#39;s state (network beliefs, weights, optimiser</span>
+<span class="sd">moments) enters and leaves as explicit values, and the forward walk, the error at the</span>
+<span class="sd">output, and every local learning step are staged into a single compiled program —</span>
+<span class="sd">nothing crosses a compilation boundary inside one training step.</span>
+
+<span class="sd">See ``docs/source/notebooks/0.6-Deep_networks_implementation.md`` for the architecture guide and the</span>
+<span class="sd">verification gates.</span>
+
+<span class="sd">Supported part trees: :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`,</span>
+<span class="sd">:class:`~pyhgf.model.hybrid.EquinoxAdapter`, :class:`~pyhgf.model.hybrid.PCSequential`,</span>
+<span class="sd">:class:`~pyhgf.model.hybrid.Residual`,</span>
+<span class="sd">:class:`~pyhgf.model.transformer.MultiHeadAttention`, and the assembled</span>
+<span class="sd">:class:`~pyhgf.model.transformer.HybridGPT` — the entire Transformer trains in one</span>
+<span class="sd">compiled call per step.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DeepNetworkAdapter</span><span class="p">,</span>
+    <span class="n">EquinoxAdapter</span><span class="p">,</span>
+    <span class="n">PCSequential</span><span class="p">,</span>
+    <span class="n">Residual</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.transformer</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HybridGPT</span><span class="p">,</span>
+    <span class="n">MultiHeadAttention</span><span class="p">,</span>
+    <span class="n">_mixing_backward</span><span class="p">,</span>
+    <span class="n">_mixing_forward</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_batch_step</span><span class="p">,</span>
+    <span class="n">_prediction_sweep</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FusedPipeline&quot;</span><span class="p">,</span> <span class="s2">&quot;step_report&quot;</span><span class="p">]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Core</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A part tree&#39;s training step as pure functions with explicit state.</span>
+
+<span class="sd">    ``forward(state, x)`` returns the tree&#39;s output and a cache of whatever the backward</span>
+<span class="sd">    walk needs; ``backward(state, cache, error)`` returns the error at the tree&#39;s input,</span>
+<span class="sd">    the advanced state, and a tuple of per-part report entries (see</span>
+<span class="sd">    :func:`step_report`). All are pure — the recursion over the tree happens while</span>
+<span class="sd">    tracing, staging one graph. ``write_back(state)`` copies a state pytree onto the</span>
+<span class="sd">    part objects the core was built from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">init_state</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">forward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="n">backward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
+    <span class="n">write_back</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_adapter_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">DeepNetworkAdapter</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of a learning part: sweep forward, batch learning backward.</span>
+
+<span class="sd">    The state is the pair (network, optimiser state). The forward pass keeps the per-</span>
+<span class="sd">    sample swept states as the cache, so the backward pass starts from them instead of</span>
+<span class="sd">    re-running the sweep — inside one trace, the handover is free.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">optimizer</span>
+    <span class="n">learning_kind</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">learning_kind</span>
+    <span class="n">update_confidences</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">update_confidences</span>
+    <span class="n">time_step</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">time_step</span>
+    <span class="n">layer_sizes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
+
+    <span class="c1"># part.init_state() returns the (network, opt_state) pytree directly.</span>
+    <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">init_state</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">network</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">one</span><span class="p">(</span><span class="n">xi</span><span class="p">):</span>
+            <span class="n">swept</span> <span class="o">=</span> <span class="n">_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">swept</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+
+        <span class="n">states</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">one</span><span class="p">)(</span><span class="n">flat</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">expected_mean</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">flat</span><span class="p">,</span> <span class="n">states</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">flat_x</span><span class="p">,</span> <span class="n">states</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">expected_mean</span>
+        <span class="n">weights_before</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">()</span>
+        <span class="c1"># Correct-and-clamp: the observation the network should have</span>
+        <span class="c1"># produced is its output corrected by the error.</span>
+        <span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">input_errors</span> <span class="o">=</span> <span class="n">_batch_step</span><span class="p">(</span>
+            <span class="n">network</span><span class="p">,</span>
+            <span class="n">opt_state</span><span class="p">,</span>
+            <span class="n">flat_x</span><span class="p">,</span>
+            <span class="n">out</span> <span class="o">-</span> <span class="n">error</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">error</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">update_confidences</span><span class="o">=</span><span class="n">update_confidences</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">predicted</span><span class="o">=</span><span class="n">states</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">update_norm</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">after</span> <span class="o">-</span> <span class="n">before</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">weights_before</span><span class="p">,</span> <span class="n">network</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">after</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;part&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+                <span class="s2">&quot;layer_sizes&quot;</span><span class="p">:</span> <span class="n">layer_sizes</span><span class="p">,</span>
+                <span class="s2">&quot;update_norm&quot;</span><span class="p">:</span> <span class="n">update_norm</span><span class="p">,</span>
+                <span class="s2">&quot;error_norm&quot;</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="c1"># PyHGF&#39;s input errors are observed-minus-predicted; the pipeline</span>
+        <span class="c1"># convention is descent.</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="o">-</span><span class="n">input_errors</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">error</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">),</span>
+            <span class="n">report</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">state</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_frozen_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">EquinoxAdapter</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of a frozen part: its formula pair, cache threaded explicitly.</span>
+
+<span class="sd">    A frozen part has no learnable state, so its state pytree is empty.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">part</span><span class="o">.</span><span class="n">forward_fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">part</span><span class="o">.</span><span class="n">backward_fn</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">),</span> <span class="n">state</span><span class="p">,</span> <span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sequential_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">PCSequential</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of a chain: children forward in order, backward in reverse.</span>
+
+<span class="sd">    The state is a tuple of the children&#39;s states, built from the child cores.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cores</span> <span class="o">=</span> <span class="p">[</span><span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.parts[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">parts</span><span class="p">)]</span>
+
+    <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">init_state</span> <span class="k">for</span> <span class="n">core</span> <span class="ow">in</span> <span class="n">cores</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">child_state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cores</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">caches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">caches</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">caches</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">reports</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cores</span><span class="p">))):</span>
+            <span class="n">error</span><span class="p">,</span> <span class="n">new_state</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">report</span> <span class="o">=</span> <span class="n">cores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">caches</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">error</span><span class="p">)</span>
+            <span class="n">reports</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">report</span>  <span class="c1"># keep pipeline order, not visit order</span>
+        <span class="k">return</span> <span class="n">error</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_state</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">reports</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">child_state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cores</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+            <span class="n">core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">child_state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_residual_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">Residual</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the shortcut junction: the branch&#39;s messages add back.</span>
+
+<span class="sd">    State is obtained from the branch via its _Core&#39;s init_state pytree. The shortcut</span>
+<span class="sd">    itself has no state (it just routes signals), so the pytree is just the branch&#39;s</span>
+<span class="sd">    state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">inner</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">branch</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.branch&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">inner</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">cache</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">error_in</span><span class="p">,</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">report</span> <span class="o">=</span> <span class="n">inner</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">error</span> <span class="o">+</span> <span class="n">error_in</span><span class="p">,</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">report</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">inner</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">inner</span><span class="o">.</span><span class="n">write_back</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the attention composite: Q/K/V, the mixing, then O.</span>
+
+<span class="sd">    Backward, the output error returns through O, is re-routed across positions by the</span>
+<span class="sd">    mixing formula, and the three resulting messages return through Q, K, and V — whose</span>
+<span class="sd">    input errors add, since all three read the same input.</span>
+
+<span class="sd">    State is obtained from each of the four weight table cores (Q, K, V, O), which have</span>
+<span class="sd">    already been initialized via their respective ``init_state()`` calls during _core</span>
+<span class="sd">    construction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q_core</span><span class="p">,</span> <span class="n">k_core</span><span class="p">,</span> <span class="n">v_core</span><span class="p">,</span> <span class="n">o_core</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;wq&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wq</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;wk&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wk</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;wv&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wv</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;wo&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wo</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">n_heads</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">n_heads</span>
+
+    <span class="c1"># Aggregate init_state pytrees from all four cores.</span>
+    <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">init_state</span> <span class="k">for</span> <span class="n">core</span> <span class="ow">in</span> <span class="p">(</span><span class="n">q_core</span><span class="p">,</span> <span class="n">k_core</span><span class="p">,</span> <span class="n">v_core</span><span class="p">,</span> <span class="n">o_core</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">state_q</span><span class="p">,</span> <span class="n">state_k</span><span class="p">,</span> <span class="n">state_v</span><span class="p">,</span> <span class="n">state_o</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">q</span><span class="p">,</span> <span class="n">cache_q</span> <span class="o">=</span> <span class="n">q_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_q</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">k</span><span class="p">,</span> <span class="n">cache_k</span> <span class="o">=</span> <span class="n">k_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_k</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">v</span><span class="p">,</span> <span class="n">cache_v</span> <span class="o">=</span> <span class="n">v_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_v</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="p">,</span> <span class="n">cache_mix</span> <span class="o">=</span> <span class="n">_mixing_forward</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">n_heads</span><span class="p">)</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="n">cache_q</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">state_q</span><span class="p">,</span> <span class="n">state_k</span><span class="p">,</span> <span class="n">state_v</span><span class="p">,</span> <span class="n">state_o</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">cache_q</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">d_ctx</span><span class="p">,</span> <span class="n">new_o</span><span class="p">,</span> <span class="n">report_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+        <span class="n">d_q</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">d_v</span> <span class="o">=</span> <span class="n">_mixing_backward</span><span class="p">(</span><span class="n">cache_mix</span><span class="p">,</span> <span class="n">d_ctx</span><span class="p">)</span>
+        <span class="n">error_q</span><span class="p">,</span> <span class="n">new_q</span><span class="p">,</span> <span class="n">report_q</span> <span class="o">=</span> <span class="n">q_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_q</span><span class="p">,</span> <span class="n">cache_q</span><span class="p">,</span> <span class="n">d_q</span><span class="p">)</span>
+        <span class="n">error_k</span><span class="p">,</span> <span class="n">new_k</span><span class="p">,</span> <span class="n">report_k</span> <span class="o">=</span> <span class="n">k_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_k</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">d_k</span><span class="p">)</span>
+        <span class="n">error_v</span><span class="p">,</span> <span class="n">new_v</span><span class="p">,</span> <span class="n">report_v</span> <span class="o">=</span> <span class="n">v_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_v</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">d_v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">error_q</span> <span class="o">+</span> <span class="n">error_k</span> <span class="o">+</span> <span class="n">error_v</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">new_q</span><span class="p">,</span> <span class="n">new_k</span><span class="p">,</span> <span class="n">new_v</span><span class="p">,</span> <span class="n">new_o</span><span class="p">),</span>
+            <span class="n">report_q</span> <span class="o">+</span> <span class="n">report_k</span> <span class="o">+</span> <span class="n">report_v</span> <span class="o">+</span> <span class="n">report_o</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">child_state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">q_core</span><span class="p">,</span> <span class="n">k_core</span><span class="p">,</span> <span class="n">v_core</span><span class="p">,</span> <span class="n">o_core</span><span class="p">),</span> <span class="n">state</span><span class="p">):</span>
+            <span class="n">core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">child_state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gpt_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">HybridGPT</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the full Transformer: embeddings, blocks, and head.</span>
+
+<span class="sd">    The forward pass takes integer token ids, not feature arrays: the one-hot encoding</span>
+<span class="sd">    (or the frozen table lookup) happens in-trace. Backward, the error at the embedding</span>
+<span class="sd">    output goes to both embedding parts — the position part receives the batch mean,</span>
+<span class="sd">    matching its one-row-per-position sample count — and is returned, ending the chain.</span>
+
+<span class="sd">    State is obtained from the pipeline and optional embedding parts via their</span>
+<span class="sd">    respective _Core init_state pytrees. Frozen embeddings contribute empty states.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pipeline_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">pipeline</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.pipeline&quot;</span><span class="p">)</span>
+    <span class="n">token_core</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">token_part</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">token_part</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.token_part&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">position_core</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">position_part</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">position_part</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.position_part&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">tok_table</span><span class="p">,</span> <span class="n">pos_table</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">tok_table</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">pos_table</span>
+
+    <span class="c1"># Aggregate init_state pytrees: pipeline (always present) and optional</span>
+    <span class="c1"># token/position cores (empty tuples if frozen).</span>
+    <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pipeline_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">token_core</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">token_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">position_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">ids</span><span class="p">):</span>
+        <span class="n">state_pipe</span><span class="p">,</span> <span class="n">state_tok</span><span class="p">,</span> <span class="n">state_pos</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">seq_len</span> <span class="o">=</span> <span class="n">ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">token_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tok</span><span class="p">,</span> <span class="n">cache_tok</span> <span class="o">=</span> <span class="n">token_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span>
+                <span class="n">state_tok</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">one_hot</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">tok_table</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tok</span><span class="p">,</span> <span class="n">cache_tok</span> <span class="o">=</span> <span class="n">tok_table</span><span class="p">[</span><span class="n">ids</span><span class="p">],</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pos</span><span class="p">,</span> <span class="n">cache_pos</span> <span class="o">=</span> <span class="n">position_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span>
+                <span class="n">state_pos</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">one_hot</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">seq_len</span><span class="p">),</span> <span class="n">pos_table</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pos</span><span class="p">,</span> <span class="n">cache_pos</span> <span class="o">=</span> <span class="n">pos_table</span><span class="p">[:</span><span class="n">seq_len</span><span class="p">],</span> <span class="p">()</span>
+        <span class="n">out</span><span class="p">,</span> <span class="n">cache_pipe</span> <span class="o">=</span> <span class="n">pipeline_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_pipe</span><span class="p">,</span> <span class="n">tok</span> <span class="o">+</span> <span class="n">pos</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="p">(</span><span class="n">cache_pipe</span><span class="p">,</span> <span class="n">cache_tok</span><span class="p">,</span> <span class="n">cache_pos</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">state_pipe</span><span class="p">,</span> <span class="n">state_tok</span><span class="p">,</span> <span class="n">state_pos</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">cache_pipe</span><span class="p">,</span> <span class="n">cache_tok</span><span class="p">,</span> <span class="n">cache_pos</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">embedding_error</span><span class="p">,</span> <span class="n">new_pipe</span><span class="p">,</span> <span class="n">reports</span> <span class="o">=</span> <span class="n">pipeline_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span>
+            <span class="n">state_pipe</span><span class="p">,</span> <span class="n">cache_pipe</span><span class="p">,</span> <span class="n">error</span>
+        <span class="p">)</span>
+        <span class="n">new_tok</span><span class="p">,</span> <span class="n">new_pos</span> <span class="o">=</span> <span class="n">state_tok</span><span class="p">,</span> <span class="n">state_pos</span>
+        <span class="k">if</span> <span class="n">token_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">new_tok</span><span class="p">,</span> <span class="n">report</span> <span class="o">=</span> <span class="n">token_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span>
+                <span class="n">state_tok</span><span class="p">,</span> <span class="n">cache_tok</span><span class="p">,</span> <span class="n">embedding_error</span>
+            <span class="p">)</span>
+            <span class="n">reports</span> <span class="o">=</span> <span class="n">reports</span> <span class="o">+</span> <span class="n">report</span>
+        <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">,</span> <span class="n">report</span> <span class="o">=</span> <span class="n">position_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span>
+                <span class="n">state_pos</span><span class="p">,</span> <span class="n">cache_pos</span><span class="p">,</span> <span class="n">embedding_error</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">reports</span> <span class="o">=</span> <span class="n">reports</span> <span class="o">+</span> <span class="n">report</span>
+        <span class="k">return</span> <span class="n">embedding_error</span><span class="p">,</span> <span class="p">(</span><span class="n">new_pipe</span><span class="p">,</span> <span class="n">new_tok</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">),</span> <span class="n">reports</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">state_pipe</span><span class="p">,</span> <span class="n">state_tok</span><span class="p">,</span> <span class="n">state_pos</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">pipeline_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state_pipe</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">token_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">token_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state_tok</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">position_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state_pos</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the functional core for a part tree, by its type.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">part</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">DeepNetworkAdapter</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_adapter_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">EquinoxAdapter</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_frozen_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">PCSequential</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_sequential_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">Residual</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_residual_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">MultiHeadAttention</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">HybridGPT</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_gpt_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="s2">&quot;FusedPipeline supports DeepNetworkAdapter, EquinoxAdapter, &quot;</span>
+        <span class="s2">&quot;PCSequential, Residual, MultiHeadAttention, and HybridGPT trees; &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">part</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="FusedPipeline">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html#pyhgf.model.fused.FusedPipeline">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FusedPipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a part tree, one compiled program per training step.</span>
+
+<span class="sd">    Holds every part&#39;s mutable state (the network beliefs and weights, the optimiser</span>
+<span class="sd">    states) as one explicit pytree, and compiles a single step function: forward walk →</span>
+<span class="sd">    error at the output → backward walk with every local learning step → error at the</span>
+<span class="sd">    input. The error is formed *inside* the program by ``error_fn``, so no intermediate</span>
+<span class="sd">    crosses a compilation boundary.</span>
+
+<span class="sd">    The part objects only declare the model; they are not advanced while the executor</span>
+<span class="sd">    runs. Call :meth:`merge` to write the current state back onto them (e.g. to inspect</span>
+<span class="sd">    a network&#39;s layers, or to save it).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    part :</span>
+<span class="sd">        The part tree to execute: any composition of</span>
+<span class="sd">        :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`,</span>
+<span class="sd">        :class:`~pyhgf.model.hybrid.EquinoxAdapter`,</span>
+<span class="sd">        :class:`~pyhgf.model.hybrid.PCSequential`,</span>
+<span class="sd">        :class:`~pyhgf.model.hybrid.Residual`, and</span>
+<span class="sd">        :class:`~pyhgf.model.transformer.MultiHeadAttention`, or a full</span>
+<span class="sd">        :class:`~pyhgf.model.transformer.HybridGPT` (whose inputs are then</span>
+<span class="sd">        integer token ids).</span>
+<span class="sd">    error_fn :</span>
+<span class="sd">        How the descent error at the tree&#39;s output is formed from the output and the</span>
+<span class="sd">        training target, e.g. ``lambda out, target: out - target`` for a squared-error</span>
+<span class="sd">        objective (the default), or</span>
+<span class="sd">        ``lambda probs, ids: probs - jax.nn.one_hot(ids, vocab)`` for a categorical</span>
+<span class="sd">        head trained on integer targets. Must be a pure function of arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FusedPipeline.__init__">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html#pyhgf.model.fused.FusedPipeline.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">part</span><span class="p">,</span>
+        <span class="n">error_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">error_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">error_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">out</span> <span class="o">-</span> <span class="n">target</span>  <span class="c1"># noqa: E731</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">init_state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_report</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">error_fn</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+            <span class="n">input_error</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">reports</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span><span class="p">,</span> <span class="n">reports</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the forward pass only — no error, no learning, no state change.</span>
+
+<span class="sd">        Use for evaluation and generation. For a</span>
+<span class="sd">        :class:`~pyhgf.model.transformer.HybridGPT`, ``x`` is a batch of integer token-</span>
+<span class="sd">        id sequences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Advance the held state by one training step, in one compiled call.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Inputs, shape ``(batch, n_input_features)`` — or integer token ids,</span>
+<span class="sd">            ``(batch, seq)``, for a full Transformer.</span>
+<span class="sd">        target :</span>
+<span class="sd">            Training targets, shaped as ``error_fn`` expects alongside the tree&#39;s</span>
+<span class="sd">            output.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        output :</span>
+<span class="sd">            The tree&#39;s predictions for ``x``, shape ``(batch, n_output_features)``.</span>
+<span class="sd">        input_error :</span>
+<span class="sd">            The descent error at the tree&#39;s input — what a part behind the tree</span>
+<span class="sd">            would receive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the held state back onto the wrapped parts; return the tree.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_part</span></div>
+
+
+
+<div class="viewcode-block" id="step_report">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.fused/pyhgf.model.fused.step_report.html#pyhgf.model.fused.step_report">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">step_report</span><span class="p">(</span><span class="n">pipeline</span><span class="p">:</span> <span class="n">FusedPipeline</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-part step magnitudes after a training step, for rate calibration.</span>
+
+<span class="sd">    Returns one entry per learning part of the last :meth:`FusedPipeline.step`</span>
+<span class="sd">    call: the norm of its applied weight change and of the error it received,</span>
+<span class="sd">    labelled by the part&#39;s path inside the model. Reading the two side by side</span>
+<span class="sd">    shows at a glance which parts are being over- or under-driven — the</span>
+<span class="sd">    practical symptom of a mis-calibrated learning rate (see the architecture</span>
+<span class="sd">    guide on choosing the optimizer and rate).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pipeline :</span>
+<span class="sd">        The executor to read. Its part tree must have taken at least one step.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict</span>
+<span class="sd">        One entry per learning part, in pipeline order, with keys ``&quot;part&quot;``</span>
+<span class="sd">        (its path inside the model), ``&quot;layer_sizes&quot;`` (the wrapped network&#39;s</span>
+<span class="sd">        layout), ``&quot;update_norm&quot;`` and ``&quot;error_norm&quot;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">_last_report</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;part&quot;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;part&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;layer_sizes&quot;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;layer_sizes&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;update_norm&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;update_norm&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;error_norm&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;error_norm&quot;</span><span class="p">]),</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">_last_report</span>
+    <span class="p">]</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2026, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

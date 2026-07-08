@@ -1,0 +1,23 @@
+﻿pyhgf.model.hybrid.DeepNetworkAdapter
+=====================================
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autoclass:: DeepNetworkAdapter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DeepNetworkAdapter.__init__
+      ~DeepNetworkAdapter.init_state
+   
+   
+
+   
+   
+   

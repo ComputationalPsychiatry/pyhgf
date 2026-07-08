@@ -493,28 +493,32 @@
 <li><p><a class="reference internal" href="#model" id="id35">Model</a></p>
 <ul>
 <li><p><a class="reference internal" href="#weight-transplant" id="id36">Weight transplant</a></p></li>
+<li><p><a class="reference internal" href="#declarative-construction" id="id37">Declarative construction</a></p></li>
+<li><p><a class="reference internal" href="#mixed-pipelines" id="id38">Mixed pipelines</a></p></li>
+<li><p><a class="reference internal" href="#transformer" id="id39">Transformer</a></p></li>
+<li><p><a class="reference internal" href="#fused-pipeline-execution" id="id40">Fused pipeline execution</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#plots" id="id37">Plots</a></p>
+<li><p><a class="reference internal" href="#plots" id="id41">Plots</a></p>
 <ul>
-<li><p><a class="reference internal" href="#matplotlib" id="id38">Matplotlib</a></p></li>
-<li><p><a class="reference internal" href="#graphviz" id="id39">Graphviz</a></p></li>
-<li><p><a class="reference internal" href="#networkx" id="id40">Networkx</a></p></li>
+<li><p><a class="reference internal" href="#matplotlib" id="id42">Matplotlib</a></p></li>
+<li><p><a class="reference internal" href="#graphviz" id="id43">Graphviz</a></p></li>
+<li><p><a class="reference internal" href="#networkx" id="id44">Networkx</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#response" id="id41">Response</a></p></li>
-<li><p><a class="reference internal" href="#utils" id="id42">Utils</a></p>
+<li><p><a class="reference internal" href="#response" id="id45">Response</a></p></li>
+<li><p><a class="reference internal" href="#utils" id="id46">Utils</a></p>
 <ul>
-<li><p><a class="reference internal" href="#weight-initialisation" id="id43">Weight initialisation</a></p></li>
-<li><p><a class="reference internal" href="#sampling" id="id44">Sampling</a></p></li>
-<li><p><a class="reference internal" href="#vectorized-belief-propagation" id="id45">Vectorized belief propagation</a></p></li>
+<li><p><a class="reference internal" href="#weight-initialisation" id="id47">Weight initialisation</a></p></li>
+<li><p><a class="reference internal" href="#sampling" id="id48">Sampling</a></p></li>
+<li><p><a class="reference internal" href="#vectorized-belief-propagation" id="id49">Vectorized belief propagation</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#math" id="id46">Math</a></p></li>
-<li><p><a class="reference internal" href="#typing" id="id47">Typing</a></p>
+<li><p><a class="reference internal" href="#math" id="id50">Math</a></p></li>
+<li><p><a class="reference internal" href="#typing" id="id51">Typing</a></p>
 <ul>
-<li><p><a class="reference internal" href="#network-structure" id="id48">Network structure</a></p></li>
-<li><p><a class="reference internal" href="#vectorized-networks" id="id49">Vectorized networks</a></p></li>
+<li><p><a class="reference internal" href="#network-structure" id="id52">Network structure</a></p></li>
+<li><p><a class="reference internal" href="#vectorized-networks" id="id53">Vectorized networks</a></p></li>
 </ul>
 </li>
 </ul>
@@ -991,6 +995,9 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient" title="pyhgf.updates.vectorized.learning.vectorized_weight_gradient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_weight_gradient</span></code></a>(parent_state, ...)</p></td>
 <td><p>Per-layer weight gradient for the vectorised deep network.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors" title="pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_weight_gradient_factors</span></code></a>(...[, ...])</p></td>
+<td><p>Child- and parent-side factors of the weight gradient.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1060,14 +1067,101 @@ of a trained Equinox module, translating its weights into PyHGF’s layer layout
 </table>
 </div>
 </section>
+<section id="declarative-construction">
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">Declarative construction</a><a class="headerlink" href="#declarative-construction" title="Link to this heading">#</a></h3>
+<p>Build a <a class="reference internal" href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeepNetwork</span></code></a> from serializable layer configurations, for
+configuration-driven experiments and reproducible hyperparameter sweeps.</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig" title="pyhgf.model.builder.LayerConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerConfig</span></code></a></p></td>
+<td><p>Configuration for one layer in a DeepNetwork.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.builder/pyhgf.model.builder.resolve_coupling_fn.html#pyhgf.model.builder.resolve_coupling_fn" title="pyhgf.model.builder.resolve_coupling_fn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_coupling_fn</span></code></a></p></td>
+<td><p>Resolve a coupling function name to a callable.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="mixed-pipelines">
+<h3><a class="toc-backref" href="#id38" role="doc-backlink">Mixed pipelines</a><a class="headerlink" href="#mixed-pipelines" title="Link to this heading">#</a></h3>
+<p>Declare models as a tree of <strong>parts</strong> mixing learning PyHGF networks with frozen
+calculations. Each part translates prediction errors backward through the tree, so
+locally-learning networks and fixed operations compose into one model.</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PCModule</span></code></a></p></td>
+<td><p>Base class for all parts in a mixed pipeline.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.DeepNetworkAdapter.html#pyhgf.model.hybrid.DeepNetworkAdapter" title="pyhgf.model.hybrid.DeepNetworkAdapter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeepNetworkAdapter</span></code></a></p></td>
+<td><p>A learning part: a PyHGF <a class="reference internal" href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeepNetwork</span></code></a> in the pipeline.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.EquinoxAdapter.html#pyhgf.model.hybrid.EquinoxAdapter" title="pyhgf.model.hybrid.EquinoxAdapter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EquinoxAdapter</span></code></a></p></td>
+<td><p>A frozen part: a fixed calculation that routes errors but never learns.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.PCSequential.html#pyhgf.model.hybrid.PCSequential" title="pyhgf.model.hybrid.PCSequential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PCSequential</span></code></a></p></td>
+<td><p>A chain of parts: forward in order to predict, in reverse to update.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.Residual.html#pyhgf.model.hybrid.Residual" title="pyhgf.model.hybrid.Residual"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Residual</span></code></a></p></td>
+<td><p>The shortcut junction: <code class="docutils literal notranslate"><span class="pre">output</span> <span class="pre">=</span> <span class="pre">input</span> <span class="pre">+</span> <span class="pre">branch(input)</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.linear_adapter.html#pyhgf.model.hybrid.linear_adapter" title="pyhgf.model.hybrid.linear_adapter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linear_adapter</span></code></a></p></td>
+<td><p>Build a frozen linear map around an <code class="docutils literal notranslate"><span class="pre">eqx.nn.Linear</span></code>'s parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.layer_norm_adapter.html#pyhgf.model.hybrid.layer_norm_adapter" title="pyhgf.model.hybrid.layer_norm_adapter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">layer_norm_adapter</span></code></a></p></td>
+<td><p>Build a frozen LayerNorm around an <code class="docutils literal notranslate"><span class="pre">eqx.nn.LayerNorm</span></code>'s parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.gelu_adapter.html#pyhgf.model.hybrid.gelu_adapter" title="pyhgf.model.hybrid.gelu_adapter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gelu_adapter</span></code></a></p></td>
+<td><p>Build a frozen GELU: the error is multiplied by the slope at the cached input.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="transformer">
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">Transformer</a><a class="headerlink" href="#transformer" title="Link to this heading">#</a></h3>
+<p>A GPT-style Transformer assembled from mixed-pipeline parts, where any slot can hold a
+frozen calculation or a learning PyHGF network.</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.transformer/pyhgf.model.transformer.MultiHeadAttention.html#pyhgf.model.transformer.MultiHeadAttention" title="pyhgf.model.transformer.MultiHeadAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiHeadAttention</span></code></a></p></td>
+<td><p>Causal multi-head self-attention as a composite pipeline part.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.transformer/pyhgf.model.transformer.HybridGPT.html#pyhgf.model.transformer.HybridGPT" title="pyhgf.model.transformer.HybridGPT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HybridGPT</span></code></a></p></td>
+<td><p>The full Transformer as a mixed pipeline, from token ids to logits.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.transformer/pyhgf.model.transformer.hybrid_from_gpt.html#pyhgf.model.transformer.hybrid_from_gpt" title="pyhgf.model.transformer.hybrid_from_gpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hybrid_from_gpt</span></code></a></p></td>
+<td><p>Assemble a <a class="reference internal" href="generated/pyhgf.model.transformer/pyhgf.model.transformer.HybridGPT.html#pyhgf.model.transformer.HybridGPT" title="pyhgf.model.transformer.HybridGPT"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridGPT</span></code></a> from a reference Equinox GPT.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="fused-pipeline-execution">
+<h3><a class="toc-backref" href="#id40" role="doc-backlink">Fused pipeline execution</a><a class="headerlink" href="#fused-pipeline-execution" title="Link to this heading">#</a></h3>
+<p>Run a part tree as a single compiled program per training step: the forward walk, the
+output error, and every local learning step are staged into one graph with all part
+state passed explicitly.</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html#pyhgf.model.fused.FusedPipeline" title="pyhgf.model.fused.FusedPipeline"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FusedPipeline</span></code></a></p></td>
+<td><p>Run a part tree, one compiled program per training step.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.model.fused/pyhgf.model.fused.step_report.html#pyhgf.model.fused.step_report" title="pyhgf.model.fused.step_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">step_report</span></code></a></p></td>
+<td><p>Per-part step magnitudes after a training step, for rate calibration.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 </section>
 <section id="plots">
-<h2><a class="toc-backref" href="#id37" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id41" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <p>Plotting functionalities to visualize parameters trajectories and correlations after
 observing new data. We are currently fully supporting Graphviz for network structure and
 Matplotlib for time series visualization. NetworkX is also available for some functions.</p>
 <section id="matplotlib">
-<h3><a class="toc-backref" href="#id38" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id42" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html#pyhgf.plots.matplotlib.plot_trajectories" title="pyhgf.plots.matplotlib.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
@@ -1090,7 +1184,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="graphviz">
-<h3><a class="toc-backref" href="#id39" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id43" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html#pyhgf.plots.graphviz.plot_network" title="pyhgf.plots.graphviz.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
@@ -1104,7 +1198,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="networkx">
-<h3><a class="toc-backref" href="#id40" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id44" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html#pyhgf.plots.networkx.plot_network" title="pyhgf.plots.networkx.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network[, figsize, node_size, ...])</p></td>
@@ -1116,7 +1210,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </section>
 </section>
 <section id="response">
-<h2><a class="toc-backref" href="#id41" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id45" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
 <p>A collection of response functions. A response function is simply a callable taking at
 least the HGF instance as input after observation and returning surprise.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
@@ -1141,7 +1235,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="utils">
-<h2><a class="toc-backref" href="#id42" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id46" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
 <p>Utilities for manipulating neural networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1191,7 +1285,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </table>
 </div>
 <section id="weight-initialisation">
-<h3><a class="toc-backref" href="#id43" role="doc-backlink">Weight initialisation</a><a class="headerlink" href="#weight-initialisation" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id47" role="doc-backlink">Weight initialisation</a><a class="headerlink" href="#weight-initialisation" title="Link to this heading">#</a></h3>
 <p>Initialisation strategies for coupling weight matrices in predictive-coding networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1212,7 +1306,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="sampling">
-<h3><a class="toc-backref" href="#id44" role="doc-backlink">Sampling</a><a class="headerlink" href="#sampling" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id48" role="doc-backlink">Sampling</a><a class="headerlink" href="#sampling" title="Link to this heading">#</a></h3>
 <p>Low-level helpers used when sampling from a network’s generative distribution.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1224,7 +1318,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="vectorized-belief-propagation">
-<h3><a class="toc-backref" href="#id45" role="doc-backlink">Vectorized belief propagation</a><a class="headerlink" href="#vectorized-belief-propagation" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id49" role="doc-backlink">Vectorized belief propagation</a><a class="headerlink" href="#vectorized-belief-propagation" title="Link to this heading">#</a></h3>
 <p>Scan-based belief propagation used internally by <a class="reference internal" href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.model.DeepNetwork</span></code></a>.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1237,13 +1331,40 @@ least the HGF instance as input after observation and returning surprise.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html#pyhgf.utils.vectorized_belief_propagation.run_scan" title="pyhgf.utils.vectorized_belief_propagation.run_scan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_scan</span></code></a>(init_carry, inputs, optimizer, ...)</p></td>
 <td><p>Run <code class="docutils literal notranslate"><span class="pre">jax.lax.scan</span></code> over the belief-propagation step.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_sweep.html#pyhgf.utils.vectorized_belief_propagation.prediction_sweep" title="pyhgf.utils.vectorized_belief_propagation.prediction_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction_sweep</span></code></a>(network, x)</p></td>
+<td><p>JIT-compiled top-down prediction sweep.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.update_sweep.html#pyhgf.utils.vectorized_belief_propagation.update_sweep" title="pyhgf.utils.vectorized_belief_propagation.update_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_sweep</span></code></a>(network, y)</p></td>
+<td><p>JIT-compiled bottom-up PE + posterior sweep.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.learn_sweep.html#pyhgf.utils.vectorized_belief_propagation.learn_sweep" title="pyhgf.utils.vectorized_belief_propagation.learn_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">learn_sweep</span></code></a>(network, opt_state, optimizer, ...)</p></td>
+<td><p>JIT-compiled weight-learning phase.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.input_prediction_error.html#pyhgf.utils.vectorized_belief_propagation.input_prediction_error" title="pyhgf.utils.vectorized_belief_propagation.input_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_prediction_error</span></code></a>(network)</p></td>
+<td><p>JIT-compiled prediction error at the input (top) layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.sample_step.html#pyhgf.utils.vectorized_belief_propagation.sample_step" title="pyhgf.utils.vectorized_belief_propagation.sample_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_step</span></code></a>(network, x, y[, learning_kind, ...])</p></td>
+<td><p>One full local learning step for one sample, as a pure function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batch_step.html#pyhgf.utils.vectorized_belief_propagation.batch_step" title="pyhgf.utils.vectorized_belief_propagation.batch_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_step</span></code></a>(network, opt_state, x, y[, ...])</p></td>
+<td><p>One batch-synchronous learning step over many samples at once.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html#pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments" title="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_confidence_increments</span></code></a>(network, increments)</p></td>
+<td><p>Add confidence increments (see <code class="xref py py-func docutils literal notranslate"><span class="pre">_confidence_increments()</span></code>) to a network.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass.html#pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass" title="pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batched_prediction_pass</span></code></a>(network, x)</p></td>
+<td><p>Forward-only sweep for a batch of samples, compiled once and reused.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html#pyhgf.utils.vectorized_belief_propagation.batched_prediction_states" title="pyhgf.utils.vectorized_belief_propagation.batched_prediction_states"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batched_prediction_states</span></code></a>(network, x)</p></td>
+<td><p>Batched forward sweep returning the per-sample swept states.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
 </section>
 </section>
 <section id="math">
-<h2><a class="toc-backref" href="#id46" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id50" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
 <p>Math functions and probability densities.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1288,11 +1409,11 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="typing">
-<h2><a class="toc-backref" href="#id47" role="doc-backlink">Typing</a><a class="headerlink" href="#typing" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id51" role="doc-backlink">Typing</a><a class="headerlink" href="#typing" title="Link to this heading">#</a></h2>
 <p>Named tuples and PyTree containers describing the structure and state of
 probabilistic networks.</p>
 <section id="network-structure">
-<h3><a class="toc-backref" href="#id48" role="doc-backlink">Network structure</a><a class="headerlink" href="#network-structure" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id52" role="doc-backlink">Network structure</a><a class="headerlink" href="#network-structure" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.typing/pyhgf.typing.typing.AdjacencyLists.html#pyhgf.typing.typing.AdjacencyLists" title="pyhgf.typing.typing.AdjacencyLists"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyLists</span></code></a>(node_type, value_parents, ...)</p></td>
@@ -1309,7 +1430,7 @@ probabilistic networks.</p>
 </div>
 </section>
 <section id="vectorized-networks">
-<h3><a class="toc-backref" href="#id49" role="doc-backlink">Vectorized networks</a><a class="headerlink" href="#vectorized-networks" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id53" role="doc-backlink">Vectorized networks</a><a class="headerlink" href="#vectorized-networks" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams" title="pyhgf.typing.vectorised.LayerParams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerParams</span></code></a>(tonic_volatility, ...)</p></td>
@@ -1426,6 +1547,10 @@ probabilistic networks.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#weight-transplant">Weight transplant</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#declarative-construction">Declarative construction</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mixed-pipelines">Mixed pipelines</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#transformer">Transformer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fused-pipeline-execution">Fused pipeline execution</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plots">Plots</a><ul class="nav section-nav flex-column">

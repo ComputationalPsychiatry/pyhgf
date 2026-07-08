@@ -1,0 +1,6 @@
+﻿pyhgf.model.hybrid.layer\_norm\_adapter
+=======================================
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autofunction:: layer_norm_adapter

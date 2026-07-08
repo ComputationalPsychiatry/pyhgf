@@ -1,0 +1,23 @@
+﻿pyhgf.model.transformer.HybridGPT
+=================================
+
+.. currentmodule:: pyhgf.model.transformer
+
+.. autoclass:: HybridGPT
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~HybridGPT.__init__
+      ~HybridGPT.init_state
+   
+   
+
+   
+   
+   

@@ -1,0 +1,6 @@
+﻿pyhgf.model.fused.step\_report
+==============================
+
+.. currentmodule:: pyhgf.model.fused
+
+.. autofunction:: step_report

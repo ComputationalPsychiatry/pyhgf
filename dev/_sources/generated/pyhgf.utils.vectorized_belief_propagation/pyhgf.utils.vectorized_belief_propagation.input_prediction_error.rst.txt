@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.input\_prediction\_error
+====================================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: input_prediction_error

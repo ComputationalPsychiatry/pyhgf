@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorized\_belief\_propagation.batched\_prediction\_states
+=======================================================================
+
+.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+
+.. autofunction:: batched_prediction_states

@@ -1,0 +1,6 @@
+﻿pyhgf.model.hybrid.gelu\_adapter
+================================
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autofunction:: gelu_adapter

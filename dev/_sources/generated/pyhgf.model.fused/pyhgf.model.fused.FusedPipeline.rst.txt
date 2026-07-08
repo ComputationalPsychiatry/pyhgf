@@ -1,0 +1,25 @@
+﻿pyhgf.model.fused.FusedPipeline
+===============================
+
+.. currentmodule:: pyhgf.model.fused
+
+.. autoclass:: FusedPipeline
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FusedPipeline.__init__
+      ~FusedPipeline.merge
+      ~FusedPipeline.predict
+      ~FusedPipeline.step
+   
+   
+
+   
+   
+   

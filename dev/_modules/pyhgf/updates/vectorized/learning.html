@@ -1059,6 +1059,8 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="vectorized_weight_gradient_factors">
+<a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_weight_gradient_factors</span><span class="p">(</span>
     <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
     <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
@@ -1117,7 +1119,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">v</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">v</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
     <span class="c1"># Descent sign, folded into the child-side factor.</span>
-    <span class="k">return</span> <span class="o">-</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span></div>
+
 </pre></div>
 
                 </article>

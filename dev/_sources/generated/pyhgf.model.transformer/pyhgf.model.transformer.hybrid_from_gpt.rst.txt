@@ -1,0 +1,6 @@
+﻿pyhgf.model.transformer.hybrid\_from\_gpt
+=========================================
+
+.. currentmodule:: pyhgf.model.transformer
+
+.. autofunction:: hybrid_from_gpt
