@@ -9,6 +9,11 @@ import jax.numpy as jnp
 
 from pyhgf.typing.vectorised import LayerState
 
+# The accepted weight-update kinds. Both share the same base term and factorise
+# into a child-side and a parent-side vector (a rank-one product), which is why
+# the gradient below is assembled as a single outer product.
+SEPARABLE_KINDS: tuple = ("standard", "precision_weighted")
+
 
 def vectorized_weight_gradient(
     parent_state: LayerState,
@@ -61,8 +66,8 @@ def vectorized_weight_gradient(
         If True, the parent layer has a constant input node (mean = 1.0,
         precision = 1.0) appended to its activations after coupling.
     child_is_binary :
-        If True, the child layer is a binary node drops the redundant
-        precision factor in ``precision_weighted`` (the Bernoulli variance
+        If True, the child layer is a binary node, so the redundant precision
+        factor is dropped in ``precision_weighted`` (the Bernoulli variance
         cancels through the sigmoid in the gradient).
 
     Returns
@@ -77,72 +82,6 @@ def vectorized_weight_gradient(
     ValueError
         If *kind* is unrecognised.
     """
-    # Every kind is a rank-one product of a child-side and a parent-side factor
-    # (see :func:`vectorized_weight_gradient_factors`), so the full matrix is
-    # their outer product. The factor kernel is the single home of the per-kind
-    # geometry, the descent-sign flip, and the ``kind`` validation. NaN/inf are
-    # zeroed on the two factors there rather than on the assembled matrix; the
-    # two agree except for a finite×finite overflow to inf, which neither path
-    # special-cases.
-    u, v = vectorized_weight_gradient_factors(
-        parent_state,
-        child_state,
-        coupling_fn,
-        kind=kind,
-        parent_has_constant=parent_has_constant,
-        child_is_binary=child_is_binary,
-    )
-    return u[:, None] * v[None, :]
-
-
-# Both weight-update kinds factorise into a child-side and a parent-side
-# vector (a rank-one product): pe (times, for precision_weighted, the child
-# posterior precision) on one side, the coupled parent activation on the
-# other. No reduction across other parents or children. Returning the two
-# factors lets a batched caller average over samples with one contraction
-# instead of materialising a weight-matrix-sized gradient per sample.
-SEPARABLE_KINDS: tuple = ("standard", "precision_weighted")
-
-
-def vectorized_weight_gradient_factors(
-    parent_state: LayerState,
-    child_state: LayerState,
-    coupling_fn: Callable,
-    kind: str = "precision_weighted",
-    parent_has_constant: bool = False,
-    child_is_binary: bool = False,
-) -> tuple[jnp.ndarray, jnp.ndarray]:
-    r"""Child- and parent-side factors of the weight gradient.
-
-    For the separable gradient modes (:data:`SEPARABLE_KINDS`) the descent
-    gradient of :func:`vectorized_weight_gradient` is a rank-one product,
-    ``grad = u[:, None] * v[None, :]``. Returning the two vectors instead of
-    their product lets a batched caller average gradients over many samples
-    with a single contraction (``einsum('bi,bj->ij') / batch``). The same
-    arithmetic, but without materialising one weight-matrix-sized gradient
-    per sample, which is what dominates memory traffic at scale.
-
-    Non-finite entries are zeroed on the factors, matching the per-entry
-    zeroing of :func:`vectorized_weight_gradient` for vector-borne NaN/inf.
-
-    Parameters
-    ----------
-    parent_state, child_state, coupling_fn, kind, parent_has_constant, child_is_binary :
-        As in :func:`vectorized_weight_gradient`. *kind* must be one of
-        :data:`SEPARABLE_KINDS`.
-
-    Returns
-    -------
-    (u, v) :
-        Child-side factor, shape ``(n_children,)``, and parent-side factor,
-        shape ``(n_parents[+1],)``, such that ``u[:, None] * v[None, :]`` equals the
-        descent gradient.
-
-    Raises
-    ------
-    ValueError
-        If *kind* is unrecognised.
-    """
     if kind not in SEPARABLE_KINDS:
         raise ValueError(f"Unknown kind '{kind}'. Expected one of {SEPARABLE_KINDS}.")
 
@@ -151,6 +90,10 @@ def vectorized_weight_gradient_factors(
     if parent_has_constant:
         coupled_parent = jnp.concatenate([coupled_parent, jnp.ones(1)])
 
+    # The gradient is the outer product of a child-side factor (the prediction
+    # error, scaled by the child's posterior precision in ``precision_weighted``)
+    # and a parent-side factor (the coupled parent activation). NaN / inf are
+    # zeroed on each factor so optax does not propagate them.
     u = pe
     v = coupled_parent
     if kind == "precision_weighted" and not child_is_binary:
@@ -160,4 +103,4 @@ def vectorized_weight_gradient_factors(
     v = jnp.where(jnp.isfinite(v), v, 0.0)
 
     # Descent sign, folded into the child-side factor.
-    return -u, v
+    return -u[:, None] * v[None, :]

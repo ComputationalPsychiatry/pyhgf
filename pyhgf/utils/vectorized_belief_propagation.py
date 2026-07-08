@@ -24,6 +24,10 @@ from pyhgf.updates.vectorized.binary import (
     vectorized_binary_prediction,
     vectorized_binary_prediction_error,
 )
+from pyhgf.updates.vectorized.categorical import (
+    vectorized_categorical_prediction,
+    vectorized_categorical_prediction_error,
+)
 from pyhgf.updates.vectorized.learning import vectorized_weight_gradient
 from pyhgf.updates.vectorized.volatile import (
     vectorized_layer_posterior_update,
@@ -105,6 +109,14 @@ def _predict_layer_from_parent(
             coupling_fn=parent_coupling_fn,
             parent_has_constant=parent_has_constant,
             precision_clipping_value=precision_clipping_value,
+        )
+    elif child.kind == "categorical":
+        new_state = vectorized_categorical_prediction(
+            child_state=child.state,
+            parent_state=parent_state,
+            weights=parent_weights,
+            coupling_fn=parent_coupling_fn,
+            parent_has_constant=parent_has_constant,
         )
     else:
         new_state = vectorized_layer_prediction(
@@ -240,6 +252,8 @@ def _leaf_pe(layer: Layer, *, volatility_updates: str, max_posterior_precision: 
     """Compute the PE of the bottom layer (a ``Layer``; leaves can't be stacks)."""
     if layer.kind == "binary":
         new_state = vectorized_binary_prediction_error(layer=layer.state)
+    elif layer.kind == "categorical":
+        new_state = vectorized_categorical_prediction_error(layer=layer.state)
     else:
         new_state = vectorized_layer_prediction_error(
             layer=layer.state,

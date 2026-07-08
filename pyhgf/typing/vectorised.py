@@ -72,10 +72,10 @@ class LayerState(eqx.Module):
 
         With ``has_volatility_parent=False`` the six volatility-level fields are
         set to ``None`` instead of being allocated. A frozen volatility level is
-        never predicted or updated. Every access to these fields sits behind a
+        never predicted or updated — every access to these fields sits behind a
         ``has_volatility_parent`` guard (see
         :func:`pyhgf.updates.vectorized.volatile.prediction` and
-        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`), so storing
+        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`) — so storing
         them would only carry dead arrays through the state. As ``None`` pytree
         nodes they hold no data and are skipped by every ``tree_map`` over the
         state (stacking, scanning, recording).
@@ -182,7 +182,7 @@ class Layer(eqx.Module):
     fully_connected :
         Whether the incoming weights are fully connected.
     kind :
-        The kind of layer, either ``"volatile"`` or ``"binary"``.
+        The kind of layer, one of ``"volatile"``, ``"binary"``, or ``"categorical"``.
     """
 
     state: LayerState
@@ -193,7 +193,7 @@ class Layer(eqx.Module):
     has_volatility_parent: bool = field(static=True)
     is_input_layer: bool = field(static=True)
     fully_connected: bool = field(static=True)
-    kind: str = field(static=True)  # "volatile" | "binary"
+    kind: str = field(static=True)  # "volatile" | "binary" | "categorical"
 
 
 class LayerStack(eqx.Module):
@@ -230,7 +230,7 @@ class LayerStack(eqx.Module):
     fully_connected :
         Whether the incoming weights are fully connected.
     kind :
-        The kind of layer, either ``"volatile"`` or ``"binary"``.
+        The kind of layer, one of ``"volatile"``, ``"binary"``, or ``"categorical"``.
     n_layers :
         The number of stacked layers ``N``.
     """
