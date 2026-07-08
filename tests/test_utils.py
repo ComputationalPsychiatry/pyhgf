@@ -256,7 +256,7 @@ def test_learning():
 
     network.fit(x=x, y=y, inputs_x_idxs=(3,), inputs_y_idxs=(0, 1), lr=0.2)
 
-    # Kalman-gain learning rule with a fixed step size
+    # Precision-weighted learning rule with a fixed step size
     network = (
         Network(volatility_updates="unbounded")
         .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
@@ -274,7 +274,7 @@ def test_learning():
         inputs_x_idxs=(3,),
         inputs_y_idxs=(0, 1),
         lr=0.2,
-        learning_kind="precision_ratio",
+        learning_kind="precision_weighted",
     )
 
 

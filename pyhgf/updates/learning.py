@@ -30,21 +30,15 @@ def learning_weights(
       precision weighting.
       :math:`g_i = \text{PE} \cdot g(\text{parent}_i)`
     - **precision_weighted** (``kind="precision_weighted"``): gradient weighted
-      by the child posterior precision.
+      by the child *posterior* precision (the backprop-parity choice: it cancels
+      the posterior-precision division in the belief shift).
       :math:`g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)`
-    - **precision_ratio** (``kind="precision_ratio"``): Kalman-gain-weighted PE
-      using the posterior precisions of child and parent.
-      :math:`K_i = \pi_\text{child} / (\pi_{\text{parent}_i} + \pi_\text{child})`
-      :math:`g_i = K_i \cdot \text{PE} \cdot g(\text{parent}_i)`
 
-    *lr* controls how the gradient is applied (same semantics for all three kinds):
+    *lr* controls how the gradient is applied (same semantics for both kinds):
 
     - **Adam** (``adam_beta1`` is a float): gradient filtered through Adam;
       step size controlled by *lr*.
     - **Fixed** (``adam_beta1`` is None): :math:`\Delta w_i = \text{lr} \cdot g_i`.
-
-    To recover the old "full Kalman step" behaviour for ``kind="precision_ratio"``,
-    pass ``lr=1.0``.
 
     Parameters
     ----------
@@ -57,11 +51,11 @@ def learning_weights(
         :py:class:`pyhgf.typing.Indexes`. The tuple has the same length as node number.
         For each node, the index list value and volatility parents and children.
     kind :
-        Gradient computation mode: ``"standard"``, ``"precision_weighted"`` (default),
-        or ``"precision_ratio"``.
+        Gradient computation mode: ``"standard"`` or ``"precision_weighted"``
+        (default).
     lr :
-        Fixed learning rate or Adam step size.  Applied uniformly across all *kind*
-        values, including ``"precision_ratio"``.
+        Fixed learning rate or Adam step size. Applied uniformly across both
+        *kind* values.
     adam_beta1 :
         Adam first moment decay rate.  When ``None`` (default) Adam is not used.
     adam_beta2 :
@@ -106,15 +100,7 @@ def learning_weights(
     pe = attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]
     is_binary = edges[node_idx].node_type == 1
 
-    if kind == "precision_ratio":
-        parent_precisions = jnp.array([
-            attributes[parent_idx].get("precision", 1.0)
-            for parent_idx in edges[node_idx].value_parents  # type: ignore[union-attr]
-        ])
-
-        kalman_gain = child_precision / (parent_precisions + child_precision)
-        gradient = kalman_gain * pe * prospective_activation
-    elif kind == "precision_weighted" and not is_binary:
+    if kind == "precision_weighted" and not is_binary:
         gradient = pe * child_precision * prospective_activation
     else:  # "standard", or binary child where Bernoulli variance must not be doubled
         gradient = pe * prospective_activation
