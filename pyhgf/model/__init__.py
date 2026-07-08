@@ -13,16 +13,44 @@ from .add_nodes import (
     insert_nodes,
     update_parameters,
 )
+from .builder import LayerConfig, resolve_coupling_fn
 from .deep_network import DeepNetwork
+from .fused import FusedPipeline, step_report
+from .hybrid import (
+    DeepNetworkAdapter,
+    EquinoxAdapter,
+    PCModule,
+    PCSequential,
+    Residual,
+    gelu_adapter,
+    layer_norm_adapter,
+    linear_adapter,
+)
 from .network import Network
+from .transformer import HybridGPT, MultiHeadAttention, hybrid_from_gpt
 from .transplant import from_embedding, from_feedforward, from_linear
 
 __all__ = [
     "Network",
     "DeepNetwork",
+    "LayerConfig",
+    "resolve_coupling_fn",
     "from_linear",
     "from_feedforward",
     "from_embedding",
+    "PCModule",
+    "EquinoxAdapter",
+    "DeepNetworkAdapter",
+    "PCSequential",
+    "Residual",
+    "gelu_adapter",
+    "layer_norm_adapter",
+    "linear_adapter",
+    "step_report",
+    "FusedPipeline",
+    "MultiHeadAttention",
+    "HybridGPT",
+    "hybrid_from_gpt",
     "LayerState",
     "LayerParams",
     "predict",

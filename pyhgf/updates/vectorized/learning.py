@@ -82,6 +82,54 @@ def vectorized_weight_gradient(
     ValueError
         If *kind* is unrecognised.
     """
+    u, v = vectorized_weight_gradient_factors(
+        parent_state,
+        child_state,
+        coupling_fn,
+        kind=kind,
+        parent_has_constant=parent_has_constant,
+        child_is_binary=child_is_binary,
+    )
+    return u[:, None] * v[None, :]
+
+
+def vectorized_weight_gradient_factors(
+    parent_state: LayerState,
+    child_state: LayerState,
+    coupling_fn: Callable,
+    kind: str = "precision_weighted",
+    parent_has_constant: bool = False,
+    child_is_binary: bool = False,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Child- and parent-side factors of the weight gradient.
+
+    The descent gradient of :func:`vectorized_weight_gradient` is a rank-one
+    product, ``grad = u[:, None] * v[None, :]``. Returning the two vectors
+    instead of their product lets a batched caller average gradients over many
+    samples with a single contraction (``einsum('bi,bj->ij') / batch``) — the
+    same arithmetic, but without materialising one weight-matrix-sized gradient
+    per sample, which is what dominates memory traffic at scale.
+
+    Non-finite entries are zeroed on the factors, matching the per-entry
+    zeroing of :func:`vectorized_weight_gradient` for vector-borne NaN/inf.
+
+    Parameters
+    ----------
+    parent_state, child_state, coupling_fn, kind, parent_has_constant, child_is_binary :
+        As in :func:`vectorized_weight_gradient`.
+
+    Returns
+    -------
+    (u, v) :
+        Child-side factor, shape ``(n_children,)``, and parent-side factor,
+        shape ``(n_parents[+1],)``, such that ``u[:, None] * v[None, :]``
+        equals the descent gradient.
+
+    Raises
+    ------
+    ValueError
+        If *kind* is unrecognised.
+    """
     if kind not in SEPARABLE_KINDS:
         raise ValueError(f"Unknown kind '{kind}'. Expected one of {SEPARABLE_KINDS}.")
 
@@ -103,4 +151,4 @@ def vectorized_weight_gradient(
     v = jnp.where(jnp.isfinite(v), v, 0.0)
 
     # Descent sign, folded into the child-side factor.
-    return -u[:, None] * v[None, :]
+    return -u, v

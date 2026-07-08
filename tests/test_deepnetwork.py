@@ -766,3 +766,368 @@ def test_constant_input_is_linearly_coupled():
 
     expected = w1 @ jax.nn.gelu(w2 @ x + b2) + b1
     np.testing.assert_allclose(net.predict(x), expected, rtol=1e-5, atol=1e-6)
+
+
+def _set_weights(net: DeepNetwork, weights: dict) -> DeepNetwork:
+    """Replace ``weights_in`` on the given layers (index -> matrix)."""
+    elements = list(net.state.layers)
+    for i, w in weights.items():
+        elements[i] = dataclasses.replace(elements[i], weights_in=jnp.asarray(w))
+    net.state = dataclasses.replace(net.state, layers=tuple(elements))
+    return net
+
+
+def _norm_rel_err(a, b) -> float:
+    """Relative error between two arrays, measured in the Frobenius norm."""
+    return float(jnp.linalg.norm(a - b) / jnp.linalg.norm(b))
+
+
+def test_input_error_routes_child_error_through_weights():
+    """``input_error()`` returns the child's error routed back through the weights.
+
+    Two linear layers without bias and with default (unit) precisions: the
+    confidence weighting is 1, so the message at the input (top) layer reduces
+    to ``W.T @ (y - W @ x)`` — the output residual multiplied back through the
+    connecting weight matrix.
+    """
+    rng = np.random.default_rng(1)
+    w = rng.normal(size=(3, 2))
+    x = jnp.asarray(rng.normal(size=(2,)))
+    y = jnp.asarray(rng.normal(size=(3,)))
+
+    net = (
+        DeepNetwork()
+        .add_layer(size=3, add_constant_input=False)
+        .add_layer(size=2, add_constant_input=False)
+    )
+    _set_weights(net, {1: w})
+    net.prediction(x).update(y)
+
+    expected = jnp.asarray(w).T @ (y - jnp.asarray(w) @ x)
+    np.testing.assert_allclose(net.input_error(), expected, rtol=1e-5, atol=1e-6)
+
+
+# Feed-forward block used by the backprop-parity tests below:
+# a Linear -> GELU -> Linear network, D -> H -> D, without biases.
+_FF_D, _FF_H = 8, 16
+
+
+def _ff_oracle_grads(w1, w2, x, y):
+    """Backprop gradients of the squared-error loss on the same forward pass.
+
+    The forward function mirrors the DeepNetwork exactly: the top (input)
+    layer predicts the hidden layer linearly, and the hidden layer predicts
+    the output layer through the GELU coupling.
+    """
+
+    def loss(w1_, w2_, x_):
+        return 0.5 * jnp.sum((y - w1_ @ jax.nn.gelu(w2_ @ x_)) ** 2)
+
+    return jax.grad(loss, argnums=(0, 1, 2))(w1, w2, x)
+
+
+def _ff_net(hidden_kwargs: dict, top_kwargs: dict, leaf_kwargs: dict) -> DeepNetwork:
+    return (
+        DeepNetwork()
+        .add_layer(size=_FF_D, add_constant_input=False, **leaf_kwargs)
+        .add_layer(
+            size=_FF_H,
+            add_constant_input=False,
+            coupling_fn=jax.nn.gelu,
+            **hidden_kwargs,
+        )
+        .add_layer(size=_FF_D, add_constant_input=False, **top_kwargs)
+    )
+
+
+def test_ff_block_single_sweep_matches_backprop():
+    """One local learning step on Linear -> GELU -> Linear matches backprop.
+
+    The network is configured so that the single belief-propagation sweep
+    reproduces the gradients of a squared-error loss on the identical forward
+    function: volatility levels frozen, high prior precision (confidence) on
+    the hidden and input layers so their beliefs barely move during the update
+    sweep, unit precision on the observed output layer, and the
+    ``"precision_weighted"`` learning mode — the hidden layer's belief shift is
+    its routed error divided by its posterior precision, and the
+    precision-weighted gradient multiplies that same precision back in.
+
+    Bias columns are excluded: the prediction step applies the coupling
+    function to the constant bias node while the learning step treats it as
+    linear, so with biases the two sides compute different forward functions.
+
+    Measured agreement (norm-relative): ~5e-4 on the weight gradients and
+    ~2e-3 on the input error message in float32; better than 1e-5 in float64.
+    """
+    rng = np.random.default_rng(42)
+    w1 = jnp.asarray(rng.normal(size=(_FF_D, _FF_H)) * (2.0 / _FF_H) ** 0.5)
+    w2 = jnp.asarray(rng.normal(size=(_FF_H, _FF_D)) * (2.0 / _FF_D) ** 0.5)
+    x = jnp.asarray(rng.normal(size=(_FF_D,)))
+    y = jnp.asarray(w1 @ jax.nn.gelu(w2 @ x) + rng.normal(size=(_FF_D,)))
+
+    g_w1, g_w2, g_x = _ff_oracle_grads(w1, w2, x, y)
+
+    high_confidence = dict(
+        volatility_parent=False,
+        tonic_volatility=-20.0,
+        precision=1e4,
+        expected_precision=1e4,
+    )
+    net = _ff_net(
+        hidden_kwargs=high_confidence,
+        top_kwargs=high_confidence,
+        leaf_kwargs=dict(volatility_parent=False, tonic_volatility=-20.0),
+    )
+    _set_weights(net, {1: w1, 2: w2})
+
+    lr = 1e-3
+    net.prediction(x).update(
+        y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+    )
+
+    # The applied weight change divided by -lr is the descent gradient.
+    d_w1 = -(net.state.layers[1].weights_in - w1) / lr
+    d_w2 = -(net.state.layers[2].weights_in - w2) / lr
+
+    assert _norm_rel_err(d_w1, g_w1) < 1e-2
+    assert _norm_rel_err(d_w2, g_w2) < 1e-2
+    # Prediction errors follow the observed-minus-predicted convention, so the
+    # input message is the negative of the loss gradient at the input.
+    assert _norm_rel_err(net.input_error(), -g_x) < 1e-2
+
+
+def test_input_side_gradient_precision_cancellation():
+    """The input-side weight gradient equals backprop at default settings.
+
+    The hidden layer's posterior mean shift is its routed error divided by its posterior
+    precision; the ``"precision_weighted"`` gradient multiplies the resulting prediction
+    error by that same posterior precision. The division cancels exactly, so the
+    gradient of the weight matrix entering the top (input) layer matches backprop at any
+    precision setting — checked here with all defaults.
+    """
+    rng = np.random.default_rng(7)
+    w1 = jnp.asarray(rng.normal(size=(_FF_D, _FF_H)) * (2.0 / _FF_H) ** 0.5)
+    w2 = jnp.asarray(rng.normal(size=(_FF_H, _FF_D)) * (2.0 / _FF_D) ** 0.5)
+    x = jnp.asarray(rng.normal(size=(_FF_D,)))
+    y = jnp.asarray(w1 @ jax.nn.gelu(w2 @ x) + rng.normal(size=(_FF_D,)))
+
+    _, g_w2, _ = _ff_oracle_grads(w1, w2, x, y)
+
+    net = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
+    _set_weights(net, {1: w1, 2: w2})
+
+    lr = 1e-3
+    net.prediction(x).update(
+        y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+    )
+    d_w2 = -(net.state.layers[2].weights_in - w2) / lr
+
+    assert _norm_rel_err(d_w2, g_w2) < 1e-3
+
+
+def _ff_net_with_weights(rng) -> tuple[DeepNetwork, jnp.ndarray, jnp.ndarray]:
+    """Build a default-config feed-forward net with random weights, plus the weights."""
+    w1 = jnp.asarray(rng.normal(size=(_FF_D, _FF_H)) * (2.0 / _FF_H) ** 0.5)
+    w2 = jnp.asarray(rng.normal(size=(_FF_H, _FF_D)) * (2.0 / _FF_D) ** 0.5)
+    net = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
+    _set_weights(net, {1: w1, 2: w2})
+    return net, w1, w2
+
+
+def test_sample_step_matches_stateful_api():
+    """The pure per-sample step reproduces the stateful prediction/update path.
+
+    From the same state template, ``sample_step`` must return (a) the same input-layer
+    error as ``net.prediction(x).update(y)`` followed by ``input_error()``, (b)
+    confidence increments equal to the change of the carried fields (value precision and
+    the volatility level), and (c) weight gradients matching the weight change one SGD
+    step applies.
+    """
+    from pyhgf.utils.vectorized_belief_propagation import sample_step
+
+    rng = np.random.default_rng(11)
+    x = jnp.asarray(rng.normal(size=(_FF_D,)))
+    y = jnp.asarray(rng.normal(size=(_FF_D,)))
+
+    net, w1, w2 = _ff_net_with_weights(rng)
+    template = net.state
+
+    input_error, grads, increments = sample_step(template, x, y)
+
+    # Beliefs-only stateful pass: input error and confidence increments.
+    net.prediction(x).update(y)
+    np.testing.assert_allclose(input_error, net.input_error(), rtol=1e-5, atol=1e-7)
+    for elem_before, elem_after, inc in zip(
+        template.layers, net.state.layers, increments
+    ):
+        for field in ("precision", "mean_vol", "precision_vol"):
+            np.testing.assert_allclose(
+                inc[field],
+                getattr(elem_after.state, field) - getattr(elem_before.state, field),
+                rtol=1e-5,
+                atol=1e-6,
+            )
+
+    # Learning stateful pass: gradients match the applied weight change.
+    lr = 1e-3
+    net_learn = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
+    _set_weights(net_learn, {1: w1, 2: w2})
+    net_learn.prediction(x).update(
+        y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+    )
+    # atol: reconstructing the gradient from a float32 weight delta of ~lr·grad
+    # loses ~(weight magnitude · float32 eps) / lr of absolute precision.
+    for k in (1, 2):
+        implied = (
+            -(net_learn.state.layers[k].weights_in - template.layers[k].weights_in) / lr
+        )
+        np.testing.assert_allclose(grads[k], implied, rtol=1e-3, atol=1e-4)
+
+
+def test_batch_update_averages_and_is_batch_size_invariant():
+    """A batch counts as one observation: averaged updates, repetition-invariant.
+
+    ``batch_update`` must apply the batch-mean of the per-sample weight gradients in one
+    optimiser step, advance the confidence state by the batch-mean of the per-sample
+    increments, and return per-sample input errors matching the pure per-sample step.
+    Feeding the same batch twice over must produce the same step.
+    """
+    from pyhgf.utils.vectorized_belief_propagation import sample_step
+
+    rng = np.random.default_rng(23)
+    batch = 4
+    xb = jnp.asarray(rng.normal(size=(batch, _FF_D)))
+    yb = jnp.asarray(rng.normal(size=(batch, _FF_D)))
+
+    net, w1, w2 = _ff_net_with_weights(rng)
+    template = net.state
+
+    # Per-sample reference quantities from the pure step.
+    ref = [sample_step(template, xb[i], yb[i]) for i in range(batch)]
+    mean_grads = {
+        k: jnp.mean(jnp.stack([r[1][k] for r in ref]), axis=0) for k in (1, 2)
+    }
+    mean_inc = jnp.mean(
+        jnp.stack([r[2][1]["precision"] for r in ref]), axis=0
+    )  # hidden-layer value precision
+
+    lr = 1e-2
+    net.batch_update(xb, yb, optimizer=optax.sgd(lr))
+
+    for k in (1, 2):
+        np.testing.assert_allclose(
+            net.state.layers[k].weights_in,
+            template.layers[k].weights_in - lr * mean_grads[k],
+            rtol=1e-5,
+            atol=1e-6,
+        )
+    np.testing.assert_allclose(
+        net.state.layers[1].state.precision,
+        template.layers[1].state.precision + mean_inc,
+        rtol=1e-5,
+        atol=1e-6,
+    )
+    assert net.input_errors.shape == (batch, _FF_D)
+    for i in range(batch):
+        np.testing.assert_allclose(net.input_errors[i], ref[i][0], rtol=1e-5, atol=1e-6)
+
+    # The same samples twice over: averaging makes the step identical.
+    net_twice = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
+    _set_weights(net_twice, {1: w1, 2: w2})
+    net_twice.batch_update(
+        jnp.concatenate([xb, xb]), jnp.concatenate([yb, yb]), optimizer=optax.sgd(lr)
+    )
+    for k in (1, 2):
+        np.testing.assert_allclose(
+            net_twice.state.layers[k].weights_in,
+            net.state.layers[k].weights_in,
+            rtol=1e-6,
+            atol=1e-7,
+        )
+    np.testing.assert_allclose(
+        net_twice.state.layers[1].state.precision,
+        net.state.layers[1].state.precision,
+        rtol=1e-6,
+        atol=1e-7,
+    )
+
+
+def test_batch_update_freezing_flags():
+    """``update_confidences=False`` and ``optimizer=None`` freeze their targets.
+
+    Without confidence updates, the carried fields stay exactly at their template values
+    while the weights still learn (the mode used for exact comparisons against
+    backpropagation). Without an optimiser, the weights stay exactly fixed while the
+    confidences still adapt.
+    """
+    rng = np.random.default_rng(31)
+    xb = jnp.asarray(rng.normal(size=(4, _FF_D)))
+    yb = jnp.asarray(rng.normal(size=(4, _FF_D)))
+
+    # Confidences frozen, weights learning.
+    net, w1, w2 = _ff_net_with_weights(rng)
+    template = net.state
+    net.batch_update(xb, yb, optimizer=optax.sgd(1e-2), update_confidences=False)
+    for elem_before, elem_after in zip(template.layers, net.state.layers):
+        for field in ("precision", "mean_vol", "precision_vol"):
+            np.testing.assert_array_equal(
+                getattr(elem_after.state, field), getattr(elem_before.state, field)
+            )
+    assert not np.allclose(net.state.layers[1].weights_in, w1)
+
+    # Weights frozen, confidences adapting.
+    net_frozen = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
+    _set_weights(net_frozen, {1: w1, 2: w2})
+    template_frozen = net_frozen.state
+    net_frozen.batch_update(xb, yb)
+    np.testing.assert_array_equal(net_frozen.state.layers[1].weights_in, w1)
+    assert not np.allclose(
+        net_frozen.state.layers[1].state.precision,
+        template_frozen.layers[1].state.precision,
+    )
+
+
+def test_batch_update_from_predicted_states_matches():
+    """Reusing the forward sweep's states gives the same step as re-sweeping.
+
+    ``predict_states`` + ``batch_update(predicted=...)`` must produce the same new
+    weights and per-sample input errors as the plain call, which re-runs the forward
+    sweep internally — the reuse reorganises when the same computation happens, it does
+    not change the computation.
+    """
+    rng = np.random.default_rng(17)
+    w1 = jnp.asarray(rng.normal(size=(_FF_D, _FF_H)) * (2.0 / _FF_H) ** 0.5)
+    w2 = jnp.asarray(rng.normal(size=(_FF_H, _FF_D)) * (2.0 / _FF_D) ** 0.5)
+    xb = jnp.asarray(rng.normal(size=(5, _FF_D)))
+    yb = jnp.asarray(rng.normal(size=(5, _FF_D)))
+
+    def fresh():
+        net = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
+        return _set_weights(net, {1: w1, 2: w2})
+
+    plain = fresh()
+    np.testing.assert_allclose(
+        fresh().predict_states(xb)[0], plain.predict(xb), rtol=1e-6, atol=1e-7
+    )
+    plain.batch_update(xb, yb, optimizer=optax.sgd(1e-2))
+
+    reused = fresh()
+    _, states = reused.predict_states(xb)
+    reused.batch_update(xb, yb, optimizer=optax.sgd(1e-2), predicted=states)
+
+    for k in (1, 2):
+        np.testing.assert_allclose(
+            reused.state.layers[k].weights_in,
+            plain.state.layers[k].weights_in,
+            rtol=1e-6,
+            atol=1e-7,
+        )
+    np.testing.assert_allclose(
+        reused.input_errors, plain.input_errors, rtol=1e-6, atol=1e-7
+    )
+    np.testing.assert_allclose(
+        reused.state.layers[1].state.precision,
+        plain.state.layers[1].state.precision,
+        rtol=1e-6,
+        atol=1e-7,
+    )

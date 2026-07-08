@@ -362,6 +362,7 @@ Vectorized learning
    :toctree: generated/pyhgf.updates.vectorized.learning
 
     vectorized_weight_gradient
+    vectorized_weight_gradient_factors
 
 Model
 *****
@@ -401,6 +402,75 @@ of a trained Equinox module, translating its weights into PyHGF's layer layout.
    from_linear
    from_feedforward
    from_embedding
+
+Declarative construction
+========================
+
+Build a :class:`~pyhgf.model.DeepNetwork` from serializable layer configurations, for
+configuration-driven experiments and reproducible hyperparameter sweeps.
+
+.. currentmodule:: pyhgf.model.builder
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.builder
+   :nosignatures:
+
+   LayerConfig
+   resolve_coupling_fn
+
+Mixed pipelines
+===============
+
+Declare models as a tree of **parts** mixing learning PyHGF networks with frozen
+calculations. Each part translates prediction errors backward through the tree, so
+locally-learning networks and fixed operations compose into one model.
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.hybrid
+   :nosignatures:
+
+   PCModule
+   DeepNetworkAdapter
+   EquinoxAdapter
+   PCSequential
+   Residual
+   linear_adapter
+   layer_norm_adapter
+   gelu_adapter
+
+Transformer
+===========
+
+A GPT-style Transformer assembled from mixed-pipeline parts, where any slot can hold a
+frozen calculation or a learning PyHGF network.
+
+.. currentmodule:: pyhgf.model.transformer
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.transformer
+   :nosignatures:
+
+   MultiHeadAttention
+   HybridGPT
+   hybrid_from_gpt
+
+Fused pipeline execution
+========================
+
+Run a part tree as a single compiled program per training step: the forward walk, the
+output error, and every local learning step are staged into one graph with all part
+state passed explicitly.
+
+.. currentmodule:: pyhgf.model.fused
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.fused
+   :nosignatures:
+
+   FusedPipeline
+   step_report
 
 Plots
 *****
@@ -526,6 +596,15 @@ Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork
    propagation_step
    prediction_pass
    run_scan
+   prediction_sweep
+   update_sweep
+   learn_sweep
+   input_prediction_error
+   sample_step
+   batch_step
+   apply_confidence_increments
+   batched_prediction_pass
+   batched_prediction_states
 
 Math
 ****
