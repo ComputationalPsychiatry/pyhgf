@@ -705,9 +705,6 @@ by the child <em>posterior</em> precision (the backprop-parity choice: it cancel
 the posterior-precision division in the belief shift).
 <span class="math notranslate nohighlight">\(g_i = \text{PE} \cdot \pi_\text{child} \cdot g(\text{parent}_i)\)</span></p></li>
 </ul>
-<p>(The layered <a class="reference internal" href="../pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeepNetwork</span></code></a> path additionally supports the
-exact <code class="docutils literal notranslate"><span class="pre">&quot;natural&quot;</span></code> gradient; see
-<a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient" title="pyhgf.updates.vectorized.learning.vectorized_weight_gradient"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.vectorized.learning.vectorized_weight_gradient()</span></code></a>.)</p>
 <p><em>lr</em> controls how the gradient is applied (same semantics for both kinds):</p>
 <ul class="simple">
 <li><p><strong>Adam</strong> (<code class="docutils literal notranslate"><span class="pre">adam_beta1</span></code> is a float): gradient filtered through Adam;

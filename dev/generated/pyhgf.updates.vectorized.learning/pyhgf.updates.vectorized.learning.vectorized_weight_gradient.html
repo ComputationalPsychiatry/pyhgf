@@ -693,21 +693,20 @@
 <h1>pyhgf.updates.vectorized.learning.vectorized_weight_gradient<a class="headerlink" href="#pyhgf-updates-vectorized-learning-vectorized-weight-gradient" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.vectorized.learning.vectorized_weight_gradient">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.learning.</span></span><span class="sig-name descname"><span class="pre">vectorized_weight_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'precision_weighted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_has_constant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_is_binary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_is_categorical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categorical_damping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/learning.html#vectorized_weight_gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.learning.vectorized_weight_gradient" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.learning.</span></span><span class="sig-name descname"><span class="pre">vectorized_weight_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'precision_weighted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_has_constant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_is_binary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/learning.html#vectorized_weight_gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.learning.vectorized_weight_gradient" title="Link to this definition">#</a></dt>
 <dd><p>Per-layer weight gradient for the vectorised deep network.</p>
 <p>Returns the <em>descent</em> gradient for the weight matrix. Sign-flipped from the natural
 “ascent” formulation so it composes with standard optax (<cite>apply_updates(weights,
 updates)</cite> performs <code class="docutils literal notranslate"><span class="pre">weights</span> <span class="pre">+</span> <span class="pre">updates</span></code>; <cite>optax.sgd(lr).update(grad, state, w)</cite>
 returns <code class="docutils literal notranslate"><span class="pre">-lr</span> <span class="pre">*</span> <span class="pre">grad</span></code>; together they reproduce the legacy <code class="docutils literal notranslate"><span class="pre">weights</span> <span class="pre">+</span> <span class="pre">lr</span> <span class="pre">*</span> <span class="pre">g</span></code>
 rule with <code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">-grad</span></code>).</p>
-<p>The three <em>kind</em> values sit on a single axis — <strong>which geometry the update
-respects</strong>, from none to the exact Fisher metric. All share the same base
-term, the value prediction error <span class="math notranslate nohighlight">\(\delta = \mu_\text{child} -
-\hat{\mu}_\text{child}\)</span> times the coupled parent activation
-<span class="math notranslate nohighlight">\(a = g(\mu_\text{parent})\)</span>; they differ only in what preconditions it.
-<span class="math notranslate nohighlight">\(\pi\)</span> denotes a posterior precision, <span class="math notranslate nohighlight">\(\hat{\pi}\)</span> a predicted
-(expected) one — see <code class="docutils literal notranslate"><span class="pre">docs/source/notebooks/0.1-Theory.ipynb</span></code>.</p>
-<ul>
+<p>The two <em>kind</em> values share the same base term, the value prediction error
+<span class="math notranslate nohighlight">\(\delta = \mu_\text{child} - \hat{\mu}_\text{child}\)</span> times the coupled
+parent activation <span class="math notranslate nohighlight">\(a = g(\mu_\text{parent})\)</span>; they differ only in what
+scales it. Both are strictly <em>local</em>: the update for one weight only reads
+the prediction error and precision at its child and the activation at its
+parent. No reduction over other parents or children in the layer.</p>
+<ul class="simple">
 <li><p><strong>standard</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;standard&quot;</span></code>) — the raw gradient of an <em>unweighted</em>
 squared error, no metric:
 <span class="math notranslate nohighlight">\(g = \delta \otimes a\)</span>.
@@ -719,36 +718,7 @@ gradient weighted by the child’s <em>posterior</em> precision:
 This is the <strong>backprop-parity</strong> mode. A moved interior belief shifts by
 (routed error) / posterior precision, so weighting by that same posterior
 precision cancels the division and reproduces the backpropagated gradient
-node-for-node at <em>any</em> precision setting, not only the pinned recipe (see
-<code class="docutils literal notranslate"><span class="pre">docs/source/notebooks/0.6-Deep_networks_implementation.md</span></code>). This is why it uses the
-posterior precision where <code class="docutils literal notranslate"><span class="pre">natural</span></code> — a conjugate update — uses the
-predicted one. A binary child drops the factor entirely: the Bernoulli
-variance cancels through the sigmoid.</p></li>
-<li><p><strong>natural</strong> (<code class="docutils literal notranslate"><span class="pre">kind=&quot;natural&quot;</span></code>) — the exact <strong>natural gradient</strong>:
-<span class="math notranslate nohighlight">\(\nabla F\)</span> preconditioned by the inverse Fisher metric of the weight
-row. For a Gaussian child the Fisher is the parent-precision prior plus a
-rank-one data term <span class="math notranslate nohighlight">\(\hat{\pi}_\text{child}\,a a^\top\)</span>; its inverse
-collapses by Sherman-Morrison to a per-row scalar shrinkage — an
-<span class="math notranslate nohighlight">\(O(d_\text{parent})\)</span> update with no matrix inverse that reaches the
-conjugate (ridge) posterior mean in a single step. With
-<span class="math notranslate nohighlight">\(s = \sum_k a_k^2 / \hat{\pi}_{\text{parent},k}\)</span>:</p>
-<ul class="simple">
-<li><p>Gaussian child:
-<span class="math notranslate nohighlight">\(g = \dfrac{\hat{\pi}_\text{child}\,\delta}{1 + \hat{\pi}_\text{child}\, s}
-\cdot \dfrac{a}{\hat{\pi}_\text{parent}}\)</span>.</p></li>
-<li><p>Binary child (Bernoulli curvature <span class="math notranslate nohighlight">\(\rho = \sigma(1-\sigma)\)</span>, the
-Gauss-Newton term; the numerator is the raw residual
-<span class="math notranslate nohighlight">\(\delta = x - \sigma\)</span>):
-<span class="math notranslate nohighlight">\(g = \dfrac{\delta}{1 + \rho\, s} \cdot \dfrac{a}{\hat{\pi}_\text{parent}}\)</span>.</p></li>
-<li><p>Categorical (softmax) child (<span class="math notranslate nohighlight">\(p = \hat{\mu}_\text{child}\)</span>, the
-softmax prediction): the output-side scalar precision is replaced by the
-multinomial Fisher <span class="math notranslate nohighlight">\(\mathrm{diag}(p) - p p^\top\)</span> (damped by
-<span class="math notranslate nohighlight">\(\lambda\)</span>, <code class="docutils literal notranslate"><span class="pre">categorical_damping</span></code>), the input side unchanged:
-<span class="math notranslate nohighlight">\(g = \dfrac{(\mathrm{diag}(p) + \lambda I - p p^\top)^{-1}\,\delta}{1 + s}
-\cdot \dfrac{a}{\hat{\pi}_\text{parent}}\)</span>.</p></li>
-</ul>
-<p>Full derivation in <code class="docutils literal notranslate"><span class="pre">docs/source/notebooks/0.5-Deep_networks_theory.md</span></code>.</p>
-</li>
+node-for-node at <em>any</em> precision setting, not only the pinned recipe.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -759,16 +729,9 @@ multinomial Fisher <span class="math notranslate nohighlight">\(\mathrm{diag}(p)
 <li><p><strong>kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Gradient computation mode.</p></li>
 <li><p><strong>parent_has_constant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the parent layer has a constant input node (mean = 1.0,
 precision = 1.0) appended to its activations after coupling.</p></li>
-<li><p><strong>child_is_binary</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child layer is a binary node — drops the redundant
+<li><p><strong>child_is_binary</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child layer is a binary node drops the redundant
 precision factor in <code class="docutils literal notranslate"><span class="pre">precision_weighted</span></code> (the Bernoulli variance
-cancels through the sigmoid in the gradient) and uses the Gauss-Newton
-curvature <span class="math notranslate nohighlight">\(\rho = \sigma(1-\sigma)\)</span> in <code class="docutils literal notranslate"><span class="pre">natural</span></code>.</p></li>
-<li><p><strong>child_is_categorical</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the child layer is a categorical (softmax) node. In the
-<code class="docutils literal notranslate"><span class="pre">natural</span></code> mode the error is preconditioned by the multinomial Fisher
-(see above); <code class="docutils literal notranslate"><span class="pre">standard</span></code> and <code class="docutils literal notranslate"><span class="pre">precision_weighted</span></code> treat each class as
-an independent unit-precision belief.</p></li>
-<li><p><strong>categorical_damping</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Tikhonov damping for the categorical <code class="docutils literal notranslate"><span class="pre">natural</span></code> mode. Ignored unless
-<em>child_is_categorical</em> and <code class="docutils literal notranslate"><span class="pre">kind=&quot;natural&quot;</span></code>.</p></li>
+cancels through the sigmoid in the gradient).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
