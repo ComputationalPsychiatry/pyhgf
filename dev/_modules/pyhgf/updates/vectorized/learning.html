@@ -1047,6 +1047,55 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ValueError</span>
 <span class="sd">        If *kind* is unrecognised.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">vectorized_weight_gradient_factors</span><span class="p">(</span>
+        <span class="n">parent_state</span><span class="p">,</span>
+        <span class="n">child_state</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
+        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent_has_constant</span><span class="p">,</span>
+        <span class="n">child_is_binary</span><span class="o">=</span><span class="n">child_is_binary</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">vectorized_weight_gradient_factors</span><span class="p">(</span>
+    <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_is_binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Child- and parent-side factors of the weight gradient.</span>
+
+<span class="sd">    The descent gradient of :func:`vectorized_weight_gradient` is a rank-one</span>
+<span class="sd">    product, ``grad = u[:, None] * v[None, :]``. Returning the two vectors</span>
+<span class="sd">    instead of their product lets a batched caller average gradients over many</span>
+<span class="sd">    samples with a single contraction (``einsum(&#39;bi,bj-&gt;ij&#39;) / batch``) — the</span>
+<span class="sd">    same arithmetic, but without materialising one weight-matrix-sized gradient</span>
+<span class="sd">    per sample, which is what dominates memory traffic at scale.</span>
+
+<span class="sd">    Non-finite entries are zeroed on the factors, matching the per-entry</span>
+<span class="sd">    zeroing of :func:`vectorized_weight_gradient` for vector-borne NaN/inf.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parent_state, child_state, coupling_fn, kind, parent_has_constant, child_is_binary :</span>
+<span class="sd">        As in :func:`vectorized_weight_gradient`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (u, v) :</span>
+<span class="sd">        Child-side factor, shape ``(n_children,)``, and parent-side factor,</span>
+<span class="sd">        shape ``(n_parents[+1],)``, such that ``u[:, None] * v[None, :]``</span>
+<span class="sd">        equals the descent gradient.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If *kind* is unrecognised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SEPARABLE_KINDS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected one of </span><span class="si">{</span><span class="n">SEPARABLE_KINDS</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
@@ -1068,8 +1117,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">v</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">v</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
     <span class="c1"># Descent sign, folded into the child-side factor.</span>
-    <span class="k">return</span> <span class="o">-</span><span class="n">u</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span></div>
-
+    <span class="k">return</span> <span class="o">-</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span>
 </pre></div>
 
                 </article>
