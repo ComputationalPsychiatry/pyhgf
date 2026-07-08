@@ -304,11 +304,7 @@ def _match_child_vol_structure(child_state, has_volatility_parent):
     if has_volatility_parent:
         n = child_state.mean.shape[-1]
         repl = {
-            f: (
-                jnp.zeros(n)
-                if getattr(child_state, f) is None
-                else getattr(child_state, f)
-            )
+            f: (jnp.zeros(n) if getattr(child_state, f) is None else getattr(child_state, f))
             for f in _VOL_STATE_FIELDS
         }
     else:

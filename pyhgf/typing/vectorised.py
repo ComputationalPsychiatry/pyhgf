@@ -72,19 +72,15 @@ class LayerState(eqx.Module):
 
         With ``has_volatility_parent=False`` the six volatility-level fields are
         set to ``None`` instead of being allocated. A frozen volatility level is
-        never predicted or updated. Every access to these fields sits behind a
+        never predicted or updated — every access to these fields sits behind a
         ``has_volatility_parent`` guard (see
         :func:`pyhgf.updates.vectorized.volatile.prediction` and
-        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`), so storing
+        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`) — so storing
         them would only carry dead arrays through the state. As ``None`` pytree
         nodes they hold no data and are skipped by every ``tree_map`` over the
         state (stacking, scanning, recording).
         """
-        vol = (
-            (lambda v: jnp.full(n_nodes, v))
-            if has_volatility_parent
-            else (lambda v: None)
-        )
+        vol = (lambda v: jnp.full(n_nodes, v)) if has_volatility_parent else (lambda v: None)
         return cls(
             mean=jnp.zeros(n_nodes),
             precision=jnp.ones(n_nodes),
