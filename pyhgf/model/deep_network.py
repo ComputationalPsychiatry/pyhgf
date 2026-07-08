@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import os
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import equinox as eqx
 import jax
@@ -20,14 +20,26 @@ import numpy as np
 import optax
 import pandas as pd
 
+from pyhgf.model.builder import LayerConfig, resolve_coupling_fn
 from pyhgf.typing.vectorised import (
+    VOLATILITY_STATE_FIELDS,
     Layer,
     LayerParams,
     LayerState,
     Network,
     stack_layers,
 )
-from pyhgf.utils.vectorized_belief_propagation import prediction_pass, run_scan
+from pyhgf.utils.vectorized_belief_propagation import (
+    batch_step,
+    batched_prediction_pass,
+    batched_prediction_states,
+    input_prediction_error,
+    learn_sweep,
+    prediction_pass,
+    prediction_sweep,
+    run_scan,
+    update_sweep,
+)
 from pyhgf.utils.weight_initialisation import (
     he_init,
     orthogonal_init,
@@ -46,6 +58,10 @@ _LAYER_PARAM_DEFAULTS: dict[str, float] = {
 # Names of fields that can be overridden per layer (eqx.Modules expose dataclass fields).
 _LAYER_STATE_FIELDS: frozenset[str] = frozenset(LayerState.__dataclass_fields__.keys())
 _LAYER_PARAM_FIELDS: frozenset[str] = frozenset(LayerParams.__dataclass_fields__.keys())
+# Volatility-level state fields, absent (``None``) on a layer without a
+# volatility parent — a state override for one of these on such a layer is
+# dropped rather than re-allocating the array.
+_VOL_STATE_FIELDS: frozenset[str] = frozenset(VOLATILITY_STATE_FIELDS)
 
 # Minimum identical-layer count for ``add_layer_stack`` to auto-collapse the
 # block into a ``LayerStack`` (i.e. switch the propagation kernels to
@@ -162,6 +178,191 @@ class DeepNetwork:
         self._optimizer: Optional[optax.GradientTransformation] = None
         self.trajectories: Optional[Network] = None
         self.predictions: Optional[jnp.ndarray] = None
+        # Per-sample input-layer errors from the last batch_update call,
+        # shape (batch, n_input_features).
+        self.input_errors: Optional[jnp.ndarray] = None
+
+    @classmethod
+    def from_configs(
+        cls,
+        configs: list[LayerConfig],
+        coupling_fn: Optional[Callable | str] = None,
+        volatility_updates: str = "unbounded",
+        max_posterior_precision: float = 1e10,
+        precision_clipping_value: float = 1e-6,
+    ) -> "DeepNetwork":
+        """Build a network from a list of layer configurations.
+
+        Constructs a DeepNetwork by adding layers in order from a list of
+        :class:`LayerConfig` objects. This is useful for reproducible experiments,
+        hyperparameter sweeps, and programmatic model construction.
+
+        Parameters
+        ----------
+        configs : list[LayerConfig]
+            List of layer configurations, outermost (output) layer first.
+        coupling_fn : Optional[Callable | str], default None
+            Default coupling function applied between layers. Can be a callable
+            (e.g., ``jax.nn.gelu``) or a string name (e.g., ``"gelu"``).
+            Per-layer overrides in configs take precedence.
+        volatility_updates : str, default "unbounded"
+            The type of volatility-level posterior update.
+        max_posterior_precision : float, default 1e10
+            Upper bound applied to posterior precision writes.
+        precision_clipping_value : float, default 1e-6
+            Bound applied to binary-layer predicted means.
+
+        Returns
+        -------
+        DeepNetwork
+            Fully constructed network with all layers added.
+
+        Raises
+        ------
+        ValueError
+            If any layer config is invalid or a coupling function name
+            is not recognized.
+
+        Examples
+        --------
+        >>> from pyhgf.model import LayerConfig, DeepNetwork
+        >>> configs = [
+        ...     LayerConfig(size=10),
+        ...     LayerConfig(size=20, coupling_fn="gelu"),
+        ...     LayerConfig(size=15)
+        ... ]
+        >>> net = DeepNetwork.from_configs(configs)
+        >>> net.n_layers
+        3
+        """
+        if not configs:
+            raise ValueError("configs must not be empty")
+
+        # Resolve the network-level coupling function
+        net_coupling_fn = resolve_coupling_fn(coupling_fn)
+
+        # Create the network with the resolved coupling function
+        net = cls(
+            coupling_fn=net_coupling_fn or (lambda x: x),
+            volatility_updates=volatility_updates,
+            max_posterior_precision=max_posterior_precision,
+            precision_clipping_value=precision_clipping_value,
+        )
+
+        # Add layers in order
+        for config in configs:
+            # Resolve per-layer coupling function
+            layer_coupling_fn = resolve_coupling_fn(config.coupling_fn)
+            if layer_coupling_fn is None:
+                layer_coupling_fn = net_coupling_fn
+
+            # Prepare per-layer parameter overrides
+            overrides = {}
+            if config.tonic_volatility is not None:
+                overrides["tonic_volatility"] = config.tonic_volatility
+            if config.tonic_volatility_vol is not None:
+                overrides["tonic_volatility_vol"] = config.tonic_volatility_vol
+            if config.volatility_coupling is not None:
+                overrides["volatility_coupling"] = config.volatility_coupling
+            if config.autoconnection_strength_vol is not None:
+                overrides["autoconnection_strength_vol"] = (
+                    config.autoconnection_strength_vol
+                )
+
+            # Add the layer
+            net = net.add_layer(
+                size=config.size,
+                kind=config.kind,
+                add_constant_input=config.add_constant_input,
+                fully_connected=config.fully_connected,
+                coupling_fn=layer_coupling_fn,
+                volatility_parent=config.volatility_parent,
+                **overrides,
+            )
+
+        return net
+
+    @classmethod
+    def from_dict(
+        cls,
+        config: dict[str, Any],
+    ) -> "DeepNetwork":
+        """Build a network from a dictionary configuration.
+
+        Loads a network configuration from a dictionary (e.g., from JSON or YAML),
+        making it easy to version control and reproduce experiments.
+
+        Parameters
+        ----------
+        config : dict[str, Any]
+            Configuration dictionary with keys:
+            - "layers" (required): list of layer configs (each a dict or LayerConfig)
+            - "coupling_fn" (optional): default coupling function name or callable
+            - "volatility_updates" (optional): volatility update scheme
+            - "max_posterior_precision" (optional): precision upper bound
+            - "precision_clipping_value" (optional): binary-layer clipping bound
+
+        Returns
+        -------
+        DeepNetwork
+            Fully constructed network.
+
+        Raises
+        ------
+        ValueError
+            If "layers" is missing or invalid.
+        KeyError
+            If required layer fields are missing.
+
+        Examples
+        --------
+        >>> config = {
+        ...     "layers": [
+        ...         {"size": 10},
+        ...         {"size": 20, "coupling_fn": "gelu"},
+        ...         {"size": 15}
+        ...     ],
+        ...     "coupling_fn": "identity",
+        ...     "volatility_updates": "unbounded"
+        ... }
+        >>> net = DeepNetwork.from_dict(config)
+        >>> net.n_layers
+        3
+
+        You can also save and load from JSON:
+
+        >>> import json
+        >>> json_str = json.dumps(config)
+        >>> loaded_config = json.loads(json_str)
+        >>> net = DeepNetwork.from_dict(loaded_config)
+        """
+        if "layers" not in config:
+            raise ValueError("config must contain a 'layers' key")
+
+        # Convert layer dicts to LayerConfig objects
+        layers_data = config["layers"]
+        if not layers_data:
+            raise ValueError("'layers' must not be empty")
+
+        configs = [
+            LayerConfig.from_dict(layer) if isinstance(layer, dict) else layer
+            for layer in layers_data
+        ]
+
+        # Extract network-level parameters
+        net_config = {
+            k: v
+            for k, v in config.items()
+            if k
+            in (
+                "coupling_fn",
+                "volatility_updates",
+                "max_posterior_precision",
+                "precision_clipping_value",
+            )
+        }
+
+        return cls.from_configs(configs, **net_config)
 
     def add_layer(
         self,
@@ -238,6 +439,14 @@ class DeepNetwork:
         if kind not in valid_kinds:
             raise ValueError(
                 f"Invalid layer kind '{kind}'. Choose from {sorted(valid_kinds)}."
+            )
+        if kind == "categorical" and self.layer_sizes:
+            # A softmax couples every node of the layer into one choice; that
+            # is only meaningful for the observed (bottom) layer, where the
+            # one-hot truth is clamped.
+            raise ValueError(
+                "Categorical layers represent a single N-way choice and are "
+                "only supported as the output (bottom) layer — add it first."
             )
 
         invalid_keys = [k for k in kwargs if k not in _LAYER_OVERRIDE_FIELDS]
@@ -360,12 +569,16 @@ class DeepNetwork:
         for i, size in enumerate(self.layer_sizes):
             overrides = self.layer_overrides[i]
 
-            # Per-layer state with overrides (broadcast scalar -> (n_nodes,))
-            state = LayerState.create(size)
+            # Per-layer state with overrides (broadcast scalar -> (n_nodes,)).
+            # Without a volatility parent the volatility fields are ``None``; a
+            # state override for one of them is dropped, since the frozen
+            # volatility level never reads it.
+            has_vol = self.volatility_parents[i]
+            state = LayerState.create(size, has_volatility_parent=has_vol)
             state_overrides = {
                 k: jnp.full(size, v)
                 for k, v in overrides.items()
-                if k in _LAYER_STATE_FIELDS
+                if k in _LAYER_STATE_FIELDS and (has_vol or k not in _VOL_STATE_FIELDS)
             }
             if state_overrides:
                 state = dataclasses.replace(state, **state_overrides)
@@ -632,7 +845,241 @@ class DeepNetwork:
         # Handle single sample vs batch.
         if x.ndim == 1:
             return prediction_pass(self.state, x)
-        return jax.vmap(lambda xi: prediction_pass(self.state, xi))(x)
+        return batched_prediction_pass(self.state, x)
+
+    def prediction(self, x: Union[np.ndarray, jnp.ndarray]) -> "DeepNetwork":
+        """Run the top-down prediction sweep only.
+
+        Clamps the predictors ``x`` on the input (top) layer, predicts every layer
+        from the one above, and writes the resulting beliefs back to ``self.state``.
+        No prediction errors, posterior updates, or weight learning are performed —
+        use :meth:`update` for the bottom-up belief update and :meth:`fit` for weight
+        learning.
+
+        Unlike :meth:`predict` (which returns the bottom layer's ``expected_mean`` and
+        leaves the network untouched), this advances and stores the network state, so
+        a subsequent :meth:`update` sees the predicted beliefs.
+
+        Parameters
+        ----------
+        x :
+            Predictors clamped on the top layer, shape ``(n_input_features,)``. Single
+            sample only; use :meth:`predict` for a batched, read-only forward pass.
+
+        Returns
+        -------
+        DeepNetwork
+            Self, with ``self.state`` advanced by the prediction sweep.
+        """
+        if self.state is None:
+            raise ValueError("Add at least one layer before calling prediction.")
+        x = jnp.asarray(x)
+        if x.ndim != 1:
+            raise ValueError(
+                "prediction() operates on a single sample (1D x); "
+                "use predict() for a batched read-only forward pass."
+            )
+        self.state = prediction_sweep(self.state, x)
+        return self
+
+    def update(
+        self,
+        y: Union[np.ndarray, jnp.ndarray],
+        optimizer: Optional[optax.GradientTransformation] = None,
+        learning_kind: str = "precision_weighted",
+    ) -> "DeepNetwork":
+        """Run the bottom-up prediction-error + posterior-update sweep.
+
+        Clamps the observations ``y`` on the output (bottom) layer, computes the leaf
+        prediction error, then performs the interleaved posterior-update + prediction-
+        error for every interior layer, in the correct bottom-up order. Belief states
+        (means and precisions) are always updated.
+
+        If an ``optimizer`` is supplied, a weight-learning phase runs *after* the belief
+        sweep: PE-driven gradients are formed and applied to every inter-layer weight
+        matrix, with the optimiser state held on ``self.opt_state``. With
+        ``optimizer=None`` (default) the weights are left unchanged, exactly as
+        :meth:`fit` would leave them with ``weight_update=False``.
+
+        Typically called right after :meth:`prediction`, which sets up the predicted
+        beliefs this sweep corrects, so a full local learning step without backprop is::
+
+            net.prediction(x).update(y, optimizer=optax.sgd(1e-2))
+
+        Parameters
+        ----------
+        y :
+            Observations clamped on the bottom layer, shape ``(n_output_features,)``.
+            Single sample only.
+        optimizer :
+            Optional ``optax.GradientTransformation``. If given, run the weight-learning
+            phase and update ``self.opt_state``. If ``None``, only beliefs are updated.
+        learning_kind :
+            Weight-gradient mode used when ``optimizer`` is supplied. One of
+            ``"standard"`` or ``"precision_weighted"`` (default). Both are
+            strictly local. Each weight update reads only its own
+            connection's prediction error, activation, and precision.
+
+        Returns
+        -------
+        DeepNetwork
+            Self, with ``self.state`` (and, if learning, ``self.opt_state``) advanced.
+        """
+        if self.state is None:
+            raise ValueError("Add at least one layer before calling update.")
+        y = jnp.asarray(y)
+        if y.ndim != 1:
+            raise ValueError("update() operates on a single sample (1D y).")
+        self.state = update_sweep(self.state, y)
+
+        if optimizer is not None:
+            # Initialise opt_state on first use, or when the optimiser changes.
+            if self.opt_state is None or self._optimizer is not optimizer:
+                self.opt_state = optimizer.init(self.state.weights_tuple())
+                self._optimizer = optimizer
+            self.state, self.opt_state = learn_sweep(
+                self.state, self.opt_state, optimizer, learning_kind
+            )
+        return self
+
+    def input_error(self) -> jnp.ndarray:
+        """Prediction error at the input (top) layer.
+
+        The bottom-up sweep leaves the top layer untouched (its values are
+        clamped to the predictors), so this is the only way to read the error
+        message the input would receive from the layer below — the child
+        layer's prediction error, weighted by its confidence (precision) and
+        routed back through the connecting weights. Typical usage runs the
+        two sweeps first::
+
+            net.prediction(x).update(y)
+            error_at_input = net.input_error()
+
+        Because prediction errors follow the ``observed - predicted``
+        convention, the result is the negative of the gradient of a
+        squared-error loss with respect to the predictors.
+
+        Returns
+        -------
+        jnp.ndarray
+            The prediction error at the top layer, shape
+            ``(n_input_features,)``.
+        """
+        if self.state is None:
+            raise ValueError("Add at least one layer before calling input_error.")
+        return input_prediction_error(self.state)
+
+    def predict_states(
+        self, x: Union[np.ndarray, jnp.ndarray]
+    ) -> tuple[jnp.ndarray, tuple]:
+        """Batched forward pass that also returns the per-sample swept states.
+
+        Returns the same predictions as :meth:`predict` on 2D input, plus the
+        per-sample layer states the sweep computed. Passing those states to
+        :meth:`batch_update` (as ``predicted``) skips its internal forward
+        sweep, so a caller that has already predicted does not pay for the
+        sweep twice.
+
+        Parameters
+        ----------
+        x :
+            Predictors, shape ``(batch, n_input_features)``.
+
+        Returns
+        -------
+        predictions :
+            Shape ``(batch, n_output_features)``.
+        states :
+            One batched ``LayerState`` per element — an opaque value to hand
+            back to :meth:`batch_update`.
+        """
+        if self.state is None:
+            raise ValueError("Add at least one layer before calling predict_states.")
+        states = batched_prediction_states(self.state, jnp.asarray(x))
+        return states[0].expected_mean, states
+
+    def batch_update(
+        self,
+        x: Union[np.ndarray, jnp.ndarray],
+        y: Union[np.ndarray, jnp.ndarray],
+        optimizer: Optional[optax.GradientTransformation] = None,
+        learning_kind: str = "precision_weighted",
+        update_confidences: bool = True,
+        time_step: float = 1.0,
+        predicted: Optional[tuple] = None,
+    ) -> "DeepNetwork":
+        """One batch-synchronous learning step over many samples at once.
+
+        Every sample in the batch is processed from the same state — same
+        weights, same confidences — in parallel; the per-sample weight
+        gradients and confidence changes are then *averaged* and applied
+        once, so the whole batch counts as a single observation. This
+        differs from :meth:`fit`, which scans samples sequentially and lets
+        the confidences adapt from one sample to the next (the natural mode
+        for a time series). Use this method when samples are exchangeable —
+        e.g. many token positions learned together.
+
+        The per-sample errors at the input layer are stored on
+        ``self.input_errors``, shape ``(batch, n_input_features)`` — see
+        :meth:`input_error` for their meaning and sign convention.
+
+        Parameters
+        ----------
+        x :
+            Predictors, shape ``(batch, n_input_features)``.
+        y :
+            Observations, shape ``(batch, n_output_features)``.
+        optimizer :
+            Optax optimiser for the weight step. ``None`` (default) freezes
+            the weights.
+        learning_kind :
+            Weight-gradient mode, as in :meth:`fit`.
+        update_confidences :
+            If True (default), carry the batch-averaged change of the
+            confidence state (value-level precisions and the volatility
+            level) into ``self.state``. Set to False to keep confidences
+            pinned, e.g. for exact comparisons against backpropagation.
+        time_step :
+            Inference time step, applied once per batch.
+        predicted :
+            Optional per-sample predicted states from :meth:`predict_states`;
+            when given, the internal forward sweep is skipped and ``x`` is
+            ignored.
+
+        Returns
+        -------
+        DeepNetwork
+            Self, with ``self.state`` (and, if learning, ``self.opt_state``)
+            advanced by one batch.
+        """
+        if self.state is None:
+            raise ValueError("Add at least one layer before calling batch_update.")
+        x = jnp.asarray(x)
+        y = jnp.asarray(y)
+        if x.ndim != 2 or y.ndim != 2:
+            raise ValueError(
+                "batch_update() operates on batches: x and y must be 2D "
+                "(batch, n_features)."
+            )
+
+        if optimizer is not None and (
+            self.opt_state is None or self._optimizer is not optimizer
+        ):
+            self.opt_state = optimizer.init(self.state.weights_tuple())
+            self._optimizer = optimizer
+
+        self.state, self.opt_state, self.input_errors = batch_step(
+            self.state,
+            self.opt_state,
+            x,
+            y,
+            optimizer=optimizer,
+            learning_kind=learning_kind,
+            update_confidences=update_confidences,
+            time_step=float(time_step),
+            predicted=predicted,
+        )
+        return self
 
     def reset(self) -> "DeepNetwork":
         """Reset the network state."""
