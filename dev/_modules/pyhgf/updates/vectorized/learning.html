@@ -972,6 +972,55 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
 
+<span class="c1"># Default Tikhonov damping for the categorical (softmax) natural gradient. The</span>
+<span class="c1"># multinomial Fisher diag(p) - p pᵀ is singular and its inverse amplifies the</span>
+<span class="c1"># error by 1/p, which diverges for a class the model deems near-impossible.</span>
+<span class="c1"># Adding lambda to the diagonal caps that amplification at ~1/lambda. Because p</span>
+<span class="c1"># is a probability, this bound is scale-free: lambda = 1e-2 treats classes below</span>
+<span class="c1"># ~1% probability as ~1% for curvature purposes.</span>
+<span class="n">CATEGORICAL_NATURAL_DAMPING</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_softmax_fisher_inverse</span><span class="p">(</span>
+    <span class="n">p</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pe</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">damping</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Apply the damped inverse multinomial Fisher to a residual.</span>
+
+<span class="sd">    Solves :math:`(\mathrm{diag}(p) + \lambda I - p p^\top)\,x = \delta` for</span>
+<span class="sd">    ``x``, the softmax (categorical) natural gradient&#39;s output-side</span>
+<span class="sd">    preconditioning of the value prediction error :math:`\delta` (``pe``). The</span>
+<span class="sd">    rank-one term :math:`p p^\top` is inverted in closed form by Sherman-Morrison</span>
+<span class="sd">    on the damped diagonal :math:`D = \mathrm{diag}(p) + \lambda I`:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        x = D^{-1} \delta + \frac{D^{-1} p \; (p^\top D^{-1} \delta)}{1 - p^\top D^{-1} p}.</span>
+
+<span class="sd">    With ``damping`` :math:`&gt; 0` the denominator lies in ``(0, 1)`` (because</span>
+<span class="sd">    :math:`p^\top D^{-1} p = \sum_k p_k^2 / (p_k + \lambda) &lt; \sum_k p_k = 1`),</span>
+<span class="sd">    so the solve is always well-conditioned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p :</span>
+<span class="sd">        Predicted class probabilities (softmax output), shape ``(n_classes,)``.</span>
+<span class="sd">    pe :</span>
+<span class="sd">        Prediction error, the zero-sum residual ``one_hot - p``.</span>
+<span class="sd">    damping :</span>
+<span class="sd">        Tikhonov damping added to the Fisher diagonal.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The preconditioned residual, shape ``(n_classes,)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">damping</span><span class="p">)</span>  <span class="c1"># diagonal of D^{-1}</span>
+    <span class="n">dinv_pe</span> <span class="o">=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">pe</span>
+    <span class="n">dinv_p</span> <span class="o">=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">p</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">dinv_p</span><span class="p">)</span>  <span class="c1"># 1 - pᵀ D^{-1} p</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">dinv_pe</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span>  <span class="c1"># (pᵀ D^{-1} pe) / denom</span>
+    <span class="k">return</span> <span class="n">dinv_pe</span> <span class="o">+</span> <span class="n">dinv_p</span> <span class="o">*</span> <span class="n">coef</span>
+
 
 <div class="viewcode-block" id="vectorized_weight_gradient">
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient">[docs]</a>
@@ -982,6 +1031,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">child_is_binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_is_categorical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">categorical_damping</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CATEGORICAL_NATURAL_DAMPING</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Per-layer weight gradient for the vectorised deep network.</span>
 
