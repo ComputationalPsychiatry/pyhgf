@@ -4,10 +4,10 @@
 """Vectorized prediction update for volatile node layers."""
 
 import dataclasses
-from typing import Callable
+from typing import Callable, Optional
 
 import jax.numpy as jnp
-from jax import grad, vmap
+from jax import Array, grad, vmap
 
 from pyhgf.typing.vectorised import LayerParams, LayerState
 
@@ -92,7 +92,12 @@ def vectorized_layer_prediction(
     """
     # 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------
     # ----------------------------------------------------------------------------------
+    expected_mean_vol: Optional[Array]
+    expected_precision_vol: Optional[Array]
+    effective_precision_vol: Optional[Array]
     if has_volatility_parent:
+        assert child_state.mean_vol is not None
+        assert child_state.precision_vol is not None
         # Expected mean for volatility level
         expected_mean_vol = params.autoconnection_strength_vol * child_state.mean_vol
 
@@ -137,6 +142,8 @@ def vectorized_layer_prediction(
     expected_mean = jnp.matmul(weights, coupled_parents)
 
     if has_volatility_parent:
+        assert expected_mean_vol is not None
+        assert expected_precision_vol is not None
         # Total volatility includes contribution from internal volatility level
         # plus the closed-form moment-generating-function correction
         # κ² / (2 · π̂_vol) that arises from marginalising over the volatility
@@ -167,8 +174,12 @@ def vectorized_layer_prediction(
         # The constant node never varies: zero derivative, infinite precision.
         parent_precision = jnp.concatenate([parent_precision, jnp.array([jnp.inf])])
         g_prime = jnp.concatenate([g_prime, jnp.zeros(1)])
-    weighted_grad = weights * (time_step * g_prime)
-    value_coupling_variance = jnp.sum(weighted_grad**2 / parent_precision, axis=-1)
+    # Σ_j (t · W[i, j] · g'_j)² / π_j, computed as (W²) @ ((t · g')² / π): the
+    # weight-dependent factor is a constant matrix, so the per-node sum is a
+    # matrix product with a per-node vector — no weight-matrix-sized
+    # intermediate, which matters when this function is vmapped over a batch.
+    per_parent_variance = (time_step * g_prime) ** 2 / parent_precision
+    value_coupling_variance = jnp.matmul(weights**2, per_parent_variance)
 
     # Conditional predicted precision π̂_a — the precision of x_a given a specific
     # value of x_b (own AR-plus-volatility variance only, no parent-uncertainty
