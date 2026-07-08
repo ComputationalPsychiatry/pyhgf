@@ -387,6 +387,21 @@ The main classes used to create probabilistic networks for binary or continuous 
    update_parameters
    insert_nodes
 
+Weight transplant
+=================
+
+Converters that build a :class:`~pyhgf.model.DeepNetwork` reproducing the forward pass
+of a trained Equinox module, translating its weights into PyHGF's layer layout.
+
+.. currentmodule:: pyhgf.model.transplant
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.transplant
+
+   from_linear
+   from_feedforward
+   from_embedding
+
 Plots
 *****
 

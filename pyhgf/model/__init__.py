@@ -15,10 +15,14 @@ from .add_nodes import (
 )
 from .deep_network import DeepNetwork
 from .network import Network
+from .transplant import from_embedding, from_feedforward, from_linear
 
 __all__ = [
     "Network",
     "DeepNetwork",
+    "from_linear",
+    "from_feedforward",
+    "from_embedding",
     "LayerState",
     "LayerParams",
     "predict",
