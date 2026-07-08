@@ -1031,8 +1031,20 @@ window.runMermaid = runMermaid;</script>
     <span class="n">volatility_prediction_error</span><span class="p">:</span> <span class="n">Array</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerState&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise a layer state with defaults.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerState&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise a layer state with defaults.</span>
+
+<span class="sd">        With ``has_volatility_parent=False`` the six volatility-level fields are</span>
+<span class="sd">        set to ``None`` instead of being allocated. A frozen volatility level is</span>
+<span class="sd">        never predicted or updated — every access to these fields sits behind a</span>
+<span class="sd">        ``has_volatility_parent`` guard (see</span>
+<span class="sd">        :func:`pyhgf.updates.vectorized.volatile.prediction` and</span>
+<span class="sd">        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`) — so storing</span>
+<span class="sd">        them would only carry dead arrays through the state. As ``None`` pytree</span>
+<span class="sd">        nodes they hold no data and are skipped by every ``tree_map`` over the</span>
+<span class="sd">        state (stacking, scanning, recording).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span> <span class="k">if</span> <span class="n">has_volatility_parent</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
@@ -1041,14 +1053,26 @@ window.runMermaid = runMermaid;</script>
             <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">effective_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">mean_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">precision_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">effective_precision_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">mean_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">effective_precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
         <span class="p">)</span></div>
 
+
+
+<span class="c1"># The six volatility-level fields of :class:`LayerState`, set to ``None`` on a</span>
+<span class="c1"># layer without a volatility parent (see :meth:`LayerState.create`).</span>
+<span class="n">VOLATILITY_STATE_FIELDS</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;mean_vol&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;precision_vol&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;effective_precision_vol&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;volatility_prediction_error&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="LayerParams">

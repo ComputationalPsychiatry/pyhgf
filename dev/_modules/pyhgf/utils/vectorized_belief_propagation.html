@@ -975,7 +975,14 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">Network</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">VOLATILITY_STATE_FIELDS</span> <span class="k">as</span> <span class="n">_VOL_STATE_FIELDS</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Layer</span><span class="p">,</span>
+    <span class="n">LayerStack</span><span class="p">,</span>
+    <span class="n">Network</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.binary</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">vectorized_binary_prediction</span><span class="p">,</span>
     <span class="n">vectorized_binary_prediction_error</span><span class="p">,</span>
@@ -1243,6 +1250,31 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_match_child_vol_structure</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Align a child state&#39;s volatility fields to a consumer&#39;s volatility structure.</span>
+
+<span class="sd">    A layer without a volatility parent stores its six volatility fields as</span>
+<span class="sd">    ``None`` rather than arrays. Where such a child meets a ``LayerStack`` with a</span>
+<span class="sd">    different volatility structure — a ``scan`` carry seeded by the child, or a</span>
+<span class="sd">    concatenation of the child onto the stack — the two pytrees must match.</span>
+
+<span class="sd">    Reconciling them here is value-neutral: cross-layer coupling is value-only,</span>
+<span class="sd">    so a parent update never reads its child&#39;s volatility level (that level is</span>
+<span class="sd">    internal to each layer). Materialising zero volatility fields when the</span>
+<span class="sd">    consumer has them, or dropping to ``None`` when it does not, only fixes the</span>
+<span class="sd">    structure; no volatility quantity of the child is ever consumed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">repl</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">f</span><span class="p">:</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_VOL_STATE_FIELDS</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">repl</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_VOL_STATE_FIELDS</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="o">**</span><span class="n">repl</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_posterior_pe_stack</span><span class="p">(</span>
     <span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span>
     <span class="n">child_state_init</span><span class="p">,</span>
@@ -1259,6 +1291,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ``child_is_input_layer=False`` throughout — Phase 8 v1 requires the layer below a</span>
 <span class="sd">    stack to be non-leaf, so the boundary is interior.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># The scan carry becomes a stack slice each step, so seed it with the</span>
+    <span class="c1"># child&#39;s state coerced to the stack&#39;s volatility structure.</span>
+    <span class="n">child_state_init</span> <span class="o">=</span> <span class="n">_match_child_vol_structure</span><span class="p">(</span>
+        <span class="n">child_state_init</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span>
+    <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">child_carry_state</span><span class="p">,</span> <span class="n">slice_data</span><span class="p">):</span>
         <span class="n">slice_state</span><span class="p">,</span> <span class="n">slice_params</span><span class="p">,</span> <span class="n">slice_weights</span> <span class="o">=</span> <span class="n">slice_data</span>
@@ -1340,6 +1377,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    slice grad over the N parent slices and the N child slots.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
+    <span class="n">child_state</span> <span class="o">=</span> <span class="n">_match_child_vol_structure</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">)</span>
 
     <span class="n">combined_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">s</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
