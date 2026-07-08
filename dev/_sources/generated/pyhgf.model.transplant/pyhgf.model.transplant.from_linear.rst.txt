@@ -1,0 +1,6 @@
+﻿pyhgf.model.transplant.from\_linear
+===================================
+
+.. currentmodule:: pyhgf.model.transplant
+
+.. autofunction:: from_linear

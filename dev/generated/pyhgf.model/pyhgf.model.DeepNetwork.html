@@ -557,6 +557,11 @@
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.insert_nodes.html">pyhgf.model.insert_nodes</a></li>
 </ul>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transplant/pyhgf.model.transplant.from_linear.html">pyhgf.model.transplant.from_linear</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transplant/pyhgf.model.transplant.from_feedforward.html">pyhgf.model.transplant.from_feedforward</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.model.transplant/pyhgf.model.transplant.from_embedding.html">pyhgf.model.transplant.from_embedding</a></li>
+</ul>
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html">pyhgf.plots.matplotlib.plot_trajectories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_correlations.html">pyhgf.plots.matplotlib.plot_correlations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_nodes.html">pyhgf.plots.matplotlib.plot_nodes</a></li>
@@ -782,20 +787,8 @@ plateaus that hurt gradient-based inference. Shared with the nodalised
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_layer_stack</span></code>(layer_sizes[, kind, ...])</p></td>
 <td><p>Add multiple hidden layers at once.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_update</span></code>(x, y[, optimizer, ...])</p></td>
-<td><p>One batch-synchronous learning step over many samples at once.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y, optimizer[, learning_kind, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y, optimizer[, learning_kind, ...])</p></td>
 <td><p>Fit network to data.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_configs</span></code>(configs[, coupling_fn, ...])</p></td>
-<td><p>Build a network from a list of layer configurations.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dict</span></code>(config)</p></td>
-<td><p>Build a network from a dictionary configuration.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_error</span></code>()</p></td>
-<td><p>Prediction error at the input (top) layer.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(path)</p></td>
 <td><p>Read array leaves from <code class="docutils literal notranslate"><span class="pre">path</span></code> back into <code class="docutils literal notranslate"><span class="pre">self.state</span></code>.</p></td>
@@ -806,12 +799,6 @@ plateaus that hurt gradient-based inference. Shared with the nodalised
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
 <td><p>Forward pass without learning.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_states</span></code>(x)</p></td>
-<td><p>Batched forward pass that also returns the per-sample swept states.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction</span></code>(x)</p></td>
-<td><p>Run the top-down prediction sweep only.</p></td>
-</tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
 <td><p>Reset the network state.</p></td>
 </tr>
@@ -821,10 +808,7 @@ plateaus that hurt gradient-based inference. Shared with the nodalised
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code>()</p></td>
 <td><p>Flatten <code class="docutils literal notranslate"><span class="pre">self.trajectories</span></code> into a wide-format <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>(y[, optimizer, learning_kind])</p></td>
-<td><p>Run the bottom-up prediction-error + posterior-update sweep.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, key])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, key])</p></td>
 <td><p>Initialise inter-layer weight matrices.</p></td>
 </tr>
 </tbody>

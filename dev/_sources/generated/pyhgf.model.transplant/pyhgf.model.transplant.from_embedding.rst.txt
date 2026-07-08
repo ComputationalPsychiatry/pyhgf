@@ -1,0 +1,6 @@
+﻿pyhgf.model.transplant.from\_embedding
+======================================
+
+.. currentmodule:: pyhgf.model.transplant
+
+.. autofunction:: from_embedding

@@ -1,0 +1,6 @@
+﻿pyhgf.model.transplant.from\_feedforward
+========================================
+
+.. currentmodule:: pyhgf.model.transplant
+
+.. autofunction:: from_feedforward
