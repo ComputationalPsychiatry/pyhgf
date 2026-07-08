@@ -342,6 +342,17 @@ Binary layers
     vectorized_binary_prediction
     vectorized_binary_prediction_error
 
+Categorical layers
+------------------
+
+.. currentmodule:: pyhgf.updates.vectorized.categorical
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorized.categorical
+
+    vectorized_categorical_prediction
+    vectorized_categorical_prediction_error
+
 Vectorized learning
 -------------------
 

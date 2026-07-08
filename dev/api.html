@@ -484,32 +484,33 @@
 <ul>
 <li><p><a class="reference internal" href="#volatile-layers" id="id31">Volatile layers</a></p></li>
 <li><p><a class="reference internal" href="#binary-layers" id="id32">Binary layers</a></p></li>
-<li><p><a class="reference internal" href="#vectorized-learning" id="id33">Vectorized learning</a></p></li>
+<li><p><a class="reference internal" href="#categorical-layers" id="id33">Categorical layers</a></p></li>
+<li><p><a class="reference internal" href="#vectorized-learning" id="id34">Vectorized learning</a></p></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#model" id="id34">Model</a></p></li>
-<li><p><a class="reference internal" href="#plots" id="id35">Plots</a></p>
+<li><p><a class="reference internal" href="#model" id="id35">Model</a></p></li>
+<li><p><a class="reference internal" href="#plots" id="id36">Plots</a></p>
 <ul>
-<li><p><a class="reference internal" href="#matplotlib" id="id36">Matplotlib</a></p></li>
-<li><p><a class="reference internal" href="#graphviz" id="id37">Graphviz</a></p></li>
-<li><p><a class="reference internal" href="#networkx" id="id38">Networkx</a></p></li>
+<li><p><a class="reference internal" href="#matplotlib" id="id37">Matplotlib</a></p></li>
+<li><p><a class="reference internal" href="#graphviz" id="id38">Graphviz</a></p></li>
+<li><p><a class="reference internal" href="#networkx" id="id39">Networkx</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#response" id="id39">Response</a></p></li>
-<li><p><a class="reference internal" href="#utils" id="id40">Utils</a></p>
+<li><p><a class="reference internal" href="#response" id="id40">Response</a></p></li>
+<li><p><a class="reference internal" href="#utils" id="id41">Utils</a></p>
 <ul>
-<li><p><a class="reference internal" href="#weight-initialisation" id="id41">Weight initialisation</a></p></li>
-<li><p><a class="reference internal" href="#sampling" id="id42">Sampling</a></p></li>
-<li><p><a class="reference internal" href="#vectorized-belief-propagation" id="id43">Vectorized belief propagation</a></p></li>
+<li><p><a class="reference internal" href="#weight-initialisation" id="id42">Weight initialisation</a></p></li>
+<li><p><a class="reference internal" href="#sampling" id="id43">Sampling</a></p></li>
+<li><p><a class="reference internal" href="#vectorized-belief-propagation" id="id44">Vectorized belief propagation</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#math" id="id44">Math</a></p></li>
-<li><p><a class="reference internal" href="#typing" id="id45">Typing</a></p>
+<li><p><a class="reference internal" href="#math" id="id45">Math</a></p></li>
+<li><p><a class="reference internal" href="#typing" id="id46">Typing</a></p>
 <ul>
-<li><p><a class="reference internal" href="#network-structure" id="id46">Network structure</a></p></li>
-<li><p><a class="reference internal" href="#vectorized-networks" id="id47">Vectorized networks</a></p></li>
+<li><p><a class="reference internal" href="#network-structure" id="id47">Network structure</a></p></li>
+<li><p><a class="reference internal" href="#vectorized-networks" id="id48">Vectorized networks</a></p></li>
 </ul>
 </li>
 </ul>
@@ -965,8 +966,22 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 </table>
 </div>
 </section>
+<section id="categorical-layers">
+<h4><a class="toc-backref" href="#id33" role="doc-backlink">Categorical layers</a><a class="headerlink" href="#categorical-layers" title="Link to this heading">#</a></h4>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction.html#pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction" title="pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_categorical_prediction</span></code></a>(...[, ...])</p></td>
+<td><p>Predict a categorical state node layer: one belief per class.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error.html#pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error" title="pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_categorical_prediction_error</span></code></a>(layer)</p></td>
+<td><p>Compute the prediction error of a categorical state node layer.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="vectorized-learning">
-<h4><a class="toc-backref" href="#id33" role="doc-backlink">Vectorized learning</a><a class="headerlink" href="#vectorized-learning" title="Link to this heading">#</a></h4>
+<h4><a class="toc-backref" href="#id34" role="doc-backlink">Vectorized learning</a><a class="headerlink" href="#vectorized-learning" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient" title="pyhgf.updates.vectorized.learning.vectorized_weight_gradient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_weight_gradient</span></code></a>(parent_state, ...)</p></td>
@@ -979,7 +994,7 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 </section>
 </section>
 <section id="model">
-<h2><a class="toc-backref" href="#id34" role="doc-backlink">Model</a><a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id35" role="doc-backlink">Model</a><a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
 <p>The main classes used to create probabilistic networks for binary or continuous inputs.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1024,12 +1039,12 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 </div>
 </section>
 <section id="plots">
-<h2><a class="toc-backref" href="#id35" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id36" role="doc-backlink">Plots</a><a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <p>Plotting functionalities to visualize parameters trajectories and correlations after
 observing new data. We are currently fully supporting Graphviz for network structure and
 Matplotlib for time series visualization. NetworkX is also available for some functions.</p>
 <section id="matplotlib">
-<h3><a class="toc-backref" href="#id36" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">Matplotlib</a><a class="headerlink" href="#matplotlib" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.matplotlib/pyhgf.plots.matplotlib.plot_trajectories.html#pyhgf.plots.matplotlib.plot_trajectories" title="pyhgf.plots.matplotlib.plot_trajectories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a>(network[, ci, ...])</p></td>
@@ -1052,7 +1067,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="graphviz">
-<h3><a class="toc-backref" href="#id37" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id38" role="doc-backlink">Graphviz</a><a class="headerlink" href="#graphviz" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.graphviz/pyhgf.plots.graphviz.plot_network.html#pyhgf.plots.graphviz.plot_network" title="pyhgf.plots.graphviz.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network)</p></td>
@@ -1066,7 +1081,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </div>
 </section>
 <section id="networkx">
-<h3><a class="toc-backref" href="#id38" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">Networkx</a><a class="headerlink" href="#networkx" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.plots.networkx/pyhgf.plots.networkx.plot_network.html#pyhgf.plots.networkx.plot_network" title="pyhgf.plots.networkx.plot_network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_network</span></code></a>(network[, figsize, node_size, ...])</p></td>
@@ -1078,7 +1093,7 @@ Matplotlib for time series visualization. NetworkX is also available for some fu
 </section>
 </section>
 <section id="response">
-<h2><a class="toc-backref" href="#id39" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id40" role="doc-backlink">Response</a><a class="headerlink" href="#response" title="Link to this heading">#</a></h2>
 <p>A collection of response functions. A response function is simply a callable taking at
 least the HGF instance as input after observation and returning surprise.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
@@ -1103,7 +1118,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="utils">
-<h2><a class="toc-backref" href="#id40" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id41" role="doc-backlink">Utils</a><a class="headerlink" href="#utils" title="Link to this heading">#</a></h2>
 <p>Utilities for manipulating neural networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1153,7 +1168,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </table>
 </div>
 <section id="weight-initialisation">
-<h3><a class="toc-backref" href="#id41" role="doc-backlink">Weight initialisation</a><a class="headerlink" href="#weight-initialisation" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id42" role="doc-backlink">Weight initialisation</a><a class="headerlink" href="#weight-initialisation" title="Link to this heading">#</a></h3>
 <p>Initialisation strategies for coupling weight matrices in predictive-coding networks.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1174,7 +1189,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="sampling">
-<h3><a class="toc-backref" href="#id42" role="doc-backlink">Sampling</a><a class="headerlink" href="#sampling" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id43" role="doc-backlink">Sampling</a><a class="headerlink" href="#sampling" title="Link to this heading">#</a></h3>
 <p>Low-level helpers used when sampling from a network’s generative distribution.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1186,7 +1201,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="vectorized-belief-propagation">
-<h3><a class="toc-backref" href="#id43" role="doc-backlink">Vectorized belief propagation</a><a class="headerlink" href="#vectorized-belief-propagation" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id44" role="doc-backlink">Vectorized belief propagation</a><a class="headerlink" href="#vectorized-belief-propagation" title="Link to this heading">#</a></h3>
 <p>Scan-based belief propagation used internally by <a class="reference internal" href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork" title="pyhgf.model.DeepNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyhgf.model.DeepNetwork</span></code></a>.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1205,7 +1220,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 </section>
 </section>
 <section id="math">
-<h2><a class="toc-backref" href="#id44" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id45" role="doc-backlink">Math</a><a class="headerlink" href="#math" title="Link to this heading">#</a></h2>
 <p>Math functions and probability densities.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -1250,11 +1265,11 @@ least the HGF instance as input after observation and returning surprise.</p>
 </div>
 </section>
 <section id="typing">
-<h2><a class="toc-backref" href="#id45" role="doc-backlink">Typing</a><a class="headerlink" href="#typing" title="Link to this heading">#</a></h2>
+<h2><a class="toc-backref" href="#id46" role="doc-backlink">Typing</a><a class="headerlink" href="#typing" title="Link to this heading">#</a></h2>
 <p>Named tuples and PyTree containers describing the structure and state of
 probabilistic networks.</p>
 <section id="network-structure">
-<h3><a class="toc-backref" href="#id46" role="doc-backlink">Network structure</a><a class="headerlink" href="#network-structure" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id47" role="doc-backlink">Network structure</a><a class="headerlink" href="#network-structure" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.typing/pyhgf.typing.typing.AdjacencyLists.html#pyhgf.typing.typing.AdjacencyLists" title="pyhgf.typing.typing.AdjacencyLists"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyLists</span></code></a>(node_type, value_parents, ...)</p></td>
@@ -1271,7 +1286,7 @@ probabilistic networks.</p>
 </div>
 </section>
 <section id="vectorized-networks">
-<h3><a class="toc-backref" href="#id47" role="doc-backlink">Vectorized networks</a><a class="headerlink" href="#vectorized-networks" title="Link to this heading">#</a></h3>
+<h3><a class="toc-backref" href="#id48" role="doc-backlink">Vectorized networks</a><a class="headerlink" href="#vectorized-networks" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams" title="pyhgf.typing.vectorised.LayerParams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerParams</span></code></a>(tonic_volatility, ...)</p></td>
@@ -1380,6 +1395,7 @@ probabilistic networks.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#vectorized-updates">Vectorized updates</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#volatile-layers">Volatile layers</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#binary-layers">Binary layers</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#categorical-layers">Categorical layers</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#vectorized-learning">Vectorized learning</a></li>
 </ul>
 </li>
