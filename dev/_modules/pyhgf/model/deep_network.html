@@ -1149,7 +1149,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Number of nodes in the layer.</span>
 <span class="sd">        kind :</span>
 <span class="sd">            Type of nodes in this layer. ``&quot;volatile&quot;`` (default) uses volatile nodes</span>
-<span class="sd">            with value and volatility levels. ``&quot;binary&quot;`` uses binary state nodes.</span>
+<span class="sd">            with value and volatility levels. ``&quot;binary&quot;`` uses binary state nodes (one</span>
+<span class="sd">            independent Bernoulli belief per node). ``&quot;categorical&quot;`` makes the whole</span>
+<span class="sd">            layer one joint choice over its ``size`` mutually-exclusive classes: the</span>
+<span class="sd">            expected mean is the softmax across the layer&#39;s nodes, and the observation</span>
+<span class="sd">            clamped during :meth:`fit` must be one-hot. Only valid as the output</span>
+<span class="sd">            (bottom) layer. See ``docs/source/notebooks/1.1-Binary_HGF.ipynb`` for the</span>
+<span class="sd">            binary case.</span>
 <span class="sd">        add_constant_input :</span>
 <span class="sd">            If `True`, add a bias term to the layer&#39;s predictions.</span>
 <span class="sd">        fully_connected :</span>
@@ -1192,10 +1198,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">_kind_aliases</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;volatile-state&quot;</span><span class="p">:</span> <span class="s2">&quot;volatile&quot;</span><span class="p">,</span>
             <span class="s2">&quot;binary-state&quot;</span><span class="p">:</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;categorical-state&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="n">_kind_aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
 
-        <span class="n">valid_kinds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;volatile&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">}</span>
+        <span class="n">valid_kinds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;volatile&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;categorical&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_kinds</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Invalid layer kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
@@ -1251,20 +1258,21 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple hidden layers at once.</span>
 
 <span class="sd">        When the block contains ≥ ``_SCAN_AUTO_THRESHOLD`` (currently 5) identical</span>
-<span class="sd">        layers sitting on a matching-width non-binary layer below, the layers are</span>
+<span class="sd">        layers sitting on a matching-width volatile layer below, the layers are</span>
 <span class="sd">        automatically collapsed into a single ``LayerStack`` at network-build time, and</span>
 <span class="sd">        the propagation kernels ``jax.lax.scan`` over them with a single trace.</span>
 
 <span class="sd">        If any eligibility condition is not met (mixed sizes, fewer than 5 layers, width</span>
-<span class="sd">        mismatch with the layer below, direct binary-leaf adjacency, or no layer below),</span>
-<span class="sd">        the layers are simply added one by one the usual way.</span>
+<span class="sd">        mismatch with the layer below, direct binary- or categorical-leaf adjacency, or</span>
+<span class="sd">        no layer below), the layers are simply added one by one the usual way.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        layer_sizes :</span>
 <span class="sd">            List of layer sizes.</span>
 <span class="sd">        kind :</span>
-<span class="sd">            Type of nodes for all layers (``&quot;volatile&quot;`` or ``&quot;binary&quot;``).</span>
+<span class="sd">            Type of nodes for all layers (``&quot;volatile&quot;``, ``&quot;binary&quot;``, or</span>
+<span class="sd">            ``&quot;categorical&quot;``).</span>
 <span class="sd">        add_constant_input :</span>
 <span class="sd">            If True, add a bias term to each layer&#39;s predictions.</span>
 <span class="sd">        fully_connected :</span>
@@ -1288,7 +1296,10 @@ window.runMermaid = runMermaid;</script>
             <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span>
             <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;categorical&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>

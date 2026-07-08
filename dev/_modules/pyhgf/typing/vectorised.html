@@ -1045,7 +1045,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        nodes they hold no data and are skipped by every ``tree_map`` over the</span>
 <span class="sd">        state (stacking, scanning, recording).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span> <span class="k">if</span> <span class="n">has_volatility_parent</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">has_volatility_parent</span>
+            <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
@@ -1149,7 +1153,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    fully_connected :</span>
 <span class="sd">        Whether the incoming weights are fully connected.</span>
 <span class="sd">    kind :</span>
-<span class="sd">        The kind of layer, either ``&quot;volatile&quot;`` or ``&quot;binary&quot;``.</span>
+<span class="sd">        The kind of layer, one of ``&quot;volatile&quot;``, ``&quot;binary&quot;``, or ``&quot;categorical&quot;``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">state</span><span class="p">:</span> <span class="n">LayerState</span>
@@ -1160,7 +1164,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># &quot;volatile&quot; | &quot;binary&quot;</span></div>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># &quot;volatile&quot; | &quot;binary&quot; | &quot;categorical&quot;</span></div>
 
 
 
@@ -1200,7 +1204,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    fully_connected :</span>
 <span class="sd">        Whether the incoming weights are fully connected.</span>
 <span class="sd">    kind :</span>
-<span class="sd">        The kind of layer, either ``&quot;volatile&quot;`` or ``&quot;binary&quot;``.</span>
+<span class="sd">        The kind of layer, one of ``&quot;volatile&quot;``, ``&quot;binary&quot;``, or ``&quot;categorical&quot;``.</span>
 <span class="sd">    n_layers :</span>
 <span class="sd">        The number of stacked layers ``N``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

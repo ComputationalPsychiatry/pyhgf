@@ -556,27 +556,31 @@
 <h2>Learning in deep predictive coding networks<a class="headerlink" href="#learning-in-deep-predictive-coding-networks" title="Link to this heading">#</a></h2>
 <p>The framework extends predictive coding to deep neural networks through <em>prospective configuration</em> (<a class="reference external" href="https://doi.org/10.1038/s41593-023-01514-1">Song et al., 2024</a>): before updating any weight, the network first infers the most likely activations at every layer by settling prediction errors across the hierarchy, and only then adjusts the coupling strengths (weights). This two-phase infer-then-update cycle avoids the catastrophic interference that plagues standard backpropagation and naturally yields precision-weighted learning, where the balance of uncertainty between inputs and outputs controls the depth at which weights change.</p>
 <details>
-<summary>Binary classification on a two-moons dataset</summary>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<summary>Multiclass classification on a three-branch spiral</summary>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span>
 
-<span class="c1"># Build a 2 → 16 → 16 → 1 (binary) predictive coding network</span>
-<span class="n">clf_net</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">DeepNetwork</span><span class="p">(</span><span class="n">coupling_fn</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">weight_initialisation</span><span class="p">(</span><span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># Build a 2 → 8 × 4 → 3 (categorical) predictive coding network</span>
+<span class="n">clf_net</span> <span class="o">=</span> <span class="n">DeepNetwork</span><span class="p">(</span><span class="n">coupling_fn</span><span class="o">=</span><span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">leaky_relu</span><span class="p">)</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
+    <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;categorical&quot;</span>
 <span class="p">)</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">clf_net</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=-</span><span class="mf">80.0</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="o">=-</span><span class="mf">8.0</span><span class="p">)</span>
+<span class="n">clf_net</span> <span class="o">=</span> <span class="n">clf_net</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
+    <span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">coupling_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">expected_precision</span><span class="o">=</span><span class="mf">10e9</span>
+<span class="p">)</span><span class="o">.</span><span class="n">weight_initialisation</span><span class="p">(</span><span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 
-<span class="c1"># Train for 100 epochs using the Adam optimiser</span>
-<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
-    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="c1"># Train for 80 epochs using the Adam optimiser (Y_train is one-hot)</span>
+<span class="n">adam</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">80</span><span class="p">):</span>
+    <span class="n">clf_net</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+        <span class="n">X_train</span><span class="p">,</span> <span class="n">Y_train</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">adam</span><span class="p">,</span> <span class="n">learning_kind</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="mf">0.001</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
 </details>
-<p><img alt="gif" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/two_moons_training.gif" /></p>
+<p><img alt="gif" src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif" /></p>
 <ul class="simple">
 <li><p>🎓 <a class="reference external" href="https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Learning.html">Deep Bayesian predictive coding</a></p></li>
 </ul>
