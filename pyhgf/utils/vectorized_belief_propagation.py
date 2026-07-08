@@ -12,7 +12,14 @@ import jax
 import jax.numpy as jnp
 import optax
 
-from pyhgf.typing.vectorised import Layer, LayerStack, Network
+from pyhgf.typing.vectorised import (
+    VOLATILITY_STATE_FIELDS as _VOL_STATE_FIELDS,
+)
+from pyhgf.typing.vectorised import (
+    Layer,
+    LayerStack,
+    Network,
+)
 from pyhgf.updates.vectorized.binary import (
     vectorized_binary_prediction,
     vectorized_binary_prediction_error,
@@ -280,6 +287,35 @@ def _posterior_pe_layer(
     return dataclasses.replace(parent, state=new_state)
 
 
+def _match_child_vol_structure(child_state, has_volatility_parent):
+    """Align a child state's volatility fields to a consumer's volatility structure.
+
+    A layer without a volatility parent stores its six volatility fields as
+    ``None`` rather than arrays. Where such a child meets a ``LayerStack`` with a
+    different volatility structure — a ``scan`` carry seeded by the child, or a
+    concatenation of the child onto the stack — the two pytrees must match.
+
+    Reconciling them here is value-neutral: cross-layer coupling is value-only,
+    so a parent update never reads its child's volatility level (that level is
+    internal to each layer). Materialising zero volatility fields when the
+    consumer has them, or dropping to ``None`` when it does not, only fixes the
+    structure; no volatility quantity of the child is ever consumed.
+    """
+    if has_volatility_parent:
+        n = child_state.mean.shape[-1]
+        repl = {
+            f: (
+                jnp.zeros(n)
+                if getattr(child_state, f) is None
+                else getattr(child_state, f)
+            )
+            for f in _VOL_STATE_FIELDS
+        }
+    else:
+        repl = {f: None for f in _VOL_STATE_FIELDS}
+    return dataclasses.replace(child_state, **repl)
+
+
 def _posterior_pe_stack(
     stack: LayerStack,
     child_state_init,
@@ -296,6 +332,11 @@ def _posterior_pe_stack(
     ``child_is_input_layer=False`` throughout — Phase 8 v1 requires the layer below a
     stack to be non-leaf, so the boundary is interior.
     """
+    # The scan carry becomes a stack slice each step, so seed it with the
+    # child's state coerced to the stack's volatility structure.
+    child_state_init = _match_child_vol_structure(
+        child_state_init, stack.has_volatility_parent
+    )
 
     def body(child_carry_state, slice_data):
         slice_state, slice_params, slice_weights = slice_data
@@ -377,6 +418,7 @@ def _grad_stack(stack: LayerStack, child_elem, learning_kind: str):
     slice grad over the N parent slices and the N child slots.
     """
     child_state, _, _ = _child_view(child_elem)
+    child_state = _match_child_vol_structure(child_state, stack.has_volatility_parent)
 
     combined_state = jax.tree_util.tree_map(
         lambda c, s: jnp.concatenate([c[None, ...], s], axis=0),

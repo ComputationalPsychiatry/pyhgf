@@ -57,17 +57,34 @@ class LayerState(eqx.Module):
     conditional_expected_precision: Array
     effective_precision: Array
     value_prediction_error: Array
-    # Volatility level (internal)
-    mean_vol: Array
-    precision_vol: Array
-    expected_mean_vol: Array
-    expected_precision_vol: Array
-    effective_precision_vol: Array
-    volatility_prediction_error: Array
+    # Volatility level (internal). ``None`` when the layer has no volatility
+    # parent (see :meth:`create`).
+    mean_vol: Optional[Array]
+    precision_vol: Optional[Array]
+    expected_mean_vol: Optional[Array]
+    expected_precision_vol: Optional[Array]
+    effective_precision_vol: Optional[Array]
+    volatility_prediction_error: Optional[Array]
 
     @classmethod
-    def create(cls, n_nodes: int) -> "LayerState":
-        """Initialise a layer state with defaults."""
+    def create(cls, n_nodes: int, has_volatility_parent: bool = True) -> "LayerState":
+        """Initialise a layer state with defaults.
+
+        With ``has_volatility_parent=False`` the six volatility-level fields are
+        set to ``None`` instead of being allocated. A frozen volatility level is
+        never predicted or updated. Every access to these fields sits behind a
+        ``has_volatility_parent`` guard (see
+        :func:`pyhgf.updates.vectorized.volatile.prediction` and
+        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`), so storing
+        them would only carry dead arrays through the state. As ``None`` pytree
+        nodes they hold no data and are skipped by every ``tree_map`` over the
+        state (stacking, scanning, recording).
+        """
+        vol = (
+            (lambda v: jnp.full(n_nodes, v))
+            if has_volatility_parent
+            else (lambda v: None)
+        )
         return cls(
             mean=jnp.zeros(n_nodes),
             precision=jnp.ones(n_nodes),
@@ -76,13 +93,25 @@ class LayerState(eqx.Module):
             conditional_expected_precision=jnp.ones(n_nodes),
             effective_precision=jnp.zeros(n_nodes),
             value_prediction_error=jnp.zeros(n_nodes),
-            mean_vol=jnp.zeros(n_nodes),
-            precision_vol=jnp.ones(n_nodes),
-            expected_mean_vol=jnp.zeros(n_nodes),
-            expected_precision_vol=jnp.ones(n_nodes),
-            effective_precision_vol=jnp.zeros(n_nodes),
-            volatility_prediction_error=jnp.zeros(n_nodes),
+            mean_vol=vol(0.0),
+            precision_vol=vol(1.0),
+            expected_mean_vol=vol(0.0),
+            expected_precision_vol=vol(1.0),
+            effective_precision_vol=vol(0.0),
+            volatility_prediction_error=vol(0.0),
         )
+
+
+# The six volatility-level fields of :class:`LayerState`, set to ``None`` on a
+# layer without a volatility parent (see :meth:`LayerState.create`).
+VOLATILITY_STATE_FIELDS: tuple = (
+    "mean_vol",
+    "precision_vol",
+    "expected_mean_vol",
+    "expected_precision_vol",
+    "effective_precision_vol",
+    "volatility_prediction_error",
+)
 
 
 class LayerParams(eqx.Module):

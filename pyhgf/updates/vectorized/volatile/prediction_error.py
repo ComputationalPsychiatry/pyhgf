@@ -116,6 +116,8 @@ def vectorized_layer_volatility_posterior_standard(
     --------
     :mod:`pyhgf.updates.posterior.volatile.posterior_update_volatility_level`
     """
+    assert layer.expected_precision_vol is not None
+    assert layer.expected_mean_vol is not None
     volatility_prediction_error = layer.volatility_prediction_error
     volatility_coupling = params.volatility_coupling
     effective_precision = layer.effective_precision
@@ -182,6 +184,8 @@ def vectorized_layer_volatility_posterior_ehgf(
     LayerState
         Updated layer state with ``precision_vol`` and ``mean_vol`` set.
     """
+    assert layer.expected_precision_vol is not None
+    assert layer.expected_mean_vol is not None
     volatility_coupling = params.volatility_coupling
     tonic_volatility = params.tonic_volatility
 
@@ -274,6 +278,8 @@ def vectorized_layer_volatility_posterior_unbounded(
     LayerState
         Updated layer state with ``precision_vol`` and ``mean_vol`` set.
     """
+    assert layer.expected_precision_vol is not None
+    assert layer.expected_mean_vol is not None
     volatility_coupling = params.volatility_coupling
     tonic_volatility = params.tonic_volatility
 
