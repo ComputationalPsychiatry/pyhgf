@@ -1267,11 +1267,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">repl</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">f</span><span class="p">:</span> <span class="p">(</span>
-                <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
-                <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">f</span><span class="p">:</span> <span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_VOL_STATE_FIELDS</span>
         <span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>

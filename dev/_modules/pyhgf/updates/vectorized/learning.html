@@ -972,6 +972,55 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
 
+<span class="c1"># Default Tikhonov damping for the categorical (softmax) natural gradient. The</span>
+<span class="c1"># multinomial Fisher diag(p) - p pᵀ is singular and its inverse amplifies the</span>
+<span class="c1"># error by 1/p, which diverges for a class the model deems near-impossible.</span>
+<span class="c1"># Adding lambda to the diagonal caps that amplification at ~1/lambda. Because p</span>
+<span class="c1"># is a probability, this bound is scale-free: lambda = 1e-2 treats classes below</span>
+<span class="c1"># ~1% probability as ~1% for curvature purposes.</span>
+<span class="n">CATEGORICAL_NATURAL_DAMPING</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_softmax_fisher_inverse</span><span class="p">(</span>
+    <span class="n">p</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pe</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">damping</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Apply the damped inverse multinomial Fisher to a residual.</span>
+
+<span class="sd">    Solves :math:`(\mathrm{diag}(p) + \lambda I - p p^\top)\,x = \delta` for</span>
+<span class="sd">    ``x``, the softmax (categorical) natural gradient&#39;s output-side</span>
+<span class="sd">    preconditioning of the value prediction error :math:`\delta` (``pe``). The</span>
+<span class="sd">    rank-one term :math:`p p^\top` is inverted in closed form by Sherman-Morrison</span>
+<span class="sd">    on the damped diagonal :math:`D = \mathrm{diag}(p) + \lambda I`:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        x = D^{-1} \delta + \frac{D^{-1} p \; (p^\top D^{-1} \delta)}{1 - p^\top D^{-1} p}.</span>
+
+<span class="sd">    With ``damping`` :math:`&gt; 0` the denominator lies in ``(0, 1)`` (because</span>
+<span class="sd">    :math:`p^\top D^{-1} p = \sum_k p_k^2 / (p_k + \lambda) &lt; \sum_k p_k = 1`),</span>
+<span class="sd">    so the solve is always well-conditioned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    p :</span>
+<span class="sd">        Predicted class probabilities (softmax output), shape ``(n_classes,)``.</span>
+<span class="sd">    pe :</span>
+<span class="sd">        Prediction error, the zero-sum residual ``one_hot - p``.</span>
+<span class="sd">    damping :</span>
+<span class="sd">        Tikhonov damping added to the Fisher diagonal.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x :</span>
+<span class="sd">        The preconditioned residual, shape ``(n_classes,)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">damping</span><span class="p">)</span>  <span class="c1"># diagonal of D^{-1}</span>
+    <span class="n">dinv_pe</span> <span class="o">=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">pe</span>
+    <span class="n">dinv_p</span> <span class="o">=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">p</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">dinv_p</span><span class="p">)</span>  <span class="c1"># 1 - pᵀ D^{-1} p</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">dinv_pe</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span>  <span class="c1"># (pᵀ D^{-1} pe) / denom</span>
+    <span class="k">return</span> <span class="n">dinv_pe</span> <span class="o">+</span> <span class="n">dinv_p</span> <span class="o">*</span> <span class="n">coef</span>
+
 
 <div class="viewcode-block" id="vectorized_weight_gradient">
 <a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient">[docs]</a>
@@ -982,6 +1031,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">child_is_binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_is_categorical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">categorical_damping</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CATEGORICAL_NATURAL_DAMPING</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Per-layer weight gradient for the vectorised deep network.</span>
 
@@ -991,31 +1042,56 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    returns ``-lr * grad``; together they reproduce the legacy ``weights + lr * g``</span>
 <span class="sd">    rule with ``g = -grad``).</span>
 
-<span class="sd">    The gradient is computed according to *kind*:</span>
+<span class="sd">    The three *kind* values sit on a single axis — **which geometry the update</span>
+<span class="sd">    respects**, from none to the exact Fisher metric. All share the same base</span>
+<span class="sd">    term, the value prediction error :math:`\delta = \mu_\text{child} -</span>
+<span class="sd">    \hat{\mu}_\text{child}` times the coupled parent activation</span>
+<span class="sd">    :math:`a = g(\mu_\text{parent})`; they differ only in what preconditions it.</span>
+<span class="sd">    :math:`\pi` denotes a posterior precision, :math:`\hat{\pi}` a predicted</span>
+<span class="sd">    (expected) one — see ``docs/source/notebooks/0.1-Theory.ipynb``.</span>
 
-<span class="sd">    - **standard** (``kind=&quot;standard&quot;``):</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent})`</span>
-<span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``):</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child}`</span>
-<span class="sd">    - **precision_ratio** (``kind=&quot;precision_ratio&quot;``): Kalman-gain-style gain</span>
-<span class="sd">      using the parent&#39;s expected precision in the numerator.</span>
-<span class="sd">      :math:`K = \pi_\text{parent} / (\pi_\text{parent} + \pi_\text{child})`,</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot K`</span>
-<span class="sd">    - **map_natural** (``kind=&quot;map_natural&quot;``): MAP weight update from the</span>
-<span class="sd">      predictive-coding free energy with a Gaussian weight prior whose</span>
-<span class="sd">      precision is the parent&#39;s expected precision; combines child precision</span>
-<span class="sd">      (numerator) with parent prior plus per-weight Fisher curvature</span>
-<span class="sd">      :math:`g(\text{parent})^2` (denominator).</span>
-<span class="sd">      Gaussian child:</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / (\pi_\text{parent} + \pi_\text{child} \cdot g(\text{parent})^2)`.</span>
-<span class="sd">      Binary child:</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) / (\pi_\text{parent} + g(\text{parent})^2)`.</span>
-<span class="sd">    - **pure_natural** (``kind=&quot;pure_natural&quot;``): Riemannian natural gradient</span>
-<span class="sd">      under the parent&#39;s precision metric.</span>
-<span class="sd">      Gaussian child:</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) \cdot \pi_\text{child} / \pi_\text{parent}`.</span>
-<span class="sd">      Binary child:</span>
-<span class="sd">      :math:`g = \text{PE} \otimes g(\text{parent}) / \pi_\text{parent}`.</span>
+<span class="sd">    - **standard** (``kind=&quot;standard&quot;``) — the raw gradient of an *unweighted*</span>
+<span class="sd">      squared error, no metric:</span>
+<span class="sd">      :math:`g = \delta \otimes a`.</span>
+<span class="sd">      This coincides with the free-energy gradient only when the child precision</span>
+<span class="sd">      is one (e.g. the unit-precision output / categorical convention).</span>
+
+<span class="sd">    - **precision_weighted** (``kind=&quot;precision_weighted&quot;``) — the free-energy</span>
+<span class="sd">      gradient weighted by the child&#39;s *posterior* precision:</span>
+<span class="sd">      :math:`g = \delta \otimes a \cdot \pi_\text{child}`.</span>
+<span class="sd">      This is the **backprop-parity** mode. A moved interior belief shifts by</span>
+<span class="sd">      (routed error) / posterior precision, so weighting by that same posterior</span>
+<span class="sd">      precision cancels the division and reproduces the backpropagated gradient</span>
+<span class="sd">      node-for-node at *any* precision setting, not only the pinned recipe (see</span>
+<span class="sd">      ``docs/source/notebooks/0.6-Deep_networks_implementation.md``). This is why it uses the</span>
+<span class="sd">      posterior precision where ``natural`` — a conjugate update — uses the</span>
+<span class="sd">      predicted one. A binary child drops the factor entirely: the Bernoulli</span>
+<span class="sd">      variance cancels through the sigmoid.</span>
+
+<span class="sd">    - **natural** (``kind=&quot;natural&quot;``) — the exact **natural gradient**:</span>
+<span class="sd">      :math:`\nabla F` preconditioned by the inverse Fisher metric of the weight</span>
+<span class="sd">      row. For a Gaussian child the Fisher is the parent-precision prior plus a</span>
+<span class="sd">      rank-one data term :math:`\hat{\pi}_\text{child}\,a a^\top`; its inverse</span>
+<span class="sd">      collapses by Sherman-Morrison to a per-row scalar shrinkage — an</span>
+<span class="sd">      :math:`O(d_\text{parent})` update with no matrix inverse that reaches the</span>
+<span class="sd">      conjugate (ridge) posterior mean in a single step. With</span>
+<span class="sd">      :math:`s = \sum_k a_k^2 / \hat{\pi}_{\text{parent},k}`:</span>
+
+<span class="sd">      - Gaussian child:</span>
+<span class="sd">        :math:`g = \dfrac{\hat{\pi}_\text{child}\,\delta}{1 + \hat{\pi}_\text{child}\, s}</span>
+<span class="sd">        \cdot \dfrac{a}{\hat{\pi}_\text{parent}}`.</span>
+<span class="sd">      - Binary child (Bernoulli curvature :math:`\rho = \sigma(1-\sigma)`, the</span>
+<span class="sd">        Gauss-Newton term; the numerator is the raw residual</span>
+<span class="sd">        :math:`\delta = x - \sigma`):</span>
+<span class="sd">        :math:`g = \dfrac{\delta}{1 + \rho\, s} \cdot \dfrac{a}{\hat{\pi}_\text{parent}}`.</span>
+<span class="sd">      - Categorical (softmax) child (:math:`p = \hat{\mu}_\text{child}`, the</span>
+<span class="sd">        softmax prediction): the output-side scalar precision is replaced by the</span>
+<span class="sd">        multinomial Fisher :math:`\mathrm{diag}(p) - p p^\top` (damped by</span>
+<span class="sd">        :math:`\lambda`, ``categorical_damping``), the input side unchanged:</span>
+<span class="sd">        :math:`g = \dfrac{(\mathrm{diag}(p) + \lambda I - p p^\top)^{-1}\,\delta}{1 + s}</span>
+<span class="sd">        \cdot \dfrac{a}{\hat{\pi}_\text{parent}}`.</span>
+
+<span class="sd">      Full derivation in ``docs/source/notebooks/0.5-Deep_networks_theory.md``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1032,8 +1108,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        precision = 1.0) appended to its activations after coupling.</span>
 <span class="sd">    child_is_binary :</span>
 <span class="sd">        If True, the child layer is a binary node — drops the redundant</span>
-<span class="sd">        precision factor in ``precision_weighted`` / ``map_natural`` /</span>
-<span class="sd">        ``pure_natural`` modes (Bernoulli Fisher cancels through sigmoid).</span>
+<span class="sd">        precision factor in ``precision_weighted`` (the Bernoulli variance</span>
+<span class="sd">        cancels through the sigmoid in the gradient) and uses the Gauss-Newton</span>
+<span class="sd">        curvature :math:`\rho = \sigma(1-\sigma)` in ``natural``.</span>
+<span class="sd">    child_is_categorical :</span>
+<span class="sd">        If True, the child layer is a categorical (softmax) node. In the</span>
+<span class="sd">        ``natural`` mode the error is preconditioned by the multinomial Fisher</span>
+<span class="sd">        (see above); ``standard`` and ``precision_weighted`` treat each class as</span>
+<span class="sd">        an independent unit-precision belief.</span>
+<span class="sd">    categorical_damping :</span>
+<span class="sd">        Tikhonov damping for the categorical ``natural`` mode. Ignored unless</span>
+<span class="sd">        *child_is_categorical* and ``kind=&quot;natural&quot;``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1047,67 +1132,118 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ValueError</span>
 <span class="sd">        If *kind* is unrecognised.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_valid_kinds</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;precision_ratio&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;map_natural&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pure_natural&quot;</span><span class="p">,</span>
+    <span class="c1"># Every kind is a rank-one product of a child-side and a parent-side factor</span>
+    <span class="c1"># (see :func:`vectorized_weight_gradient_factors`), so the full matrix is</span>
+    <span class="c1"># their outer product. The factor kernel is the single home of the per-kind</span>
+    <span class="c1"># geometry, the descent-sign flip, and the ``kind`` validation. NaN/inf are</span>
+    <span class="c1"># zeroed on the two factors there rather than on the assembled matrix; the</span>
+    <span class="c1"># two agree except for a finite×finite overflow to inf, which neither path</span>
+    <span class="c1"># special-cases.</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">vectorized_weight_gradient_factors</span><span class="p">(</span>
+        <span class="n">parent_state</span><span class="p">,</span>
+        <span class="n">child_state</span><span class="p">,</span>
+        <span class="n">coupling_fn</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
+        <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent_has_constant</span><span class="p">,</span>
+        <span class="n">child_is_binary</span><span class="o">=</span><span class="n">child_is_binary</span><span class="p">,</span>
+        <span class="n">child_is_categorical</span><span class="o">=</span><span class="n">child_is_categorical</span><span class="p">,</span>
+        <span class="n">categorical_damping</span><span class="o">=</span><span class="n">categorical_damping</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_valid_kinds</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected one of </span><span class="si">{</span><span class="n">_valid_kinds</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span></div>
 
-    <span class="c1"># Prediction error at the child layer.</span>
+
+
+<span class="c1"># Every weight-update kind factorises into a child-side and a parent-side</span>
+<span class="c1"># vector (a rank-one product). ``natural`` factorises because its</span>
+<span class="c1"># Sherman-Morrison shrinkage depends on the parent only through the shared</span>
+<span class="c1"># scalar ``s`` (and, for a categorical child, the output-side Fisher solve is a</span>
+<span class="c1"># function of the child alone). Returning the two factors lets a batched caller</span>
+<span class="c1"># average over samples with one contraction instead of materialising a</span>
+<span class="c1"># weight-matrix-sized gradient per sample.</span>
+<span class="n">SEPARABLE_KINDS</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span> <span class="s2">&quot;natural&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">vectorized_weight_gradient_factors</span><span class="p">(</span>
+    <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_is_binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_is_categorical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">categorical_damping</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">CATEGORICAL_NATURAL_DAMPING</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Child- and parent-side factors of the weight gradient.</span>
+
+<span class="sd">    For the separable gradient modes (:data:`SEPARABLE_KINDS`) the descent</span>
+<span class="sd">    gradient of :func:`vectorized_weight_gradient` is a rank-one product,</span>
+<span class="sd">    ``grad = u[:, None] * v[None, :]``. Returning the two vectors instead of</span>
+<span class="sd">    their product lets a batched caller average gradients over many samples</span>
+<span class="sd">    with a single contraction (``einsum(&#39;bi,bj-&gt;ij&#39;) / batch``) — the same</span>
+<span class="sd">    arithmetic, but without materialising one weight-matrix-sized gradient</span>
+<span class="sd">    per sample, which is what dominates memory traffic at scale.</span>
+
+<span class="sd">    Non-finite entries are zeroed on the factors, matching the per-entry</span>
+<span class="sd">    zeroing of :func:`vectorized_weight_gradient` for vector-borne NaN/inf.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parent_state, child_state, coupling_fn, kind, parent_has_constant, child_is_binary, child_is_categorical, categorical_damping :</span>
+<span class="sd">        As in :func:`vectorized_weight_gradient`. *kind* must be one of</span>
+<span class="sd">        :data:`SEPARABLE_KINDS`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (u, v) :</span>
+<span class="sd">        Child-side factor, shape ``(n_children,)``, and parent-side factor,</span>
+<span class="sd">        shape ``(n_parents[+1],)``, such that ``u[:, None] * v[None, :]``</span>
+<span class="sd">        equals the descent gradient.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If *kind* is unrecognised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SEPARABLE_KINDS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unknown kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Expected one of </span><span class="si">{</span><span class="n">SEPARABLE_KINDS</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
     <span class="n">pe</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
-
-    <span class="c1"># Coupled parent activation. The constant bias node is wired in linearly</span>
-    <span class="c1"># (g(1) = 1) regardless of coupling_fn, so the bias entry is appended</span>
-    <span class="c1"># after the coupling has been applied to the activations.</span>
     <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
         <span class="n">coupled_parent</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">coupled_parent</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
 
-    <span class="c1"># Base outer product: PE ⊗ g(parent)</span>
-    <span class="n">gradient</span> <span class="o">=</span> <span class="n">pe</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-
-    <span class="c1"># Specialise by kind.</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;precision_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;map_natural&quot;</span><span class="p">,</span> <span class="s2">&quot;pure_natural&quot;</span><span class="p">):</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">pe</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">coupled_parent</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_weighted&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>  <span class="c1"># posterior precision (backprop-parity gradient)</span>
+    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;natural&quot;</span><span class="p">:</span>
         <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
         <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
-            <span class="c1"># Constant state nodes have precision = 1.0 (fully known bias).</span>
             <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
-
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_ratio&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
-        <span class="n">kalman_gain</span> <span class="o">=</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">kalman_gain</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;map_natural&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">child_is_binary</span><span class="p">:</span>
-            <span class="n">gain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">parent_precision</span>  <span class="c1"># P^{-1} a (parent-side factor)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">coupled_parent</span> <span class="o">@</span> <span class="n">v</span>  <span class="c1"># scalar a^T P^{-1} a, shared across rows</span>
+        <span class="k">if</span> <span class="n">child_is_categorical</span><span class="p">:</span>
+            <span class="c1"># Softmax layer: precondition the error by the multinomial Fisher</span>
+            <span class="c1"># (see vectorized_weight_gradient); the shared 1/(1+s) input scaling</span>
+            <span class="c1"># folds into the child-side factor.</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">_softmax_fisher_inverse</span><span class="p">(</span>
+                <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">categorical_damping</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">s</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">child_is_binary</span><span class="p">:</span>
+            <span class="c1"># Bernoulli curvature rho = sigma(1 - sigma), not 1.</span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">u</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-                <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-                <span class="o">+</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">coupled_parent</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="p">)</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">gain</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;pure_natural&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">child_is_binary</span><span class="p">:</span>
-            <span class="n">gain</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">gain</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="n">parent_precision</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">gain</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;precision_weighted&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_is_binary</span><span class="p">:</span>
-        <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">pi_c</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">u</span> <span class="o">*</span> <span class="n">pi_c</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">pi_c</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>  <span class="c1"># per-row curvature correction</span>
 
-    <span class="c1"># Zero out NaN/inf so optax moments stay finite.</span>
-    <span class="n">gradient</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">gradient</span><span class="p">)</span> <span class="o">|</span> <span class="n">jnp</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">gradient</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">gradient</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">u</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">v</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
-    <span class="c1"># Negate: HGF&#39;s natural formulation produces an ascent gradient; optax</span>
-    <span class="c1"># expects descent. The combination ``apply_updates(w, sgd(lr).update(grad))``</span>
-    <span class="c1"># reproduces ``w + lr * (-(-grad)) = w + lr * g`` matching legacy.</span>
-    <span class="k">return</span> <span class="o">-</span><span class="n">gradient</span></div>
-
+    <span class="c1"># Descent sign, folded into the child-side factor.</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span>
 </pre></div>
 
                 </article>
