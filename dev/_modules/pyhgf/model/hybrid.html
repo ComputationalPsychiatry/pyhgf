@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -39,10 +39,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
     <script src="../../../_static/documentation_options.js?v=e259d695"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -1002,6 +1002,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.deep_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.error_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescentError</span><span class="p">,</span> <span class="n">ObservedMinusPredicted</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;PCModule&quot;</span><span class="p">,</span>
@@ -1109,6 +1110,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    - ``backward_fn(cache, error) -&gt; error_in`` translates the error at the</span>
 <span class="sd">      output into the error at the input, using only the cache.</span>
 
+<span class="sd">    Error Convention</span>
+<span class="sd">    ----------------</span>
+<span class="sd">    Both forward_fn and backward_fn use the **descent-error convention**</span>
+<span class="sd">    (see :mod:`pyhgf.model.error_types`):</span>
+
+<span class="sd">    - forward_fn receives arrays in the pipeline&#39;s usual format</span>
+<span class="sd">    - backward_fn receives :class:`~pyhgf.model.error_types.DescentError`</span>
+<span class="sd">      (positive = signal too high) and returns the same convention</span>
+
+<span class="sd">    The hand-derived backward formula must respect this convention:</span>
+<span class="sd">    if the function is ``y = f(x)`` and loss is ``L(y)``, then</span>
+<span class="sd">    ``backward_fn`` should return ``∂L/∂x = (∂L/∂y) @ (∂y/∂x)^T``.</span>
+
 <span class="sd">    Use the ready-made constructors :func:`gelu_adapter` and</span>
 <span class="sd">    :func:`layer_norm_adapter` for the standard Transformer pieces.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1118,7 +1132,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">forward_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]],</span>
-        <span class="n">backward_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">backward_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">DescentError</span><span class="p">],</span> <span class="n">DescentError</span><span class="p">],</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward_fn</span> <span class="o">=</span> <span class="n">forward_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backward_fn</span> <span class="o">=</span> <span class="n">backward_fn</span></div>
@@ -1231,13 +1245,28 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    computation as :meth:`~pyhgf.model.DeepNetwork.batch_update`, staged</span>
 <span class="sd">    in-trace) and threads the error at the network&#39;s input onward.</span>
 
-<span class="sd">    The learning part&#39;s boundary is where the descent-error convention of the</span>
-<span class="sd">    pipeline meets PyHGF&#39;s observed-minus-predicted convention:</span>
+<span class="sd">    Error Convention Bridge</span>
+<span class="sd">    -----------------------</span>
+<span class="sd">    This part is where the pipeline&#39;s **descent-error convention** meets</span>
+<span class="sd">    **PyHGF&#39;s observed-minus-predicted convention** (see :mod:`pyhgf.model.error_types`).</span>
+<span class="sd">    The executor performs the conversion at this single boundary:</span>
 
-<span class="sd">    - the error *enters* by clamping ``output - error`` as the observation</span>
-<span class="sd">      the network should have produced (so the leaf prediction error is</span>
-<span class="sd">      exactly ``-error``);</span>
-<span class="sd">    - the error *leaves* as the negated input-layer prediction error.</span>
+<span class="sd">    **Forward (pipeline → PyHGF):**</span>
+<span class="sd">        Input (DescentError) is unchanged; used as usual.</span>
+
+<span class="sd">    **Backward (PyHGF → pipeline):**</span>
+<span class="sd">        1. Pipeline passes :class:`~pyhgf.model.error_types.DescentError` (positive = too high)</span>
+<span class="sd">        2. This part converts to :class:`~pyhgf.model.error_types.ObservedMinusPredicted`:</span>
+<span class="sd">           ``observation = output - descent_error``</span>
+<span class="sd">        3. PyHGF&#39;s ``batch_update`` treats this as the target, computing</span>
+<span class="sd">           ``prediction_error = observation - output = -descent_error``</span>
+<span class="sd">        4. Learning uses the prediction error natively</span>
+<span class="sd">        5. Input error (also prediction-error convention) is negated back to</span>
+<span class="sd">           descent-error convention before passing to the previous part</span>
+
+<span class="sd">    This two-step conversion (descent↔observed-minus-predicted) happens</span>
+<span class="sd">    **in exactly one place**: inside the executor&#39;s backward pass for this</span>
+<span class="sd">    adapter. No other part needs to know about the convention flip.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1364,8 +1393,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1399,7 +1428,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>
