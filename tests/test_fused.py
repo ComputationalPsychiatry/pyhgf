@@ -123,6 +123,100 @@ def test_fused_confidences_carry_across_steps():
     np.testing.assert_allclose(before, after)  # pinned for parity
 
 
+def test_fused_gpt_trajectory_matches_backprop():
+    """A parity Transformer follows its backprop twin over a training run.
+
+    The all-weights-PyHGF model in the parity configuration and an autodiff
+    twin of the same architecture, trained by plain SGD at the same rate on
+    identical batches for 100 steps: the two cross-entropy curves must stay
+    close over the whole run (they are the same mathematics; only
+    floating-point noise separates them, and it compounds — hence a looser
+    tolerance late than the per-step gates use).
+    """
+    from test_transformer import EqxGPT
+
+    rng = np.random.default_rng(4)
+    vocab, dim, n_heads, hidden, n_layers, seq_len = 11, 16, 2, 24, 1, 8
+    batch, lr, n_steps = 4, 0.1, 100
+    gpt = EqxGPT(vocab, dim, n_heads, hidden, n_layers, seq_len, key=random.key(5))
+
+    def part(net):
+        return DeepNetworkAdapter(
+            net, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+        )
+
+    hybrid = hybrid_from_gpt(
+        gpt,
+        ff_parts=[
+            part(
+                from_feedforward(
+                    b.ff.fc1, b.ff.fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY
+                )
+            )
+            for b in gpt.blocks
+        ],
+        attention_parts=[
+            {
+                name: part(
+                    from_linear(
+                        getattr(b.attn, name),
+                        leaf_kwargs=_PARITY_LEAF,
+                        layer_kwargs=_PARITY,
+                    )
+                )
+                for name in ("wq", "wk", "wv", "wo")
+            }
+            for b in gpt.blocks
+        ],
+        head_part=part(
+            from_linear(
+                gpt.head,
+                leaf_kwargs=dict(kind="categorical", **_PARITY_LEAF),
+                layer_kwargs=_PARITY,
+            )
+        ),
+        token_part=part(
+            from_embedding(gpt.tok_emb, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY)
+        ),
+        position_part=part(
+            from_embedding(gpt.pos_emb, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY)
+        ),
+    )
+    fused = FusedPipeline(
+        hybrid, error_fn=lambda probs, t: probs - jax.nn.one_hot(t, vocab)
+    )
+
+    # The backprop twin, same weights, same optimiser, same batches.
+    twin = gpt
+    sgd = optax.sgd(lr)
+    opt_state = sgd.init(eqx.filter(twin, eqx.is_array))
+
+    def ce_loss(model, x, y):
+        logits = jax.vmap(model)(x)
+        return optax.softmax_cross_entropy_with_integer_labels(logits, y).mean()
+
+    @eqx.filter_jit
+    def twin_step(model, opt_state, x, y):
+        loss, grads = eqx.filter_value_and_grad(ce_loss)(model, x, y)
+        updates, opt_state = sgd.update(grads, opt_state)
+        return eqx.apply_updates(model, updates), opt_state, loss
+
+    losses_f, losses_b = [], []
+    for _step in range(n_steps):
+        ids = jnp.asarray(rng.integers(0, vocab, size=(batch, seq_len)))
+        targets = jnp.asarray(rng.integers(0, vocab, size=(batch, seq_len)))
+
+        probs, _ = fused.step(ids, targets)
+        picked = jnp.take_along_axis(probs, targets[..., None], axis=-1)
+        losses_f.append(float(-jnp.log(picked + 1e-9).mean()))
+
+        twin, opt_state, loss = twin_step(twin, opt_state, ids, targets)
+        losses_b.append(float(loss))
+
+    gap = np.max(np.abs(np.array(losses_f) - np.array(losses_b)))
+    assert gap < 0.05, f"largest cross-entropy gap over the run: {gap:.4f}"
+
+
 def test_fused_merge_writes_state_back():
     """``merge`` puts the advanced state back onto the wrapped parts."""
     rng = np.random.default_rng(6)
