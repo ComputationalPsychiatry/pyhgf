@@ -39,6 +39,7 @@ import jax.numpy as jnp
 import optax
 
 from pyhgf.model.deep_network import DeepNetwork
+from pyhgf.model.error_types import DescentError, ObservedMinusPredicted
 
 __all__ = [
     "PCModule",
@@ -141,6 +142,19 @@ class EquinoxAdapter(PCModule):
     - ``backward_fn(cache, error) -> error_in`` translates the error at the
       output into the error at the input, using only the cache.
 
+    Error Convention
+    ----------------
+    Both forward_fn and backward_fn use the **descent-error convention**
+    (see :mod:`pyhgf.model.error_types`):
+
+    - forward_fn receives arrays in the pipeline's usual format
+    - backward_fn receives :class:`~pyhgf.model.error_types.DescentError`
+      (positive = signal too high) and returns the same convention
+
+    The hand-derived backward formula must respect this convention:
+    if the function is ``y = f(x)`` and loss is ``L(y)``, then
+    ``backward_fn`` should return ``∂L/∂x = (∂L/∂y) @ (∂y/∂x)^T``.
+
     Use the ready-made constructors :func:`gelu_adapter` and
     :func:`layer_norm_adapter` for the standard Transformer pieces.
     """
@@ -148,7 +162,7 @@ class EquinoxAdapter(PCModule):
     def __init__(
         self,
         forward_fn: Callable[[jnp.ndarray], tuple[jnp.ndarray, tuple]],
-        backward_fn: Callable[[tuple, jnp.ndarray], jnp.ndarray],
+        backward_fn: Callable[[tuple, DescentError], DescentError],
     ):
         self.forward_fn = forward_fn
         self.backward_fn = backward_fn
@@ -248,13 +262,28 @@ class DeepNetworkAdapter(PCModule):
     computation as :meth:`~pyhgf.model.DeepNetwork.batch_update`, staged
     in-trace) and threads the error at the network's input onward.
 
-    The learning part's boundary is where the descent-error convention of the
-    pipeline meets PyHGF's observed-minus-predicted convention:
+    Error Convention Bridge
+    -----------------------
+    This part is where the pipeline's **descent-error convention** meets
+    **PyHGF's observed-minus-predicted convention** (see :mod:`pyhgf.model.error_types`).
+    The executor performs the conversion at this single boundary:
 
-    - the error *enters* by clamping ``output - error`` as the observation
-      the network should have produced (so the leaf prediction error is
-      exactly ``-error``);
-    - the error *leaves* as the negated input-layer prediction error.
+    **Forward (pipeline → PyHGF):**
+        Input (DescentError) is unchanged; used as usual.
+
+    **Backward (PyHGF → pipeline):**
+        1. Pipeline passes :class:`~pyhgf.model.error_types.DescentError` (positive = too high)
+        2. This part converts to :class:`~pyhgf.model.error_types.ObservedMinusPredicted`:
+           ``observation = output - descent_error``
+        3. PyHGF's ``batch_update`` treats this as the target, computing
+           ``prediction_error = observation - output = -descent_error``
+        4. Learning uses the prediction error natively
+        5. Input error (also prediction-error convention) is negated back to
+           descent-error convention before passing to the previous part
+
+    This two-step conversion (descent↔observed-minus-predicted) happens
+    **in exactly one place**: inside the executor's backward pass for this
+    adapter. No other part needs to know about the convention flip.
 
     Parameters
     ----------

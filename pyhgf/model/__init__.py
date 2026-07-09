@@ -15,6 +15,11 @@ from .add_nodes import (
 )
 from .builder import LayerConfig, resolve_coupling_fn
 from .deep_network import DeepNetwork
+from .error_types import (
+    DescentError,
+    ObservedMinusPredicted,
+    validate_error_convention,
+)
 from .fused import FusedPipeline, step_report
 from .hybrid import (
     DeepNetworkAdapter,
@@ -35,6 +40,9 @@ __all__ = [
     "DeepNetwork",
     "LayerConfig",
     "resolve_coupling_fn",
+    "DescentError",
+    "ObservedMinusPredicted",
+    "validate_error_convention",
     "from_linear",
     "from_feedforward",
     "from_embedding",
