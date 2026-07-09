@@ -85,18 +85,21 @@ def validate_error_convention(
     part,
     x: DescentError,
     y: DescentError,
-    perturb_size: float = 1e-5,
+    rtol: float = 1e-4,
+    atol: float = 1e-5,
 ) -> bool:
     """Check that a part's backward pass uses the pipeline (descent) convention.
 
-    Runs a finite-difference check: perturbs the input slightly, measures how
-    the output changes, and compares that to what the part claims the input
-    error should be. If they match (to numerical precision), the backward pass
-    uses the descent-error convention correctly.
+    A descent-convention backward pass must map the error at the output onto the
+    error at the input by the vector-Jacobian product ``Jᵀ @ error``, where
+    ``J = ∂output/∂input``. This is exactly what reverse-mode autodiff computes,
+    so the check compares the part's hand-derived ``backward`` against the VJP
+    that :func:`jax.vjp` produces for its ``forward``.
 
-    This is a **sanity check**, not a proof. It uses finite differences which
-    are noisy, so it's conservative: it prefers false negatives (missing bugs)
-    over false positives (rejecting correct code).
+    The comparison is exact (up to floating-point tolerance) and works for any
+    input shape, so it catches a flipped sign or a wrong Jacobian anywhere in the
+    array. If the backward instead used PyHGF's observed-minus-predicted
+    convention, every element would be negated and the check would fail.
 
     Parameters
     ----------
@@ -108,16 +111,16 @@ def validate_error_convention(
         Used to test forward and backward.
     y : DescentError
         Sample target (same shape as x). Used to form error for backward pass.
-    perturb_size : float, default 1e-5
-        Magnitude of finite-difference perturbation in input. Smaller is more
-        accurate but noisier; larger is faster but less accurate.
+    rtol : float, default 1e-4
+        Relative tolerance for the element-wise comparison against the autodiff VJP.
+    atol : float, default 1e-5
+        Absolute tolerance for the element-wise comparison against the autodiff VJP.
 
     Returns
     -------
     bool
-        True if the backward pass appears to use descent-error convention (to numerical
-        precision). False if it appears to use the opposite convention or something else
-        entirely.
+        True if the backward pass matches the autodiff VJP (descent-error
+        convention). False if it uses the opposite convention or a wrong Jacobian.
 
     Raises
     ------
@@ -128,7 +131,8 @@ def validate_error_convention(
     Notes
     -----
     This function is intended for testing custom part implementations. For
-    production use, check the part type and trust the implementation.
+    production use, check the part type and trust the implementation. The
+    ``forward`` pass must be differentiable by JAX for the VJP to be available.
 
     Example
     -------
@@ -149,37 +153,27 @@ def validate_error_convention(
     # Initialize state
     state = part.init_state()
 
-    # Handle both method-based (PCSequential, etc.) and attribute-based (EquinoxAdapter) parts
+    # Handle both attribute-based (EquinoxAdapter, forward_fn/backward_fn) and
+    # method-based (custom PCModule, forward/backward) parts. In both cases
+    # ``forward`` returns only the output, so it can be differentiated on its own.
     if hasattr(part, "forward_fn"):
-        # EquinoxAdapter: forward_fn(x) -> (output, cache)
-        output, cache = part.forward_fn(x)
+        forward = lambda inp: part.forward_fn(inp)[0]  # noqa: E731
+        _, cache = part.forward_fn(x)
     else:
-        # Custom PCModule: forward(state, x) -> (output, cache)
-        output, cache = part.forward(state, x)
+        forward = lambda inp: part.forward(state, inp)[0]  # noqa: E731
+        _, cache = part.forward(state, x)
 
-    # Error at output (descent convention)
+    # Output and the reverse-mode VJP of the forward pass.
+    output, vjp_fn = jax.vjp(forward, x)
+
+    # Error at the output in the descent convention (positive = output too high).
     error = output - y
 
-    # Finite-difference estimate of input sensitivity
-    # For a small perturbation eps in input, the output changes by ~eps * jacobian
-    # So input_error ~ error @ jacobian^T ~ error * (d output / d input)
-    eps_x = jnp.zeros_like(x)
-    if jnp.ndim(x) == 1:
-        eps_x = eps_x.at[0].set(perturb_size)
-    else:
-        eps_x = eps_x.at[0, 0].set(perturb_size)
+    # Autodiff ground truth: the input error a descent-convention backward pass
+    # must produce is the vector-Jacobian product Jᵀ @ error.
+    (expected_input_error,) = vjp_fn(error)
 
-    if hasattr(part, "forward_fn"):
-        output_plus, _ = part.forward_fn(x + eps_x)
-    else:
-        output_plus, _ = part.forward(state, x + eps_x)
-
-    fd_slope = (output_plus - output) / perturb_size
-
-    # Expected input error: error flows back through the slope
-    expected_input_error = error * fd_slope
-
-    # Part's claimed input error
+    # The part's hand-derived input error.
     if hasattr(part, "backward_fn"):
         # EquinoxAdapter: backward_fn(cache, error) -> error_in
         actual_input_error = part.backward_fn(cache, error)
@@ -187,12 +181,6 @@ def validate_error_convention(
         # Custom PCModule: backward(state, cache, error) -> (error_in, ...)
         actual_input_error, _, _ = part.backward(state, cache, error)
 
-    # Compare: loose tolerance (this is noisy)
-    # We compare element-wise and check if most elements agree
-    relative_error = jnp.abs(
-        (actual_input_error - expected_input_error)
-        / (jnp.abs(expected_input_error) + 1e-8)
+    return bool(
+        jnp.allclose(actual_input_error, expected_input_error, rtol=rtol, atol=atol)
     )
-    fraction_correct = jnp.mean(relative_error < 0.3)  # 30% tolerance
-
-    return bool(fraction_correct >= 0.8)  # At least 80% of elements agree

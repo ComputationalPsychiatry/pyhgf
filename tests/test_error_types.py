@@ -19,9 +19,44 @@ from pyhgf.model import (
     DescentError,
     ObservedMinusPredicted,
     gelu_adapter,
+    layer_norm_adapter,
     validate_error_convention,
 )
 from pyhgf.model.error_types import validate_error_convention as direct_validate
+
+
+class _IdentityModule:
+    """Minimal method-based part (forward/backward) using the descent convention.
+
+    Exercises the ``part.forward(state, x)`` / ``part.backward(state, cache, error)``
+    branches of :func:`validate_error_convention`, i.e. the path for custom
+    :class:`~pyhgf.model.hybrid.PCModule` implementations rather than the attribute-
+    based :class:`~pyhgf.model.hybrid.EquinoxAdapter`.
+
+    The forward pass is the identity (slope 1), so the descent-convention backward pass
+    returns the output error unchanged.
+    """
+
+    def init_state(self):
+        return ()
+
+    def forward(self, state, x):
+        return x, ()
+
+    def backward(self, state, cache, error):
+        return error, state, ()
+
+
+class _SignFlippedModule(_IdentityModule):
+    """Same as :class:`_IdentityModule` but the backward pass negates the error.
+
+    This is the classic convention bug: returning an observed-minus-predicted
+    error where a descent error is expected. :func:`validate_error_convention`
+    should reject it.
+    """
+
+    def backward(self, state, cache, error):
+        return -error, state, ()
 
 
 class TestErrorTypeMarkers:
@@ -60,23 +95,65 @@ class TestValidateErrorConvention:
         x = DescentError(jnp.array([0.5, -0.2, 1.5]))
         y = DescentError(jnp.array([0.3, -0.1, 1.0]))
 
-        # validate_error_convention works with parts that have init_state/forward/backward
-        # For adapters, we need to call through forward_fn/backward_fn
-        result = validate_error_convention(part, x, y)
-        # GELU is a standard activation with a known derivative, so
-        # the validation should recognize it
-        assert isinstance(result, (bool, jnp.ndarray))
+        # GELU's hand-derived backward matches the autodiff VJP of its forward.
+        assert validate_error_convention(part, x, y) is True
 
     def test_validate_returns_bool(self):
-        """Validation function returns a boolean."""
+        """Validation function returns a plain Python bool."""
         part = gelu_adapter()
 
         x = DescentError(jnp.array([1.0, -2.0, 3.0]))
         y = DescentError(jnp.array([0.5, -1.0, 1.5]))
 
-        # validate_error_convention works with any part that has the protocol
         result = validate_error_convention(part, x, y)
-        assert isinstance(result, (bool, jnp.ndarray))
+        assert isinstance(result, bool)
+
+    def test_validate_method_based_part_correct(self):
+        """Method-based parts (forward/backward) validate under descent convention."""
+        part = _IdentityModule()
+
+        x = DescentError(jnp.array([1.0, -0.5, 2.0]))
+        y = DescentError(jnp.array([0.5, 0.1, 1.5]))
+
+        assert validate_error_convention(part, x, y) is True
+
+    def test_validate_batched_input(self):
+        """Validation handles multi-dimensional (batched) input."""
+        part = _IdentityModule()
+
+        x = DescentError(jnp.array([[1.0, -0.5, 2.0], [0.2, 1.3, -1.0]]))
+        y = DescentError(jnp.array([[0.5, 0.1, 1.5], [0.0, 1.0, -0.5]]))
+
+        assert validate_error_convention(part, x, y) is True
+
+    def test_validate_detects_sign_error(self):
+        """A backward pass with the wrong (negated) sign fails validation.
+
+        The error is caught even though only the sign is wrong and every other aspect of
+        the backward pass is correct.
+        """
+        part = _SignFlippedModule()
+
+        x = DescentError(jnp.array([1.0, -0.5, 2.0]))
+        y = DescentError(jnp.array([0.5, 0.1, 1.5]))
+
+        assert validate_error_convention(part, x, y) is False
+
+    def test_validate_layer_norm_non_diagonal_jacobian(self):
+        """LayerNorm validates even though its Jacobian is not diagonal.
+
+        LayerNorm couples every output to every input, so the backward pass is a full
+        vector-Jacobian product rather than an element-wise scaling. The autodiff
+        comparison handles this exactly.
+        """
+        import equinox as eqx
+
+        part = layer_norm_adapter(eqx.nn.LayerNorm(shape=(4,)))
+
+        x = DescentError(jnp.array([1.0, -0.5, 2.0, 0.3]))
+        y = DescentError(jnp.array([0.5, 0.1, 1.5, 0.0]))
+
+        assert validate_error_convention(part, x, y) is True
 
     def test_validate_missing_method_raises(self):
         """Validation raises AttributeError if part is incomplete."""
