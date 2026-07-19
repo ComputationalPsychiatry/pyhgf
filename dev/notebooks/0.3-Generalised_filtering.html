@@ -415,7 +415,7 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Deep learning without backpropagation: the theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Learning in deep predictive coding networks - The theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="0.6-Deep_networks_implementation.html">The DeepNetwork architecture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="0.7-Deep_learning.html">Deep Bayesian predictive coding</a></li>
 
@@ -653,7 +653,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/678bffaec2f88d076bf2e3afd3e417b96e6e7aba9f10f264176148da8cb6382f.png" src="../_images/678bffaec2f88d076bf2e3afd3e417b96e6e7aba9f10f264176148da8cb6382f.png" />
+<img alt="../_images/3d65ad6a10ca0cf2d33734e8cbcadeb3a16ed24349058e3f69d9bdc26d20ef8b.png" src="../_images/3d65ad6a10ca0cf2d33734e8cbcadeb3a16ed24349058e3f69d9bdc26d20ef8b.png" />
 </div>
 </div>
 <p>The vizualisation of the predictive distribution over new observations require integrating the joint probability of the prior <span class="math notranslate nohighlight">\(g_{\xi, \nu}(\vartheta)\)</span> and the posterior <span class="math notranslate nohighlight">\(f_x(\vartheta)\)</span>. In the case of a univariate normal, the <em>Gaussian-predictive</em> distribution is given by:</p>
@@ -689,7 +689,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/65340d9175b3d8eb0985e8cc08c858e56f7376c795cc5e7348ba6e3484a238f3.png" src="../_images/65340d9175b3d8eb0985e8cc08c858e56f7376c795cc5e7348ba6e3484a238f3.png" />
+<img alt="../_images/a71ddaa0b4721c7b66faf3d59e0e737e36a49cad83dfd0278c93c0bf72650fca.png" src="../_images/a71ddaa0b4721c7b66faf3d59e0e737e36a49cad83dfd0278c93c0bf72650fca.png" />
 </div>
 </div>
 </section>
@@ -825,7 +825,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/e346f41b344cd6e08882ad8c5d3914291d6c1a9c43906e641b4397aaec0087c1.png" src="../_images/e346f41b344cd6e08882ad8c5d3914291d6c1a9c43906e641b4397aaec0087c1.png" />
+<img alt="../_images/75f97bfd09d9d2ccfc8adc57492bb0c29d207f0251ee887c170666ab8d0d6a50.png" src="../_images/75f97bfd09d9d2ccfc8adc57492bb0c29d207f0251ee887c170666ab8d0d6a50.png" />
 </div>
 </div>
 <p>We can see that larger values for <span class="math notranslate nohighlight">\(\nu\)</span> correspond to a lower learning rate, and therefore smoother transition between states.</p>
@@ -897,7 +897,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/ac13965b301cf7294ebb02eeebdd2299f3b7d9955f495419bf815ee6beece410.png" src="../_images/ac13965b301cf7294ebb02eeebdd2299f3b7d9955f495419bf815ee6beece410.png" />
+<img alt="../_images/4ab8f2cc9dfa02fbeda701a8ab379507f81ffc20449afbcd9aa02e72abdc7dc7.png" src="../_images/4ab8f2cc9dfa02fbeda701a8ab379507f81ffc20449afbcd9aa02e72abdc7dc7.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -1146,7 +1146,7 @@ z(\xi, \nu) := (\int \exp(\nu(\eta(\vartheta) · \xi−b(\vartheta)))d\vartheta)
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri, 10 Jul 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sun, 19 Jul 2026
 
 Python implementation: CPython
 Python version       : 3.12.13
@@ -1158,7 +1158,7 @@ jaxlib: 0.4.31
 
 IPython   : 9.15.0
 jax       : 0.4.31
-matplotlib: 3.11.0
+matplotlib: 3.11.1
 numpy     : 2.4.6
 pyhgf     : 0.3.0
 seaborn   : 0.13.2

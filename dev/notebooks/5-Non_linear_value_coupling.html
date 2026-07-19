@@ -415,7 +415,7 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Deep learning without backpropagation: the theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Learning in deep predictive coding networks - The theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="0.6-Deep_networks_implementation.html">The DeepNetwork architecture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="0.7-Deep_learning.html">Deep Bayesian predictive coding</a></li>
 
@@ -591,7 +591,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/69ec04888251b042949748e475872833d5111fb063550380fe10ce3526bf4cc2.png" src="../_images/69ec04888251b042949748e475872833d5111fb063550380fe10ce3526bf4cc2.png" />
+<img alt="../_images/5e7d28848f779573b5f0e92bd35b9cd1d3d13d5f790f6ddb70ad13a9c0de2e35.png" src="../_images/5e7d28848f779573b5f0e92bd35b9cd1d3d13d5f790f6ddb70ad13a9c0de2e35.png" />
 </div>
 </div>
 <p>Imagine that this behaviour constitutes a signal of a given underlying phenomenon. Now, we want to measure the same phenomenon with another instrument that above an arbitrary threshold <span class="math notranslate nohighlight">\(a\)</span> can track the signal <span class="math notranslate nohighlight">\(u_2\)</span>, but below that threshold just gives us some noise. This measurement <span class="math notranslate nohighlight">\(u_1\)</span> is supposed to be also noisier than the underlying signal.</p>
@@ -617,7 +617,7 @@
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/306ff2ebef3e69ed658fbd202558fef9c7cb6496a6f3e399a52d27fa31dd7f62.png" src="../_images/306ff2ebef3e69ed658fbd202558fef9c7cb6496a6f3e399a52d27fa31dd7f62.png" />
+<img alt="../_images/0b325bb85da8d24ded3b35e3f7a9096c34760e907152dcb59785a74bfb1b2339.png" src="../_images/0b325bb85da8d24ded3b35e3f7a9096c34760e907152dcb59785a74bfb1b2339.png" />
 </div>
 </div>
 <p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Rectifier_(neural_networks)">ReLU (rectified linear unit) activation function</a> is commonly used in artificial neural networks and is defined as the non-negative part of its argument:</p>
@@ -728,7 +728,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/8bbf748798198912d262a1d097a4a09bea7ab829e418605344e498a3b6911798.png" src="../_images/8bbf748798198912d262a1d097a4a09bea7ab829e418605344e498a3b6911798.png" />
+<img alt="../_images/19e8cc6daf66b01c001b83909636639b64095095cbd849f0805d3dbcc67741eb.png" src="../_images/19e8cc6daf66b01c001b83909636639b64095095cbd849f0805d3dbcc67741eb.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -745,7 +745,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/5372ecf8ab92c71d68f46090e1a7a991bab542e23ec665b7ec80d4b24409fcd5.png" src="../_images/5372ecf8ab92c71d68f46090e1a7a991bab542e23ec665b7ec80d4b24409fcd5.png" />
+<img alt="../_images/7fca99471ccd39f7acea25d2e4cbede2471e3a531e62aef1d3cb55da4840cb04.png" src="../_images/7fca99471ccd39f7acea25d2e4cbede2471e3a531e62aef1d3cb55da4840cb04.png" />
 </div>
 </div>
 <p>Let’s have a closer look at the behaviour of <span class="math notranslate nohighlight">\(x_1\)</span> (“State node 2” in the plot).</p>
@@ -777,7 +777,7 @@ If the value parent, as in this case, possesses multiple children, all the funct
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/f279c48c5a6fccbaac2a03d20d77ad6a56b62dc462640c6af39f961552fb340e.png" src="../_images/f279c48c5a6fccbaac2a03d20d77ad6a56b62dc462640c6af39f961552fb340e.png" />
+<img alt="../_images/ec6cf44ae199d480ddacefbe66b4c6b076445bcbc21febf1fab49815bc338a63.png" src="../_images/ec6cf44ae199d480ddacefbe66b4c6b076445bcbc21febf1fab49815bc338a63.png" />
 </div>
 </div>
 <p>Notice how the HGF manages to track the gaussian random walk even with the linear coupling. However, it is using data coming from <span class="math notranslate nohighlight">\(u_2\)</span> to inform <span class="math notranslate nohighlight">\(x_1\)</span> state through the value parent <span class="math notranslate nohighlight">\(x_2\)</span> even below the threshold, something that in this specific example is incorrect, as <span class="math notranslate nohighlight">\(u_1\)</span> behaviour is non-linear and depends on a threshold. Providing a coupling function allows us to use the information coming from <span class="math notranslate nohighlight">\(u_2\)</span> just when needed, allowing a more precise tracking.</p>
@@ -840,7 +840,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/e162def9797971ef1c4e64f4681ae919c794277ef289c43ec53538bc22ce1def.png" src="../_images/e162def9797971ef1c4e64f4681ae919c794277ef289c43ec53538bc22ce1def.png" />
+<img alt="../_images/19caf9b45e93aa9ba892da9d70753c7d30ef92b3b8092ed9a6a6537ff6baa6c5.png" src="../_images/19caf9b45e93aa9ba892da9d70753c7d30ef92b3b8092ed9a6a6537ff6baa6c5.png" />
 </div>
 </div>
 <p>Notice how <span class="math notranslate nohighlight">\(\mu_1\)</span> is just drifting during the missing observation chuncks.</p>
@@ -863,7 +863,7 @@ where \)</span>t<span class="math notranslate nohighlight">\( is the timestep, \
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/610de47bb18ce94c70029064d67ebad97f168fdd7af10e95e4c06d56a1c39435.png" src="../_images/610de47bb18ce94c70029064d67ebad97f168fdd7af10e95e4c06d56a1c39435.png" />
+<img alt="../_images/4b185b237f3356f82dc1b32e95f468bfcd79db13f0ec5bdfe0c2390fe43fec2a.png" src="../_images/4b185b237f3356f82dc1b32e95f468bfcd79db13f0ec5bdfe0c2390fe43fec2a.png" />
 </div>
 </div>
 <p>This happens because time is not included directly inside <span class="math notranslate nohighlight">\(g\)</span>, a fact that doesn’t allow the transformation of all the terms from the native space to the sinusoidal space.
@@ -914,7 +914,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/0db94f0a6bffbccf9cf0a011322028f50513dc8504310481d659e4cbd21b361c.png" src="../_images/0db94f0a6bffbccf9cf0a011322028f50513dc8504310481d659e4cbd21b361c.png" />
+<img alt="../_images/107609b6dcd7e4cd95c421a76a68d5461ceb716182ad7d1764bfc44d912ab43d.png" src="../_images/107609b6dcd7e4cd95c421a76a68d5461ceb716182ad7d1764bfc44d912ab43d.png" />
 </div>
 </div>
 </section>
@@ -972,7 +972,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/7445570b9cf209d50b251c8d1dec8e8f3a236169465b1bc62d9752c37229a004.png" src="../_images/7445570b9cf209d50b251c8d1dec8e8f3a236169465b1bc62d9752c37229a004.png" />
+<img alt="../_images/524bc0f0eec16d77973abd8c7901a044492c3cd6b4e68605343d9018664c649a.png" src="../_images/524bc0f0eec16d77973abd8c7901a044492c3cd6b4e68605343d9018664c649a.png" />
 </div>
 </div>
 <p>Zooming on <span class="math notranslate nohighlight">\(x_3\)</span>, is it possible to observe that higher levels of <span class="math notranslate nohighlight">\(\mu_3\)</span> are associated with higher oscillation frequencies (<span class="math notranslate nohighlight">\(t=[400:600]\)</span>), as predicted. Since no data are given in the interval <span class="math notranslate nohighlight">\(t=[600:650]\)</span>, the network will not update the oscillation frequency until new data is inputed.</p>
@@ -987,7 +987,7 @@ The drift corresponds to the slope of <span class="math notranslate nohighlight"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri, 10 Jul 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sun, 19 Jul 2026
 
 Python implementation: CPython
 Python version       : 3.12.13
@@ -999,7 +999,7 @@ jaxlib: 0.4.31
 
 IPython   : 9.15.0
 jax       : 0.4.31
-matplotlib: 3.11.0
+matplotlib: 3.11.1
 numpy     : 2.4.6
 pyhgf     : 0.3.0
 seaborn   : 0.13.2

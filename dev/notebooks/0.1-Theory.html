@@ -415,7 +415,7 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Deep learning without backpropagation: the theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Learning in deep predictive coding networks - The theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="0.6-Deep_networks_implementation.html">The DeepNetwork architecture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="0.7-Deep_learning.html">Deep Bayesian predictive coding</a></li>
 
@@ -598,7 +598,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)}, \sigma^2)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/d526466a04cd85d583005279646d1a346ea7106152e91d369a2bed9196674914.png" src="../_images/d526466a04cd85d583005279646d1a346ea7106152e91d369a2bed9196674914.png" />
+<img alt="../_images/1097f110ff4050bfd31d1d2aa4873f80d1dc716b464632d92b69725258fd6c0a.png" src="../_images/1097f110ff4050bfd31d1d2aa4873f80d1dc716b464632d92b69725258fd6c0a.png" />
 </div>
 </div>
 <p>This simple process will be our first building block. Importantly here, the variability of the sensory input is constant across time: even if we don’t know exactly in which direction the time series is going to move in the future, we know that it is unlikely to make certain kinds of big jumps because it is controlled by a fixed parameter, the variance <span class="math notranslate nohighlight">\(\sigma^2\)</span>.</p>
@@ -635,7 +635,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \rho, \sigma^2)
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/595ce879ff3a5e6b6a4c2efd0e298495d8870a1fc1e0fcbc1637695888758589.png" src="../_images/595ce879ff3a5e6b6a4c2efd0e298495d8870a1fc1e0fcbc1637695888758589.png" />
+<img alt="../_images/22e03b5c19ce1c825e98bf07f543520858e910e2cfcfcaf00e39a9aa9a66da00.png" src="../_images/22e03b5c19ce1c825e98bf07f543520858e910e2cfcfcaf00e39a9aa9a66da00.png" />
 </div>
 </div>
 </section>
@@ -692,7 +692,7 @@ x_1^{(k)} \sim \mathcal{N}(x_1^{(k-1)} + \phi(m - x_1^{(k-1)}), \sigma^2)
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/461913121afcdcb2da2bfab4993768c6e1c61b08aa9b724699b6c12e2795bbd8.png" src="../_images/461913121afcdcb2da2bfab4993768c6e1c61b08aa9b724699b6c12e2795bbd8.png" />
+<img alt="../_images/baec4a7e9444f40f3de8dcfa412b72fed3e21323a2c8f6a4891f773f1d550552.png" src="../_images/baec4a7e9444f40f3de8dcfa412b72fed3e21323a2c8f6a4891f773f1d550552.png" />
 </div>
 </div>
 <p>With the two examples above, we have seen that a <a class="reference internal" href="#term-Gaussian-Random-Walk"><span class="xref std std-term">Gaussian Random Walk</span></a> - the simple iterative sampling from a given Gaussian distribution at each time step - can be further influenced by two kinds of parameterizations:</p>
@@ -792,7 +792,7 @@ $<span class="math notranslate nohighlight">\(
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/97875a9b4f51aeec5823662e35a901228012a60fc4f11b7caac60336122403e5.png" src="../_images/97875a9b4f51aeec5823662e35a901228012a60fc4f11b7caac60336122403e5.png" />
+<img alt="../_images/81ff505487f939f465cb83ea224bd7a8800ac97052d42597a66d06bca1bcb2a1.png" src="../_images/81ff505487f939f465cb83ea224bd7a8800ac97052d42597a66d06bca1bcb2a1.png" />
 </div>
 </div>
 </section>
@@ -857,7 +857,7 @@ x_2^{(k)} \sim \mathcal{N}(x_2^{(k-1)}, \, \exp(\omega_2))
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/033dd0310b163f1bab4eab9a10a6ac08ccd79a0115adc756e824a52870fe90cb.png" src="../_images/033dd0310b163f1bab4eab9a10a6ac08ccd79a0115adc756e824a52870fe90cb.png" />
+<img alt="../_images/7b96420ca502473c3e7380034b5a2469ddc5ea27e6139f5f7675fc4a40a02d5d.png" src="../_images/7b96420ca502473c3e7380034b5a2469ddc5ea27e6139f5f7675fc4a40a02d5d.png" />
 </div>
 </div>
 <p>In this example, it becomes apparent that the volatility of the observation is not constant in time anymore, but depends on the values observed at the level above.</p>
@@ -957,7 +957,7 @@ Given the expectation from the prediction step</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri, 10 Jul 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Sun, 19 Jul 2026
 
 Python implementation: CPython
 Python version       : 3.12.13
@@ -968,7 +968,7 @@ jax   : 0.4.31
 jaxlib: 0.4.31
 
 IPython   : 9.15.0
-matplotlib: 3.11.0
+matplotlib: 3.11.1
 numpy     : 2.4.6
 seaborn   : 0.13.2
 
