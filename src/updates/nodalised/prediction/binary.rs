@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Prediction from a binary state node
 pub fn prediction_binary_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {

@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 use crate::utils::set_coupling::set_coupling;
 
 /// Unified weights update.

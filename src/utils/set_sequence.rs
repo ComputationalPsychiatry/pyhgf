@@ -1,4 +1,4 @@
-use crate::model::{AdjacencyLists, Network, UpdateSequence};
+use crate::model::network::{AdjacencyLists, Network, UpdateSequence};
 use crate::utils::function_pointer::UpdateStep;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {

@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 // =============================================================================
 // Value level updates

@@ -14,3 +14,20 @@ pyo3 = { version = "0.28.1", features = ["extension-module", "abi3-py37"] }
 numpy = "0.28"
 rand = { version = "0.9", features = ["small_rng"] }
 rand_distr = "0.5"
+ndarray = { version = "0.16", features = ["matrixmultiply-threading"] }
+
+# BLAS provider, linked only under the `blas` feature, with a per-platform
+# backend: the system Accelerate framework on Apple targets (no build step),
+# OpenBLAS elsewhere (requires an OpenBLAS toolchain).
+[target.'cfg(target_vendor = "apple")'.dependencies]
+blas-src = { version = "0.10", optional = true, features = ["accelerate"] }
+
+[target.'cfg(not(target_vendor = "apple"))'.dependencies]
+blas-src = { version = "0.10", optional = true, features = ["openblas"] }
+
+[features]
+# Opt-in seam for the vectorised backend: route ndarray's `.dot()` through a
+# linked BLAS (DGEMM) instead of the pure-Rust `matrixmultiply` kernel. Off by
+# default — for the small matrices typical of HGF layers `matrixmultiply` is
+# often as fast; BLAS pays off at wide layers and batched gemm.
+blas = ["ndarray/blas", "dep:blas-src"]

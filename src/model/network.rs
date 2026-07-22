@@ -1,5 +1,5 @@
 use crate::optimiser::AdamState;
-use crate::updates::observations::{set_observation, set_predictors};
+use crate::updates::nodalised::observations::{set_observation, set_predictors};
 use crate::utils::beliefs_propagation::belief_propagation;
 use crate::utils::function_pointer::UpdateStep;
 use crate::utils::set_learning_sequence::build_learning_sequence;
@@ -1767,12 +1767,7 @@ impl Network {
     }
 }
 
-// Create a module to expose the class to Python
-#[pymodule]
-fn rshgf(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<Network>()?;
-    Ok(())
-}
+// The Python module registration lives in `lib.rs`.
 
 // Unit tests
 #[cfg(test)]

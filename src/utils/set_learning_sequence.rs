@@ -1,4 +1,4 @@
-use crate::model::AdjacencyLists;
+use crate::model::network::AdjacencyLists;
 use crate::utils::function_pointer::UpdateStep;
 
 pub struct LearningSequence {
@@ -59,7 +59,7 @@ pub fn build_learning_sequence(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::Network;
+    use crate::model::network::Network;
 
     fn make_edges(idxs: &[usize]) -> Vec<AdjacencyLists> {
         let max_idx = idxs.iter().copied().max().unwrap_or(0);

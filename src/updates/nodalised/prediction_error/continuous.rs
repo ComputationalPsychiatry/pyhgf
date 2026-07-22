@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Prediction error from a continuous state node
 pub fn prediction_error_continuous_state_node(

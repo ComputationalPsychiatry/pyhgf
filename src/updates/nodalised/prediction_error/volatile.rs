@@ -1,18 +1,5 @@
-use crate::model::Network;
-
-/// Principal branch of the Lambert W function for z >= 0.
-/// Solves w * exp(w) = z via 6 Halley iterations.
-fn lambert_w0(z: f64) -> f64 {
-    let mut w = (z + 1.0).ln();
-    for _ in 0..6 {
-        let ew = w.exp();
-        let f = w * ew - z;
-        let f1 = (w + 1.0) * ew;
-        let f2 = (w + 2.0) * ew;
-        w -= (2.0 * f * f1) / (2.0 * f1 * f1 - f * f2);
-    }
-    w
-}
+use crate::math::lambert_w0;
+use crate::model::network::Network;
 
 /// Compute value and volatility prediction errors for a volatile state node.
 fn compute_volatile_prediction_errors(network: &mut Network, node_idx: usize) {

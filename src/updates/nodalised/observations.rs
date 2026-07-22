@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Inject new observations into an input node
 pub fn observation_update(network: &mut Network, node_idx: usize, observations: f64) {

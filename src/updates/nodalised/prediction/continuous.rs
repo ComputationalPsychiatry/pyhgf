@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Prediction step for a continuous state node.
 ///

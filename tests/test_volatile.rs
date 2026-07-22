@@ -1,4 +1,4 @@
-use rshgf::model::Network;
+use rshgf::model::network::Network;
 use std::collections::HashMap;
 
 /// Helper to assert approximate equality of f64 values.

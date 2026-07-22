@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Prediction error for a binary state node
 pub fn prediction_error_binary_state_node(network: &mut Network, node_idx: usize, _time_step: f64) {

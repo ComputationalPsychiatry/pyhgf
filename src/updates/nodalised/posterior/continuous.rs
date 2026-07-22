@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Principal branch of the Lambert W function for z >= 0.
 /// Solves w * exp(w) = z via 6 Halley iterations.
@@ -416,7 +416,7 @@ fn precision_update_from_children_mean_field(network: &Network, node_idx: usize)
 /// enhanced HGF volatility update (TAPAS `hgf_volatility_update` `'ehgf'` branch). This
 /// guarantees the posterior precision never drops below the predicted precision.
 fn ehgf_volatility_increment(
-    child_state: &crate::model::NodeState,
+    child_state: &crate::model::network::NodeState,
     volatility_coupling: f64,
     mean: f64,
     time_step: f64,

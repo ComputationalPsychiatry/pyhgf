@@ -1,6 +1,59 @@
-pub fn sufficient_statistics(x: &f64) -> Vec<f64> {
-    vec![*x, x.powf(2.0)]
+/// Sufficient statistics `[x, x²]` of a univariate Gaussian observation.
+pub fn sufficient_statistics(x: f64) -> Vec<f64> {
+    vec![x, x * x]
 }
+
+/// Principal branch of the Lambert W function for `z >= 0`.
+///
+/// Solves `w * exp(w) = z` via 6 Halley iterations — the same scheme (and the
+/// same initial guess `ln(z + 1)`) as `pyhgf.math.lambert_w0`, so the two
+/// backends agree to machine precision. Used by the `unbounded` volatility
+/// updates.
+pub fn lambert_w0(z: f64) -> f64 {
+    let mut w = (z + 1.0).ln();
+    for _ in 0..6 {
+        let ew = w.exp();
+        let f = w * ew - z;
+        let f1 = (w + 1.0) * ew;
+        let f2 = (w + 2.0) * ew;
+        w -= (2.0 * f * f1) / (2.0 * f1 * f1 - f * f2);
+    }
+    w
+}
+
+/// `ln(exp(a) + exp(b))`, computed stably (mirrors `jnp.logaddexp`).
+#[inline]
+pub fn logaddexp(a: f64, b: f64) -> f64 {
+    let m = a.max(b);
+    // With an infinite m the general formula would produce ∞ − ∞ = NaN; the
+    // answer is m itself (−∞ only when both arguments are −∞).
+    if m.is_infinite() {
+        return m;
+    }
+    m + ((a - m).exp() + (b - m).exp()).ln()
+}
+
+/// Resolve a coupling-function name, erroring on unknown names.
+///
+/// This is the validating counterpart of [`resolve_coupling_fn`], used at the
+/// Python boundary (mirroring the JAX resolver, which raises `ValueError`).
+/// `"identity"` is accepted as an alias of `"linear"` for JAX-name parity.
+pub fn parse_coupling_fn(name: &str) -> Result<&'static CouplingFn, String> {
+    match name {
+        "linear" | "identity" => Ok(&LINEAR),
+        "relu" => Ok(&RELU),
+        "sigmoid" => Ok(&SIGMOID),
+        "tanh" => Ok(&TANH),
+        "leaky_relu" => Ok(&LEAKY_RELU),
+        "gelu" => Ok(&GELU),
+        other => Err(format!(
+            "Unknown coupling function '{other}'. Choose from [\"linear\", \
+             \"identity\", \"relu\", \"sigmoid\", \"tanh\", \"leaky_relu\", \
+             \"gelu\"]."
+        )),
+    }
+}
+
 /// A coupling (activation) function together with its first and second derivatives.
 ///
 /// Use the module-level constants ([`LINEAR`], [`RELU`], [`SIGMOID`], [`TANH`],
@@ -16,6 +69,10 @@ pub fn sufficient_statistics(x: &f64) -> Vec<f64> {
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct CouplingFn {
+    /// Which named coupling function this is (used by the `with_coupling!`
+    /// macro to dispatch hot loops onto monomorphised, inlinable function
+    /// items instead of the `fn` pointers below).
+    pub kind: CouplingKind,
     /// The activation function $f(x)$.
     pub f: fn(f64) -> f64,
     /// The first derivative $f'(x)$.
@@ -24,11 +81,81 @@ pub struct CouplingFn {
     pub d2f: fn(f64) -> f64,
 }
 
-// ── Activation functions ──────────────────────────────────────────────────────
+/// Tag identifying one of the named coupling functions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CouplingKind {
+    /// Identity.
+    Linear,
+    /// Rectified linear unit.
+    Relu,
+    /// Logistic sigmoid.
+    Sigmoid,
+    /// Hyperbolic tangent.
+    Tanh,
+    /// Leaky ReLU (slope 0.01 for negative inputs).
+    LeakyRelu,
+    /// Gaussian error linear unit.
+    Gelu,
+}
+
+/// Run `$body` with `$f`/`$df`/`$d2f` bound to the *function items* of the
+/// coupling in `$cf`.
+///
+/// Calling through the `fn` pointers stored on [`CouplingFn`] is an indirect
+/// call per element, which blocks inlining and SIMD vectorisation in the
+/// per-node hot loops. This macro matches on [`CouplingFn::kind`] once and
+/// duplicates the body per arm with the concrete (zero-sized, inlinable)
+/// function items, so the compiler monomorphises each loop. Use underscore
+/// names (e.g. `|f, _df, _d2f|`) for the derivatives a body does not need.
+macro_rules! with_coupling {
+    ($cf:expr, |$f:ident, $df:ident, $d2f:ident| $body:expr) => {{
+        match $cf.kind {
+            $crate::math::CouplingKind::Linear => {
+                let $f = $crate::math::linear;
+                let $df = $crate::math::linear_d1;
+                let $d2f = $crate::math::linear_d2;
+                $body
+            }
+            $crate::math::CouplingKind::Relu => {
+                let $f = $crate::math::relu;
+                let $df = $crate::math::relu_d1;
+                let $d2f = $crate::math::relu_d2;
+                $body
+            }
+            $crate::math::CouplingKind::Sigmoid => {
+                let $f = $crate::math::sigmoid;
+                let $df = $crate::math::sigmoid_d1;
+                let $d2f = $crate::math::sigmoid_d2;
+                $body
+            }
+            $crate::math::CouplingKind::Tanh => {
+                let $f = $crate::math::tanh;
+                let $df = $crate::math::tanh_d1;
+                let $d2f = $crate::math::tanh_d2;
+                $body
+            }
+            $crate::math::CouplingKind::LeakyRelu => {
+                let $f = $crate::math::leaky_relu;
+                let $df = $crate::math::leaky_relu_d1;
+                let $d2f = $crate::math::leaky_relu_d2;
+                $body
+            }
+            $crate::math::CouplingKind::Gelu => {
+                let $f = $crate::math::gelu;
+                let $df = $crate::math::gelu_d1;
+                let $d2f = $crate::math::gelu_d2;
+                $body
+            }
+        }
+    }};
+}
+pub(crate) use with_coupling;
+
+// ── Coupling functions ────────────────────────────────────────────────────────
 
 // ─── Linear ──────────────────────────────────────────────────────────────────
 
-/// Linear (identity) activation: $f(x) = x$.
+/// Linear (identity) coupling function: $f(x) = x$.
 pub fn linear(x: f64) -> f64 {
     x
 }
@@ -40,8 +167,9 @@ pub fn linear_d1(_x: f64) -> f64 {
 pub fn linear_d2(_x: f64) -> f64 {
     0.0
 }
-/// [`CouplingFn`] constant for the linear (identity) activation.
+/// [`CouplingFn`] constant for the linear (identity) coupling function.
 pub const LINEAR: CouplingFn = CouplingFn {
+    kind: CouplingKind::Linear,
     f: linear,
     df: linear_d1,
     d2f: linear_d2,
@@ -65,8 +193,9 @@ pub fn relu_d1(x: f64) -> f64 {
 pub fn relu_d2(_x: f64) -> f64 {
     0.0
 }
-/// [`CouplingFn`] constant for the ReLU activation.
+/// [`CouplingFn`] constant for the ReLU coupling function.
 pub const RELU: CouplingFn = CouplingFn {
+    kind: CouplingKind::Relu,
     f: relu,
     df: relu_d1,
     d2f: relu_d2,
@@ -86,10 +215,11 @@ pub fn sigmoid_d1(x: f64) -> f64 {
 /// Second derivative of sigmoid: $f''(x) = f'(x)(1 - 2f(x))$.
 pub fn sigmoid_d2(x: f64) -> f64 {
     let s = sigmoid(x);
-    sigmoid_d1(x) * (1.0 - 2.0 * s)
+    s * (1.0 - s) * (1.0 - 2.0 * s)
 }
-/// [`CouplingFn`] constant for the sigmoid activation.
+/// [`CouplingFn`] constant for the sigmoid coupling function.
 pub const SIGMOID: CouplingFn = CouplingFn {
+    kind: CouplingKind::Sigmoid,
     f: sigmoid,
     df: sigmoid_d1,
     d2f: sigmoid_d2,
@@ -110,8 +240,9 @@ pub fn tanh_d2(x: f64) -> f64 {
     let t = x.tanh();
     -2.0 * t * (1.0 - t * t)
 }
-/// [`CouplingFn`] constant for the tanh activation.
+/// [`CouplingFn`] constant for the tanh coupling function.
 pub const TANH: CouplingFn = CouplingFn {
+    kind: CouplingKind::Tanh,
     f: tanh,
     df: tanh_d1,
     d2f: tanh_d2,
@@ -139,8 +270,9 @@ pub fn leaky_relu_d1(x: f64) -> f64 {
 pub fn leaky_relu_d2(_x: f64) -> f64 {
     0.0
 }
-/// [`CouplingFn`] constant for the Leaky ReLU activation.
+/// [`CouplingFn`] constant for the Leaky ReLU coupling function.
 pub const LEAKY_RELU: CouplingFn = CouplingFn {
+    kind: CouplingKind::LeakyRelu,
     f: leaky_relu,
     df: leaky_relu_d1,
     d2f: leaky_relu_d2,
@@ -192,6 +324,18 @@ fn erfc(x: f64) -> f64 {
 }
 
 /// GELU: $f(x) = x \cdot \Phi(x)$ where $\Phi$ is the standard-normal CDF.
+///
+/// Implements the exact (erf-based) GELU through the `erfc` rational
+/// approximation below, with a maximum absolute error of ~2 × 10⁻⁷ over
+/// $x \in [-10, 10]$.
+///
+/// Cross-backend note: the JAX backend resolves `"gelu"` to `jax.nn.gelu`,
+/// whose default is the *tanh* approximation — up to ~5 × 10⁻⁴ from the exact
+/// GELU — so GELU-coupled networks agree across backends only to that
+/// tolerance. Passing `approximate=False` on the JAX side tightens the
+/// agreement to the ~2 × 10⁻⁷ of this approximation. Every other coupling
+/// function evaluates the same closed form in both backends and matches to
+/// machine precision.
 pub fn gelu(x: f64) -> f64 {
     x * 0.5 * erfc(-x / std::f64::consts::SQRT_2)
 }
@@ -206,8 +350,9 @@ pub fn gelu_d2(x: f64) -> f64 {
     let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
     pdf * (2.0 - x * x)
 }
-/// [`CouplingFn`] constant for the GELU activation.
+/// [`CouplingFn`] constant for the GELU coupling function.
 pub const GELU: CouplingFn = CouplingFn {
+    kind: CouplingKind::Gelu,
     f: gelu,
     df: gelu_d1,
     d2f: gelu_d2,
@@ -215,9 +360,10 @@ pub const GELU: CouplingFn = CouplingFn {
 
 // ─── Resolver ────────────────────────────────────────────────────────────────
 
-/// Resolve an activation name to its [`CouplingFn`] constant.
+/// Resolve a coupling-function name to its [`CouplingFn`] constant.
 ///
-/// Called once at node-creation time in [`Network::add_nodes`]; the resulting
+/// Called once at node-creation time in
+/// [`Network::add_nodes`](crate::model::network::Network::add_nodes); the resulting
 /// `&'static CouplingFn` is stored directly in `Attributes::fn_ptrs` so that
 /// prediction code only needs to call `.f`, `.df`, or `.d2f`.
 ///
@@ -230,16 +376,10 @@ pub const GELU: CouplingFn = CouplingFn {
 /// | `"leaky_relu"` | [`LEAKY_RELU`] |
 /// | `"gelu"` | [`GELU`] |
 ///
-/// Any unrecognised name falls back to [`LINEAR`].
+/// Any unrecognised name falls back to [`LINEAR`]; use [`parse_coupling_fn`]
+/// where an unknown name should instead be an error.
 pub fn resolve_coupling_fn(name: &str) -> &'static CouplingFn {
-    match name {
-        "relu" => &RELU,
-        "sigmoid" => &SIGMOID,
-        "tanh" => &TANH,
-        "leaky_relu" => &LEAKY_RELU,
-        "gelu" => &GELU,
-        _ => &LINEAR,
-    }
+    parse_coupling_fn(name).unwrap_or(&LINEAR)
 }
 
 #[cfg(test)]
@@ -264,23 +404,153 @@ mod tests {
 
     #[test]
     fn test_sufficient_statistics_positive() {
-        let s = sufficient_statistics(&3.0);
+        let s = sufficient_statistics(3.0);
         assert_close(s[0], 3.0, "sufficient_statistics[0] for x=3");
         assert_close(s[1], 9.0, "sufficient_statistics[1] for x=3");
     }
 
     #[test]
     fn test_sufficient_statistics_negative() {
-        let s = sufficient_statistics(&-2.5);
+        let s = sufficient_statistics(-2.5);
         assert_close(s[0], -2.5, "sufficient_statistics[0] for x=-2.5");
         assert_close(s[1], 6.25, "sufficient_statistics[1] for x=-2.5");
     }
 
     #[test]
     fn test_sufficient_statistics_zero() {
-        let s = sufficient_statistics(&0.0);
+        let s = sufficient_statistics(0.0);
         assert_close(s[0], 0.0, "sufficient_statistics[0] for x=0");
         assert_close(s[1], 0.0, "sufficient_statistics[1] for x=0");
+    }
+
+    // ── lambert_w0 ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_lambert_w0_known_values() {
+        assert_close(lambert_w0(0.0), 0.0, "W0(0)");
+        assert_close(lambert_w0(std::f64::consts::E), 1.0, "W0(e)");
+    }
+
+    #[test]
+    fn test_lambert_w0_round_trip() {
+        // w · e^w must recover z across the range the volatility updates use.
+        for &z in &[0.0, 0.1, 0.5, 1.0, 10.0, 100.0, 1e4] {
+            let w = lambert_w0(z);
+            let back = w * w.exp();
+            assert!(
+                (back - z).abs() <= 1e-9 * z.max(1.0),
+                "W0 round trip at z={z}: w·e^w = {back}"
+            );
+        }
+    }
+
+    // ── logaddexp ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_logaddexp_matches_direct() {
+        for &(a, b) in &[(0.0, 0.0), (1.0, 2.0), (-3.0, 4.0)] {
+            assert_close(
+                logaddexp(a, b),
+                (a.exp() + b.exp()).ln(),
+                &format!("logaddexp({a}, {b})"),
+            );
+        }
+    }
+
+    #[test]
+    fn test_logaddexp_extremes() {
+        // Large arguments must not overflow: ln(2·e^1000) = 1000 + ln 2.
+        assert_close(
+            logaddexp(1000.0, 1000.0),
+            1000.0 + 2.0_f64.ln(),
+            "logaddexp(1000, 1000)",
+        );
+        assert_close(logaddexp(f64::NEG_INFINITY, 5.0), 5.0, "logaddexp(-inf, 5)");
+        assert_eq!(
+            logaddexp(f64::NEG_INFINITY, f64::NEG_INFINITY),
+            f64::NEG_INFINITY
+        );
+        assert_eq!(logaddexp(f64::INFINITY, 5.0), f64::INFINITY);
+        assert_eq!(logaddexp(f64::INFINITY, f64::INFINITY), f64::INFINITY);
+    }
+
+    // ── coupling-function resolvers ───────────────────────────────────────────
+
+    #[test]
+    fn test_parse_coupling_fn_known_names() {
+        for name in [
+            "linear",
+            "identity",
+            "relu",
+            "sigmoid",
+            "tanh",
+            "leaky_relu",
+            "gelu",
+        ] {
+            assert!(parse_coupling_fn(name).is_ok(), "'{name}' should parse");
+        }
+        assert_eq!(
+            parse_coupling_fn("identity").unwrap().kind,
+            CouplingKind::Linear
+        );
+    }
+
+    #[test]
+    fn test_parse_coupling_fn_unknown_name() {
+        let err = parse_coupling_fn("sigmiod").unwrap_err();
+        assert!(
+            err.contains("sigmiod"),
+            "error should name the offender: {err}"
+        );
+    }
+
+    #[test]
+    fn test_resolve_coupling_fn_fallback() {
+        assert_eq!(resolve_coupling_fn("tanh").kind, CouplingKind::Tanh);
+        assert_eq!(resolve_coupling_fn("sigmiod").kind, CouplingKind::Linear);
+    }
+
+    // ── derivatives vs central differences ────────────────────────────────────
+
+    /// Check `d1`/`d2` against central differences of `f` at off-kink points.
+    fn check_derivatives(f: fn(f64) -> f64, d1: fn(f64) -> f64, d2: fn(f64) -> f64, name: &str) {
+        let h = 1e-5;
+        for &x in &[-2.0, -0.5, 0.3, 1.7] {
+            let num_d1 = (f(x + h) - f(x - h)) / (2.0 * h);
+            assert!(
+                (d1(x) - num_d1).abs() < 1e-4,
+                "{name}' at {x}: analytic {}, numeric {num_d1}",
+                d1(x)
+            );
+            let num_d2 = (f(x + h) - 2.0 * f(x) + f(x - h)) / (h * h);
+            assert!(
+                (d2(x) - num_d2).abs() < 1e-4,
+                "{name}'' at {x}: analytic {}, numeric {num_d2}",
+                d2(x)
+            );
+        }
+    }
+
+    #[test]
+    fn test_derivatives_match_finite_differences() {
+        check_derivatives(linear, linear_d1, linear_d2, "linear");
+        check_derivatives(relu, relu_d1, relu_d2, "relu");
+        check_derivatives(sigmoid, sigmoid_d1, sigmoid_d2, "sigmoid");
+        check_derivatives(tanh, tanh_d1, tanh_d2, "tanh");
+        check_derivatives(leaky_relu, leaky_relu_d1, leaky_relu_d2, "leaky_relu");
+        check_derivatives(gelu, gelu_d1, gelu_d2, "gelu");
+    }
+
+    #[test]
+    fn test_with_coupling_matches_fn_pointers() {
+        // The macro must bind the same functions the constants store as pointers.
+        for cf in [&LINEAR, &RELU, &SIGMOID, &TANH, &LEAKY_RELU, &GELU] {
+            let x = 0.7;
+            let (fv, dfv, d2fv) = with_coupling!(cf, |f, df, d2f| (f(x), df(x), d2f(x)));
+            assert_close(fv, (cf.f)(x), "with_coupling f");
+            assert_close(dfv, (cf.df)(x), "with_coupling df");
+            assert_close(d2fv, (cf.d2f)(x), "with_coupling d2f");
+        }
     }
 
     // ── relu ──────────────────────────────────────────────────────────────────

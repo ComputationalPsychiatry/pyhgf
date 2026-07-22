@@ -44,18 +44,14 @@ from pyhgf.updates.vectorized.volatile import (
 # ---------------------------------------------------------------------------
 
 
-def _bottom_slice(stack: LayerStack):
-    """Return ``(state, params, weights_in)`` of the *bottommost* stack slice."""
-    state = jax.tree_util.tree_map(lambda x: x[0], stack.state)
-    params = jax.tree_util.tree_map(lambda x: x[0], stack.params)
-    return state, params, stack.weights_in[0]
+def _stack_slice(stack: LayerStack, index: int):
+    """Return ``(state, params, weights_in)`` of the stack slice at ``index``.
 
-
-def _top_slice(stack: LayerStack):
-    """Return ``(state, params, weights_in)`` of the *topmost* stack slice."""
-    state = jax.tree_util.tree_map(lambda x: x[-1], stack.state)
-    params = jax.tree_util.tree_map(lambda x: x[-1], stack.params)
-    return state, params, stack.weights_in[-1]
+    Index ``0`` is the bottommost slice, ``-1`` the topmost.
+    """
+    state = jax.tree_util.tree_map(lambda x: x[index], stack.state)
+    params = jax.tree_util.tree_map(lambda x: x[index], stack.params)
+    return state, params, stack.weights_in[index]
 
 
 def _parent_view(elem):
@@ -68,7 +64,7 @@ def _parent_view(elem):
     child below the stack).
     """
     if isinstance(elem, LayerStack):
-        state, _, weights = _bottom_slice(elem)
+        state, _, weights = _stack_slice(elem, 0)
         return state, weights, elem.coupling_fn, elem.add_constant_input
     return elem.state, elem.weights_in, elem.coupling_fn, elem.add_constant_input
 
@@ -77,15 +73,15 @@ def _child_view(elem):
     """Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a child.
 
     Returns ``(state, kind, is_input_layer)``. What's needed when something above is
-    doing a posterior update or computing PE-driven weight grads using this element's
-    state as the child.
+    doing a posterior update or computing prediction-error-driven weight gradients using
+    this element's state as the child.
 
     For a ``LayerStack``, the child role is filled by the *topmost* slice (the slice
     closest to the parent above the stack).
     """
     if isinstance(elem, LayerStack):
-        state, _, _ = _top_slice(elem)
-        return state, elem.kind, False  # interior; never an input layer
+        state, _, _ = _stack_slice(elem, -1)
+        return state, elem.kind, False  # interior; never the clamped leaf
     return elem.state, elem.kind, elem.is_input_layer
 
 
@@ -148,15 +144,15 @@ def _predict_stack_from_parent(
 ):
     """Top-down sweep over a ``LayerStack``.
 
-    Step 1 (boundary): predict the topmost slice from the external parent. Using the
-    parent's coupling/weights/bias (which may differ from the stack's. For ``(L, S)``
-    they're the layer's; for ``(S, S)`` they're the parent stack's bottommost slice).
+    Boundary step: predict the topmost slice from the external parent, using the
+    parent's coupling function, weights, and bias — a ``Layer`` parent's own, or,
+    for a ``LayerStack`` parent, those of its bottommost slice.
 
-    Step 2 (scan): predict slice ``k`` from slice ``k+1`` for ``k = N-2 ... 0``
-    using ``stack.weights_in[k+1]`` and the stack's own coupling_fn / bias.
-    Scan in reverse so the carry threads top-to-bottom through the stack.
+    Scan step: predict slice ``k`` from slice ``k+1`` for ``k = N-2 ... 0`` using
+    ``stack.weights_in[k+1]`` and the stack's own coupling function and bias.
+    The scan runs in reverse so the carry threads top-to-bottom through the stack.
     """
-    top_slice_state, top_slice_params, _ = _top_slice(stack)
+    top_slice_state, top_slice_params, _ = _stack_slice(stack, -1)
     new_top_state = vectorized_layer_prediction(
         child_state=top_slice_state,
         parent_state=parent_state,
@@ -169,17 +165,12 @@ def _predict_stack_from_parent(
         is_input_layer=False,
     )
 
-    n = stack.n_layers
-    if n == 1:
-        # Degenerate: stack with a single slice. Just write the new state.
-        new_state = jax.tree_util.tree_map(
-            lambda x, v: x.at[0].set(v), stack.state, new_top_state
-        )
-        return dataclasses.replace(stack, state=new_state)
-
     # xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.
     # At step k, body(parent_state, xs[k]) → predict slice k. The "parent's
     # weights" used to predict slice k come from slice k+1 — i.e. stack.weights_in[k+1].
+    # A single-slice stack yields zero-length xs: the scan runs no steps and the
+    # concatenation below just wraps the top state.
+    n = stack.n_layers
     xs_child_state = jax.tree_util.tree_map(lambda x: x[: n - 1], stack.state)
     xs_child_params = jax.tree_util.tree_map(lambda x: x[: n - 1], stack.params)
     xs_parent_weights = stack.weights_in[1:]  # shape (n-1, ...)
@@ -217,11 +208,11 @@ def _predict_stack_from_parent(
 
 
 def _topdown_predict(
-    parent_elem, child_elem, *, time_step: float, precision_clipping_value: float = 1e-6
+    parent_elem, child_elem, *, time_step: float, precision_clipping_value: float
 ):
     """Predict ``child_elem`` from ``parent_elem``.
 
-    Both can be Layer or LayerStack.
+    Either element can be a ``Layer`` or a ``LayerStack``.
     """
     parent_state, parent_weights, parent_coupling_fn, parent_has_const = _parent_view(
         parent_elem
@@ -248,12 +239,18 @@ def _topdown_predict(
 
 
 # ---------------------------------------------------------------------------
-# Leaf PE (bottom element of the network)
+# Leaf prediction error (bottom element of the network)
 # ---------------------------------------------------------------------------
 
 
-def _leaf_pe(layer: Layer, *, volatility_updates: str, max_posterior_precision: float):
-    """Compute the PE of the bottom layer (a ``Layer``; leaves can't be stacks)."""
+def _leaf_pe(
+    layer: Layer,
+    *,
+    volatility_updates: str,
+    max_posterior_precision: float,
+    time_step: float = 1.0,
+):
+    """Compute the prediction error of the bottom layer (never a stack)."""
     if layer.kind == "binary":
         new_state = vectorized_binary_prediction_error(layer=layer.state)
     elif layer.kind == "categorical":
@@ -263,6 +260,7 @@ def _leaf_pe(layer: Layer, *, volatility_updates: str, max_posterior_precision: 
             layer=layer.state,
             params=layer.params,
             volatility_updates=volatility_updates,
+            time_step=time_step,
             has_volatility_parent=layer.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
@@ -270,7 +268,7 @@ def _leaf_pe(layer: Layer, *, volatility_updates: str, max_posterior_precision: 
 
 
 # ---------------------------------------------------------------------------
-# Bottom-up posterior + PE
+# Bottom-up posterior update + prediction error
 # ---------------------------------------------------------------------------
 
 
@@ -281,8 +279,9 @@ def _posterior_pe_layer(
     *,
     volatility_updates: str,
     max_posterior_precision: float,
+    time_step: float = 1.0,
 ):
-    """Single-layer posterior update + PE."""
+    """Single-layer posterior update + prediction error."""
     new_state = vectorized_layer_posterior_update(
         layer=parent.state,
         child=child_state,
@@ -299,6 +298,7 @@ def _posterior_pe_layer(
             layer=new_state,
             params=parent.params,
             volatility_updates=volatility_updates,
+            time_step=time_step,
             has_volatility_parent=parent.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
@@ -340,15 +340,17 @@ def _posterior_pe_stack(
     *,
     volatility_updates: str,
     max_posterior_precision: float,
+    time_step: float = 1.0,
 ):
-    """Bottom-up sweep over a ``LayerStack`` (posterior update + PE per slice).
+    """Bottom-up sweep over a ``LayerStack``.
 
-    Scan forward from slice 0 (bottommost) to slice N-1 (topmost). The carry is the
-    just-PE'd child state below the current slice; on the first iteration it's the
+    Posterior update + prediction error for every slice, scanning forward from slice 0
+    (bottommost) to slice N-1 (topmost). The carry is the child state below the current
+    slice, already carrying its prediction error; on the first iteration it is the
     external ``child_state_init``.
 
-    ``child_is_input_layer=False`` throughout — Phase 8 v1 requires the layer below a
-    stack to be non-leaf, so the boundary is interior.
+    ``child_is_input_layer=False`` throughout — the element below a stack must be
+    interior, never the clamped observation leaf.
     """
     # The scan carry becomes a stack slice each step, so seed it with the
     # child's state coerced to the stack's volatility structure.
@@ -371,6 +373,7 @@ def _posterior_pe_stack(
             layer=new_state,
             params=slice_params,
             volatility_updates=volatility_updates,
+            time_step=time_step,
             has_volatility_parent=stack.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
@@ -390,8 +393,9 @@ def _bottomup_posterior_pe(
     *,
     volatility_updates: str,
     max_posterior_precision: float,
+    time_step: float = 1.0,
 ):
-    """Posterior update + PE for ``parent_elem`` using ``child_elem`` below."""
+    """Posterior update + prediction error for ``parent_elem`` from ``child_elem``."""
     child_state, _, child_is_input_layer = _child_view(child_elem)
     if isinstance(parent_elem, LayerStack):
         return _posterior_pe_stack(
@@ -399,6 +403,7 @@ def _bottomup_posterior_pe(
             child_state,
             volatility_updates=volatility_updates,
             max_posterior_precision=max_posterior_precision,
+            time_step=time_step,
         )
     return _posterior_pe_layer(
         parent_elem,
@@ -406,6 +411,7 @@ def _bottomup_posterior_pe(
         child_is_input_layer,
         volatility_updates=volatility_updates,
         max_posterior_precision=max_posterior_precision,
+        time_step=time_step,
     )
 
 
@@ -432,19 +438,17 @@ def _stack_weight_op(kernel, stack: LayerStack, child_elem, learning_kind: str):
 
     The child of slice 0 is the layer below the stack (``child_elem``); the child of
     slice k>0 is slice k-1 within the stack. Pre-pend the external child's state to the
-    stack's state along axis 0 to form an ``(N+1, ...)`` array, then ``vmap`` the kernel
-    over the N parent slices (``stack.state``) and the N child slots
-    (``combined[:-1]``).
+    stack's slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child slots, then
+    ``vmap`` the kernel over the N parent slices (``stack.state``) and the child slots.
     """
     child_state, _, _ = _child_view(child_elem)
     child_state = _match_child_vol_structure(child_state, stack.has_volatility_parent)
 
-    combined_state = jax.tree_util.tree_map(
-        lambda c, s: jnp.concatenate([c[None, ...], s], axis=0),
+    child_states = jax.tree_util.tree_map(
+        lambda c, s: jnp.concatenate([c[None, ...], s[:-1]], axis=0),
         child_state,
         stack.state,
     )
-    child_states = jax.tree_util.tree_map(lambda x: x[:-1], combined_state)
 
     def per_slice(parent_state, child_state_for_slice):
         return kernel(
@@ -466,29 +470,15 @@ def _weight_op(kernel, parent_elem, child_elem, learning_kind: str):
     return _layer_weight_op(kernel, parent_elem, child_elem, learning_kind)
 
 
-def _weight_grad(parent_elem, child_elem, learning_kind: str):
-    """Weight gradient (same shape as ``parent_elem.weights_in``)."""
-    return _weight_op(
-        vectorized_weight_gradient, parent_elem, child_elem, learning_kind
-    )
-
-
-def _weight_factor(parent_elem, child_elem, learning_kind: str):
-    """Rank-one gradient factors ``(u, v)`` for ``parent_elem.weights_in``."""
-    return _weight_op(
-        vectorized_weight_gradient_factors, parent_elem, child_elem, learning_kind
-    )
-
-
 # ---------------------------------------------------------------------------
 # Element-level state writeback (for clamping x/y at the boundaries)
 # ---------------------------------------------------------------------------
 
 
 def _set_top_predictors(elem, x):
-    """Clamp ``expected_mean`` and ``mean`` of the top element to ``x``.
+    """Clamp ``expected_mean`` and ``mean`` of the top element to the predictors ``x``.
 
-    The top element must be a ``Layer`` (input layer).
+    The top element must be a ``Layer``.
     """
     if isinstance(elem, LayerStack):
         raise NotImplementedError("Top of network must be a Layer, not a LayerStack.")
@@ -497,9 +487,9 @@ def _set_top_predictors(elem, x):
 
 
 def _set_bottom_observations(elem, y):
-    """Clamp ``mean`` of the bottom element to ``y``.
+    """Clamp ``mean`` of the bottom element to the observations ``y``.
 
-    Must be a ``Layer`` (leaf).
+    The bottom element must be a ``Layer``.
     """
     if isinstance(elem, LayerStack):
         raise NotImplementedError(
@@ -507,11 +497,6 @@ def _set_bottom_observations(elem, y):
         )
     new_state = dataclasses.replace(elem.state, mean=y)
     return dataclasses.replace(elem, state=new_state)
-
-
-def _writeback_weights(elem, new_w):
-    """Replace ``weights_in`` on a Layer or LayerStack with ``new_w``."""
-    return dataclasses.replace(elem, weights_in=new_w)
 
 
 # ---------------------------------------------------------------------------
@@ -531,12 +516,12 @@ def propagation_step(
 ) -> tuple[tuple[Network, optax.OptState], jnp.ndarray]:
     """Single propagation step through the network.
 
-    Belief-propagation sweep (top-down prediction → leaf PE → interleaved
-    posterior/PE bottom-up) followed by an optional weight-learning phase. Each step
-    dispatches per element on ``Layer`` vs ``LayerStack``:
+    Belief-propagation sweep — top-down prediction, leaf prediction error, then the
+    interleaved posterior update + prediction error bottom-up — followed by an
+    optional weight-learning phase. Each step dispatches per element:
 
-    * ``Layer`` → standard per-layer kernel call (unrolled).
-    * ``LayerStack`` → ``jax.lax.scan`` over the stack's slices.
+    * ``Layer``: standard per-layer kernel call (unrolled).
+    * ``LayerStack``: ``jax.lax.scan`` over the stack's slices.
 
     Top and bottom elements must be ``Layer``s. A ``LayerStack``'s child below (and
     parent above) can themselves be ``Layer`` or ``LayerStack``; the stack-stack case
@@ -564,14 +549,17 @@ def propagation_step(
     Returns
     -------
     carry :
-        A tuple ``((network, opt_state), surprise)`` where `network` and
-        `opt_state` are updated and `surprise` is the step's surprise.
+        A tuple ``((network, opt_state), output_pred)`` where ``network`` and
+        ``opt_state`` are updated and ``output_pred`` is the bottom element's
+        ``expected_mean`` — the prediction of the observations for this step.
     """
     x, y = inputs
 
     # Belief propagation: top-down prediction (clamping x on top) then the
-    # bottom-up PE + posterior sweep (clamping y at the bottom).
-    swept = _update_sweep(_prediction_sweep(network, x, time_step=time_step), y)
+    # bottom-up prediction-error + posterior sweep (clamping y at the bottom).
+    swept = _update_sweep(
+        _prediction_sweep(network, x, time_step=time_step), y, time_step=time_step
+    )
 
     # Optional weight-learning phase.
     if weight_update:
@@ -586,7 +574,7 @@ def propagation_step(
 
 
 # ---------------------------------------------------------------------------
-# Scan driver + prediction-only sweep (unchanged contract)
+# Scan driver + prediction-only sweep
 # ---------------------------------------------------------------------------
 
 
@@ -622,8 +610,8 @@ def run_scan(
         Whether to apply the weight-learning phase at every step.
     record :
         Tuple of ``LayerState`` field names to record at every time step (e.g.
-        ``("expected_mean", "precision")``). An empty tuple disables recording. The scan
-        output is just the per-step ``output_pred``. With a non-empty tuple, the
+        ``("expected_mean", "precision")``). An empty tuple disables recording and the
+        scan output is the per-step ``output_pred`` alone. With a non-empty tuple, the
         per-step output is ``(traj_step, output_pred)`` where ``traj_step`` is
         ``dict[field_name, tuple[Array, ...]]`` (one per-element array per field, with
         ``LayerStack`` elements contributing arrays of shape ``(N, n_nodes)``). After
@@ -652,26 +640,13 @@ def run_scan(
         )
         if record:
             traj_step = {
-                field: tuple(
-                    getattr(_state_for_record(elem), field)
-                    for elem in new_network.layers
-                )
+                field: tuple(getattr(elem.state, field) for elem in new_network.layers)
                 for field in record
             }
             return (new_network, new_opt_state), (traj_step, pred)
         return (new_network, new_opt_state), pred
 
     return jax.lax.scan(_scan_body, init_carry, inputs)
-
-
-def _state_for_record(elem):
-    """Return the ``LayerState`` to read trajectory fields from.
-
-    For a ``Layer`` this is ``elem.state`` (shape ``(n_nodes,)`` per field). For a
-    ``LayerStack`` it's the stacked state (shape ``(N, n_nodes)`` per field) — the user
-    gets the whole stack's trajectory in one block.
-    """
-    return elem.state
 
 
 def _prediction_sweep(
@@ -698,12 +673,16 @@ def _prediction_sweep(
     return dataclasses.replace(network, layers=tuple(elements))
 
 
-def _update_sweep(network: Network, y: jnp.ndarray) -> Network:
+def _update_sweep(
+    network: Network, y: jnp.ndarray, *, time_step: float = 1.0
+) -> Network:
     """Bottom-up prediction-error + posterior-update sweep, returning the network.
 
     Clamps the observations on the bottom element, computes the leaf prediction error,
-    then performs the interleaved posterior-update + PE for every interior element, in
-    bottom-up order. Belief states are updated; inter-layer weights are not.
+    then performs the interleaved posterior update + prediction error for every interior
+    element, in bottom-up order. Belief states are updated; inter-layer weights are not.
+    The inference time step scales the volatility-level posterior updates with the same
+    time step the prediction sweep uses.
     """
     elements = list(network.layers)
     n_elements = len(elements)
@@ -714,15 +693,18 @@ def _update_sweep(network: Network, y: jnp.ndarray) -> Network:
         elements[0],
         volatility_updates=network.volatility_updates,
         max_posterior_precision=network.max_posterior_precision,
+        time_step=time_step,
     )
 
-    # Interleaved bottom-up posterior + PE on every interior element.
+    # Interleaved bottom-up posterior update + prediction error on every
+    # interior element.
     for i in range(1, n_elements - 1):
         elements[i] = _bottomup_posterior_pe(
             elements[i],
             elements[i - 1],
             volatility_updates=network.volatility_updates,
             max_posterior_precision=network.max_posterior_precision,
+            time_step=time_step,
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -738,12 +720,12 @@ def prediction_sweep(network: Network, x: jnp.ndarray) -> Network:
 
 
 @eqx.filter_jit
-def update_sweep(network: Network, y: jnp.ndarray) -> Network:
-    """JIT-compiled bottom-up PE + posterior sweep.
+def update_sweep(network: Network, y: jnp.ndarray, time_step: float = 1.0) -> Network:
+    """JIT-compiled bottom-up prediction-error + posterior sweep.
 
     See :func:`_update_sweep`.
     """
-    return _update_sweep(network, y)
+    return _update_sweep(network, y, time_step=time_step)
 
 
 def _input_prediction_error(network: Network) -> jnp.ndarray:
@@ -753,7 +735,7 @@ def _input_prediction_error(network: Network) -> jnp.ndarray:
     its values are clamped to the predictors ``x``, so it receives no
     posterior update and no prediction error. This function computes the
     error message the top layer *would* receive from the layer below it —
-    the same confidence-weighted quantity that drives the posterior mean
+    the same gain-weighted prediction error that drives the posterior mean
     shift of every interior layer:
 
     .. math::
@@ -827,19 +809,24 @@ def input_prediction_error(network: Network) -> jnp.ndarray:
     return _input_prediction_error(network)
 
 
-def _weight_gradients(network: Network, learning_kind: str) -> tuple:
+def _weight_gradients(
+    network: Network, learning_kind: str, kernel=vectorized_weight_gradient
+) -> tuple:
     """Per-element weight gradients, without applying them.
 
     Must run *after* :func:`_update_sweep`, so the per-layer states already carry their
-    prediction errors / posteriors. Returns one gradient per element, matched 1:1 to
-    ``network.layers`` (``None`` for the bottom element, which has no incoming weights).
-    Gradients are in descent form, ready for optax.
+    prediction errors / posteriors. Returns one entry per element, matched 1:1 to
+    ``network.layers`` (``None`` for the bottom element, which has no incoming
+    weights). With the default kernel each entry is a gradient in descent form
+    (same shape as the element's ``weights_in``), ready for optax; with
+    :func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`
+    each entry is the rank-one factor pair ``(u, v)``.
     """
     elements = network.layers
-    grads_list: list = [None]  # bottom element has no weights_in
-    for i in range(1, len(elements)):
-        grads_list.append(_weight_grad(elements[i], elements[i - 1], learning_kind))
-    return tuple(grads_list)
+    return (None,) + tuple(
+        _weight_op(kernel, elements[i], elements[i - 1], learning_kind)
+        for i in range(1, len(elements))
+    )
 
 
 def _apply_weight_updates(
@@ -856,7 +843,7 @@ def _apply_weight_updates(
     new_weights = optax.apply_updates(weights, updates)
     for i, new_w in enumerate(new_weights):
         if new_w is not None:
-            elements[i] = _writeback_weights(elements[i], new_w)
+            elements[i] = dataclasses.replace(elements[i], weights_in=new_w)
 
     return dataclasses.replace(network, layers=tuple(elements)), new_opt_state
 
@@ -867,7 +854,7 @@ def _learn_sweep(
     optimizer: optax.GradientTransformation,
     learning_kind: str = "precision_weighted",
 ) -> tuple[Network, optax.OptState]:
-    """Weight-learning phase: PE-driven gradients + an optimiser step.
+    """Weight-learning phase: prediction-error-driven gradients + an optimiser step.
 
     Mirrors the weight-update block of :func:`propagation_step`. Must run *after*
     :func:`_update_sweep`, so the per-layer states already carry their prediction errors
@@ -898,9 +885,8 @@ def learn_sweep(
 # The state fields that carry information from one sample to the next. Every
 # other field is rewritten by the sweeps: expected means and precisions come
 # from the prediction sweep, posterior means are rebuilt as expected mean +
-# correction. What persists is the confidence side — the value-level
-# posterior precision (each prediction reads the previous one) and the
-# volatility level's belief.
+# correction. What persists is the value-level posterior precision (each
+# prediction reads the previous one) and the volatility level's belief.
 _CARRIED_FIELDS: tuple = ("precision", "mean_vol", "precision_vol")
 
 
@@ -912,7 +898,7 @@ def _confidence_increments(before: Network, after: Network) -> tuple:
     ``(n_slices, n_nodes)``.
     """
     # ``mean_vol``/``precision_vol`` are ``None`` on layers without a volatility
-    # parent — there is no volatility confidence to carry, so skip them.
+    # parent — there is no volatility-level belief to carry, so skip them.
     return tuple(
         {
             field: getattr(elem_after.state, field) - getattr(elem_before.state, field)
@@ -955,7 +941,7 @@ def sample_step(
     Runs the prediction sweep (clamp ``x`` on top, predict downward) and the
     update sweep (clamp ``y`` at the bottom, compute errors and correct
     beliefs upward), then reads out everything a caller needs without
-    mutating anything:
+    mutating anything.
 
     Parameters
     ----------
@@ -989,7 +975,9 @@ def sample_step(
         template. Average these across a batch and apply once with
         :func:`apply_confidence_increments`.
     """
-    updated = _update_sweep(_prediction_sweep(network, x, time_step=time_step), y)
+    updated = _update_sweep(
+        _prediction_sweep(network, x, time_step=time_step), y, time_step=time_step
+    )
     return (
         _input_prediction_error(updated),
         _weight_gradients(updated, learning_kind),
@@ -1016,11 +1004,11 @@ def _batch_step(
     nothing depends on their order. The per-sample results are then averaged
     and applied once, so the batch counts as a single observation:
 
-    * weight gradients → one optimiser step (skipped when ``optimizer`` is
-      ``None``);
-    * confidence increments → added to the carried fields (skipped when
-      ``update_confidences`` is ``False``, e.g. to keep confidences pinned
-      during backprop-parity comparisons).
+    * the mean weight gradient drives one optimiser step (skipped when
+      ``optimizer`` is ``None``);
+    * the mean confidence increments are added to the carried fields (skipped
+      when ``update_confidences`` is ``False``, e.g. to keep the carried
+      precisions pinned when comparing against backpropagation).
 
     Averaging (rather than summing) makes the result invariant to repeating
     the batch: the same samples twice produce the same step.
@@ -1071,17 +1059,11 @@ def _batch_step(
     # vmap — the same arithmetic, a batch factor less memory traffic. Every
     # gradient kind is separable, so this is the only path.
     def finish_sample(swept: Network, yi):
-        updated = _update_sweep(swept, yi)
+        updated = _update_sweep(swept, yi, time_step=time_step)
         factors = None
         if optimizer is not None:
-            factors = tuple(
-                [None]
-                + [
-                    _weight_factor(
-                        updated.layers[i], updated.layers[i - 1], learning_kind
-                    )
-                    for i in range(1, len(updated.layers))
-                ]
+            factors = _weight_gradients(
+                updated, learning_kind, kernel=vectorized_weight_gradient_factors
             )
         return (
             _input_prediction_error(updated),
@@ -1126,8 +1108,8 @@ def _batch_step(
     return new_network, opt_state, input_errors
 
 
-# The compiled entry point. The implementation stays callable unjitted so a
-# larger compiled program (a fused pipeline step) can inline it.
+# Compiled entry point. The unjitted ``_batch_step`` is importable so a larger
+# compiled program (e.g. a fused pipeline step) can inline it.
 batch_step = eqx.filter_jit(_batch_step)
 
 
@@ -1149,10 +1131,11 @@ def _contract_factors(factors) -> Optional[jnp.ndarray]:
 
 @eqx.filter_jit
 def prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
-    """Forward-only sweep through the network (no PE / posterior / learning).
+    """Forward-only sweep through the network.
 
-    Sets predictors on the top element and runs the top-down prediction pass; returns
-    the bottom element's ``expected_mean``. Used by
+    Sets the predictors on the top element and runs the top-down prediction sweep —
+    no prediction errors, posterior updates, or weight learning — returning the
+    bottom element's ``expected_mean``. Used by
     :meth:`pyhgf.model.DeepNetwork.predict`.
 
     Parameters
