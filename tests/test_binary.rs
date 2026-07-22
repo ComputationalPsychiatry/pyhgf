@@ -1,4 +1,4 @@
-use rshgf::model::Network;
+use rshgf::model::network::Network;
 
 /// Helper to check approximate equality of f64 values.
 fn assert_close(actual: f64, expected: f64, label: &str) {
