@@ -73,8 +73,8 @@ def _child_view(elem):
     """Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a child.
 
     Returns ``(state, kind, is_input_layer)``. What's needed when something above is
-    doing a posterior update or computing prediction-error-driven weight gradients
-    using this element's state as the child.
+    doing a posterior update or computing prediction-error-driven weight gradients using
+    this element's state as the child.
 
     For a ``LayerStack``, the child role is filled by the *topmost* slice (the slice
     closest to the parent above the stack).
@@ -344,10 +344,10 @@ def _posterior_pe_stack(
 ):
     """Bottom-up sweep over a ``LayerStack``.
 
-    Posterior update + prediction error for every slice, scanning forward from
-    slice 0 (bottommost) to slice N-1 (topmost). The carry is the child state below
-    the current slice, already carrying its prediction error; on the first
-    iteration it is the external ``child_state_init``.
+    Posterior update + prediction error for every slice, scanning forward from slice 0
+    (bottommost) to slice N-1 (topmost). The carry is the child state below the current
+    slice, already carrying its prediction error; on the first iteration it is the
+    external ``child_state_init``.
 
     ``child_is_input_layer=False`` throughout — the element below a stack must be
     interior, never the clamped observation leaf.
@@ -437,10 +437,9 @@ def _stack_weight_op(kernel, stack: LayerStack, child_elem, learning_kind: str):
     """Apply a per-layer weight kernel to every slice of a ``LayerStack``.
 
     The child of slice 0 is the layer below the stack (``child_elem``); the child of
-    slice k>0 is slice k-1 within the stack. Pre-pend the external child's state to
-    the stack's slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child
-    slots, then ``vmap`` the kernel over the N parent slices (``stack.state``) and
-    the child slots.
+    slice k>0 is slice k-1 within the stack. Pre-pend the external child's state to the
+    stack's slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child slots, then
+    ``vmap`` the kernel over the N parent slices (``stack.state``) and the child slots.
     """
     child_state, _, _ = _child_view(child_elem)
     child_state = _match_child_vol_structure(child_state, stack.has_volatility_parent)
@@ -679,12 +678,11 @@ def _update_sweep(
 ) -> Network:
     """Bottom-up prediction-error + posterior-update sweep, returning the network.
 
-    Clamps the observations on the bottom element, computes the leaf prediction
-    error, then performs the interleaved posterior update + prediction error for
-    every interior element, in bottom-up order. Belief states are updated;
-    inter-layer weights are not. The inference time step scales the
-    volatility-level posterior updates with the same time step the prediction
-    sweep uses.
+    Clamps the observations on the bottom element, computes the leaf prediction error,
+    then performs the interleaved posterior update + prediction error for every interior
+    element, in bottom-up order. Belief states are updated; inter-layer weights are not.
+    The inference time step scales the volatility-level posterior updates with the same
+    time step the prediction sweep uses.
     """
     elements = list(network.layers)
     n_elements = len(elements)

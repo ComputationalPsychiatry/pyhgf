@@ -75,8 +75,8 @@ def _inject_jax_weights(net, weights):
 def _matched_pair(sizes, rng, volatility_updates="eHGF", coupling=None):
     """Build a Rust and a JAX network with identical topology and weights.
 
-    ``coupling`` is the name of a ``jnp`` function (for example ``"tanh"``);
-    ``None`` uses the identity coupling on both sides.
+    ``coupling`` is the name of a ``jnp`` function (for example ``"tanh"``); ``None``
+    uses the identity coupling on both sides.
     """
     rs = _build_rs(
         sizes, volatility_updates, "linear" if coupling is None else coupling
