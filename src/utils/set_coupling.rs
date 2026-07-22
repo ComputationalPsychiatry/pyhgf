@@ -1,4 +1,4 @@
-use crate::model::Network;
+use crate::model::network::Network;
 
 /// Update the value-coupling strength for a single `(parent, child)` pair.
 pub fn set_coupling(network: &mut Network, parent_idx: usize, child_idx: usize, coupling: f64) {
@@ -44,7 +44,7 @@ pub fn set_coupling_vec(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{
+    use crate::model::network::{
         AdjacencyLists, Attributes, Network, NodeFnPtrs, NodeState, NodeTrajectories, NodeVectors,
         UpdateSequence,
     };

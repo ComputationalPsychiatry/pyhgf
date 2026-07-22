@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::updates::learning::learning_weights;
+use crate::updates::nodalised::learning::learning_weights;
 use crate::{
-    model::Network,
-    updates::{
+    model::network::Network,
+    updates::nodalised::{
         posterior::continuous::{
             posterior_update_continuous_state_node, posterior_update_continuous_state_node_ehgf,
             posterior_update_continuous_state_node_ehgf_mean_field,

@@ -1,5 +1,6 @@
 use crate::{
-    model::Network, updates::observations::observation_update, utils::function_pointer::UpdateStep,
+    model::network::Network, updates::nodalised::observations::observation_update,
+    utils::function_pointer::UpdateStep,
 };
 
 /// Single time slice belief propagation.
