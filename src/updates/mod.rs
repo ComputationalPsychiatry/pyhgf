@@ -1,5 +1,6 @@
-pub mod learning;
-pub mod observations;
-pub mod posterior;
-pub mod prediction;
-pub mod prediction_error;
+//! Belief-update kernels, split by backend: `nodalised` (per-node scalar
+//! updates) and `vectorised` (matrix updates over whole layers), mirroring
+//! `pyhgf/updates/` and `pyhgf/updates/vectorized/`.
+
+pub mod nodalised;
+pub mod vectorised;
