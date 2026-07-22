@@ -146,6 +146,28 @@ fn extract_for_fit(x: &Bound<'_, PyAny>, expected_cols: usize, name: &str) -> Py
     Ok(mat)
 }
 
+/// Parse an optimizer name (`"adam"` or `"sgd"`) into an [`Optimizer`].
+fn parse_optimizer(name: &str, learning_rate: f64) -> PyResult<Optimizer> {
+    match name.to_lowercase().as_str() {
+        "adam" => Ok(Optimizer::adam(learning_rate)),
+        "sgd" => Ok(Optimizer::sgd(learning_rate)),
+        other => Err(PyValueError::new_err(format!(
+            "Unknown optimizer '{other}'. Use 'adam' or 'sgd'."
+        ))),
+    }
+}
+
+/// Parse a `learning_kind` name into a [`WeightKind`].
+fn parse_weight_kind(kind: &str) -> PyResult<WeightKind> {
+    match kind {
+        "precision_weighted" => Ok(WeightKind::PrecisionWeighted),
+        "standard" => Ok(WeightKind::Standard),
+        other => Err(PyValueError::new_err(format!(
+            "Unknown learning_kind '{other}'. Use 'precision_weighted' or 'standard'."
+        ))),
+    }
+}
+
 #[pymethods]
 impl DeepNetwork {
     #[new]
@@ -316,24 +338,8 @@ impl DeepNetwork {
         weight_update: bool,
         time_step: f64,
     ) -> PyResult<Py<PyAny>> {
-        let opt = match optimizer.to_lowercase().as_str() {
-            "adam" => Optimizer::adam(learning_rate),
-            "sgd" => Optimizer::sgd(learning_rate),
-            other => {
-                return Err(PyValueError::new_err(format!(
-                    "Unknown optimizer '{other}'. Use 'adam' or 'sgd'."
-                )))
-            }
-        };
-        let kind = match learning_kind {
-            "precision_weighted" => WeightKind::PrecisionWeighted,
-            "standard" => WeightKind::Standard,
-            other => {
-                return Err(PyValueError::new_err(format!(
-                    "Unknown learning_kind '{other}'. Use 'precision_weighted' or 'standard'."
-                )))
-            }
-        };
+        let opt = parse_optimizer(optimizer, learning_rate)?;
+        let kind = parse_weight_kind(learning_kind)?;
 
         slf.require_net()?;
         let xmat = extract_for_fit(&x, slf.top_size(), "x")?;
@@ -379,6 +385,108 @@ impl DeepNetwork {
             }
         });
         Ok(out.to_pyarray(py).into_any().unbind())
+    }
+
+    /// One batch-synchronous learning step over many samples at once,
+    /// mirroring the JAX `DeepNetwork.batch_update`. Every sample in the
+    /// batch is processed from the same state (same weights, same
+    /// confidences); the per-sample weight gradients and confidence changes
+    /// are then averaged and applied once, so the whole batch counts as a
+    /// single observation. This differs from `fit`, which scans samples
+    /// sequentially and lets the confidences adapt from one sample to the
+    /// next. `optimizer=None` (default) freezes the weights; pass `"adam"` or
+    /// `"sgd"` with `learning_rate` to learn. `update_confidences=False`
+    /// keeps the carried precisions pinned, the setting used for exact
+    /// comparisons against backpropagation. Returns the per-sample prediction
+    /// errors at the input (top) layer, shape `(n_samples, n_input_features)`;
+    /// they follow the observed minus predicted convention, the negative of a
+    /// squared-error loss gradient with respect to the predictors.
+    #[pyo3(signature = (
+        x, y,
+        optimizer = None,
+        learning_rate = 1e-3,
+        learning_kind = "precision_weighted",
+        update_confidences = true,
+        time_step = 1.0,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn batch_update<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        py: Python<'py>,
+        x: Bound<'py, PyAny>,
+        y: Bound<'py, PyAny>,
+        optimizer: Option<&str>,
+        learning_rate: f64,
+        learning_kind: &str,
+        update_confidences: bool,
+        time_step: f64,
+    ) -> PyResult<Py<PyAny>> {
+        let opt = optimizer
+            .map(|name| parse_optimizer(name, learning_rate))
+            .transpose()?;
+        let kind = parse_weight_kind(learning_kind)?;
+
+        slf.require_net()?;
+        if slf.configs.len() < 2 {
+            return Err(PyValueError::new_err(
+                "The network has a single layer: there is no layer below the \
+                 input layer to route an error from.",
+            ));
+        }
+        let (xmat, x_was_1d) = extract_matrix(&x)?;
+        let (ymat, y_was_1d) = extract_matrix(&y)?;
+        if x_was_1d || y_was_1d {
+            return Err(PyValueError::new_err(
+                "batch_update() operates on batches: x and y must be 2D \
+                 (batch, n_features).",
+            ));
+        }
+        check_predict_cols(xmat.ncols(), slf.top_size())?;
+        if ymat.ncols() != slf.bottom_size() {
+            return Err(PyValueError::new_err(format!(
+                "y has {} feature column(s) but the output (bottom) layer has {} node(s).",
+                ymat.ncols(),
+                slf.bottom_size()
+            )));
+        }
+        if xmat.nrows() != ymat.nrows() {
+            return Err(PyValueError::new_err(format!(
+                "x and y must have the same number of samples, got {} and {}.",
+                xmat.nrows(),
+                ymat.nrows()
+            )));
+        }
+
+        let this = &mut *slf;
+        if let Some(opt) = opt {
+            // Same reset-on-change semantics as `fit`.
+            if this.last_optimizer != Some(opt) {
+                this.opt_state = None;
+                this.last_optimizer = Some(opt);
+            }
+            if this.opt_state.is_none() {
+                this.opt_state = Some(OptState::init(this.net.as_ref().unwrap()));
+            }
+        }
+        let net = this.net.as_mut().unwrap();
+        // A stale opt_state from an earlier call is inert without an
+        // optimizer: the engine only steps the weights when both are given.
+        let opt_state = this.opt_state.as_mut();
+
+        // Release the GIL for the batched step, as in `fit`: it touches only
+        // owned Rust data, and the chunk workers never call into Python.
+        let errors = py.detach(|| {
+            net.batch_update(
+                xmat.view(),
+                ymat.view(),
+                opt.as_ref(),
+                opt_state,
+                time_step,
+                kind,
+                update_confidences,
+            )
+        });
+        Ok(errors.to_pyarray(py).into_any().unbind())
     }
 
     /// Initialise all inter-layer weights with a named strategy — `"xavier"`,

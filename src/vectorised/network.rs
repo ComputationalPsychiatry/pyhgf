@@ -189,6 +189,239 @@ impl DeepNet {
         output_pred
     }
 
+    /// Prediction error routed to the network's input (top) layer, mirroring
+    /// the JAX `input_prediction_error`.
+    ///
+    /// The bottom-up sweep never touches the top layer (its values are clamped
+    /// to the predictors), so this computes the error message the top layer
+    /// would receive from the layer below it: the child layer's value
+    /// prediction error, weighted by its smoothing gain (the same gain used by
+    /// the interior posterior mean update), routed back through the connecting
+    /// weights (bias column excluded) and scaled by the derivative of the top
+    /// layer's coupling function at the clamped predictors. Must run after
+    /// [`Self::update_sweep`], so the child layer carries its prediction
+    /// error. Panics if the network has a single layer (there is no layer
+    /// below the input layer to route an error from); the Python boundary
+    /// validates this.
+    pub fn input_prediction_error(&self) -> Vector {
+        let n = self.layers.len();
+        assert!(n >= 2, "input_prediction_error needs at least two layers");
+        let top = &self.layers[n - 1];
+        let child = &self.layers[n - 2].state;
+        let w = top
+            .weights_in
+            .as_ref()
+            .expect("the top layer of a multi-layer network has weights");
+        // The bias column connects the constant node, not a real input.
+        let cols = w.ncols() - usize::from(top.add_constant_input);
+        let w = w.slice(s![.., ..cols]);
+
+        // Smoothing gain of the child layer, identical to the gain of the
+        // interior posterior mean update, fused directly into the message so
+        // the top layer sees exactly the message any interior layer would see.
+        let mut message = Vector::zeros(child.mean.len());
+        ndarray::Zip::from(&mut message)
+            .and(&child.value_prediction_error)
+            .and(&child.conditional_expected_precision)
+            .and(&child.precision)
+            .and(&child.expected_precision)
+            .for_each(|out, &d, &cep, &prec, &ep| {
+                let pi_y = prec - ep;
+                *out = cep * prec / (cep + pi_y) * d;
+            });
+        let mut routed = w.t().dot(&message);
+        if top.coupling_fn.kind != crate::math::CouplingKind::Linear {
+            crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
+                ndarray::Zip::from(&mut routed)
+                    .and(&top.state.expected_mean)
+                    .for_each(|r, &m| *r *= df(m));
+            });
+        }
+        routed
+    }
+
+    /// One batch-synchronous learning step over many samples at once,
+    /// mirroring the JAX `batch_step`.
+    ///
+    /// Every sample is processed from the same state template (same weights,
+    /// same confidences); the whole batch is swept together through the
+    /// batched kernels of [`crate::vectorised::batched`], so every phase is
+    /// one `gemm` per layer in a features × samples layout. The per-sample
+    /// weight gradients and confidence changes are averaged and applied once,
+    /// so the whole batch counts as a single observation. This differs from
+    /// [`Self::propagation_step`] driven sequentially, where the confidences
+    /// adapt from one sample to the next.
+    ///
+    /// With `optimizer` set, the batch-mean descent gradient drives one
+    /// optimiser step; with `None` the weights are frozen. With
+    /// `update_confidences`, the batch-mean change of the carried confidence
+    /// fields (the value-level posterior precision and the volatility level's
+    /// belief) is added to the template state; everything else is left on the
+    /// template, as the next batch's sweeps rewrite it anyway.
+    ///
+    /// Returns the per-sample prediction errors at the input layer, shape
+    /// `(n_samples, top_size)`; see [`Self::input_prediction_error`] for their
+    /// meaning and sign convention.
+    #[allow(clippy::too_many_arguments)]
+    pub fn batch_update(
+        &mut self,
+        x: ArrayView2<f64>,
+        y: ArrayView2<f64>,
+        optimizer: Option<&Optimizer>,
+        opt_state: Option<&mut OptState>,
+        time_step: f64,
+        learning_kind: WeightKind,
+        update_confidences: bool,
+    ) -> Matrix {
+        // Samples are exchangeable by construction, so the batch splits into
+        // per-thread slabs swept independently; small batches stay in one
+        // chunk and take exactly the single-threaded path.
+        const MIN_CHUNK: usize = 256;
+        let n_chunks = rayon::current_num_threads()
+            .min(x.nrows().div_ceil(MIN_CHUNK))
+            .max(1);
+        self.batch_update_chunked(
+            x,
+            y,
+            optimizer,
+            opt_state,
+            time_step,
+            learning_kind,
+            update_confidences,
+            n_chunks,
+        )
+    }
+
+    /// The chunked executor behind [`Self::batch_update`]: sweep each slab of
+    /// samples through the batched kernels in parallel, then combine the
+    /// per-chunk results (input-error slices concatenated; gradient and
+    /// confidence means weighted by chunk size) and apply them once.
+    #[allow(clippy::too_many_arguments)]
+    fn batch_update_chunked(
+        &mut self,
+        x: ArrayView2<f64>,
+        y: ArrayView2<f64>,
+        optimizer: Option<&Optimizer>,
+        opt_state: Option<&mut OptState>,
+        time_step: f64,
+        learning_kind: WeightKind,
+        update_confidences: bool,
+        n_chunks: usize,
+    ) -> Matrix {
+        use crate::vectorised::batched::{
+            batched_confidence_increments, batched_input_prediction_error,
+            batched_mean_weight_gradients, batched_prediction_sweep, batched_update_sweep,
+            BatchedLayerState, ConfidenceIncrements,
+        };
+        use crate::vectorised::layer::LayerState;
+        use rayon::prelude::*;
+
+        let n_samples = x.nrows();
+        let n_layers = self.layers.len();
+        let top_size = self.layers[n_layers - 1].n_nodes();
+        let learning = optimizer.is_some();
+
+        // Even sample ranges, the remainder spread over the first chunks.
+        let base = n_samples / n_chunks;
+        let remainder = n_samples % n_chunks;
+        let mut ranges = Vec::with_capacity(n_chunks);
+        let mut start = 0;
+        for c in 0..n_chunks {
+            let len = base + usize::from(c < remainder);
+            ranges.push(start..start + len);
+            start += len;
+        }
+
+        struct ChunkOut {
+            range: std::ops::Range<usize>,
+            errors: Matrix,
+            grads: Option<Vec<Option<Matrix>>>,
+            increments: Option<ConfidenceIncrements>,
+        }
+
+        let net: &DeepNet = self;
+        let templates: Vec<&LayerState> = net.layers.iter().map(|layer| &layer.state).collect();
+        let chunk_outs: Vec<ChunkOut> = ranges
+            .into_par_iter()
+            .map(|range| {
+                let mut states: Vec<BatchedLayerState> = templates
+                    .iter()
+                    .map(|state| BatchedLayerState::from_template(state, range.len()))
+                    .collect();
+                batched_prediction_sweep(
+                    net,
+                    &mut states,
+                    x.slice(s![range.clone(), ..]),
+                    time_step,
+                );
+                batched_update_sweep(net, &mut states, y.slice(s![range.clone(), ..]), time_step);
+                let errors = batched_input_prediction_error(net, &states);
+                let grads =
+                    learning.then(|| batched_mean_weight_gradients(net, &states, learning_kind));
+                let increments = update_confidences
+                    .then(|| batched_confidence_increments(&states, &templates));
+                ChunkOut {
+                    range,
+                    errors,
+                    grads,
+                    increments,
+                }
+            })
+            .collect();
+
+        let mut input_errors = Matrix::zeros((top_size, n_samples));
+        for chunk in &chunk_outs {
+            input_errors
+                .slice_mut(s![.., chunk.range.clone()])
+                .assign(&chunk.errors);
+        }
+
+        if let (Some(opt), Some(state)) = (optimizer, opt_state) {
+            // Batch mean = chunk means weighted by chunk size.
+            let mut grads: Vec<Option<Matrix>> = self
+                .layers
+                .iter()
+                .map(|layer| layer.weights_in.as_ref().map(|w| Matrix::zeros(w.raw_dim())))
+                .collect();
+            for chunk in &chunk_outs {
+                let weight = chunk.range.len() as f64 / n_samples as f64;
+                for (total, grad) in grads.iter_mut().zip(chunk.grads.as_ref().unwrap()) {
+                    if let (Some(total), Some(grad)) = (total.as_mut(), grad.as_ref()) {
+                        total.scaled_add(weight, grad);
+                    }
+                }
+            }
+            opt.apply_dense(state, &mut self.layers, &grads);
+        }
+
+        if update_confidences {
+            for (l, layer) in self.layers.iter_mut().enumerate() {
+                for chunk in &chunk_outs {
+                    let weight = chunk.range.len() as f64 / n_samples as f64;
+                    let (precision_inc, vol_inc) = &chunk.increments.as_ref().unwrap()[l];
+                    layer.state.precision.scaled_add(weight, precision_inc);
+                    if let Some((mean_vol_inc, precision_vol_inc)) = vol_inc {
+                        layer
+                            .state
+                            .mean_vol
+                            .as_mut()
+                            .expect("volatility level")
+                            .scaled_add(weight, mean_vol_inc);
+                        layer
+                            .state
+                            .precision_vol
+                            .as_mut()
+                            .expect("volatility level")
+                            .scaled_add(weight, precision_vol_inc);
+                    }
+                }
+            }
+        }
+
+        // Rows become samples again at the boundary (stride flip, no copy).
+        input_errors.reversed_axes()
+    }
+
     /// Batched, read-only forward pass over `n` samples at once.
     ///
     /// `x` is a `(n_samples, top_size)` view (borrowed directly from the numpy
@@ -271,7 +504,7 @@ mod tests {
                 ..LayerConfig::new(3)
             },
         ];
-        let mut net = DeepNet::from_configs(&configs).unwrap();
+        let net = DeepNet::from_configs(&configs).unwrap();
         let x = Matrix::from_shape_vec((1, 3), vec![1.0, 2.0, 3.0]).unwrap();
         let out = net.predict_batch(x.view());
         // weights_in on layer 1 is ones (2,3); each output = sum(x) = 6.
@@ -285,7 +518,7 @@ mod tests {
     #[test]
     fn test_predict_with_bias() {
         let configs = vec![LayerConfig::new(1), LayerConfig::new(2)];
-        let mut net = DeepNet::from_configs(&configs).unwrap();
+        let net = DeepNet::from_configs(&configs).unwrap();
         // weights_in on layer 1: shape (1, 2 + bias) = (1, 3), all ones.
         let x = Matrix::from_shape_vec((1, 2), vec![1.0, 4.0]).unwrap();
         let out = net.predict_batch(x.view());
@@ -332,6 +565,248 @@ mod tests {
         assert!(last < first);
     }
 
+    /// The batched (gemm) step reproduces the per-sample reference: sweeping
+    /// each sample from the template with the per-sample kernels, averaging
+    /// the rank-one gradients and the carried-field increments, and applying
+    /// both once. Covers a three-layer network with a nonlinear (tanh)
+    /// coupling, Adam, and confidence carrying.
+    #[test]
+    fn test_batch_update_matches_per_sample_reference() {
+        use crate::math::resolve_coupling_fn;
+
+        let make_net = || {
+            let configs = vec![
+                LayerConfig::new(2),
+                LayerConfig {
+                    coupling_fn: resolve_coupling_fn("tanh"),
+                    ..LayerConfig::new(4)
+                },
+                LayerConfig::new(3),
+            ];
+            let mut net = DeepNet::from_configs(&configs).unwrap();
+            // Deterministic, non-uniform weights.
+            for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
+                let w = layer.weights_in.as_mut().unwrap();
+                for ((i, j), v) in w.indexed_iter_mut() {
+                    *v = 0.3 * ((i + 2 * j + l) as f64 * 0.7).sin();
+                }
+            }
+            net
+        };
+
+        let n_samples = 5;
+        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as f64 * 0.9).cos());
+        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as f64 * 0.4).sin());
+        let opt = Optimizer::adam(0.01);
+
+        // Reference: the per-sample loop over the same template.
+        let mut reference = make_net();
+        let mut ref_state = OptState::init(&reference);
+        let template: Vec<_> = reference.layers.iter().map(|l| l.state.clone()).collect();
+        let n_layers = reference.layers.len();
+        let mut grad_sums: Vec<Option<Matrix>> = reference
+            .layers
+            .iter()
+            .map(|l| l.weights_in.as_ref().map(|w| Matrix::zeros(w.raw_dim())))
+            .collect();
+        let mut precision_sums: Vec<Vector> = template
+            .iter()
+            .map(|s| Vector::zeros(s.precision.len()))
+            .collect();
+        let mut vol_sums: Vec<(Vector, Vector)> = template
+            .iter()
+            .map(|s| {
+                let v = s.mean_vol.as_ref().unwrap();
+                (Vector::zeros(v.len()), Vector::zeros(v.len()))
+            })
+            .collect();
+        let mut ref_errors = Matrix::zeros((n_samples, 3));
+        for i in 0..n_samples {
+            for (layer, state) in reference.layers.iter_mut().zip(template.iter()) {
+                layer.state = state.clone();
+            }
+            reference.prediction_sweep(x.row(i), 1.0);
+            reference.update_sweep(y.row(i), 1.0);
+            ref_errors
+                .row_mut(i)
+                .assign(&reference.input_prediction_error());
+            let factors = reference.weight_gradient_factors(WeightKind::PrecisionWeighted);
+            for (sum, factor) in grad_sums.iter_mut().zip(factors.iter()) {
+                if let (Some(g), Some((u, v))) = (sum.as_mut(), factor.as_ref()) {
+                    for (r, &ui) in u.iter().enumerate() {
+                        for (c, &vj) in v.iter().enumerate() {
+                            g[[r, c]] += ui * vj;
+                        }
+                    }
+                }
+            }
+            for l in 0..n_layers {
+                let state = &reference.layers[l].state;
+                precision_sums[l] += &(&state.precision - &template[l].precision);
+                vol_sums[l].0 +=
+                    &(state.mean_vol.as_ref().unwrap() - template[l].mean_vol.as_ref().unwrap());
+                vol_sums[l].1 += &(state.precision_vol.as_ref().unwrap()
+                    - template[l].precision_vol.as_ref().unwrap());
+            }
+        }
+        for (layer, state) in reference.layers.iter_mut().zip(template) {
+            layer.state = state;
+        }
+        let inv_n = 1.0 / n_samples as f64;
+        for g in grad_sums.iter_mut().flatten() {
+            g.mapv_inplace(|v| v * inv_n);
+        }
+        opt.apply_dense(&mut ref_state, &mut reference.layers, &grad_sums);
+        for l in 0..n_layers {
+            let state = &mut reference.layers[l].state;
+            state.precision.zip_mut_with(&precision_sums[l], |p, &s| *p += s * inv_n);
+            state
+                .mean_vol
+                .as_mut()
+                .unwrap()
+                .zip_mut_with(&vol_sums[l].0, |p, &s| *p += s * inv_n);
+            state
+                .precision_vol
+                .as_mut()
+                .unwrap()
+                .zip_mut_with(&vol_sums[l].1, |p, &s| *p += s * inv_n);
+        }
+
+        // The batched step on an identically built network.
+        let mut batched = make_net();
+        let mut bat_state = OptState::init(&batched);
+        let errors = batched.batch_update(
+            x.view(),
+            y.view(),
+            Some(&opt),
+            Some(&mut bat_state),
+            1.0,
+            WeightKind::PrecisionWeighted,
+            true,
+        );
+
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-12 * (1.0 + a.abs().max(b.abs()));
+        for (a, b) in errors.iter().zip(ref_errors.iter()) {
+            assert!(close(*a, *b), "input errors differ: {a} vs {b}");
+        }
+        for (bl, rl) in batched.layers.iter().zip(reference.layers.iter()) {
+            if let (Some(bw), Some(rw)) = (bl.weights_in.as_ref(), rl.weights_in.as_ref()) {
+                for (a, b) in bw.iter().zip(rw.iter()) {
+                    assert!(close(*a, *b), "weights differ: {a} vs {b}");
+                }
+            }
+            for (a, b) in bl.state.precision.iter().zip(rl.state.precision.iter()) {
+                assert!(close(*a, *b), "carried precision differs: {a} vs {b}");
+            }
+            for (a, b) in bl
+                .state
+                .mean_vol
+                .as_ref()
+                .unwrap()
+                .iter()
+                .zip(rl.state.mean_vol.as_ref().unwrap().iter())
+            {
+                assert!(close(*a, *b), "carried mean_vol differs: {a} vs {b}");
+            }
+        }
+    }
+
+    /// Splitting the batch across chunks leaves the result unchanged: the
+    /// chunk means recombine to the batch mean, so a four-chunk run matches a
+    /// single-chunk run to floating point reordering noise.
+    #[test]
+    fn test_batch_update_chunked_matches_single_chunk() {
+        let make_net = || {
+            let configs = vec![LayerConfig::new(2), LayerConfig::new(4), LayerConfig::new(3)];
+            let mut net = DeepNet::from_configs(&configs).unwrap();
+            for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
+                let w = layer.weights_in.as_mut().unwrap();
+                for ((i, j), v) in w.indexed_iter_mut() {
+                    *v = 0.3 * ((i + 2 * j + l) as f64 * 0.7).sin();
+                }
+            }
+            net
+        };
+        let n_samples = 601; // odd, so the chunks are uneven
+        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as f64 * 0.9).cos());
+        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as f64 * 0.4).sin());
+        let opt = Optimizer::adam(0.01);
+
+        let run = |n_chunks: usize| {
+            let mut net = make_net();
+            let mut state = OptState::init(&net);
+            let errors = net.batch_update_chunked(
+                x.view(),
+                y.view(),
+                Some(&opt),
+                Some(&mut state),
+                1.0,
+                WeightKind::PrecisionWeighted,
+                true,
+                n_chunks,
+            );
+            (net, errors)
+        };
+        let (net_one, errors_one) = run(1);
+        let (net_four, errors_four) = run(4);
+
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9 * (1.0 + a.abs().max(b.abs()));
+        for (a, b) in errors_one.iter().zip(errors_four.iter()) {
+            assert!(close(*a, *b), "input errors differ: {a} vs {b}");
+        }
+        for (l1, l4) in net_one.layers.iter().zip(net_four.layers.iter()) {
+            if let (Some(w1), Some(w4)) = (l1.weights_in.as_ref(), l4.weights_in.as_ref()) {
+                for (a, b) in w1.iter().zip(w4.iter()) {
+                    assert!(close(*a, *b), "weights differ: {a} vs {b}");
+                }
+            }
+            for (a, b) in l1.state.precision.iter().zip(l4.state.precision.iter()) {
+                assert!(close(*a, *b), "carried precision differs: {a} vs {b}");
+            }
+        }
+    }
+
+    /// A single-sample batch step applies exactly the weight update of one
+    /// sequential propagation step (the batch mean over one sample is that
+    /// sample's gradient).
+    #[test]
+    fn test_batch_update_single_sample_matches_propagation_step() {
+        let configs = vec![LayerConfig::new(2), LayerConfig::new(3)];
+        let mut seq = DeepNet::from_configs(&configs).unwrap();
+        let mut bat = DeepNet::from_configs(&configs).unwrap();
+        let opt = Optimizer::sgd(0.05);
+        let mut seq_state = OptState::init(&seq);
+        let mut bat_state = OptState::init(&bat);
+
+        let x = Array1::from_vec(vec![0.3, -0.2, 0.8]);
+        let y = Array1::from_vec(vec![0.5, -0.1]);
+
+        seq.propagation_step(
+            x.view(),
+            y.view(),
+            &opt,
+            &mut seq_state,
+            1.0,
+            WeightKind::PrecisionWeighted,
+            true,
+        );
+        let errors = bat.batch_update(
+            x.view().insert_axis(ndarray::Axis(0)),
+            y.view().insert_axis(ndarray::Axis(0)),
+            Some(&opt),
+            Some(&mut bat_state),
+            1.0,
+            WeightKind::PrecisionWeighted,
+            false,
+        );
+        assert_eq!(errors.shape(), &[1, 3]);
+        let ws = seq.layers[1].weights_in.as_ref().unwrap();
+        let wb = bat.layers[1].weights_in.as_ref().unwrap();
+        for (a, b) in ws.iter().zip(wb.iter()) {
+            assert!((a - b).abs() < 1e-12);
+        }
+    }
+
     /// A binary leaf produces sigmoid outputs in (0, 1).
     #[test]
     fn test_binary_leaf_predict_in_unit_interval() {
@@ -342,7 +817,7 @@ mod tests {
             },
             LayerConfig::new(2),
         ];
-        let mut net = DeepNet::from_configs(&configs).unwrap();
+        let net = DeepNet::from_configs(&configs).unwrap();
         let x = Matrix::from_shape_vec((1, 2), vec![0.5, -0.5]).unwrap();
         let out = net.predict_batch(x.view());
         assert!(out[[0, 0]] > 0.0 && out[[0, 0]] < 1.0);
@@ -358,7 +833,7 @@ mod tests {
             },
             LayerConfig::new(2),
         ];
-        let mut net = DeepNet::from_configs(&configs).unwrap();
+        let net = DeepNet::from_configs(&configs).unwrap();
         let x = Matrix::from_shape_vec((1, 2), vec![1.0, -1.0]).unwrap();
         let out = net.predict_batch(x.view());
         assert_eq!(out.shape(), &[1, 3]);
