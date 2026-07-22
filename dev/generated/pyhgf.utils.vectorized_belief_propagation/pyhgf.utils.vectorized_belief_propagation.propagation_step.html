@@ -736,12 +736,12 @@
 <dt class="sig sig-object py" id="pyhgf.utils.vectorized_belief_propagation.propagation_step">
 <span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">propagation_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'precision_weighted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/vectorized_belief_propagation.html#propagation_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.propagation_step" title="Link to this definition">#</a></dt>
 <dd><p>Single propagation step through the network.</p>
-<p>Belief-propagation sweep (top-down prediction → leaf PE → interleaved
-posterior/PE bottom-up) followed by an optional weight-learning phase. Each step
-dispatches per element on <code class="docutils literal notranslate"><span class="pre">Layer</span></code> vs <code class="docutils literal notranslate"><span class="pre">LayerStack</span></code>:</p>
+<p>Belief-propagation sweep — top-down prediction, leaf prediction error, then the
+interleaved posterior update + prediction error bottom-up — followed by an
+optional weight-learning phase. Each step dispatches per element:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Layer</span></code> → standard per-layer kernel call (unrolled).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">LayerStack</span></code> → <code class="docutils literal notranslate"><span class="pre">jax.lax.scan</span></code> over the stack’s slices.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Layer</span></code>: standard per-layer kernel call (unrolled).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LayerStack</span></code>: <code class="docutils literal notranslate"><span class="pre">jax.lax.scan</span></code> over the stack’s slices.</p></li>
 </ul>
 <p>Top and bottom elements must be <code class="docutils literal notranslate"><span class="pre">Layer``s.</span> <span class="pre">A</span> <span class="pre">``LayerStack</span></code>’s child below (and
 parent above) can themselves be <code class="docutils literal notranslate"><span class="pre">Layer</span></code> or <code class="docutils literal notranslate"><span class="pre">LayerStack</span></code>; the stack-stack case
@@ -761,8 +761,9 @@ observations clamped on the bottom element.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple <code class="docutils literal notranslate"><span class="pre">((network,</span> <span class="pre">opt_state),</span> <span class="pre">surprise)</span></code> where <cite>network</cite> and
-<cite>opt_state</cite> are updated and <cite>surprise</cite> is the step’s surprise.</p>
+<dd class="field-even"><p>A tuple <code class="docutils literal notranslate"><span class="pre">((network,</span> <span class="pre">opt_state),</span> <span class="pre">output_pred)</span></code> where <code class="docutils literal notranslate"><span class="pre">network</span></code> and
+<code class="docutils literal notranslate"><span class="pre">opt_state</span></code> are updated and <code class="docutils literal notranslate"><span class="pre">output_pred</span></code> is the bottom element’s
+<code class="docutils literal notranslate"><span class="pre">expected_mean</span></code> — the prediction of the observations for this step.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>carry</p>

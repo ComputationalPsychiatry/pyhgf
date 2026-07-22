@@ -742,11 +742,11 @@ same weights, same confidences — through the same sweeps as
 nothing depends on their order. The per-sample results are then averaged
 and applied once, so the batch counts as a single observation:</p>
 <ul class="simple">
-<li><p>weight gradients → one optimiser step (skipped when <code class="docutils literal notranslate"><span class="pre">optimizer</span></code> is
-<code class="docutils literal notranslate"><span class="pre">None</span></code>);</p></li>
-<li><p>confidence increments → added to the carried fields (skipped when
-<code class="docutils literal notranslate"><span class="pre">update_confidences</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, e.g. to keep confidences pinned
-during backprop-parity comparisons).</p></li>
+<li><p>the mean weight gradient drives one optimiser step (skipped when
+<code class="docutils literal notranslate"><span class="pre">optimizer</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>);</p></li>
+<li><p>the mean confidence increments are added to the carried fields (skipped
+when <code class="docutils literal notranslate"><span class="pre">update_confidences</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, e.g. to keep the carried
+precisions pinned when comparing against backpropagation).</p></li>
 </ul>
 <p>Averaging (rather than summing) makes the result invariant to repeating
 the batch: the same samples twice produce the same step.</p>

@@ -734,14 +734,15 @@
 <h1>pyhgf.utils.vectorized_belief_propagation.update_sweep<a class="headerlink" href="#pyhgf-utils-vectorized-belief-propagation-update-sweep" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.utils.vectorized_belief_propagation.update_sweep">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">update_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/vectorized_belief_propagation.html#update_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.update_sweep" title="Link to this definition">#</a></dt>
-<dd><p>JIT-compiled bottom-up PE + posterior sweep.</p>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">update_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/vectorized_belief_propagation.html#update_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.update_sweep" title="Link to this definition">#</a></dt>
+<dd><p>JIT-compiled bottom-up prediction-error + posterior sweep.</p>
 <p>See <code class="xref py py-func docutils literal notranslate"><span class="pre">_update_sweep()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.typing.vectorised/pyhgf.typing.vectorised.Network.html#pyhgf.typing.vectorised.Network" title="pyhgf.typing.vectorised.Network"><em>Network</em></a>)</p></li>
 <li><p><strong>y</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>)</p></li>
+<li><p><strong>time_step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>

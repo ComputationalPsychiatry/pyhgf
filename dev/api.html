@@ -1326,7 +1326,7 @@ least the HGF instance as input after observation and returning surprise.</p>
 <td><p>Single propagation step through the network.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_pass.html#pyhgf.utils.vectorized_belief_propagation.prediction_pass" title="pyhgf.utils.vectorized_belief_propagation.prediction_pass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction_pass</span></code></a>(network, x)</p></td>
-<td><p>Forward-only sweep through the network (no PE / posterior / learning).</p></td>
+<td><p>Forward-only sweep through the network.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html#pyhgf.utils.vectorized_belief_propagation.run_scan" title="pyhgf.utils.vectorized_belief_propagation.run_scan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_scan</span></code></a>(init_carry, inputs, optimizer, ...)</p></td>
 <td><p>Run <code class="docutils literal notranslate"><span class="pre">jax.lax.scan</span></code> over the belief-propagation step.</p></td>
@@ -1334,8 +1334,8 @@ least the HGF instance as input after observation and returning surprise.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_sweep.html#pyhgf.utils.vectorized_belief_propagation.prediction_sweep" title="pyhgf.utils.vectorized_belief_propagation.prediction_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction_sweep</span></code></a>(network, x)</p></td>
 <td><p>JIT-compiled top-down prediction sweep.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.update_sweep.html#pyhgf.utils.vectorized_belief_propagation.update_sweep" title="pyhgf.utils.vectorized_belief_propagation.update_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_sweep</span></code></a>(network, y)</p></td>
-<td><p>JIT-compiled bottom-up PE + posterior sweep.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.update_sweep.html#pyhgf.utils.vectorized_belief_propagation.update_sweep" title="pyhgf.utils.vectorized_belief_propagation.update_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_sweep</span></code></a>(network, y[, time_step])</p></td>
+<td><p>JIT-compiled bottom-up prediction-error + posterior sweep.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.learn_sweep.html#pyhgf.utils.vectorized_belief_propagation.learn_sweep" title="pyhgf.utils.vectorized_belief_propagation.learn_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">learn_sweep</span></code></a>(network, opt_state, optimizer, ...)</p></td>
 <td><p>JIT-compiled weight-learning phase.</p></td>
