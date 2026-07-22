@@ -14,7 +14,8 @@ pyo3 = { version = "0.28.1", features = ["extension-module", "abi3-py37"] }
 numpy = "0.28"
 rand = { version = "0.9", features = ["small_rng"] }
 rand_distr = "0.5"
-ndarray = { version = "0.16", features = ["matrixmultiply-threading"] }
+ndarray = { version = "0.16", features = ["matrixmultiply-threading", "rayon"] }
+rayon = "1.10"
 
 # BLAS provider, linked only under the `blas` feature, with a per-platform
 # backend: the system Accelerate framework on Apple targets (no build step),

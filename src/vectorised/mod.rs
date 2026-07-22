@@ -5,6 +5,7 @@
 //! (`pyhgf/typing/vectorised.py` + `pyhgf/utils/vectorized_belief_propagation.py`
 //! vs `pyhgf/updates/vectorized/`).
 
+pub mod batched;
 pub mod layer;
 pub mod mat;
 pub mod network;

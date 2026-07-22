@@ -136,12 +136,99 @@ impl Optimizer {
             }
         }
     }
+
+    /// Apply one optimizer step to every layer's `weights_in` from matched
+    /// per-layer dense descent gradients (`grads[i]` is `None` where the layer
+    /// has no weights). The dense twin of [`Self::apply`], for gradients that
+    /// are not rank-one; [`crate::vectorised::network::DeepNet::batch_update`]
+    /// uses it with the batch-mean gradient, which is a sum of outer products.
+    pub fn apply_dense(
+        &self,
+        state: &mut OptState,
+        layers: &mut [Layer],
+        grads: &[Option<Matrix>],
+    ) {
+        // Same step-counter semantics as `apply`: only Adam advances it.
+        if let Optimizer::Adam { .. } = self {
+            state.t += 1;
+        }
+        for (i, layer) in layers.iter_mut().enumerate() {
+            let grad = match &grads[i] {
+                Some(g) => g,
+                None => continue,
+            };
+            let weights = layer
+                .weights_in
+                .as_mut()
+                .expect("gradient present but layer has no weights");
+
+            match *self {
+                Optimizer::Sgd { lr } => {
+                    ndarray::Zip::from(&mut *weights)
+                        .and(grad)
+                        .for_each(|w, &g| *w -= lr * g);
+                }
+                Optimizer::Adam { lr, b1, b2, eps } => {
+                    let (m, mv) = state.moments[i]
+                        .as_mut()
+                        .expect("Adam moments missing for a weighted layer");
+                    let bc1 = 1.0 - b1.powi(state.t);
+                    let bc2 = 1.0 - b2.powi(state.t);
+                    ndarray::Zip::from(&mut *weights)
+                        .and(&mut *m)
+                        .and(&mut *mv)
+                        .and(grad)
+                        .for_each(|w, m_, v_, &g| {
+                            *w -= crate::optimiser::adam_step(
+                                m_, v_, g, b1, b2, bc1, bc2, lr, eps,
+                            );
+                        });
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::vectorised::layer::{DeepNet, LayerConfig};
+
+    /// `apply` and `apply_dense` produce the same step from the same gradient,
+    /// whether given as rank-one factors or as the materialised matrix.
+    #[test]
+    fn test_apply_dense_matches_factor_apply() {
+        let mut net_a = DeepNet::from_configs(&[LayerConfig::new(2), LayerConfig::new(2)]).unwrap();
+        let mut net_b = DeepNet::from_configs(&[LayerConfig::new(2), LayerConfig::new(2)]).unwrap();
+        let mut state_a = OptState::init(&net_a);
+        let mut state_b = OptState::init(&net_b);
+
+        let u = Vector::from_vec(vec![0.5, -1.5]);
+        let v = Vector::from_vec(vec![2.0, 1.0, -0.5]);
+        let dense = {
+            let mut g = Matrix::zeros((2, 3));
+            for i in 0..2 {
+                for j in 0..3 {
+                    g[[i, j]] = u[i] * v[j];
+                }
+            }
+            g
+        };
+        let opt = Optimizer::adam(0.01);
+        for _ in 0..3 {
+            opt.apply(
+                &mut state_a,
+                &mut net_a.layers,
+                &[None, Some((u.clone(), v.clone()))],
+            );
+            opt.apply_dense(&mut state_b, &mut net_b.layers, &[None, Some(dense.clone())]);
+        }
+        let wa = net_a.layers[1].weights_in.as_ref().unwrap();
+        let wb = net_b.layers[1].weights_in.as_ref().unwrap();
+        for (a, b) in wa.iter().zip(wb.iter()) {
+            assert!((a - b).abs() < 1e-12);
+        }
+    }
 
     #[test]
     fn test_sgd_step_descends() {

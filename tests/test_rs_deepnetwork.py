@@ -409,6 +409,112 @@ def test_fit_parity_categorical_output():
     )
 
 
+def test_batch_update_validation():
+    """Reject non-batched input, unknown options, and single-layer networks."""
+    net = _build_rs([2, 3])
+    x = np.zeros((4, 3))
+    y = np.zeros((4, 2))
+    with pytest.raises(ValueError, match="must be 2D"):
+        net.batch_update(np.zeros(3), np.zeros(2))
+    with pytest.raises(ValueError, match="Unknown optimizer"):
+        net.batch_update(x, y, optimizer="nope")
+    with pytest.raises(ValueError, match="Unknown learning_kind"):
+        net.batch_update(x, y, learning_kind="nope")
+    with pytest.raises(ValueError, match="same number of samples"):
+        net.batch_update(x, np.zeros((3, 2)))
+    single = RsDeepNetwork().add_layer(2)
+    with pytest.raises(ValueError, match="single layer"):
+        single.batch_update(np.zeros((4, 2)), np.zeros((4, 2)))
+
+
+@pytest.mark.parametrize("optimizer", ["sgd", "adam"])
+def test_batch_update_trajectory_parity(optimizer):
+    """Input errors and weights agree with JAX over several batch steps."""
+    rng = np.random.default_rng(30)
+    rs, jx = _matched_pair([2, 4, 3], rng)
+    make_optax = {"sgd": lambda: optax.sgd(0.05), "adam": lambda: optax.adam(1e-2)}
+    lr = {"sgd": 0.05, "adam": 1e-2}
+    optax_opt = make_optax[optimizer]()
+    for _ in range(5):
+        x = rng.normal(size=(8, 3))
+        y = rng.normal(size=(8, 2))
+        errors_rs = rs.batch_update(
+            x, y, optimizer=optimizer, learning_rate=lr[optimizer]
+        )
+        jx.batch_update(x, y, optimizer=optax_opt)
+        np.testing.assert_allclose(
+            errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
+        )
+    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+
+
+def test_batch_update_parity_pinned_confidences():
+    """With pinned confidences the batch step still matches JAX exactly."""
+    rng = np.random.default_rng(31)
+    rs, jx = _matched_pair([2, 3, 3], rng)
+    x = rng.normal(size=(6, 3))
+    y = rng.normal(size=(6, 2))
+    for _ in range(3):
+        errors_rs = rs.batch_update(
+            x,
+            y,
+            optimizer="sgd",
+            learning_rate=0.05,
+            update_confidences=False,
+        )
+        jx.batch_update(x, y, optimizer=optax.sgd(0.05), update_confidences=False)
+    np.testing.assert_allclose(
+        errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
+    )
+    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+
+
+def test_batch_update_frozen_weights():
+    """Without an optimizer the weights stay untouched; errors still agree."""
+    rng = np.random.default_rng(32)
+    rs, jx = _matched_pair([2, 3], rng)
+    weights_before = [np.array(w) for w in rs.get_weights()]
+    x = rng.normal(size=(6, 3))
+    y = rng.normal(size=(6, 2))
+    errors_rs = rs.batch_update(x, y)
+    jx.batch_update(x, y)
+    np.testing.assert_allclose(
+        errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
+    )
+    for got, expected in zip(rs.get_weights(), weights_before):
+        np.testing.assert_array_equal(got, expected)
+
+
+def test_batch_update_parity_categorical_output():
+    """The batch step agrees with JAX under a categorical output layer."""
+    rng = np.random.default_rng(33)
+    rs = RsDeepNetwork(volatility_updates="eHGF")
+    rs.add_layer(3, kind="categorical").add_layer(4)
+    jx = JaxDeepNetwork(volatility_updates="eHGF")
+    jx.add_layer(size=3, kind="categorical").add_layer(size=4)
+    weights = _random_weights(rs, rng)
+    rs.set_weights(weights)
+    _inject_jax_weights(jx, weights)
+    x = rng.normal(size=(8, 4))
+    y = np.eye(3)[rng.integers(0, 3, size=8)]
+    # One optax object for the whole run: a new object per call would reset
+    # the optimiser state, which the Rust class keeps across calls.
+    optax_opt = optax.adam(1e-2)
+    for _ in range(3):
+        errors_rs = rs.batch_update(x, y, optimizer="adam", learning_rate=1e-2)
+        jx.batch_update(x, y, optimizer=optax_opt)
+    np.testing.assert_allclose(
+        errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
+    )
+    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+
+
 def test_predict_parity_binary_output():
     """Match the JAX forward pass with a binary output layer."""
     rng = np.random.default_rng(17)
