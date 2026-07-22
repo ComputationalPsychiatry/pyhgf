@@ -177,7 +177,7 @@ for epoch in range(80):
 
 ![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif)
 
-* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.7-Deep_learning.html)
+* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Learning.html)
 
 
 ## Acknowledgments
