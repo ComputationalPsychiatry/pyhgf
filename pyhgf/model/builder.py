@@ -53,14 +53,8 @@ class LayerConfig:
         :func:`resolve_coupling_fn`.
     volatility_parent : bool, default True
         Whether the layer has an internal volatility parent.
-    tonic_volatility : Optional[float], default None
-        Per-layer override for tonic_volatility parameter.
     tonic_volatility_vol : Optional[float], default None
         Per-layer override for tonic_volatility_vol parameter.
-    volatility_coupling : Optional[float], default None
-        Per-layer override for volatility_coupling parameter.
-    autoconnection_strength_vol : Optional[float], default None
-        Per-layer override for autoconnection_strength_vol parameter.
 
     Notes
     -----
@@ -74,10 +68,7 @@ class LayerConfig:
     fully_connected: bool = True
     coupling_fn: Optional[str] = None
     volatility_parent: bool = True
-    tonic_volatility: Optional[float] = None
     tonic_volatility_vol: Optional[float] = None
-    volatility_coupling: Optional[float] = None
-    autoconnection_strength_vol: Optional[float] = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to a JSON-serializable dictionary.

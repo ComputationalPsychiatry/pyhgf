@@ -38,12 +38,12 @@ fn precision_update_volatility_level(network: &Network, node_idx: usize) -> f64 
     let expected_precision_vol = s.expected_precision_vol;
     let volatility_pe = s.volatility_prediction_error;
     let effective_precision = s.effective_precision;
-    let volatility_coupling = s.volatility_coupling_internal;
 
+    // Volatility coupling is fixed at 1.
     expected_precision_vol
-        + 0.5 * (volatility_coupling * effective_precision).powi(2)
-        + (volatility_coupling * effective_precision).powi(2) * volatility_pe
-        - 0.5 * volatility_coupling.powi(2) * effective_precision * volatility_pe
+        + 0.5 * effective_precision.powi(2)
+        + effective_precision.powi(2) * volatility_pe
+        - 0.5 * effective_precision * volatility_pe
 }
 
 /// Enhanced-HGF "safe" precision update for the fused volatile node's volatility level.
@@ -60,13 +60,11 @@ fn precision_update_volatility_level_ehgf(
 ) -> f64 {
     let s = &network.attributes.states[node_idx];
     let mean_vol = s.mean_vol; // volatility-level posterior mean (mean-first)
-    let tonic_volatility = s.tonic_volatility; // value-level tonic volatility
-    let volatility_coupling = s.volatility_coupling_internal;
     // value-level posterior variance at the previous step (σ = 1 / π)
     let previous_variance = s.current_variance;
 
-    let predicted_volatility =
-        time_step * (volatility_coupling * mean_vol + tonic_volatility).exp();
+    // Volatility coupling is fixed at 1.
+    let predicted_volatility = time_step * mean_vol.exp();
     let expected_precision = 1.0 / (previous_variance + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
     let volatility_error_weight = (predicted_volatility - previous_variance) * expected_precision;
@@ -74,7 +72,6 @@ fn precision_update_volatility_level_ehgf(
         (1.0 / s.precision + (s.mean - s.expected_mean).powi(2)) * expected_precision - 1.0;
 
     let increment = (0.5
-        * volatility_coupling.powi(2)
         * effective_precision
         * (effective_precision + volatility_error_weight * volatility_prediction_error))
         .max(0.0);
@@ -90,11 +87,11 @@ fn mean_update_volatility_level(
     let expected_mean_vol = s.expected_mean_vol;
     let volatility_pe = s.volatility_prediction_error;
     let effective_precision = s.effective_precision;
-    let volatility_coupling = s.volatility_coupling_internal;
     let observed = s.observed;
 
+    // Volatility coupling is fixed at 1.
     let precision_weighted_pe =
-        (volatility_coupling * effective_precision * volatility_pe) / (2.0 * node_precision_vol);
+        (effective_precision * volatility_pe) / (2.0 * node_precision_vol);
 
     expected_mean_vol + precision_weighted_pe * observed
 }
@@ -165,8 +162,6 @@ fn unbounded_volatility_level_update(
     let s = &network.attributes.states[node_idx];
     let expected_mean_vol = s.expected_mean_vol;
     let expected_precision_vol = s.expected_precision_vol;
-    let volatility_coupling = s.volatility_coupling_internal;
-    let tonic_volatility = s.tonic_volatility;
     let mean = s.mean;
     let expected_mean = s.expected_mean;
     let precision = s.precision;
@@ -174,8 +169,9 @@ fn unbounded_volatility_level_update(
     let previous_variance = s.current_variance.max(1e-128); // previous-step variance (= 1 / precision at the previous step)
     let be_aux = (1.0 / precision) + (mean - expected_mean).powi(2);
 
-    // Canonical exponent at prediction: y = log(time_step) + volatility_coupling*expected_mean_vol + tonic_volatility
-    let gamma_c = time_step.ln() + volatility_coupling * expected_mean_vol + tonic_volatility;
+    // Canonical exponent at prediction (coupling fixed at 1):
+    // y = log(time_step) + expected_mean_vol
+    let gamma_c = time_step.ln() + expected_mean_vol;
 
     // Recompute v and w using expected_mean_vol. w is written as 1/(1 + previous_variance/v) so
     // it stays finite when v_jm1 overflows to +inf (→ 1), matching Julia.
@@ -188,35 +184,33 @@ fn unbounded_volatility_level_update(
     let da_jm1 = expected_precision * be_aux - 1.0;
 
     // Expansion 1: quadratic at the prediction (prior mean)
-    let pi1 = expected_precision_vol + 0.5 * volatility_coupling.powi(2) * w_jm1 * (1.0 - w_jm1);
-    let mu1 = expected_mean_vol + (volatility_coupling * w_jm1 / (2.0 * pi1)) * da_jm1;
+    let pi1 = expected_precision_vol + 0.5 * w_jm1 * (1.0 - w_jm1);
+    let mu1 = expected_mean_vol + (w_jm1 / (2.0 * pi1)) * da_jm1;
 
     // Expansion 2: quadratic at the Lambert W0 approximate mode.
     // W_arg is computed in log-space and capped at log(f64::MAX) to match the
     // MATLAB reference: W_arg = exp(min(log_W_arg, log(realmax))).
-    let pihat_y = expected_precision_vol / volatility_coupling.powi(2);
+    let pihat_y = expected_precision_vol;
     let log_w_arg = be_aux.ln() - (2.0 * pihat_y).ln() + 0.5 / pihat_y - gamma_c;
     let w_arg = log_w_arg.min(f64::MAX.ln()).exp();
     let v_w = lambert_w0(w_arg);
     let y_star = gamma_c + v_w - 0.5 / pihat_y;
-    let x_star = (y_star - time_step.ln() - tonic_volatility) / volatility_coupling;
+    let x_star = y_star - time_step.ln();
 
     // Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).
-    let s2 = time_step * (volatility_coupling * x_star + tonic_volatility).exp();
+    let s2 = time_step * x_star.exp();
     let w2 = 1.0 / (1.0 + previous_variance / s2);
     let da2 = be_aux / (previous_variance + s2) - 1.0;
 
-    let pi2_full = expected_precision_vol
-        + 0.5 * volatility_coupling.powi(2) * w2 * (w2 + (2.0 * w2 - 1.0) * da2);
+    let pi2_full =
+        expected_precision_vol + 0.5 * w2 * (w2 + (2.0 * w2 - 1.0) * da2);
     let pi2_safe = if pi2_full <= 0.0 {
-        expected_precision_vol + 0.5 * volatility_coupling.powi(2) * w2 * (1.0 - w2)
+        expected_precision_vol + 0.5 * w2 * (1.0 - w2)
     } else {
         pi2_full
     };
     let mu2_safe = x_star
-        + (0.5 * volatility_coupling * w2 * da2
-            - expected_precision_vol * (x_star - expected_mean_vol))
-            / pi2_safe;
+        + (0.5 * w2 * da2 - expected_precision_vol * (x_star - expected_mean_vol)) / pi2_safe;
 
     // Fall back to Expansion 1 if Expansion 2 yields non-finite results —
     // matches MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1".
@@ -224,13 +218,14 @@ fn unbounded_volatility_level_update(
     let pi2 = if exp2_finite { pi2_safe } else { pi1 };
     let mu2 = if exp2_finite { mu2_safe } else { mu1 };
 
-    // Variational energy-based softmax blend (direct form, matches MATLAB)
-    let ey1 = time_step * (volatility_coupling * mu1 + tonic_volatility).exp();
+    // Variational energy-based softmax blend (direct form, matches MATLAB).
+    // Volatility coupling is fixed at 1.
+    let ey1 = time_step * mu1.exp();
     let i1 = -0.5 * (previous_variance + ey1).ln()
         - 0.5 * be_aux / (previous_variance + ey1)
         - 0.5 * expected_precision_vol * (mu1 - expected_mean_vol).powi(2);
 
-    let ey2 = time_step * (volatility_coupling * mu2 + tonic_volatility).exp();
+    let ey2 = time_step * mu2.exp();
     let i2 = -0.5 * (previous_variance + ey2).ln()
         - 0.5 * be_aux / (previous_variance + ey2)
         - 0.5 * expected_precision_vol * (mu2 - expected_mean_vol).powi(2);

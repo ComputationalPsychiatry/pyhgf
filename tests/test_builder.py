@@ -37,25 +37,25 @@ class TestLayerConfig:
             kind="binary",
             add_constant_input=False,
             coupling_fn="gelu",
-            tonic_volatility=-2.0,
+            tonic_volatility_vol=-2.0,
         )
         assert cfg.size == 20
         assert cfg.kind == "binary"
         assert cfg.add_constant_input is False
         assert cfg.coupling_fn == "gelu"
-        assert cfg.tonic_volatility == -2.0
+        assert cfg.tonic_volatility_vol == -2.0
 
     def test_layer_config_to_dict_excludes_none(self):
         """LayerConfig.to_dict() excludes None values for clean JSON."""
         cfg = LayerConfig(
             size=10,
             coupling_fn="gelu",
-            tonic_volatility=None,  # Should be excluded
+            tonic_volatility_vol=None,  # Should be excluded
         )
         d = cfg.to_dict()
         assert "size" in d
         assert "coupling_fn" in d
-        assert "tonic_volatility" not in d
+        assert "tonic_volatility_vol" not in d
         assert d["size"] == 10
         assert d["coupling_fn"] == "gelu"
 
@@ -81,14 +81,14 @@ class TestLayerConfig:
             size=25,
             kind="volatile",
             coupling_fn="gelu",
-            tonic_volatility=-3.0,
+            tonic_volatility_vol=-3.0,
         )
         d = original.to_dict()
         restored = LayerConfig.from_dict(d)
         assert restored.size == original.size
         assert restored.kind == original.kind
         assert restored.coupling_fn == original.coupling_fn
-        assert restored.tonic_volatility == original.tonic_volatility
+        assert restored.tonic_volatility_vol == original.tonic_volatility_vol
 
 
 class TestResolveCouplingFn:
@@ -182,7 +182,7 @@ class TestDeepNetworkFromConfigs:
     def test_from_configs_with_layer_params_override(self):
         """Per-layer parameter overrides are applied."""
         configs = [
-            LayerConfig(size=10, tonic_volatility=-2.0),
+            LayerConfig(size=10, tonic_volatility_vol=-2.0),
             LayerConfig(size=20),
         ]
         net = DeepNetwork.from_configs(configs)

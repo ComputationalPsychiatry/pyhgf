@@ -56,13 +56,19 @@ def _build_volatile(cls, volatility_updates, timeseries, mean_field_updates=Fals
 
 
 def _build_explicit(cls, volatility_updates, timeseries, mean_field_updates=False):
-    """Build explicit continuous + volatility-parent network."""
+    """Build explicit continuous + volatility-parent network.
+
+    The fused volatile node's value level carries no tonic volatility, so the explicit
+    value node (node 1) sets ``tonic_volatility=0.0`` to match. Its volatility parent
+    (node 2) keeps the default, mirroring the volatility level's
+    ``tonic_volatility_vol``.
+    """
     return (
         cls(
             volatility_updates=volatility_updates, mean_field_updates=mean_field_updates
         )
         .add_nodes()
-        .add_nodes(value_children=0)
+        .add_nodes(value_children=0, tonic_volatility=0.0)
         .add_nodes(volatility_children=1)
         .input_data(input_data=timeseries)
     )
@@ -133,56 +139,49 @@ def test_explicit_cross_backend_unbounded():
     _run_explicit_cross_backend("unbounded")
 
 
-def _run_volatile_input_invariance(cls, label, mean_field_updates=False):
-    """Vary ``tonic_volatility`` of a volatile-state input/leaf node.
+def _run_volatile_input_leaf_precision(cls, label, mean_field_updates=False):
+    """Check that a volatile-state input/leaf node keeps its prior precision.
 
     The input/leaf node has no value children, so it does not undergo a Gaussian random
-    walk between observations. Its ``expected_precision`` must therefore be its prior
-    precision — identical for any value of ``tonic_volatility`` — mirroring the
-    continuous-node treatment.
+    walk between observations. Its ``expected_precision`` must therefore equal its prior
+    precision at every step (the input-leaf override, mirroring the continuous-node
+    treatment). Volatile nodes carry no ``tonic_volatility``.
     """
     timeseries = np.array([0.5, 1.0, 0.7, 0.3])
-    expected_precisions = []
-    for omega in [-8.0, 0.0]:
-        net = (
-            cls(
-                volatility_updates="unbounded",
-                mean_field_updates=mean_field_updates,
-            )
-            .add_nodes(
-                kind="volatile-state",
-                tonic_volatility=omega,
-                precision=5.0,
-                expected_precision=5.0,
-            )
-            .add_nodes(value_children=0)
-            .input_data(input_data=timeseries)
+    net = (
+        cls(
+            volatility_updates="unbounded",
+            mean_field_updates=mean_field_updates,
         )
-        expected_precisions.append(
-            np.asarray(net.node_trajectories[0]["expected_precision"])
+        .add_nodes(
+            kind="volatile-state",
+            precision=5.0,
+            expected_precision=5.0,
         )
-
+        .add_nodes(value_children=0)
+        .input_data(input_data=timeseries)
+    )
+    expected_precision = np.asarray(net.node_trajectories[0]["expected_precision"])
+    # The input/leaf node's expected_precision stays at its prior precision of 5.0.
     np.testing.assert_allclose(
-        expected_precisions[0],
-        expected_precisions[1],
+        expected_precision,
+        5.0,
         rtol=1e-5,
         err_msg=(
-            f"{label}: input volatile-state node's expected_precision changes "
-            "with tonic_volatility — input-leaf override missing"
+            f"{label}: input volatile-state node's expected_precision is not the "
+            "prior precision — input-leaf override missing"
         ),
     )
-    # And it should equal the prior precision of 5.0 throughout.
-    np.testing.assert_allclose(expected_precisions[0], 5.0, rtol=1e-5)
 
 
-def test_volatile_input_node_invariant_to_tonic_volatility_python():
-    """Per-node Python: volatile-state input ignores tonic_volatility."""
-    _run_volatile_input_invariance(PyNetwork, "py")
+def test_volatile_input_node_uses_prior_precision_python():
+    """Per-node Python: volatile-state input/leaf keeps its prior precision."""
+    _run_volatile_input_leaf_precision(PyNetwork, "py")
 
 
-def test_volatile_input_node_invariant_to_tonic_volatility_rust():
-    """Per-node Rust: volatile-state input ignores tonic_volatility."""
-    _run_volatile_input_invariance(RsNetwork, "rs")
+def test_volatile_input_node_uses_prior_precision_rust():
+    """Per-node Rust: volatile-state input/leaf keeps its prior precision."""
+    _run_volatile_input_leaf_precision(RsNetwork, "rs")
 
 
 def _assert_volatile_node_cross_backend(net_py, net_rs, node, label="", rtol=1e-4):
@@ -249,14 +248,18 @@ def test_explicit_mean_field_cross_backend(volatility_updates):
     _assert_value_level_match(exp_py, 2, exp_rs, 2, label, rtol=rtol)
 
 
-def test_volatile_input_node_invariant_mean_field_python():
-    """Per-node Python: volatile-state input ignores tonic_volatility (mean-field)."""
-    _run_volatile_input_invariance(PyNetwork, "py mean_field", mean_field_updates=True)
+def test_volatile_input_node_uses_prior_precision_mean_field_python():
+    """Per-node Python: volatile-state input/leaf keeps prior precision (mean-field)."""
+    _run_volatile_input_leaf_precision(
+        PyNetwork, "py mean_field", mean_field_updates=True
+    )
 
 
-def test_volatile_input_node_invariant_mean_field_rust():
-    """Per-node Rust: volatile-state input ignores tonic_volatility (mean-field)."""
-    _run_volatile_input_invariance(RsNetwork, "rs mean_field", mean_field_updates=True)
+def test_volatile_input_node_uses_prior_precision_mean_field_rust():
+    """Per-node Rust: volatile-state input/leaf keeps prior precision (mean-field)."""
+    _run_volatile_input_leaf_precision(
+        RsNetwork, "rs mean_field", mean_field_updates=True
+    )
 
 
 def _build_volatile_value_parent(coupling_fn, mean_field_updates, timeseries):

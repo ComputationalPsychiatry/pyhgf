@@ -162,7 +162,6 @@ def add_volatile_state(
         "expected_mean": 0.0,
         "precision": 1.0,
         "expected_precision": 1.0,
-        "tonic_volatility": -4.0,
         "autoconnection_strength": 0.0,
         # Volatility level parameters (implicit internal)
         "mean_vol": 0.0,
@@ -170,8 +169,6 @@ def add_volatile_state(
         "precision_vol": 1.0,
         "expected_precision_vol": 1.0,
         "tonic_volatility_vol": -4.0,
-        # Internal coupling
-        "volatility_coupling_internal": 1.0,
         # External coupling (value only)
         "value_coupling_children": value_children[1],
         "value_coupling_parents": value_parents[1],

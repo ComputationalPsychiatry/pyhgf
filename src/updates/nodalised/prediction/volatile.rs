@@ -14,20 +14,18 @@ use crate::model::network::Network;
 ///   contribution from each value parent (using the parent's marginal predicted
 ///   precision π̃_b).
 ///
-/// Ω = Δt · exp(ω + κ · μ_vol + κ² / (2 π̂_vol)); the MGF correction
-/// κ² / (2 π̂_vol) marginalises over the implicit volatility level's Gaussian
+/// Ω = Δt · exp(μ_vol + 1 / (2 π̂_vol)); the volatility coupling is fixed at 1,
+/// the value level has no tonic volatility of its own, and the MGF correction
+/// 1 / (2 π̂_vol) marginalises over the implicit volatility level's Gaussian
 /// rather than collapsing it to a point estimate.
 pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, time_step: f64) {
     // Copy own scalar state
     let precision = network.attributes.states[node_idx].precision;
     let mean = network.attributes.states[node_idx].mean;
     let autoconnection_strength = network.attributes.states[node_idx].autoconnection_strength;
-    let tonic_volatility = network.attributes.states[node_idx].tonic_volatility;
     let mean_vol = network.attributes.states[node_idx].mean_vol;
     let precision_vol = network.attributes.states[node_idx].precision_vol;
     let tonic_volatility_vol = network.attributes.states[node_idx].tonic_volatility_vol;
-    let volatility_coupling_internal =
-        network.attributes.states[node_idx].volatility_coupling_internal;
 
     // Store current variance for unbounded updates
     let current_variance = 1.0 / precision;
@@ -71,15 +69,14 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
 
     let expected_mean = autoconnection_strength * mean + time_step * driftrate;
 
-    // --- 2b. Predict precision (depends on volatility level). The implicit
-    //         volatility level enters the conditional variance through
-    //         exp(κ · x_vol); marginalising over the volatility level's
-    //         Gaussian yields the closed-form moment-generating-function
-    //         correction κ² / (2 · π̂_vol) inside the log-volatility exponent.
-    let total_volatility = tonic_volatility
-        + volatility_coupling_internal * mean_vol
-        + (volatility_coupling_internal * volatility_coupling_internal)
-            / (2.0 * expected_precision_vol);
+    // --- 2b. Predict precision (depends on volatility level). The volatility
+    //         coupling is fixed at 1 and the value level carries no tonic
+    //         volatility of its own; the implicit volatility level enters the
+    //         conditional variance through exp(x_vol), and marginalising over the
+    //         volatility level's Gaussian yields the closed-form
+    //         moment-generating-function correction 1 / (2 · π̂_vol) inside the
+    //         log-volatility exponent.
+    let total_volatility = mean_vol + 1.0 / (2.0 * expected_precision_vol);
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
     // Conditional predicted precision π̂_a — precision of x_a given its value
@@ -96,7 +93,7 @@ pub fn prediction_volatile_state_node(network: &mut Network, node_idx: usize, ti
 
     // Input/leaf override: a volatile-state node with no value children is an
     // observed input — it does not undergo a Gaussian random walk between
-    // observations, so the tonic-volatility contribution to the value-level
+    // observations, so the volatility contribution to the value-level
     // expected precision is dropped (matches the continuous-node treatment in
     // `prediction_continuous_state_node`).
     let is_input = network.edges[node_idx].value_children.is_none();
@@ -130,12 +127,9 @@ pub fn prediction_volatile_state_node_mean_field(
     let precision = network.attributes.states[node_idx].precision;
     let mean = network.attributes.states[node_idx].mean;
     let autoconnection_strength = network.attributes.states[node_idx].autoconnection_strength;
-    let tonic_volatility = network.attributes.states[node_idx].tonic_volatility;
     let mean_vol = network.attributes.states[node_idx].mean_vol;
     let precision_vol = network.attributes.states[node_idx].precision_vol;
     let tonic_volatility_vol = network.attributes.states[node_idx].tonic_volatility_vol;
-    let volatility_coupling_internal =
-        network.attributes.states[node_idx].volatility_coupling_internal;
 
     let current_variance = 1.0 / precision;
 
@@ -161,8 +155,8 @@ pub fn prediction_volatile_state_node_mean_field(
     }
     let expected_mean = autoconnection_strength * mean + time_step * driftrate;
 
-    // Value level precision — no MGF, no Laplace correction
-    let total_volatility = tonic_volatility + volatility_coupling_internal * mean_vol;
+    // Value level precision — no MGF, no Laplace correction (coupling fixed at 1)
+    let total_volatility = mean_vol;
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
     let expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);

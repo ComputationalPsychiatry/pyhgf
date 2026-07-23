@@ -35,13 +35,12 @@ def posterior_update_precision_volatility_level(
     volatility_pe = attributes[node_idx]["temp"]["volatility_prediction_error"]
     # Use the VALUE level's effective precision (not the volatility level's)
     effective_precision_value = attributes[node_idx]["temp"]["effective_precision"]
-    volatility_coupling = attributes[node_idx]["volatility_coupling_internal"]
 
-    # Update precision using volatility coupling formula
+    # Update precision using the volatility coupling formula (coupling fixed at 1).
     posterior_precision += (
-        0.5 * ((volatility_coupling * effective_precision_value) ** 2)
-        + ((volatility_coupling * effective_precision_value) ** 2) * volatility_pe
-        - 0.5 * (volatility_coupling**2) * effective_precision_value * volatility_pe
+        0.5 * (effective_precision_value**2)
+        + (effective_precision_value**2) * volatility_pe
+        - 0.5 * effective_precision_value * volatility_pe
     )
 
     return posterior_precision
@@ -74,16 +73,11 @@ def posterior_update_precision_volatility_level_ehgf(
     """
     time_step = attributes[-1]["time_step"]
     mean_vol = attributes[node_idx]["mean_vol"]  # volatility-level posterior mean
-    tonic_volatility = attributes[node_idx][
-        "tonic_volatility"
-    ]  # value-level tonic vol.
-    volatility_coupling = attributes[node_idx]["volatility_coupling_internal"]
     # value-level posterior variance at the previous step (σ = 1 / π)
     previous_variance = attributes[node_idx]["temp"]["current_variance"]
 
-    predicted_volatility = time_step * jnp.exp(
-        volatility_coupling * mean_vol + tonic_volatility
-    )
+    # Volatility coupling is fixed at 1.
+    predicted_volatility = time_step * jnp.exp(mean_vol)
     expected_precision = 1.0 / (previous_variance + predicted_volatility)
     effective_precision = predicted_volatility * expected_precision
     volatility_error_weight = (
@@ -97,7 +91,6 @@ def posterior_update_precision_volatility_level_ehgf(
     increment = jnp.maximum(
         0.0,
         0.5
-        * volatility_coupling**2
         * effective_precision
         * (effective_precision + volatility_error_weight * volatility_prediction_error),
     )
@@ -135,12 +128,11 @@ def posterior_update_mean_volatility_level(
     volatility_pe = attributes[node_idx]["temp"]["volatility_prediction_error"]
     # Use the VALUE level's effective precision (not the volatility level's)
     effective_precision_value = attributes[node_idx]["temp"]["effective_precision"]
-    volatility_coupling = attributes[node_idx]["volatility_coupling_internal"]
 
-    # Update mean using volatility coupling formula
-    precision_weighted_pe = (
-        volatility_coupling * effective_precision_value * volatility_pe
-    ) / (2 * node_precision)
+    # Update mean using the volatility coupling formula (coupling fixed at 1).
+    precision_weighted_pe = (effective_precision_value * volatility_pe) / (
+        2 * node_precision
+    )
 
     posterior_mean += precision_weighted_pe
 

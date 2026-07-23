@@ -121,36 +121,21 @@ class LayerParams(eqx.Module):
 
     Parameters
     ----------
-    tonic_volatility :
-        The tonic (baseline) volatility of the value level.
     tonic_volatility_vol :
         The tonic (baseline) volatility of the volatility level.
-    volatility_coupling :
-        The volatility-coupling strength between the value and volatility levels.
-    autoconnection_strength_vol :
-        The autoconnection (self-coupling) strength of the volatility level.
     """
 
-    tonic_volatility: Array
     tonic_volatility_vol: Array
-    volatility_coupling: Array
-    autoconnection_strength_vol: Array
 
     @classmethod
     def create(
         cls,
         n_nodes: int,
-        tonic_volatility: float = -4.0,
         tonic_volatility_vol: float = -4.0,
-        volatility_coupling: float = 1.0,
-        autoconnection_strength_vol: float = 1.0,
     ) -> "LayerParams":
         """Initialise layer params with defaults."""
         return cls(
-            tonic_volatility=jnp.full(n_nodes, tonic_volatility),
             tonic_volatility_vol=jnp.full(n_nodes, tonic_volatility_vol),
-            volatility_coupling=jnp.full(n_nodes, volatility_coupling),
-            autoconnection_strength_vol=jnp.full(n_nodes, autoconnection_strength_vol),
         )
 
 

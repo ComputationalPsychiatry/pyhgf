@@ -258,7 +258,6 @@ def _leaf_pe(
     else:
         new_state = vectorized_layer_prediction_error(
             layer=layer.state,
-            params=layer.params,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=layer.has_volatility_parent,
@@ -296,7 +295,6 @@ def _posterior_pe_layer(
     else:
         new_state = vectorized_layer_prediction_error(
             layer=new_state,
-            params=parent.params,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=parent.has_volatility_parent,
@@ -359,7 +357,7 @@ def _posterior_pe_stack(
     )
 
     def body(child_carry_state, slice_data):
-        slice_state, slice_params, slice_weights = slice_data
+        slice_state, _slice_params, slice_weights = slice_data
         new_state = vectorized_layer_posterior_update(
             layer=slice_state,
             child=child_carry_state,
@@ -371,7 +369,6 @@ def _posterior_pe_stack(
         )
         new_state = vectorized_layer_prediction_error(
             layer=new_state,
-            params=slice_params,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=stack.has_volatility_parent,

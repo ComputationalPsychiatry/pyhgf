@@ -241,6 +241,6 @@ def deep_network_for_graphviz():
     return (
         DeepNetwork()
         .add_layer(size=4)
-        .add_layer(size=3, tonic_volatility=-1.0)
-        .add_layer(size=2, tonic_volatility=-2.0)
+        .add_layer(size=3, tonic_volatility_vol=-1.0)
+        .add_layer(size=2, tonic_volatility_vol=-2.0)
     )
