@@ -8,6 +8,7 @@
 
 use crate::math::parse_coupling_fn;
 use crate::updates::vectorised::learning::WeightKind;
+use crate::vectorised::batched::BatchWorkspace;
 use crate::vectorised::layer::{
     DeepNet, LayerConfig, LayerKind, VolatilityUpdate, LAYER_STATE_FIELDS,
 };
@@ -34,6 +35,10 @@ pub struct DeepNetwork {
     /// semantics, mirroring the JAX class re-initialising on a new optax
     /// object).
     last_optimizer: Option<Optimizer>,
+    /// Reusable scratch memory for `batch_update`: the batched per-chunk
+    /// states persist across calls, so repeated steps at the same batch size
+    /// allocate nothing. Cleared on every rebuild.
+    batch_workspace: BatchWorkspace,
     volatility_updates: VolatilityUpdate,
     max_posterior_precision: Float,
     precision_clipping_value: Float,
@@ -69,6 +74,7 @@ impl DeepNetwork {
         self.net = Some(net);
         self.opt_state = None;
         self.last_optimizer = None;
+        self.batch_workspace = BatchWorkspace::default();
         Ok(())
     }
 
@@ -230,6 +236,7 @@ impl DeepNetwork {
             net: None,
             opt_state: None,
             last_optimizer: None,
+            batch_workspace: BatchWorkspace::default(),
             volatility_updates,
             max_posterior_precision,
             precision_clipping_value,
@@ -507,11 +514,13 @@ impl DeepNetwork {
         // A stale opt_state from an earlier call is inert without an
         // optimizer: the engine only steps the weights when both are given.
         let opt_state = this.opt_state.as_mut();
+        let workspace = &mut this.batch_workspace;
 
         // Release the GIL for the batched step, as in `fit`: it touches only
         // owned Rust data, and the chunk workers never call into Python.
         let errors = py.detach(|| {
-            net.batch_update(
+            net.batch_update_with_workspace(
+                workspace,
                 xmat.view(),
                 ymat.view(),
                 opt.as_ref(),
