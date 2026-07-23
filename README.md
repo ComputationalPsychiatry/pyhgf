@@ -171,7 +171,7 @@ for epoch in range(100):
 ```
 </details>
 
-![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/two_moons_training.gif)
+![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif)
 
 * 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Learning.html)
 
