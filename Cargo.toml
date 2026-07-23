@@ -27,21 +27,23 @@ blas-src = { version = "0.10", optional = true, features = ["accelerate"] }
 blas-src = { version = "0.10", optional = true, features = ["openblas"] }
 
 [features]
-# The default build of the vectorised backend (`DeepNetwork`): f32 arithmetic
-# with `.dot()` routed through a linked BLAS (SGEMM). The previous engine —
-# f64 through the pure-Rust `matrixmultiply` kernel — remains available:
+# The default build of the vectorised backend (`DeepNetwork`) computes in f32
+# through the pure-Rust `matrixmultiply` kernel — no BLAS toolchain required.
+# Two opt-in features adjust the engine:
 #
-#   maturin develop --release                                # f32 + BLAS (default)
-#   maturin develop --release -F f64                         # f64 + BLAS
-#   maturin develop --release --no-default-features          # f32, pure Rust
-#   maturin develop --release --no-default-features -F f64   # the previous engine
+#   maturin develop --release                    # f32, pure Rust (default)
+#   maturin develop --release -F blas            # f32 + linked BLAS (SGEMM)
+#   maturin develop --release -F f64             # the previous engine (f64)
+#   maturin develop --release -F f64 -F blas     # f64 + linked BLAS (DGEMM)
 #
 # The nodalised (per-node) backend computes in f64 under every configuration.
-default = ["blas"]
 
 # Route ndarray's `.dot()` through a linked BLAS (SGEMM/DGEMM) instead of the
-# pure-Rust `matrixmultiply` kernel. Pays off at wide layers and batched gemm;
-# for small per-sample ops `matrixmultiply` is often as fast.
+# pure-Rust `matrixmultiply` kernel: the system Accelerate framework on Apple
+# targets (no build step), OpenBLAS elsewhere (requires an OpenBLAS
+# toolchain). Pays off at wide layers and batched gemm — on the deep-network
+# benchmark it roughly halves the batched learning step at batch 4096; for
+# small per-sample ops `matrixmultiply` is often as fast.
 blas = ["ndarray/blas", "dep:blas-src"]
 
 # Compute the vectorised backend in f64 instead of the default f32 — for
