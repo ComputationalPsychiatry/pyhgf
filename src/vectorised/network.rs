@@ -278,6 +278,35 @@ impl DeepNet {
         learning_kind: WeightKind,
         update_confidences: bool,
     ) -> Matrix {
+        self.batch_update_with_workspace(
+            &mut crate::vectorised::batched::BatchWorkspace::default(),
+            x,
+            y,
+            optimizer,
+            opt_state,
+            time_step,
+            learning_kind,
+            update_confidences,
+        )
+    }
+
+    /// [`Self::batch_update`] with caller-owned scratch memory: the batched
+    /// per-chunk states live in `workspace` and are reused across calls, so
+    /// repeated steps at the same batch size allocate nothing. This is the
+    /// path a training loop should use; `batch_update` itself builds a fresh
+    /// workspace per call.
+    #[allow(clippy::too_many_arguments)]
+    pub fn batch_update_with_workspace(
+        &mut self,
+        workspace: &mut crate::vectorised::batched::BatchWorkspace,
+        x: ArrayView2<Float>,
+        y: ArrayView2<Float>,
+        optimizer: Option<&Optimizer>,
+        opt_state: Option<&mut OptState>,
+        time_step: Float,
+        learning_kind: WeightKind,
+        update_confidences: bool,
+    ) -> Matrix {
         // Samples are exchangeable by construction, so the batch splits into
         // per-thread slabs swept independently; small batches stay in one
         // chunk and take exactly the single-threaded path.
@@ -286,6 +315,7 @@ impl DeepNet {
             .min(x.nrows().div_ceil(MIN_CHUNK))
             .max(1);
         self.batch_update_chunked(
+            workspace,
             x,
             y,
             optimizer,
@@ -304,6 +334,7 @@ impl DeepNet {
     #[allow(clippy::too_many_arguments)]
     fn batch_update_chunked(
         &mut self,
+        workspace: &mut crate::vectorised::batched::BatchWorkspace,
         x: ArrayView2<Float>,
         y: ArrayView2<Float>,
         optimizer: Option<&Optimizer>,
@@ -316,7 +347,7 @@ impl DeepNet {
         use crate::vectorised::batched::{
             batched_confidence_increments, batched_input_prediction_error,
             batched_mean_weight_gradients, batched_prediction_sweep, batched_update_sweep,
-            BatchedLayerState, ConfidenceIncrements,
+            reset_chunk, ConfidenceIncrements,
         };
         use crate::vectorised::layer::LayerState;
         use rayon::prelude::*;
@@ -344,27 +375,25 @@ impl DeepNet {
             increments: Option<ConfidenceIncrements>,
         }
 
+        // One workspace entry per chunk; entries beyond the chunk count are
+        // dropped (their memory returned), missing ones start empty and are
+        // built by `reset_chunk`.
+        workspace.chunks.resize_with(n_chunks, Vec::new);
+
         let net: &DeepNet = self;
         let templates: Vec<&LayerState> = net.layers.iter().map(|layer| &layer.state).collect();
         let chunk_outs: Vec<ChunkOut> = ranges
             .into_par_iter()
-            .map(|range| {
-                let mut states: Vec<BatchedLayerState> = templates
-                    .iter()
-                    .map(|state| BatchedLayerState::from_template(state, range.len()))
-                    .collect();
-                batched_prediction_sweep(
-                    net,
-                    &mut states,
-                    x.slice(s![range.clone(), ..]),
-                    time_step,
-                );
-                batched_update_sweep(net, &mut states, y.slice(s![range.clone(), ..]), time_step);
-                let errors = batched_input_prediction_error(net, &states);
+            .zip(workspace.chunks.par_iter_mut())
+            .map(|(range, states)| {
+                reset_chunk(states, &templates, range.len());
+                batched_prediction_sweep(net, states, x.slice(s![range.clone(), ..]), time_step);
+                batched_update_sweep(net, states, y.slice(s![range.clone(), ..]), time_step);
+                let errors = batched_input_prediction_error(net, states);
                 let grads =
-                    learning.then(|| batched_mean_weight_gradients(net, &states, learning_kind));
+                    learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
                 let increments =
-                    update_confidences.then(|| batched_confidence_increments(&states, &templates));
+                    update_confidences.then(|| batched_confidence_increments(states, &templates));
                 ChunkOut {
                     range,
                     errors,
@@ -764,6 +793,7 @@ mod tests {
             let mut net = make_net();
             let mut state = OptState::init(&net);
             let errors = net.batch_update_chunked(
+                &mut crate::vectorised::batched::BatchWorkspace::default(),
                 x.view(),
                 y.view(),
                 Some(&opt),
@@ -797,6 +827,79 @@ mod tests {
     /// A single-sample batch step applies exactly the weight update of one
     /// sequential propagation step (the batch mean over one sample is that
     /// sample's gradient).
+    #[test]
+    fn test_batch_update_workspace_reuse_is_exact() {
+        // A reused workspace (dirty buffers from the previous call) must give
+        // bitwise the same trajectory as a fresh workspace per call: the
+        // compute path is identical and every reused field is either re-tiled
+        // by `reset_chunk` or written by the sweeps before it is read. The
+        // middle call changes the batch size to exercise the rebuild path,
+        // and the last call returns to the first size to exercise reuse
+        // after a rebuild.
+        let make_net = || {
+            let configs = vec![
+                LayerConfig::new(2),
+                LayerConfig::new(4),
+                LayerConfig::new(3),
+            ];
+            let mut net = DeepNet::from_configs(&configs).unwrap();
+            for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
+                let w = layer.weights_in.as_mut().unwrap();
+                for ((i, j), v) in w.indexed_iter_mut() {
+                    *v = 0.3 * ((i + 2 * j + l) as Float * 0.7).sin();
+                }
+            }
+            net
+        };
+        let data = |n_samples: usize, phase: Float| {
+            (
+                Matrix::from_shape_fn((n_samples, 3), |(i, j)| {
+                    ((i * 3 + j) as Float * 0.9 + phase).cos()
+                }),
+                Matrix::from_shape_fn((n_samples, 2), |(i, j)| {
+                    ((i * 2 + j) as Float * 0.4 + phase).sin()
+                }),
+            )
+        };
+        let opt = Optimizer::adam(0.01);
+
+        let mut reused = make_net();
+        let mut fresh = make_net();
+        let mut reused_opt = OptState::init(&reused);
+        let mut fresh_opt = OptState::init(&fresh);
+        let mut workspace = crate::vectorised::batched::BatchWorkspace::default();
+
+        for (n_samples, phase) in [(601, 0.0), (257, 1.0), (601, 2.0)] {
+            let (x, y) = data(n_samples, phase);
+            let errors_reused = reused.batch_update_with_workspace(
+                &mut workspace,
+                x.view(),
+                y.view(),
+                Some(&opt),
+                Some(&mut reused_opt),
+                1.0,
+                WeightKind::PrecisionWeighted,
+                true,
+            );
+            let errors_fresh = fresh.batch_update(
+                x.view(),
+                y.view(),
+                Some(&opt),
+                Some(&mut fresh_opt),
+                1.0,
+                WeightKind::PrecisionWeighted,
+                true,
+            );
+            assert_eq!(errors_reused, errors_fresh);
+            for (a, b) in reused.layers.iter().zip(fresh.layers.iter()) {
+                assert_eq!(a.weights_in, b.weights_in);
+                assert_eq!(a.state.precision, b.state.precision);
+                assert_eq!(a.state.mean_vol, b.state.mean_vol);
+                assert_eq!(a.state.precision_vol, b.state.precision_vol);
+            }
+        }
+    }
+
     #[test]
     fn test_batch_update_single_sample_matches_propagation_step() {
         let configs = vec![LayerConfig::new(2), LayerConfig::new(3)];

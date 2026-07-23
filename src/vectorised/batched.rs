@@ -83,6 +83,74 @@ impl BatchedLayerState {
     fn n_samples(&self) -> usize {
         self.mean.ncols()
     }
+
+    /// True when this buffer already has the shape [`Self::from_template`]
+    /// would allocate for `state` at `n_samples` columns, so
+    /// [`Self::reset_from_template`] can reuse it in place.
+    fn matches_template(&self, state: &LayerState, n_samples: usize) -> bool {
+        self.mean.dim() == (state.n_nodes(), n_samples)
+            && self.mean_vol.is_some() == state.mean_vol.is_some()
+    }
+
+    /// Re-arm an existing buffer as [`Self::from_template`] would, without
+    /// allocating: the template-carried fields (the value-level posterior
+    /// precision, the marginal predicted precision, and the volatility
+    /// level's belief) are re-tiled in place. Every other field keeps the
+    /// values the previous sweep left behind, which is sound for the same
+    /// reason `from_template` leaves them zeroed: the sweeps write them
+    /// before reading them.
+    pub fn reset_from_template(&mut self, state: &LayerState, n_samples: usize) {
+        debug_assert!(self.matches_template(state, n_samples));
+        fn retile(dst: &mut Matrix, src: &Vector) {
+            dst.assign(&src.view().insert_axis(Axis(1)));
+        }
+        retile(&mut self.precision, &state.precision);
+        retile(&mut self.expected_precision, &state.expected_precision);
+        if let (Some(dst), Some(src)) = (self.mean_vol.as_mut(), state.mean_vol.as_ref()) {
+            retile(dst, src);
+        }
+        if let (Some(dst), Some(src)) = (self.precision_vol.as_mut(), state.precision_vol.as_ref())
+        {
+            retile(dst, src);
+        }
+    }
+}
+
+/// Reusable scratch memory for the batched learning step: one per-layer
+/// batched state per parallel chunk, owned by the caller and handed to
+/// [`crate::vectorised::network::DeepNet::batch_update_with_workspace`] on
+/// every call. Buffers whose shapes match the previous call are re-armed in
+/// place instead of reallocated, so repeated same-shape calls allocate
+/// nothing; a call with a different batch size, chunk count, or architecture
+/// rebuilds only the chunks that no longer fit.
+#[derive(Default)]
+pub struct BatchWorkspace {
+    /// One entry per parallel chunk, each a per-layer batched state.
+    pub(crate) chunks: Vec<Vec<BatchedLayerState>>,
+}
+
+/// Make `chunk` host one sweep over `width` samples of the layers in
+/// `templates`: reuse matching buffers in place, rebuild otherwise.
+pub(crate) fn reset_chunk(
+    chunk: &mut Vec<BatchedLayerState>,
+    templates: &[&LayerState],
+    width: usize,
+) {
+    let reusable = chunk.len() == templates.len()
+        && chunk
+            .iter()
+            .zip(templates)
+            .all(|(buffer, template)| buffer.matches_template(template, width));
+    if reusable {
+        for (buffer, template) in chunk.iter_mut().zip(templates) {
+            buffer.reset_from_template(template, width);
+        }
+    } else {
+        *chunk = templates
+            .iter()
+            .map(|template| BatchedLayerState::from_template(template, width))
+            .collect();
+    }
 }
 
 /// Coupled parent activations for the whole batch: `g(μ̂_parent)` with a
