@@ -877,15 +877,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    has_volatility_parent :</span>
 <span class="sd">        If True (default), the layer has an implied internal volatility parent</span>
 <span class="sd">        whose state (``mean_vol``, ``precision_vol``) is predicted and updated.</span>
-<span class="sd">        If False, the volatility level is frozen and only ``tonic_volatility``</span>
-<span class="sd">        drives the expected precision for the value level.</span>
+<span class="sd">        If False, the value level has no volatility source at all, so it does not</span>
+<span class="sd">        undergo a Gaussian random walk: the diffusion term is dropped and the</span>
+<span class="sd">        conditional predicted precision equals the prior precision.</span>
 <span class="sd">    is_input_layer :</span>
 <span class="sd">        If True, the layer is treated as an observed input/leaf: it does not</span>
-<span class="sd">        undergo a Gaussian random walk between observations. The</span>
-<span class="sd">        ``tonic_volatility`` contribution to the value-level expected precision</span>
-<span class="sd">        is skipped, ``expected_precision`` and ``conditional_expected_precision``</span>
-<span class="sd">        are both set to the prior precision, and the effective precision is</span>
-<span class="sd">        zeroed — mirroring the continuous-node treatment in</span>
+<span class="sd">        undergo a Gaussian random walk between observations. The volatility</span>
+<span class="sd">        contribution to the value-level expected precision is skipped,</span>
+<span class="sd">        ``expected_precision`` and ``conditional_expected_precision`` are both set</span>
+<span class="sd">        to the prior precision, and the effective precision is zeroed — mirroring</span>
+<span class="sd">        the continuous-node treatment in</span>
 <span class="sd">        :func:`pyhgf.updates.prediction.continuous.continuous_node_prediction`.</span>
 
 <span class="sd">    Returns</span>
@@ -902,8 +903,8 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="c1"># Expected mean for volatility level</span>
-        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">autoconnection_strength_vol</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
+        <span class="c1"># Expected mean for volatility level (autoconnection strength fixed at 1).</span>
+        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
 
         <span class="c1"># Predicted volatility for volatility level</span>
         <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">)</span>
@@ -948,24 +949,23 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">expected_mean_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="n">expected_precision_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="c1"># Total volatility includes contribution from internal volatility level</span>
-        <span class="c1"># plus the closed-form moment-generating-function correction</span>
-        <span class="c1"># κ² / (2 · π̂_vol) that arises from marginalising over the volatility</span>
-        <span class="c1"># level&#39;s Gaussian rather than collapsing it to a point estimate.</span>
-        <span class="n">total_volatility</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
-            <span class="o">+</span> <span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">expected_mean_vol</span>
-            <span class="o">+</span> <span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">expected_precision_vol</span><span class="p">)</span>
+        <span class="c1"># Total volatility is the internal volatility level&#39;s expected mean plus</span>
+        <span class="c1"># the closed-form moment-generating-function correction 1 / (2 · π̂_vol)</span>
+        <span class="c1"># that arises from marginalising over the volatility level&#39;s Gaussian</span>
+        <span class="c1"># rather than collapsing it to a point estimate. The volatility coupling</span>
+        <span class="c1"># is fixed at 1, and the value level carries no tonic volatility of its own.</span>
+        <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">expected_precision_vol</span><span class="p">)</span>
+        <span class="c1"># Predicted volatility for value level</span>
+        <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
+        <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Only tonic volatility — no mean_vol contribution</span>
-        <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility</span>
-
-    <span class="c1"># Predicted volatility for value level</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
-    <span class="p">)</span>
+        <span class="c1"># No volatility parent and no tonic volatility: the value level has no</span>
+        <span class="c1"># volatility source, so it does not undergo a Gaussian random walk between</span>
+        <span class="c1"># observations. Dropping the diffusion term leaves the conditional</span>
+        <span class="c1"># predicted precision equal to the prior precision (see below).</span>
+        <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
 
     <span class="c1"># Laplace value-coupling correction. Linearising g at μ̂_b and marginalising</span>
     <span class="c1"># over each parent&#39;s Gaussian yields, per child node i, the additional variance</span>

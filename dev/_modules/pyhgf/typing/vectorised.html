@@ -928,36 +928,21 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    tonic_volatility :</span>
-<span class="sd">        The tonic (baseline) volatility of the value level.</span>
 <span class="sd">    tonic_volatility_vol :</span>
 <span class="sd">        The tonic (baseline) volatility of the volatility level.</span>
-<span class="sd">    volatility_coupling :</span>
-<span class="sd">        The volatility-coupling strength between the value and volatility levels.</span>
-<span class="sd">    autoconnection_strength_vol :</span>
-<span class="sd">        The autoconnection (self-coupling) strength of the volatility level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">tonic_volatility</span><span class="p">:</span> <span class="n">Array</span>
     <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">volatility_coupling</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">autoconnection_strength_vol</span><span class="p">:</span> <span class="n">Array</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
         <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
-        <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">autoconnection_strength_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerParams&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise layer params with defaults.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="p">),</span>
             <span class="n">tonic_volatility_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="p">),</span>
-            <span class="n">volatility_coupling</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">volatility_coupling</span><span class="p">),</span>
-            <span class="n">autoconnection_strength_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">autoconnection_strength_vol</span><span class="p">),</span>
         <span class="p">)</span></div>
 
 

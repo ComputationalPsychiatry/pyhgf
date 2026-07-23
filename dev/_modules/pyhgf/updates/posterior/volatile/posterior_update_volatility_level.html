@@ -839,13 +839,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">volatility_pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;volatility_prediction_error&quot;</span><span class="p">]</span>
     <span class="c1"># Use the VALUE level&#39;s effective precision (not the volatility level&#39;s)</span>
     <span class="n">effective_precision_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;effective_precision&quot;</span><span class="p">]</span>
-    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Update precision using volatility coupling formula</span>
+    <span class="c1"># Update precision using the volatility coupling formula (coupling fixed at 1).</span>
     <span class="n">posterior_precision</span> <span class="o">+=</span> <span class="p">(</span>
-        <span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision_value</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="o">+</span> <span class="p">((</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision_value</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">volatility_pe</span>
-        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">effective_precision_value</span> <span class="o">*</span> <span class="n">volatility_pe</span>
+        <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">effective_precision_value</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">effective_precision_value</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">volatility_pe</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">effective_precision_value</span> <span class="o">*</span> <span class="n">volatility_pe</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">posterior_precision</span></div>
@@ -881,16 +880,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
     <span class="n">mean_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean_vol&quot;</span><span class="p">]</span>  <span class="c1"># volatility-level posterior mean</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span>
-        <span class="s2">&quot;tonic_volatility&quot;</span>
-    <span class="p">]</span>  <span class="c1"># value-level tonic vol.</span>
-    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
     <span class="c1"># value-level posterior variance at the previous step (σ = 1 / π)</span>
     <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;current_variance&quot;</span><span class="p">]</span>
 
-    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-        <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mean_vol</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
-    <span class="p">)</span>
+    <span class="c1"># Volatility coupling is fixed at 1.</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mean_vol</span><span class="p">)</span>
     <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">previous_variance</span> <span class="o">+</span> <span class="n">predicted_volatility</span><span class="p">)</span>
     <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
     <span class="n">volatility_error_weight</span> <span class="o">=</span> <span class="p">(</span>
@@ -904,7 +898,6 @@ window.runMermaid = runMermaid;</script>
     <span class="n">increment</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
         <span class="mf">0.0</span><span class="p">,</span>
         <span class="mf">0.5</span>
-        <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
         <span class="o">*</span> <span class="n">effective_precision</span>
         <span class="o">*</span> <span class="p">(</span><span class="n">effective_precision</span> <span class="o">+</span> <span class="n">volatility_error_weight</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span><span class="p">),</span>
     <span class="p">)</span>
@@ -945,12 +938,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">volatility_pe</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;volatility_prediction_error&quot;</span><span class="p">]</span>
     <span class="c1"># Use the VALUE level&#39;s effective precision (not the volatility level&#39;s)</span>
     <span class="n">effective_precision_value</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;effective_precision&quot;</span><span class="p">]</span>
-    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Update mean using volatility coupling formula</span>
-    <span class="n">precision_weighted_pe</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">effective_precision_value</span> <span class="o">*</span> <span class="n">volatility_pe</span>
-    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">node_precision</span><span class="p">)</span>
+    <span class="c1"># Update mean using the volatility coupling formula (coupling fixed at 1).</span>
+    <span class="n">precision_weighted_pe</span> <span class="o">=</span> <span class="p">(</span><span class="n">effective_precision_value</span> <span class="o">*</span> <span class="n">volatility_pe</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">node_precision</span>
+    <span class="p">)</span>
 
     <span class="n">posterior_mean</span> <span class="o">+=</span> <span class="n">precision_weighted_pe</span>
 

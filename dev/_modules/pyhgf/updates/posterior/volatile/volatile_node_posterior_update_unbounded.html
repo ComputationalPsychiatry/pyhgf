@@ -844,7 +844,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    dict</span>
 <span class="sd">        Updated attributes with ``precision_vol`` and ``mean_vol`` set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">volatility_coupling</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
 
     <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
@@ -856,7 +855,6 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span>
     <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
 
     <span class="c1"># All quantities that would otherwise pass through ``exp`` of a potentially</span>
     <span class="c1"># large number are kept in log-space. Materialising ``v = exp(γ)`` is correct</span>
@@ -872,8 +870,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">log_time_step</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
     <span class="n">log_previous_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">previous_variance</span><span class="p">)</span>
 
-    <span class="c1"># Canonical exponent at the prediction: γ = log(time_step) + volatility_coupling*expected_mean_vol + tonic_volatility</span>
-    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="c1"># Canonical exponent at the prediction (coupling fixed at 1):</span>
+    <span class="c1"># γ = log(time_step) + expected_mean_vol</span>
+    <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">expected_mean_vol</span>
 
     <span class="c1"># w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α).</span>
     <span class="n">w_jm1</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">gamma_c</span> <span class="o">-</span> <span class="n">log_previous_variance</span><span class="p">)</span>
@@ -886,13 +885,13 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Expansion 1: quadratic at the prediction (prior mean)</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">pi1</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w_jm1</span><span class="p">)</span>
-    <span class="n">mu1</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi1</span><span class="p">))</span> <span class="o">*</span> <span class="n">da_jm1</span>
+    <span class="n">pi1</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">w_jm1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w_jm1</span><span class="p">)</span>
+    <span class="n">mu1</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="p">(</span><span class="n">w_jm1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi1</span><span class="p">))</span> <span class="o">*</span> <span class="n">da_jm1</span>
 
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Expansion 2: quadratic at the Lambert W_0 approximate mode</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">pihat_y</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">/</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">pihat_y</span> <span class="o">=</span> <span class="n">expected_precision_vol</span>
 
     <span class="c1"># Compute W_arg in log-space and cap at log(float_max) — matches MATLAB&#39;s</span>
     <span class="c1"># &quot;W_arg = exp(min(log_W_arg, log(realmax)))&quot;.</span>
@@ -901,34 +900,29 @@ window.runMermaid = runMermaid;</script>
     <span class="n">W_arg</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">log_W_arg</span><span class="p">,</span> <span class="n">log_float_max</span><span class="p">))</span>
     <span class="n">v_W</span> <span class="o">=</span> <span class="n">lambert_w0</span><span class="p">(</span><span class="n">W_arg</span><span class="p">)</span>
     <span class="n">y_star</span> <span class="o">=</span> <span class="n">gamma_c</span> <span class="o">+</span> <span class="n">v_W</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="n">pihat_y</span>
-    <span class="n">x_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_star</span> <span class="o">-</span> <span class="n">log_time_step</span> <span class="o">-</span> <span class="n">tonic_volatility</span><span class="p">)</span> <span class="o">/</span> <span class="n">volatility_coupling</span>
+    <span class="n">x_star</span> <span class="o">=</span> <span class="n">y_star</span> <span class="o">-</span> <span class="n">log_time_step</span>
 
     <span class="c1"># Log-space s2/w2/da2 — equivalent to the direct</span>
-    <span class="c1">#   s2 = time_step * exp(volatility_coupling*x_star + tonic_volatility); w2 = 1/(1 + previous_variance/s2);</span>
+    <span class="c1">#   s2 = time_step * exp(x_star); w2 = 1/(1 + previous_variance/s2);</span>
     <span class="c1">#   da2 = be_aux/(previous_variance + s2) - 1</span>
     <span class="c1"># but without materialising ``s2 = inf`` (which injects 0·∞ NaN gradients).</span>
-    <span class="n">log_s2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">x_star</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_s2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">x_star</span>
     <span class="n">log_denom_s</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span>
         <span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_s2</span>
     <span class="p">)</span>  <span class="c1"># = log(previous_variance + s2)</span>
     <span class="n">w2</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">log_s2</span> <span class="o">-</span> <span class="n">log_previous_variance</span><span class="p">)</span>
     <span class="n">da2</span> <span class="o">=</span> <span class="n">be_aux</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_denom_s</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
 
-    <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span>
-        <span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span>
-    <span class="p">)</span>
+    <span class="n">pi2_full</span> <span class="o">=</span> <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="n">w2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">da2</span><span class="p">)</span>
     <span class="c1"># Guard against negative precision (Matlab fallback: use w2*(1-w2) form)</span>
     <span class="n">pi2_safe</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">pi2_full</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w2</span><span class="p">),</span>
+        <span class="n">expected_precision_vol</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">w2</span><span class="p">),</span>
         <span class="n">pi2_full</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">mu2_safe</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">x_star</span>
-        <span class="o">+</span> <span class="p">(</span>
-            <span class="mf">0.5</span> <span class="o">*</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">da2</span>
-            <span class="o">-</span> <span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_star</span> <span class="o">-</span> <span class="n">expected_mean_vol</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">da2</span> <span class="o">-</span> <span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_star</span> <span class="o">-</span> <span class="n">expected_mean_vol</span><span class="p">))</span>
         <span class="o">/</span> <span class="n">pi2_safe</span>
     <span class="p">)</span>
 
@@ -948,11 +942,11 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Variational energy-based softmax blend (log-space form, gradient-safe).</span>
-    <span class="c1"># The direct ``ey = time_step * exp(volatility_coupling*mu + tonic_volatility)`` materialises ``inf`` for large</span>
-    <span class="c1"># ``volatility_coupling*mu + tonic_volatility`` and injects 0·∞ NaNs in the backward pass; ``logaddexp`` and</span>
-    <span class="c1"># ``exp(-positive)`` stay bounded both forward and backward.</span>
+    <span class="c1"># The direct ``ey = time_step * exp(mu)`` materialises ``inf`` for large ``mu`` and</span>
+    <span class="c1"># injects 0·∞ NaNs in the backward pass; ``logaddexp`` and ``exp(-positive)`` stay</span>
+    <span class="c1"># bounded both forward and backward.</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">log_ey1</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mu1</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_ey1</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">mu1</span>
     <span class="n">log_denom_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span>
         <span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_ey1</span>
     <span class="p">)</span>  <span class="c1"># = log(previous_variance + ey1)</span>
@@ -962,7 +956,7 @@ window.runMermaid = runMermaid;</script>
         <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">expected_precision_vol</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu1</span> <span class="o">-</span> <span class="n">expected_mean_vol</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span>
 
-    <span class="n">log_ey2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mu2</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
+    <span class="n">log_ey2</span> <span class="o">=</span> <span class="n">log_time_step</span> <span class="o">+</span> <span class="n">mu2</span>
     <span class="n">log_denom_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">log_previous_variance</span><span class="p">,</span> <span class="n">log_ey2</span><span class="p">)</span>
     <span class="n">I2</span> <span class="o">=</span> <span class="p">(</span>
         <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_denom_2</span>

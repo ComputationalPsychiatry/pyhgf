@@ -857,14 +857,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        :func:`resolve_coupling_fn`.</span>
 <span class="sd">    volatility_parent : bool, default True</span>
 <span class="sd">        Whether the layer has an internal volatility parent.</span>
-<span class="sd">    tonic_volatility : Optional[float], default None</span>
-<span class="sd">        Per-layer override for tonic_volatility parameter.</span>
 <span class="sd">    tonic_volatility_vol : Optional[float], default None</span>
 <span class="sd">        Per-layer override for tonic_volatility_vol parameter.</span>
-<span class="sd">    volatility_coupling : Optional[float], default None</span>
-<span class="sd">        Per-layer override for volatility_coupling parameter.</span>
-<span class="sd">    autoconnection_strength_vol : Optional[float], default None</span>
-<span class="sd">        Per-layer override for autoconnection_strength_vol parameter.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -878,10 +872,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">tonic_volatility</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">volatility_coupling</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">autoconnection_strength_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a JSON-serializable dictionary.</span>

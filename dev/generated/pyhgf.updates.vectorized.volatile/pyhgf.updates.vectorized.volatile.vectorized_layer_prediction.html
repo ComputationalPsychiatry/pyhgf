@@ -775,14 +775,15 @@ its predicted precision is infinite, so it contributes nothing to the
 value-coupling variance.</p></li>
 <li><p><strong>has_volatility_parent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True (default), the layer has an implied internal volatility parent
 whose state (<code class="docutils literal notranslate"><span class="pre">mean_vol</span></code>, <code class="docutils literal notranslate"><span class="pre">precision_vol</span></code>) is predicted and updated.
-If False, the volatility level is frozen and only <code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code>
-drives the expected precision for the value level.</p></li>
+If False, the value level has no volatility source at all, so it does not
+undergo a Gaussian random walk: the diffusion term is dropped and the
+conditional predicted precision equals the prior precision.</p></li>
 <li><p><strong>is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the layer is treated as an observed input/leaf: it does not
-undergo a Gaussian random walk between observations. The
-<code class="docutils literal notranslate"><span class="pre">tonic_volatility</span></code> contribution to the value-level expected precision
-is skipped, <code class="docutils literal notranslate"><span class="pre">expected_precision</span></code> and <code class="docutils literal notranslate"><span class="pre">conditional_expected_precision</span></code>
-are both set to the prior precision, and the effective precision is
-zeroed — mirroring the continuous-node treatment in
+undergo a Gaussian random walk between observations. The volatility
+contribution to the value-level expected precision is skipped,
+<code class="docutils literal notranslate"><span class="pre">expected_precision</span></code> and <code class="docutils literal notranslate"><span class="pre">conditional_expected_precision</span></code> are both set
+to the prior precision, and the effective precision is zeroed — mirroring
+the continuous-node treatment in
 <a class="reference internal" href="../pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#pyhgf.updates.prediction.continuous.continuous_node_prediction" title="pyhgf.updates.prediction.continuous.continuous_node_prediction"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.updates.prediction.continuous.continuous_node_prediction()</span></code></a>.</p></li>
 </ul>
 </dd>

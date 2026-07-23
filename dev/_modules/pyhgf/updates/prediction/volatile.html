@@ -974,23 +974,17 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Get value level parameters</span>
     <span class="n">precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
 
     <span class="c1"># Get volatility level&#39;s expected mean and precision (already computed)</span>
     <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span>
     <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision_vol&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Get internal coupling strength</span>
-    <span class="n">volatility_coupling_internal</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
-
-    <span class="c1"># Total volatility = tonic + linear contribution of the implicit volatility</span>
-    <span class="c1"># parent + closed-form moment-generating-function correction κ²/(2 π̂_vol)</span>
-    <span class="c1"># that arises from marginalising over the volatility parent&#39;s Gaussian.</span>
-    <span class="n">total_volatility</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">tonic_volatility</span>
-        <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling_internal</span> <span class="o">*</span> <span class="n">expected_mean_vol</span><span class="p">)</span>
-        <span class="o">+</span> <span class="p">(</span><span class="n">volatility_coupling_internal</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">expected_precision_vol</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="c1"># Total volatility = implicit volatility parent&#39;s expected mean + closed-form</span>
+    <span class="c1"># moment-generating-function correction 1/(2 π̂_vol) that arises from</span>
+    <span class="c1"># marginalising over the volatility parent&#39;s Gaussian. The volatility coupling</span>
+    <span class="c1"># is fixed at 1, and the value level carries no tonic volatility of its own;</span>
+    <span class="c1"># its diffusion is driven entirely by the volatility level.</span>
+    <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">expected_precision_vol</span><span class="p">)</span>
 
     <span class="c1"># Compute predicted volatility</span>
     <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
@@ -1101,7 +1095,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Input/leaf override: an observed volatile node has no value children, so it</span>
     <span class="c1"># does not undergo a Gaussian random walk between observations. Skip the</span>
-    <span class="c1"># tonic-volatility contribution at the value level and use the prior precision</span>
+    <span class="c1"># volatility contribution at the value level and use the prior precision</span>
     <span class="c1"># directly, mirroring the continuous-node treatment in</span>
     <span class="c1"># :func:`continuous_node_prediction`.</span>
     <span class="k">if</span> <span class="p">(</span>
@@ -1164,13 +1158,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
 
     <span class="n">precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
     <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean_vol&quot;</span><span class="p">]</span>
-    <span class="n">volatility_coupling_internal</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_internal&quot;</span><span class="p">]</span>
 
-    <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">tonic_volatility</span> <span class="o">+</span> <span class="p">(</span>
-        <span class="n">volatility_coupling_internal</span> <span class="o">*</span> <span class="n">expected_mean_vol</span>
-    <span class="p">)</span>
+    <span class="c1"># Volatility coupling is fixed at 1.</span>
+    <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">expected_mean_vol</span>
 
     <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
     <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>

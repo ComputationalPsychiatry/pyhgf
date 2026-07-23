@@ -26,13 +26,10 @@
    .. autosummary::
    
       ~LayerConfig.add_constant_input
-      ~LayerConfig.autoconnection_strength_vol
       ~LayerConfig.coupling_fn
       ~LayerConfig.fully_connected
       ~LayerConfig.kind
-      ~LayerConfig.tonic_volatility
       ~LayerConfig.tonic_volatility_vol
-      ~LayerConfig.volatility_coupling
       ~LayerConfig.volatility_parent
       ~LayerConfig.size
    

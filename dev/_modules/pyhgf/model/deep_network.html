@@ -851,10 +851,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="c1"># Default per-layer parameter values (matching ``LayerParams.create``).</span>
 <span class="n">_LAYER_PARAM_DEFAULTS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;tonic_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
     <span class="s2">&quot;tonic_volatility_vol&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
-    <span class="s2">&quot;volatility_coupling&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="s2">&quot;autoconnection_strength_vol&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="c1"># Names of fields that can be overridden per layer (eqx.Modules expose dataclass fields).</span>
@@ -1065,16 +1062,8 @@ window.runMermaid = runMermaid;</script>
 
             <span class="c1"># Prepare per-layer parameter overrides</span>
             <span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;tonic_volatility_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility_vol</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">volatility_coupling</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;volatility_coupling&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">volatility_coupling</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">autoconnection_strength_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;autoconnection_strength_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">config</span><span class="o">.</span><span class="n">autoconnection_strength_vol</span>
-                <span class="p">)</span>
 
             <span class="c1"># Add the layer</span>
             <span class="n">net</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
@@ -1209,14 +1198,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        volatility_parent :</span>
 <span class="sd">            If True (default), this layer has an implied internal volatility parent:</span>
 <span class="sd">            mean_vol and precision_vol are predicted and updated each step. If False,</span>
-<span class="sd">            the volatility level is frozen and only ``tonic_volatility`` determines the</span>
-<span class="sd">            expected precision for the value level.</span>
+<span class="sd">            the value level has no volatility source and does not undergo a Gaussian</span>
+<span class="sd">            random walk (its conditional predicted precision equals the prior</span>
+<span class="sd">            precision).</span>
 <span class="sd">        **kwargs :</span>
 <span class="sd">            Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`</span>
 <span class="sd">            (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,</span>
 <span class="sd">            ``mean_vol``, ``precision_vol``, ...) or :class:`pyhgf.typing.LayerParams`</span>
-<span class="sd">            (``tonic_volatility``, ``tonic_volatility_vol``, ``volatility_coupling``,</span>
-<span class="sd">            ``autoconnection_strength_vol``).</span>
+<span class="sd">            (``tonic_volatility_vol``).</span>
 <span class="sd">            Each value is broadcast to the layer&#39;s ``size``. Unknown names raise</span>
 <span class="sd">            ``ValueError``. Defaults match ``LayerState.create`` and</span>
 <span class="sd">            ``LayerParams.create``.</span>
@@ -1331,7 +1320,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            function.</span>
 <span class="sd">        **kwargs :</span>
 <span class="sd">            Per-layer overrides forwarded to :meth:`add_layer` (any field of</span>
-<span class="sd">            ``LayerState`` or ``LayerParams``, e.g. ``tonic_volatility``,</span>
+<span class="sd">            ``LayerState`` or ``LayerParams``, e.g. ``tonic_volatility_vol``,</span>
 <span class="sd">            ``precision``).</span>
 
 <span class="sd">        Returns</span>

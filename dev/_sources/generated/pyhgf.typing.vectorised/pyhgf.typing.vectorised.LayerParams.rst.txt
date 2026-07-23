@@ -24,9 +24,6 @@
 
    .. autosummary::
    
-      ~LayerParams.tonic_volatility
       ~LayerParams.tonic_volatility_vol
-      ~LayerParams.volatility_coupling
-      ~LayerParams.autoconnection_strength_vol
    
    

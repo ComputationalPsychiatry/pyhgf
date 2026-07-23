@@ -1060,7 +1060,6 @@ window.runMermaid = runMermaid;</script>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction_error</span><span class="p">(</span>
             <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
             <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">layer</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
@@ -1098,7 +1097,6 @@ window.runMermaid = runMermaid;</script>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction_error</span><span class="p">(</span>
             <span class="n">layer</span><span class="o">=</span><span class="n">new_state</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
             <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
@@ -1161,7 +1159,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">child_carry_state</span><span class="p">,</span> <span class="n">slice_data</span><span class="p">):</span>
-        <span class="n">slice_state</span><span class="p">,</span> <span class="n">slice_params</span><span class="p">,</span> <span class="n">slice_weights</span> <span class="o">=</span> <span class="n">slice_data</span>
+        <span class="n">slice_state</span><span class="p">,</span> <span class="n">_slice_params</span><span class="p">,</span> <span class="n">slice_weights</span> <span class="o">=</span> <span class="n">slice_data</span>
         <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_posterior_update</span><span class="p">(</span>
             <span class="n">layer</span><span class="o">=</span><span class="n">slice_state</span><span class="p">,</span>
             <span class="n">child</span><span class="o">=</span><span class="n">child_carry_state</span><span class="p">,</span>
@@ -1173,7 +1171,6 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_prediction_error</span><span class="p">(</span>
             <span class="n">layer</span><span class="o">=</span><span class="n">new_state</span><span class="p">,</span>
-            <span class="n">params</span><span class="o">=</span><span class="n">slice_params</span><span class="p">,</span>
             <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
