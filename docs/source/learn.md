@@ -16,6 +16,7 @@ notebooks/0.6-Deep_networks_implementation.md
 notebooks/0.7-Deep_learning.ipynb
 notebooks/0.8-Transformers.ipynb
 notebooks/0.9-Rust_backend.ipynb
+notebooks/0.10-Input_precision.ipynb
 ```
 
 ```{toctree}
