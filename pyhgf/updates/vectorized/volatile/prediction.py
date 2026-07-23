@@ -73,15 +73,16 @@ def vectorized_layer_prediction(
     has_volatility_parent :
         If True (default), the layer has an implied internal volatility parent
         whose state (``mean_vol``, ``precision_vol``) is predicted and updated.
-        If False, the volatility level is frozen and only ``tonic_volatility``
-        drives the expected precision for the value level.
+        If False, the value level has no volatility source at all, so it does not
+        undergo a Gaussian random walk: the diffusion term is dropped and the
+        conditional predicted precision equals the prior precision.
     is_input_layer :
         If True, the layer is treated as an observed input/leaf: it does not
-        undergo a Gaussian random walk between observations. The
-        ``tonic_volatility`` contribution to the value-level expected precision
-        is skipped, ``expected_precision`` and ``conditional_expected_precision``
-        are both set to the prior precision, and the effective precision is
-        zeroed — mirroring the continuous-node treatment in
+        undergo a Gaussian random walk between observations. The volatility
+        contribution to the value-level expected precision is skipped,
+        ``expected_precision`` and ``conditional_expected_precision`` are both set
+        to the prior precision, and the effective precision is zeroed — mirroring
+        the continuous-node treatment in
         :func:`pyhgf.updates.prediction.continuous.continuous_node_prediction`.
 
     Returns
@@ -98,8 +99,8 @@ def vectorized_layer_prediction(
     if has_volatility_parent:
         assert child_state.mean_vol is not None
         assert child_state.precision_vol is not None
-        # Expected mean for volatility level
-        expected_mean_vol = params.autoconnection_strength_vol * child_state.mean_vol
+        # Expected mean for volatility level (autoconnection strength fixed at 1).
+        expected_mean_vol = child_state.mean_vol
 
         # Predicted volatility for volatility level
         predicted_volatility_vol = time_step * jnp.exp(params.tonic_volatility_vol)
@@ -144,24 +145,23 @@ def vectorized_layer_prediction(
     if has_volatility_parent:
         assert expected_mean_vol is not None
         assert expected_precision_vol is not None
-        # Total volatility includes contribution from internal volatility level
-        # plus the closed-form moment-generating-function correction
-        # κ² / (2 · π̂_vol) that arises from marginalising over the volatility
-        # level's Gaussian rather than collapsing it to a point estimate.
-        total_volatility = (
-            params.tonic_volatility
-            + params.volatility_coupling * expected_mean_vol
-            + (params.volatility_coupling**2) / (2.0 * expected_precision_vol)
+        # Total volatility is the internal volatility level's expected mean plus
+        # the closed-form moment-generating-function correction 1 / (2 · π̂_vol)
+        # that arises from marginalising over the volatility level's Gaussian
+        # rather than collapsing it to a point estimate. The volatility coupling
+        # is fixed at 1, and the value level carries no tonic volatility of its own.
+        total_volatility = expected_mean_vol + 1.0 / (2.0 * expected_precision_vol)
+        # Predicted volatility for value level
+        predicted_volatility = time_step * jnp.exp(total_volatility)
+        predicted_volatility = jnp.where(
+            predicted_volatility > 1e-128, predicted_volatility, jnp.nan
         )
     else:
-        # Only tonic volatility — no mean_vol contribution
-        total_volatility = params.tonic_volatility
-
-    # Predicted volatility for value level
-    predicted_volatility = time_step * jnp.exp(total_volatility)
-    predicted_volatility = jnp.where(
-        predicted_volatility > 1e-128, predicted_volatility, jnp.nan
-    )
+        # No volatility parent and no tonic volatility: the value level has no
+        # volatility source, so it does not undergo a Gaussian random walk between
+        # observations. Dropping the diffusion term leaves the conditional
+        # predicted precision equal to the prior precision (see below).
+        predicted_volatility = jnp.zeros_like(child_state.precision)
 
     # Laplace value-coupling correction. Linearising g at μ̂_b and marginalising
     # over each parent's Gaussian yields, per child node i, the additional variance

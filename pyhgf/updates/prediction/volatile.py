@@ -164,23 +164,17 @@ def predict_precision_value_level(
 
     # Get value level parameters
     precision = attributes[node_idx]["precision"]
-    tonic_volatility = attributes[node_idx]["tonic_volatility"]
 
     # Get volatility level's expected mean and precision (already computed)
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
     expected_precision_vol = attributes[node_idx]["expected_precision_vol"]
 
-    # Get internal coupling strength
-    volatility_coupling_internal = attributes[node_idx]["volatility_coupling_internal"]
-
-    # Total volatility = tonic + linear contribution of the implicit volatility
-    # parent + closed-form moment-generating-function correction κ²/(2 π̂_vol)
-    # that arises from marginalising over the volatility parent's Gaussian.
-    total_volatility = (
-        tonic_volatility
-        + (volatility_coupling_internal * expected_mean_vol)
-        + (volatility_coupling_internal**2) / (2.0 * expected_precision_vol)
-    )
+    # Total volatility = implicit volatility parent's expected mean + closed-form
+    # moment-generating-function correction 1/(2 π̂_vol) that arises from
+    # marginalising over the volatility parent's Gaussian. The volatility coupling
+    # is fixed at 1, and the value level carries no tonic volatility of its own;
+    # its diffusion is driven entirely by the volatility level.
+    total_volatility = expected_mean_vol + 1.0 / (2.0 * expected_precision_vol)
 
     # Compute predicted volatility
     predicted_volatility = time_step * jnp.exp(total_volatility)
@@ -288,7 +282,7 @@ def volatile_node_prediction(
 
     # Input/leaf override: an observed volatile node has no value children, so it
     # does not undergo a Gaussian random walk between observations. Skip the
-    # tonic-volatility contribution at the value level and use the prior precision
+    # volatility contribution at the value level and use the prior precision
     # directly, mirroring the continuous-node treatment in
     # :func:`continuous_node_prediction`.
     if (
@@ -348,13 +342,10 @@ def predict_precision_value_level_mean_field(
     time_step = attributes[-1]["time_step"]
 
     precision = attributes[node_idx]["precision"]
-    tonic_volatility = attributes[node_idx]["tonic_volatility"]
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
-    volatility_coupling_internal = attributes[node_idx]["volatility_coupling_internal"]
 
-    total_volatility = tonic_volatility + (
-        volatility_coupling_internal * expected_mean_vol
-    )
+    # Volatility coupling is fixed at 1.
+    total_volatility = expected_mean_vol
 
     predicted_volatility = time_step * jnp.exp(total_volatility)
     predicted_volatility = jnp.where(

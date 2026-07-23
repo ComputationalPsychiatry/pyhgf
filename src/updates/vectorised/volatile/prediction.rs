@@ -40,7 +40,8 @@ pub fn layer_prediction(
             let mean_vol = child.mean_vol.as_ref().expect("volatility mean");
             let precision_vol = child.precision_vol.as_ref().expect("volatility precision");
 
-            let expected_mean_vol = &child_params.autoconnection_strength_vol * mean_vol;
+            // Autoconnection strength is fixed at 1.
+            let expected_mean_vol = mean_vol.clone();
             let mut epv = Array1::<f64>::zeros(n);
             let mut effv = Array1::<f64>::zeros(n);
             ndarray::Zip::from(&mut epv)
@@ -79,22 +80,21 @@ pub fn layer_prediction(
     // Mean prediction: W @ g(parent means).
     child.expected_mean = weights.dot(&coupled);
 
-    // Predicted volatility Ω = t·exp(ω + κ·μ_vol + κ²/(2·π̂_vol)), fused.
+    // Predicted volatility Ω = t·exp(μ_vol + 1/(2·π̂_vol)), fused. The volatility
+    // coupling is fixed at 1 and the value level carries no tonic volatility of
+    // its own.
     let predicted_vol = if has_volatility_parent {
-        let kappa = &child_params.volatility_coupling;
         let emv = expected_mean_vol.as_ref().unwrap();
         let epv = expected_precision_vol.as_ref().unwrap();
-        ndarray::Zip::from(&child_params.tonic_volatility)
-            .and(kappa)
-            .and(emv)
+        ndarray::Zip::from(emv)
             .and(epv)
-            .map_collect(|&t, &k, &m, &pv| {
-                guarded_volatility(t + k * m + (k * k) / (pv * 2.0), time_step)
-            })
+            .map_collect(|&m, &pv| guarded_volatility(m + 1.0 / (pv * 2.0), time_step))
     } else {
-        child_params
-            .tonic_volatility
-            .mapv(|t| guarded_volatility(t, time_step))
+        // No volatility parent and no tonic volatility: the value level has no
+        // volatility source, so it does not undergo a Gaussian random walk. The
+        // diffusion term is zero, leaving the conditional predicted precision
+        // equal to the prior precision.
+        Array1::<f64>::zeros(n)
     };
 
     // Laplace value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).

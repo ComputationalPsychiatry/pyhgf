@@ -132,20 +132,20 @@ fn batched_volatile_prediction(
 
         let mut emv = Matrix::zeros((n, n_samples));
         let mut epv = Matrix::zeros((n, n_samples));
+        // Autoconnection strength is fixed at 1.
         Zip::from(emv.rows_mut())
             .and(epv.rows_mut())
             .and(mean_vol.rows())
             .and(precision_vol.rows())
-            .and(&params.autoconnection_strength_vol)
             .and(&params.tonic_volatility_vol)
-            .for_each(|mut em_row, mut ep_row, mv, pv, &a, &tvv| {
+            .for_each(|mut em_row, mut ep_row, mv, pv, &tvv| {
                 let pvv = guarded_volatility(tvv, time_step);
                 Zip::from(&mut em_row)
                     .and(&mut ep_row)
                     .and(&mv)
                     .and(&pv)
                     .for_each(|em, ep, &m, &pv_prec| {
-                        *em = a * m;
+                        *em = m;
                         *ep = 1.0 / (1.0 / pv_prec + pvv);
                     });
             });
@@ -201,11 +201,11 @@ fn batched_volatile_prediction(
         Zip::from(predicted_vol.rows_mut())
             .and(emv.rows())
             .and(epv.rows())
-            .and(&params.tonic_volatility)
-            .and(&params.volatility_coupling)
-            .for_each(|mut out, em, ep, &t, &k| {
+            .for_each(|mut out, em, ep| {
+                // Volatility coupling is fixed at 1 and the value level carries no
+                // tonic volatility of its own.
                 Zip::from(&mut out).and(&em).and(&ep).for_each(|o, &m, &pvv| {
-                    *o = guarded_volatility(t + k * m + (k * k) / (pvv * 2.0), time_step);
+                    *o = guarded_volatility(m + 1.0 / (pvv * 2.0), time_step);
                 });
             });
         Zip::from(&mut child.conditional_expected_precision)
@@ -216,11 +216,11 @@ fn batched_volatile_prediction(
             .and(&value_coupling_variance)
             .for_each(|c, e, ef, &pr, &pv, &v| precision_triple(c, e, ef, pr, pv, v));
     } else {
-        // Without a volatility level Ω is per node, not per sample: no tiled
-        // matrix, one row scalar each.
-        let per_node = params
-            .tonic_volatility
-            .mapv(|t| guarded_volatility(t, time_step));
+        // No volatility parent and no tonic volatility: the value level has no
+        // volatility source, so it does not undergo a Gaussian random walk. Ω is
+        // zero per node, leaving the conditional predicted precision equal to the
+        // prior precision.
+        let per_node = ndarray::Array1::<f64>::zeros(n);
         Zip::from(child.conditional_expected_precision.rows_mut())
             .and(child.expected_precision.rows_mut())
             .and(child.effective_precision.rows_mut())
@@ -334,7 +334,6 @@ fn batched_prediction_error(
     // per sample), so the node rows run in parallel; every row's samples are
     // contiguous in the row-major layout.
     let (n, n_samples) = layer_state.mean.dim();
-    let params = &layer.params;
     let emv = layer_state.expected_mean_vol.as_ref().expect("volatility level");
     let epv = layer_state
         .expected_precision_vol
@@ -354,8 +353,6 @@ fn batched_prediction_error(
         .zip(new_mean_vol.outer_iter_mut().into_par_iter())
         .enumerate()
         .for_each(|(i, (mut pv_row, mut mv_row))| {
-            let k = params.volatility_coupling[i];
-            let t = params.tonic_volatility[i];
             for j in 0..n_samples {
                 let dpe = volatility_pe_node(
                     expected_precision[[i, j]],
@@ -365,7 +362,6 @@ fn batched_prediction_error(
                 );
                 let (pp, m) = match volatility_updates {
                     VolatilityUpdate::Standard => standard_vol_node(
-                        k,
                         effective[[i, j]],
                         dpe,
                         epv[[i, j]],
@@ -373,8 +369,6 @@ fn batched_prediction_error(
                         max_posterior_precision,
                     ),
                     VolatilityUpdate::EHgf => ehgf_vol_node(
-                        k,
-                        t,
                         emv[[i, j]],
                         epv[[i, j]],
                         effective[[i, j]],
@@ -387,8 +381,6 @@ fn batched_prediction_error(
                         max_posterior_precision,
                     ),
                     VolatilityUpdate::Unbounded => unbounded_vol_node(
-                        k,
-                        t,
                         emv[[i, j]],
                         epv[[i, j]],
                         conditional[[i, j]],

@@ -108,8 +108,6 @@ pub struct NodeState {
     pub expected_precision_vol: f64,
     pub tonic_volatility_vol: f64,
     pub tonic_drift_vol: f64,
-    pub autoconnection_strength_vol: f64,
-    pub volatility_coupling_internal: f64,
     pub effective_precision_vol: f64,
     // EF-state
     pub nus: f64,
@@ -139,8 +137,6 @@ impl Default for NodeState {
             expected_precision_vol: 1.0,
             tonic_volatility_vol: -4.0,
             tonic_drift_vol: 0.0,
-            autoconnection_strength_vol: 1.0,
-            volatility_coupling_internal: 1.0,
             effective_precision_vol: 0.0,
             nus: 0.0,
             lr: f64::NAN,
@@ -202,8 +198,6 @@ pub struct NodeTrajectory {
     pub expected_precision_vol: Vec<f64>,
     pub tonic_volatility_vol: Vec<f64>,
     pub tonic_drift_vol: Vec<f64>,
-    pub autoconnection_strength_vol: Vec<f64>,
-    pub volatility_coupling_internal: Vec<f64>,
     pub effective_precision_vol: Vec<f64>,
     pub nus: Vec<f64>,
     pub lr: Vec<f64>,
@@ -236,8 +230,6 @@ impl NodeTrajectory {
             expected_precision_vol: Vec::with_capacity(n),
             tonic_volatility_vol: Vec::with_capacity(n),
             tonic_drift_vol: Vec::with_capacity(n),
-            autoconnection_strength_vol: Vec::with_capacity(n),
-            volatility_coupling_internal: Vec::with_capacity(n),
             effective_precision_vol: Vec::with_capacity(n),
             nus: Vec::with_capacity(n),
             lr: Vec::with_capacity(n),
@@ -269,10 +261,6 @@ impl NodeTrajectory {
         self.expected_precision_vol.push(s.expected_precision_vol);
         self.tonic_volatility_vol.push(s.tonic_volatility_vol);
         self.tonic_drift_vol.push(s.tonic_drift_vol);
-        self.autoconnection_strength_vol
-            .push(s.autoconnection_strength_vol);
-        self.volatility_coupling_internal
-            .push(s.volatility_coupling_internal);
         self.effective_precision_vol.push(s.effective_precision_vol);
         self.nus.push(s.nus);
         self.lr.push(s.lr);
@@ -364,7 +352,6 @@ fn trajectory_fields_for_type(node_type: &str) -> &'static [&'static str] {
             "expected_mean",
             "precision",
             "expected_precision",
-            "tonic_volatility",
             "tonic_drift",
             "autoconnection_strength",
             "current_variance",
@@ -377,8 +364,6 @@ fn trajectory_fields_for_type(node_type: &str) -> &'static [&'static str] {
             "expected_precision_vol",
             "tonic_volatility_vol",
             "tonic_drift_vol",
-            "autoconnection_strength_vol",
-            "volatility_coupling_internal",
             "effective_precision_vol",
             "observed",
         ],
@@ -409,8 +394,6 @@ fn trajectory_field_ref<'a>(traj: &'a NodeTrajectory, field: &str) -> &'a Vec<f6
         "expected_precision_vol" => &traj.expected_precision_vol,
         "tonic_volatility_vol" => &traj.tonic_volatility_vol,
         "tonic_drift_vol" => &traj.tonic_drift_vol,
-        "autoconnection_strength_vol" => &traj.autoconnection_strength_vol,
-        "volatility_coupling_internal" => &traj.volatility_coupling_internal,
         "effective_precision_vol" => &traj.effective_precision_vol,
         "nus" => &traj.nus,
         "lr" => &traj.lr,
@@ -618,7 +601,9 @@ impl Network {
                         expected_mean: 0.0,
                         precision: 1.0,
                         expected_precision: 1.0,
-                        tonic_volatility: -4.0,
+                        // Volatile nodes carry no value-level tonic volatility; the
+                        // shared `tonic_volatility` field falls back to its Default
+                        // (0.0) and is never read by the volatile update path.
                         tonic_drift: 0.0,
                         autoconnection_strength: 0.0,
                         current_variance: 1.0,
@@ -628,8 +613,6 @@ impl Network {
                         expected_precision_vol: 1.0,
                         tonic_volatility_vol: -4.0,
                         tonic_drift_vol: 0.0,
-                        autoconnection_strength_vol: 1.0,
-                        volatility_coupling_internal: 1.0,
                         effective_precision: 0.0,
                         value_prediction_error: 0.0,
                         volatility_prediction_error: 0.0,
@@ -1322,17 +1305,24 @@ fn apply_overrides_continuous(state: &mut NodeState, overrides: &HashMap<String,
 
 /// Apply parameter overrides for volatile-state nodes
 fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f64>) {
-    apply_overrides_continuous(state, overrides);
+    // Volatile nodes share the continuous value-level fields *except*
+    // `tonic_volatility`, which they do not carry — so it is deliberately not
+    // accepted here (the volatile update path never reads it).
     for (key, &value) in overrides {
         match key.as_str() {
+            "mean" => state.mean = value,
+            "expected_mean" => state.expected_mean = value,
+            "precision" => state.precision = value,
+            "expected_precision" => state.expected_precision = value,
+            "tonic_drift" => state.tonic_drift = value,
+            "autoconnection_strength" => state.autoconnection_strength = value,
+            "current_variance" => state.current_variance = value,
             "mean_vol" => state.mean_vol = value,
             "expected_mean_vol" => state.expected_mean_vol = value,
             "precision_vol" => state.precision_vol = value,
             "expected_precision_vol" => state.expected_precision_vol = value,
             "tonic_volatility_vol" => state.tonic_volatility_vol = value,
             "tonic_drift_vol" => state.tonic_drift_vol = value,
-            "autoconnection_strength_vol" => state.autoconnection_strength_vol = value,
-            "volatility_coupling_internal" => state.volatility_coupling_internal = value,
             _ => {}
         }
     }
@@ -1813,7 +1803,11 @@ mod tests {
             None,
             None,
             None,
-            None,
+            // The fused volatile node's value level has no tonic volatility, so
+            // the explicit value node must set tonic_volatility = 0.0 to match
+            // (its volatility parent keeps the default, mirroring the volatility
+            // level's tonic_volatility_vol).
+            Some(HashMap::from([("tonic_volatility".into(), 0.0)])),
         );
         explicit_net.add_nodes(
             "continuous-state",
@@ -1860,7 +1854,11 @@ mod tests {
             None,
             None,
             None,
-            None,
+            // The fused volatile node's value level has no tonic volatility, so
+            // the explicit value node must set tonic_volatility = 0.0 to match
+            // (its volatility parent keeps the default, mirroring the volatility
+            // level's tonic_volatility_vol).
+            Some(HashMap::from([("tonic_volatility".into(), 0.0)])),
         );
         explicit_net.add_nodes(
             "continuous-state",
@@ -1907,7 +1905,11 @@ mod tests {
             None,
             None,
             None,
-            None,
+            // The fused volatile node's value level has no tonic volatility, so
+            // the explicit value node must set tonic_volatility = 0.0 to match
+            // (its volatility parent keeps the default, mirroring the volatility
+            // level's tonic_volatility_vol).
+            Some(HashMap::from([("tonic_volatility".into(), 0.0)])),
         );
         explicit_net.add_nodes(
             "continuous-state",

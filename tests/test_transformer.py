@@ -126,11 +126,10 @@ class EqxGPT(eqx.Module):
 
 _PARITY = dict(
     volatility_parent=False,
-    tonic_volatility=-20.0,
     precision=1e4,
     expected_precision=1e4,
 )
-_PARITY_LEAF = dict(volatility_parent=False, tonic_volatility=-20.0)
+_PARITY_LEAF = dict(volatility_parent=False)
 
 
 def _norm_rel(a, b) -> float:

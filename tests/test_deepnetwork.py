@@ -167,7 +167,7 @@ def test_categorical_learns_separable_classes():
         size=3, kind="categorical"
     )
     for _ in range(4):
-        net.add_layer(size=16, tonic_volatility=-80.0, tonic_volatility_vol=-8.0)
+        net.add_layer(size=16, tonic_volatility_vol=-8.0)
     net = net.add_layer(
         size=2,
         add_constant_input=False,
@@ -327,9 +327,8 @@ def test_three_backends_binary_volatile():
     → 1 volatile input
 
     The constant is a value parent of the intermediate volatile node (shared across
-    all three backends).  All three update types are exercised.  Both JAX and Rust
-    default to ``tonic_volatility=-4.0`` for volatile-state nodes, so no explicit
-    override is needed.
+    all three backends).  All three update types are exercised.  Volatile-state nodes
+    carry no ``tonic_volatility``, so no explicit override is needed.
 
     Tolerances
     ----------
@@ -680,53 +679,48 @@ def test_fit_weight_update_toggle_retraces():
     )
 
 
-def test_input_layer_invariant_to_tonic_volatility():
-    """The bottom layer's ``expected_precision`` must ignore its tonic_volatility.
+def test_input_layer_uses_prior_precision():
+    """The bottom layer's ``expected_precision`` must stay at its prior precision.
 
     Layer 0 is the observation layer of a DeepNetwork — it has no value children, so it
-    does not undergo a Gaussian random walk between samples and the tonic-volatility
-    contribution should be skipped (mirroring the per-node continuous-node treatment).
+    does not undergo a Gaussian random walk between samples and the volatility
+    contribution is skipped (mirroring the per-node continuous-node treatment). Volatile
+    layers carry no ``tonic_volatility``.
     """
     rng = np.random.default_rng(0)
     x = rng.standard_normal((5, 2)).astype(np.float32)
     y = rng.standard_normal((5, 1)).astype(np.float32)
 
-    expected_precisions = []
-    for omega in [-8.0, 0.0]:
-        net = (
-            DeepNetwork()
-            .add_layer(
-                size=1,
-                tonic_volatility=omega,
-                precision=5.0,
-                expected_precision=5.0,
-            )
-            .add_layer(size=4)
-            .add_layer(size=2)
+    net = (
+        DeepNetwork()
+        .add_layer(
+            size=1,
+            precision=5.0,
+            expected_precision=5.0,
         )
-        # lr=0 so weights don't drift across samples — isolates the
-        # tonic-volatility effect on the prediction step.
-        net.fit(
-            x=x,
-            y=y,
-            optimizer=optax.sgd(0.0),
-            learning_kind="standard",
-            record=("expected_precision",),
-        )
-        expected_precisions.append(
-            np.asarray(net.trajectories["expected_precision"][0])
-        )
+        .add_layer(size=4)
+        .add_layer(size=2)
+    )
+    # lr=0 so weights don't drift across samples — isolates the prediction step.
+    net.fit(
+        x=x,
+        y=y,
+        optimizer=optax.sgd(0.0),
+        learning_kind="standard",
+        record=("expected_precision",),
+    )
+    expected_precision = np.asarray(net.trajectories["expected_precision"][0])
 
+    # The bottom (input) layer's expected_precision stays at its prior precision.
     np.testing.assert_allclose(
-        expected_precisions[0],
-        expected_precisions[1],
+        expected_precision,
+        5.0,
         rtol=1e-5,
         err_msg=(
-            "DeepNetwork bottom layer's expected_precision changes with "
-            "tonic_volatility — is_input_layer override missing"
+            "DeepNetwork bottom layer's expected_precision is not the prior "
+            "precision — is_input_layer override missing"
         ),
     )
-    np.testing.assert_allclose(expected_precisions[0], 5.0, rtol=1e-5)
 
 
 def test_constant_input_is_linearly_coupled():
@@ -869,14 +863,13 @@ def test_ff_block_single_sweep_matches_backprop():
 
     high_confidence = dict(
         volatility_parent=False,
-        tonic_volatility=-20.0,
         precision=1e4,
         expected_precision=1e4,
     )
     net = _ff_net(
         hidden_kwargs=high_confidence,
         top_kwargs=high_confidence,
-        leaf_kwargs=dict(volatility_parent=False, tonic_volatility=-20.0),
+        leaf_kwargs=dict(volatility_parent=False),
     )
     _set_weights(net, {1: w1, 2: w2})
 

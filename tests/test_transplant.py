@@ -17,11 +17,10 @@ from pyhgf.model import from_embedding, from_feedforward, from_linear
 
 _PARITY = dict(
     volatility_parent=False,
-    tonic_volatility=-20.0,
     precision=1e4,
     expected_precision=1e4,
 )
-_PARITY_LEAF = dict(volatility_parent=False, tonic_volatility=-20.0)
+_PARITY_LEAF = dict(volatility_parent=False)
 
 
 def test_from_linear_forward_parity():

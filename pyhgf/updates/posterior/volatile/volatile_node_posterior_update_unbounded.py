@@ -40,7 +40,6 @@ def volatile_node_posterior_update_unbounded(
     dict
         Updated attributes with ``precision_vol`` and ``mean_vol`` set.
     """
-    volatility_coupling = attributes[node_idx]["volatility_coupling_internal"]
     time_step = attributes[-1]["time_step"]
 
     previous_variance = jnp.maximum(
@@ -52,7 +51,6 @@ def volatile_node_posterior_update_unbounded(
 
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
     expected_precision_vol = attributes[node_idx]["expected_precision_vol"]
-    tonic_volatility = attributes[node_idx]["tonic_volatility"]
 
     # All quantities that would otherwise pass through ``exp`` of a potentially
     # large number are kept in log-space. Materialising ``v = exp(γ)`` is correct
@@ -68,8 +66,9 @@ def volatile_node_posterior_update_unbounded(
     log_time_step = jnp.log(time_step)
     log_previous_variance = jnp.log(previous_variance)
 
-    # Canonical exponent at the prediction: γ = log(time_step) + volatility_coupling*expected_mean_vol + tonic_volatility
-    gamma_c = log_time_step + volatility_coupling * expected_mean_vol + tonic_volatility
+    # Canonical exponent at the prediction (coupling fixed at 1):
+    # γ = log(time_step) + expected_mean_vol
+    gamma_c = log_time_step + expected_mean_vol
 
     # w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α).
     w_jm1 = sigmoid(gamma_c - log_previous_variance)
@@ -82,13 +81,13 @@ def volatile_node_posterior_update_unbounded(
     # ----------------------------------------------------------------------------------
     # Expansion 1: quadratic at the prediction (prior mean)
     # ----------------------------------------------------------------------------------
-    pi1 = expected_precision_vol + 0.5 * volatility_coupling**2 * w_jm1 * (1.0 - w_jm1)
-    mu1 = expected_mean_vol + (volatility_coupling * w_jm1 / (2.0 * pi1)) * da_jm1
+    pi1 = expected_precision_vol + 0.5 * w_jm1 * (1.0 - w_jm1)
+    mu1 = expected_mean_vol + (w_jm1 / (2.0 * pi1)) * da_jm1
 
     # ----------------------------------------------------------------------------------
     # Expansion 2: quadratic at the Lambert W_0 approximate mode
     # ----------------------------------------------------------------------------------
-    pihat_y = expected_precision_vol / volatility_coupling**2
+    pihat_y = expected_precision_vol
 
     # Compute W_arg in log-space and cap at log(float_max) — matches MATLAB's
     # "W_arg = exp(min(log_W_arg, log(realmax)))".
@@ -97,34 +96,29 @@ def volatile_node_posterior_update_unbounded(
     W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
     v_W = lambert_w0(W_arg)
     y_star = gamma_c + v_W - 0.5 / pihat_y
-    x_star = (y_star - log_time_step - tonic_volatility) / volatility_coupling
+    x_star = y_star - log_time_step
 
     # Log-space s2/w2/da2 — equivalent to the direct
-    #   s2 = time_step * exp(volatility_coupling*x_star + tonic_volatility); w2 = 1/(1 + previous_variance/s2);
+    #   s2 = time_step * exp(x_star); w2 = 1/(1 + previous_variance/s2);
     #   da2 = be_aux/(previous_variance + s2) - 1
     # but without materialising ``s2 = inf`` (which injects 0·∞ NaN gradients).
-    log_s2 = log_time_step + volatility_coupling * x_star + tonic_volatility
+    log_s2 = log_time_step + x_star
     log_denom_s = jnp.logaddexp(
         log_previous_variance, log_s2
     )  # = log(previous_variance + s2)
     w2 = sigmoid(log_s2 - log_previous_variance)
     da2 = be_aux * jnp.exp(-log_denom_s) - 1.0
 
-    pi2_full = expected_precision_vol + 0.5 * volatility_coupling**2 * w2 * (
-        w2 + (2.0 * w2 - 1.0) * da2
-    )
+    pi2_full = expected_precision_vol + 0.5 * w2 * (w2 + (2.0 * w2 - 1.0) * da2)
     # Guard against negative precision (Matlab fallback: use w2*(1-w2) form)
     pi2_safe = jnp.where(
         pi2_full <= 0.0,
-        expected_precision_vol + 0.5 * volatility_coupling**2 * w2 * (1.0 - w2),
+        expected_precision_vol + 0.5 * w2 * (1.0 - w2),
         pi2_full,
     )
     mu2_safe = (
         x_star
-        + (
-            0.5 * volatility_coupling * w2 * da2
-            - expected_precision_vol * (x_star - expected_mean_vol)
-        )
+        + (0.5 * w2 * da2 - expected_precision_vol * (x_star - expected_mean_vol))
         / pi2_safe
     )
 
@@ -144,11 +138,11 @@ def volatile_node_posterior_update_unbounded(
 
     # ----------------------------------------------------------------------------------
     # Variational energy-based softmax blend (log-space form, gradient-safe).
-    # The direct ``ey = time_step * exp(volatility_coupling*mu + tonic_volatility)`` materialises ``inf`` for large
-    # ``volatility_coupling*mu + tonic_volatility`` and injects 0·∞ NaNs in the backward pass; ``logaddexp`` and
-    # ``exp(-positive)`` stay bounded both forward and backward.
+    # The direct ``ey = time_step * exp(mu)`` materialises ``inf`` for large ``mu`` and
+    # injects 0·∞ NaNs in the backward pass; ``logaddexp`` and ``exp(-positive)`` stay
+    # bounded both forward and backward.
     # ----------------------------------------------------------------------------------
-    log_ey1 = log_time_step + volatility_coupling * mu1 + tonic_volatility
+    log_ey1 = log_time_step + mu1
     log_denom_1 = jnp.logaddexp(
         log_previous_variance, log_ey1
     )  # = log(previous_variance + ey1)
@@ -158,7 +152,7 @@ def volatile_node_posterior_update_unbounded(
         - 0.5 * expected_precision_vol * (mu1 - expected_mean_vol) ** 2
     )
 
-    log_ey2 = log_time_step + volatility_coupling * mu2 + tonic_volatility
+    log_ey2 = log_time_step + mu2
     log_denom_2 = jnp.logaddexp(log_previous_variance, log_ey2)
     I2 = (
         -0.5 * log_denom_2

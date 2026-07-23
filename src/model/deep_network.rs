@@ -249,10 +249,7 @@ impl DeepNetwork {
                 let val: f64 = value.extract()?;
                 match key.as_str() {
                     // LayerParams overrides (typed fields on the config).
-                    "tonic_volatility" => cfg.tonic_volatility = val,
                     "tonic_volatility_vol" => cfg.tonic_volatility_vol = val,
-                    "volatility_coupling" => cfg.volatility_coupling = val,
-                    "autoconnection_strength_vol" => cfg.autoconnection_strength_vol = val,
                     // LayerState (initial-belief) overrides, applied at build
                     // time — e.g. `precision=2.0` or `expected_precision=1e10`.
                     name if LAYER_STATE_FIELDS.contains(&name) => {
@@ -260,9 +257,8 @@ impl DeepNetwork {
                     }
                     other => {
                         return Err(PyValueError::new_err(format!(
-                            "Unknown layer override '{other}'. Valid: tonic_volatility, \
-                             tonic_volatility_vol, volatility_coupling, \
-                             autoconnection_strength_vol, or any LayerState field \
+                            "Unknown layer override '{other}'. Valid: \
+                             tonic_volatility_vol, or any LayerState field \
                              ({}).",
                             LAYER_STATE_FIELDS.join(", ")
                         )))

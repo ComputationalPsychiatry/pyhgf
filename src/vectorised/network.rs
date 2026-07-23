@@ -65,7 +65,6 @@ fn layer_pe(
     match layer.kind {
         LayerKind::Volatile => volatile::prediction_error::layer_prediction_error(
             &mut layer.state,
-            &layer.params,
             volatility_updates,
             time_step,
             layer.has_volatility_parent,

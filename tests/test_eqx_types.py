@@ -64,10 +64,7 @@ def test_layer_params_create_defaults():
     """LayerParams.create matches the legacy class's defaults."""
     n = 4
     p = LayerParams.create(n)
-    assert jnp.all(p.tonic_volatility == -4.0)
     assert jnp.all(p.tonic_volatility_vol == -4.0)
-    assert jnp.all(p.volatility_coupling == 1.0)
-    assert jnp.all(p.autoconnection_strength_vol == 1.0)
     for fname in LayerParams.__dataclass_fields__:
         assert getattr(p, fname).shape == (n,), fname
 
@@ -95,8 +92,8 @@ def test_layer_static_fields_are_in_treedef_not_leaves():
         kind="volatile",
     )
     leaves = jtu.tree_leaves(layer)
-    # 13 (state) + 4 (params) + 1 (weights_in) = 18 array leaves
-    assert len(leaves) == 18
+    # 13 (state) + 1 (params) + 1 (weights_in) = 15 array leaves
+    assert len(leaves) == 15
     treedef_str = str(jtu.tree_structure(layer))
     # Statics show up inside the treedef, not as leaves.
     assert "volatile" in treedef_str
@@ -119,8 +116,8 @@ def test_layer_weights_in_can_be_none():
     assert layer.weights_in is None
     # tree_leaves still flattens cleanly.
     leaves = jtu.tree_leaves(layer)
-    # 13 + 4 = 17 leaves (no weights_in)
-    assert len(leaves) == 17
+    # 13 + 1 = 14 leaves (no weights_in)
+    assert len(leaves) == 14
 
 
 def test_network_is_pytree_with_static_meta():
@@ -534,13 +531,11 @@ def test_phase8_add_layer_stack_auto_collapses_into_layerstack():
         .add_layer(
             size=6,
             add_constant_input=True,
-            tonic_volatility=-4.0,
             volatility_parent=False,
         )
         .add_layer_stack(
             layer_sizes=[6] * 5,
             add_constant_input=True,
-            tonic_volatility=-4.0,
             tonic_volatility_vol=-8.0,
             volatility_parent=True,
         )
@@ -570,7 +565,6 @@ def _phase8_build(scan, depth=5, width=6, seed=0):
         .add_layer(
             size=width,
             add_constant_input=True,
-            tonic_volatility=-4.0,
             volatility_parent=False,
         )
     )
@@ -578,7 +572,6 @@ def _phase8_build(scan, depth=5, width=6, seed=0):
         net = net.add_layer_stack(
             layer_sizes=[width] * depth,
             add_constant_input=True,
-            tonic_volatility=-4.0,
             tonic_volatility_vol=-8.0,
             volatility_parent=True,
         )
@@ -587,7 +580,6 @@ def _phase8_build(scan, depth=5, width=6, seed=0):
             net = net.add_layer(
                 size=width,
                 add_constant_input=True,
-                tonic_volatility=-4.0,
                 tonic_volatility_vol=-8.0,
                 volatility_parent=True,
             )

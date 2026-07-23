@@ -134,7 +134,7 @@ def test_add_layer_validation():
     with pytest.raises(ValueError, match="Unknown layer override"):
         RsDeepNetwork().add_layer(2, not_a_field=1.0)
     # LayerParams and LayerState overrides are accepted.
-    RsDeepNetwork().add_layer(2, tonic_volatility=-2.0, expected_precision=1e10)
+    RsDeepNetwork().add_layer(2, tonic_volatility_vol=-2.0, expected_precision=1e10)
 
 
 def test_categorical_only_at_bottom():

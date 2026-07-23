@@ -220,37 +220,21 @@ pub const LAYER_STATE_FIELDS: &[&str] = &[
 /// Per-node static parameters for one layer. Each field is length `n_nodes`.
 #[derive(Debug, Clone)]
 pub struct LayerParams {
-    /// Tonic (baseline) volatility of the value level.
-    pub tonic_volatility: Vector,
     /// Tonic (baseline) volatility of the volatility level.
     pub tonic_volatility_vol: Vector,
-    /// Volatility-coupling strength (κ) between the value and volatility levels.
-    pub volatility_coupling: Vector,
-    /// Autoconnection (self-coupling) strength of the volatility level.
-    pub autoconnection_strength_vol: Vector,
 }
 
 impl LayerParams {
     /// Default per-node parameters, matching `LayerParams.create` in the JAX
-    /// backend: `tonic_volatility = tonic_volatility_vol = -4`,
-    /// `volatility_coupling = autoconnection_strength_vol = 1`.
+    /// backend: `tonic_volatility_vol = -4`.
     pub fn create(n_nodes: usize) -> Self {
-        Self::create_with(n_nodes, -4.0, -4.0, 1.0, 1.0)
+        Self::create_with(n_nodes, -4.0)
     }
 
     /// Per-node parameters with explicit scalar values broadcast to `n_nodes`.
-    pub fn create_with(
-        n_nodes: usize,
-        tonic_volatility: f64,
-        tonic_volatility_vol: f64,
-        volatility_coupling: f64,
-        autoconnection_strength_vol: f64,
-    ) -> Self {
+    pub fn create_with(n_nodes: usize, tonic_volatility_vol: f64) -> Self {
         Self {
-            tonic_volatility: Array1::from_elem(n_nodes, tonic_volatility),
             tonic_volatility_vol: Array1::from_elem(n_nodes, tonic_volatility_vol),
-            volatility_coupling: Array1::from_elem(n_nodes, volatility_coupling),
-            autoconnection_strength_vol: Array1::from_elem(n_nodes, autoconnection_strength_vol),
         }
     }
 }
@@ -306,14 +290,8 @@ pub struct LayerConfig {
     pub coupling_fn: &'static CouplingFn,
     /// Give the layer an internal volatility parent.
     pub volatility_parent: bool,
-    /// Tonic volatility of the value level (per node, `LayerParams` default −4).
-    pub tonic_volatility: f64,
     /// Tonic volatility of the volatility level (default −4).
     pub tonic_volatility_vol: f64,
-    /// Volatility-coupling strength κ (default 1).
-    pub volatility_coupling: f64,
-    /// Volatility-level autoconnection strength (default 1).
-    pub autoconnection_strength_vol: f64,
     /// Initial-belief overrides applied to the layer's [`LayerState`] at build
     /// time, as `(field_name, value)` pairs broadcast to every node (e.g.
     /// `("expected_precision", 1e10)` for a noiseless input layer). See
@@ -332,10 +310,7 @@ impl LayerConfig {
             fully_connected: true,
             coupling_fn: &LINEAR,
             volatility_parent: true,
-            tonic_volatility: -4.0,
             tonic_volatility_vol: -4.0,
-            volatility_coupling: 1.0,
-            autoconnection_strength_vol: 1.0,
             state_overrides: Vec::new(),
         }
     }
@@ -403,13 +378,7 @@ impl DeepNet {
             for (name, value) in &cfg.state_overrides {
                 state.set_field(name, *value)?;
             }
-            let params = LayerParams::create_with(
-                cfg.size,
-                cfg.tonic_volatility,
-                cfg.tonic_volatility_vol,
-                cfg.volatility_coupling,
-                cfg.autoconnection_strength_vol,
-            );
+            let params = LayerParams::create_with(cfg.size, cfg.tonic_volatility_vol);
 
             // `weights_in` lives on the parent (this layer); the bottom layer
             // has no child below it, hence `None`.
@@ -516,9 +485,7 @@ mod tests {
     #[test]
     fn test_layer_params_defaults() {
         let p = LayerParams::create(2);
-        assert!(p.tonic_volatility.iter().all(|&x| x == -4.0));
-        assert!(p.volatility_coupling.iter().all(|&x| x == 1.0));
-        assert!(p.autoconnection_strength_vol.iter().all(|&x| x == 1.0));
+        assert!(p.tonic_volatility_vol.iter().all(|&x| x == -4.0));
     }
 
     #[test]

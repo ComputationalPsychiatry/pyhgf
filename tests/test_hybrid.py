@@ -74,7 +74,6 @@ def _parity_ff_net(d: int, h: int, w1: jnp.ndarray, w2: jnp.ndarray) -> DeepNetw
     """
     high_confidence = dict(
         volatility_parent=False,
-        tonic_volatility=-20.0,
         precision=1e4,
         expected_precision=1e4,
     )
@@ -84,7 +83,6 @@ def _parity_ff_net(d: int, h: int, w1: jnp.ndarray, w2: jnp.ndarray) -> DeepNetw
             size=d,
             add_constant_input=False,
             volatility_parent=False,
-            tonic_volatility=-20.0,
         )
         .add_layer(
             size=h,

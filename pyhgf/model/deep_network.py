@@ -49,10 +49,7 @@ from pyhgf.utils.weight_initialisation import (
 
 # Default per-layer parameter values (matching ``LayerParams.create``).
 _LAYER_PARAM_DEFAULTS: dict[str, float] = {
-    "tonic_volatility": -4.0,
     "tonic_volatility_vol": -4.0,
-    "volatility_coupling": 1.0,
-    "autoconnection_strength_vol": 1.0,
 }
 
 # Names of fields that can be overridden per layer (eqx.Modules expose dataclass fields).
@@ -258,16 +255,8 @@ class DeepNetwork:
 
             # Prepare per-layer parameter overrides
             overrides = {}
-            if config.tonic_volatility is not None:
-                overrides["tonic_volatility"] = config.tonic_volatility
             if config.tonic_volatility_vol is not None:
                 overrides["tonic_volatility_vol"] = config.tonic_volatility_vol
-            if config.volatility_coupling is not None:
-                overrides["volatility_coupling"] = config.volatility_coupling
-            if config.autoconnection_strength_vol is not None:
-                overrides["autoconnection_strength_vol"] = (
-                    config.autoconnection_strength_vol
-                )
 
             # Add the layer
             net = net.add_layer(
@@ -402,14 +391,14 @@ class DeepNetwork:
         volatility_parent :
             If True (default), this layer has an implied internal volatility parent:
             mean_vol and precision_vol are predicted and updated each step. If False,
-            the volatility level is frozen and only ``tonic_volatility`` determines the
-            expected precision for the value level.
+            the value level has no volatility source and does not undergo a Gaussian
+            random walk (its conditional predicted precision equals the prior
+            precision).
         **kwargs :
             Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`
             (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,
             ``mean_vol``, ``precision_vol``, ...) or :class:`pyhgf.typing.LayerParams`
-            (``tonic_volatility``, ``tonic_volatility_vol``, ``volatility_coupling``,
-            ``autoconnection_strength_vol``).
+            (``tonic_volatility_vol``).
             Each value is broadcast to the layer's ``size``. Unknown names raise
             ``ValueError``. Defaults match ``LayerState.create`` and
             ``LayerParams.create``.
@@ -524,7 +513,7 @@ class DeepNetwork:
             function.
         **kwargs :
             Per-layer overrides forwarded to :meth:`add_layer` (any field of
-            ``LayerState`` or ``LayerParams``, e.g. ``tonic_volatility``,
+            ``LayerState`` or ``LayerParams``, e.g. ``tonic_volatility_vol``,
             ``precision``).
 
         Returns
