@@ -4,7 +4,7 @@
 use crate::math::{sigmoid, with_coupling, CouplingFn};
 use crate::updates::vectorised::push;
 use crate::vectorised::layer::LayerState;
-use crate::vectorised::mat::Matrix;
+use crate::vectorised::mat::{Float, Matrix};
 
 /// Predict a binary (Bernoulli) leaf layer: `μ̂ = σ(W @ g(parent))`, clipped
 /// away from 0/1, with the Bernoulli variance stored as `expected_precision`.
@@ -16,16 +16,18 @@ pub fn binary_prediction(
     weights: &Matrix,
     coupling_fn: &CouplingFn,
     parent_has_constant: bool,
-    precision_clipping_value: f64,
+    precision_clipping_value: Float,
 ) {
-    let mut coupled_parents =
-        with_coupling!(coupling_fn, |f, _df, _d2f| parent.expected_mean.mapv(f));
+    let mut coupled_parents = with_coupling!(coupling_fn, |f, _df, _d2f| parent
+        .expected_mean
+        .mapv(|v| f(v as f64) as Float));
     if parent_has_constant {
         coupled_parents = push(&coupled_parents, 1.0);
     }
     let logit = weights.dot(&coupled_parents);
-    let expected_mean =
-        logit.mapv(|x| sigmoid(x).clamp(precision_clipping_value, 1.0 - precision_clipping_value));
+    let expected_mean = logit.mapv(|x| {
+        (sigmoid(x as f64) as Float).clamp(precision_clipping_value, 1.0 - precision_clipping_value)
+    });
     let expected_precision = expected_mean.mapv(|m| m * (1.0 - m));
 
     child.expected_mean = expected_mean;

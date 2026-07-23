@@ -17,14 +17,20 @@ use crate::math::sigmoid;
 use crate::updates::vectorised::learning::{weight_gradient_factors, WeightKind};
 use crate::updates::vectorised::{binary, categorical, softmax_inplace, volatile};
 use crate::vectorised::layer::{DeepNet, Layer, LayerKind};
-use crate::vectorised::mat::{Matrix, Vector};
+use crate::vectorised::mat::{Float, Matrix, Vector};
 use crate::vectorised::optimiser::{OptState, Optimizer};
 use ndarray::{s, ArrayView1, ArrayView2};
 
 /// Predict a single child layer from its parent, in place, dispatching on the
 /// child kind. `child` is borrowed mutably; `parent` provides the read-only
 /// weights/coupling/bias.
-fn predict_child(child: &mut Layer, parent: &Layer, weights: &Matrix, time_step: f64, pcv: f64) {
+fn predict_child(
+    child: &mut Layer,
+    parent: &Layer,
+    weights: &Matrix,
+    time_step: Float,
+    pcv: Float,
+) {
     match child.kind {
         LayerKind::Volatile => volatile::prediction::layer_prediction(
             &mut child.state,
@@ -59,8 +65,8 @@ fn predict_child(child: &mut Layer, parent: &Layer, weights: &Matrix, time_step:
 fn layer_pe(
     layer: &mut Layer,
     volatility_updates: crate::vectorised::layer::VolatilityUpdate,
-    time_step: f64,
-    max_pp: f64,
+    time_step: Float,
+    max_pp: Float,
 ) {
     match layer.kind {
         LayerKind::Volatile => volatile::prediction_error::layer_prediction_error(
@@ -80,20 +86,20 @@ fn layer_pe(
 impl DeepNet {
     /// Clamp the predictors `x` on the top layer (where the predictors enter),
     /// writing into the existing state buffers (no allocation).
-    fn set_top_predictors(&mut self, x: ArrayView1<f64>) {
+    fn set_top_predictors(&mut self, x: ArrayView1<Float>) {
         let top = self.layers.last_mut().expect("network has no layers");
         top.state.expected_mean.assign(&x);
         top.state.mean.assign(&x);
     }
 
     /// Clamp the observations `y` on the bottom (output) layer, in place.
-    fn set_bottom_observations(&mut self, y: ArrayView1<f64>) {
+    fn set_bottom_observations(&mut self, y: ArrayView1<Float>) {
         self.layers[0].state.mean.assign(&y);
     }
 
     /// Top-down prediction sweep: clamp `x` on top and predict every layer from
     /// the one above it. No prediction errors or posterior updates.
-    pub fn prediction_sweep(&mut self, x: ArrayView1<f64>, time_step: f64) {
+    pub fn prediction_sweep(&mut self, x: ArrayView1<Float>, time_step: Float) {
         let n = self.layers.len();
         self.set_top_predictors(x);
         let pcv = self.precision_clipping_value;
@@ -108,7 +114,7 @@ impl DeepNet {
 
     /// Bottom-up update sweep: clamp `y`, compute the leaf PE, then interleave
     /// posterior + PE over interior layers (the clamped top is not updated).
-    pub fn update_sweep(&mut self, y: ArrayView1<f64>, time_step: f64) {
+    pub fn update_sweep(&mut self, y: ArrayView1<Float>, time_step: Float) {
         let n = self.layers.len();
         let vol = self.volatility_updates;
         let max_pp = self.max_posterior_precision;
@@ -170,11 +176,11 @@ impl DeepNet {
     #[allow(clippy::too_many_arguments)]
     pub fn propagation_step(
         &mut self,
-        x: ArrayView1<f64>,
-        y: ArrayView1<f64>,
+        x: ArrayView1<Float>,
+        y: ArrayView1<Float>,
         optimizer: &Optimizer,
         opt_state: &mut OptState,
-        time_step: f64,
+        time_step: Float,
         learning_kind: WeightKind,
         weight_update: bool,
     ) -> Vector {
@@ -233,7 +239,7 @@ impl DeepNet {
             crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
                 ndarray::Zip::from(&mut routed)
                     .and(&top.state.expected_mean)
-                    .for_each(|r, &m| *r *= df(m));
+                    .for_each(|r, &m| *r *= df(m as f64) as Float);
             });
         }
         routed
@@ -264,11 +270,11 @@ impl DeepNet {
     #[allow(clippy::too_many_arguments)]
     pub fn batch_update(
         &mut self,
-        x: ArrayView2<f64>,
-        y: ArrayView2<f64>,
+        x: ArrayView2<Float>,
+        y: ArrayView2<Float>,
         optimizer: Option<&Optimizer>,
         opt_state: Option<&mut OptState>,
-        time_step: f64,
+        time_step: Float,
         learning_kind: WeightKind,
         update_confidences: bool,
     ) -> Matrix {
@@ -298,11 +304,11 @@ impl DeepNet {
     #[allow(clippy::too_many_arguments)]
     fn batch_update_chunked(
         &mut self,
-        x: ArrayView2<f64>,
-        y: ArrayView2<f64>,
+        x: ArrayView2<Float>,
+        y: ArrayView2<Float>,
         optimizer: Option<&Optimizer>,
         opt_state: Option<&mut OptState>,
-        time_step: f64,
+        time_step: Float,
         learning_kind: WeightKind,
         update_confidences: bool,
         n_chunks: usize,
@@ -357,8 +363,8 @@ impl DeepNet {
                 let errors = batched_input_prediction_error(net, &states);
                 let grads =
                     learning.then(|| batched_mean_weight_gradients(net, &states, learning_kind));
-                let increments = update_confidences
-                    .then(|| batched_confidence_increments(&states, &templates));
+                let increments =
+                    update_confidences.then(|| batched_confidence_increments(&states, &templates));
                 ChunkOut {
                     range,
                     errors,
@@ -380,10 +386,15 @@ impl DeepNet {
             let mut grads: Vec<Option<Matrix>> = self
                 .layers
                 .iter()
-                .map(|layer| layer.weights_in.as_ref().map(|w| Matrix::zeros(w.raw_dim())))
+                .map(|layer| {
+                    layer
+                        .weights_in
+                        .as_ref()
+                        .map(|w| Matrix::zeros(w.raw_dim()))
+                })
                 .collect();
             for chunk in &chunk_outs {
-                let weight = chunk.range.len() as f64 / n_samples as f64;
+                let weight = chunk.range.len() as Float / n_samples as Float;
                 for (total, grad) in grads.iter_mut().zip(chunk.grads.as_ref().unwrap()) {
                     if let (Some(total), Some(grad)) = (total.as_mut(), grad.as_ref()) {
                         total.scaled_add(weight, grad);
@@ -396,7 +407,7 @@ impl DeepNet {
         if update_confidences {
             for (l, layer) in self.layers.iter_mut().enumerate() {
                 for chunk in &chunk_outs {
-                    let weight = chunk.range.len() as f64 / n_samples as f64;
+                    let weight = chunk.range.len() as Float / n_samples as Float;
                     let (precision_inc, vol_inc) = &chunk.increments.as_ref().unwrap()[l];
                     layer.state.precision.scaled_add(weight, precision_inc);
                     if let Some((mean_vol_inc, precision_vol_inc)) = vol_inc {
@@ -432,7 +443,7 @@ impl DeepNet {
     /// never depends on the precision or volatility levels, so this is exact,
     /// not an approximation, and it collapses the per-sample `gemv`s into one
     /// `gemm` per layer.
-    pub fn predict_batch(&self, x: ArrayView2<f64>) -> Matrix {
+    pub fn predict_batch(&self, x: ArrayView2<Float>) -> Matrix {
         let n = self.layers.len();
         if n == 1 {
             return x.to_owned(); // degenerate single-layer network (no weights)
@@ -457,7 +468,7 @@ impl DeepNet {
             crate::math::with_coupling!(parent.coupling_fn, |f, _df, _d2f| {
                 ndarray::Zip::from(coupled.slice_mut(s![..psize, ..]))
                     .and(&a)
-                    .for_each(|c, &e| *c = f(e));
+                    .for_each(|c, &e| *c = f(e as f64) as Float);
             });
 
             // (child, parent[+1]) @ (parent[+1], n_samples) = (child, n_samples).
@@ -466,7 +477,7 @@ impl DeepNet {
             match child.kind {
                 LayerKind::Binary => {
                     let pcv = self.precision_clipping_value;
-                    child_a.mapv_inplace(|z| sigmoid(z).clamp(pcv, 1.0 - pcv));
+                    child_a.mapv_inplace(|z| (sigmoid(z as f64) as Float).clamp(pcv, 1.0 - pcv));
                 }
                 LayerKind::Categorical => {
                     // One sample per column in the features×samples layout.
@@ -490,6 +501,18 @@ mod tests {
     use super::*;
     use crate::vectorised::layer::{DeepNet, LayerConfig};
     use ndarray::Array1;
+
+    /// Relative tolerances for the batched-equivalence tests. The compared
+    /// paths differ only in floating point summation order, so the bound
+    /// scales with the engine's machine epsilon.
+    #[cfg(feature = "f64")]
+    const REF_TOL: Float = 1e-12;
+    #[cfg(not(feature = "f64"))]
+    const REF_TOL: Float = 1e-4;
+    #[cfg(feature = "f64")]
+    const CHUNK_TOL: Float = 1e-9;
+    #[cfg(not(feature = "f64"))]
+    const CHUNK_TOL: Float = 1e-4;
 
     /// A two-layer linear network with identity coupling and no bias predicts
     /// `W @ x` at the output (all weights initialised to 1).
@@ -587,15 +610,15 @@ mod tests {
             for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
                 let w = layer.weights_in.as_mut().unwrap();
                 for ((i, j), v) in w.indexed_iter_mut() {
-                    *v = 0.3 * ((i + 2 * j + l) as f64 * 0.7).sin();
+                    *v = 0.3 * ((i + 2 * j + l) as Float * 0.7).sin();
                 }
             }
             net
         };
 
         let n_samples = 5;
-        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as f64 * 0.9).cos());
-        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as f64 * 0.4).sin());
+        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
+        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as Float * 0.4).sin());
         let opt = Optimizer::adam(0.01);
 
         // Reference: the per-sample loop over the same template.
@@ -651,14 +674,16 @@ mod tests {
         for (layer, state) in reference.layers.iter_mut().zip(template) {
             layer.state = state;
         }
-        let inv_n = 1.0 / n_samples as f64;
+        let inv_n = 1.0 / n_samples as Float;
         for g in grad_sums.iter_mut().flatten() {
             g.mapv_inplace(|v| v * inv_n);
         }
         opt.apply_dense(&mut ref_state, &mut reference.layers, &grad_sums);
         for l in 0..n_layers {
             let state = &mut reference.layers[l].state;
-            state.precision.zip_mut_with(&precision_sums[l], |p, &s| *p += s * inv_n);
+            state
+                .precision
+                .zip_mut_with(&precision_sums[l], |p, &s| *p += s * inv_n);
             state
                 .mean_vol
                 .as_mut()
@@ -684,7 +709,7 @@ mod tests {
             true,
         );
 
-        let close = |a: f64, b: f64| (a - b).abs() < 1e-12 * (1.0 + a.abs().max(b.abs()));
+        let close = |a: Float, b: Float| (a - b).abs() < REF_TOL * (1.0 + a.abs().max(b.abs()));
         for (a, b) in errors.iter().zip(ref_errors.iter()) {
             assert!(close(*a, *b), "input errors differ: {a} vs {b}");
         }
@@ -716,19 +741,23 @@ mod tests {
     #[test]
     fn test_batch_update_chunked_matches_single_chunk() {
         let make_net = || {
-            let configs = vec![LayerConfig::new(2), LayerConfig::new(4), LayerConfig::new(3)];
+            let configs = vec![
+                LayerConfig::new(2),
+                LayerConfig::new(4),
+                LayerConfig::new(3),
+            ];
             let mut net = DeepNet::from_configs(&configs).unwrap();
             for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
                 let w = layer.weights_in.as_mut().unwrap();
                 for ((i, j), v) in w.indexed_iter_mut() {
-                    *v = 0.3 * ((i + 2 * j + l) as f64 * 0.7).sin();
+                    *v = 0.3 * ((i + 2 * j + l) as Float * 0.7).sin();
                 }
             }
             net
         };
         let n_samples = 601; // odd, so the chunks are uneven
-        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as f64 * 0.9).cos());
-        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as f64 * 0.4).sin());
+        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
+        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as Float * 0.4).sin());
         let opt = Optimizer::adam(0.01);
 
         let run = |n_chunks: usize| {
@@ -749,7 +778,7 @@ mod tests {
         let (net_one, errors_one) = run(1);
         let (net_four, errors_four) = run(4);
 
-        let close = |a: f64, b: f64| (a - b).abs() < 1e-9 * (1.0 + a.abs().max(b.abs()));
+        let close = |a: Float, b: Float| (a - b).abs() < CHUNK_TOL * (1.0 + a.abs().max(b.abs()));
         for (a, b) in errors_one.iter().zip(errors_four.iter()) {
             assert!(close(*a, *b), "input errors differ: {a} vs {b}");
         }

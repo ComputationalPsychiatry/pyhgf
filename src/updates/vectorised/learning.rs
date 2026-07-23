@@ -12,7 +12,7 @@
 
 use crate::math::{with_coupling, CouplingFn};
 use crate::vectorised::layer::LayerState;
-use crate::vectorised::mat::Vector;
+use crate::vectorised::mat::{Float, Vector};
 
 /// Weight-gradient mode, matching the JAX `learning_kind`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,7 +44,9 @@ pub fn weight_gradient_factors(
     child_is_binary: bool,
 ) -> (Vector, Vector) {
     let pe = &child.mean - &child.expected_mean;
-    let mut coupled_parent = with_coupling!(coupling_fn, |f, _df, _d2f| parent.mean.mapv(f));
+    let mut coupled_parent = with_coupling!(coupling_fn, |f, _df, _d2f| parent
+        .mean
+        .mapv(|v| f(v as f64) as Float));
     if parent_has_constant {
         coupled_parent = super::push(&coupled_parent, 1.0);
     }

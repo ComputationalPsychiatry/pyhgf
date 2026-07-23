@@ -11,7 +11,7 @@ use crate::updates::vectorised::learning::WeightKind;
 use crate::vectorised::layer::{
     DeepNet, LayerConfig, LayerKind, VolatilityUpdate, LAYER_STATE_FIELDS,
 };
-use crate::vectorised::mat::Matrix;
+use crate::vectorised::mat::{Float, Matrix};
 use crate::vectorised::optimiser::{OptState, Optimizer};
 use numpy::{PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyValueError;
@@ -35,8 +35,8 @@ pub struct DeepNetwork {
     /// object).
     last_optimizer: Option<Optimizer>,
     volatility_updates: VolatilityUpdate,
-    max_posterior_precision: f64,
-    precision_clipping_value: f64,
+    max_posterior_precision: Float,
+    precision_clipping_value: Float,
     /// Network-level default coupling function name (validated at
     /// construction).
     default_coupling: String,
@@ -88,28 +88,59 @@ impl DeepNetwork {
 /// whether the input was 1-D (a single sample), so callers can reproduce the
 /// JAX convention of returning a 1-D output for a 1-D input.
 fn extract_matrix(x: &Bound<'_, PyAny>) -> PyResult<(Matrix, bool)> {
-    if let Ok(arr) = x.extract::<PyReadonlyArray2<f64>>() {
+    if let Ok(arr) = x.extract::<PyReadonlyArray2<Float>>() {
         Ok((arr.as_array().to_owned(), false))
-    } else if let Ok(arr) = x.extract::<PyReadonlyArray1<f64>>() {
+    } else if let Ok(arr) = x.extract::<PyReadonlyArray1<Float>>() {
         Ok((
             arr.as_array().to_owned().insert_axis(ndarray::Axis(0)),
             true,
         ))
+    } else if let Ok((mat, was_1d)) = extract_matrix_f64(x) {
+        // f32 engine: numpy's default float64 buffers still land on a
+        // vectorised cast, not the per-element fallback below.
+        Ok((mat, was_1d))
     } else {
-        // Fallback: a Python nested list / non-f64 array.
-        if let Ok(rows) = x.extract::<Vec<Vec<f64>>>() {
+        // Fallback: a Python nested list / non-Float array.
+        if let Ok(rows) = x.extract::<Vec<Vec<Float>>>() {
             let n = rows.len();
             let m = rows.first().map_or(0, Vec::len);
-            let flat: Vec<f64> = rows.into_iter().flatten().collect();
+            let flat: Vec<Float> = rows.into_iter().flatten().collect();
             let mat = Matrix::from_shape_vec((n, m), flat)
                 .map_err(|e| PyValueError::new_err(format!("ragged input array: {e}")))?;
             Ok((mat, false))
         } else {
-            let flat: Vec<f64> = x.extract()?;
+            let flat: Vec<Float> = x.extract()?;
             let m = flat.len();
             Ok((Matrix::from_shape_vec((1, m), flat).unwrap(), true))
         }
     }
+}
+
+/// Vectorised-cast extraction of a float64 numpy buffer (numpy's default
+/// dtype) for the f32 engine: one `mapv` cast instead of the per-element
+/// sequence fallback.
+#[cfg(not(feature = "f64"))]
+fn extract_matrix_f64(x: &Bound<'_, PyAny>) -> PyResult<(Matrix, bool)> {
+    if let Ok(arr) = x.extract::<PyReadonlyArray2<f64>>() {
+        return Ok((arr.as_array().mapv(|v| v as Float), false));
+    }
+    let arr = x.extract::<PyReadonlyArray1<f64>>()?;
+    Ok((
+        arr.as_array()
+            .mapv(|v| v as Float)
+            .insert_axis(ndarray::Axis(0)),
+        true,
+    ))
+}
+
+/// Under the `f64` feature `Float` *is* f64, so the `Float` paths above have
+/// already matched any float64 buffer; always defer to the caller's fallback.
+#[cfg(feature = "f64")]
+fn extract_matrix_f64(x: &Bound<'_, PyAny>) -> PyResult<(Matrix, bool)> {
+    let _ = x;
+    Err(PyValueError::new_err(
+        "Float is f64; handled by the Float paths",
+    ))
 }
 
 /// Error unless the input's column count matches the top layer's node count.
@@ -147,7 +178,7 @@ fn extract_for_fit(x: &Bound<'_, PyAny>, expected_cols: usize, name: &str) -> Py
 }
 
 /// Parse an optimizer name (`"adam"` or `"sgd"`) into an [`Optimizer`].
-fn parse_optimizer(name: &str, learning_rate: f64) -> PyResult<Optimizer> {
+fn parse_optimizer(name: &str, learning_rate: Float) -> PyResult<Optimizer> {
     match name.to_lowercase().as_str() {
         "adam" => Ok(Optimizer::adam(learning_rate)),
         "sgd" => Ok(Optimizer::sgd(learning_rate)),
@@ -179,8 +210,8 @@ impl DeepNetwork {
     ))]
     fn py_new(
         volatility_updates: &str,
-        max_posterior_precision: f64,
-        precision_clipping_value: f64,
+        max_posterior_precision: Float,
+        precision_clipping_value: Float,
         coupling_fn: &str,
     ) -> PyResult<Self> {
         let volatility_updates =
@@ -246,7 +277,7 @@ impl DeepNetwork {
         if let Some(dict) = kwargs {
             for (key, value) in dict.iter() {
                 let key: String = key.extract()?;
-                let val: f64 = value.extract()?;
+                let val: Float = value.extract()?;
                 match key.as_str() {
                     // LayerParams overrides (typed fields on the config).
                     "tonic_volatility_vol" => cfg.tonic_volatility_vol = val,
@@ -290,13 +321,21 @@ impl DeepNetwork {
     ) -> PyResult<Py<PyAny>> {
         let net = slf.require_net()?;
         let top = slf.top_size();
-        // Fast path: borrow a 2-D f64 numpy buffer directly — the forward pass
+        // Fast path: borrow a 2-D Float numpy buffer directly — the forward pass
         // then makes exactly one input copy (the features×samples layout) and
         // one output copy (`to_pyarray`).
-        if let Ok(arr) = x.extract::<PyReadonlyArray2<f64>>() {
+        if let Ok(arr) = x.extract::<PyReadonlyArray2<Float>>() {
             let xv = arr.as_array();
             check_predict_cols(xv.ncols(), top)?;
             let out = net.predict_batch(xv);
+            return Ok(out.to_pyarray(py).into_any().unbind());
+        }
+        // f32 engine: a 2-D float64 buffer pays one vectorised cast instead.
+        #[cfg(not(feature = "f64"))]
+        if let Ok(arr) = x.extract::<PyReadonlyArray2<f64>>() {
+            let xmat = arr.as_array().mapv(|v| v as Float);
+            check_predict_cols(xmat.ncols(), top)?;
+            let out = net.predict_batch(xmat.view());
             return Ok(out.to_pyarray(py).into_any().unbind());
         }
         // Fallback: 1-D single sample or a Python list.
@@ -329,10 +368,10 @@ impl DeepNetwork {
         x: Bound<'py, PyAny>,
         y: Bound<'py, PyAny>,
         optimizer: &str,
-        learning_rate: f64,
+        learning_rate: Float,
         learning_kind: &str,
         weight_update: bool,
-        time_step: f64,
+        time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let opt = parse_optimizer(optimizer, learning_rate)?;
         let kind = parse_weight_kind(learning_kind)?;
@@ -412,10 +451,10 @@ impl DeepNetwork {
         x: Bound<'py, PyAny>,
         y: Bound<'py, PyAny>,
         optimizer: Option<&str>,
-        learning_rate: f64,
+        learning_rate: Float,
         learning_kind: &str,
         update_confidences: bool,
-        time_step: f64,
+        time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let opt = optimizer
             .map(|name| parse_optimizer(name, learning_rate))
@@ -520,10 +559,24 @@ impl DeepNetwork {
 
     /// Set the inter-layer weight matrices for layers `1..n` from a list of 2D
     /// arrays (same order/shapes as [`Self::get_weights`]).
-    fn set_weights(
-        mut slf: PyRefMut<'_, Self>,
-        weights: Vec<PyReadonlyArray2<f64>>,
-    ) -> PyResult<()> {
+    fn set_weights(mut slf: PyRefMut<'_, Self>, weights: Vec<Bound<'_, PyAny>>) -> PyResult<()> {
+        // Accept `Float` buffers directly and float64 buffers (numpy's
+        // default dtype) through a vectorised cast, mirroring the data paths.
+        let weights: Vec<Matrix> = weights
+            .iter()
+            .map(|w| {
+                if let Ok(arr) = w.extract::<PyReadonlyArray2<Float>>() {
+                    return Ok(arr.as_array().to_owned());
+                }
+                #[cfg(not(feature = "f64"))]
+                if let Ok(arr) = w.extract::<PyReadonlyArray2<f64>>() {
+                    return Ok(arr.as_array().mapv(|v| v as Float));
+                }
+                Err(PyValueError::new_err(
+                    "each weight must be a 2-D float array".to_string(),
+                ))
+            })
+            .collect::<PyResult<_>>()?;
         let net = slf.require_net_mut()?;
         let n_weighted = net.layers.len() - 1;
         if weights.len() != n_weighted {
@@ -540,15 +593,15 @@ impl DeepNetwork {
                 .as_ref()
                 .expect("interior layer has weights")
                 .dim();
-            if w.as_array().dim() != expected {
+            if w.dim() != expected {
                 return Err(PyValueError::new_err(format!(
                     "weight shape mismatch: expected {expected:?}, got {:?}.",
-                    w.as_array().dim()
+                    w.dim()
                 )));
             }
         }
-        for (layer, w) in net.layers.iter_mut().skip(1).zip(weights.iter()) {
-            layer.weights_in = Some(w.as_array().to_owned());
+        for (layer, w) in net.layers.iter_mut().skip(1).zip(weights) {
+            layer.weights_in = Some(w);
         }
         // Weight values changed but shapes did not; existing optimiser moments
         // stay valid, so opt_state is left as-is.

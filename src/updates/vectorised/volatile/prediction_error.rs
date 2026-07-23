@@ -3,8 +3,10 @@
 //! `pyhgf/updates/vectorized/volatile/prediction_error.py` (which, like here,
 //! hosts the per-update-type volatility posteriors and the combined driver).
 
+use super::MIN_VOLATILITY;
 use crate::math::{lambert_w0, logaddexp, sigmoid};
 use crate::vectorised::layer::{LayerState, VolatilityUpdate};
+use crate::vectorised::mat::Float;
 use ndarray::Array1;
 
 /// Compute prediction errors and apply the volatility-level posterior update.
@@ -15,9 +17,9 @@ use ndarray::Array1;
 pub fn layer_prediction_error(
     layer: &mut LayerState,
     volatility_updates: VolatilityUpdate,
-    time_step: f64,
+    time_step: Float,
     has_volatility_parent: bool,
-    max_posterior_precision: f64,
+    max_posterior_precision: Float,
 ) {
     // Value prediction error (always).
     layer.value_prediction_error = &layer.mean - &layer.expected_mean;
@@ -35,9 +37,7 @@ pub fn layer_prediction_error(
     layer.volatility_prediction_error = Some(vol_pe);
 
     match volatility_updates {
-        VolatilityUpdate::Standard => {
-            volatility_posterior_standard(layer, max_posterior_precision)
-        }
+        VolatilityUpdate::Standard => volatility_posterior_standard(layer, max_posterior_precision),
         VolatilityUpdate::EHgf => {
             volatility_posterior_ehgf(layer, time_step, max_posterior_precision)
         }
@@ -50,7 +50,7 @@ pub fn layer_prediction_error(
 /// The value-level volatility prediction error of one node:
 /// `Δ = π̃/π + π̃·δ² − 1`.
 #[inline]
-pub(crate) fn volatility_pe_node(ep: f64, p: f64, m: f64, em: f64) -> f64 {
+pub(crate) fn volatility_pe_node(ep: Float, p: Float, m: Float, em: Float) -> Float {
     let d = m - em;
     ep / p + ep * (d * d) - 1.0
 }
@@ -62,12 +62,12 @@ pub(crate) fn volatility_pe_node(ep: f64, p: f64, m: f64, em: f64) -> f64 {
 /// shared by the per-sample and the batched kernels, so the two paths cannot drift.
 #[inline]
 pub(crate) fn standard_vol_node(
-    g: f64,
-    dpe: f64,
-    ep: f64,
-    em: f64,
-    max_posterior_precision: f64,
-) -> (f64, f64) {
+    g: Float,
+    dpe: Float,
+    ep: Float,
+    em: Float,
+    max_posterior_precision: Float,
+) -> (Float, Float) {
     let g2 = g * g;
     let contrib = 0.5 * g2 + g2 * dpe - 0.5 * g * dpe;
     let pp = (ep + contrib).min(max_posterior_precision);
@@ -76,23 +76,17 @@ pub(crate) fn standard_vol_node(
 }
 
 /// Standard volatility-level posterior: precision first, then mean.
-fn volatility_posterior_standard(state: &mut LayerState, max_posterior_precision: f64) {
+fn volatility_posterior_standard(state: &mut LayerState, max_posterior_precision: Float) {
     let eff = &state.effective_precision;
     let vpe = state.volatility_prediction_error.as_ref().unwrap();
     let epv = state.expected_precision_vol.as_ref().unwrap();
     let emv = state.expected_mean_vol.as_ref().unwrap();
 
     let n = eff.len();
-    let mut posterior_precision_vol = Array1::<f64>::zeros(n);
-    let mut posterior_mean_vol = Array1::<f64>::zeros(n);
+    let mut posterior_precision_vol = Array1::<Float>::zeros(n);
+    let mut posterior_mean_vol = Array1::<Float>::zeros(n);
     for i in 0..n {
-        let (pp, m) = standard_vol_node(
-            eff[i],
-            vpe[i],
-            epv[i],
-            emv[i],
-            max_posterior_precision,
-        );
+        let (pp, m) = standard_vol_node(eff[i], vpe[i], epv[i], emv[i], max_posterior_precision);
         posterior_precision_vol[i] = pp;
         posterior_mean_vol[i] = m;
     }
@@ -108,31 +102,31 @@ fn volatility_posterior_standard(state: &mut LayerState, max_posterior_precision
 ///
 /// Plain exponentials: the JAX eHGF posterior applies no underflow guard here
 /// (unlike the prediction kernels' `guarded_volatility`); the only floor is
-/// the `1e-128` clamp on `previous_variance`. The per-node backend's eHGF
-/// update follows the same convention.
+/// the [`MIN_VOLATILITY`] clamp on `previous_variance`. The per-node backend's
+/// eHGF update follows the same convention.
 #[inline]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn ehgf_vol_node(
-    em: f64,
-    ep: f64,
-    g: f64,
-    dpe: f64,
-    cond: f64,
-    prec: f64,
-    mean: f64,
-    emean: f64,
-    time_step: f64,
-    max_posterior_precision: f64,
-) -> (f64, f64) {
+    em: Float,
+    ep: Float,
+    g: Float,
+    dpe: Float,
+    cond: Float,
+    prec: Float,
+    mean: Float,
+    emean: Float,
+    time_step: Float,
+    max_posterior_precision: Float,
+) -> (Float, Float) {
     // Mean first, using expected_precision_vol as the approximation (coupling = 1).
     let posterior_mean_vol = em + (g * dpe) / (ep * 2.0);
 
-    let pvol = |exponent: f64| time_step * exponent.exp();
+    let pvol = |exponent: Float| time_step * exponent.exp();
     // Reconstruct the value level's pre-prediction variance exactly. The value
     // level carries no tonic volatility of its own.
     let mgf = 1.0 / (ep * 2.0);
     let predicted_vol = pvol(em + mgf);
-    let previous_variance = (1.0 / cond - predicted_vol).max(1e-128);
+    let previous_variance = (1.0 / cond - predicted_vol).max(MIN_VOLATILITY);
     // Re-predict volatility / precision from the posterior mean.
     let repredicted_vol = pvol(posterior_mean_vol);
     let expected_precision = 1.0 / (previous_variance + repredicted_vol);
@@ -142,13 +136,20 @@ pub(crate) fn ehgf_vol_node(
     let vpe2 = (1.0 / prec + d * d) * expected_precision - 1.0;
     let inner = eff2 + vew * vpe2;
     let contrib = (eff2 * inner * 0.5).max(0.0);
-    ((ep + contrib).min(max_posterior_precision), posterior_mean_vol)
+    (
+        (ep + contrib).min(max_posterior_precision),
+        posterior_mean_vol,
+    )
 }
 
 /// eHGF volatility-level posterior: mean first (using the expected precision),
 /// then the "safe" precision increment recomputed from the updated mean and
 /// floored at zero.
-fn volatility_posterior_ehgf(state: &mut LayerState, time_step: f64, max_posterior_precision: f64) {
+fn volatility_posterior_ehgf(
+    state: &mut LayerState,
+    time_step: Float,
+    max_posterior_precision: Float,
+) {
     let eff = &state.effective_precision;
     let vpe = state.volatility_prediction_error.as_ref().unwrap();
     let epv = state.expected_precision_vol.as_ref().unwrap();
@@ -159,8 +160,8 @@ fn volatility_posterior_ehgf(state: &mut LayerState, time_step: f64, max_posteri
     let emean = &state.expected_mean;
 
     let n = mean.len();
-    let mut posterior_precision_vol = Array1::<f64>::zeros(n);
-    let mut posterior_mean_vol = Array1::<f64>::zeros(n);
+    let mut posterior_precision_vol = Array1::<Float>::zeros(n);
+    let mut posterior_mean_vol = Array1::<Float>::zeros(n);
     for i in 0..n {
         let (pp, m) = ehgf_vol_node(
             emv[i],
@@ -193,16 +194,16 @@ fn volatility_posterior_ehgf(state: &mut LayerState, time_step: f64, max_posteri
 /// are kept here so both backends compute the *same* forward values.
 fn volatility_posterior_unbounded(
     state: &mut LayerState,
-    time_step: f64,
-    max_posterior_precision: f64,
+    time_step: Float,
+    max_posterior_precision: Float,
 ) {
     let epv = state.expected_precision_vol.as_ref().unwrap();
     let emv = state.expected_mean_vol.as_ref().unwrap();
     let cond = &state.conditional_expected_precision;
 
     let n = state.mean.len();
-    let mut posterior_mean_vol = Array1::<f64>::zeros(n);
-    let mut posterior_precision_vol = Array1::<f64>::zeros(n);
+    let mut posterior_mean_vol = Array1::<Float>::zeros(n);
+    let mut posterior_precision_vol = Array1::<Float>::zeros(n);
     for i in 0..n {
         let (pp, m) = unbounded_vol_node(
             emv[i],
@@ -229,16 +230,29 @@ fn volatility_posterior_unbounded(
 #[inline]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn unbounded_vol_node(
-    em: f64,
-    ep: f64,
-    cond: f64,
-    marginal_ep: f64,
-    prec: f64,
-    mean: f64,
-    emean: f64,
-    time_step: f64,
-    max_posterior_precision: f64,
-) -> (f64, f64) {
+    em: Float,
+    ep: Float,
+    cond: Float,
+    marginal_ep: Float,
+    prec: Float,
+    mean: Float,
+    emean: Float,
+    time_step: Float,
+    max_posterior_precision: Float,
+) -> (Float, Float) {
+    // The dual-quadratic blend is numerically delicate (log-space energies,
+    // Lambert W); compute it in f64 and cast the posterior pair back at the end.
+    let (em, ep, cond, marginal_ep, prec, mean, emean, time_step, max_posterior_precision) = (
+        em as f64,
+        ep as f64,
+        cond as f64,
+        marginal_ep as f64,
+        prec as f64,
+        mean as f64,
+        emean as f64,
+        time_step as f64,
+        max_posterior_precision as f64,
+    );
     let log_time_step = time_step.ln();
     let log_float_max = f64::MAX.ln();
 
@@ -247,7 +261,7 @@ pub(crate) fn unbounded_vol_node(
     // volatility coupling is fixed at 1 and the value level carries no tonic
     // volatility of its own.
     let predicted_volatility = time_step * (em + 1.0 / (2.0 * ep)).exp();
-    let previous_variance = (1.0 / cond - predicted_volatility).max(1e-128);
+    let previous_variance = (1.0 / cond - predicted_volatility).max(MIN_VOLATILITY as f64);
     let d = mean - emean;
     let be_aux = 1.0 / prec + d * d;
 
@@ -307,7 +321,10 @@ pub(crate) fn unbounded_vol_node(
     // Gaussian mixture moment matching.
     let mu = (1.0 - b) * mu1 + b * mu2;
     let sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2) * (mu1 - mu2);
-    ((1.0 / sig2).min(max_posterior_precision), mu)
+    (
+        ((1.0 / sig2).min(max_posterior_precision)) as Float,
+        mu as Float,
+    )
 }
 
 #[cfg(test)]

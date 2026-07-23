@@ -11,12 +11,14 @@ Two complementary suites cover ``pyhgf.rshgf.DeepNetwork``:
   build matched architectures, inject identical weights, and assert that the
   forward pass and the weight learning trajectories agree.
 
-JAX is put in float64 mode for the duration of this module so it matches the
-Rust ``f64`` backend; without this, JAX's default float32 would swamp any
-meaningful tolerance. The flag is restored on teardown so the other test
-modules keep their default dtype behaviour. The two backends order their
-matrix product summations differently, so agreement is asserted to a tight
-floating point tolerance rather than bit equality.
+JAX is put in float64 mode for the duration of this module so the reference
+side of every comparison is computed at full precision; the flag is restored
+on teardown so the other test modules keep their default dtype behaviour.
+The Rust engine's own scalar depends on how it was built (f32 by default,
+f64 behind the ``f64`` cargo feature), so the parity bounds are scaled to
+the engine dtype probed at import. The two backends order their matrix
+product summations differently, so agreement is asserted to a floating
+point tolerance rather than bit equality in either configuration.
 """
 
 import dataclasses
@@ -29,6 +31,32 @@ import pytest
 from pyhgf.rshgf import DeepNetwork as RsDeepNetwork
 
 from pyhgf.model import DeepNetwork as JaxDeepNetwork
+
+
+def _engine_dtype() -> np.dtype:
+    """Probe the Rust engine's scalar dtype from an initialised weight."""
+    probe = RsDeepNetwork()
+    probe.add_layer(2)
+    probe.add_layer(2)
+    probe.weight_initialisation("he", seed=0)
+    return np.asarray(probe.get_weights()[0]).dtype
+
+
+ENGINE_F32 = _engine_dtype() == np.float32
+
+# Cross-backend bounds against the float64 JAX reference: one sweep agrees to
+# a few machine epsilons of the engine scalar (PARITY); sequential
+# trajectories accumulate summation-order differences over samples
+# (TRAJECTORY). CONSISTENCY compares the Rust engine against itself (input
+# forms, softmax normalisation), where only the engine epsilon matters.
+if ENGINE_F32:
+    PARITY = {"rtol": 3e-5, "atol": 1e-6}
+    TRAJECTORY = {"rtol": 3e-3, "atol": 1e-4}
+    CONSISTENCY = {"rtol": 1e-6}
+else:
+    PARITY = {"rtol": 1e-8, "atol": 1e-10}
+    TRAJECTORY = {"rtol": 1e-6, "atol": 1e-9}
+    CONSISTENCY = {"rtol": 1e-12}
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -166,10 +194,10 @@ def test_predict_input_forms():
     # A 1D sample returns a 1D output and matches the matching batch row.
     out1 = net.predict(x2[0])
     assert out1.shape == (2,)
-    np.testing.assert_allclose(out1, out2[0], rtol=1e-12)
+    np.testing.assert_allclose(out1, out2[0], **CONSISTENCY)
     # Nested Python lists are accepted.
     out_list = net.predict(x2.tolist())
-    np.testing.assert_allclose(out_list, out2, rtol=1e-12)
+    np.testing.assert_allclose(out_list, out2, **CONSISTENCY)
 
 
 def test_predict_input_errors():
@@ -249,7 +277,8 @@ def test_fit_weight_update_false_freezes_weights():
     net.set_weights(weights)
     net.fit(rng.normal(size=(6, 3)), rng.normal(size=(6, 2)), weight_update=False)
     for got, expected in zip(net.get_weights(), weights):
-        np.testing.assert_array_equal(got, expected)
+        # Frozen means bit-identical to what was set, in the engine's scalar.
+        np.testing.assert_array_equal(got, np.asarray(expected, dtype=got.dtype))
 
 
 # ---------------------------------------------------------------------------
@@ -263,9 +292,7 @@ def test_predict_parity(volatility_updates):
     rng = np.random.default_rng(10)
     rs, jx = _matched_pair([2, 4, 3], rng, volatility_updates=volatility_updates)
     x = rng.normal(size=(5, 3))
-    np.testing.assert_allclose(
-        rs.predict(x), np.asarray(jx.predict(x)), rtol=1e-8, atol=1e-10
-    )
+    np.testing.assert_allclose(rs.predict(x), np.asarray(jx.predict(x)), **PARITY)
 
 
 def test_predict_parity_tanh_coupling():
@@ -273,9 +300,7 @@ def test_predict_parity_tanh_coupling():
     rng = np.random.default_rng(11)
     rs, jx = _matched_pair([2, 4, 3], rng, coupling="tanh")
     x = rng.normal(size=(5, 3))
-    np.testing.assert_allclose(
-        rs.predict(x), np.asarray(jx.predict(x)), rtol=1e-8, atol=1e-10
-    )
+    np.testing.assert_allclose(rs.predict(x), np.asarray(jx.predict(x)), **PARITY)
 
 
 def test_predict_parity_single_sample():
@@ -286,7 +311,7 @@ def test_predict_parity_single_sample():
     out_rs = rs.predict(x)
     out_jx = np.asarray(jx.predict(x))
     assert out_rs.shape == out_jx.shape == (2,)
-    np.testing.assert_allclose(out_rs, out_jx, rtol=1e-8, atol=1e-10)
+    np.testing.assert_allclose(out_rs, out_jx, **PARITY)
 
 
 @pytest.mark.parametrize(
@@ -305,12 +330,10 @@ def test_fit_trajectory_parity(optimizer, make_optax):
     )
     jx.fit(x, y, make_optax())
 
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
-        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
 def test_fit_parity_standard_learning_kind():
@@ -323,9 +346,7 @@ def test_fit_parity_standard_learning_kind():
         x, y, optimizer="sgd", learning_rate=0.1, learning_kind="standard"
     )
     jx.fit(x, y, optax.sgd(0.1), learning_kind="standard")
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
 
 def test_fit_parity_time_step():
@@ -336,9 +357,7 @@ def test_fit_parity_time_step():
     y = rng.normal(size=(6, 2))
     preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05, time_step=0.7)
     jx.fit(x, y, optax.sgd(0.05), time_step=0.7)
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
 
 def test_fit_parity_weight_update_false():
@@ -349,9 +368,7 @@ def test_fit_parity_weight_update_false():
     y = rng.normal(size=(6, 2))
     preds_rs = rs.fit(x, y, weight_update=False)
     jx.fit(x, y, optax.sgd(0.1), weight_update=False)
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
 
 @pytest.mark.parametrize("volatility_updates", ["standard", "unbounded"])
@@ -363,9 +380,7 @@ def test_fit_parity_volatility_updates(volatility_updates):
     y = rng.normal(size=(6, 2))
     preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
 
 def test_fit_parity_binary_output():
@@ -382,12 +397,10 @@ def test_fit_parity_binary_output():
     y = rng.integers(0, 2, size=(8, 2)).astype(float)
     preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
-        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
 def test_fit_parity_categorical_output():
@@ -404,9 +417,7 @@ def test_fit_parity_categorical_output():
     y = np.eye(3)[rng.integers(0, 3, size=8)]
     preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
-    np.testing.assert_allclose(
-        preds_rs, np.asarray(jx.predictions), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
 
 def test_batch_update_validation():
@@ -442,12 +453,10 @@ def test_batch_update_trajectory_parity(optimizer):
             x, y, optimizer=optimizer, learning_rate=lr[optimizer]
         )
         jx.batch_update(x, y, optimizer=optax_opt)
-        np.testing.assert_allclose(
-            errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
-        )
+        np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
-        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
 def test_batch_update_parity_pinned_confidences():
@@ -465,12 +474,10 @@ def test_batch_update_parity_pinned_confidences():
             update_confidences=False,
         )
         jx.batch_update(x, y, optimizer=optax.sgd(0.05), update_confidences=False)
-    np.testing.assert_allclose(
-        errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
-        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
 def test_batch_update_frozen_weights():
@@ -482,9 +489,7 @@ def test_batch_update_frozen_weights():
     y = rng.normal(size=(6, 2))
     errors_rs = rs.batch_update(x, y)
     jx.batch_update(x, y)
-    np.testing.assert_allclose(
-        errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     for got, expected in zip(rs.get_weights(), weights_before):
         np.testing.assert_array_equal(got, expected)
 
@@ -507,12 +512,10 @@ def test_batch_update_parity_categorical_output():
     for _ in range(3):
         errors_rs = rs.batch_update(x, y, optimizer="adam", learning_rate=1e-2)
         jx.batch_update(x, y, optimizer=optax_opt)
-    np.testing.assert_allclose(
-        errors_rs, np.asarray(jx.input_errors), rtol=1e-6, atol=1e-9
-    )
+    np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
-        np.testing.assert_allclose(w_rs, w_jx, rtol=1e-6, atol=1e-9)
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
 def test_predict_parity_binary_output():
@@ -526,9 +529,7 @@ def test_predict_parity_binary_output():
     rs.set_weights(weights)
     _inject_jax_weights(jx, weights)
     x = rng.normal(size=(5, 3))
-    np.testing.assert_allclose(
-        rs.predict(x), np.asarray(jx.predict(x)), rtol=1e-8, atol=1e-10
-    )
+    np.testing.assert_allclose(rs.predict(x), np.asarray(jx.predict(x)), **PARITY)
 
 
 def test_predict_parity_categorical_output():
@@ -544,5 +545,5 @@ def test_predict_parity_categorical_output():
     x = rng.normal(size=(5, 4))
     out_rs = rs.predict(x)
     # A categorical output layer predicts a softmax; rows sum to one.
-    np.testing.assert_allclose(out_rs.sum(axis=1), np.ones(5), rtol=1e-12)
-    np.testing.assert_allclose(out_rs, np.asarray(jx.predict(x)), rtol=1e-8, atol=1e-10)
+    np.testing.assert_allclose(out_rs.sum(axis=1), np.ones(5), **CONSISTENCY)
+    np.testing.assert_allclose(out_rs, np.asarray(jx.predict(x)), **PARITY)
