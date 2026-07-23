@@ -5,7 +5,7 @@
 //! inline, so no gradient matrix is ever materialised.
 
 use crate::vectorised::layer::{DeepNet, Layer};
-use crate::vectorised::mat::{Matrix, Vector};
+use crate::vectorised::mat::{Float, Matrix, Vector};
 
 /// A gradient-descent optimizer over the network's weight matrices, mirroring
 /// the optax transforms `fit` accepts. `PartialEq` lets the Python `fit`
@@ -14,19 +14,24 @@ use crate::vectorised::mat::{Matrix, Vector};
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Optimizer {
     /// Plain SGD: `w ← w − lr · grad`.
-    Sgd { lr: f64 },
+    Sgd { lr: Float },
     /// Adam (Kingma & Ba, 2015), matching `optax.adam` defaults.
-    Adam { lr: f64, b1: f64, b2: f64, eps: f64 },
+    Adam {
+        lr: Float,
+        b1: Float,
+        b2: Float,
+        eps: Float,
+    },
 }
 
 impl Optimizer {
     /// `optax.sgd(lr)`.
-    pub fn sgd(lr: f64) -> Self {
+    pub fn sgd(lr: Float) -> Self {
         Optimizer::Sgd { lr }
     }
 
     /// `optax.adam(lr)` with the standard `b1=0.9, b2=0.999, eps=1e-8`.
-    pub fn adam(lr: f64) -> Self {
+    pub fn adam(lr: Float) -> Self {
         Optimizer::Adam {
             lr,
             b1: 0.9,
@@ -119,17 +124,7 @@ impl Optimizer {
                                 .and(&mut vrow)
                                 .and(v)
                                 .for_each(|w, m_, v_, &vj| {
-                                    *w -= crate::optimiser::adam_step(
-                                        m_,
-                                        v_,
-                                        ui * vj,
-                                        b1,
-                                        b2,
-                                        bc1,
-                                        bc2,
-                                        lr,
-                                        eps,
-                                    );
+                                    *w -= adam_step_flt(m_, v_, ui * vj, b1, b2, bc1, bc2, lr, eps);
                                 });
                         });
                 }
@@ -179,9 +174,7 @@ impl Optimizer {
                         .and(&mut *mv)
                         .and(grad)
                         .for_each(|w, m_, v_, &g| {
-                            *w -= crate::optimiser::adam_step(
-                                m_, v_, g, b1, b2, bc1, bc2, lr, eps,
-                            );
+                            *w -= adam_step_flt(m_, v_, g, b1, b2, bc1, bc2, lr, eps);
                         });
                 }
             }
@@ -221,7 +214,11 @@ mod tests {
                 &mut net_a.layers,
                 &[None, Some((u.clone(), v.clone()))],
             );
-            opt.apply_dense(&mut state_b, &mut net_b.layers, &[None, Some(dense.clone())]);
+            opt.apply_dense(
+                &mut state_b,
+                &mut net_b.layers,
+                &[None, Some(dense.clone())],
+            );
         }
         let wa = net_a.layers[1].weights_in.as_ref().unwrap();
         let wb = net_b.layers[1].weights_in.as_ref().unwrap();
@@ -262,4 +259,25 @@ mod tests {
         assert!((w[[0, 0]] - (1.0 - 0.01)).abs() < 1e-6);
         assert_eq!(state.t, 1);
     }
+}
+
+/// Float twin of [`crate::optimiser::adam_step`] for the vectorised engine.
+#[allow(clippy::too_many_arguments)]
+#[inline]
+fn adam_step_flt(
+    m: &mut Float,
+    v: &mut Float,
+    gradient: Float,
+    beta1: Float,
+    beta2: Float,
+    bc1: Float,
+    bc2: Float,
+    lr: Float,
+    epsilon: Float,
+) -> Float {
+    *m = beta1 * *m + (1.0 - beta1) * gradient;
+    *v = beta2 * *v + (1.0 - beta2) * gradient * gradient;
+    let m_hat = *m / bc1;
+    let v_hat = *v / bc2;
+    lr * m_hat / (v_hat.sqrt() + epsilon)
 }

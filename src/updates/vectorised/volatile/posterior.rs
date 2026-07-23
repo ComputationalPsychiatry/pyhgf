@@ -3,7 +3,7 @@
 
 use crate::math::{with_coupling, CouplingFn};
 use crate::vectorised::layer::LayerState;
-use crate::vectorised::mat::Matrix;
+use crate::vectorised::mat::{Float, Matrix};
 use ndarray::s;
 
 /// Update the value-level posterior (precision then mean) of a parent layer
@@ -18,7 +18,7 @@ pub fn layer_posterior_update(
     weights: &Matrix,
     coupling_fn: &CouplingFn,
     parent_has_constant: bool,
-    max_posterior_precision: f64,
+    max_posterior_precision: Float,
     child_is_input_layer: bool,
 ) {
     // Bias column stripped via a view (no matrix clone).
@@ -31,8 +31,8 @@ pub fn layer_posterior_update(
 
     let (coupling_prime, coupling_second) = with_coupling!(coupling_fn, |_f, df, d2f| {
         (
-            parent.expected_mean.mapv(df),
-            parent.expected_mean.mapv(d2f),
+            parent.expected_mean.mapv(|v| df(v as f64) as Float),
+            parent.expected_mean.mapv(|v| d2f(v as f64) as Float),
         )
     });
 
@@ -43,9 +43,9 @@ pub fn layer_posterior_update(
     // temporaries.
     let n_child = w.nrows();
     let n_parent = w.ncols();
-    let mut pc1_base = ndarray::Array1::<f64>::zeros(n_parent);
-    let mut sum_pi_vpe = ndarray::Array1::<f64>::zeros(n_parent);
-    let mut msg = ndarray::Array1::<f64>::zeros(n_parent);
+    let mut pc1_base = ndarray::Array1::<Float>::zeros(n_parent);
+    let mut sum_pi_vpe = ndarray::Array1::<Float>::zeros(n_parent);
+    let mut msg = ndarray::Array1::<Float>::zeros(n_parent);
     for i in 0..n_child {
         let cep = child.conditional_expected_precision[i];
         let prec = child.precision[i];

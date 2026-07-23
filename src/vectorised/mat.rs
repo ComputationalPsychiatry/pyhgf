@@ -1,19 +1,33 @@
 //! Matrix primitives for the vectorised backend.
 //!
 //! The backend works directly on [`ndarray`] types: matrix products go through
-//! `ndarray`'s `.dot()`, which uses the pure-Rust (threaded) `matrixmultiply`
-//! kernel by default; enabling the crate's `blas` feature re-routes the same
-//! calls through a linked BLAS (`DGEMM`/`DGEMV`) without any code change. This
-//! module only adds the type aliases and the two constructions `ndarray` does
-//! not provide directly ([`eye`]).
+//! `ndarray`'s `.dot()`, which the default `blas` feature routes through a
+//! linked BLAS (`SGEMM`/`DGEMM`); building with `--no-default-features` falls
+//! back to the pure-Rust (threaded) `matrixmultiply` kernel without any code
+//! change. This module only adds the scalar/type aliases and the two
+//! constructions `ndarray` does not provide directly ([`eye`]).
+//!
+//! The engine's scalar is [`Float`]: `f32` by default (half the memory
+//! traffic of `f64`, which dominates the elementwise sweeps), switched to
+//! `f64` by the `f64` cargo feature for bit-compatibility with the JAX
+//! backend under `jax_enable_x64`. The nodalised (per-node) backend is
+//! unaffected: it computes in `f64` under either feature.
 
 use ndarray::{Array1, Array2};
 
-/// Row-major 2D matrix of f64 values backed by [`ndarray::Array2`].
-pub type Matrix = Array2<f64>;
+/// Scalar type of the vectorised engine: `f32` unless the `f64` feature is on.
+#[cfg(not(feature = "f64"))]
+pub type Float = f32;
 
-/// 1D vector of f64 values.
-pub type Vector = Array1<f64>;
+/// Scalar type of the vectorised engine: `f64` (the `f64` feature is on).
+#[cfg(feature = "f64")]
+pub type Float = f64;
+
+/// Row-major 2D matrix of [`Float`] values backed by [`ndarray::Array2`].
+pub type Matrix = Array2<Float>;
+
+/// 1D vector of [`Float`] values.
+pub type Vector = Array1<Float>;
 
 /// Create an identity matrix of size `n × n`.
 pub fn eye(n: usize) -> Matrix {

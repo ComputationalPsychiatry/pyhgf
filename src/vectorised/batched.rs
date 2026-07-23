@@ -20,7 +20,7 @@ use crate::updates::vectorised::volatile::prediction_error::{
     ehgf_vol_node, standard_vol_node, unbounded_vol_node, volatility_pe_node,
 };
 use crate::vectorised::layer::{DeepNet, Layer, LayerKind, LayerState, VolatilityUpdate};
-use crate::vectorised::mat::{Matrix, Vector};
+use crate::vectorised::mat::{Float, Matrix, Vector};
 use ndarray::parallel::prelude::*;
 use ndarray::{s, ArrayView2, Axis, Zip};
 
@@ -100,7 +100,7 @@ fn coupled_activations(
     crate::math::with_coupling!(coupling_fn, |f, _df, _d2f| {
         Zip::from(coupled.slice_mut(s![..n_parent, ..]))
             .and(parent_field)
-            .for_each(|c, &m| *c = f(m));
+            .for_each(|c, &m| *c = f(m as f64) as Float);
     });
     if parent_has_constant {
         coupled.row_mut(n_parent).fill(1.0);
@@ -117,7 +117,7 @@ fn batched_volatile_prediction(
     parent: &BatchedLayerState,
     weights: &Matrix,
     parent_layer: &Layer,
-    time_step: f64,
+    time_step: Float,
 ) {
     let params = &child_layer.params;
     let (n, n_samples) = child.mean.dim();
@@ -166,7 +166,7 @@ fn batched_volatile_prediction(
             .and(&parent.expected_mean)
             .and(&parent.expected_precision)
             .for_each(|o, &mu, &ep| {
-                let num = time_step * df(mu);
+                let num = time_step * df(mu as f64) as Float;
                 *o = (num * num) / ep;
             });
     });
@@ -182,11 +182,12 @@ fn batched_volatile_prediction(
     // fused into a single pass over the state: π̂ = 1/(1/π + Ω),
     // π̃ = 1/(1/π̂ + value_coupling_variance), γ = Ω·π̃, with
     // Ω = t·exp(ω + κ·μ_vol + κ²/(2·π̂_vol)) the predicted volatility.
-    let precision_triple = |c: &mut f64, e: &mut f64, ef: &mut f64, pr: f64, pv: f64, v: f64| {
-        *c = 1.0 / (1.0 / pr + pv);
-        *e = 1.0 / (1.0 / *c + v);
-        *ef = pv * *e;
-    };
+    let precision_triple =
+        |c: &mut Float, e: &mut Float, ef: &mut Float, pr: Float, pv: Float, v: Float| {
+            *c = 1.0 / (1.0 / pr + pv);
+            *e = 1.0 / (1.0 / *c + v);
+            *ef = pv * *e;
+        };
     if child_layer.is_input_layer {
         // Input/leaf override: no random walk between observations.
         child
@@ -204,9 +205,12 @@ fn batched_volatile_prediction(
             .for_each(|mut out, em, ep| {
                 // Volatility coupling is fixed at 1 and the value level carries no
                 // tonic volatility of its own.
-                Zip::from(&mut out).and(&em).and(&ep).for_each(|o, &m, &pvv| {
-                    *o = guarded_volatility(m + 1.0 / (pvv * 2.0), time_step);
-                });
+                Zip::from(&mut out)
+                    .and(&em)
+                    .and(&ep)
+                    .for_each(|o, &m, &pvv| {
+                        *o = guarded_volatility(m + 1.0 / (pvv * 2.0), time_step);
+                    });
             });
         Zip::from(&mut child.conditional_expected_precision)
             .and(&mut child.expected_precision)
@@ -220,7 +224,7 @@ fn batched_volatile_prediction(
         // volatility source, so it does not undergo a Gaussian random walk. Ω is
         // zero per node, leaving the conditional predicted precision equal to the
         // prior precision.
-        let per_node = ndarray::Array1::<f64>::zeros(n);
+        let per_node = ndarray::Array1::<Float>::zeros(n);
         Zip::from(child.conditional_expected_precision.rows_mut())
             .and(child.expected_precision.rows_mut())
             .and(child.effective_precision.rows_mut())
@@ -245,7 +249,7 @@ fn batched_binary_prediction(
     parent: &BatchedLayerState,
     weights: &Matrix,
     parent_layer: &Layer,
-    precision_clipping_value: f64,
+    precision_clipping_value: Float,
 ) {
     let coupled = coupled_activations(
         &parent.expected_mean,
@@ -254,7 +258,7 @@ fn batched_binary_prediction(
     );
     let mut logit = weights.dot(&coupled);
     logit.mapv_inplace(|x| {
-        sigmoid(x).clamp(precision_clipping_value, 1.0 - precision_clipping_value)
+        (sigmoid(x as f64) as Float).clamp(precision_clipping_value, 1.0 - precision_clipping_value)
     });
     let expected_precision = logit.mapv(|m| m * (1.0 - m));
     child.expected_mean = logit;
@@ -292,8 +296,8 @@ fn batched_prediction_error(
     layer_state: &mut BatchedLayerState,
     layer: &Layer,
     volatility_updates: VolatilityUpdate,
-    time_step: f64,
-    max_posterior_precision: f64,
+    time_step: Float,
+    max_posterior_precision: Float,
 ) {
     match layer.kind {
         LayerKind::Binary => {
@@ -303,7 +307,9 @@ fn batched_prediction_error(
                 .and(&layer_state.expected_mean)
                 .and(&layer_state.expected_precision)
                 .for_each(|d, &m, &em, &ep| *d = (m - em) / ep);
-            layer_state.precision.assign(&layer_state.expected_precision);
+            layer_state
+                .precision
+                .assign(&layer_state.expected_precision);
             return;
         }
         LayerKind::Categorical => {
@@ -311,7 +317,9 @@ fn batched_prediction_error(
                 .and(&layer_state.mean)
                 .and(&layer_state.expected_mean)
                 .for_each(|d, &m, &em| *d = m - em);
-            layer_state.precision.assign(&layer_state.expected_precision);
+            layer_state
+                .precision
+                .assign(&layer_state.expected_precision);
             return;
         }
         LayerKind::Volatile => {}
@@ -334,7 +342,10 @@ fn batched_prediction_error(
     // per sample), so the node rows run in parallel; every row's samples are
     // contiguous in the row-major layout.
     let (n, n_samples) = layer_state.mean.dim();
-    let emv = layer_state.expected_mean_vol.as_ref().expect("volatility level");
+    let emv = layer_state
+        .expected_mean_vol
+        .as_ref()
+        .expect("volatility level");
     let epv = layer_state
         .expected_precision_vol
         .as_ref()
@@ -433,7 +444,7 @@ fn batched_posterior_update(
     child: &BatchedLayerState,
     weights: &Matrix,
     parent_layer: &Layer,
-    max_posterior_precision: f64,
+    max_posterior_precision: Float,
     child_is_input_layer: bool,
 ) {
     let ncols = weights.ncols();
@@ -476,8 +487,8 @@ fn batched_posterior_update(
             .and(&mut coupling_second)
             .and(&parent.expected_mean)
             .for_each(|p, sec, &m| {
-                *p = df(m);
-                *sec = d2f(m);
+                *p = df(m as f64) as Float;
+                *sec = d2f(m as f64) as Float;
             });
     });
 
@@ -513,8 +524,8 @@ fn batched_posterior_update(
 pub fn batched_prediction_sweep(
     net: &DeepNet,
     states: &mut [BatchedLayerState],
-    x: ArrayView2<f64>,
-    time_step: f64,
+    x: ArrayView2<Float>,
+    time_step: Float,
 ) {
     let n = net.layers.len();
     // Clamp x (transposed to features × samples) on the top layer: one
@@ -563,8 +574,8 @@ pub fn batched_prediction_sweep(
 pub fn batched_update_sweep(
     net: &DeepNet,
     states: &mut [BatchedLayerState],
-    y: ArrayView2<f64>,
-    time_step: f64,
+    y: ArrayView2<Float>,
+    time_step: Float,
 ) {
     let n = net.layers.len();
     let vol = net.volatility_updates;
@@ -630,7 +641,7 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
         crate::math::with_coupling!(top_layer.coupling_fn, |_f, df, _d2f| {
             Zip::from(&mut routed)
                 .and(&states[n - 1].expected_mean)
-                .for_each(|r, &m| *r *= df(m));
+                .for_each(|r, &m| *r *= df(m as f64) as Float);
         });
     }
     routed
@@ -659,7 +670,7 @@ pub fn batched_mean_weight_gradients(
         // Child-side factor u = -(δ [∘ π]) and parent-side factor
         // v = g(parent posterior mean) with a bias row of ones, each built
         // sanitized (non-finite entries zeroed) in a single pass.
-        let sanitize = |x: f64| if x.is_finite() { x } else { 0.0 };
+        let sanitize = |x: Float| if x.is_finite() { x } else { 0.0 };
         let mut u = Matrix::zeros(child.value_prediction_error.raw_dim());
         if kind == WeightKind::PrecisionWeighted && child_layer.kind != LayerKind::Binary {
             Zip::from(&mut u)
@@ -677,14 +688,14 @@ pub fn batched_mean_weight_gradients(
         crate::math::with_coupling!(parent_layer.coupling_fn, |f, _df, _d2f| {
             Zip::from(v.slice_mut(s![..n_parent, ..]))
                 .and(&parent.mean)
-                .for_each(|c, &m| *c = sanitize(f(m)));
+                .for_each(|c, &m| *c = sanitize(f(m as f64) as Float));
         });
         if parent_layer.add_constant_input {
             v.row_mut(n_parent).fill(1.0);
         }
 
         let mut grad = u.dot(&v.t());
-        grad.mapv_inplace(|g| g / n_samples as f64);
+        grad.mapv_inplace(|g| g / n_samples as Float);
         grads.push(Some(grad));
     }
     grads
@@ -705,8 +716,8 @@ pub fn batched_confidence_increments(
         .iter()
         .zip(templates.iter())
         .map(|(state, template)| {
-            let precision = state.precision.mean_axis(Axis(1)).expect("non-empty batch")
-                - &template.precision;
+            let precision =
+                state.precision.mean_axis(Axis(1)).expect("non-empty batch") - &template.precision;
             let vol = template.mean_vol.as_ref().map(|template_mv| {
                 let mv = state.mean_vol.as_ref().expect("volatility level");
                 let pv = state.precision_vol.as_ref().expect("volatility level");

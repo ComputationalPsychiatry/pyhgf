@@ -18,14 +18,14 @@ pub mod categorical;
 pub mod learning;
 pub mod volatile;
 
-use crate::vectorised::mat::Vector;
+use crate::vectorised::mat::{Float, Vector};
 use ndarray::{s, Array1, ArrayViewMut1};
 
 /// Append a scalar to a vector, returning a new length `n + 1` vector (used to
 /// wire in the constant bias activation).
-pub(crate) fn push(v: &Vector, value: f64) -> Vector {
+pub(crate) fn push(v: &Vector, value: Float) -> Vector {
     let n = v.len();
-    let mut out = Array1::<f64>::zeros(n + 1);
+    let mut out = Array1::<Float>::zeros(n + 1);
     out.slice_mut(s![..n]).assign(v);
     out[n] = value;
     out
@@ -34,8 +34,8 @@ pub(crate) fn push(v: &Vector, value: f64) -> Vector {
 /// Numerically stable in-place softmax over one sample's logits — the single
 /// implementation shared by the categorical prediction kernel and the batched
 /// forward pass, so the two paths cannot drift.
-pub(crate) fn softmax_inplace(mut v: ArrayViewMut1<f64>) {
-    let max = v.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+pub(crate) fn softmax_inplace(mut v: ArrayViewMut1<Float>) {
+    let max = v.iter().copied().fold(Float::NEG_INFINITY, Float::max);
     v.mapv_inplace(|z| (z - max).exp());
     let sum = v.sum();
     v.mapv_inplace(|z| z / sum);

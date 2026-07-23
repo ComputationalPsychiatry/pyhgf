@@ -4,7 +4,7 @@
 use super::guarded_volatility;
 use crate::math::{with_coupling, CouplingFn};
 use crate::vectorised::layer::{LayerParams, LayerState};
-use crate::vectorised::mat::Matrix;
+use crate::vectorised::mat::{Float, Matrix};
 use ndarray::Array1;
 
 /// Predict the value- and volatility-level expectations for every node in a
@@ -24,7 +24,7 @@ pub fn layer_prediction(
     parent: &LayerState,
     weights: &Matrix,
     coupling_fn: &CouplingFn,
-    time_step: f64,
+    time_step: Float,
     parent_has_constant: bool,
     has_volatility_parent: bool,
     is_input_layer: bool,
@@ -42,8 +42,8 @@ pub fn layer_prediction(
 
             // Autoconnection strength is fixed at 1.
             let expected_mean_vol = mean_vol.clone();
-            let mut epv = Array1::<f64>::zeros(n);
-            let mut effv = Array1::<f64>::zeros(n);
+            let mut epv = Array1::<Float>::zeros(n);
+            let mut effv = Array1::<Float>::zeros(n);
             ndarray::Zip::from(&mut epv)
                 .and(&mut effv)
                 .and(precision_vol)
@@ -63,13 +63,13 @@ pub fn layer_prediction(
     // Coupled parent activations (bias node = 1) and the per-parent Laplace
     // variance factor (t·g'(μ̂))² / π̃_parent, built together in one pass. The
     // bias parent has zero derivative and infinite precision → factor 0.
-    let mut coupled = Array1::<f64>::zeros(p);
-    let mut ppv = Array1::<f64>::zeros(p);
+    let mut coupled = Array1::<Float>::zeros(p);
+    let mut ppv = Array1::<Float>::zeros(p);
     with_coupling!(coupling_fn, |f, df, _d2f| {
         for j in 0..n_parent {
             let mu = parent.expected_mean[j];
-            coupled[j] = f(mu);
-            let num = time_step * df(mu);
+            coupled[j] = f(mu as f64) as Float;
+            let num = time_step * df(mu as f64) as Float;
             ppv[j] = (num * num) / parent.expected_precision[j];
         }
     });
@@ -94,11 +94,11 @@ pub fn layer_prediction(
         // volatility source, so it does not undergo a Gaussian random walk. The
         // diffusion term is zero, leaving the conditional predicted precision
         // equal to the prior precision.
-        Array1::<f64>::zeros(n)
+        Array1::<Float>::zeros(n)
     };
 
     // Laplace value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).
-    let mut value_coupling_variance = Array1::<f64>::zeros(n);
+    let mut value_coupling_variance = Array1::<Float>::zeros(n);
     for i in 0..n {
         let mut s = 0.0;
         for j in 0..p {

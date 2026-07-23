@@ -23,7 +23,7 @@
 
 use crate::math::{CouplingFn, LINEAR};
 use crate::utils::weight_initialisation::weight_init_by_name;
-use crate::vectorised::mat::{eye, Matrix, Vector};
+use crate::vectorised::mat::{eye, Float, Matrix, Vector};
 use ndarray::Array1;
 
 /// Which volatility-level posterior update the network applies.
@@ -127,11 +127,11 @@ impl LayerState {
     /// `has_volatility_parent = false` the six volatility-level fields are
     /// `None`.
     pub fn create(n_nodes: usize, has_volatility_parent: bool) -> Self {
-        let zeros = || Array1::<f64>::zeros(n_nodes);
-        let ones = || Array1::<f64>::from_elem(n_nodes, 1.0);
-        let vol = |v: f64| {
+        let zeros = || Array1::<Float>::zeros(n_nodes);
+        let ones = || Array1::<Float>::from_elem(n_nodes, 1.0);
+        let vol = |v: Float| {
             if has_volatility_parent {
-                Some(Array1::<f64>::from_elem(n_nodes, v))
+                Some(Array1::<Float>::from_elem(n_nodes, v))
             } else {
                 None
             }
@@ -165,9 +165,9 @@ impl LayerState {
     /// volatility-level override on a layer without a volatility parent is
     /// silently dropped (the frozen level never reads it; same rule as the
     /// Python `_init_state`). Unknown names are an error.
-    pub fn set_field(&mut self, name: &str, value: f64) -> Result<(), String> {
+    pub fn set_field(&mut self, name: &str, value: Float) -> Result<(), String> {
         let n = self.n_nodes();
-        let full = || Array1::<f64>::from_elem(n, value);
+        let full = || Array1::<Float>::from_elem(n, value);
         // A volatility slot is written only when present; a frozen level (no
         // volatility parent) silently ignores the override.
         fn set_vol(slot: &mut Option<Vector>, value: Vector) {
@@ -232,7 +232,7 @@ impl LayerParams {
     }
 
     /// Per-node parameters with explicit scalar values broadcast to `n_nodes`.
-    pub fn create_with(n_nodes: usize, tonic_volatility_vol: f64) -> Self {
+    pub fn create_with(n_nodes: usize, tonic_volatility_vol: Float) -> Self {
         Self {
             tonic_volatility_vol: Array1::from_elem(n_nodes, tonic_volatility_vol),
         }
@@ -291,13 +291,13 @@ pub struct LayerConfig {
     /// Give the layer an internal volatility parent.
     pub volatility_parent: bool,
     /// Tonic volatility of the volatility level (default −4).
-    pub tonic_volatility_vol: f64,
+    pub tonic_volatility_vol: Float,
     /// Initial-belief overrides applied to the layer's [`LayerState`] at build
     /// time, as `(field_name, value)` pairs broadcast to every node (e.g.
     /// `("expected_precision", 1e10)` for a noiseless input layer). See
     /// [`LayerState::set_field`] for the accepted names and the
     /// volatility-drop rule.
-    pub state_overrides: Vec<(String, f64)>,
+    pub state_overrides: Vec<(String, Float)>,
 }
 
 impl LayerConfig {
@@ -327,9 +327,9 @@ pub struct DeepNet {
     /// The volatility-level posterior update applied network-wide.
     pub volatility_updates: VolatilityUpdate,
     /// Upper bound on posterior precisions.
-    pub max_posterior_precision: f64,
+    pub max_posterior_precision: Float,
     /// Lower/upper clamp bounding binary predictions away from 0 and 1.
-    pub precision_clipping_value: f64,
+    pub precision_clipping_value: Float,
 }
 
 impl DeepNet {
@@ -421,8 +421,8 @@ impl DeepNet {
     pub fn with_settings(
         mut self,
         volatility_updates: VolatilityUpdate,
-        max_posterior_precision: f64,
-        precision_clipping_value: f64,
+        max_posterior_precision: Float,
+        precision_clipping_value: Float,
     ) -> Self {
         self.volatility_updates = volatility_updates;
         self.max_posterior_precision = max_posterior_precision;
@@ -450,7 +450,12 @@ impl DeepNet {
             let (n_children, cols) = w.dim();
             // Flat, row-major (n_children × cols), same layout as the JAX
             // helpers' `.reshape(n_children, n_parents)`.
-            let flat = weight_init_by_name(strategy, cols, n_children, seed)?;
+            // The shared initialisers draw in f64 (they serve the nodalised
+            // backend too); narrow to the engine's Float here.
+            let flat: Vec<Float> = weight_init_by_name(strategy, cols, n_children, seed)?
+                .into_iter()
+                .map(|v| v as Float)
+                .collect();
             *w = Matrix::from_shape_vec((n_children, cols), flat)
                 .expect("init vector length matches the weight shape");
         }
