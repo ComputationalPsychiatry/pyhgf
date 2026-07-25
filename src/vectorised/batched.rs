@@ -130,11 +130,16 @@ pub struct BatchWorkspace {
 }
 
 /// Make `chunk` host one sweep over `width` samples of the layers in
-/// `templates`: reuse matching buffers in place, rebuild otherwise.
+/// `templates`: reuse matching buffers in place, rebuild otherwise. With
+/// `tile` false only the shapes are guaranteed, not the template values:
+/// the fused pinned-confidence path reads no precision buffer, so re-tiling
+/// them would be pure memory traffic. Every general call re-tiles, so a
+/// fused call leaving stale precisions behind cannot leak into one.
 pub(crate) fn reset_chunk(
     chunk: &mut Vec<BatchedLayerState>,
     templates: &[&LayerState],
     width: usize,
+    tile: bool,
 ) {
     let reusable = chunk.len() == templates.len()
         && chunk
@@ -142,8 +147,10 @@ pub(crate) fn reset_chunk(
             .zip(templates)
             .all(|(buffer, template)| buffer.matches_template(template, width));
     if reusable {
-        for (buffer, template) in chunk.iter_mut().zip(templates) {
-            buffer.reset_from_template(template, width);
+        if tile {
+            for (buffer, template) in chunk.iter_mut().zip(templates) {
+                buffer.reset_from_template(template, width);
+            }
         }
     } else {
         *chunk = templates
@@ -157,7 +164,7 @@ pub(crate) fn reset_chunk(
 /// trailing bias row of ones, shape `(n_parent[+1], n_samples)`. Every entry
 /// is written exactly once (activation rows by the coupling pass, the bias
 /// row by a fill), so the zeroed allocation is never touched twice.
-fn coupled_activations(
+pub(crate) fn coupled_activations(
     parent_field: &Matrix,
     coupling_fn: &'static crate::math::CouplingFn,
     parent_has_constant: bool,

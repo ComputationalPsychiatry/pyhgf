@@ -382,18 +382,43 @@ impl DeepNet {
 
         let net: &DeepNet = self;
         let templates: Vec<&LayerState> = net.layers.iter().map(|layer| &layer.state).collect();
+        // Pinned-confidence networks (no volatility levels, linear coupling)
+        // take the fused path: the data-independent precisions and gains are
+        // computed once as per-node vectors and the per-sample work reduces
+        // to the matrix products. The general kernels remain the fallback
+        // for every other configuration, and compute the same update.
+        let profile = crate::vectorised::fused::pinned_profile(net, time_step);
         let chunk_outs: Vec<ChunkOut> = ranges
             .into_par_iter()
             .zip(workspace.chunks.par_iter_mut())
             .map(|(range, states)| {
-                reset_chunk(states, &templates, range.len());
-                batched_prediction_sweep(net, states, x.slice(s![range.clone(), ..]), time_step);
-                batched_update_sweep(net, states, y.slice(s![range.clone(), ..]), time_step);
-                let errors = batched_input_prediction_error(net, states);
-                let grads =
-                    learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
-                let increments =
-                    update_confidences.then(|| batched_confidence_increments(states, &templates));
+                reset_chunk(states, &templates, range.len(), profile.is_none());
+                let (errors, grads, increments) = if let Some(profile) = &profile {
+                    crate::vectorised::fused::fused_sweep(
+                        net,
+                        profile,
+                        states,
+                        x.slice(s![range.clone(), ..]),
+                        y.slice(s![range.clone(), ..]),
+                        learning,
+                        learning_kind,
+                        update_confidences,
+                    )
+                } else {
+                    batched_prediction_sweep(
+                        net,
+                        states,
+                        x.slice(s![range.clone(), ..]),
+                        time_step,
+                    );
+                    batched_update_sweep(net, states, y.slice(s![range.clone(), ..]), time_step);
+                    let errors = batched_input_prediction_error(net, states);
+                    let grads =
+                        learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
+                    let increments = update_confidences
+                        .then(|| batched_confidence_increments(states, &templates));
+                    (errors, grads, increments)
+                };
                 ChunkOut {
                     range,
                     errors,

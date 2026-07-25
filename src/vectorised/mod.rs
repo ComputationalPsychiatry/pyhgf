@@ -6,6 +6,7 @@
 //! vs `pyhgf/updates/vectorized/`).
 
 pub mod batched;
+pub mod fused;
 pub mod layer;
 pub mod mat;
 pub mod network;

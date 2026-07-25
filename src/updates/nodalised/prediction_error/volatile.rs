@@ -60,7 +60,7 @@ fn precision_update_volatility_level_ehgf(
 ) -> f64 {
     let s = &network.attributes.states[node_idx];
     let mean_vol = s.mean_vol; // volatility-level posterior mean (mean-first)
-    // value-level posterior variance at the previous step (σ = 1 / π)
+                               // value-level posterior variance at the previous step (σ = 1 / π)
     let previous_variance = s.current_variance;
 
     // Volatility coupling is fixed at 1.
@@ -90,8 +90,7 @@ fn mean_update_volatility_level(
     let observed = s.observed;
 
     // Volatility coupling is fixed at 1.
-    let precision_weighted_pe =
-        (effective_precision * volatility_pe) / (2.0 * node_precision_vol);
+    let precision_weighted_pe = (effective_precision * volatility_pe) / (2.0 * node_precision_vol);
 
     expected_mean_vol + precision_weighted_pe * observed
 }
@@ -202,8 +201,7 @@ fn unbounded_volatility_level_update(
     let w2 = 1.0 / (1.0 + previous_variance / s2);
     let da2 = be_aux / (previous_variance + s2) - 1.0;
 
-    let pi2_full =
-        expected_precision_vol + 0.5 * w2 * (w2 + (2.0 * w2 - 1.0) * da2);
+    let pi2_full = expected_precision_vol + 0.5 * w2 * (w2 + (2.0 * w2 - 1.0) * da2);
     let pi2_safe = if pi2_full <= 0.0 {
         expected_precision_vol + 0.5 * w2 * (1.0 - w2)
     } else {
