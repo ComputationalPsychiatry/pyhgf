@@ -905,6 +905,62 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">from_linears</span><span class="p">(</span>
+    <span class="n">linears</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a two-layer network stacking several Linears that share one input.</span>
+
+<span class="sd">    The layers&#39; outputs are concatenated on the feature axis in the given</span>
+<span class="sd">    order: the bottom (output) layer has the summed ``out_features``, the top</span>
+<span class="sd">    (input) layer the shared ``in_features``, and the connecting matrix</span>
+<span class="sd">    stacks the weights row-wise (with the biases folded in as the last</span>
+<span class="sd">    column when present). The canonical use is the fused query/key/value</span>
+<span class="sd">    projection of an attention block, whose three tables read the same</span>
+<span class="sd">    input and can be one matrix product.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    linears :</span>
+<span class="sd">        The Equinox layers to stack. All must share ``in_features``, and</span>
+<span class="sd">        either all or none carry a bias.</span>
+<span class="sd">    leaf_kwargs :</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for the bottom (observed)</span>
+<span class="sd">        layer.</span>
+<span class="sd">    layer_kwargs :</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for the top (input) layer.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DeepNetwork</span>
+<span class="sd">        A network whose ``predict`` reproduces the stacked forward passes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">in_features</span> <span class="o">=</span> <span class="p">{</span><span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">linear</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">in_features</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All stacked Linears must share in_features.&quot;</span><span class="p">)</span>
+    <span class="n">has_bias</span> <span class="o">=</span> <span class="p">{</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">linear</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">has_bias</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either all or none of the stacked Linears may have a bias.&quot;</span><span class="p">)</span>
+    <span class="n">weight</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span> <span class="k">for</span> <span class="n">linear</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">bias</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span> <span class="k">for</span> <span class="n">linear</span> <span class="ow">in</span> <span class="n">linears</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">has_bias</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">out_features</span><span class="p">,</span> <span class="n">in_features</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">DeepNetwork</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">out_features</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">leaf_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">in_features</span><span class="p">,</span>
+            <span class="n">add_constant_input</span><span class="o">=</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">(</span><span class="n">layer_kwargs</span> <span class="ow">or</span> <span class="p">{}),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_set_weights</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="n">_weights_with_bias</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">bias</span><span class="p">)})</span>
+
+
 <div class="viewcode-block" id="from_feedforward">
 <a class="viewcode-back" href="../../../generated/pyhgf.model.transplant/pyhgf.model.transplant.from_feedforward.html#pyhgf.model.transplant.from_feedforward">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_feedforward</span><span class="p">(</span>

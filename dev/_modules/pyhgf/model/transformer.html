@@ -850,6 +850,11 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Holds four single-input parts for the Q, K, V, and O weight tables (any</span>
 <span class="sd">    mix of frozen and learning parts) around the weight-free mixing step.</span>
+<span class="sd">    The query, key, and value projections read the same input, so they can</span>
+<span class="sd">    instead be one fused part ``wqkv`` whose output stacks the three streams</span>
+<span class="sd">    on the feature axis, ``[q | k | v]``: the same three linear maps</span>
+<span class="sd">    computed as one matrix product, with the three routed errors</span>
+<span class="sd">    concatenated on the way back.</span>
 <span class="sd">    Operates on ``(batch, seq, features)`` arrays — attention is the one</span>
 <span class="sd">    part that needs the sequence axis explicit, because it moves information</span>
 <span class="sd">    *between* positions; everywhere else each position is independent.</span>
@@ -871,18 +876,42 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../generated/pyhgf.model.transformer/pyhgf.model.transformer.MultiHeadAttention.html#pyhgf.model.transformer.MultiHeadAttention.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">wq</span><span class="p">:</span> <span class="n">PCModule</span><span class="p">,</span>
-        <span class="n">wk</span><span class="p">:</span> <span class="n">PCModule</span><span class="p">,</span>
-        <span class="n">wv</span><span class="p">:</span> <span class="n">PCModule</span><span class="p">,</span>
-        <span class="n">wo</span><span class="p">:</span> <span class="n">PCModule</span><span class="p">,</span>
-        <span class="n">n_heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">wq</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PCModule</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">wk</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PCModule</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">wv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PCModule</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">wo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PCModule</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">wqkv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PCModule</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wk</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wo</span> <span class="o">=</span> <span class="n">wq</span><span class="p">,</span> <span class="n">wk</span><span class="p">,</span> <span class="n">wv</span><span class="p">,</span> <span class="n">wo</span>
+        <span class="k">if</span> <span class="n">wo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;MultiHeadAttention requires an output part `wo`.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">wqkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">wq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">wk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">wv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Pass either the fused `wqkv` part or the separate &quot;</span>
+                    <span class="s2">&quot;`wq`/`wk`/`wv` parts, not both.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">wq</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">wk</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">wv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;MultiHeadAttention requires `wq`, `wk`, and `wv` parts, or &quot;</span>
+                <span class="s2">&quot;one fused `wqkv` part.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wk</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wv</span> <span class="o">=</span> <span class="n">wq</span><span class="p">,</span> <span class="n">wk</span><span class="p">,</span> <span class="n">wv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wo</span><span class="p">:</span> <span class="n">PCModule</span> <span class="o">=</span> <span class="n">wo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wqkv</span> <span class="o">=</span> <span class="n">wqkv</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_heads</span> <span class="o">=</span> <span class="n">n_heads</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the ``(q, k, v, o)`` tuple of the four weight tables&#39; states.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the weight tables&#39; state tuple.</span>
+
+<span class="sd">        ``(qkv, o)`` with the fused projection part, ``(q, k, v, o)`` with the separate</span>
+<span class="sd">        ones.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wqkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wqkv</span><span class="o">.</span><span class="n">init_state</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">wo</span><span class="o">.</span><span class="n">init_state</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">wq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">wk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">wv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="o">.</span><span class="n">init_state</span><span class="p">(),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">wk</span><span class="o">.</span><span class="n">init_state</span><span class="p">(),</span>
@@ -1038,7 +1067,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        feed-forwards.</span>
 <span class="sd">    attention_parts :</span>
 <span class="sd">        Optional list of dicts, one per block, with keys ``&quot;wq&quot;``, ``&quot;wk&quot;``,</span>
-<span class="sd">        ``&quot;wv&quot;``, ``&quot;wo&quot;``, replacing the frozen attention weight tables.</span>
+<span class="sd">        ``&quot;wv&quot;``, ``&quot;wo&quot;``, replacing the frozen attention weight tables; or</span>
+<span class="sd">        a ``&quot;wqkv&quot;`` key carrying one fused part for the stacked</span>
+<span class="sd">        ``[q | k | v]`` projections (e.g. built with</span>
+<span class="sd">        :func:`~pyhgf.model.transplant.from_linears`), alongside an</span>
+<span class="sd">        optional ``&quot;wo&quot;``.</span>
 <span class="sd">    head_part :</span>
 <span class="sd">        Optional part replacing the frozen output head.</span>
 <span class="sd">    token_part, position_part :</span>
@@ -1053,13 +1086,22 @@ window.runMermaid = runMermaid;</script>
     <span class="n">layers</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gpt</span><span class="o">.</span><span class="n">blocks</span><span class="p">):</span>
         <span class="n">attn_tables</span> <span class="o">=</span> <span class="n">attention_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">attention_parts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
-        <span class="n">attention</span> <span class="o">=</span> <span class="n">MultiHeadAttention</span><span class="p">(</span>
-            <span class="n">wq</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wq&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wq</span><span class="p">),</span>
-            <span class="n">wk</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wk&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wk</span><span class="p">),</span>
-            <span class="n">wv</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wv&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wv</span><span class="p">),</span>
-            <span class="n">wo</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wo&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wo</span><span class="p">),</span>
-            <span class="n">n_heads</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">n_heads</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;wqkv&quot;</span> <span class="ow">in</span> <span class="n">attn_tables</span><span class="p">:</span>
+            <span class="c1"># One fused projection part for the stacked ``[q | k | v]``</span>
+            <span class="c1"># streams; the reference model&#39;s separate tables stay unused.</span>
+            <span class="n">attention</span> <span class="o">=</span> <span class="n">MultiHeadAttention</span><span class="p">(</span>
+                <span class="n">wqkv</span><span class="o">=</span><span class="n">attn_tables</span><span class="p">[</span><span class="s2">&quot;wqkv&quot;</span><span class="p">],</span>
+                <span class="n">wo</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wo&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wo</span><span class="p">),</span>
+                <span class="n">n_heads</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">n_heads</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">attention</span> <span class="o">=</span> <span class="n">MultiHeadAttention</span><span class="p">(</span>
+                <span class="n">wq</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wq&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wq</span><span class="p">),</span>
+                <span class="n">wk</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wk&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wk</span><span class="p">),</span>
+                <span class="n">wv</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wv&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wv</span><span class="p">),</span>
+                <span class="n">wo</span><span class="o">=</span><span class="n">attn_tables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wo&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">linear_adapter</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">wo</span><span class="p">),</span>
+                <span class="n">n_heads</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">attn</span><span class="o">.</span><span class="n">n_heads</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">ff_parts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">feed_forward</span> <span class="o">=</span> <span class="n">ff_parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>

@@ -1009,6 +1009,43 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">inner</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">inner</span><span class="o">.</span><span class="n">write_back</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_fused_qkv_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the attention core over one fused query/key/value part.</span>
+
+<span class="sd">    The part emits the stacked ``[q | k | v]`` streams, split after the part</span>
+<span class="sd">    on the way out and concatenated on the way back: the same three linear</span>
+<span class="sd">    maps as one matrix product.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">part</span><span class="o">.</span><span class="n">wqkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">qkv_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">wqkv</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.wqkv&quot;</span><span class="p">)</span>
+    <span class="n">o_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">wo</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.wo&quot;</span><span class="p">)</span>
+    <span class="n">n_heads</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">n_heads</span>
+    <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="p">(</span><span class="n">qkv_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">o_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">state_qkv</span><span class="p">,</span> <span class="n">state_o</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">qkv</span><span class="p">,</span> <span class="n">cache_qkv</span> <span class="o">=</span> <span class="n">qkv_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_qkv</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">qkv</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="p">,</span> <span class="n">cache_mix</span> <span class="o">=</span> <span class="n">_mixing_forward</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">n_heads</span><span class="p">)</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="n">cache_qkv</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+        <span class="n">state_qkv</span><span class="p">,</span> <span class="n">state_o</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">cache_qkv</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">d_ctx</span><span class="p">,</span> <span class="n">new_o</span><span class="p">,</span> <span class="n">report_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+        <span class="n">d_q</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">d_v</span> <span class="o">=</span> <span class="n">_mixing_backward</span><span class="p">(</span><span class="n">cache_mix</span><span class="p">,</span> <span class="n">d_ctx</span><span class="p">)</span>
+        <span class="n">d_qkv</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">d_q</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">d_v</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">error_qkv</span><span class="p">,</span> <span class="n">new_qkv</span><span class="p">,</span> <span class="n">report_qkv</span> <span class="o">=</span> <span class="n">qkv_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_qkv</span><span class="p">,</span> <span class="n">cache_qkv</span><span class="p">,</span> <span class="n">d_qkv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">error_qkv</span><span class="p">,</span> <span class="p">(</span><span class="n">new_qkv</span><span class="p">,</span> <span class="n">new_o</span><span class="p">),</span> <span class="n">report_qkv</span> <span class="o">+</span> <span class="n">report_o</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+        <span class="n">qkv_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">o_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the attention composite: Q/K/V, the mixing, then O.</span>
 
@@ -1020,6 +1057,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    already been initialized via their respective ``init_state()`` calls during _core</span>
 <span class="sd">    construction.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">wqkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_fused_qkv_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="n">n_heads</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">n_heads</span>
     <span class="n">q_core</span><span class="p">,</span> <span class="n">k_core</span><span class="p">,</span> <span class="n">v_core</span><span class="p">,</span> <span class="n">o_core</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="p">(</span>
@@ -1029,7 +1069,6 @@ window.runMermaid = runMermaid;</script>
             <span class="p">(</span><span class="s2">&quot;wo&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wo</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">n_heads</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">n_heads</span>
 
     <span class="c1"># Aggregate init_state pytrees from all four cores.</span>
     <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>

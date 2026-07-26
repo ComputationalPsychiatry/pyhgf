@@ -734,10 +734,15 @@
 <h1>pyhgf.model.transformer.MultiHeadAttention<a class="headerlink" href="#pyhgf-model-transformer-multiheadattention" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.model.transformer.MultiHeadAttention">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.transformer.</span></span><span class="sig-name descname"><span class="pre">MultiHeadAttention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/transformer.html#MultiHeadAttention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.transformer.MultiHeadAttention" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.transformer.</span></span><span class="sig-name descname"><span class="pre">MultiHeadAttention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">wqkv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/transformer.html#MultiHeadAttention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.transformer.MultiHeadAttention" title="Link to this definition">#</a></dt>
 <dd><p>Causal multi-head self-attention as a composite pipeline part.</p>
 <p>Holds four single-input parts for the Q, K, V, and O weight tables (any
 mix of frozen and learning parts) around the weight-free mixing step.
+The query, key, and value projections read the same input, so they can
+instead be one fused part <code class="docutils literal notranslate"><span class="pre">wqkv</span></code> whose output stacks the three streams
+on the feature axis, <code class="docutils literal notranslate"><span class="pre">[q</span> <span class="pre">|</span> <span class="pre">k</span> <span class="pre">|</span> <span class="pre">v]</span></code>: the same three linear maps
+computed as one matrix product, with the three routed errors
+concatenated on the way back.
 Operates on <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">seq,</span> <span class="pre">features)</span></code> arrays — attention is the one
 part that needs the sequence axis explicit, because it moves information
 <em>between</em> positions; everywhere else each position is independent.</p>
@@ -754,25 +759,27 @@ input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>wq</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
-<li><p><strong>wk</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
-<li><p><strong>wv</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
-<li><p><strong>wo</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
+<li><p><strong>wq</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em>]</em>)</p></li>
+<li><p><strong>wk</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em>]</em>)</p></li>
+<li><p><strong>wv</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em>]</em>)</p></li>
+<li><p><strong>wo</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em>]</em>)</p></li>
 <li><p><strong>n_heads</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>wqkv</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em>]</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.model.transformer.MultiHeadAttention.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/transformer.html#MultiHeadAttention.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.transformer.MultiHeadAttention.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">wqkv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/transformer.html#MultiHeadAttention.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.transformer.MultiHeadAttention.__init__" title="Link to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>wq</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
-<li><p><strong>wk</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
-<li><p><strong>wv</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
-<li><p><strong>wo</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a>)</p></li>
+<li><p><strong>wq</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>wk</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>wv</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>wo</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>n_heads</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>wqkv</strong> (<a class="reference internal" href="../pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule" title="pyhgf.model.hybrid.PCModule"><em>PCModule</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -781,11 +788,11 @@ input.</p>
 <p class="rubric">Methods</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.transformer.MultiHeadAttention.__init__" title="pyhgf.model.transformer.MultiHeadAttention.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(wq, wk, wv, wo, n_heads)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.transformer.MultiHeadAttention.__init__" title="pyhgf.model.transformer.MultiHeadAttention.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([wq, wk, wv, wo, n_heads, wqkv])</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_state</span></code>()</p></td>
-<td><p>Return the <code class="docutils literal notranslate"><span class="pre">(q,</span> <span class="pre">k,</span> <span class="pre">v,</span> <span class="pre">o)</span></code> tuple of the four weight tables' states.</p></td>
+<td><p>Return the weight tables' state tuple.</p></td>
 </tr>
 </tbody>
 </table>
