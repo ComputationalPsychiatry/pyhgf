@@ -108,7 +108,8 @@ def test_fused_confidences_carry_across_steps():
             update_confidences=update_confidences,
         )
         fused = FusedPipeline(part)
-        before = fused.state[0].layers[1].state.precision
+        # Snapshot, not a live reference: the step donates the state buffers.
+        before = np.asarray(fused.state[0].layers[1].state.precision)
         for _ in range(3):
             fused.step(
                 jnp.asarray(rng.normal(size=(4, 6))),
