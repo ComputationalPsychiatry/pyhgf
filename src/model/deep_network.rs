@@ -39,6 +39,10 @@ pub struct DeepNetwork {
     /// states persist across calls, so repeated steps at the same batch size
     /// allocate nothing. Cleared on every rebuild.
     batch_workspace: BatchWorkspace,
+    /// Token guarding the two-phase batch step: set by `batch_forward`
+    /// (batch size, time step), consumed by `batch_update_from_error`, and
+    /// cleared by anything that invalidates the cached sweep.
+    forward_cache: Option<(usize, Float)>,
     volatility_updates: VolatilityUpdate,
     max_posterior_precision: Float,
     precision_clipping_value: Float,
@@ -75,6 +79,7 @@ impl DeepNetwork {
         self.opt_state = None;
         self.last_optimizer = None;
         self.batch_workspace = BatchWorkspace::default();
+        self.forward_cache = None;
         Ok(())
     }
 
@@ -237,6 +242,7 @@ impl DeepNetwork {
             opt_state: None,
             last_optimizer: None,
             batch_workspace: BatchWorkspace::default(),
+            forward_cache: None,
             volatility_updates,
             max_posterior_precision,
             precision_clipping_value,
@@ -383,6 +389,7 @@ impl DeepNetwork {
         let opt = parse_optimizer(optimizer, learning_rate)?;
         let kind = parse_weight_kind(learning_kind)?;
 
+        slf.forward_cache = None;
         slf.require_net()?;
         let xmat = extract_for_fit(&x, slf.top_size(), "x")?;
         let ymat = extract_for_fit(&y, slf.bottom_size(), "y")?;
@@ -437,6 +444,118 @@ impl DeepNetwork {
     /// single observation. This differs from `fit`, which scans samples
     /// sequentially and lets the confidences adapt from one sample to the
     /// next. `optimizer=None` (default) freezes the weights; pass `"adam"` or
+    /// Forward phase of the two-phase batch step: predict the batch and keep
+    /// the swept states cached, returning the output layer's expected means,
+    /// shape `(n_samples, n_output_features)`. Pair with
+    /// `batch_update_from_error`, which finishes the learning step from the
+    /// cached states without re-running the forward sweep; the pair must run
+    /// back to back on the same batch, with no other batched call in
+    /// between.
+    #[pyo3(signature = (x, time_step = 1.0))]
+    fn batch_forward<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        py: Python<'py>,
+        x: Bound<'py, PyAny>,
+        time_step: Float,
+    ) -> PyResult<Py<PyAny>> {
+        slf.require_net()?;
+        if slf.configs.len() < 2 {
+            return Err(PyValueError::new_err(
+                "The network has a single layer: there is no layer below the \
+                 input layer to route an error from.",
+            ));
+        }
+        let (xmat, was_1d) = extract_matrix(&x)?;
+        if was_1d {
+            return Err(PyValueError::new_err(
+                "batch_forward() operates on batches: x must be 2D (batch, n_features).",
+            ));
+        }
+        check_predict_cols(xmat.ncols(), slf.top_size())?;
+        let this = &mut *slf;
+        let net = this.net.as_ref().unwrap();
+        let workspace = &mut this.batch_workspace;
+        let out = py.detach(|| net.batch_forward(workspace, xmat.view(), time_step));
+        this.forward_cache = Some((xmat.nrows(), time_step));
+        Ok(out.to_pyarray(py).into_any().unbind())
+    }
+
+    /// Backward phase of the two-phase batch step: finish the learning step
+    /// from the states `batch_forward` cached. `error` is
+    /// `(n_samples, n_output_features)` in the descent convention (positive
+    /// where the output was too high): the observation clamped on the output
+    /// layer is the cached prediction minus the error. Returns the routed
+    /// input errors in the observed minus predicted convention, exactly as
+    /// `batch_update` does.
+    #[pyo3(signature = (
+        error,
+        optimizer = None,
+        learning_rate = 1e-3,
+        learning_kind = "precision_weighted",
+        update_confidences = true,
+        time_step = 1.0,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn batch_update_from_error<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        py: Python<'py>,
+        error: Bound<'py, PyAny>,
+        optimizer: Option<&str>,
+        learning_rate: Float,
+        learning_kind: &str,
+        update_confidences: bool,
+        time_step: Float,
+    ) -> PyResult<Py<PyAny>> {
+        let opt = optimizer
+            .map(|name| parse_optimizer(name, learning_rate))
+            .transpose()?;
+        let kind = parse_weight_kind(learning_kind)?;
+        slf.require_net()?;
+        let (emat, was_1d) = extract_matrix(&error)?;
+        if was_1d {
+            return Err(PyValueError::new_err(
+                "batch_update_from_error() operates on batches: error must be \
+                 2D (batch, n_features).",
+            ));
+        }
+        match slf.forward_cache.take() {
+            Some((n, t)) if n == emat.nrows() && t == time_step => {}
+            _ => {
+                return Err(PyValueError::new_err(
+                    "batch_update_from_error() must directly follow a \
+                     batch_forward() call on the same batch and time step.",
+                ));
+            }
+        }
+        let this = &mut *slf;
+        if let Some(opt) = opt {
+            if this.last_optimizer != Some(opt) {
+                this.opt_state = None;
+                this.last_optimizer = Some(opt);
+            }
+            if this.opt_state.is_none() {
+                this.opt_state = Some(OptState::init(this.net.as_ref().unwrap()));
+            }
+        }
+        let net = this.net.as_mut().unwrap();
+        let opt_state = this.opt_state.as_mut();
+        let workspace = &mut this.batch_workspace;
+        let errors = py
+            .detach(|| {
+                net.batch_update_from_error(
+                    workspace,
+                    emat.view(),
+                    opt.as_ref(),
+                    opt_state,
+                    time_step,
+                    kind,
+                    update_confidences,
+                )
+            })
+            .map_err(PyValueError::new_err)?;
+        Ok(errors.to_pyarray(py).into_any().unbind())
+    }
+
     /// `"sgd"` with `learning_rate` to learn. `update_confidences=False`
     /// keeps the carried precisions pinned, the setting used for exact
     /// comparisons against backpropagation. Returns the per-sample prediction
@@ -500,6 +619,7 @@ impl DeepNetwork {
         }
 
         let this = &mut *slf;
+        this.forward_cache = None;
         if let Some(opt) = opt {
             // Same reset-on-change semantics as `fit`.
             if this.last_optimizer != Some(opt) {
@@ -545,6 +665,7 @@ impl DeepNetwork {
         strategy: &str,
         seed: Option<u64>,
     ) -> PyResult<PyRefMut<'py, Self>> {
+        slf.forward_cache = None;
         slf.require_net_mut()?
             .weight_initialisation(strategy, seed)
             .map_err(PyValueError::new_err)?;
@@ -569,6 +690,7 @@ impl DeepNetwork {
     /// Set the inter-layer weight matrices for layers `1..n` from a list of 2D
     /// arrays (same order/shapes as [`Self::get_weights`]).
     fn set_weights(mut slf: PyRefMut<'_, Self>, weights: Vec<Bound<'_, PyAny>>) -> PyResult<()> {
+        slf.forward_cache = None;
         // Accept `Float` buffers directly and float64 buffers (numpy's
         // default dtype) through a vectorised cast, mirroring the data paths.
         let weights: Vec<Matrix> = weights

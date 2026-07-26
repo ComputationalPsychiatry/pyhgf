@@ -281,6 +281,65 @@ def test_fit_weight_update_false_freezes_weights():
         np.testing.assert_array_equal(got, np.asarray(expected, dtype=got.dtype))
 
 
+def test_two_phase_matches_batch_update():
+    """batch_forward + batch_update_from_error reproduces batch_update.
+
+    Covered on a plain volatile chain, a GELU coupling, and a categorical head, the part
+    shapes the hybrid transformer uses.
+    """
+    rng = np.random.default_rng(11)
+
+    def build(variant):
+        net = RsDeepNetwork()
+        if variant == "categorical":
+            net.add_layer(5, kind="categorical", volatility_parent=False)
+            net.add_layer(4, volatility_parent=False)
+        elif variant == "gelu":
+            net.add_layer(3, volatility_parent=False)
+            net.add_layer(6, volatility_parent=False, coupling_fn="gelu")
+            net.add_layer(4, volatility_parent=False)
+        else:  # plain pinned linear chain
+            net.add_layer(3, volatility_parent=False)
+            net.add_layer(6, volatility_parent=False)
+            net.add_layer(4, volatility_parent=False)
+        net.weight_initialisation("he", seed=3)
+        return net
+
+    for variant in ("pinned", "gelu", "categorical"):
+        one, two = build(variant), build(variant)
+        x = rng.normal(size=(17, 4)).astype("float32")
+        out_size = one.layer_sizes[0]
+        if variant == "categorical":
+            y = np.eye(out_size, dtype="float32")[rng.integers(0, out_size, 17)]
+        else:
+            y = rng.normal(size=(17, out_size)).astype("float32")
+
+        errors_one = one.batch_update(x, y, optimizer="adam", learning_rate=1e-2)
+        out = two.batch_forward(x)
+        errors_two = two.batch_update_from_error(
+            out - y, optimizer="adam", learning_rate=1e-2
+        )
+        np.testing.assert_allclose(errors_one, errors_two, rtol=1e-4, atol=1e-6)
+        for w_one, w_two in zip(one.get_weights(), two.get_weights()):
+            np.testing.assert_allclose(w_one, w_two, rtol=1e-4, atol=1e-6)
+
+
+def test_two_phase_requires_matching_forward():
+    """The error entry demands a directly preceding forward on the same batch."""
+    net = RsDeepNetwork()
+    net.add_layer(3, volatility_parent=False)
+    net.add_layer(4, volatility_parent=False)
+    rng = np.random.default_rng(0)
+    e = rng.normal(size=(5, 3)).astype("float32")
+    with pytest.raises(ValueError, match="batch_forward"):
+        net.batch_update_from_error(e)
+    x = rng.normal(size=(5, 4)).astype("float32")
+    net.batch_forward(x)
+    net.batch_update(x, rng.normal(size=(5, 3)).astype("float32"))
+    with pytest.raises(ValueError, match="batch_forward"):
+        net.batch_update_from_error(e)
+
+
 # ---------------------------------------------------------------------------
 # Parity with the JAX backend
 # ---------------------------------------------------------------------------
