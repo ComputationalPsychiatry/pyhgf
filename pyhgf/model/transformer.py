@@ -46,6 +46,11 @@ class MultiHeadAttention(PCModule):
 
     Holds four single-input parts for the Q, K, V, and O weight tables (any
     mix of frozen and learning parts) around the weight-free mixing step.
+    The query, key, and value projections read the same input, so they can
+    instead be one fused part ``wqkv`` whose output stacks the three streams
+    on the feature axis, ``[q | k | v]``: the same three linear maps
+    computed as one matrix product, with the three routed errors
+    concatenated on the way back.
     Operates on ``(batch, seq, features)`` arrays — attention is the one
     part that needs the sequence axis explicit, because it moves information
     *between* positions; everywhere else each position is independent.
@@ -65,17 +70,41 @@ class MultiHeadAttention(PCModule):
 
     def __init__(
         self,
-        wq: PCModule,
-        wk: PCModule,
-        wv: PCModule,
-        wo: PCModule,
-        n_heads: int,
+        wq: Optional[PCModule] = None,
+        wk: Optional[PCModule] = None,
+        wv: Optional[PCModule] = None,
+        wo: Optional[PCModule] = None,
+        n_heads: int = 1,
+        *,
+        wqkv: Optional[PCModule] = None,
     ):
-        self.wq, self.wk, self.wv, self.wo = wq, wk, wv, wo
+        if wo is None:
+            raise ValueError("MultiHeadAttention requires an output part `wo`.")
+        if wqkv is not None:
+            if wq is not None or wk is not None or wv is not None:
+                raise ValueError(
+                    "Pass either the fused `wqkv` part or the separate "
+                    "`wq`/`wk`/`wv` parts, not both."
+                )
+        elif wq is None or wk is None or wv is None:
+            raise ValueError(
+                "MultiHeadAttention requires `wq`, `wk`, and `wv` parts, or "
+                "one fused `wqkv` part."
+            )
+        self.wq, self.wk, self.wv = wq, wk, wv
+        self.wo: PCModule = wo
+        self.wqkv = wqkv
         self.n_heads = n_heads
 
     def init_state(self) -> tuple:
-        """Return the ``(q, k, v, o)`` tuple of the four weight tables' states."""
+        """Return the weight tables' state tuple.
+
+        ``(qkv, o)`` with the fused projection part, ``(q, k, v, o)`` with the separate
+        ones.
+        """
+        if self.wqkv is not None:
+            return (self.wqkv.init_state(), self.wo.init_state())
+        assert self.wq is not None and self.wk is not None and self.wv is not None
         return (
             self.wq.init_state(),
             self.wk.init_state(),
@@ -222,7 +251,11 @@ def hybrid_from_gpt(
         feed-forwards.
     attention_parts :
         Optional list of dicts, one per block, with keys ``"wq"``, ``"wk"``,
-        ``"wv"``, ``"wo"``, replacing the frozen attention weight tables.
+        ``"wv"``, ``"wo"``, replacing the frozen attention weight tables; or
+        a ``"wqkv"`` key carrying one fused part for the stacked
+        ``[q | k | v]`` projections (e.g. built with
+        :func:`~pyhgf.model.transplant.from_linears`), alongside an
+        optional ``"wo"``.
     head_part :
         Optional part replacing the frozen output head.
     token_part, position_part :
@@ -237,13 +270,22 @@ def hybrid_from_gpt(
     layers: list = []
     for i, block in enumerate(gpt.blocks):
         attn_tables = attention_parts[i] if attention_parts is not None else {}
-        attention = MultiHeadAttention(
-            wq=attn_tables.get("wq") or linear_adapter(block.attn.wq),
-            wk=attn_tables.get("wk") or linear_adapter(block.attn.wk),
-            wv=attn_tables.get("wv") or linear_adapter(block.attn.wv),
-            wo=attn_tables.get("wo") or linear_adapter(block.attn.wo),
-            n_heads=block.attn.n_heads,
-        )
+        if "wqkv" in attn_tables:
+            # One fused projection part for the stacked ``[q | k | v]``
+            # streams; the reference model's separate tables stay unused.
+            attention = MultiHeadAttention(
+                wqkv=attn_tables["wqkv"],
+                wo=attn_tables.get("wo") or linear_adapter(block.attn.wo),
+                n_heads=block.attn.n_heads,
+            )
+        else:
+            attention = MultiHeadAttention(
+                wq=attn_tables.get("wq") or linear_adapter(block.attn.wq),
+                wk=attn_tables.get("wk") or linear_adapter(block.attn.wk),
+                wv=attn_tables.get("wv") or linear_adapter(block.attn.wv),
+                wo=attn_tables.get("wo") or linear_adapter(block.attn.wo),
+                n_heads=block.attn.n_heads,
+            )
         if ff_parts is not None:
             feed_forward = ff_parts[i]
         else:

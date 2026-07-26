@@ -100,6 +100,62 @@ def from_linear(
     return _set_weights(net, {1: _weights_with_bias(linear.weight, linear.bias)})
 
 
+def from_linears(
+    linears: list,
+    leaf_kwargs: Optional[dict] = None,
+    layer_kwargs: Optional[dict] = None,
+) -> DeepNetwork:
+    """Build a two-layer network stacking several Linears that share one input.
+
+    The layers' outputs are concatenated on the feature axis in the given
+    order: the bottom (output) layer has the summed ``out_features``, the top
+    (input) layer the shared ``in_features``, and the connecting matrix
+    stacks the weights row-wise (with the biases folded in as the last
+    column when present). The canonical use is the fused query/key/value
+    projection of an attention block, whose three tables read the same
+    input and can be one matrix product.
+
+    Parameters
+    ----------
+    linears :
+        The Equinox layers to stack. All must share ``in_features``, and
+        either all or none carry a bias.
+    leaf_kwargs :
+        Extra ``add_layer`` keyword arguments for the bottom (observed)
+        layer.
+    layer_kwargs :
+        Extra ``add_layer`` keyword arguments for the top (input) layer.
+
+    Returns
+    -------
+    DeepNetwork
+        A network whose ``predict`` reproduces the stacked forward passes.
+    """
+    in_features = {linear.weight.shape[1] for linear in linears}
+    if len(in_features) != 1:
+        raise ValueError("All stacked Linears must share in_features.")
+    has_bias = {linear.bias is not None for linear in linears}
+    if len(has_bias) != 1:
+        raise ValueError("Either all or none of the stacked Linears may have a bias.")
+    weight = jnp.concatenate([jnp.asarray(linear.weight) for linear in linears], axis=0)
+    bias = (
+        jnp.concatenate([jnp.asarray(linear.bias) for linear in linears])
+        if has_bias.pop()
+        else None
+    )
+    out_features, in_features = weight.shape
+    net = (
+        DeepNetwork()
+        .add_layer(size=out_features, add_constant_input=False, **(leaf_kwargs or {}))
+        .add_layer(
+            size=in_features,
+            add_constant_input=bias is not None,
+            **(layer_kwargs or {}),
+        )
+    )
+    return _set_weights(net, {1: _weights_with_bias(weight, bias)})
+
+
 def from_feedforward(
     fc1: eqx.nn.Linear,
     fc2: eqx.nn.Linear,

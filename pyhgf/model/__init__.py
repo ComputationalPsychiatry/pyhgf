@@ -33,7 +33,7 @@ from .hybrid import (
 )
 from .network import Network
 from .transformer import HybridGPT, MultiHeadAttention, hybrid_from_gpt
-from .transplant import from_embedding, from_feedforward, from_linear
+from .transplant import from_embedding, from_feedforward, from_linear, from_linears
 
 __all__ = [
     "Network",
@@ -44,6 +44,7 @@ __all__ = [
     "ObservedMinusPredicted",
     "validate_error_convention",
     "from_linear",
+    "from_linears",
     "from_feedforward",
     "from_embedding",
     "PCModule",
