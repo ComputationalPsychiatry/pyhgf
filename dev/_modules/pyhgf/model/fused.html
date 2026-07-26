@@ -1184,6 +1184,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    runs. Call :meth:`merge` to write the current state back onto them (e.g. to inspect</span>
 <span class="sd">    a network&#39;s layers, or to save it).</span>
 
+<span class="sd">    The carried state&#39;s buffers are donated to the compiled step, so</span>
+<span class="sd">    :attr:`state` holds live arrays that the next :meth:`step` consumes:</span>
+<span class="sd">    anything read from it that must survive a step (a belief to compare</span>
+<span class="sd">    before and after, a weight snapshot) should be copied first, e.g. with</span>
+<span class="sd">    ``np.asarray``.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    part :</span>
@@ -1214,7 +1220,15 @@ window.runMermaid = runMermaid;</script>
             <span class="n">error_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">out</span> <span class="o">-</span> <span class="n">target</span>  <span class="c1"># noqa: E731</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">init_state</span>
+        <span class="c1"># Own the carried state: the init pytree shares its arrays with the</span>
+        <span class="c1"># part objects it was built from, and the step donates its input</span>
+        <span class="c1"># buffers, so donating the shared originals would delete them out</span>
+        <span class="c1"># from under the parts (and anything else built on the same</span>
+        <span class="c1"># arrays). One copy at construction makes every donated buffer</span>
+        <span class="c1"># pipeline-owned.</span>
+        <span class="n">_arrays</span><span class="p">,</span> <span class="n">_static</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">eqx</span><span class="o">.</span><span class="n">is_array</span><span class="p">)</span>
+        <span class="n">_arrays</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">_arrays</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">_arrays</span><span class="p">,</span> <span class="n">_static</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_last_report</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
@@ -1223,7 +1237,13 @@ window.runMermaid = runMermaid;</script>
             <span class="n">input_error</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">reports</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span><span class="p">,</span> <span class="n">reports</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+        <span class="c1"># The carried state is consumed and rebuilt every step, so its</span>
+        <span class="c1"># buffers are donated to the compiled call: XLA updates the weights</span>
+        <span class="c1"># and optimiser states in place instead of double-buffering the</span>
+        <span class="c1"># whole pytree. `step` copies its input arrays before the call, so</span>
+        <span class="c1"># donation never invalidates a caller&#39;s buffers; `predict` does not</span>
+        <span class="c1"># donate, since the state it reads must survive the call.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">donate</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="p">)</span></div>
@@ -1260,8 +1280,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            The descent error at the tree&#39;s input — what a part behind the tree</span>
 <span class="sd">            would receive.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># `jnp.array` (not `asarray`) forces fresh device buffers: the</span>
+        <span class="c1"># compiled step donates every input, and the caller&#39;s arrays must</span>
+        <span class="c1"># not be invalidated behind its back.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span>
 

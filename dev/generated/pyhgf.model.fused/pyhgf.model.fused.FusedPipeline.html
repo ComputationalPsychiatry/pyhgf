@@ -744,6 +744,11 @@ crosses a compilation boundary.</p>
 <p>The part objects only declare the model; they are not advanced while the executor
 runs. Call <code class="xref py py-meth docutils literal notranslate"><span class="pre">merge()</span></code> to write the current state back onto them (e.g. to inspect
 a network’s layers, or to save it).</p>
+<p>The carried state’s buffers are donated to the compiled step, so
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">state</span></code> holds live arrays that the next <code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code> consumes:
+anything read from it that must survive a step (a belief to compare
+before and after, a weight snapshot) should be copied first, e.g. with
+<code class="docutils literal notranslate"><span class="pre">np.asarray</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
