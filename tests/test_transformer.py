@@ -248,6 +248,70 @@ def test_fused_qkv_matches_separate():
         np.testing.assert_allclose(err_fused, err_sep, rtol=1e-3, atol=1e-4)
 
 
+def test_fused_qkv_validation():
+    """The attention composite rejects inconsistent projection slots."""
+    import pytest
+
+    eqx_attn = EqxAttention(16, 4, key=random.key(0))
+    q = linear_adapter(eqx_attn.wq)
+    o = linear_adapter(eqx_attn.wo)
+    stacked = linear_adapter(eqx_attn.wq)  # any part will do for the slot
+    with pytest.raises(ValueError, match="output part"):
+        MultiHeadAttention(wq=q, wk=q, wv=q, n_heads=4)
+    with pytest.raises(ValueError, match="not both"):
+        MultiHeadAttention(wq=q, wqkv=stacked, wo=o, n_heads=4)
+    with pytest.raises(ValueError, match="one fused"):
+        MultiHeadAttention(wq=q, wk=q, wo=o, n_heads=4)
+
+
+def test_fused_qkv_through_hybrid_and_merge():
+    """hybrid_from_gpt wires the fused slot, and merge writes it back.
+
+    The fused hybrid must reproduce the reference model's logits (the stacked part
+    carries the same weights), and after a training step ``merge`` must write the
+    advanced fused weights back onto the part.
+    """
+    from pyhgf.model import from_linears
+
+    rng = np.random.default_rng(9)
+    vocab, dim, n_heads, hidden, n_layers, seq_len = 11, 16, 4, 32, 1, 8
+    gpt = EqxGPT(vocab, dim, n_heads, hidden, n_layers, seq_len, key=random.key(8))
+    ids = jnp.asarray(rng.integers(0, vocab, size=(2, seq_len)))
+    targets = jnp.asarray(rng.integers(0, vocab, size=(2, seq_len)))
+
+    qkv_parts = [
+        DeepNetworkAdapter(
+            from_linears(
+                [b.attn.wq, b.attn.wk, b.attn.wv],
+                leaf_kwargs=_PARITY_LEAF,
+                layer_kwargs=_PARITY,
+            ),
+            optimizer=optax.adam(1e-3),
+        )
+        for b in gpt.blocks
+    ]
+    hybrid = hybrid_from_gpt(
+        gpt,
+        attention_parts=[{"wqkv": part} for part in qkv_parts],
+    )
+    pipeline = FusedPipeline(
+        hybrid,
+        error_fn=lambda logits, y: (
+            jax.nn.softmax(logits, axis=-1) - jax.nn.one_hot(y, vocab)
+        ),
+    )
+    # The head slot stays frozen here, so the pipeline's output is the
+    # reference model's logits.
+    reference = jax.vmap(gpt)(ids)
+    np.testing.assert_allclose(pipeline.predict(ids), reference, rtol=1e-4, atol=1e-5)
+
+    before = np.asarray(qkv_parts[0].net.state.layers[1].weights_in)
+    pipeline.step(ids, targets)
+    pipeline.merge()
+    after = np.asarray(qkv_parts[0].net.state.layers[1].weights_in)
+    assert not np.allclose(before, after)  # the fused weights learnt
+
+
 def test_full_model_forward_gate():
     """The fully transplanted, fully frozen model reproduces the Equinox GPT.
 

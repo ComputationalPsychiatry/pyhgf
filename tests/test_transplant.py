@@ -119,3 +119,30 @@ def test_transplanted_feedforward_learns_like_backprop_with_biases():
     # PyHGF errors are observed-minus-predicted: the negative of the loss
     # gradient at the input.
     assert norm_rel(-net.input_errors, per_sample_dx) < 1e-2
+
+
+def test_from_linears_stacks_and_validates():
+    """Stack shared-input Linears, rejecting mismatched inputs or mixed biases."""
+    import pytest
+
+    from pyhgf.model import from_linears
+
+    k1, k2, k3 = random.split(random.key(0), 3)
+    a = eqx.nn.Linear(4, 3, key=k1)
+    b = eqx.nn.Linear(4, 5, key=k2)
+    x = jnp.asarray(np.random.default_rng(0).normal(size=(6, 4)).astype("float32"))
+
+    net = from_linears([a, b], leaf_kwargs=dict(volatility_parent=False))
+    stacked = np.concatenate(
+        [np.asarray(jax.vmap(a)(x)), np.asarray(jax.vmap(b)(x))], axis=1
+    )
+    np.testing.assert_allclose(
+        np.asarray(net.predict(x)), stacked, rtol=1e-5, atol=1e-6
+    )
+
+    wrong_input = eqx.nn.Linear(5, 3, key=k3)
+    with pytest.raises(ValueError, match="in_features"):
+        from_linears([a, wrong_input])
+    no_bias = eqx.nn.Linear(4, 3, use_bias=False, key=k3)
+    with pytest.raises(ValueError, match="bias"):
+        from_linears([a, no_bias])
