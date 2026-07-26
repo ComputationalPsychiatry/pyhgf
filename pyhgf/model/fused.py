@@ -207,6 +207,43 @@ def _residual_core(part: Residual, path: str) -> _Core:
     return _Core(inner.init_state, forward, backward, inner.write_back)
 
 
+def _fused_qkv_attention_core(part: MultiHeadAttention, path: str) -> _Core:
+    """Build the attention core over one fused query/key/value part.
+
+    The part emits the stacked ``[q | k | v]`` streams, split after the part
+    on the way out and concatenated on the way back: the same three linear
+    maps as one matrix product.
+    """
+    assert part.wqkv is not None
+    qkv_core = _core(part.wqkv, f"{path}.wqkv")
+    o_core = _core(part.wo, f"{path}.wo")
+    n_heads = part.n_heads
+    init_state_pytree = (qkv_core.init_state, o_core.init_state)
+
+    def forward(state, x):
+        state_qkv, state_o = state
+        qkv, cache_qkv = qkv_core.forward(state_qkv, x)
+        q, k, v = jnp.split(qkv, 3, axis=-1)
+        ctx, cache_mix = _mixing_forward(q, k, v, n_heads)
+        y, cache_o = o_core.forward(state_o, ctx)
+        return y, (cache_qkv, cache_mix, cache_o)
+
+    def backward(state, cache, error):
+        state_qkv, state_o = state
+        cache_qkv, cache_mix, cache_o = cache
+        d_ctx, new_o, report_o = o_core.backward(state_o, cache_o, error)
+        d_q, d_k, d_v = _mixing_backward(cache_mix, d_ctx)
+        d_qkv = jnp.concatenate([d_q, d_k, d_v], axis=-1)
+        error_qkv, new_qkv, report_qkv = qkv_core.backward(state_qkv, cache_qkv, d_qkv)
+        return error_qkv, (new_qkv, new_o), report_qkv + report_o
+
+    def write_back(state):
+        qkv_core.write_back(state[0])
+        o_core.write_back(state[1])
+
+    return _Core(init_state_pytree, forward, backward, write_back)
+
+
 def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
     """Build the core of the attention composite: Q/K/V, the mixing, then O.
 
@@ -218,6 +255,9 @@ def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
     already been initialized via their respective ``init_state()`` calls during _core
     construction.
     """
+    if part.wqkv is not None:
+        return _fused_qkv_attention_core(part, path)
+    n_heads = part.n_heads
     q_core, k_core, v_core, o_core = (
         _core(child, f"{path}.{name}")
         for name, child in (
@@ -227,7 +267,6 @@ def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
             ("wo", part.wo),
         )
     )
-    n_heads = part.n_heads
 
     # Aggregate init_state pytrees from all four cores.
     init_state_pytree = tuple(
