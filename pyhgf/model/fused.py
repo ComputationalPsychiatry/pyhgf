@@ -380,6 +380,12 @@ class FusedPipeline:
     runs. Call :meth:`merge` to write the current state back onto them (e.g. to inspect
     a network's layers, or to save it).
 
+    The carried state's buffers are donated to the compiled step, so
+    :attr:`state` holds live arrays that the next :meth:`step` consumes:
+    anything read from it that must survive a step (a belief to compare
+    before and after, a weight snapshot) should be copied first, e.g. with
+    ``np.asarray``.
+
     Parameters
     ----------
     part :
@@ -408,7 +414,15 @@ class FusedPipeline:
             error_fn = lambda out, target: out - target  # noqa: E731
         self._part = part
         self._core_fns = _core(part)
-        self.state = self._core_fns.init_state
+        # Own the carried state: the init pytree shares its arrays with the
+        # part objects it was built from, and the step donates its input
+        # buffers, so donating the shared originals would delete them out
+        # from under the parts (and anything else built on the same
+        # arrays). One copy at construction makes every donated buffer
+        # pipeline-owned.
+        _arrays, _static = eqx.partition(self._core_fns.init_state, eqx.is_array)
+        _arrays = jax.tree_util.tree_map(jnp.array, _arrays)
+        self.state = eqx.combine(_arrays, _static)
         self._last_report: Optional[tuple] = None
 
         def step(state, x, target):
@@ -417,7 +431,13 @@ class FusedPipeline:
             input_error, state, reports = self._core_fns.backward(state, cache, error)
             return state, output, input_error, reports
 
-        self._step = eqx.filter_jit(step)
+        # The carried state is consumed and rebuilt every step, so its
+        # buffers are donated to the compiled call: XLA updates the weights
+        # and optimiser states in place instead of double-buffering the
+        # whole pytree. `step` copies its input arrays before the call, so
+        # donation never invalidates a caller's buffers; `predict` does not
+        # donate, since the state it reads must survive the call.
+        self._step = eqx.filter_jit(step, donate="all")
         self._predict = eqx.filter_jit(
             lambda state, x: self._core_fns.forward(state, x)[0]
         )
@@ -453,8 +473,11 @@ class FusedPipeline:
             The descent error at the tree's input — what a part behind the tree
             would receive.
         """
+        # `jnp.array` (not `asarray`) forces fresh device buffers: the
+        # compiled step donates every input, and the caller's arrays must
+        # not be invalidated behind its back.
         self.state, output, input_error, self._last_report = self._step(
-            self.state, jnp.asarray(x), jnp.asarray(target)
+            self.state, jnp.array(x), jnp.array(target)
         )
         return output, input_error
 
