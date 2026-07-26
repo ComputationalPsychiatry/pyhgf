@@ -83,6 +83,39 @@ fn layer_pe(
     }
 }
 
+/// Per-chunk outputs of a batched step, combined by
+/// [`DeepNet::combine_and_apply`].
+struct ChunkOut {
+    range: std::ops::Range<usize>,
+    errors: Matrix,
+    grads: Option<Vec<Option<Matrix>>>,
+    increments: Option<crate::vectorised::batched::ConfidenceIncrements>,
+}
+
+/// Chunk count of a batched call: per-thread slabs, small batches staying in
+/// one chunk.
+fn chunk_count(n_samples: usize) -> usize {
+    const MIN_CHUNK: usize = 256;
+    rayon::current_num_threads()
+        .min(n_samples.div_ceil(MIN_CHUNK))
+        .max(1)
+}
+
+/// Even sample ranges over `n_samples`, the remainder spread over the first
+/// chunks.
+fn chunk_ranges(n_samples: usize, n_chunks: usize) -> Vec<std::ops::Range<usize>> {
+    let base = n_samples / n_chunks;
+    let remainder = n_samples % n_chunks;
+    let mut ranges = Vec::with_capacity(n_chunks);
+    let mut start = 0;
+    for c in 0..n_chunks {
+        let len = base + usize::from(c < remainder);
+        ranges.push(start..start + len);
+        start += len;
+    }
+    ranges
+}
+
 impl DeepNet {
     /// Clamp the predictors `x` on the top layer (where the predictors enter),
     /// writing into the existing state buffers (no allocation).
@@ -310,10 +343,7 @@ impl DeepNet {
         // Samples are exchangeable by construction, so the batch splits into
         // per-thread slabs swept independently; small batches stay in one
         // chunk and take exactly the single-threaded path.
-        const MIN_CHUNK: usize = 256;
-        let n_chunks = rayon::current_num_threads()
-            .min(x.nrows().div_ceil(MIN_CHUNK))
-            .max(1);
+        let n_chunks = chunk_count(x.nrows());
         self.batch_update_chunked(
             workspace,
             x,
@@ -347,33 +377,14 @@ impl DeepNet {
         use crate::vectorised::batched::{
             batched_confidence_increments, batched_input_prediction_error,
             batched_mean_weight_gradients, batched_prediction_sweep, batched_update_sweep,
-            reset_chunk, ConfidenceIncrements,
+            reset_chunk,
         };
         use crate::vectorised::layer::LayerState;
         use rayon::prelude::*;
 
         let n_samples = x.nrows();
-        let n_layers = self.layers.len();
-        let top_size = self.layers[n_layers - 1].n_nodes();
         let learning = optimizer.is_some();
-
-        // Even sample ranges, the remainder spread over the first chunks.
-        let base = n_samples / n_chunks;
-        let remainder = n_samples % n_chunks;
-        let mut ranges = Vec::with_capacity(n_chunks);
-        let mut start = 0;
-        for c in 0..n_chunks {
-            let len = base + usize::from(c < remainder);
-            ranges.push(start..start + len);
-            start += len;
-        }
-
-        struct ChunkOut {
-            range: std::ops::Range<usize>,
-            errors: Matrix,
-            grads: Option<Vec<Option<Matrix>>>,
-            increments: Option<ConfidenceIncrements>,
-        }
+        let ranges = chunk_ranges(n_samples, n_chunks);
 
         // One workspace entry per chunk; entries beyond the chunk count are
         // dropped (their memory returned), missing ones start empty and are
@@ -403,6 +414,162 @@ impl DeepNet {
             })
             .collect();
 
+        self.combine_and_apply(
+            chunk_outs,
+            n_samples,
+            optimizer,
+            opt_state,
+            update_confidences,
+        )
+    }
+
+    /// Forward phase of the two-phase batch step: run the prediction sweep
+    /// for every chunk into `workspace` and return the bottom layer's
+    /// expected means, `(n_samples, bottom_size)`. The swept states stay in
+    /// the workspace for [`Self::batch_update_from_error`]; the pair must
+    /// run back to back on the same batch, with no other batched call on
+    /// the same workspace in between.
+    pub fn batch_forward(
+        &self,
+        workspace: &mut crate::vectorised::batched::BatchWorkspace,
+        x: ArrayView2<Float>,
+        time_step: Float,
+    ) -> Matrix {
+        use crate::vectorised::batched::{batched_prediction_sweep, reset_chunk};
+        use crate::vectorised::layer::LayerState;
+        use rayon::prelude::*;
+
+        let n_samples = x.nrows();
+        let n_chunks = chunk_count(n_samples);
+        let ranges = chunk_ranges(n_samples, n_chunks);
+        workspace.chunks.resize_with(n_chunks, Vec::new);
+
+        let templates: Vec<&LayerState> = self.layers.iter().map(|layer| &layer.state).collect();
+        let bottom = self.layers[0].n_nodes();
+        let mut out = Matrix::zeros((bottom, n_samples));
+        let out_chunks: Vec<(std::ops::Range<usize>, Matrix)> = ranges
+            .into_par_iter()
+            .zip(workspace.chunks.par_iter_mut())
+            .map(|(range, states)| {
+                reset_chunk(states, &templates, range.len());
+                batched_prediction_sweep(self, states, x.slice(s![range.clone(), ..]), time_step);
+                (range, states[0].expected_mean.clone())
+            })
+            .collect();
+        for (range, chunk_out) in out_chunks {
+            out.slice_mut(s![.., range]).assign(&chunk_out);
+        }
+        out.reversed_axes()
+    }
+
+    /// Backward phase of the two-phase batch step: consume the swept states
+    /// left by [`Self::batch_forward`]. `error` is `(n_samples, bottom_size)`
+    /// in the descent convention: the observation clamped on the leaf is
+    /// the cached prediction minus the error. Returns the routed input
+    /// errors in the observed-minus-predicted convention, exactly as
+    /// [`Self::batch_update`] does.
+    ///
+    /// # Errors
+    /// Returns an error when the workspace does not hold a matching forward
+    /// pass for this batch size and architecture.
+    #[allow(clippy::too_many_arguments)]
+    pub fn batch_update_from_error(
+        &mut self,
+        workspace: &mut crate::vectorised::batched::BatchWorkspace,
+        error: ArrayView2<Float>,
+        optimizer: Option<&Optimizer>,
+        opt_state: Option<&mut OptState>,
+        time_step: Float,
+        learning_kind: WeightKind,
+        update_confidences: bool,
+    ) -> Result<Matrix, String> {
+        use crate::vectorised::batched::{
+            batched_confidence_increments, batched_input_prediction_error,
+            batched_mean_weight_gradients, batched_update_sweep,
+        };
+        use crate::vectorised::layer::LayerState;
+        use rayon::prelude::*;
+
+        let n_samples = error.nrows();
+        let n_layers = self.layers.len();
+        if n_layers < 2 {
+            return Err("add at least two layers before a batched step.".to_string());
+        }
+        if error.ncols() != self.layers[0].n_nodes() {
+            return Err(format!(
+                "error has {} column(s) but the output layer has {} node(s).",
+                error.ncols(),
+                self.layers[0].n_nodes()
+            ));
+        }
+        let n_chunks = chunk_count(n_samples);
+        let ranges = chunk_ranges(n_samples, n_chunks);
+        let matches = workspace.chunks.len() == n_chunks
+            && ranges
+                .iter()
+                .zip(workspace.chunks.iter())
+                .all(|(r, states)| {
+                    states.len() == n_layers
+                        && states.iter().zip(self.layers.iter()).all(|(state, layer)| {
+                            state.expected_mean.dim() == (layer.n_nodes(), r.len())
+                        })
+                });
+        if !matches {
+            return Err(
+                "no matching forward pass in the workspace: call batch_forward \
+                 on the same batch first."
+                    .to_string(),
+            );
+        }
+
+        let learning = optimizer.is_some();
+        let net: &DeepNet = self;
+        let templates: Vec<&LayerState> = net.layers.iter().map(|layer| &layer.state).collect();
+        let chunk_outs: Vec<ChunkOut> = ranges
+            .into_par_iter()
+            .zip(workspace.chunks.par_iter_mut())
+            .map(|(range, states)| {
+                let e = error.slice(s![range.clone(), ..]);
+                // The observation the leaf should have produced is its
+                // cached prediction minus the error.
+                let y_t = &states[0].expected_mean - &e.t();
+                batched_update_sweep(net, states, y_t.t(), time_step);
+                let errors = batched_input_prediction_error(net, states);
+                let grads =
+                    learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
+                let increments =
+                    update_confidences.then(|| batched_confidence_increments(states, &templates));
+                ChunkOut {
+                    range,
+                    errors,
+                    grads,
+                    increments,
+                }
+            })
+            .collect();
+
+        Ok(self.combine_and_apply(
+            chunk_outs,
+            n_samples,
+            optimizer,
+            opt_state,
+            update_confidences,
+        ))
+    }
+
+    /// Combine per-chunk outputs (input-error slices concatenated; gradient
+    /// and confidence means weighted by chunk size) and apply the optimiser
+    /// step and confidence increments once. Returns the routed input errors,
+    /// `(top_size, n_samples)`, transposed to samples-first at the return.
+    fn combine_and_apply(
+        &mut self,
+        chunk_outs: Vec<ChunkOut>,
+        n_samples: usize,
+        optimizer: Option<&Optimizer>,
+        opt_state: Option<&mut OptState>,
+        update_confidences: bool,
+    ) -> Matrix {
+        let top_size = self.layers[self.layers.len() - 1].n_nodes();
         let mut input_errors = Matrix::zeros((top_size, n_samples));
         for chunk in &chunk_outs {
             input_errors
@@ -896,6 +1063,87 @@ mod tests {
                 assert_eq!(a.state.precision, b.state.precision);
                 assert_eq!(a.state.mean_vol, b.state.mean_vol);
                 assert_eq!(a.state.precision_vol, b.state.precision_vol);
+            }
+        }
+    }
+
+    #[test]
+    fn test_two_phase_matches_batch_update() {
+        // batch_forward + batch_update_from_error(out - y) must reproduce
+        // batch_update(x, y): the error entry clamps the same observation.
+        // Covered with volatility levels on and off.
+        use crate::vectorised::batched::BatchWorkspace;
+
+        for volatility in [true, false] {
+            let make_net = || {
+                let configs: Vec<LayerConfig> = [2usize, 4, 3]
+                    .iter()
+                    .map(|&size| {
+                        let mut cfg = LayerConfig::new(size);
+                        cfg.volatility_parent = volatility;
+                        cfg
+                    })
+                    .collect();
+                let mut net = DeepNet::from_configs(&configs).unwrap();
+                for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
+                    let w = layer.weights_in.as_mut().unwrap();
+                    for ((i, j), v) in w.indexed_iter_mut() {
+                        *v = 0.3 * ((i + 2 * j + l) as Float * 0.7).sin();
+                    }
+                }
+                net
+            };
+            let n_samples = 37;
+            let x =
+                Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
+            let y =
+                Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as Float * 0.4).sin());
+            let opt = Optimizer::adam(0.01);
+
+            let mut one_shot = make_net();
+            let mut one_state = OptState::init(&one_shot);
+            let mut one_ws = BatchWorkspace::default();
+            let errors_one = one_shot.batch_update_with_workspace(
+                &mut one_ws,
+                x.view(),
+                y.view(),
+                Some(&opt),
+                Some(&mut one_state),
+                1.0,
+                WeightKind::PrecisionWeighted,
+                true,
+            );
+
+            let mut two_phase = make_net();
+            let mut two_state = OptState::init(&two_phase);
+            let mut two_ws = BatchWorkspace::default();
+            let out = two_phase.batch_forward(&mut two_ws, x.view(), 1.0);
+            let e = &out - &y;
+            let errors_two = two_phase
+                .batch_update_from_error(
+                    &mut two_ws,
+                    e.view(),
+                    Some(&opt),
+                    Some(&mut two_state),
+                    1.0,
+                    WeightKind::PrecisionWeighted,
+                    true,
+                )
+                .unwrap();
+
+            let close = |a: Float, b: Float| (a - b).abs() < 1e-5 * (1.0 + a.abs().max(b.abs()));
+            for (a, b) in errors_one.iter().zip(errors_two.iter()) {
+                assert!(close(*a, *b), "input errors differ: {a} vs {b}");
+            }
+            for (la, lb) in one_shot.layers.iter().zip(two_phase.layers.iter()) {
+                if let (Some(wa), Some(wb)) = (la.weights_in.as_ref(), lb.weights_in.as_ref()) {
+                    for (a, b) in wa.iter().zip(wb.iter()) {
+                        assert!(close(*a, *b), "weights differ: {a} vs {b}");
+                    }
+                }
+                for (a, b) in la.state.precision.iter().zip(lb.state.precision.iter()) {
+                    assert!(close(*a, *b), "carried precisions differ: {a} vs {b}");
+                }
             }
         }
     }
