@@ -992,6 +992,7 @@ def _batch_step(
     update_confidences: bool = True,
     time_step: float = 1.0,
     predicted: Optional[tuple] = None,
+    sample_weight: Optional[jnp.ndarray] = None,
 ) -> tuple[Network, Optional[optax.OptState], jnp.ndarray]:
     """One batch-synchronous learning step over many samples at once.
 
@@ -1029,6 +1030,20 @@ def _batch_step(
         returned network.
     time_step :
         Inference time step, applied once per batch.
+    sample_weight :
+        Optional per-sample weights, shape ``(batch,)``. The batch mean becomes a
+        weighted mean whose denominator is ``sample_weight.sum()`` rather than the
+        row count, so rows that carry no information do not dilute the update.
+
+        This exists because "average over the batch" is ambiguous once a caller pads.
+        A padded row contributes a zero gradient either way, but with a plain mean it
+        still counts in the denominator, so the effective step shrinks by the padding
+        fraction. Anything that hands this function a variable-length batch — a token
+        sequence, a masked objective, a ragged observation — is affected, and the
+        symptom is a *systematic* gradient scale error rather than noise. Pass the mask
+        as weights to make the reduction mean-over-contributing-rows instead.
+
+        ``None`` (default) keeps the plain mean, so existing behaviour is unchanged.
     predicted :
         Optional per-sample predicted states from
         :func:`batched_prediction_states` (one batched ``LayerState`` per
@@ -1093,13 +1108,21 @@ def _batch_step(
 
     new_network = network
     if optimizer is not None:
-        mean_grads = tuple(_contract_factors(f) for f in factors)
+        mean_grads = tuple(_contract_factors(f, sample_weight) for f in factors)
         new_network, opt_state = _apply_weight_updates(
             new_network, mean_grads, opt_state, optimizer
         )
 
     if update_confidences:
-        mean_increments = jax.tree_util.tree_map(lambda i: i.mean(axis=0), increments)
+        if sample_weight is None:
+            reduce = lambda i: i.mean(axis=0)  # noqa: E731
+        else:
+            denominator = jnp.maximum(sample_weight.sum(), 1.0)
+
+            def reduce(i):
+                return jnp.tensordot(sample_weight, i, axes=(0, 0)) / denominator
+
+        mean_increments = jax.tree_util.tree_map(reduce, increments)
         new_network = apply_confidence_increments(new_network, mean_increments)
 
     return new_network, opt_state, input_errors
@@ -1110,7 +1133,7 @@ def _batch_step(
 batch_step = eqx.filter_jit(_batch_step)
 
 
-def _contract_factors(factors) -> Optional[jnp.ndarray]:
+def _contract_factors(factors, sample_weight=None) -> Optional[jnp.ndarray]:
     """Batch-mean gradient from stacked per-sample factors.
 
     ``factors`` is ``None`` for the bottom element, or a ``(u, v)`` pair with
@@ -1121,9 +1144,16 @@ def _contract_factors(factors) -> Optional[jnp.ndarray]:
     if factors is None:
         return None
     u, v = factors
+    if sample_weight is None:
+        if u.ndim == 2:
+            return jnp.einsum("bi,bj->ij", u, v) / u.shape[0]
+        return jnp.einsum("bni,bnj->nij", u, v) / u.shape[0]
+    # Weighted mean: the denominator is the weight the batch actually carries,
+    # not the number of rows it happens to be padded to.
+    denominator = jnp.maximum(sample_weight.sum(), 1.0)
     if u.ndim == 2:
-        return jnp.einsum("bi,bj->ij", u, v) / u.shape[0]
-    return jnp.einsum("bni,bnj->nij", u, v) / u.shape[0]
+        return jnp.einsum("b,bi,bj->ij", sample_weight, u, v) / denominator
+    return jnp.einsum("b,bni,bnj->nij", sample_weight, u, v) / denominator
 
 
 @eqx.filter_jit

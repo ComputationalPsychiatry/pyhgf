@@ -996,6 +996,7 @@ class DeepNetwork:
         update_confidences: bool = True,
         time_step: float = 1.0,
         predicted: Optional[tuple] = None,
+        sample_weight: Optional[Union[np.ndarray, jnp.ndarray]] = None,
     ) -> "DeepNetwork":
         """One batch-synchronous learning step over many samples at once.
 
@@ -1034,6 +1035,11 @@ class DeepNetwork:
             Optional per-sample predicted states from :meth:`predict_states`;
             when given, the internal forward sweep is skipped and ``x`` is
             ignored.
+        sample_weight :
+            Optional per-sample weights, shape ``(batch,)``. The batch average
+            becomes a weighted average with denominator ``sample_weight.sum()``,
+            so padded or masked rows do not dilute the update. Pass a 0/1 mask
+            for a variable-length batch. ``None`` keeps the plain mean.
 
         Returns
         -------
@@ -1067,6 +1073,7 @@ class DeepNetwork:
             update_confidences=update_confidences,
             time_step=float(time_step),
             predicted=predicted,
+            sample_weight=None if sample_weight is None else jnp.asarray(sample_weight),
         )
         return self
 
