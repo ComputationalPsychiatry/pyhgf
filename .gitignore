@@ -19,6 +19,4 @@ target*
 *DS_Store
 .benchmarks/
 pyhgf/*.so
-uv.lock
-Cargo.lock
 .python-version
