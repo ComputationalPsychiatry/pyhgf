@@ -442,15 +442,27 @@ class FusedPipeline:
         objective (the default), or
         ``lambda probs, ids: probs - jax.nn.one_hot(ids, vocab)`` for a categorical
         head trained on integer targets. Must be a pure function of arrays.
+    error_normalisation :
+        How the batch average is normalised when some rows carry no error.
+
+        Every learning part averages its update over the rows it is handed.
+        ``"active"`` (default) divides by the number of rows carrying a non-zero error;
+        ``"rows"`` divides by the row count.
     """
 
     def __init__(
         self,
         part,
         error_fn: Optional[Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]] = None,
+        error_normalisation: str = "active",
     ):
         if error_fn is None:
             error_fn = lambda out, target: out - target  # noqa: E731
+        if error_normalisation not in ("rows", "active"):
+            raise ValueError(
+                "error_normalisation must be 'rows' or 'active', got "
+                f"{error_normalisation!r}."
+            )
         self._part = part
         self._core_fns = _core(part)
         # Own the carried state: the init pytree shares its arrays with the
@@ -467,6 +479,10 @@ class FusedPipeline:
         def step(state, x, target):
             output, cache = self._core_fns.forward(state, x)
             error = error_fn(output, target)
+            if error_normalisation == "active":
+                rows = error.reshape(-1, error.shape[-1])
+                active = jnp.count_nonzero(jnp.any(rows != 0, axis=-1))
+                error = error * (rows.shape[0] / jnp.maximum(active, 1))
             input_error, state, reports = self._core_fns.backward(state, cache, error)
             return state, output, input_error, reports
 
