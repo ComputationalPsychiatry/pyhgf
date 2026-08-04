@@ -1818,6 +1818,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">update_confidences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;One batch-synchronous learning step over many samples at once.</span>
 
@@ -1855,6 +1856,20 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        returned network.</span>
 <span class="sd">    time_step :</span>
 <span class="sd">        Inference time step, applied once per batch.</span>
+<span class="sd">    sample_weight :</span>
+<span class="sd">        Optional per-sample weights, shape ``(batch,)``. The batch mean becomes a</span>
+<span class="sd">        weighted mean whose denominator is ``sample_weight.sum()`` rather than the</span>
+<span class="sd">        row count, so rows that carry no information do not dilute the update.</span>
+
+<span class="sd">        This exists because &quot;average over the batch&quot; is ambiguous once a caller pads.</span>
+<span class="sd">        A padded row contributes a zero gradient either way, but with a plain mean it</span>
+<span class="sd">        still counts in the denominator, so the effective step shrinks by the padding</span>
+<span class="sd">        fraction. Anything that hands this function a variable-length batch — a token</span>
+<span class="sd">        sequence, a masked objective, a ragged observation — is affected, and the</span>
+<span class="sd">        symptom is a *systematic* gradient scale error rather than noise. Pass the mask</span>
+<span class="sd">        as weights to make the reduction mean-over-contributing-rows instead.</span>
+
+<span class="sd">        ``None`` (default) keeps the plain mean, so existing behaviour is unchanged.</span>
 <span class="sd">    predicted :</span>
 <span class="sd">        Optional per-sample predicted states from</span>
 <span class="sd">        :func:`batched_prediction_states` (one batched ``LayerState`` per</span>
@@ -1919,13 +1934,21 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">new_network</span> <span class="o">=</span> <span class="n">network</span>
     <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">mean_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_contract_factors</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">)</span>
+        <span class="n">mean_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_contract_factors</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">)</span>
         <span class="n">new_network</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">_apply_weight_updates</span><span class="p">(</span>
             <span class="n">new_network</span><span class="p">,</span> <span class="n">mean_grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">update_confidences</span><span class="p">:</span>
-        <span class="n">mean_increments</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">increments</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reduce</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># noqa: E731</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">denominator</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sample_weight</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="n">denominator</span>
+
+        <span class="n">mean_increments</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="n">reduce</span><span class="p">,</span> <span class="n">increments</span><span class="p">)</span>
         <span class="n">new_network</span> <span class="o">=</span> <span class="n">apply_confidence_increments</span><span class="p">(</span><span class="n">new_network</span><span class="p">,</span> <span class="n">mean_increments</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">new_network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">input_errors</span>
@@ -1936,7 +1959,7 @@ window.runMermaid = runMermaid;</script>
 <span class="n">batch_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">_batch_step</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_contract_factors</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_contract_factors</span><span class="p">(</span><span class="n">factors</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch-mean gradient from stacked per-sample factors.</span>
 
 <span class="sd">    ``factors`` is ``None`` for the bottom element, or a ``(u, v)`` pair with</span>
@@ -1947,9 +1970,16 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">factors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">factors</span>
+    <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bi,bj-&gt;ij&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bni,bnj-&gt;nij&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Weighted mean: the denominator is the weight the batch actually carries,</span>
+    <span class="c1"># not the number of rows it happens to be padded to.</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sample_weight</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bi,bj-&gt;ij&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bni,bnj-&gt;nij&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;b,bi,bj-&gt;ij&quot;</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;b,bni,bnj-&gt;nij&quot;</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
 
 
 <div class="viewcode-block" id="prediction_pass">

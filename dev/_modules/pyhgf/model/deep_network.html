@@ -1803,6 +1803,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">update_confidences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;One batch-synchronous learning step over many samples at once.</span>
 
@@ -1841,6 +1842,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Optional per-sample predicted states from :meth:`predict_states`;</span>
 <span class="sd">            when given, the internal forward sweep is skipped and ``x`` is</span>
 <span class="sd">            ignored.</span>
+<span class="sd">        sample_weight :</span>
+<span class="sd">            Optional per-sample weights, shape ``(batch,)``. The batch average</span>
+<span class="sd">            becomes a weighted average with denominator ``sample_weight.sum()``,</span>
+<span class="sd">            so padded or masked rows do not dilute the update. Pass a 0/1 mask</span>
+<span class="sd">            for a variable-length batch. ``None`` keeps the plain mean.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1874,6 +1880,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">update_confidences</span><span class="o">=</span><span class="n">update_confidences</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
             <span class="n">predicted</span><span class="o">=</span><span class="n">predicted</span><span class="p">,</span>
+            <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 

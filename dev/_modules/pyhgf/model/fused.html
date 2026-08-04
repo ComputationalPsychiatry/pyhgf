@@ -1246,6 +1246,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        objective (the default), or</span>
 <span class="sd">        ``lambda probs, ids: probs - jax.nn.one_hot(ids, vocab)`` for a categorical</span>
 <span class="sd">        head trained on integer targets. Must be a pure function of arrays.</span>
+<span class="sd">    error_normalisation :</span>
+<span class="sd">        How the batch average is normalised when some rows carry no error.</span>
+
+<span class="sd">        Every learning part averages its update over the rows it is handed.</span>
+<span class="sd">        ``&quot;active&quot;`` (default) divides by the number of rows carrying a non-zero error;</span>
+<span class="sd">        ``&quot;rows&quot;`` divides by the row count.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="FusedPipeline.__init__">
@@ -1254,9 +1260,15 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">part</span><span class="p">,</span>
         <span class="n">error_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">error_normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">error_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">error_fn</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">out</span> <span class="o">-</span> <span class="n">target</span>  <span class="c1"># noqa: E731</span>
+        <span class="k">if</span> <span class="n">error_normalisation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;rows&quot;</span><span class="p">,</span> <span class="s2">&quot;active&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;error_normalisation must be &#39;rows&#39; or &#39;active&#39;, got &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_normalisation</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
         <span class="c1"># Own the carried state: the init pytree shares its arrays with the</span>
@@ -1273,6 +1285,10 @@ window.runMermaid = runMermaid;</script>
         <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
             <span class="n">output</span><span class="p">,</span> <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
             <span class="n">error</span> <span class="o">=</span> <span class="n">error_fn</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">error_normalisation</span> <span class="o">==</span> <span class="s2">&quot;active&quot;</span><span class="p">:</span>
+                <span class="n">rows</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">error</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">active</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">rows</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="n">error</span> <span class="o">*</span> <span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">active</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
             <span class="n">input_error</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">reports</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span><span class="p">,</span> <span class="n">reports</span>
 
