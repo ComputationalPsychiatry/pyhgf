@@ -396,8 +396,6 @@ def test_three_backends_binary_volatile():
         dn = (
             DeepNetwork(
                 volatility_updates=volatility_updates,
-                # The nodalised backends always propagate value-parent
-                # uncertainty, so the vectorised one has to be asked to.
                 feedforward_uncertainty=True,
             )
             .add_layer(size=n_targets, kind="binary")
@@ -1259,9 +1257,6 @@ def test_input_layer_precision_equilibrates_instead_of_running_away():
     volatility prediction error can never be positive, so a layer that did update it
     would drive its own diffusion to zero and then accumulate evidence forever. Held
     at the tonic value, the diffusion bounds the precision.
-
-    At the default, where value parents propagate nothing, it settles near 7.11; with
-    ``feedforward_uncertainty=True`` it settles lower, near 4.45, and sooner.
     """
     x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
     net = _three_layer(True)
