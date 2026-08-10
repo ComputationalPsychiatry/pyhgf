@@ -107,7 +107,7 @@ def test_transplanted_feedforward_learns_like_backprop_with_biases():
     # Transplant, one batch-synchronous step in the parity configuration.
     net = from_feedforward(fc1, fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY)
     lr = 1e-3
-    net.batch_update(xb, yb, optimizer=optax.sgd(lr), update_confidences=False)
+    net.batch_update(xb, yb, optimizer=optax.sgd(lr), update_precisions=False)
 
     def norm_rel(a, b):
         return float(jnp.linalg.norm(a - b) / jnp.linalg.norm(b))

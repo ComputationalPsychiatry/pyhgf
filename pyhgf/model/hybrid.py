@@ -295,12 +295,12 @@ class DeepNetworkAdapter(PCModule):
         weights (the beliefs still update).
     learning_kind :
         Weight-gradient mode, as in :meth:`~pyhgf.model.DeepNetwork.fit`.
-    update_confidences :
-        Whether the confidence state adapts across batches (see
+    update_precisions :
+        Whether the precision state adapts across batches (see
         :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —
         the setting used for exact comparisons against backpropagation.
     time_step :
-        Inference time step — scales the confidence leak per batch (one batch
+        Inference time step — scales the precision leak per batch (one batch
         counts as one observation of duration ``time_step``).
     """
 
@@ -309,13 +309,13 @@ class DeepNetworkAdapter(PCModule):
         net: DeepNetwork,
         optimizer: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
-        update_confidences: bool = False,
+        update_precisions: bool = False,
         time_step: float = 1.0,
     ):
         self.net = net
         self.optimizer = optimizer
         self.learning_kind = learning_kind
-        self.update_confidences = update_confidences
+        self.update_precisions = update_precisions
         self.time_step = time_step
 
     def init_state(self) -> tuple:

@@ -764,7 +764,7 @@ class DeepNetwork:
         record: Optional[tuple] = None,
         weight_update: bool = True,
         time_step: float = 1.0,
-        update_confidences: bool = True,
+        update_precisions: bool = True,
     ) -> "DeepNetwork":
         r"""Fit network to data.
 
@@ -831,7 +831,7 @@ class DeepNetwork:
             weight_update,
             record_tuple,
             float(time_step),
-            update_confidences,
+            update_precisions,
         )
 
         if record_tuple:
@@ -967,7 +967,7 @@ class DeepNetwork:
         """Prediction error at the input (top) layer.
 
         The error message the input receives from the layer below — the child
-        layer's prediction error, weighted by its confidence (precision) and
+        layer's prediction error, weighted by its precision and
         routed back through the connecting weights. It is read off the child,
         so it does not depend on whether ``update_input_layer`` is set.
         Typical usage runs the two sweeps first::
@@ -1024,7 +1024,7 @@ class DeepNetwork:
         y: Union[np.ndarray, jnp.ndarray],
         optimizer: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
-        update_confidences: bool = True,
+        update_precisions: bool = True,
         time_step: float = 1.0,
         predicted: Optional[tuple] = None,
         sample_weight: Optional[Union[np.ndarray, jnp.ndarray]] = None,
@@ -1032,11 +1032,11 @@ class DeepNetwork:
         """One batch-synchronous learning step over many samples at once.
 
         Every sample in the batch is processed from the same state — same
-        weights, same confidences — in parallel; the per-sample weight
-        gradients and confidence changes are then *averaged* and applied
+        weights, same precisions — in parallel; the per-sample weight
+        gradients and precision changes are then *averaged* and applied
         once, so the whole batch counts as a single observation. This
         differs from :meth:`fit`, which scans samples sequentially and lets
-        the confidences adapt from one sample to the next (the natural mode
+        the precisions adapt from one sample to the next (the natural mode
         for a time series). Use this method when samples are exchangeable —
         e.g. many token positions learned together.
 
@@ -1055,10 +1055,10 @@ class DeepNetwork:
             the weights.
         learning_kind :
             Weight-gradient mode, as in :meth:`fit`.
-        update_confidences :
+        update_precisions :
             If True (default), carry the batch-averaged change of the
-            confidence state (value-level precisions and the volatility
-            level) into ``self.state``. Set to False to keep confidences
+            precision state (value-level precisions and the volatility
+            level) into ``self.state``. Set to False to keep the precisions
             pinned, e.g. for exact comparisons against backpropagation.
         time_step :
             Inference time step, applied once per batch.
@@ -1101,7 +1101,7 @@ class DeepNetwork:
             y,
             optimizer=optimizer,
             learning_kind=learning_kind,
-            update_confidences=update_confidences,
+            update_precisions=update_precisions,
             time_step=float(time_step),
             predicted=predicted,
             sample_weight=None if sample_weight is None else jnp.asarray(sample_weight),

@@ -821,7 +821,7 @@ def test_input_error_routes_child_error_through_weights():
     """``input_error()`` returns the child's error routed back through the weights.
 
     Two linear layers without bias and with default (unit) precisions: the
-    confidence weighting is 1, so the message at the input (top) layer reduces
+    precision weighting is 1, so the message at the input (top) layer reduces
     to ``W.T @ (y - W @ x)`` — the output residual multiplied back through the
     connecting weight matrix.
     """
@@ -880,7 +880,7 @@ def test_ff_block_single_sweep_matches_backprop():
 
     The network is configured so that the single belief-propagation sweep
     reproduces the gradients of a squared-error loss on the identical forward
-    function: volatility levels frozen, high prior precision (confidence) on
+    function: volatility levels frozen, high prior precision on
     the hidden and input layers so their beliefs barely move during the update
     sweep, unit precision on the observed output layer, and the
     ``"precision_weighted"`` learning mode — the hidden layer's belief shift is
@@ -902,14 +902,14 @@ def test_ff_block_single_sweep_matches_backprop():
 
     g_w1, g_w2, g_x = _ff_oracle_grads(w1, w2, x, y)
 
-    high_confidence = dict(
+    high_precision = dict(
         volatility_parent=False,
         precision=1e4,
         expected_precision=1e4,
     )
     net = _ff_net(
-        hidden_kwargs=high_confidence,
-        top_kwargs=high_confidence,
+        hidden_kwargs=high_precision,
+        top_kwargs=high_precision,
         leaf_kwargs=dict(volatility_parent=False),
     )
     _set_weights(net, {1: w1, 2: w2})
@@ -973,7 +973,7 @@ def test_sample_step_matches_stateful_api():
 
     From the same state template, ``sample_step`` must return (a) the same input-layer
     error as ``net.prediction(x).update(y)`` followed by ``input_error()``, (b)
-    confidence increments equal to the change of the carried fields (value precision and
+    precision increments equal to the change of the carried fields (value precision and
     the volatility level), and (c) weight gradients matching the weight change one SGD
     step applies.
     """
@@ -988,7 +988,7 @@ def test_sample_step_matches_stateful_api():
 
     input_error, grads, increments = sample_step(template, x, y)
 
-    # Beliefs-only stateful pass: input error and confidence increments.
+    # Beliefs-only stateful pass: input error and precision increments.
     net.prediction(x).update(y)
     np.testing.assert_allclose(input_error, net.input_error(), rtol=1e-5, atol=1e-7)
     for elem_before, elem_after, inc in zip(
@@ -1022,7 +1022,7 @@ def test_batch_update_averages_and_is_batch_size_invariant():
     """A batch counts as one observation: averaged updates, repetition-invariant.
 
     ``batch_update`` must apply the batch-mean of the per-sample weight gradients in one
-    optimiser step, advance the confidence state by the batch-mean of the per-sample
+    optimiser step, advance the precision state by the batch-mean of the per-sample
     increments, and return per-sample input errors matching the pure per-sample step.
     Feeding the same batch twice over must produce the same step.
     """
@@ -1087,21 +1087,21 @@ def test_batch_update_averages_and_is_batch_size_invariant():
 
 
 def test_batch_update_freezing_flags():
-    """``update_confidences=False`` and ``optimizer=None`` freeze their targets.
+    """``update_precisions=False`` and ``optimizer=None`` freeze their targets.
 
-    Without confidence updates, the carried fields stay exactly at their template values
+    Without precision updates, the carried fields stay exactly at their template values
     while the weights still learn (the mode used for exact comparisons against
     backpropagation). Without an optimiser, the weights stay exactly fixed while the
-    confidences still adapt.
+    precisions still adapt.
     """
     rng = np.random.default_rng(31)
     xb = jnp.asarray(rng.normal(size=(4, _FF_D)))
     yb = jnp.asarray(rng.normal(size=(4, _FF_D)))
 
-    # Confidences frozen, weights learning.
+    # Precisions frozen, weights learning.
     net, w1, w2 = _ff_net_with_weights(rng)
     template = net.state
-    net.batch_update(xb, yb, optimizer=optax.sgd(1e-2), update_confidences=False)
+    net.batch_update(xb, yb, optimizer=optax.sgd(1e-2), update_precisions=False)
     for elem_before, elem_after in zip(template.layers, net.state.layers):
         for field in ("precision", "mean_vol", "precision_vol"):
             np.testing.assert_array_equal(
@@ -1109,7 +1109,7 @@ def test_batch_update_freezing_flags():
             )
     assert not np.allclose(net.state.layers[1].weights_in, w1)
 
-    # Weights frozen, confidences adapting.
+    # Weights frozen, precisions adapting.
     net_frozen = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
     _set_weights(net_frozen, {1: w1, 2: w2})
     template_frozen = net_frozen.state
@@ -1204,7 +1204,7 @@ def test_input_layer_frozen_by_default():
 
 
 def test_input_layer_precision_moves_but_mean_stays_on_the_predictors():
-    """On, only the top layer's confidence moves — its value stays on the input.
+    """On, only the top layer's precision moves — its value stays on the input.
 
     The predictors are observed, and the weight update reads the top layer's mean back
     to build its parent-side factor, so that mean is not the network's to revise. Its
@@ -1318,7 +1318,7 @@ def test_input_layer_flag_survives_from_dict():
 def test_input_layer_updated_under_batch_and_scan():
     """``fit`` and ``batch_update`` route through the same sweeps as ``update``.
 
-    Both carry the top layer's confidence forward (it is one of ``_CARRIED_FIELDS``), so
+    Both carry the top layer's precision forward (it is one of ``_CARRIED_FIELDS``), so
     neither should leave it at the value ``add_layer`` gave it.
     """
     rng = np.random.default_rng(0)
@@ -1435,7 +1435,7 @@ def test_predict_precision_default_is_on():
     )
 
 
-def test_fit_update_confidences_false_pins_precisions():
+def test_fit_update_precisions_false_pins_precisions():
     """Static-cascade mode: precisions stay at their built values across a fit."""
     rng = np.random.default_rng(0)
     x = jnp.asarray(rng.normal(size=(32, 2)))
@@ -1461,7 +1461,7 @@ def test_fit_update_confidences_false_pins_precisions():
         y,
         optimizer=optax.sgd(1e-2),
         learning_kind="standard",
-        update_confidences=False,
+        update_precisions=False,
     )
     np.testing.assert_array_equal(
         static.state.layers[1].state.precision, jnp.full(4, 3.0)

@@ -69,10 +69,10 @@ def test_layer_norm_backward_matches_autodiff():
 def _parity_ff_net(d: int, h: int, w1: jnp.ndarray, w2: jnp.ndarray) -> DeepNetwork:
     """Build a Linear-GELU-Linear DeepNetwork in backprop-parity configuration.
 
-    Bias-free, volatility frozen, high prior confidence on the hidden and input layers,
+    Bias-free, volatility frozen, high prior precision on the hidden and input layers,
     unit precision on the observed output layer.
     """
-    high_confidence = dict(
+    high_precision = dict(
         volatility_parent=False,
         precision=1e4,
         expected_precision=1e4,
@@ -88,9 +88,9 @@ def _parity_ff_net(d: int, h: int, w1: jnp.ndarray, w2: jnp.ndarray) -> DeepNetw
             size=h,
             add_constant_input=False,
             coupling_fn=jax.nn.gelu,
-            **high_confidence,
+            **high_precision,
         )
-        .add_layer(size=d, add_constant_input=False, **high_confidence)
+        .add_layer(size=d, add_constant_input=False, **high_precision)
     )
     elements = list(net.state.layers)
     elements[1] = dataclasses.replace(elements[1], weights_in=w1)

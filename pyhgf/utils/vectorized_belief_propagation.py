@@ -330,7 +330,7 @@ def _top_precision_only(
     (:func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`
     forms the parent-side factor from ``coupling_fn(parent.mean)``). Those weights must
     be learned against the predictors that were actually supplied, so the mean stays
-    pinned to ``x`` and only the confidence in it moves.
+    pinned to ``x`` and only its precision moves.
 
     Two things follow from the clamp, and both are deliberate:
 
@@ -558,7 +558,7 @@ def _sweeps_reach_top(network: Network) -> bool:
 
     Gating the two sweeps on one predicate keeps them in step: a top element that
     receives a posterior update must also receive the precision prediction that
-    carries it into the next step, or its confidence would accumulate with nothing
+    carries it into the next step, or its precision would accumulate with nothing
     advancing it.
 
     Requires ``update_input_layer``, something below the top to send it a message,
@@ -577,7 +577,7 @@ def _predict_top_precisions(elem, *, time_step: float):
     """Predict the top element's precisions, which no parent above it can supply.
 
     The element's ``expected_mean`` stays clamped to the predictors; what this adds is
-    the predicted precision of both levels, so the confidence the bottom-up sweep wrote
+    the predicted precision of both levels, so the precision the bottom-up sweep wrote
     into ``precision`` on the previous step is carried forward (damped by the volatility
     level) instead of being ignored.
     """
@@ -691,7 +691,7 @@ def run_scan(
     weight_update: bool,
     record: tuple,
     time_step: float = 1.0,
-    update_confidences: bool = True,
+    update_precisions: bool = True,
 ) -> tuple:
     r"""Run ``jax.lax.scan`` over the belief-propagation step.
 
@@ -744,11 +744,11 @@ def run_scan(
             learning_kind=learning_kind,
             weight_update=weight_update,
         )
-        if not update_confidences:
+        if not update_precisions:
             # Static-cascade mode: precisions are parameters, not filter state. Note
             # that recorded carried fields then show the template values, since the
             # restore runs before recording.
-            new_network = _restore_confidences(new_network, template)
+            new_network = _restore_precisions(new_network, template)
         if record:
             traj_step = {
                 field: tuple(getattr(elem.state, field) for elem in new_network.layers)
@@ -806,7 +806,7 @@ def _update_sweep(
     on different terms from the interior: its mean stays clamped to the predictors and
     only its precision moves (see :func:`_top_precision_only`). The top element holds
     observed inputs that the weight update reads back, so its value is not the
-    network's to revise, only its confidence in that value is.
+    network's to revise, only its precision is.
     """
     elements = list(network.layers)
     n_elements = len(elements)
@@ -1027,8 +1027,8 @@ def learn_sweep(
 _CARRIED_FIELDS: tuple = ("precision", "mean_vol", "precision_vol")
 
 
-def _confidence_increments(before: Network, after: Network) -> tuple:
-    """Per-element change of the carried confidence fields, ``after - before``.
+def _precision_increments(before: Network, after: Network) -> tuple:
+    """Per-element change of the carried precision fields, ``after - before``.
 
     Returns one ``dict`` per element, keyed by field name. For a ``Layer``
     each entry has shape ``(n_nodes,)``; for a ``LayerStack``,
@@ -1046,10 +1046,10 @@ def _confidence_increments(before: Network, after: Network) -> tuple:
     )
 
 
-def apply_confidence_increments(network: Network, increments: tuple) -> Network:
-    """Add confidence increments (see :func:`_confidence_increments`) to a network.
+def apply_precision_increments(network: Network, increments: tuple) -> Network:
+    """Add precision increments (see :func:`_precision_increments`) to a network.
 
-    Used by :func:`batch_step` to carry the batch-averaged confidence change into the
+    Used by :func:`batch_step` to carry the batch-averaged precision change into the
     state used by the next batch.
     """
     new_elements = []
@@ -1066,8 +1066,8 @@ def apply_confidence_increments(network: Network, increments: tuple) -> Network:
     return dataclasses.replace(network, layers=tuple(new_elements))
 
 
-def _restore_confidences(network: Network, template: Network) -> Network:
-    """Reset the carried confidence fields to a template's values.
+def _restore_precisions(network: Network, template: Network) -> Network:
+    """Reset the carried precision fields to a template's values.
 
     The inverse of carrying: with this applied after every propagation step, each
     sample's sweeps still compute full per-sample posteriors but the filtered
@@ -1104,7 +1104,7 @@ def sample_step(
     ----------
     network :
         The state template. Not modified; every call starting from the same
-        template sees the same weights and the same confidences, which is
+        template sees the same weights and the same precisions, which is
         what makes this function safe to ``jax.vmap`` over a batch of
         samples.
     x :
@@ -1127,10 +1127,10 @@ def sample_step(
         Per-element weight gradients (descent form, ``None`` for the bottom
         element). Average these across a batch and apply once.
     increments :
-        Per-element change of the carried confidence fields (value-level
+        Per-element change of the carried precision fields (value-level
         posterior precision and the volatility level), relative to the
         template. Average these across a batch and apply once with
-        :func:`apply_confidence_increments`.
+        :func:`apply_precision_increments`.
     """
     updated = _update_sweep(
         _prediction_sweep(network, x, time_step=time_step), y, time_step=time_step
@@ -1138,7 +1138,7 @@ def sample_step(
     return (
         _input_prediction_error(updated),
         _weight_gradients(updated, learning_kind),
-        _confidence_increments(network, updated),
+        _precision_increments(network, updated),
     )
 
 
@@ -1149,7 +1149,7 @@ def _batch_step(
     y: jnp.ndarray,
     optimizer: Optional[optax.GradientTransformation] = None,
     learning_kind: str = "precision_weighted",
-    update_confidences: bool = True,
+    update_precisions: bool = True,
     time_step: float = 1.0,
     predicted: Optional[tuple] = None,
     sample_weight: Optional[jnp.ndarray] = None,
@@ -1157,15 +1157,15 @@ def _batch_step(
     """One batch-synchronous learning step over many samples at once.
 
     Every sample in the batch is processed from the *same* state template —
-    same weights, same confidences — through the same sweeps as
+    same weights, same precisions — through the same sweeps as
     :func:`sample_step`, under ``jax.vmap``, so samples are exchangeable and
     nothing depends on their order. The per-sample results are then averaged
     and applied once, so the batch counts as a single observation:
 
     * the mean weight gradient drives one optimiser step (skipped when
       ``optimizer`` is ``None``);
-    * the mean confidence increments are added to the carried fields (skipped
-      when ``update_confidences`` is ``False``, e.g. to keep the carried
+    * the mean precision increments are added to the carried fields (skipped
+      when ``update_precisions`` is ``False``, e.g. to keep the carried
       precisions pinned when comparing against backpropagation).
 
     Averaging (rather than summing) makes the result invariant to repeating
@@ -1185,8 +1185,8 @@ def _batch_step(
         Optax optimiser for the weight step. ``None`` freezes the weights.
     learning_kind :
         Weight-gradient mode.
-    update_confidences :
-        Whether to carry the batch-averaged confidence increments into the
+    update_precisions :
+        Whether to carry the batch-averaged precision increments into the
         returned network.
     time_step :
         Inference time step, applied once per batch.
@@ -1215,7 +1215,7 @@ def _batch_step(
     -------
     network :
         The template advanced by one batch: new weights and, if requested,
-        new confidences. Everything else is untouched (it is rewritten by
+        new precisions. Everything else is untouched (it is rewritten by
         the sweeps on the next call anyway).
     opt_state :
         The advanced optimiser state (``None`` if no optimiser was given).
@@ -1239,7 +1239,7 @@ def _batch_step(
             )
         return (
             _input_prediction_error(updated),
-            _confidence_increments(network, updated),
+            _precision_increments(network, updated),
             factors,
         )
 
@@ -1273,7 +1273,7 @@ def _batch_step(
             new_network, mean_grads, opt_state, optimizer
         )
 
-    if update_confidences:
+    if update_precisions:
         if sample_weight is None:
             reduce = lambda i: i.mean(axis=0)  # noqa: E731
         else:
@@ -1283,7 +1283,7 @@ def _batch_step(
                 return jnp.tensordot(sample_weight, i, axes=(0, 0)) / denominator
 
         mean_increments = jax.tree_util.tree_map(reduce, increments)
-        new_network = apply_confidence_increments(new_network, mean_increments)
+        new_network = apply_precision_increments(new_network, mean_increments)
 
     return new_network, opt_state, input_errors
 

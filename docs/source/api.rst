@@ -603,7 +603,7 @@ Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork
    input_prediction_error
    sample_step
    batch_step
-   apply_confidence_increments
+   apply_precision_increments
    batched_prediction_pass
    batched_prediction_states
 

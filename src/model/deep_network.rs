@@ -444,10 +444,10 @@ impl DeepNetwork {
     /// One batch-synchronous learning step over many samples at once,
     /// mirroring the JAX `DeepNetwork.batch_update`. Every sample in the
     /// batch is processed from the same state (same weights, same
-    /// confidences); the per-sample weight gradients and confidence changes
+    /// precisions); the per-sample weight gradients and precision changes
     /// are then averaged and applied once, so the whole batch counts as a
     /// single observation. This differs from `fit`, which scans samples
-    /// sequentially and lets the confidences adapt from one sample to the
+    /// sequentially and lets the precisions adapt from one sample to the
     /// next. `optimizer=None` (default) freezes the weights; pass `"adam"` or
     /// Forward phase of the two-phase batch step: predict the batch and keep
     /// the swept states cached, returning the output layer's expected means,
@@ -497,7 +497,7 @@ impl DeepNetwork {
         optimizer = None,
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
-        update_confidences = true,
+        update_precisions = true,
         time_step = 1.0,
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -508,7 +508,7 @@ impl DeepNetwork {
         optimizer: Option<&str>,
         learning_rate: Float,
         learning_kind: &str,
-        update_confidences: bool,
+        update_precisions: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let opt = optimizer
@@ -554,14 +554,14 @@ impl DeepNetwork {
                     opt_state,
                     time_step,
                     kind,
-                    update_confidences,
+                    update_precisions,
                 )
             })
             .map_err(PyValueError::new_err)?;
         Ok(errors.to_pyarray(py).into_any().unbind())
     }
 
-    /// `"sgd"` with `learning_rate` to learn. `update_confidences=False`
+    /// `"sgd"` with `learning_rate` to learn. `update_precisions=False`
     /// keeps the carried precisions pinned, the setting used for exact
     /// comparisons against backpropagation. Returns the per-sample prediction
     /// errors at the input (top) layer, shape `(n_samples, n_input_features)`;
@@ -572,7 +572,7 @@ impl DeepNetwork {
         optimizer = None,
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
-        update_confidences = true,
+        update_precisions = true,
         time_step = 1.0,
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -584,7 +584,7 @@ impl DeepNetwork {
         optimizer: Option<&str>,
         learning_rate: Float,
         learning_kind: &str,
-        update_confidences: bool,
+        update_precisions: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let opt = optimizer
@@ -652,7 +652,7 @@ impl DeepNetwork {
                 opt_state,
                 time_step,
                 kind,
-                update_confidences,
+                update_precisions,
             )
         });
         Ok(errors.to_pyarray(py).into_any().unbind())

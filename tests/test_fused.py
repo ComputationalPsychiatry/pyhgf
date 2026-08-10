@@ -88,24 +88,24 @@ def test_fused_adapter_tracks_backprop_twin():
         assert _norm_rel(input_error, per_sample_dx) < 1e-2, f"step {step}"
 
 
-def test_fused_confidences_carry_across_steps():
-    """Released confidences adapt across steps; pinned ones stay put."""
+def test_fused_precisions_carry_across_steps():
+    """Released precisions adapt across steps; pinned ones stay put."""
     rng = np.random.default_rng(2)
     k1, k2 = random.split(random.key(3))
     fc1 = eqx.nn.Linear(6, 12, key=k1)
     fc2 = eqx.nn.Linear(12, 6, key=k2)
 
-    def run(update_confidences):
-        leaf = _PARITY_LEAF if not update_confidences else {}
+    def run(update_precisions):
+        leaf = _PARITY_LEAF if not update_precisions else {}
         layer = (
             _PARITY
-            if not update_confidences
+            if not update_precisions
             else dict(precision=30.0, expected_precision=30.0)
         )
         part = DeepNetworkAdapter(
             from_feedforward(fc1, fc2, leaf_kwargs=leaf, layer_kwargs=layer),
             optimizer=optax.adam(1e-3),
-            update_confidences=update_confidences,
+            update_precisions=update_precisions,
         )
         fused = FusedPipeline(part)
         # Snapshot, not a live reference: the step donates the state buffers.
@@ -117,9 +117,9 @@ def test_fused_confidences_carry_across_steps():
             )
         return before, fused.state[0].layers[1].state.precision
 
-    before, after = run(update_confidences=True)
-    assert not jnp.allclose(before, after)  # the confidence state moved
-    before, after = run(update_confidences=False)
+    before, after = run(update_precisions=True)
+    assert not jnp.allclose(before, after)  # the precision state moved
+    before, after = run(update_precisions=False)
     np.testing.assert_allclose(before, after)  # pinned for parity
 
 

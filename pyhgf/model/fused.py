@@ -74,7 +74,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
     """
     optimizer = part.optimizer
     learning_kind = part.learning_kind
-    update_confidences = part.update_confidences
+    update_precisions = part.update_precisions
     time_step = part.time_step
     layer_sizes = list(part.net.layer_sizes)
 
@@ -107,7 +107,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             out - error.reshape(-1, error.shape[-1]),
             optimizer=optimizer,
             learning_kind=learning_kind,
-            update_confidences=update_confidences,
+            update_precisions=update_precisions,
             time_step=time_step,
             predicted=states,
         )

@@ -295,7 +295,7 @@ def vectorized_root_prediction(
         \hat{\pi}_a^{(k)} = \tilde{\pi}_a^{(k)}
             = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)} \right)^{-1}.
 
-    This is what lets the input layer's confidence *move*. Without it,
+    This is what lets the input layer's precision *move*. Without it,
     ``expected_precision`` is frozen at whatever the layer was built with, and
     because the layer below reads it to form its own value-coupling variance, the
     whole hierarchy inherits a constant input precision. Running this kernel makes
