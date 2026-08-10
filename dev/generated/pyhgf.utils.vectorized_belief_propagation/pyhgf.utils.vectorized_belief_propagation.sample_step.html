@@ -520,6 +520,7 @@
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction.html">pyhgf.updates.vectorized.volatile.vectorized_layer_prediction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_root_prediction.html">pyhgf.updates.vectorized.volatile.vectorized_root_prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html">pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level.html">pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level.html">pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level</a></li>
@@ -640,7 +641,7 @@
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.input_prediction_error.html">pyhgf.utils.vectorized_belief_propagation.input_prediction_error</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.vectorized_belief_propagation.sample_step</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.batch_step.html">pyhgf.utils.vectorized_belief_propagation.batch_step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_precision_increments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_states</a></li>
 </ul>
@@ -744,7 +745,7 @@ mutating anything.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.typing.vectorised/pyhgf.typing.vectorised.Network.html#pyhgf.typing.vectorised.Network" title="pyhgf.typing.vectorised.Network"><em>Network</em></a>) – The state template. Not modified; every call starting from the same
-template sees the same weights and the same confidences, which is
+template sees the same weights and the same precisions, which is
 what makes this function safe to <code class="docutils literal notranslate"><span class="pre">jax.vmap</span></code> over a batch of
 samples.</p></li>
 <li><p><strong>x</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>) – Predictors clamped on the top layer, shape <code class="docutils literal notranslate"><span class="pre">(n_input_features,)</span></code>.</p></li>
@@ -761,10 +762,10 @@ samples.</p></li>
 <a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.input_prediction_error.html#pyhgf.utils.vectorized_belief_propagation.input_prediction_error" title="pyhgf.utils.vectorized_belief_propagation.input_prediction_error"><code class="xref py py-func docutils literal notranslate"><span class="pre">input_prediction_error()</span></code></a>.</p></li>
 <li><p><em>grads</em> – Per-element weight gradients (descent form, <code class="docutils literal notranslate"><span class="pre">None</span></code> for the bottom
 element). Average these across a batch and apply once.</p></li>
-<li><p><em>increments</em> – Per-element change of the carried confidence fields (value-level
+<li><p><em>increments</em> – Per-element change of the carried precision fields (value-level
 posterior precision and the volatility level), relative to the
 template. Average these across a batch and apply once with
-<a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html#pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments" title="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_confidence_increments()</span></code></a>.</p></li>
+<a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments.html#pyhgf.utils.vectorized_belief_propagation.apply_precision_increments" title="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_precision_increments()</span></code></a>.</p></li>
 </ul>
 </p>
 </dd>

@@ -29,6 +29,8 @@
       ~Network.n_total_slices
       ~Network.params
       ~Network.precision_clipping_value
+      ~Network.predict_precision
+      ~Network.update_input_layer
       ~Network.weights
       ~Network.layers
       ~Network.volatility_updates

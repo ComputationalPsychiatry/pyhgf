@@ -61,7 +61,7 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update" href="pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html" />
+    <link rel="next" title="pyhgf.updates.vectorized.volatile.vectorized_root_prediction" href="pyhgf.updates.vectorized.volatile.vectorized_root_prediction.html" />
     <link rel="prev" title="pyhgf.updates.observation.set_predictors" href="../pyhgf.updates.observation/pyhgf.updates.observation.set_predictors.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -522,6 +522,7 @@
 </ul>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.updates.vectorized.volatile.vectorized_layer_prediction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.updates.vectorized.volatile.vectorized_root_prediction.html">pyhgf.updates.vectorized.volatile.vectorized_root_prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html">pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level.html">pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level.html">pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level</a></li>
@@ -642,7 +643,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.input_prediction_error.html">pyhgf.utils.vectorized_belief_propagation.input_prediction_error</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.sample_step.html">pyhgf.utils.vectorized_belief_propagation.sample_step</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batch_step.html">pyhgf.utils.vectorized_belief_propagation.batch_step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.apply_precision_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_precision_increments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_states</a></li>
 </ul>
@@ -736,7 +737,7 @@
 <h1>pyhgf.updates.vectorized.volatile.vectorized_layer_prediction<a class="headerlink" href="#pyhgf-updates-vectorized-volatile-vectorized-layer-prediction" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.updates.vectorized.volatile.vectorized_layer_prediction">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_layer_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_has_constant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_volatility_parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_input_layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/prediction.html#vectorized_layer_prediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.updates.vectorized.volatile.</span></span><span class="sig-name descname"><span class="pre">vectorized_layer_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;PjitFunction</span> <span class="pre">of</span> <span class="pre">&lt;function</span> <span class="pre">tanh&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_has_constant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_volatility_parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_input_layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predict_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/updates/vectorized/volatile/prediction.html#vectorized_layer_prediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction" title="Link to this definition">#</a></dt>
 <dd><p>Predict expected mean/precision for all nodes in a volatile-node layer.</p>
 <p>Computes both the value-level (external) and volatility-level (internal)
 predictions. Two predicted precisions of the value level are stored:</p>
@@ -773,11 +774,20 @@ bias connections and is treated as linearly coupled (<span class="math notransla
 regardless of <em>coupling_fn</em>; the constant node’s derivative is zero and
 its predicted precision is infinite, so it contributes nothing to the
 value-coupling variance.</p></li>
+<li><p><strong>predict_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether the prediction step advances the precisions; see
+<a class="reference internal" href="#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction" title="pyhgf.updates.vectorized.volatile.vectorized_layer_prediction"><code class="xref py py-func docutils literal notranslate"><span class="pre">vectorized_layer_prediction()</span></code></a>.</p></li>
 <li><p><strong>has_volatility_parent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True (default), the layer has an implied internal volatility parent
 whose state (<code class="docutils literal notranslate"><span class="pre">mean_vol</span></code>, <code class="docutils literal notranslate"><span class="pre">precision_vol</span></code>) is predicted and updated.
 If False, the value level has no volatility source at all, so it does not
 undergo a Gaussian random walk: the diffusion term is dropped and the
 conditional predicted precision equals the prior precision.</p></li>
+<li><p><strong>predict_precision</strong> – Whether the prediction step advances the precisions at all. With <code class="docutils literal notranslate"><span class="pre">False</span></code>
+both predicted precisions are held at the layer’s prior precision, the
+effective precision is zero, and the volatility level is left untouched,
+so the only thing prediction produces is the expected mean. Precision then
+moves solely through the posterior update, if that is enabled. This is the
+same treatment <code class="docutils literal notranslate"><span class="pre">is_input_layer</span></code> gives an observed leaf, applied to every
+layer.</p></li>
 <li><p><strong>is_input_layer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, the layer is treated as an observed input/leaf: it does not
 undergo a Gaussian random walk between observations. The volatility
 contribution to the value-level expected precision is skipped,
@@ -819,11 +829,11 @@ for both the value and volatility levels.</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html"
+       href="pyhgf.updates.vectorized.volatile.vectorized_root_prediction.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update</p>
+        <p class="prev-next-title">pyhgf.updates.vectorized.volatile.vectorized_root_prediction</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

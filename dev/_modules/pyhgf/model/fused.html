@@ -876,7 +876,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">optimizer</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">optimizer</span>
     <span class="n">learning_kind</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">learning_kind</span>
-    <span class="n">update_confidences</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">update_confidences</span>
+    <span class="n">update_precisions</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">update_precisions</span>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">time_step</span>
     <span class="n">layer_sizes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
 
@@ -909,7 +909,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">out</span> <span class="o">-</span> <span class="n">error</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">error</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
             <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
             <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
-            <span class="n">update_confidences</span><span class="o">=</span><span class="n">update_confidences</span><span class="p">,</span>
+            <span class="n">update_precisions</span><span class="o">=</span><span class="n">update_precisions</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">predicted</span><span class="o">=</span><span class="n">states</span><span class="p">,</span>
         <span class="p">)</span>

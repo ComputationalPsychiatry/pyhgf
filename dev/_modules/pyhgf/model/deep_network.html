@@ -894,6 +894,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        (default), ``&quot;eHGF&quot;`` or ``&quot;standard&quot;``.</span>
 <span class="sd">    max_posterior_precision :</span>
 <span class="sd">        Upper bound applied to every posterior precision write. Defaults to ``1e10``.</span>
+<span class="sd">    update_input_layer :</span>
+<span class="sd">        Whether the belief sweeps reach the top (input) layer. Defaults to ``False``.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -931,6 +933,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
         <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+        <span class="n">update_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
 
@@ -957,11 +961,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            regimes; a very small value (default ``1e-6``) avoids flat, zero-gradient</span>
 <span class="sd">            plateaus that hurt gradient-based inference. Shared with the nodalised</span>
 <span class="sd">            ``Network`` and the Rust backend.</span>
+<span class="sd">        update_input_layer :</span>
+<span class="sd">            Whether the belief sweeps reach the top (input) layer, which holds the</span>
+<span class="sd">            predictors. Defaults to ``False``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">volatility_updates</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_posterior_precision</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_input_layer</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">update_input_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">predict_precision</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.</span>
@@ -995,6 +1004,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
         <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+        <span class="n">update_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a network from a list of layer configurations.</span>
 
@@ -1016,6 +1026,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Upper bound applied to posterior precision writes.</span>
 <span class="sd">        precision_clipping_value : float, default 1e-6</span>
 <span class="sd">            Bound applied to binary-layer predicted means.</span>
+<span class="sd">        update_input_layer : bool, default False</span>
+<span class="sd">            Whether the belief sweeps reach the top (input) layer.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1052,6 +1064,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">volatility_updates</span><span class="o">=</span><span class="n">volatility_updates</span><span class="p">,</span>
             <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
             <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">precision_clipping_value</span><span class="p">,</span>
+            <span class="n">update_input_layer</span><span class="o">=</span><span class="n">update_input_layer</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Add layers in order</span>
@@ -1098,6 +1111,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            - &quot;volatility_updates&quot; (optional): volatility update scheme</span>
 <span class="sd">            - &quot;max_posterior_precision&quot; (optional): precision upper bound</span>
 <span class="sd">            - &quot;precision_clipping_value&quot; (optional): binary-layer clipping bound</span>
+<span class="sd">            - &quot;update_input_layer&quot; (optional): whether the sweeps reach the top layer</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1156,6 +1170,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="s2">&quot;volatility_updates&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;max_posterior_precision&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;update_input_layer&quot;</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">}</span>
 
@@ -1175,6 +1190,11 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        predict_precision :</span>
+<span class="sd">            Whether the prediction sweep advances the precisions. With ``False``</span>
+<span class="sd">            each layer&#39;s predicted precisions are held at its prior precision, its</span>
+<span class="sd">            effective precision is zero and its volatility level is left untouched,</span>
+<span class="sd">            so prediction produces only the expected means.</span>
 <span class="sd">        size :</span>
 <span class="sd">            Number of nodes in the layer.</span>
 <span class="sd">        kind :</span>
@@ -1439,6 +1459,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
             <span class="n">max_posterior_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
             <span class="n">precision_clipping_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
+            <span class="n">update_input_layer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_input_layer</span><span class="p">,</span>
+            <span class="n">predict_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_initialisation</span><span class="p">(</span>
@@ -1549,6 +1571,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">record</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fit network to data.</span>
 
@@ -1566,9 +1589,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        learning_kind :</span>
 <span class="sd">            Gradient computation mode passed to</span>
 <span class="sd">            :func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient`:</span>
-<span class="sd">            ``&quot;standard&quot;`` or ``&quot;precision_weighted&quot;`` (default). Both are</span>
-<span class="sd">            strictly local. Each weight update reads only its own</span>
-<span class="sd">            connection&#39;s prediction error, activation, and precision.</span>
+<span class="sd">            ``&quot;standard&quot;`` or ``&quot;precision_weighted&quot;`` (default), both reading</span>
+<span class="sd">            the settled beliefs, strictly local per edge.</span>
 <span class="sd">        record :</span>
 <span class="sd">            Tuple of ``LayerState`` field names to record at every time step,</span>
 <span class="sd">            e.g. ``(&quot;expected_mean&quot;, &quot;precision&quot;)``. ``None`` (default) skips</span>
@@ -1580,10 +1602,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            If True (default), the learning phase updates weights each step. If False,</span>
 <span class="sd">            weights and ``opt_state`` are frozen. Useful for evaluating a fixed model on</span>
 <span class="sd">            new data while still recording trajectories.</span>
-<span class="sd">        time_step :</span>
-<span class="sd">            Uniform inference time step :math:`\\Delta t` applied at every</span>
-<span class="sd">            ``propagation_step``. Replaces the legacy ``net.state.time_step``</span>
-<span class="sd">            attribute (``NetworkState`` no longer carries it). Default ``1.0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1620,6 +1638,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">weight_update</span><span class="p">,</span>
             <span class="n">record_tuple</span><span class="p">,</span>
             <span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
+            <span class="n">update_precisions</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">record_tuple</span><span class="p">:</span>
@@ -1754,12 +1773,11 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">input_error</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Prediction error at the input (top) layer.</span>
 
-<span class="sd">        The bottom-up sweep leaves the top layer untouched (its values are</span>
-<span class="sd">        clamped to the predictors), so this is the only way to read the error</span>
-<span class="sd">        message the input would receive from the layer below — the child</span>
-<span class="sd">        layer&#39;s prediction error, weighted by its confidence (precision) and</span>
-<span class="sd">        routed back through the connecting weights. Typical usage runs the</span>
-<span class="sd">        two sweeps first::</span>
+<span class="sd">        The error message the input receives from the layer below — the child</span>
+<span class="sd">        layer&#39;s prediction error, weighted by its precision and</span>
+<span class="sd">        routed back through the connecting weights. It is read off the child,</span>
+<span class="sd">        so it does not depend on whether ``update_input_layer`` is set.</span>
+<span class="sd">        Typical usage runs the two sweeps first::</span>
 
 <span class="sd">            net.prediction(x).update(y)</span>
 <span class="sd">            error_at_input = net.input_error()</span>
@@ -1813,7 +1831,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
-        <span class="n">update_confidences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1821,16 +1839,16 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;One batch-synchronous learning step over many samples at once.</span>
 
 <span class="sd">        Every sample in the batch is processed from the same state — same</span>
-<span class="sd">        weights, same confidences — in parallel; the per-sample weight</span>
-<span class="sd">        gradients and confidence changes are then *averaged* and applied</span>
+<span class="sd">        weights, same precisions — in parallel; the per-sample weight</span>
+<span class="sd">        gradients and precision changes are then *averaged* and applied</span>
 <span class="sd">        once, so the whole batch counts as a single observation. This</span>
 <span class="sd">        differs from :meth:`fit`, which scans samples sequentially and lets</span>
-<span class="sd">        the confidences adapt from one sample to the next (the natural mode</span>
+<span class="sd">        the precisions adapt from one sample to the next (the natural mode</span>
 <span class="sd">        for a time series). Use this method when samples are exchangeable —</span>
 <span class="sd">        e.g. many token positions learned together.</span>
 
 <span class="sd">        The per-sample errors at the input layer are stored on</span>
-<span class="sd">        ``self.input_errors``, shape ``(batch, n_input_features)`` — see</span>
+<span class="sd">        ``self.input_errors``, shape ``(batch, n_input_features)``. See</span>
 <span class="sd">        :meth:`input_error` for their meaning and sign convention.</span>
 
 <span class="sd">        Parameters</span>
@@ -1844,10 +1862,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            the weights.</span>
 <span class="sd">        learning_kind :</span>
 <span class="sd">            Weight-gradient mode, as in :meth:`fit`.</span>
-<span class="sd">        update_confidences :</span>
+<span class="sd">        update_precisions :</span>
 <span class="sd">            If True (default), carry the batch-averaged change of the</span>
-<span class="sd">            confidence state (value-level precisions and the volatility</span>
-<span class="sd">            level) into ``self.state``. Set to False to keep confidences</span>
+<span class="sd">            precision state (value-level precisions and the volatility</span>
+<span class="sd">            level) into ``self.state``. Set to False to keep the precisions</span>
 <span class="sd">            pinned, e.g. for exact comparisons against backpropagation.</span>
 <span class="sd">        time_step :</span>
 <span class="sd">            Inference time step, applied once per batch.</span>
@@ -1890,7 +1908,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">y</span><span class="p">,</span>
             <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
             <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
-            <span class="n">update_confidences</span><span class="o">=</span><span class="n">update_confidences</span><span class="p">,</span>
+            <span class="n">update_precisions</span><span class="o">=</span><span class="n">update_precisions</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
             <span class="n">predicted</span><span class="o">=</span><span class="n">predicted</span><span class="p">,</span>
             <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">),</span>

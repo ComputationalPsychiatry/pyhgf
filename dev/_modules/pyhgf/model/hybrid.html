@@ -1117,12 +1117,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        weights (the beliefs still update).</span>
 <span class="sd">    learning_kind :</span>
 <span class="sd">        Weight-gradient mode, as in :meth:`~pyhgf.model.DeepNetwork.fit`.</span>
-<span class="sd">    update_confidences :</span>
-<span class="sd">        Whether the confidence state adapts across batches (see</span>
+<span class="sd">    update_precisions :</span>
+<span class="sd">        Whether the precision state adapts across batches (see</span>
 <span class="sd">        :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —</span>
 <span class="sd">        the setting used for exact comparisons against backpropagation.</span>
 <span class="sd">    time_step :</span>
-<span class="sd">        Inference time step — scales the confidence leak per batch (one batch</span>
+<span class="sd">        Inference time step — scales the precision leak per batch (one batch</span>
 <span class="sd">        counts as one observation of duration ``time_step``).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1133,13 +1133,13 @@ window.runMermaid = runMermaid;</script>
         <span class="n">net</span><span class="p">:</span> <span class="n">DeepNetwork</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
-        <span class="n">update_confidences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">net</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_kind</span> <span class="o">=</span> <span class="n">learning_kind</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">update_confidences</span> <span class="o">=</span> <span class="n">update_confidences</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_precisions</span> <span class="o">=</span> <span class="n">update_precisions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_step</span> <span class="o">=</span> <span class="n">time_step</span></div>
 
 

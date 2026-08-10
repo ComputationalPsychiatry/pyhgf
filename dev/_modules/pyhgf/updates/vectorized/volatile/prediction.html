@@ -814,6 +814,67 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerParams</span><span class="p">,</span> <span class="n">LayerState</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_predict_volatility_level</span><span class="p">(</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">],</span> <span class="n">Array</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Advance a layer&#39;s internal volatility level and read off its diffusion term.</span>
+
+<span class="sd">    Shared by every value-level prediction, whether the layer is predicted from a</span>
+<span class="sd">    parent (:func:`vectorized_layer_prediction`) or from nothing at all</span>
+<span class="sd">    (:func:`vectorized_root_prediction`).</span>
+
+<span class="sd">    Returns ``(expected_mean_vol, expected_precision_vol, effective_precision_vol,</span>
+<span class="sd">    predicted_volatility)``. The last is :math:`\Omega_a^{(k)}`, the variance the</span>
+<span class="sd">    value level accumulates over this time step; it carries the closed-form</span>
+<span class="sd">    moment-generating-function correction :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})`</span>
+<span class="sd">    that comes from marginalising over the volatility level&#39;s Gaussian rather than</span>
+<span class="sd">    collapsing it to a point estimate. Volatility coupling is fixed at 1 and the</span>
+<span class="sd">    value level carries no tonic volatility of its own.</span>
+
+<span class="sd">    Without a volatility parent the level is frozen: its three fields pass through</span>
+<span class="sd">    unchanged and the diffusion term is zero, so the value level does not undergo a</span>
+<span class="sd">    Gaussian random walk between observations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">mean_vol</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">precision_vol</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">effective_precision_vol</span><span class="p">,</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">precision</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">state</span><span class="o">.</span><span class="n">mean_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># Autoconnection strength of the volatility level is fixed at 1.</span>
+    <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">mean_vol</span>
+
+    <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">)</span>
+    <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">predicted_volatility_vol</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility_vol</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
+    <span class="p">)</span>
+    <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="o">+</span> <span class="n">predicted_volatility_vol</span>
+    <span class="p">)</span>
+    <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">predicted_volatility_vol</span> <span class="o">*</span> <span class="n">expected_precision_vol</span>
+
+    <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">expected_precision_vol</span><span class="p">)</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
+    <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">expected_mean_vol</span><span class="p">,</span>
+        <span class="n">expected_precision_vol</span><span class="p">,</span>
+        <span class="n">effective_precision_vol</span><span class="p">,</span>
+        <span class="n">predicted_volatility</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
 <div class="viewcode-block" id="vectorized_layer_prediction">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction.html#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">vectorized_layer_prediction</span><span class="p">(</span>
@@ -826,6 +887,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict expected mean/precision for all nodes in a volatile-node layer.</span>
 
@@ -874,12 +936,23 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        regardless of *coupling_fn*; the constant node&#39;s derivative is zero and</span>
 <span class="sd">        its predicted precision is infinite, so it contributes nothing to the</span>
 <span class="sd">        value-coupling variance.</span>
+<span class="sd">    predict_precision :</span>
+<span class="sd">        Whether the prediction step advances the precisions; see</span>
+<span class="sd">        :func:`vectorized_layer_prediction`.</span>
 <span class="sd">    has_volatility_parent :</span>
 <span class="sd">        If True (default), the layer has an implied internal volatility parent</span>
 <span class="sd">        whose state (``mean_vol``, ``precision_vol``) is predicted and updated.</span>
 <span class="sd">        If False, the value level has no volatility source at all, so it does not</span>
 <span class="sd">        undergo a Gaussian random walk: the diffusion term is dropped and the</span>
 <span class="sd">        conditional predicted precision equals the prior precision.</span>
+<span class="sd">    predict_precision :</span>
+<span class="sd">        Whether the prediction step advances the precisions at all. With ``False``</span>
+<span class="sd">        both predicted precisions are held at the layer&#39;s prior precision, the</span>
+<span class="sd">        effective precision is zero, and the volatility level is left untouched,</span>
+<span class="sd">        so the only thing prediction produces is the expected mean. Precision then</span>
+<span class="sd">        moves solely through the posterior update, if that is enabled. This is the</span>
+<span class="sd">        same treatment ``is_input_layer`` gives an observed leaf, applied to every</span>
+<span class="sd">        layer.</span>
 <span class="sd">    is_input_layer :</span>
 <span class="sd">        If True, the layer is treated as an observed input/leaf: it does not</span>
 <span class="sd">        undergo a Gaussian random walk between observations. The volatility</span>
@@ -897,30 +970,20 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 1. VOLATILITY LEVEL PREDICTION (internal) ----------------------------------------</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
-    <span class="n">expected_mean_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
-    <span class="n">expected_precision_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
-    <span class="n">effective_precision_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="k">assert</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="c1"># Expected mean for volatility level (autoconnection strength fixed at 1).</span>
-        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
-
-        <span class="c1"># Predicted volatility for volatility level</span>
-        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">tonic_volatility_vol</span><span class="p">)</span>
-        <span class="n">predicted_volatility_vol</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="n">predicted_volatility_vol</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility_vol</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">if</span> <span class="n">predict_precision</span><span class="p">:</span>
+        <span class="p">(</span>
+            <span class="n">expected_mean_vol</span><span class="p">,</span>
+            <span class="n">expected_precision_vol</span><span class="p">,</span>
+            <span class="n">effective_precision_vol</span><span class="p">,</span>
+            <span class="n">predicted_volatility</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">_predict_volatility_level</span><span class="p">(</span>
+            <span class="n">child_state</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">has_volatility_parent</span>
         <span class="p">)</span>
-
-        <span class="c1"># Expected precision for volatility level</span>
-        <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span> <span class="o">+</span> <span class="n">predicted_volatility_vol</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Effective precision for volatility level</span>
-        <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">predicted_volatility_vol</span> <span class="o">*</span> <span class="n">expected_precision_vol</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Volatility level is frozen — pass through current values unchanged</span>
+        <span class="c1"># Nothing downstream reads the volatility level when the value-level</span>
+        <span class="c1"># precisions are frozen: its only route into the value level is the</span>
+        <span class="c1"># diffusion term, and its own posterior update is driven by the effective</span>
+        <span class="c1"># precision, which is zero below.</span>
         <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean_vol</span>
         <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision_vol</span>
         <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">effective_precision_vol</span>
@@ -946,63 +1009,50 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Here we remove the influence of time_step on the expected mean.</span>
     <span class="n">expected_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">coupled_parents</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">has_volatility_parent</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">expected_mean_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="k">assert</span> <span class="n">expected_precision_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="c1"># Total volatility is the internal volatility level&#39;s expected mean plus</span>
-        <span class="c1"># the closed-form moment-generating-function correction 1 / (2 · π̂_vol)</span>
-        <span class="c1"># that arises from marginalising over the volatility level&#39;s Gaussian</span>
-        <span class="c1"># rather than collapsing it to a point estimate. The volatility coupling</span>
-        <span class="c1"># is fixed at 1, and the value level carries no tonic volatility of its own.</span>
-        <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">expected_mean_vol</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">expected_precision_vol</span><span class="p">)</span>
-        <span class="c1"># Predicted volatility for value level</span>
-        <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
-        <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="n">predicted_volatility</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">predicted_volatility</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">if</span> <span class="n">predict_precision</span><span class="p">:</span>
+        <span class="c1"># Laplace value-coupling correction. Linearising g at μ̂_b and marginalising</span>
+        <span class="c1"># over each parent&#39;s Gaussian yields, per child node i, the additional variance</span>
+        <span class="c1">#     Σ_j (t · W[i, j] · g&#39;(μ̂_j))² / π̃_j,</span>
+        <span class="c1"># using the parent&#39;s marginal predicted precision π̃_j (= `expected_precision`).</span>
+        <span class="c1"># The constant-bias parent (if any) has infinite precision and contributes zero.</span>
+        <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
+        <span class="n">g_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
+            <span class="c1"># The constant node never varies: zero derivative, infinite precision.</span>
+            <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">])])</span>
+            <span class="n">g_prime</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">g_prime</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+        <span class="c1"># Σ_j (t · W[i, j] · g&#39;_j)² / π_j, computed as (W²) @ (g&#39;² / π): the</span>
+        <span class="c1"># weight-dependent factor is a constant matrix, so the per-node sum is a</span>
+        <span class="c1"># matrix product with a per-node vector.</span>
+        <span class="c1"># The variance carries no time step (deviation from the Network class).</span>
+        <span class="n">per_parent_variance</span> <span class="o">=</span> <span class="n">g_prime</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">parent_precision</span>
+        <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">per_parent_variance</span><span class="p">)</span>
+
+        <span class="c1"># Conditional predicted precision π̂_a — the precision of x_a given a specific</span>
+        <span class="c1"># value of x_b (own AR-plus-volatility variance only, no parent-uncertainty</span>
+        <span class="c1"># bleed-through). This is the precision that enters the joint (x_a, x_b)</span>
+        <span class="c1"># Gaussian&#39;s Schur complement at the parent&#39;s posterior-step (smoothing)</span>
+        <span class="c1"># correction; substituting π̃_a there would double-count parent uncertainty.</span>
+        <span class="n">conditional_expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
         <span class="p">)</span>
+
+        <span class="c1"># Marginal predicted precision π̃_a — inverse marginal predictive variance,</span>
+        <span class="c1"># adding the law-of-total-variance bleed-through to the conditional variance.</span>
+        <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">conditional_expected_precision</span> <span class="o">+</span> <span class="n">value_coupling_variance</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Effective precision γ — only the volatility-driven part enters γ, since γ</span>
+        <span class="c1"># is consumed by the volatility-coupling posterior update.</span>
+        <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># No volatility parent and no tonic volatility: the value level has no</span>
-        <span class="c1"># volatility source, so it does not undergo a Gaussian random walk between</span>
-        <span class="c1"># observations. Dropping the diffusion term leaves the conditional</span>
-        <span class="c1"># predicted precision equal to the prior precision (see below).</span>
-        <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
-
-    <span class="c1"># Laplace value-coupling correction. Linearising g at μ̂_b and marginalising</span>
-    <span class="c1"># over each parent&#39;s Gaussian yields, per child node i, the additional variance</span>
-    <span class="c1">#     Σ_j (t · W[i, j] · g&#39;(μ̂_j))² / π̃_j,</span>
-    <span class="c1"># using the parent&#39;s marginal predicted precision π̃_j (= `expected_precision`).</span>
-    <span class="c1"># The constant-bias parent (if any) has infinite precision and contributes zero.</span>
-    <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
-    <span class="n">g_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
-        <span class="c1"># The constant node never varies: zero derivative, infinite precision.</span>
-        <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">])])</span>
-        <span class="n">g_prime</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">g_prime</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
-    <span class="c1"># Σ_j (t · W[i, j] · g&#39;_j)² / π_j, computed as (W²) @ (g&#39;² / π): the</span>
-    <span class="c1"># weight-dependent factor is a constant matrix, so the per-node sum is a</span>
-    <span class="c1"># matrix product with a per-node vector.</span>
-    <span class="c1"># The variance carries no time step (deviation from the Network class).</span>
-    <span class="n">per_parent_variance</span> <span class="o">=</span> <span class="n">g_prime</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">parent_precision</span>
-    <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">per_parent_variance</span><span class="p">)</span>
-
-    <span class="c1"># Conditional predicted precision π̂_a — the precision of x_a given a specific</span>
-    <span class="c1"># value of x_b (own AR-plus-volatility variance only, no parent-uncertainty</span>
-    <span class="c1"># bleed-through). This is the precision that enters the joint (x_a, x_b)</span>
-    <span class="c1"># Gaussian&#39;s Schur complement at the parent&#39;s posterior-step (smoothing)</span>
-    <span class="c1"># correction; substituting π̃_a there would double-count parent uncertainty.</span>
-    <span class="n">conditional_expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Marginal predicted precision π̃_a — inverse marginal predictive variance,</span>
-    <span class="c1"># adding the law-of-total-variance bleed-through to the conditional variance.</span>
-    <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">conditional_expected_precision</span> <span class="o">+</span> <span class="n">value_coupling_variance</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Effective precision γ — only the volatility-driven part enters γ, since γ</span>
-    <span class="c1"># is consumed by the volatility-coupling posterior update.</span>
-    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
+        <span class="c1"># Frozen: both predicted precisions stay at the prior and nothing is</span>
+        <span class="c1"># carried into the volatility-coupling update. The parent&#39;s derivative is</span>
+        <span class="c1"># not needed either, so the autodiff call is skipped with it.</span>
+        <span class="n">conditional_expected_precision</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>
+        <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>
+        <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
 
     <span class="c1"># Input/leaf override: an observed layer with no value children does not</span>
     <span class="c1"># undergo a Gaussian random walk between observations, so the</span>
@@ -1020,6 +1070,95 @@ window.runMermaid = runMermaid;</script>
         <span class="n">expected_mean</span><span class="o">=</span><span class="n">expected_mean</span><span class="p">,</span>
         <span class="n">expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
         <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">conditional_expected_precision</span><span class="p">,</span>
+        <span class="n">effective_precision</span><span class="o">=</span><span class="n">effective_precision</span><span class="p">,</span>
+        <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">expected_mean_vol</span><span class="p">,</span>
+        <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">expected_precision_vol</span><span class="p">,</span>
+        <span class="n">effective_precision_vol</span><span class="o">=</span><span class="n">effective_precision_vol</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="vectorized_root_prediction">
+<a class="viewcode-back" href="../../../../../generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_root_prediction.html#pyhgf.updates.vectorized.volatile.vectorized_root_prediction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vectorized_root_prediction</span><span class="p">(</span>
+    <span class="n">layer_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict the precisions of a layer that has no value parent above it.</span>
+
+<span class="sd">    The top (input) layer of a deep network is clamped to the predictors, so its</span>
+<span class="sd">    expected mean is supplied from outside the hierarchy rather than produced by a</span>
+<span class="sd">    parent&#39;s top-down prediction. Everything else about it is still predicted: the</span>
+<span class="sd">    volatility level advances exactly as it does anywhere else, and the value-level</span>
+<span class="sd">    predicted precisions follow the same chain as</span>
+<span class="sd">    :func:`vectorized_layer_prediction`, minus the value-coupling variance. The conditional and the</span>
+<span class="sd">    marginal predicted precision therefore coincide:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \hat{\pi}_a^{(k)} = \tilde{\pi}_a^{(k)}</span>
+<span class="sd">            = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)} \right)^{-1}.</span>
+
+<span class="sd">    This is what lets the input layer&#39;s precision *move*. Without it,</span>
+<span class="sd">    ``expected_precision`` is frozen at whatever the layer was built with, and</span>
+<span class="sd">    because the layer below reads it to form its own value-coupling variance, the</span>
+<span class="sd">    whole hierarchy inherits a constant input precision. Running this kernel makes</span>
+<span class="sd">    that quantity track the evidence the layer has accumulated: the posterior</span>
+<span class="sd">    precision written by the bottom-up sweep enters here on the next step, damped by</span>
+<span class="sd">    the volatility level.</span>
+
+<span class="sd">    ``expected_mean`` is deliberately left untouched.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    layer_state :</span>
+<span class="sd">        Current state of the layer, carrying the posterior ``precision`` (and, with a</span>
+<span class="sd">        volatility parent, ``precision_vol`` / ``mean_vol``) left by the previous step.</span>
+<span class="sd">    params :</span>
+<span class="sd">        Layer parameters for this layer.</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        Time step :math:`t^{(k)}` for the prediction.</span>
+<span class="sd">    has_volatility_parent :</span>
+<span class="sd">        If True (default), the implied internal volatility parent is predicted and</span>
+<span class="sd">        contributes a diffusion term to the value level. If False, the value level has</span>
+<span class="sd">        no volatility source, so it does not drift between observations and the</span>
+<span class="sd">        predicted precision is just the prior precision.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    LayerState</span>
+<span class="sd">        Updated layer state with the predicted precisions of both levels populated,</span>
+<span class="sd">        and ``expected_mean`` unchanged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">predict_precision</span><span class="p">:</span>
+        <span class="p">(</span>
+            <span class="n">expected_mean_vol</span><span class="p">,</span>
+            <span class="n">expected_precision_vol</span><span class="p">,</span>
+            <span class="n">effective_precision_vol</span><span class="p">,</span>
+            <span class="n">predicted_volatility</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">_predict_volatility_level</span><span class="p">(</span>
+            <span class="n">layer_state</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">has_volatility_parent</span>
+        <span class="p">)</span>
+
+        <span class="c1"># No value parent, hence no value-coupling variance: the conditional and</span>
+        <span class="c1"># the marginal predicted precision are the same quantity.</span>
+        <span class="n">expected_precision</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">layer_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">+</span> <span class="n">predicted_volatility</span><span class="p">)</span>
+        <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">predicted_volatility</span> <span class="o">*</span> <span class="n">expected_precision</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Frozen, as in :func:`vectorized_layer_prediction`.</span>
+        <span class="n">expected_mean_vol</span> <span class="o">=</span> <span class="n">layer_state</span><span class="o">.</span><span class="n">mean_vol</span>
+        <span class="n">expected_precision_vol</span> <span class="o">=</span> <span class="n">layer_state</span><span class="o">.</span><span class="n">precision_vol</span>
+        <span class="n">effective_precision_vol</span> <span class="o">=</span> <span class="n">layer_state</span><span class="o">.</span><span class="n">effective_precision_vol</span>
+        <span class="n">expected_precision</span> <span class="o">=</span> <span class="n">layer_state</span><span class="o">.</span><span class="n">precision</span>
+        <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">layer_state</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">layer_state</span><span class="p">,</span>
+        <span class="n">expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
+        <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">expected_precision</span><span class="p">,</span>
         <span class="n">effective_precision</span><span class="o">=</span><span class="n">effective_precision</span><span class="p">,</span>
         <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">expected_mean_vol</span><span class="p">,</span>
         <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">expected_precision_vol</span><span class="p">,</span>

@@ -59,7 +59,7 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments" href="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html" />
+    <link rel="next" title="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments" href="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments.html" />
     <link rel="prev" title="pyhgf.utils.vectorized_belief_propagation.sample_step" href="pyhgf.utils.vectorized_belief_propagation.sample_step.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -520,6 +520,7 @@
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction.html">pyhgf.updates.vectorized.volatile.vectorized_layer_prediction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_root_prediction.html">pyhgf.updates.vectorized.volatile.vectorized_root_prediction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html">pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level.html">pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level.html">pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level</a></li>
@@ -640,7 +641,7 @@
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.input_prediction_error.html">pyhgf.utils.vectorized_belief_propagation.input_prediction_error</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.sample_step.html">pyhgf.utils.vectorized_belief_propagation.sample_step</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.utils.vectorized_belief_propagation.batch_step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments.html">pyhgf.utils.vectorized_belief_propagation.apply_precision_increments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_pass</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.batched_prediction_states.html">pyhgf.utils.vectorized_belief_propagation.batched_prediction_states</a></li>
 </ul>
@@ -734,18 +735,18 @@
 <h1>pyhgf.utils.vectorized_belief_propagation.batch_step<a class="headerlink" href="#pyhgf-utils-vectorized-belief-propagation-batch-step" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.utils.vectorized_belief_propagation.batch_step">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">batch_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'precision_weighted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_confidences</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.batch_step" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">batch_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'precision_weighted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_precisions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.batch_step" title="Link to this definition">#</a></dt>
 <dd><p>One batch-synchronous learning step over many samples at once.</p>
 <p>Every sample in the batch is processed from the <em>same</em> state template —
-same weights, same confidences — through the same sweeps as
+same weights, same precisions — through the same sweeps as
 <a class="reference internal" href="pyhgf.utils.vectorized_belief_propagation.sample_step.html#pyhgf.utils.vectorized_belief_propagation.sample_step" title="pyhgf.utils.vectorized_belief_propagation.sample_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">sample_step()</span></code></a>, under <code class="docutils literal notranslate"><span class="pre">jax.vmap</span></code>, so samples are exchangeable and
 nothing depends on their order. The per-sample results are then averaged
 and applied once, so the batch counts as a single observation:</p>
 <ul class="simple">
 <li><p>the mean weight gradient drives one optimiser step (skipped when
 <code class="docutils literal notranslate"><span class="pre">optimizer</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>);</p></li>
-<li><p>the mean confidence increments are added to the carried fields (skipped
-when <code class="docutils literal notranslate"><span class="pre">update_confidences</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, e.g. to keep the carried
+<li><p>the mean precision increments are added to the carried fields (skipped
+when <code class="docutils literal notranslate"><span class="pre">update_precisions</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, e.g. to keep the carried
 precisions pinned when comparing against backpropagation).</p></li>
 </ul>
 <p>Averaging (rather than summing) makes the result invariant to repeating
@@ -759,7 +760,7 @@ the batch: the same samples twice produce the same step.</p>
 <li><p><strong>y</strong> (<em>jnp.ndarray</em>) – Observations, shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">n_output_features)</span></code>.</p></li>
 <li><p><strong>optimizer</strong> (<em>Optional</em><em>[</em><em>optax.GradientTransformation</em><em>]</em>) – Optax optimiser for the weight step. <code class="docutils literal notranslate"><span class="pre">None</span></code> freezes the weights.</p></li>
 <li><p><strong>learning_kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Weight-gradient mode.</p></li>
-<li><p><strong>update_confidences</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether to carry the batch-averaged confidence increments into the
+<li><p><strong>update_precisions</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether to carry the batch-averaged precision increments into the
 returned network.</p></li>
 <li><p><strong>time_step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inference time step, applied once per batch.</p></li>
 <li><p><strong>sample_weight</strong> (<em>Optional</em><em>[</em><em>jnp.ndarray</em><em>]</em>) – <p>Optional per-sample weights, shape <code class="docutils literal notranslate"><span class="pre">(batch,)</span></code>. The batch mean becomes a
@@ -784,7 +785,7 @@ already run is not repeated. <code class="docutils literal notranslate"><span cl
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><em>network</em> – The template advanced by one batch: new weights and, if requested,
-new confidences. Everything else is untouched (it is rewritten by
+new precisions. Everything else is untouched (it is rewritten by
 the sweeps on the next call anyway).</p></li>
 <li><p><em>opt_state</em> – The advanced optimiser state (<code class="docutils literal notranslate"><span class="pre">None</span></code> if no optimiser was given).</p></li>
 <li><p><em>input_errors</em> – Per-sample prediction errors at the input layer, shape
@@ -821,11 +822,11 @@ whatever sits behind this network.</p></li>
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments.html"
+       href="pyhgf.utils.vectorized_belief_propagation.apply_precision_increments.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.utils.vectorized_belief_propagation.apply_confidence_increments</p>
+        <p class="prev-next-title">pyhgf.utils.vectorized_belief_propagation.apply_precision_increments</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
