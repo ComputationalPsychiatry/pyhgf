@@ -813,6 +813,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
@@ -831,7 +832,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">Network</span><span class="p">,</span>
     <span class="n">stack_layers</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">vectorized_weight_gradient_factors</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_weight_gradients</span><span class="p">,</span>
     <span class="n">batch_step</span><span class="p">,</span>
     <span class="n">batched_prediction_pass</span><span class="p">,</span>
     <span class="n">batched_prediction_states</span><span class="p">,</span>
@@ -869,6 +874,24 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># outweigh the scan setup overhead.</span>
 <span class="n">_SCAN_AUTO_THRESHOLD</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">_LAYER_OVERRIDE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">_LAYER_STATE_FIELDS</span> <span class="o">|</span> <span class="n">_LAYER_PARAM_FIELDS</span>
+
+
+<div class="viewcode-block" id="DeadGradientWarning">
+<a class="viewcode-back" href="../../../generated/pyhgf.model/pyhgf.model.DeadGradientWarning.html#pyhgf.model.DeadGradientWarning">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeadGradientWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Some weight matrices receive essentially no learning signal.</span>
+
+<span class="sd">    Raised by :meth:`DeepNetwork.check_gradient_health` when part of the network is</span>
+<span class="sd">    training while another part receives (near-)zero gradients — typically the</span>
+<span class="sd">    matrices far from the observations. A network in this state silently degrades</span>
+<span class="sd">    into a random-feature readout: the live matrices fit against a frozen upper</span>
+<span class="sd">    stack, accuracy can look respectable, and nothing else reports the failure.</span>
+
+<span class="sd">    The two known causes are Bayesian absorption (each layer&#39;s inference consumes</span>
+<span class="sd">    most of the error message before passing the residual up) and float32</span>
+<span class="sd">    annihilation of the belief-side factor ``(μ − μ̂)·π`` at high precision.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
 
 
 <div class="viewcode-block" id="DeepNetwork">
@@ -1463,6 +1486,32 @@ window.runMermaid = runMermaid;</script>
             <span class="n">predict_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_optimizer_state</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Install optimiser state, keeping it when the optimiser is equivalent.</span>
+
+<span class="sd">        The state is rebuilt only when there is none yet, or when the new optimiser&#39;s</span>
+<span class="sd">        state has a *different structure* from the carried one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># Every caller has already built the network; a state-less network</span>
+        <span class="c1"># cannot reach a learning step.</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span><span class="p">:</span>
+            <span class="c1"># ``eval_shape`` traces the initialiser without allocating, so the</span>
+            <span class="c1"># comparison costs nothing on the common path.</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">eval_shape</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_structure</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span> <span class="o">!=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_structure</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_initialisation</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1572,6 +1621,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">check_gradient_health</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fit network to data.</span>
 
@@ -1602,6 +1652,18 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            If True (default), the learning phase updates weights each step. If False,</span>
 <span class="sd">            weights and ``opt_state`` are frozen. Useful for evaluating a fixed model on</span>
 <span class="sd">            new data while still recording trajectories.</span>
+<span class="sd">        check_gradient_health :</span>
+<span class="sd">            If True (default), probe the per-matrix gradient magnitudes on the</span>
+<span class="sd">            last sample after training and raise :class:`DeadGradientWarning`</span>
+<span class="sd">            when part of the network receives no learning signal.</span>
+<span class="sd">        update_precisions :</span>
+<span class="sd">            If True (default), the carried confidence fields (value-level posterior</span>
+<span class="sd">            precision and the volatility level) evolve from sample to sample. If False, they</span>
+<span class="sd">            are reset to their pre-fit values after every sample.</span>
+<span class="sd">        time_step :</span>
+<span class="sd">            Uniform inference time step :math:`\\Delta t` applied at every</span>
+<span class="sd">            ``propagation_step``. Replaces the legacy ``net.state.time_step``</span>
+<span class="sd">            attribute (``NetworkState`` no longer carries it). Default ``1.0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1622,10 +1684,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="sa">f</span><span class="s2">&quot;Unknown record field(s) </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2">. Valid: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_fields</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
-        <span class="c1"># Initialise opt_state on first fit, or when the optimiser changes.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_optimizer_state</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
@@ -1647,7 +1706,108 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">step_output</span>
 
+        <span class="k">if</span> <span class="n">check_gradient_health</span> <span class="ow">and</span> <span class="n">weight_update</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_if_gradients_dead</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_gradient_health</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+        <span class="n">relative_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-9</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Measure the learning signal each weight matrix actually receives.</span>
+
+<span class="sd">        Runs one prediction + update sweep on ``(x, y)`` from the current state</span>
+<span class="sd">        (without mutating it), extracts the per-matrix child-side gradient factors,</span>
+<span class="sd">        and flags matrices whose signal is zero or negligible relative to the</span>
+<span class="sd">        largest. ``fit`` calls this automatically after training and warns.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x, y :</span>
+<span class="sd">            One sample, shapes ``(n_input_features,)`` and ``(n_output_features,)``.</span>
+<span class="sd">        learning_kind :</span>
+<span class="sd">            The weight-gradient mode to probe — probe the one being trained with.</span>
+<span class="sd">        relative_floor :</span>
+<span class="sd">            A matrix counts as dead when its factor magnitude is exactly zero or</span>
+<span class="sd">            below this fraction of the largest matrix&#39;s magnitude.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            ``&quot;magnitudes&quot;``: per-element max ``|u|`` (``None`` for the bottom</span>
+<span class="sd">            element). ``&quot;dead&quot;``: indices of matrices receiving no usable signal,</span>
+<span class="sd">            by either detector — magnitude (exactly zero, or negligible relative</span>
+<span class="sd">            to the largest) or quantisation (the child&#39;s belief displacement sits</span>
+<span class="sd">            within a few float32 ulps of its mean scale, so the belief-side factor</span>
+<span class="sd">            is rounding noise; belief-side kinds only). ``&quot;quantised&quot;``: the</span>
+<span class="sd">            subset flagged by the quantisation detector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">swept</span> <span class="o">=</span> <span class="n">update_sweep</span><span class="p">(</span>
+            <span class="n">prediction_sweep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="n">_weight_gradients</span><span class="p">(</span>
+            <span class="n">swept</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">vectorized_weight_gradient_factors</span>
+        <span class="p">)</span>
+        <span class="n">magnitudes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span>
+        <span class="p">]</span>
+        <span class="n">live</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">magnitudes</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">dead</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">i</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">m</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">live</span> <span class="o">*</span> <span class="n">relative_floor</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Second detector: a displacement within a few float32 ulps of the mean</span>
+        <span class="c1"># scale makes ``(mean - expected_mean)`` pure rounding noise, so</span>
+        <span class="c1"># ``pe * precision`` returns quantisation garbage of healthy-looking</span>
+        <span class="c1"># magnitude. Measured directly: at precision 1e7 the factors read ~0.3</span>
+        <span class="c1"># while carrying no information.</span>
+        <span class="n">quantised</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">eps32</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">swept</span><span class="o">.</span><span class="n">layers</span><span class="p">)):</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">swept</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state</span>  <span class="c1"># the child driving matrix i</span>
+            <span class="n">pe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">value_prediction_error</span><span class="p">))</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">mean</span><span class="p">)),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)),</span>
+            <span class="p">)</span>
+            <span class="n">ulps</span> <span class="o">=</span> <span class="n">pe</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">scale</span> <span class="o">*</span> <span class="n">eps32</span><span class="p">,</span> <span class="mf">1e-300</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">ulps</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">8.0</span><span class="p">:</span>
+                <span class="n">quantised</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dead</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">quantised</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;magnitudes&quot;</span><span class="p">:</span> <span class="n">magnitudes</span><span class="p">,</span> <span class="s2">&quot;dead&quot;</span><span class="p">:</span> <span class="n">combined</span><span class="p">,</span> <span class="s2">&quot;quantised&quot;</span><span class="p">:</span> <span class="n">quantised</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_warn_if_gradients_dead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the gradient health check and make a dead upper stack loud.&quot;&quot;&quot;</span>
+        <span class="n">health</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_gradient_health</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">)</span>
+        <span class="n">healthy</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">i</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">health</span><span class="p">[</span><span class="s2">&quot;magnitudes&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">health</span><span class="p">[</span><span class="s2">&quot;dead&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="c1"># Warn only on *partial* death — the head-only-training signature. Uniform</span>
+        <span class="c1"># smallness (plain convergence) stays silent.</span>
+        <span class="k">if</span> <span class="n">health</span><span class="p">[</span><span class="s2">&quot;dead&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">healthy</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Weight matrices </span><span class="si">{</span><span class="n">health</span><span class="p">[</span><span class="s1">&#39;dead&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> receive essentially no &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;learning signal under learning_kind=</span><span class="si">{</span><span class="n">learning_kind</span><span class="si">!r}</span><span class="s2"> while &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;others do: only part of the network is training, and the rest &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;acts as a frozen random-feature map. Likely causes: Bayesian &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;absorption of the error message across layers, or float32 &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;annihilation of (mean - expected_mean) * precision at high &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;precision. Lower the pinned precisions or revisit the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;precision regime. Silence this check with &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;check_gradient_health=False.&quot;</span><span class="p">,</span>
+                <span class="n">DeadGradientWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1761,10 +1921,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">update_sweep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Initialise opt_state on first use, or when the optimiser changes.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_optimizer_state</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">learn_sweep</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span>
             <span class="p">)</span>
@@ -1895,11 +2052,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="s2">&quot;(batch, n_features).&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">optimizer</span>
-        <span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">weights_tuple</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_optimizer_state</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_errors</span> <span class="o">=</span> <span class="n">batch_step</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>

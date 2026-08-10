@@ -17,6 +17,7 @@
       ~DeepNetwork.add_layer
       ~DeepNetwork.add_layer_stack
       ~DeepNetwork.batch_update
+      ~DeepNetwork.check_gradient_health
       ~DeepNetwork.fit
       ~DeepNetwork.from_configs
       ~DeepNetwork.from_dict

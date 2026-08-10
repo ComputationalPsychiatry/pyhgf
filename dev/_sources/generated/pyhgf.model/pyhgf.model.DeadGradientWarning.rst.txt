@@ -1,0 +1,6 @@
+﻿pyhgf.model.DeadGradientWarning
+===============================
+
+.. currentmodule:: pyhgf.model
+
+.. autoexception:: DeadGradientWarning

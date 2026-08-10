@@ -378,6 +378,7 @@ The main classes used to create probabilistic networks for binary or continuous 
 
    Network
    DeepNetwork
+   DeadGradientWarning
    add_volatile_state
    add_continuous_state
    add_constant_state

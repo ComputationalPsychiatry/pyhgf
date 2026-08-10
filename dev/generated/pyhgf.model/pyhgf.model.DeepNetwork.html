@@ -61,7 +61,7 @@
     <link rel="icon" href="../../_static/logo_small.svg"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pyhgf.model.add_volatile_state" href="pyhgf.model.add_volatile_state.html" />
+    <link rel="next" title="pyhgf.model.DeadGradientWarning" href="pyhgf.model.DeadGradientWarning.html" />
     <link rel="prev" title="pyhgf.model.Network" href="pyhgf.model.Network.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -548,6 +548,7 @@
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.Network.html">pyhgf.model.Network</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">pyhgf.model.DeepNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyhgf.model.DeadGradientWarning.html">pyhgf.model.DeadGradientWarning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_volatile_state.html">pyhgf.model.add_volatile_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_continuous_state.html">pyhgf.model.add_continuous_state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyhgf.model.add_constant_state.html">pyhgf.model.add_constant_state</a></li>
@@ -830,46 +831,49 @@ predictors. Defaults to <code class="docutils literal notranslate"><span class="
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_update</span></code>(x, y[, optimizer, ...])</p></td>
 <td><p>One batch-synchronous learning step over many samples at once.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y, optimizer[, learning_kind, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_gradient_health</span></code>(x, y[, learning_kind, ...])</p></td>
+<td><p>Measure the learning signal each weight matrix actually receives.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code>(x, y, optimizer[, learning_kind, ...])</p></td>
 <td><p>Fit network to data.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_configs</span></code>(configs[, coupling_fn, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_configs</span></code>(configs[, coupling_fn, ...])</p></td>
 <td><p>Build a network from a list of layer configurations.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dict</span></code>(config)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dict</span></code>(config)</p></td>
 <td><p>Build a network from a dictionary configuration.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_error</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_error</span></code>()</p></td>
 <td><p>Prediction error at the input (top) layer.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(path)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code>(path)</p></td>
 <td><p>Read array leaves from <code class="docutils literal notranslate"><span class="pre">path</span></code> back into <code class="docutils literal notranslate"><span class="pre">self.state</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_layers</span></code>([layers, variables, mode, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_layers</span></code>([layers, variables, mode, ...])</p></td>
 <td><p>Plot layer-wise parameter trajectories.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
 <td><p>Forward pass without learning.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_states</span></code>(x)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_states</span></code>(x)</p></td>
 <td><p>Batched forward pass that also returns the per-sample swept states.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction</span></code>(x)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prediction</span></code>(x)</p></td>
 <td><p>Run the top-down prediction sweep only.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code>()</p></td>
 <td><p>Reset the network state.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code>(path)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code>(path)</p></td>
 <td><p>Serialise <code class="docutils literal notranslate"><span class="pre">self.state</span></code> array leaves to <code class="docutils literal notranslate"><span class="pre">path</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pandas</span></code>()</p></td>
 <td><p>Flatten <code class="docutils literal notranslate"><span class="pre">self.trajectories</span></code> into a wide-format <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>(y[, optimizer, learning_kind])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>(y[, optimizer, learning_kind])</p></td>
 <td><p>Run the bottom-up prediction-error + posterior-update sweep.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, key])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weight_initialisation</span></code>([strategy, key])</p></td>
 <td><p>Initialise inter-layer weight matrices.</p></td>
 </tr>
 </tbody>
@@ -911,11 +915,11 @@ predictors. Defaults to <code class="docutils literal notranslate"><span class="
       </div>
     </a>
     <a class="right-next"
-       href="pyhgf.model.add_volatile_state.html"
+       href="pyhgf.model.DeadGradientWarning.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyhgf.model.add_volatile_state</p>
+        <p class="prev-next-title">pyhgf.model.DeadGradientWarning</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
