@@ -1539,3 +1539,83 @@ def test_fit_update_precisions_false_pins_precisions():
     # The default carries, so the two modes genuinely diverge.
     dynamic = build().fit(x, y, optimizer=optax.sgd(1e-2), learning_kind="standard")
     assert not np.allclose(np.asarray(dynamic.state.layers[1].state.precision), 3.0)
+
+
+# ---------------------------------------------------------------------------
+# The dead-gradient health check
+# ---------------------------------------------------------------------------
+
+
+def _stiff_deep_net(depth=8):
+    """Build a pinned-stiff deep chain that silently kills belief-side gradients."""
+    net = DeepNetwork(coupling_fn=jax.nn.leaky_relu, predict_precision=False).add_layer(
+        size=3, kind="categorical", volatility_parent=False
+    )
+    for _ in range(depth):
+        net.add_layer(
+            size=8,
+            volatility_parent=False,
+            precision=10e6,
+            expected_precision=10e6,
+        )
+    return net.add_layer(
+        size=2,
+        add_constant_input=False,
+        coupling_fn=lambda x: x,
+        volatility_parent=False,
+        precision=1e6,
+        expected_precision=1e6,
+    ).weight_initialisation("he", key=jax.random.key(0))
+
+
+def test_fit_warns_when_only_the_head_trains():
+    """A network training only its head must not fail silently.
+
+    Under the stiff pinned configuration the belief-side gradients are exactly zero
+    above the first few matrices, so ``fit`` must raise ``DeadGradientWarning``.
+    """
+    from pyhgf.model.deep_network import DeadGradientWarning
+
+    rng = np.random.default_rng(1)
+    x = jnp.asarray(rng.normal(size=(24, 2)))
+    y = jnp.asarray(np.eye(3, dtype=np.float32)[rng.integers(0, 3, size=24)])
+
+    with pytest.warns(DeadGradientWarning):
+        _stiff_deep_net().fit(
+            x, y, optimizer=optax.adam(1e-3), learning_kind="precision_weighted"
+        )
+
+
+def test_optimizer_state_survives_a_fresh_optimizer_object():
+    """Constructing the optimiser inside the loop must not reset its moments."""
+    rng = np.random.default_rng(31)
+    x = jnp.asarray(rng.normal(size=(32, _FF_D)).astype(np.float32))
+    y = jnp.asarray(rng.normal(size=(32, _FF_D)).astype(np.float32))
+
+    def run(make_optimizer, steps=5):
+        net, _, _ = _ff_net_with_weights(np.random.default_rng(31))
+        sizes = []
+        for _ in range(steps):
+            before = np.asarray(net.state.layers[2].weights_in).copy()
+            net.batch_update(x, y, optimizer=make_optimizer(), update_precisions=False)
+            sizes.append(
+                float(np.abs(np.asarray(net.state.layers[2].weights_in) - before).max())
+            )
+        return net, sizes
+
+    shared = optax.adam(1e-2)
+    _, reused = run(lambda: shared)
+    net, fresh = run(lambda: optax.adam(1e-2))
+    np.testing.assert_allclose(fresh, reused, rtol=1e-5)
+    # The moments really are accumulating, so the comparison has content.
+    assert fresh[-1] > fresh[0] * (1 + 1e-3), fresh
+
+    # A different optimiser kind rebuilds the state instead of failing.
+    net.batch_update(x, y, optimizer=optax.sgd(1e-2), update_precisions=False)
+
+    # A rate change keeps the moments: the step scales with the new rate.
+    net2, sizes = run(lambda: optax.adam(1e-2), steps=3)
+    before = np.asarray(net2.state.layers[2].weights_in).copy()
+    net2.batch_update(x, y, optimizer=optax.adam(1e-1), update_precisions=False)
+    scaled = float(np.abs(np.asarray(net2.state.layers[2].weights_in) - before).max())
+    assert 8.0 < scaled / sizes[-1] < 12.0, (scaled, sizes[-1])
