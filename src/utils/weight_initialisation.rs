@@ -1,7 +1,8 @@
 //! Weight initialisation strategies for predictive-coding neural networks.
 //!
 //! Each function takes a fan-in (`n_parents`) and fan-out (`n_children`) and returns a
-//! flat `Vec<f64>` of length `n_parents * n_children` (row-major) that can be used as
+//! flat `Vec<f64>` of length `n_parents * n_children`, row-major over an
+//! `(n_children, n_parents)` matrix, that can be used as
 //! initial coupling weights.
 //!
 //! Available strategies:
@@ -70,12 +71,14 @@ pub fn orthogonal_init(
     seed: Option<u64>,
 ) -> Vec<f64> {
     let mut rng = make_rng(seed);
-    let rows = n_parents;
-    let cols = n_children;
+    // The returned vector is row-major over (n_children, n_parents).
+    let rows = n_children;
+    let cols = n_parents;
     let dist = Normal::new(0.0, 1.0).unwrap();
 
     if rows >= cols {
-        // Tall or square: fill (rows, cols) matrix, orthogonalise columns.
+        // At least as many children as parents: orthonormal columns, so
+        // W^T W = I and every input direction keeps its length.
         let mut a: Vec<Vec<f64>> = (0..rows)
             .map(|_| (0..cols).map(|_| rng.sample(&dist)).collect())
             .collect();
@@ -88,12 +91,11 @@ pub fn orthogonal_init(
         }
         out
     } else {
-        // Wide: build (cols, rows) tall matrix, orthogonalise, then transpose.
+        // Fewer children than parents.
         let mut a: Vec<Vec<f64>> = (0..cols)
             .map(|_| (0..rows).map(|_| rng.sample(&dist)).collect())
             .collect();
         gram_schmidt_columns(&mut a, cols, rows);
-        // Transpose (cols, rows) → (rows, cols)
         let mut out = Vec::with_capacity(rows * cols);
         for r in 0..rows {
             for c in 0..cols {
@@ -229,20 +231,38 @@ mod tests {
     }
 
     #[test]
-    fn test_orthogonal_columns_are_unit() {
-        let n = 6;
-        let m = 4;
-        let w = orthogonal_init(n, m, 1.0, Some(42));
-        // Check each column has unit norm
-        for c in 0..m {
-            let mut norm_sq = 0.0;
-            for r in 0..n {
-                norm_sq += w[r * m + c] * w[r * m + c];
+    fn test_orthogonal_is_orthogonal_as_the_caller_reads_it() {
+        // The vector is row-major over (n_children, n_parents)
+        for &(n_parents, n_children) in &[(4usize, 6usize), (6usize, 4usize)] {
+            let w = orthogonal_init(n_parents, n_children, 1.0, Some(42));
+            assert_eq!(w.len(), n_parents * n_children);
+            let at = |r: usize, c: usize| w[r * n_parents + c];
+
+            if n_children >= n_parents {
+                // Orthonormal columns: W^T W = I over the parent index.
+                for a in 0..n_parents {
+                    for b in 0..n_parents {
+                        let dot: f64 = (0..n_children).map(|r| at(r, a) * at(r, b)).sum();
+                        let want = if a == b { 1.0 } else { 0.0 };
+                        assert!(
+                            (dot - want).abs() < 1e-10,
+                            "W^T W [{a},{b}] = {dot}, want {want}"
+                        );
+                    }
+                }
+            } else {
+                // Orthonormal rows: W W^T = I over the child index.
+                for a in 0..n_children {
+                    for b in 0..n_children {
+                        let dot: f64 = (0..n_parents).map(|c| at(a, c) * at(b, c)).sum();
+                        let want = if a == b { 1.0 } else { 0.0 };
+                        assert!(
+                            (dot - want).abs() < 1e-10,
+                            "W W^T [{a},{b}] = {dot}, want {want}"
+                        );
+                    }
+                }
             }
-            assert!(
-                (norm_sq - 1.0).abs() < 1e-10,
-                "column {c} norm² = {norm_sq}"
-            );
         }
     }
 

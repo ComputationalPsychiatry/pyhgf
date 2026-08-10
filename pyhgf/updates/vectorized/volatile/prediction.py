@@ -174,11 +174,11 @@ def vectorized_layer_prediction(
         # The constant node never varies: zero derivative, infinite precision.
         parent_precision = jnp.concatenate([parent_precision, jnp.array([jnp.inf])])
         g_prime = jnp.concatenate([g_prime, jnp.zeros(1)])
-    # Σ_j (t · W[i, j] · g'_j)² / π_j, computed as (W²) @ ((t · g')² / π): the
+    # Σ_j (t · W[i, j] · g'_j)² / π_j, computed as (W²) @ (g'² / π): the
     # weight-dependent factor is a constant matrix, so the per-node sum is a
-    # matrix product with a per-node vector — no weight-matrix-sized
-    # intermediate, which matters when this function is vmapped over a batch.
-    per_parent_variance = (time_step * g_prime) ** 2 / parent_precision
+    # matrix product with a per-node vector.
+    # The variance carries no time step (deviation from the Network class).
+    per_parent_variance = g_prime**2 / parent_precision
     value_coupling_variance = jnp.matmul(weights**2, per_parent_variance)
 
     # Conditional predicted precision π̂_a — the precision of x_a given a specific

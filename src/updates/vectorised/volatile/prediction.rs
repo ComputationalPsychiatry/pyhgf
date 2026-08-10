@@ -61,15 +61,22 @@ pub fn layer_prediction(
 
     // 2. Value level.
     // Coupled parent activations (bias node = 1) and the per-parent Laplace
-    // variance factor (t·g'(μ̂))² / π̃_parent, built together in one pass. The
-    // bias parent has zero derivative and infinite precision → factor 0.
+    // variance factor g'(μ̂)² / π̃_parent, built together in one pass. The bias
+    // parent has zero derivative and infinite precision.
+    //
+    // No time step, unlike the nodalised backend: this term propagates the parent's
+    // uncertainty through the same map that produces `expected_mean` below, and that
+    // map is `W @ g(μ)` with no drift scaling. The nodalised path accumulates the
+    // value-parent contribution over the interval (`μ̂ = autoconnection·μ + t·drift`)
+    // and so carries `(t·ψ·g')²` to match. Mixing the two suppresses parent
+    // uncertainty by t² relative to the map it belongs to.
     let mut coupled = Array1::<Float>::zeros(p);
     let mut ppv = Array1::<Float>::zeros(p);
     with_coupling!(coupling_fn, |f, df, _d2f| {
         for j in 0..n_parent {
             let mu = parent.expected_mean[j];
             coupled[j] = f(mu as f64) as Float;
-            let num = time_step * df(mu as f64) as Float;
+            let num = df(mu as f64) as Float;
             ppv[j] = (num * num) / parent.expected_precision[j];
         }
     });

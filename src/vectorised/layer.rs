@@ -435,29 +435,32 @@ impl DeepNet {
     /// generators as the per-node backend
     /// ([`crate::utils::weight_initialisation`]).
     ///
-    /// Matches the JAX `DeepNetwork.weight_initialisation` semantics: the full
-    /// matrix is re-drawn **including the bias column**, and the same seed is
-    /// used for every layer (identically-shaped layers start identical).
     pub fn weight_initialisation(
         &mut self,
         strategy: &str,
         seed: Option<u64>,
     ) -> Result<(), String> {
         for layer in self.layers.iter_mut() {
+            let add_constant_input = layer.add_constant_input;
             let Some(w) = layer.weights_in.as_mut() else {
                 continue;
             };
             let (n_children, cols) = w.dim();
-            // Flat, row-major (n_children × cols), same layout as the JAX
-            // helpers' `.reshape(n_children, n_parents)`.
-            // The shared initialisers draw in f64 (they serve the nodalised
-            // backend too); narrow to the engine's Float here.
-            let flat: Vec<Float> = weight_init_by_name(strategy, cols, n_children, seed)?
+            let n_parents = if add_constant_input { cols - 1 } else { cols };
+            // Flat, row-major over (n_children, n_parents), the layout the
+            // shared initialisers document. They draw in f64 (they serve the
+            // nodalised backend too); narrow to the engine's Float here.
+            let flat: Vec<Float> = weight_init_by_name(strategy, n_parents, n_children, seed)?
                 .into_iter()
                 .map(|v| v as Float)
                 .collect();
-            *w = Matrix::from_shape_vec((n_children, cols), flat)
-                .expect("init vector length matches the weight shape");
+            let mut drawn = Matrix::zeros((n_children, cols));
+            for r in 0..n_children {
+                for c in 0..n_parents {
+                    drawn[[r, c]] = flat[r * n_parents + c];
+                }
+            }
+            *w = drawn;
         }
         Ok(())
     }
@@ -599,6 +602,40 @@ mod tests {
         let mut cfg = LayerConfig::new(2);
         cfg.state_overrides = vec![("not_a_field".to_string(), 1.0)];
         assert!(DeepNet::from_configs(&[cfg]).is_err());
+    }
+
+    #[test]
+    fn test_weight_initialisation_leaves_the_bias_column_out() {
+        // The bias is not a connection to a parent: it is zeroed, and it is
+        // excluded from the fan-in, so the drawn weights carry the scale of the
+        // real parent count rather than one more than it.
+        let configs = vec![LayerConfig::new(2), LayerConfig::new(3)];
+        let mut net = DeepNet::from_configs(&configs).unwrap();
+        assert!(net.layers[1].add_constant_input, "the layer carries a bias");
+
+        net.weight_initialisation("orthogonal", Some(0)).unwrap();
+        let w = net.layers[1].weights_in.as_ref().unwrap();
+        let (n_children, cols) = w.dim();
+        let n_parents = cols - 1;
+
+        for r in 0..n_children {
+            assert_eq!(w[[r, n_parents]], 0.0, "bias column must be zero");
+        }
+        // Orthogonality holds over the real parents only, which it cannot if
+        // the bias column took part in the draw. Which side is orthonormal
+        // depends on the shape: columns when there are at least as many
+        // children as parents, rows otherwise (the layer is then a projection).
+        if n_children >= n_parents {
+            for a in 0..n_parents {
+                let norm: Float = (0..n_children).map(|r| w[[r, a]] * w[[r, a]]).sum();
+                assert!((norm - 1.0).abs() < 1e-5, "column {a} norm² = {norm}");
+            }
+        } else {
+            for a in 0..n_children {
+                let norm: Float = (0..n_parents).map(|c| w[[a, c]] * w[[a, c]]).sum();
+                assert!((norm - 1.0).abs() < 1e-5, "row {a} norm² = {norm}");
+            }
+        }
     }
 
     #[test]
