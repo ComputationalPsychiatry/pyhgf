@@ -573,19 +573,23 @@ def _sweeps_reach_top(network: Network) -> bool:
     )
 
 
-def _predict_top_precisions(elem, *, time_step: float):
+def _predict_top_precisions(elem, *, time_step: float, predict_precision: bool = True):
     """Predict the top element's precisions, which no parent above it can supply.
 
     The element's ``expected_mean`` stays clamped to the predictors; what this adds is
     the predicted precision of both levels, so the precision the bottom-up sweep wrote
     into ``precision`` on the previous step is carried forward (damped by the volatility
     level) instead of being ignored.
+
+    ``predict_precision`` is threaded through: the network-level switch has to reach the
+    top element as well, or it would keep diffusing while every layer below it froze.
     """
     new_state = vectorized_root_prediction(
         layer_state=elem.state,
         params=elem.params,
         time_step=time_step,
         has_volatility_parent=elem.has_volatility_parent,
+        predict_precision=predict_precision,
     )
     return dataclasses.replace(elem, state=new_state)
 
@@ -777,7 +781,11 @@ def _prediction_sweep(
 
     elements[-1] = _set_top_predictors(elements[-1], x)
     if _sweeps_reach_top(network):
-        elements[-1] = _predict_top_precisions(elements[-1], time_step=time_step)
+        elements[-1] = _predict_top_precisions(
+            elements[-1],
+            time_step=time_step,
+            predict_precision=network.predict_precision,
+        )
 
     for i in range(n_elements - 1, 0, -1):
         elements[i - 1] = _topdown_predict(

@@ -1422,6 +1422,74 @@ def test_predict_precision_does_not_touch_the_predicted_means():
         )
 
 
+def test_predict_precision_false_freezes_the_clamped_top_layer():
+    """The two flags compose: a swept top layer still gets no precision prediction.
+
+    ``update_input_layer`` is what routes the top element through
+    :func:`~pyhgf.updates.vectorized.volatile.vectorized_root_prediction` — it is the
+    only layer with no parent above to predict it. With ``predict_precision`` off that
+    root prediction has to freeze exactly as an interior layer does, or the top would
+    keep diffusing while the rest of the hierarchy stood still.
+    """
+    x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
+
+    def top_after_a_step(predict_precision):
+        net = DeepNetwork(update_input_layer=True, predict_precision=predict_precision)
+        for size in (2, 4, 2):
+            net.add_layer(size=size, add_constant_input=False)
+        net.prediction(x).update(y)
+        # A second step, so the prediction reads a posterior precision the previous
+        # step wrote rather than the value ``add_layer`` built.
+        return net.prediction(x).state.layers[-1].state
+
+    frozen = top_after_a_step(False)
+    np.testing.assert_allclose(frozen.expected_precision, frozen.precision, rtol=1e-6)
+    np.testing.assert_allclose(
+        frozen.conditional_expected_precision, frozen.precision, rtol=1e-6
+    )
+    np.testing.assert_allclose(frozen.effective_precision, 0.0, atol=0.0)
+    # The volatility level is not advanced either.
+    np.testing.assert_array_equal(frozen.expected_mean_vol, frozen.mean_vol)
+    np.testing.assert_array_equal(frozen.expected_precision_vol, frozen.precision_vol)
+
+    # With the prediction on, the diffusion damps the carried precision instead.
+    live = top_after_a_step(True)
+    assert np.all(np.asarray(live.expected_precision) < np.asarray(live.precision))
+
+
+def test_input_layer_precision_ignores_the_constant_node():
+    """A constant input node carries no evidence about the predictors' precision.
+
+    ``_top_precision_only`` drops the bias column before reading the routed evidence:
+    the constant node is not a belief the network holds about the input, so its weights
+    say nothing about how precise the observed predictors are. Its column is also what
+    makes ``weights_in`` one wider than the top layer's own precision, so leaving it in
+    would not even be shape-compatible.
+    """
+    x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
+    rng = np.random.default_rng(11)
+    body = rng.normal(size=(4, 2))
+
+    def settle(bias_column):
+        net = DeepNetwork(update_input_layer=True)
+        net.add_layer(size=2, add_constant_input=False)
+        net.add_layer(size=4, add_constant_input=False)
+        net.add_layer(size=2, add_constant_input=bias_column is not None)
+        if bias_column is None:
+            _set_weights(net, {2: body})
+        else:
+            _set_weights(net, {2: np.hstack([body, bias_column[:, None]])})
+        net.prediction(x).update(y)
+        return np.asarray(net.state.layers[-1].state.precision)
+
+    plain = settle(None)
+    # The top layer keeps its own node count; the constant lives in the matrix only.
+    assert plain.shape == (2,)
+    np.testing.assert_allclose(settle(np.zeros(4)), plain, rtol=1e-6)
+    # An enormous constant weight is still not evidence about the input.
+    np.testing.assert_allclose(settle(np.full(4, 50.0)), plain, rtol=1e-6)
+
+
 def test_predict_precision_default_is_on():
     """The default is the ordinary filter, in which precisions do move."""
     x = jnp.array([0.7, -0.4])
