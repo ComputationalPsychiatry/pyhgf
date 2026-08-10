@@ -815,12 +815,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">* **He (Kaiming)** — :func:`he_init`</span>
 <span class="sd">* **Orthogonal** — :func:`orthogonal_init`</span>
 <span class="sd">* **Sparse** — :func:`sparse_init`</span>
+
+<span class="sd">:func:`_init_matrix` assembles one weight matrix from a strategy, keeping the bias</span>
+<span class="sd">column out of the statistics.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 
@@ -899,9 +903,14 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Orthogonal initialisation.</span>
 
-<span class="sd">    Generates a random matrix, computes its SVD, and returns the</span>
-<span class="sd">    (semi-)orthogonal factor scaled by *gain*.  This preserves gradient</span>
-<span class="sd">    norms during backpropagation.</span>
+<span class="sd">    Takes the orthogonal factor of a random matrix&#39;s SVD, scaled by *gain*. Every</span>
+<span class="sd">    singular value is then exactly one, so the layer applies the *same* gain to every</span>
+<span class="sd">    direction of its input rather than stretching some and squashing others. The returned</span>
+<span class="sd">    vector is row-major over an ``(n_children, n_parents)`` matrix, which is the shape</span>
+<span class="sd">    callers reshape it to. Orthogonality means ``W.T @ W = I`` when there are at least as</span>
+<span class="sd">    many children as parents, so every input direction keeps its length. With fewer children</span>
+<span class="sd">    than parents the layer is a projection and no matrix can preserve every direction; the</span>
+<span class="sd">    best available is ``W @ W.T = I``, which preserves length within the row space.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -910,26 +919,29 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    n_children :</span>
 <span class="sd">        Number of child (output) nodes — fan-out.</span>
 <span class="sd">    gain :</span>
-<span class="sd">        Multiplicative scaling factor (default 1.0).</span>
+<span class="sd">        Multiplicative scaling factor (default 1.0). A norm-preserving nonlinearity</span>
+<span class="sd">        would need none, but the ReLU family roughly halves the variance passing</span>
+<span class="sd">        through it, so ``gain=sqrt(2)`` is the usual compensation.</span>
 <span class="sd">    seed :</span>
 <span class="sd">        Optional random seed for reproducibility.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    numpy.ndarray</span>
-<span class="sd">        Weight vector of length ``n_parents * n_children``.</span>
+<span class="sd">        Weight vector of length ``n_parents * n_children``, row-major over an</span>
+<span class="sd">        ``(n_children, n_parents)`` matrix.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-    <span class="c1"># Always create a tall-or-square matrix so full_matrices=False gives</span>
-    <span class="c1"># the right number of orthogonal columns.</span>
-    <span class="k">if</span> <span class="n">n_parents</span> <span class="o">&gt;=</span> <span class="n">n_children</span><span class="p">:</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">))</span>
-        <span class="n">u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">u</span>  <span class="c1"># (n_parents, n_children)</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Draw tall-or-square so ``full_matrices=False`` yields orthonormal columns, then</span>
+    <span class="c1"># orient the result as (n_children, n_parents) before flattening.</span>
+    <span class="k">if</span> <span class="n">n_children</span> <span class="o">&gt;=</span> <span class="n">n_parents</span><span class="p">:</span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span><span class="p">))</span>
         <span class="n">u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">q</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># (n_parents, n_children)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">u</span>  <span class="c1"># (n_children, n_parents), orthonormal columns</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">n_parents</span><span class="p">,</span> <span class="n">n_children</span><span class="p">))</span>
+        <span class="n">u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># (n_children, n_parents), orthonormal rows</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">gain</span> <span class="o">*</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span></div>
 
 
@@ -974,6 +986,46 @@ window.runMermaid = runMermaid;</script>
     <span class="n">weights</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_nonzero</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">weights</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_init_matrix</span><span class="p">(</span>
+    <span class="n">init_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">n_children</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_parents</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Draw one ``weights_in`` matrix, keeping the bias column out of the statistics.</span>
+
+<span class="sd">    The bias column is not a connection to a parent, so it takes no part in either</span>
+<span class="sd">    half of an initialisation scheme. It is **excluded from the fan-in** and **initialised</span>
+<span class="sd">    to zero**.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    init_fn :</span>
+<span class="sd">        One of the strategies in :mod:`pyhgf.utils.weight_initialisation`.</span>
+<span class="sd">    n_children, n_parents :</span>
+<span class="sd">        Shape of the matrix, ``n_parents`` including the bias column when present.</span>
+<span class="sd">    add_constant_input :</span>
+<span class="sd">        Whether the last column is the bias.</span>
+<span class="sd">    seed :</span>
+<span class="sd">        Seed forwarded to *init_fn*.</span>
+<span class="sd">    kwargs :</span>
+<span class="sd">        Extra keyword arguments forwarded to *init_fn*.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    jnp.ndarray</span>
+<span class="sd">        The initialised matrix, shape ``(n_children, n_parents)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_real</span> <span class="o">=</span> <span class="n">n_parents</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">add_constant_input</span> <span class="k">else</span> <span class="n">n_parents</span>
+    <span class="n">flat</span> <span class="o">=</span> <span class="n">init_fn</span><span class="p">(</span><span class="n">n_real</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_children</span><span class="p">,</span> <span class="n">n_real</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">add_constant_input</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">weights</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_children</span><span class="p">,</span> <span class="mi">1</span><span class="p">))],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 </pre></div>
 
                 </article>
