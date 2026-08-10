@@ -149,6 +149,7 @@ class DeepNetwork:
         precision_clipping_value: float = 1e-6,
         update_input_layer: bool = False,
         predict_precision: bool = True,
+        feedforward_uncertainty: bool = False,
     ):
         r"""Initialize a VectorizedDeepNetwork.
 
@@ -178,6 +179,15 @@ class DeepNetwork:
         update_input_layer :
             Whether the belief sweeps reach the top (input) layer, which holds the
             predictors. Defaults to ``False``.
+        feedforward_uncertainty :
+            Whether value parents propagate their uncertainty to their children's
+            predicted precision. With ``False`` (the default) they do not: the
+            value-coupling variance is dropped, the marginal and the conditional
+            predicted precision coincide, and the only uncertainty entering a layer is
+            its own volatility parent's, which makes every layer behave as the top
+            layer already does. With ``True`` a volatile layer's marginal predicted
+            precision carries the value-coupling variance, so a parent that is unsure
+            makes its children less precise.
         """
         self.coupling_fn = coupling_fn
         self.volatility_updates = volatility_updates
@@ -185,6 +195,7 @@ class DeepNetwork:
         self.precision_clipping_value = float(precision_clipping_value)
         self.update_input_layer = bool(update_input_layer)
         self.predict_precision = bool(predict_precision)
+        self.feedforward_uncertainty = bool(feedforward_uncertainty)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -674,6 +685,7 @@ class DeepNetwork:
             precision_clipping_value=self.precision_clipping_value,
             update_input_layer=self.update_input_layer,
             predict_precision=self.predict_precision,
+            feedforward_uncertainty=self.feedforward_uncertainty,
         )
 
     def _ensure_optimizer_state(

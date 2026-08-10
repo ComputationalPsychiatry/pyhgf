@@ -186,6 +186,7 @@ fn batched_volatile_prediction(
     weights: &Matrix,
     parent_layer: &Layer,
     time_step: Float,
+    feedforward_uncertainty: bool,
 ) {
     let params = &child_layer.params;
     let (n, n_samples) = child.mean.dim();
@@ -244,9 +245,17 @@ fn batched_volatile_prediction(
     // Mean prediction: one gemm over the whole batch.
     child.expected_mean = weights.dot(&coupled);
 
-    // Laplace value-coupling variance: W² @ ppv, one gemm.
-    let w2 = weights.mapv(|w| w * w);
-    let value_coupling_variance = w2.dot(&ppv);
+    // Laplace value-coupling variance: W² @ ppv, one gemm. Without
+    // `feedforward_uncertainty` the value parents propagate nothing, so the term is
+    // zero and the marginal predicted precision collapses onto the conditional one.
+    let value_coupling_variance = if feedforward_uncertainty {
+        let w2 = weights.mapv(|w| w * w);
+        w2.dot(&ppv)
+    } else {
+        // Shaped like the product, (n, n_samples), not like ppv, which is
+        // (n_parent + bias, n_samples).
+        Matrix::zeros((n, n_samples))
+    };
 
     // Conditional (π̂), marginal (π̃), and effective (γ) predicted precisions,
     // fused into a single pass over the state: π̂ = 1/(1/π + Ω),
@@ -622,6 +631,7 @@ pub fn batched_prediction_sweep(
                 weights,
                 parent_layer,
                 time_step,
+                net.feedforward_uncertainty,
             ),
             LayerKind::Binary => batched_binary_prediction(
                 child,

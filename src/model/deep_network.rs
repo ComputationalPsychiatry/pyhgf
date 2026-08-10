@@ -47,6 +47,7 @@ pub struct DeepNetwork {
     max_posterior_precision: Float,
     precision_clipping_value: Float,
     predict_precision: bool,
+    feedforward_uncertainty: bool,
     /// Network-level default coupling function name (validated at
     /// construction).
     default_coupling: String,
@@ -76,6 +77,7 @@ impl DeepNetwork {
             self.max_posterior_precision,
             self.precision_clipping_value,
             self.predict_precision,
+            self.feedforward_uncertainty,
         );
         self.net = Some(net);
         self.opt_state = None;
@@ -221,6 +223,7 @@ impl DeepNetwork {
         precision_clipping_value = 1e-6,
         coupling_fn = "linear",
         predict_precision = true,
+        feedforward_uncertainty = false,
     ))]
     fn py_new(
         volatility_updates: &str,
@@ -228,6 +231,7 @@ impl DeepNetwork {
         precision_clipping_value: Float,
         coupling_fn: &str,
         predict_precision: bool,
+        feedforward_uncertainty: bool,
     ) -> PyResult<Self> {
         let volatility_updates =
             VolatilityUpdate::parse(volatility_updates).map_err(PyValueError::new_err)?;
@@ -251,6 +255,7 @@ impl DeepNetwork {
             max_posterior_precision,
             precision_clipping_value,
             predict_precision,
+            feedforward_uncertainty,
             default_coupling: coupling_fn.to_string(),
         })
     }

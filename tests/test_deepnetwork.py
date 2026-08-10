@@ -394,7 +394,12 @@ def test_three_backends_binary_volatile():
 
         # --- DeepNetwork (JAX vectorized) ---
         dn = (
-            DeepNetwork(volatility_updates=volatility_updates)
+            DeepNetwork(
+                volatility_updates=volatility_updates,
+                # The nodalised backends always propagate value-parent
+                # uncertainty, so the vectorised one has to be asked to.
+                feedforward_uncertainty=True,
+            )
             .add_layer(size=n_targets, kind="binary")
             .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
             .add_layer(size=n_hidden)
@@ -1254,14 +1259,17 @@ def test_input_layer_precision_equilibrates_instead_of_running_away():
     volatility prediction error can never be positive, so a layer that did update it
     would drive its own diffusion to zero and then accumulate evidence forever. Held
     at the tonic value, the diffusion bounds the precision.
+
+    At the default, where value parents propagate nothing, it settles near 7.11; with
+    ``feedforward_uncertainty=True`` it settles lower, near 4.45, and sooner.
     """
     x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
     net = _three_layer(True)
 
     seen = []
-    for step in range(400):
+    for step in range(2000):
         net.prediction(x).update(y)
-        if step in (0, 199, 399):
+        if step in (0, 999, 1999):
             seen.append(
                 float(np.mean(np.asarray(net.state.layers[-1].state.precision)))
             )
@@ -1361,6 +1369,71 @@ def test_input_layer_precision_tracks_the_routed_evidence_not_the_residual():
 
     stronger = settle(jnp.asarray(np.asarray(x) @ w.T), 2.0 * w)
     assert stronger > explained
+
+
+# ---------------------------------------------------------------------------
+# ``feedforward_uncertainty``: withholding a parent's uncertainty
+# ---------------------------------------------------------------------------
+
+
+def _feedforward_net(feedforward_uncertainty):
+    """Build a 2 -> 2 -> 2 chain, optionally propagating parent uncertainty."""
+    net = DeepNetwork(
+        coupling_fn=jax.nn.leaky_relu,
+        feedforward_uncertainty=feedforward_uncertainty,
+    )
+    for _ in range(3):
+        net.add_layer(size=2, add_constant_input=False, volatility_parent=True)
+    return net
+
+
+def test_feedforward_uncertainty_false_propagates_no_parent_uncertainty():
+    """The default: value parents contribute nothing to a child's precision."""
+    x = jnp.array([0.7, -0.4])
+    local = _feedforward_net(False).prediction(x)
+
+    for layer in local.state.layers:
+        state = layer.state
+        np.testing.assert_allclose(
+            state.expected_precision,
+            state.conditional_expected_precision,
+            rtol=1e-6,
+        )
+
+
+def test_feedforward_uncertainty_true_propagates_parent_uncertainty():
+    """With the flag on, the value-coupling variance separates the two precisions."""
+    x = jnp.array([0.7, -0.4])
+    coupled = _feedforward_net(True).prediction(x)
+
+    # The top layer has no value parent, so only the layers below it can differ.
+    separated = [
+        not np.allclose(
+            np.asarray(layer.state.expected_precision),
+            np.asarray(layer.state.conditional_expected_precision),
+        )
+        for layer in coupled.state.layers[:-1]
+    ]
+    assert any(separated), "the value-coupling variance should separate the two"
+
+
+def test_feedforward_uncertainty_leaves_the_conditional_precision_alone():
+    """The flag governs only the parent's contribution, not the layer's own."""
+    x = jnp.array([0.7, -0.4])
+    off = _feedforward_net(False).prediction(x)
+    on = _feedforward_net(True).prediction(x)
+
+    for a, b in zip(off.state.layers, on.state.layers):
+        np.testing.assert_allclose(
+            a.state.conditional_expected_precision,
+            b.state.conditional_expected_precision,
+            rtol=1e-6,
+        )
+
+
+def test_feedforward_uncertainty_defaults_to_off():
+    """Value parents do not propagate their uncertainty unless asked to."""
+    assert DeepNetwork().feedforward_uncertainty is False
 
 
 # ---------------------------------------------------------------------------
