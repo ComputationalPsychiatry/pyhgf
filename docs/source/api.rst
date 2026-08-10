@@ -321,6 +321,7 @@ Volatile layers
    :toctree: generated/pyhgf.updates.vectorized.volatile
 
     vectorized_layer_prediction
+    vectorized_root_prediction
     vectorized_layer_posterior_update
     vectorized_posterior_update_precision_value_level
     vectorized_posterior_update_mean_value_level

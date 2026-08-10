@@ -1165,3 +1165,309 @@ def test_batch_update_from_predicted_states_matches():
         rtol=1e-6,
         atol=1e-7,
     )
+
+
+# ---------------------------------------------------------------------------
+# ``update_input_layer``: the sweeps reaching the top (input) layer
+# ---------------------------------------------------------------------------
+
+
+def _three_layer(update_input_layer):
+    """Build a 2 -> 4 -> 2 network, identical apart from the flag under test."""
+    net = DeepNetwork(update_input_layer=update_input_layer)
+    return (
+        net
+        .add_layer(size=2, add_constant_input=False)
+        .add_layer(size=4, add_constant_input=False)
+        .add_layer(size=2, add_constant_input=False)
+    )
+
+
+def test_input_layer_frozen_by_default():
+    """Off (the default), no sweep writes anything to the top layer.
+
+    This is the behaviour the Rust backend and the nodalised ``Network`` share, so it
+    has to survive the flag being added.
+    """
+    net = _three_layer(False)
+    before = net.state.layers[-1].state
+    net.prediction(jnp.array([1.0, -1.0])).update(jnp.array([0.5, 0.5]))
+    after = net.state.layers[-1].state
+
+    for field in ("precision", "expected_precision", "mean_vol", "precision_vol"):
+        np.testing.assert_array_equal(
+            getattr(after, field), getattr(before, field), err_msg=field
+        )
+    # Only the clamp itself moved: mean and expected_mean are the predictors.
+    np.testing.assert_array_equal(after.mean, jnp.array([1.0, -1.0]))
+    np.testing.assert_array_equal(after.value_prediction_error, jnp.zeros(2))
+
+
+def test_input_layer_precision_moves_but_mean_stays_on_the_predictors():
+    """On, only the top layer's confidence moves — its value stays on the input.
+
+    The predictors are observed, and the weight update reads the top layer's mean back
+    to build its parent-side factor, so that mean is not the network's to revise. Its
+    precision is.
+    """
+    x = jnp.array([1.0, -1.0])
+    net = _three_layer(True)
+    net.prediction(x).update(jnp.array([0.5, 0.5]))
+    top = net.state.layers[-1].state
+
+    np.testing.assert_array_equal(top.expected_mean, x)
+    np.testing.assert_array_equal(top.mean, x)
+    # A layer pinned to its own prediction has no residual.
+    np.testing.assert_array_equal(top.value_prediction_error, jnp.zeros(2))
+    # Evidence arrived, so the belief sharpened past its own prediction.
+    assert np.all(np.asarray(top.precision) > np.asarray(top.expected_precision))
+
+
+def test_input_layer_weight_gradient_sees_the_clamped_predictors():
+    """The top weight matrix is learned against the inputs that were supplied.
+
+    The parent-side factor of the gradient is ``coupling_fn(parent.mean)``, so a top
+    layer whose mean drifted off ``x`` would train its weights against an estimate of
+    the input rather than the input. Turning the flag on must not change that factor.
+    """
+    rng = np.random.default_rng(3)
+    w = rng.normal(size=(4, 2))
+    x = jnp.asarray(rng.normal(size=(2,)))
+    y = jnp.asarray(rng.normal(size=(2,)))
+
+    grads = []
+    for flag in (False, True):
+        net = _three_layer(flag)
+        _set_weights(net, {1: np.eye(2, 4), 2: w})
+        before = np.asarray(net.state.layers[-1].weights_in).copy()
+        net.prediction(x).update(y, optimizer=optax.sgd(1e-2))
+        grads.append(np.asarray(net.state.layers[-1].weights_in) - before)
+
+    # Same parent activation, same child error on this first step: same update.
+    np.testing.assert_allclose(grads[0], grads[1], rtol=1e-6, atol=1e-7)
+
+
+def test_input_layer_precision_equilibrates_instead_of_running_away():
+    """The clamped top layer's precision settles rather than growing without bound.
+
+    Its volatility level is deliberately not updated: with the mean clamped the
+    volatility prediction error can never be positive, so a layer that did update it
+    would drive its own diffusion to zero and then accumulate evidence forever. Held
+    at the tonic value, the diffusion bounds the precision.
+    """
+    x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
+    net = _three_layer(True)
+
+    seen = []
+    for step in range(400):
+        net.prediction(x).update(y)
+        if step in (0, 199, 399):
+            seen.append(
+                float(np.mean(np.asarray(net.state.layers[-1].state.precision)))
+            )
+
+    early, mid, late = seen
+    assert early < mid  # evidence sharpens it ...
+    assert np.isfinite(late)
+    assert abs(late - mid) < 0.01 * mid  # ... then it settles
+    # The volatility level was never touched, which is what supplies the ceiling.
+    top = net.state.layers[-1].state
+    np.testing.assert_array_equal(top.mean_vol, jnp.zeros(2))
+    np.testing.assert_array_equal(top.precision_vol, jnp.ones(2))
+
+
+def test_input_layer_posterior_precision_is_carried_to_the_next_prediction():
+    """The posterior precision written on one step shapes the next step's prediction.
+
+    This is the whole point of the flag: without the carry, ``expected_precision``
+    at the top is a constant, and the layer below inherits a constant value-coupling
+    variance no matter how much evidence has accumulated.
+    """
+    x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
+    net = _three_layer(True)
+
+    net.prediction(x).update(y)
+    first = np.asarray(net.state.layers[-1].state.precision).copy()
+    hidden_first = np.asarray(net.state.layers[1].state.expected_precision).copy()
+
+    for _ in range(20):
+        net.prediction(x).update(y)
+    later = np.asarray(net.state.layers[-1].state.precision)
+
+    assert np.all(later > first)
+    # A more precise input bleeds less uncertainty into the layer below, so that
+    # layer's own predicted precision rises with it.
+    assert np.all(
+        np.asarray(net.state.layers[1].state.expected_precision) > hidden_first
+    )
+
+
+def test_input_layer_flag_survives_from_dict():
+    """The flag is part of the network spec, not just the constructor."""
+    config = {
+        "layers": [{"size": 2}, {"size": 3}],
+        "update_input_layer": True,
+    }
+    assert DeepNetwork.from_dict(config).state.update_input_layer is True
+    assert (
+        DeepNetwork.from_dict({"layers": [{"size": 2}]}).state.update_input_layer
+        is False
+    )
+
+
+def test_input_layer_updated_under_batch_and_scan():
+    """``fit`` and ``batch_update`` route through the same sweeps as ``update``.
+
+    Both carry the top layer's confidence forward (it is one of ``_CARRIED_FIELDS``), so
+    neither should leave it at the value ``add_layer`` gave it.
+    """
+    rng = np.random.default_rng(0)
+    x = jnp.asarray(rng.normal(size=(16, 2)))
+    y = jnp.asarray(rng.normal(size=(16, 2)))
+
+    for net in (
+        _three_layer(True).fit(
+            x, y, optimizer=optax.sgd(1e-3), learning_kind="standard"
+        ),
+        _three_layer(True).batch_update(
+            x, y, optimizer=optax.sgd(1e-3), learning_kind="standard"
+        ),
+    ):
+        precision = np.asarray(net.state.layers[-1].state.precision)
+        assert np.all(np.isfinite(precision))
+        assert not np.allclose(precision, 1.0)
+
+
+def test_input_layer_precision_tracks_the_routed_evidence_not_the_residual():
+    """The clamped input's precision follows the connection, not the fit."""
+    rng = np.random.default_rng(7)
+    w = rng.normal(size=(2, 2))
+    x = jnp.asarray(rng.normal(size=(200, 2)))
+
+    def settle(y, weights):
+        net = (
+            DeepNetwork(update_input_layer=True)
+            .add_layer(size=2, add_constant_input=False)
+            .add_layer(size=2, add_constant_input=False)
+        )
+        _set_weights(net, {1: weights})
+        # Weights frozen, so nothing but the beliefs can move.
+        net.fit(x, y, optimizer=optax.sgd(0.0), weight_update=False)
+        return float(np.mean(np.asarray(net.state.layers[-1].state.precision)))
+
+    explained = settle(jnp.asarray(np.asarray(x) @ w.T), w)
+    noise = settle(jnp.asarray(rng.normal(size=(200, 2))), w)
+    assert explained == pytest.approx(noise, rel=1e-6)
+
+    stronger = settle(jnp.asarray(np.asarray(x) @ w.T), 2.0 * w)
+    assert stronger > explained
+
+
+# ---------------------------------------------------------------------------
+# ``predict_precision``: the precision-prediction switch
+# ---------------------------------------------------------------------------
+
+
+def _precision_net(predict_precision, volatility_parent=True):
+    """Build a 2 -> 2 -> 2 chain whose interior layer imports parent uncertainty."""
+    net = DeepNetwork(
+        coupling_fn=jax.nn.leaky_relu, predict_precision=predict_precision
+    )
+    for _ in range(3):
+        net.add_layer(
+            size=2, add_constant_input=False, volatility_parent=volatility_parent
+        )
+    return net
+
+
+def test_predict_precision_false_freezes_every_predicted_precision():
+    """With the flag off, prediction produces means and leaves precisions alone."""
+    x = jnp.array([0.7, -0.4])
+    frozen = _precision_net(False).prediction(x)
+
+    for layer in frozen.state.layers:
+        state = layer.state
+        np.testing.assert_allclose(state.expected_precision, state.precision, rtol=1e-6)
+        np.testing.assert_allclose(
+            state.conditional_expected_precision, state.precision, rtol=1e-6
+        )
+        np.testing.assert_allclose(state.effective_precision, 0.0, atol=0.0)
+
+
+def test_predict_precision_false_leaves_the_volatility_level_untouched():
+    """The volatility level is not advanced when the value precisions are frozen."""
+    x = jnp.array([0.7, -0.4])
+    net = _precision_net(False)
+    before = [np.asarray(layer.state.mean_vol).copy() for layer in net.state.layers]
+    after = net.prediction(x).state.layers
+
+    for start, layer in zip(before, after):
+        np.testing.assert_array_equal(np.asarray(layer.state.expected_mean_vol), start)
+        np.testing.assert_array_equal(
+            np.asarray(layer.state.expected_precision_vol),
+            np.asarray(layer.state.precision_vol),
+        )
+
+
+def test_predict_precision_does_not_touch_the_predicted_means():
+    """The flag governs precisions only; the expected means are identical."""
+    x = jnp.array([0.7, -0.4])
+    on = _precision_net(True).prediction(x).state.layers
+    off = _precision_net(False).prediction(x).state.layers
+    for a, b in zip(on, off):
+        np.testing.assert_allclose(
+            np.asarray(a.state.expected_mean),
+            np.asarray(b.state.expected_mean),
+            rtol=1e-6,
+        )
+
+
+def test_predict_precision_default_is_on():
+    """The default is the ordinary filter, in which precisions do move."""
+    x = jnp.array([0.7, -0.4])
+    net = DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+    assert net.predict_precision is True
+    interior = _precision_net(True).prediction(x).state.layers[1].state
+    # The volatility diffusion alone lowers the predicted precision below the prior.
+    assert np.all(
+        np.asarray(interior.conditional_expected_precision)
+        < np.asarray(interior.precision)
+    )
+
+
+def test_fit_update_confidences_false_pins_precisions():
+    """Static-cascade mode: precisions stay at their built values across a fit."""
+    rng = np.random.default_rng(0)
+    x = jnp.asarray(rng.normal(size=(32, 2)))
+    y = jnp.asarray(rng.normal(size=(32, 2)))
+
+    def build():
+        return (
+            DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+            .add_layer(size=2, add_constant_input=False, volatility_parent=False)
+            .add_layer(
+                size=4,
+                add_constant_input=False,
+                volatility_parent=False,
+                precision=3.0,
+            )
+            .add_layer(size=2, add_constant_input=False, volatility_parent=False)
+        )
+
+    static = build()
+    before = np.asarray(static.state.layers[1].weights_in).copy()
+    static.fit(
+        x,
+        y,
+        optimizer=optax.sgd(1e-2),
+        learning_kind="standard",
+        update_confidences=False,
+    )
+    np.testing.assert_array_equal(
+        static.state.layers[1].state.precision, jnp.full(4, 3.0)
+    )
+    assert not np.allclose(np.asarray(static.state.layers[1].weights_in), before)
+
+    # The default carries, so the two modes genuinely diverge.
+    dynamic = build().fit(x, y, optimizer=optax.sgd(1e-2), learning_kind="standard")
+    assert not np.allclose(np.asarray(dynamic.state.layers[1].state.precision), 3.0)

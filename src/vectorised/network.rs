@@ -30,6 +30,7 @@ fn predict_child(
     weights: &Matrix,
     time_step: Float,
     pcv: Float,
+    predict_precision: bool,
 ) {
     match child.kind {
         LayerKind::Volatile => volatile::prediction::layer_prediction(
@@ -42,6 +43,7 @@ fn predict_child(
             parent.add_constant_input,
             child.has_volatility_parent,
             child.is_input_layer,
+            predict_precision,
         ),
         LayerKind::Binary => binary::prediction::binary_prediction(
             &mut child.state,
@@ -136,12 +138,13 @@ impl DeepNet {
         let n = self.layers.len();
         self.set_top_predictors(x);
         let pcv = self.precision_clipping_value;
+        let predict_precision = self.predict_precision;
         for i in (1..n).rev() {
             let (lower, upper) = self.layers.split_at_mut(i);
             let child = &mut lower[i - 1];
             let parent = &upper[0];
             let weights = parent.weights_in.as_ref().expect("parent has no weights");
-            predict_child(child, parent, weights, time_step, pcv);
+            predict_child(child, parent, weights, time_step, pcv, predict_precision);
         }
     }
 

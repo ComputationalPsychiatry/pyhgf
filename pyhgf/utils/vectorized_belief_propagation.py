@@ -37,6 +37,8 @@ from pyhgf.updates.vectorized.volatile import (
     vectorized_layer_posterior_update,
     vectorized_layer_prediction,
     vectorized_layer_prediction_error,
+    vectorized_posterior_update_precision_value_level,
+    vectorized_root_prediction,
 )
 
 # ---------------------------------------------------------------------------
@@ -99,6 +101,7 @@ def _predict_layer_from_parent(
     *,
     time_step: float,
     precision_clipping_value: float,
+    predict_precision: bool = True,
 ):
     """Predict a single ``Layer`` child from a parent view."""
     if child.kind == "binary":
@@ -129,6 +132,7 @@ def _predict_layer_from_parent(
             parent_has_constant=parent_has_constant,
             has_volatility_parent=child.has_volatility_parent,
             is_input_layer=child.is_input_layer,
+            predict_precision=predict_precision,
         )
     return dataclasses.replace(child, state=new_state)
 
@@ -141,6 +145,7 @@ def _predict_stack_from_parent(
     parent_has_constant: bool,
     *,
     time_step: float,
+    predict_precision: bool = True,
 ):
     """Top-down sweep over a ``LayerStack``.
 
@@ -163,6 +168,7 @@ def _predict_stack_from_parent(
         parent_has_constant=parent_has_constant,
         has_volatility_parent=stack.has_volatility_parent,
         is_input_layer=False,
+        predict_precision=predict_precision,
     )
 
     # xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.
@@ -187,6 +193,7 @@ def _predict_stack_from_parent(
             parent_has_constant=stack.add_constant_input,
             has_volatility_parent=stack.has_volatility_parent,
             is_input_layer=False,
+            predict_precision=predict_precision,
         )
         return new_child_state, new_child_state
 
@@ -208,7 +215,12 @@ def _predict_stack_from_parent(
 
 
 def _topdown_predict(
-    parent_elem, child_elem, *, time_step: float, precision_clipping_value: float
+    parent_elem,
+    child_elem,
+    *,
+    time_step: float,
+    precision_clipping_value: float,
+    predict_precision: bool = True,
 ):
     """Predict ``child_elem`` from ``parent_elem``.
 
@@ -226,6 +238,7 @@ def _topdown_predict(
             parent_coupling_fn,
             parent_has_const,
             time_step=time_step,
+            predict_precision=predict_precision,
         )
     return _predict_layer_from_parent(
         child_elem,
@@ -235,6 +248,7 @@ def _topdown_predict(
         parent_has_const,
         time_step=time_step,
         precision_clipping_value=precision_clipping_value,
+        predict_precision=predict_precision,
     )
 
 
@@ -300,6 +314,62 @@ def _posterior_pe_layer(
             has_volatility_parent=parent.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
+    return dataclasses.replace(parent, state=new_state)
+
+
+def _top_precision_only(
+    parent: Layer,
+    child_state,
+    child_is_input_layer: bool,
+    *,
+    max_posterior_precision: float,
+):
+    r"""Update the top layer's precision from the layer below, leaving its mean clamped.
+
+    The top layer holds the predictors, and its mean is read back by the weight update
+    (:func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`
+    forms the parent-side factor from ``coupling_fn(parent.mean)``). Those weights must
+    be learned against the predictors that were actually supplied, so the mean stays
+    pinned to ``x`` and only the confidence in it moves.
+
+    Two things follow from the clamp, and both are deliberate:
+
+    * The value prediction error is identically zero. A layer whose mean never leaves
+      its prediction has no residual, so the field is written as zero rather than left
+      holding a stale value.
+    * The volatility level is *not* updated. Its prediction error would reduce to
+      :math:`\hat{\pi} / \pi - 1`, which the clamp makes non-positive at every step,
+      so the layer would conclude "no volatility" and keep concluding it. That drives
+      :math:`\Omega \to 0`, and without diffusion :math:`\hat{\pi} \to \pi`, so
+      each step's evidence would add to the last and the precision would grow without
+      bound. Leaving the volatility level at its tonic value instead keeps
+      :math:`\Omega` constant, and the precision settles at
+      :math:`1/\Omega + \text{evidence}` — still tracking how well the layer below
+      accounts for the predictors, but bounded.
+    """
+    # Only called for a top element that has a layer below it, so it carries an
+    # incoming matrix.
+    assert parent.weights_in is not None
+    weights = parent.weights_in
+    if parent.add_constant_input:
+        weights = weights[:, :-1]
+
+    precision = jnp.clip(
+        vectorized_posterior_update_precision_value_level(
+            layer=parent.state,
+            child=child_state,
+            weights=weights,
+            coupling_fn=parent.coupling_fn,
+            child_is_input_layer=child_is_input_layer,
+        ),
+        a_min=parent.state.expected_precision,
+        a_max=max_posterior_precision,
+    )
+    new_state = dataclasses.replace(
+        parent.state,
+        precision=precision,
+        value_prediction_error=jnp.zeros_like(precision),
+    )
     return dataclasses.replace(parent, state=new_state)
 
 
@@ -483,6 +553,43 @@ def _set_top_predictors(elem, x):
     return dataclasses.replace(elem, state=new_state)
 
 
+def _sweeps_reach_top(network: Network) -> bool:
+    """Whether both sweeps should treat the top element as a member of the hierarchy.
+
+    Gating the two sweeps on one predicate keeps them in step: a top element that
+    receives a posterior update must also receive the precision prediction that
+    carries it into the next step, or its confidence would accumulate with nothing
+    advancing it.
+
+    Requires ``update_input_layer``, something below the top to send it a message,
+    and a volatile top element — a binary layer's predicted precision is a function
+    of its predicted mean, which is clamped to the predictors here, so there is no
+    precision of its own for the sweeps to move.
+    """
+    return (
+        network.update_input_layer
+        and len(network.layers) > 1
+        and network.layers[-1].kind == "volatile"
+    )
+
+
+def _predict_top_precisions(elem, *, time_step: float):
+    """Predict the top element's precisions, which no parent above it can supply.
+
+    The element's ``expected_mean`` stays clamped to the predictors; what this adds is
+    the predicted precision of both levels, so the confidence the bottom-up sweep wrote
+    into ``precision`` on the previous step is carried forward (damped by the volatility
+    level) instead of being ignored.
+    """
+    new_state = vectorized_root_prediction(
+        layer_state=elem.state,
+        params=elem.params,
+        time_step=time_step,
+        has_volatility_parent=elem.has_volatility_parent,
+    )
+    return dataclasses.replace(elem, state=new_state)
+
+
 def _set_bottom_observations(elem, y):
     """Clamp ``mean`` of the bottom element to the observations ``y``.
 
@@ -584,6 +691,7 @@ def run_scan(
     weight_update: bool,
     record: tuple,
     time_step: float = 1.0,
+    update_confidences: bool = True,
 ) -> tuple:
     r"""Run ``jax.lax.scan`` over the belief-propagation step.
 
@@ -623,6 +731,7 @@ def run_scan(
     the stacked predictions alone (``record == ()``) or a
     ``(stacked_traj, stacked_predictions)`` tuple.
     """
+    template = init_carry[0]
 
     def _scan_body(carry, xs):
         network, opt_state = carry
@@ -635,6 +744,11 @@ def run_scan(
             learning_kind=learning_kind,
             weight_update=weight_update,
         )
+        if not update_confidences:
+            # Static-cascade mode: precisions are parameters, not filter state. Note
+            # that recorded carried fields then show the template values, since the
+            # restore runs before recording.
+            new_network = _restore_confidences(new_network, template)
         if record:
             traj_step = {
                 field: tuple(getattr(elem.state, field) for elem in new_network.layers)
@@ -653,11 +767,17 @@ def _prediction_sweep(
 
     Clamps the predictors on the top element and predicts every element from the one
     above. No prediction errors, posterior updates, or weight learning are performed.
+
+    With ``network.update_input_layer``, the top element also gets its own precision
+    prediction (:func:`_predict_top_precisions`) — the only part of it a parent could
+    have supplied, had there been one.
     """
     elements = list(network.layers)
     n_elements = len(elements)
 
     elements[-1] = _set_top_predictors(elements[-1], x)
+    if _sweeps_reach_top(network):
+        elements[-1] = _predict_top_precisions(elements[-1], time_step=time_step)
 
     for i in range(n_elements - 1, 0, -1):
         elements[i - 1] = _topdown_predict(
@@ -665,6 +785,7 @@ def _prediction_sweep(
             elements[i - 1],
             time_step=time_step,
             precision_clipping_value=network.precision_clipping_value,
+            predict_precision=network.predict_precision,
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -680,6 +801,12 @@ def _update_sweep(
     element, in bottom-up order. Belief states are updated; inter-layer weights are not.
     The inference time step scales the volatility-level posterior updates with the same
     time step the prediction sweep uses.
+
+    With ``network.update_input_layer``, the sweep also reaches the top element, but
+    on different terms from the interior: its mean stays clamped to the predictors and
+    only its precision moves (see :func:`_top_precision_only`). The top element holds
+    observed inputs that the weight update reads back, so its value is not the
+    network's to revise, only its confidence in that value is.
     """
     elements = list(network.layers)
     n_elements = len(elements)
@@ -702,6 +829,16 @@ def _update_sweep(
             volatility_updates=network.volatility_updates,
             max_posterior_precision=network.max_posterior_precision,
             time_step=time_step,
+        )
+
+    # The top element, when asked for: precision only, mean left on the predictors.
+    if _sweeps_reach_top(network):
+        child_state, _, child_is_input_layer = _child_view(elements[-2])
+        elements[-1] = _top_precision_only(
+            elements[-1],
+            child_state,
+            child_is_input_layer,
+            max_posterior_precision=network.max_posterior_precision,
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -728,10 +865,7 @@ def update_sweep(network: Network, y: jnp.ndarray, time_step: float = 1.0) -> Ne
 def _input_prediction_error(network: Network) -> jnp.ndarray:
     r"""Prediction error routed to the network's input (top) layer.
 
-    The bottom-up sweep (:func:`_update_sweep`) never touches the top layer:
-    its values are clamped to the predictors ``x``, so it receives no
-    posterior update and no prediction error. This function computes the
-    error message the top layer *would* receive from the layer below it —
+    This is the error message the top layer receives from the layer below it —
     the same gain-weighted prediction error that drives the posterior mean
     shift of every interior layer:
 
@@ -751,6 +885,12 @@ def _input_prediction_error(network: Network) -> jnp.ndarray:
     Because prediction errors follow the ``observed - predicted`` convention,
     the result is the *negative* of the gradient of a squared-error loss with
     respect to the predictors.
+
+    The quantity is the same whether or not the network updates its top layer:
+    it is read off the child, not the top. With ``update_input_layer=True`` the
+    top layer's own ``value_prediction_error`` is this message divided by the
+    top layer's posterior precision — the shift the belief actually made, rather
+    than the raw message that drove it.
 
     Must be called after the update sweep, so the child layer carries its
     posterior prediction error.
@@ -923,6 +1063,26 @@ def apply_confidence_increments(network: Network, increments: tuple) -> Network:
             },
         )
         new_elements.append(dataclasses.replace(elem, state=new_state))
+    return dataclasses.replace(network, layers=tuple(new_elements))
+
+
+def _restore_confidences(network: Network, template: Network) -> Network:
+    """Reset the carried confidence fields to a template's values.
+
+    The inverse of carrying: with this applied after every propagation step, each
+    sample's sweeps still compute full per-sample posteriors but the filtered
+    precisions never become the next sample's starting point.
+    """
+    new_elements = []
+    for elem, ref in zip(network.layers, template.layers):
+        repl = {
+            field: getattr(ref.state, field)
+            for field in _CARRIED_FIELDS
+            if getattr(ref.state, field) is not None
+        }
+        new_elements.append(
+            dataclasses.replace(elem, state=dataclasses.replace(elem.state, **repl))
+        )
     return dataclasses.replace(network, layers=tuple(new_elements))
 
 
