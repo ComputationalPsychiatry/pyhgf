@@ -518,8 +518,8 @@ def test_batch_update_trajectory_parity(optimizer):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
-def test_batch_update_parity_pinned_confidences():
-    """With pinned confidences the batch step still matches JAX exactly."""
+def test_batch_update_parity_pinned_precisions():
+    """With pinned precisions the batch step still matches JAX exactly."""
     rng = np.random.default_rng(31)
     rs, jx = _matched_pair([2, 3, 3], rng)
     x = rng.normal(size=(6, 3))
@@ -530,9 +530,9 @@ def test_batch_update_parity_pinned_confidences():
             y,
             optimizer="sgd",
             learning_rate=0.05,
-            update_confidences=False,
+            update_precisions=False,
         )
-        jx.batch_update(x, y, optimizer=optax.sgd(0.05), update_confidences=False)
+        jx.batch_update(x, y, optimizer=optax.sgd(0.05), update_precisions=False)
     np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):

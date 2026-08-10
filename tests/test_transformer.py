@@ -563,7 +563,7 @@ def test_binary_head_at_vocabulary_width():
     )
 
     lr = 1e-3
-    net.batch_update(x, one_hot, optimizer=optax.sgd(lr), update_confidences=False)
+    net.batch_update(x, one_hot, optimizer=optax.sgd(lr), update_precisions=False)
 
     # (b) Input message: matches the sigmoid-cross-entropy gradient at x.
     def bce(x_row, y_row):
@@ -613,7 +613,7 @@ def test_categorical_head_matches_softmax_backprop():
     )
 
     lr = 1e-3
-    net.batch_update(x, one_hot, optimizer=optax.sgd(lr), update_confidences=False)
+    net.batch_update(x, one_hot, optimizer=optax.sgd(lr), update_precisions=False)
 
     # Oracle: batch-mean softmax cross-entropy gradients.
     def loss(w, x_):

@@ -28,6 +28,7 @@ pub fn layer_prediction(
     parent_has_constant: bool,
     has_volatility_parent: bool,
     is_input_layer: bool,
+    predict_precision: bool,
 ) {
     let n = child.mean.len();
     let n_parent = parent.expected_mean.len();
@@ -36,7 +37,7 @@ pub fn layer_prediction(
     // 1. Volatility level (internal); computed into locals, written at the end.
     // Frozen (no volatility parent) → the fields stay as they are (`None`).
     let (expected_mean_vol, expected_precision_vol, effective_precision_vol) =
-        if has_volatility_parent {
+        if has_volatility_parent && predict_precision {
             let mean_vol = child.mean_vol.as_ref().expect("volatility mean");
             let precision_vol = child.precision_vol.as_ref().expect("volatility precision");
 
@@ -90,7 +91,7 @@ pub fn layer_prediction(
     // Predicted volatility Ω = t·exp(μ_vol + 1/(2·π̂_vol)), fused. The volatility
     // coupling is fixed at 1 and the value level carries no tonic volatility of
     // its own.
-    let predicted_vol = if has_volatility_parent {
+    let predicted_vol = if has_volatility_parent && predict_precision {
         let emv = expected_mean_vol.as_ref().unwrap();
         let epv = expected_precision_vol.as_ref().unwrap();
         ndarray::Zip::from(emv)
@@ -116,8 +117,11 @@ pub fn layer_prediction(
     }
 
     // Conditional (π̂) and marginal (π̃) predicted precisions, written in place.
-    if is_input_layer {
-        // Input/leaf override: no random walk between observations.
+    if is_input_layer || !predict_precision {
+        // Input/leaf override, and the same treatment when precision prediction
+        // is switched off network-wide: no random walk between observations, no
+        // parent-uncertainty bleed-through, nothing carried into the
+        // volatility-coupling posterior update.
         let prior = child.precision.clone();
         child.conditional_expected_precision.assign(&prior);
         child.expected_precision.assign(&prior);
@@ -177,6 +181,7 @@ mod tests {
             false,
             true,
             false,
+            true,
         );
         // rows: [1,0]·[1,2]=1, [0,1]·[1,2]=2, [1,1]·[1,2]=3
         assert!((child.expected_mean[0] - 1.0).abs() < 1e-12);
@@ -204,6 +209,7 @@ mod tests {
             true,
             true,
             false,
+            true,
         );
         // 3*2 + 5*1 = 11
         assert!((child.expected_mean[0] - 11.0).abs() < 1e-12);
@@ -229,9 +235,44 @@ mod tests {
             false,
             true,
             true, // is_input_layer
+            true,
         );
         assert_eq!(child.expected_precision, prior_precision);
         assert_eq!(child.conditional_expected_precision, prior_precision);
         assert!(child.effective_precision.iter().all(|&x| x == 0.0));
+    }
+
+    #[test]
+    fn test_predict_precision_false_freezes_the_precisions() {
+        // Same freeze as the input-layer override, but asked for network-wide on
+        // an ordinary interior layer, and the volatility level is left alone too.
+        let parent = LayerState::create(2, true);
+        let mut child = LayerState::create(3, true);
+        let child_params = LayerParams::create(3);
+        let weights = Matrix::from_shape_vec((3, 2), vec![1.0, 0.0, 0.0, 1.0, 1.0, 1.0]).unwrap();
+        let prior_precision = child.precision.clone();
+        let prior_mean_vol = child.mean_vol.clone().unwrap();
+
+        layer_prediction(
+            &mut child,
+            &child_params,
+            &parent,
+            &weights,
+            linear(),
+            1.0,
+            false,
+            true,  // has_volatility_parent
+            false, // is_input_layer
+            false, // predict_precision
+        );
+
+        assert_eq!(child.expected_precision, prior_precision);
+        assert_eq!(child.conditional_expected_precision, prior_precision);
+        assert!(child.effective_precision.iter().all(|&x| x == 0.0));
+        // The volatility level is untouched.
+        assert_eq!(child.mean_vol.unwrap(), prior_mean_vol);
+        // The mean is still predicted: [1,0]·[0,0] etc. all zero here, but the
+        // field is written rather than left at its previous value.
+        assert_eq!(child.expected_mean.len(), 3);
     }
 }

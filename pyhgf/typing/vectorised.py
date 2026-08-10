@@ -325,12 +325,20 @@ class Network(eqx.Module):
         The volatility update scheme, e.g. ``"unbounded"``.
     max_posterior_precision :
         The maximum posterior precision used to clip the precision updates.
+    update_input_layer :
+        Whether the sweeps reach the top (input) layer — see
+        :class:`pyhgf.model.DeepNetwork`.
+    predict_precision :
+        Whether the prediction sweep advances the precisions — see
+        :func:`pyhgf.updates.vectorized.volatile.prediction.vectorized_layer_prediction`.
     """
 
     layers: tuple
     volatility_updates: str = field(static=True)
     max_posterior_precision: float = field(static=True)
     precision_clipping_value: float = field(static=True, default=1e-6)
+    update_input_layer: bool = field(static=True, default=False)
+    predict_precision: bool = field(static=True, default=True)
 
     @property
     def n_layers(self) -> int:

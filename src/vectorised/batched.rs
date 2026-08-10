@@ -771,17 +771,17 @@ pub fn batched_mean_weight_gradients(
     grads
 }
 
-/// Per-layer batch-mean increments of the carried confidence fields: the
+/// Per-layer batch-mean increments of the carried precision fields: the
 /// value-level posterior precision and, where present, the volatility
 /// level's belief `(mean_vol, precision_vol)`.
-pub type ConfidenceIncrements = Vec<(Vector, Option<(Vector, Vector)>)>;
+pub type PrecisionIncrements = Vec<(Vector, Option<(Vector, Vector)>)>;
 
-/// Batch-mean increments of the carried confidence fields relative to the
+/// Batch-mean increments of the carried precision fields relative to the
 /// template: `row_mean(field) − template`, per layer.
-pub fn batched_confidence_increments(
+pub fn batched_precision_increments(
     states: &[BatchedLayerState],
     templates: &[&LayerState],
-) -> ConfidenceIncrements {
+) -> PrecisionIncrements {
     states
         .iter()
         .zip(templates.iter())

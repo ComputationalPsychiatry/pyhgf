@@ -90,6 +90,8 @@ class DeepNetwork:
         (default), ``"eHGF"`` or ``"standard"``.
     max_posterior_precision :
         Upper bound applied to every posterior precision write. Defaults to ``1e10``.
+    update_input_layer :
+        Whether the belief sweeps reach the top (input) layer. Defaults to ``False``.
 
     Examples
     --------
@@ -125,6 +127,8 @@ class DeepNetwork:
         volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
         precision_clipping_value: float = 1e-6,
+        update_input_layer: bool = False,
+        predict_precision: bool = True,
     ):
         r"""Initialize a VectorizedDeepNetwork.
 
@@ -151,11 +155,16 @@ class DeepNetwork:
             regimes; a very small value (default ``1e-6``) avoids flat, zero-gradient
             plateaus that hurt gradient-based inference. Shared with the nodalised
             ``Network`` and the Rust backend.
+        update_input_layer :
+            Whether the belief sweeps reach the top (input) layer, which holds the
+            predictors. Defaults to ``False``.
         """
         self.coupling_fn = coupling_fn
         self.volatility_updates = volatility_updates
         self.max_posterior_precision = float(max_posterior_precision)
         self.precision_clipping_value = float(precision_clipping_value)
+        self.update_input_layer = bool(update_input_layer)
+        self.predict_precision = bool(predict_precision)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -188,6 +197,7 @@ class DeepNetwork:
         volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
         precision_clipping_value: float = 1e-6,
+        update_input_layer: bool = False,
     ) -> "DeepNetwork":
         """Build a network from a list of layer configurations.
 
@@ -209,6 +219,8 @@ class DeepNetwork:
             Upper bound applied to posterior precision writes.
         precision_clipping_value : float, default 1e-6
             Bound applied to binary-layer predicted means.
+        update_input_layer : bool, default False
+            Whether the belief sweeps reach the top (input) layer.
 
         Returns
         -------
@@ -245,6 +257,7 @@ class DeepNetwork:
             volatility_updates=volatility_updates,
             max_posterior_precision=max_posterior_precision,
             precision_clipping_value=precision_clipping_value,
+            update_input_layer=update_input_layer,
         )
 
         # Add layers in order
@@ -291,6 +304,7 @@ class DeepNetwork:
             - "volatility_updates" (optional): volatility update scheme
             - "max_posterior_precision" (optional): precision upper bound
             - "precision_clipping_value" (optional): binary-layer clipping bound
+            - "update_input_layer" (optional): whether the sweeps reach the top layer
 
         Returns
         -------
@@ -349,6 +363,7 @@ class DeepNetwork:
                 "volatility_updates",
                 "max_posterior_precision",
                 "precision_clipping_value",
+                "update_input_layer",
             )
         }
 
@@ -368,6 +383,11 @@ class DeepNetwork:
 
         Parameters
         ----------
+        predict_precision :
+            Whether the prediction sweep advances the precisions. With ``False``
+            each layer's predicted precisions are held at its prior precision, its
+            effective precision is zero and its volatility level is left untouched,
+            so prediction produces only the expected means.
         size :
             Number of nodes in the layer.
         kind :
@@ -632,6 +652,8 @@ class DeepNetwork:
             volatility_updates=self.volatility_updates,
             max_posterior_precision=self.max_posterior_precision,
             precision_clipping_value=self.precision_clipping_value,
+            update_input_layer=self.update_input_layer,
+            predict_precision=self.predict_precision,
         )
 
     def weight_initialisation(
@@ -742,6 +764,7 @@ class DeepNetwork:
         record: Optional[tuple] = None,
         weight_update: bool = True,
         time_step: float = 1.0,
+        update_precisions: bool = True,
     ) -> "DeepNetwork":
         r"""Fit network to data.
 
@@ -759,9 +782,8 @@ class DeepNetwork:
         learning_kind :
             Gradient computation mode passed to
             :func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient`:
-            ``"standard"`` or ``"precision_weighted"`` (default). Both are
-            strictly local. Each weight update reads only its own
-            connection's prediction error, activation, and precision.
+            ``"standard"`` or ``"precision_weighted"`` (default), both reading
+            the settled beliefs, strictly local per edge.
         record :
             Tuple of ``LayerState`` field names to record at every time step,
             e.g. ``("expected_mean", "precision")``. ``None`` (default) skips
@@ -773,10 +795,6 @@ class DeepNetwork:
             If True (default), the learning phase updates weights each step. If False,
             weights and ``opt_state`` are frozen. Useful for evaluating a fixed model on
             new data while still recording trajectories.
-        time_step :
-            Uniform inference time step :math:`\\Delta t` applied at every
-            ``propagation_step``. Replaces the legacy ``net.state.time_step``
-            attribute (``NetworkState`` no longer carries it). Default ``1.0``.
 
         Returns
         -------
@@ -813,6 +831,7 @@ class DeepNetwork:
             weight_update,
             record_tuple,
             float(time_step),
+            update_precisions,
         )
 
         if record_tuple:
@@ -947,12 +966,11 @@ class DeepNetwork:
     def input_error(self) -> jnp.ndarray:
         """Prediction error at the input (top) layer.
 
-        The bottom-up sweep leaves the top layer untouched (its values are
-        clamped to the predictors), so this is the only way to read the error
-        message the input would receive from the layer below — the child
-        layer's prediction error, weighted by its confidence (precision) and
-        routed back through the connecting weights. Typical usage runs the
-        two sweeps first::
+        The error message the input receives from the layer below — the child
+        layer's prediction error, weighted by its precision and
+        routed back through the connecting weights. It is read off the child,
+        so it does not depend on whether ``update_input_layer`` is set.
+        Typical usage runs the two sweeps first::
 
             net.prediction(x).update(y)
             error_at_input = net.input_error()
@@ -1006,7 +1024,7 @@ class DeepNetwork:
         y: Union[np.ndarray, jnp.ndarray],
         optimizer: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
-        update_confidences: bool = True,
+        update_precisions: bool = True,
         time_step: float = 1.0,
         predicted: Optional[tuple] = None,
         sample_weight: Optional[Union[np.ndarray, jnp.ndarray]] = None,
@@ -1014,16 +1032,16 @@ class DeepNetwork:
         """One batch-synchronous learning step over many samples at once.
 
         Every sample in the batch is processed from the same state — same
-        weights, same confidences — in parallel; the per-sample weight
-        gradients and confidence changes are then *averaged* and applied
+        weights, same precisions — in parallel; the per-sample weight
+        gradients and precision changes are then *averaged* and applied
         once, so the whole batch counts as a single observation. This
         differs from :meth:`fit`, which scans samples sequentially and lets
-        the confidences adapt from one sample to the next (the natural mode
+        the precisions adapt from one sample to the next (the natural mode
         for a time series). Use this method when samples are exchangeable —
         e.g. many token positions learned together.
 
         The per-sample errors at the input layer are stored on
-        ``self.input_errors``, shape ``(batch, n_input_features)`` — see
+        ``self.input_errors``, shape ``(batch, n_input_features)``. See
         :meth:`input_error` for their meaning and sign convention.
 
         Parameters
@@ -1037,10 +1055,10 @@ class DeepNetwork:
             the weights.
         learning_kind :
             Weight-gradient mode, as in :meth:`fit`.
-        update_confidences :
+        update_precisions :
             If True (default), carry the batch-averaged change of the
-            confidence state (value-level precisions and the volatility
-            level) into ``self.state``. Set to False to keep confidences
+            precision state (value-level precisions and the volatility
+            level) into ``self.state``. Set to False to keep the precisions
             pinned, e.g. for exact comparisons against backpropagation.
         time_step :
             Inference time step, applied once per batch.
@@ -1083,7 +1101,7 @@ class DeepNetwork:
             y,
             optimizer=optimizer,
             learning_kind=learning_kind,
-            update_confidences=update_confidences,
+            update_precisions=update_precisions,
             time_step=float(time_step),
             predicted=predicted,
             sample_weight=None if sample_weight is None else jnp.asarray(sample_weight),

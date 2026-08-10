@@ -30,6 +30,7 @@ fn predict_child(
     weights: &Matrix,
     time_step: Float,
     pcv: Float,
+    predict_precision: bool,
 ) {
     match child.kind {
         LayerKind::Volatile => volatile::prediction::layer_prediction(
@@ -42,6 +43,7 @@ fn predict_child(
             parent.add_constant_input,
             child.has_volatility_parent,
             child.is_input_layer,
+            predict_precision,
         ),
         LayerKind::Binary => binary::prediction::binary_prediction(
             &mut child.state,
@@ -89,7 +91,7 @@ struct ChunkOut {
     range: std::ops::Range<usize>,
     errors: Matrix,
     grads: Option<Vec<Option<Matrix>>>,
-    increments: Option<crate::vectorised::batched::ConfidenceIncrements>,
+    increments: Option<crate::vectorised::batched::PrecisionIncrements>,
 }
 
 /// Chunk count of a batched call: per-thread slabs, small batches staying in
@@ -136,12 +138,13 @@ impl DeepNet {
         let n = self.layers.len();
         self.set_top_predictors(x);
         let pcv = self.precision_clipping_value;
+        let predict_precision = self.predict_precision;
         for i in (1..n).rev() {
             let (lower, upper) = self.layers.split_at_mut(i);
             let child = &mut lower[i - 1];
             let parent = &upper[0];
             let weights = parent.weights_in.as_ref().expect("parent has no weights");
-            predict_child(child, parent, weights, time_step, pcv);
+            predict_child(child, parent, weights, time_step, pcv, predict_precision);
         }
     }
 
@@ -282,17 +285,17 @@ impl DeepNet {
     /// mirroring the JAX `batch_step`.
     ///
     /// Every sample is processed from the same state template (same weights,
-    /// same confidences); the whole batch is swept together through the
+    /// same precisions); the whole batch is swept together through the
     /// batched kernels of [`crate::vectorised::batched`], so every phase is
     /// one `gemm` per layer in a features × samples layout. The per-sample
-    /// weight gradients and confidence changes are averaged and applied once,
+    /// weight gradients and precision changes are averaged and applied once,
     /// so the whole batch counts as a single observation. This differs from
-    /// [`Self::propagation_step`] driven sequentially, where the confidences
+    /// [`Self::propagation_step`] driven sequentially, where the precisions
     /// adapt from one sample to the next.
     ///
     /// With `optimizer` set, the batch-mean descent gradient drives one
     /// optimiser step; with `None` the weights are frozen. With
-    /// `update_confidences`, the batch-mean change of the carried confidence
+    /// `update_precisions`, the batch-mean change of the carried precision
     /// fields (the value-level posterior precision and the volatility level's
     /// belief) is added to the template state; everything else is left on the
     /// template, as the next batch's sweeps rewrite it anyway.
@@ -309,7 +312,7 @@ impl DeepNet {
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
-        update_confidences: bool,
+        update_precisions: bool,
     ) -> Matrix {
         self.batch_update_with_workspace(
             &mut crate::vectorised::batched::BatchWorkspace::default(),
@@ -319,7 +322,7 @@ impl DeepNet {
             opt_state,
             time_step,
             learning_kind,
-            update_confidences,
+            update_precisions,
         )
     }
 
@@ -338,7 +341,7 @@ impl DeepNet {
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
-        update_confidences: bool,
+        update_precisions: bool,
     ) -> Matrix {
         // Samples are exchangeable by construction, so the batch splits into
         // per-thread slabs swept independently; small batches stay in one
@@ -352,7 +355,7 @@ impl DeepNet {
             opt_state,
             time_step,
             learning_kind,
-            update_confidences,
+            update_precisions,
             n_chunks,
         )
     }
@@ -360,7 +363,7 @@ impl DeepNet {
     /// The chunked executor behind [`Self::batch_update`]: sweep each slab of
     /// samples through the batched kernels in parallel, then combine the
     /// per-chunk results (input-error slices concatenated; gradient and
-    /// confidence means weighted by chunk size) and apply them once.
+    /// precision means weighted by chunk size) and apply them once.
     #[allow(clippy::too_many_arguments)]
     fn batch_update_chunked(
         &mut self,
@@ -371,11 +374,11 @@ impl DeepNet {
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
-        update_confidences: bool,
+        update_precisions: bool,
         n_chunks: usize,
     ) -> Matrix {
         use crate::vectorised::batched::{
-            batched_confidence_increments, batched_input_prediction_error,
+            batched_precision_increments, batched_input_prediction_error,
             batched_mean_weight_gradients, batched_prediction_sweep, batched_update_sweep,
             reset_chunk,
         };
@@ -404,7 +407,7 @@ impl DeepNet {
                 let grads =
                     learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
                 let increments =
-                    update_confidences.then(|| batched_confidence_increments(states, &templates));
+                    update_precisions.then(|| batched_precision_increments(states, &templates));
                 ChunkOut {
                     range,
                     errors,
@@ -419,7 +422,7 @@ impl DeepNet {
             n_samples,
             optimizer,
             opt_state,
-            update_confidences,
+            update_precisions,
         )
     }
 
@@ -481,10 +484,10 @@ impl DeepNet {
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
-        update_confidences: bool,
+        update_precisions: bool,
     ) -> Result<Matrix, String> {
         use crate::vectorised::batched::{
-            batched_confidence_increments, batched_input_prediction_error,
+            batched_precision_increments, batched_input_prediction_error,
             batched_mean_weight_gradients, batched_update_sweep,
         };
         use crate::vectorised::layer::LayerState;
@@ -538,7 +541,7 @@ impl DeepNet {
                 let grads =
                     learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
                 let increments =
-                    update_confidences.then(|| batched_confidence_increments(states, &templates));
+                    update_precisions.then(|| batched_precision_increments(states, &templates));
                 ChunkOut {
                     range,
                     errors,
@@ -553,13 +556,13 @@ impl DeepNet {
             n_samples,
             optimizer,
             opt_state,
-            update_confidences,
+            update_precisions,
         ))
     }
 
     /// Combine per-chunk outputs (input-error slices concatenated; gradient
-    /// and confidence means weighted by chunk size) and apply the optimiser
-    /// step and confidence increments once. Returns the routed input errors,
+    /// and precision means weighted by chunk size) and apply the optimiser
+    /// step and precision increments once. Returns the routed input errors,
     /// `(top_size, n_samples)`, transposed to samples-first at the return.
     fn combine_and_apply(
         &mut self,
@@ -567,7 +570,7 @@ impl DeepNet {
         n_samples: usize,
         optimizer: Option<&Optimizer>,
         opt_state: Option<&mut OptState>,
-        update_confidences: bool,
+        update_precisions: bool,
     ) -> Matrix {
         let top_size = self.layers[self.layers.len() - 1].n_nodes();
         let mut input_errors = Matrix::zeros((top_size, n_samples));
@@ -600,7 +603,7 @@ impl DeepNet {
             opt.apply_dense(state, &mut self.layers, &grads);
         }
 
-        if update_confidences {
+        if update_precisions {
             for (l, layer) in self.layers.iter_mut().enumerate() {
                 for chunk in &chunk_outs {
                     let weight = chunk.range.len() as Float / n_samples as Float;
@@ -787,7 +790,7 @@ mod tests {
     /// each sample from the template with the per-sample kernels, averaging
     /// the rank-one gradients and the carried-field increments, and applying
     /// both once. Covers a three-layer network with a nonlinear (tanh)
-    /// coupling, Adam, and confidence carrying.
+    /// coupling, Adam, and precision carrying.
     #[test]
     fn test_batch_update_matches_per_sample_reference() {
         use crate::math::resolve_coupling_fn;

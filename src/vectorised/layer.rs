@@ -330,6 +330,11 @@ pub struct DeepNet {
     pub max_posterior_precision: Float,
     /// Lower/upper clamp bounding binary predictions away from 0 and 1.
     pub precision_clipping_value: Float,
+    /// Whether the prediction sweep advances the precisions. With `false` every
+    /// layer's predicted precisions are held at its prior precision, its
+    /// effective precision is zero and its volatility level is left untouched,
+    /// so prediction produces only the expected means.
+    pub predict_precision: bool,
 }
 
 impl DeepNet {
@@ -414,6 +419,7 @@ impl DeepNet {
             volatility_updates: VolatilityUpdate::Unbounded,
             max_posterior_precision: 1e10,
             precision_clipping_value: 1e-6,
+            predict_precision: true,
         })
     }
 
@@ -423,10 +429,12 @@ impl DeepNet {
         volatility_updates: VolatilityUpdate,
         max_posterior_precision: Float,
         precision_clipping_value: Float,
+        predict_precision: bool,
     ) -> Self {
         self.volatility_updates = volatility_updates;
         self.max_posterior_precision = max_posterior_precision;
         self.precision_clipping_value = precision_clipping_value;
+        self.predict_precision = predict_precision;
         self
     }
 

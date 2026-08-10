@@ -46,6 +46,7 @@ pub struct DeepNetwork {
     volatility_updates: VolatilityUpdate,
     max_posterior_precision: Float,
     precision_clipping_value: Float,
+    predict_precision: bool,
     /// Network-level default coupling function name (validated at
     /// construction).
     default_coupling: String,
@@ -74,6 +75,7 @@ impl DeepNetwork {
             self.volatility_updates,
             self.max_posterior_precision,
             self.precision_clipping_value,
+            self.predict_precision,
         );
         self.net = Some(net);
         self.opt_state = None;
@@ -218,12 +220,14 @@ impl DeepNetwork {
         max_posterior_precision = 1e10,
         precision_clipping_value = 1e-6,
         coupling_fn = "linear",
+        predict_precision = true,
     ))]
     fn py_new(
         volatility_updates: &str,
         max_posterior_precision: Float,
         precision_clipping_value: Float,
         coupling_fn: &str,
+        predict_precision: bool,
     ) -> PyResult<Self> {
         let volatility_updates =
             VolatilityUpdate::parse(volatility_updates).map_err(PyValueError::new_err)?;
@@ -246,6 +250,7 @@ impl DeepNetwork {
             volatility_updates,
             max_posterior_precision,
             precision_clipping_value,
+            predict_precision,
             default_coupling: coupling_fn.to_string(),
         })
     }
@@ -439,10 +444,10 @@ impl DeepNetwork {
     /// One batch-synchronous learning step over many samples at once,
     /// mirroring the JAX `DeepNetwork.batch_update`. Every sample in the
     /// batch is processed from the same state (same weights, same
-    /// confidences); the per-sample weight gradients and confidence changes
+    /// precisions); the per-sample weight gradients and precision changes
     /// are then averaged and applied once, so the whole batch counts as a
     /// single observation. This differs from `fit`, which scans samples
-    /// sequentially and lets the confidences adapt from one sample to the
+    /// sequentially and lets the precisions adapt from one sample to the
     /// next. `optimizer=None` (default) freezes the weights; pass `"adam"` or
     /// Forward phase of the two-phase batch step: predict the batch and keep
     /// the swept states cached, returning the output layer's expected means,
@@ -492,7 +497,7 @@ impl DeepNetwork {
         optimizer = None,
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
-        update_confidences = true,
+        update_precisions = true,
         time_step = 1.0,
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -503,7 +508,7 @@ impl DeepNetwork {
         optimizer: Option<&str>,
         learning_rate: Float,
         learning_kind: &str,
-        update_confidences: bool,
+        update_precisions: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let opt = optimizer
@@ -549,14 +554,14 @@ impl DeepNetwork {
                     opt_state,
                     time_step,
                     kind,
-                    update_confidences,
+                    update_precisions,
                 )
             })
             .map_err(PyValueError::new_err)?;
         Ok(errors.to_pyarray(py).into_any().unbind())
     }
 
-    /// `"sgd"` with `learning_rate` to learn. `update_confidences=False`
+    /// `"sgd"` with `learning_rate` to learn. `update_precisions=False`
     /// keeps the carried precisions pinned, the setting used for exact
     /// comparisons against backpropagation. Returns the per-sample prediction
     /// errors at the input (top) layer, shape `(n_samples, n_input_features)`;
@@ -567,7 +572,7 @@ impl DeepNetwork {
         optimizer = None,
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
-        update_confidences = true,
+        update_precisions = true,
         time_step = 1.0,
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -579,7 +584,7 @@ impl DeepNetwork {
         optimizer: Option<&str>,
         learning_rate: Float,
         learning_kind: &str,
-        update_confidences: bool,
+        update_precisions: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let opt = optimizer
@@ -647,7 +652,7 @@ impl DeepNetwork {
                 opt_state,
                 time_step,
                 kind,
-                update_confidences,
+                update_precisions,
             )
         });
         Ok(errors.to_pyarray(py).into_any().unbind())

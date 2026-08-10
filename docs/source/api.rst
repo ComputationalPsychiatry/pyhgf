@@ -321,6 +321,7 @@ Volatile layers
    :toctree: generated/pyhgf.updates.vectorized.volatile
 
     vectorized_layer_prediction
+    vectorized_root_prediction
     vectorized_layer_posterior_update
     vectorized_posterior_update_precision_value_level
     vectorized_posterior_update_mean_value_level
@@ -602,7 +603,7 @@ Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork
    input_prediction_error
    sample_step
    batch_step
-   apply_confidence_increments
+   apply_precision_increments
    batched_prediction_pass
    batched_prediction_states
 

@@ -12,7 +12,7 @@ from .posterior import (
     vectorized_posterior_update_mean_value_level,
     vectorized_posterior_update_precision_value_level,
 )
-from .prediction import vectorized_layer_prediction
+from .prediction import vectorized_layer_prediction, vectorized_root_prediction
 from .prediction_error import (
     vectorized_layer_prediction_error,
     vectorized_layer_value_prediction_error,
@@ -33,4 +33,5 @@ __all__ = [
     "vectorized_layer_volatility_posterior_unbounded",
     "vectorized_posterior_update_mean_value_level",
     "vectorized_posterior_update_precision_value_level",
+    "vectorized_root_prediction",
 ]
