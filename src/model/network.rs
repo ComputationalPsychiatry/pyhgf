@@ -1248,7 +1248,8 @@ impl Network {
                 if let Ok(weights) = weight_init_by_name(strategy, n_parents, n_children, seed) {
                     for (p_local, &parent_idx) in parent_nodes.iter().enumerate() {
                         for (c_local, &child_idx) in pre_layer.iter().enumerate() {
-                            let w = weights[p_local * n_children + c_local];
+                            // Row-major over (n_children, n_parents).
+                            let w = weights[c_local * n_parents + p_local];
                             crate::utils::set_coupling::set_coupling(
                                 self, parent_idx, child_idx, w,
                             );
@@ -1277,7 +1278,8 @@ impl Network {
 
             for (p_local, &parent_idx) in parent_nodes.iter().enumerate() {
                 for (c_local, &child_idx) in current_nodes.iter().enumerate() {
-                    let w = weights[p_local * n_current + c_local];
+                    // Row-major over (n_children, n_parents).
+                    let w = weights[c_local * n_parents + p_local];
                     crate::utils::set_coupling::set_coupling(self, parent_idx, child_idx, w);
                 }
             }

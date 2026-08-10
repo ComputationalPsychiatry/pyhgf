@@ -41,6 +41,7 @@ from pyhgf.utils.vectorized_belief_propagation import (
     update_sweep,
 )
 from pyhgf.utils.weight_initialisation import (
+    _init_matrix,
     he_init,
     orthogonal_init,
     sparse_init,
@@ -706,15 +707,27 @@ class DeepNetwork:
                 # byte-parity with the unrolled path; the underlying "all
                 # layers identical at init" pattern is a separate concern).
                 n_slices, n_children, n_parents = elem.weights_in.shape
-                flat = init_fn(n_parents, n_children, seed=seed, **kwargs)
-                per_slice = jnp.array(flat.reshape(n_children, n_parents))
+                per_slice = _init_matrix(
+                    init_fn,
+                    n_children,
+                    n_parents,
+                    elem.add_constant_input,
+                    seed,
+                    kwargs,
+                )
                 new_weights = jnp.broadcast_to(
                     per_slice, (n_slices, n_children, n_parents)
                 )
             else:
                 n_children, n_parents = elem.weights_in.shape
-                flat = init_fn(n_parents, n_children, seed=seed, **kwargs)
-                new_weights = jnp.array(flat.reshape(elem.weights_in.shape))
+                new_weights = _init_matrix(
+                    init_fn,
+                    n_children,
+                    n_parents,
+                    elem.add_constant_input,
+                    seed,
+                    kwargs,
+                )
             new_elements[i] = dataclasses.replace(elem, weights_in=new_weights)
 
         self.state = dataclasses.replace(self.state, layers=tuple(new_elements))

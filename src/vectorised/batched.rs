@@ -222,7 +222,9 @@ fn batched_volatile_prediction(
     }
 
     // 2. Value level: coupled activations and the per-parent Laplace variance
-    // factor (t·g'(μ̂))² / π̃_parent (the bias row stays 0 there).
+    // factor g'(μ̂)² / π̃_parent (the bias row stays 0 there). No time step: it
+    // propagates parent uncertainty through the `W @ g(μ)` mean computed just below,
+    // which carries no drift scaling. See the single-sample path for the full note.
     let coupled = coupled_activations(
         &parent.expected_mean,
         parent_layer.coupling_fn,
@@ -234,7 +236,7 @@ fn batched_volatile_prediction(
             .and(&parent.expected_mean)
             .and(&parent.expected_precision)
             .for_each(|o, &mu, &ep| {
-                let num = time_step * df(mu as f64) as Float;
+                let num = df(mu as f64) as Float;
                 *o = (num * num) / ep;
             });
     });

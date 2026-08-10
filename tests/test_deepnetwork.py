@@ -261,6 +261,47 @@ def test_weight_initialisation_strategies():
         # No error raised = success for Rust backend
 
 
+def test_orthogonal_initialisation_survives_the_reshape():
+    """Non-square matrices come out orthogonal once the caller has reshaped them.
+
+    ``orthogonal_init`` returns a flat vector that the caller reshapes row-major
+    to ``(n_children, n_parents)``. Both orientations are checked here on a network
+    whose layers are deliberately unequal: one matrix has more children than parents,
+    the other fewer.
+
+    With at least as many children as parents every input direction survives, so
+    ``W.T @ W = I``; with fewer, the layer is a projection and the best available is
+    ``W @ W.T = I``, preserving length within the row space.
+    """
+    net = (
+        DeepNetwork()
+        .add_layer(size=6)
+        .add_layer(size=3)
+        .add_layer(size=8)
+        .weight_initialisation("orthogonal", key=jax.random.key(0))
+    )
+
+    shapes = []
+    for layer in net.state.layers[1:]:
+        weights = np.asarray(layer.weights_in)
+        if layer.add_constant_input:
+            # The bias column is not a connection and takes no part in the
+            # orthogonality; it is zeroed by ``_init_matrix``.
+            np.testing.assert_allclose(weights[:, -1], 0.0, atol=0.0)
+            weights = weights[:, :-1]
+        n_children, n_parents = weights.shape
+        shapes.append((n_children, n_parents))
+        assert n_children != n_parents, "the square case cannot detect the scramble"
+        if n_children >= n_parents:
+            product, size = weights.T @ weights, n_parents
+        else:
+            product, size = weights @ weights.T, n_children
+        np.testing.assert_allclose(product, np.eye(size), atol=1e-6)
+
+    # One matrix of each orientation, so both branches were exercised.
+    assert any(c > p for c, p in shapes) and any(c < p for c, p in shapes), shapes
+
+
 def test_weight_initialisation_deterministic():
     """Same seed produces identical weights."""
     nets = []
