@@ -84,6 +84,7 @@ def vectorized_layer_prediction(
     has_volatility_parent: bool = True,
     is_input_layer: bool = False,
     predict_precision: bool = True,
+    feedforward_uncertainty: bool = False,
 ) -> LayerState:
     r"""Predict expected mean/precision for all nodes in a volatile-node layer.
 
@@ -141,6 +142,12 @@ def vectorized_layer_prediction(
         If False, the value level has no volatility source at all, so it does not
         undergo a Gaussian random walk: the diffusion term is dropped and the
         conditional predicted precision equals the prior precision.
+    feedforward_uncertainty :
+        Whether the value parents propagate their uncertainty to this layer. With
+        ``False`` (the default) they do not: the value-coupling variance is dropped,
+        so the marginal and the conditional predicted precision coincide and the only
+        uncertainty entering the layer is its own volatility parent's. With ``True``
+        the parent's uncertainty bleeds through as the law of total variance requires.
     predict_precision :
         Whether the prediction step advances the precisions at all. With ``False``
         both predicted precisions are held at the layer's prior precision, the
@@ -211,18 +218,29 @@ def vectorized_layer_prediction(
         #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̃_j,
         # using the parent's marginal predicted precision π̃_j (= `expected_precision`).
         # The constant-bias parent (if any) has infinite precision and contributes zero.
-        parent_precision = parent_state.expected_precision
-        g_prime = vmap(grad(coupling_fn))(parent_state.expected_mean)
-        if parent_has_constant:
-            # The constant node never varies: zero derivative, infinite precision.
-            parent_precision = jnp.concatenate([parent_precision, jnp.array([jnp.inf])])
-            g_prime = jnp.concatenate([g_prime, jnp.zeros(1)])
-        # Σ_j (t · W[i, j] · g'_j)² / π_j, computed as (W²) @ (g'² / π): the
-        # weight-dependent factor is a constant matrix, so the per-node sum is a
-        # matrix product with a per-node vector.
-        # The variance carries no time step (deviation from the Network class).
-        per_parent_variance = g_prime**2 / parent_precision
-        value_coupling_variance = jnp.matmul(weights**2, per_parent_variance)
+        if not feedforward_uncertainty:
+            # No uncertainty is propagated by the value parents: the child's predicted
+            # precision comes from its own prior and its own volatility parent alone,
+            # which is what :func:`vectorized_root_prediction` already does for the top
+            # layer. The parent's derivative is not needed, so the autodiff call goes
+            # with it.
+            value_coupling_variance = jnp.zeros_like(child_state.precision)
+        else:
+            parent_precision = parent_state.expected_precision
+            g_prime = vmap(grad(coupling_fn))(parent_state.expected_mean)
+            if parent_has_constant:
+                # The constant node never varies: zero derivative, infinite precision.
+                parent_precision = jnp.concatenate([
+                    parent_precision,
+                    jnp.array([jnp.inf]),
+                ])
+                g_prime = jnp.concatenate([g_prime, jnp.zeros(1)])
+            # Σ_j (t · W[i, j] · g'_j)² / π_j, computed as (W²) @ (g'² / π): the
+            # weight-dependent factor is a constant matrix, so the per-node sum is a
+            # matrix product with a per-node vector.
+            # The variance carries no time step (deviation from the Network class).
+            per_parent_variance = g_prime**2 / parent_precision
+            value_coupling_variance = jnp.matmul(weights**2, per_parent_variance)
 
         # Conditional predicted precision π̂_a — the precision of x_a given a specific
         # value of x_b (own AR-plus-volatility variance only, no parent-uncertainty

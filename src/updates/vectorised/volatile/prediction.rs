@@ -29,6 +29,7 @@ pub fn layer_prediction(
     has_volatility_parent: bool,
     is_input_layer: bool,
     predict_precision: bool,
+    feedforward_uncertainty: bool,
 ) {
     let n = child.mean.len();
     let n_parent = parent.expected_mean.len();
@@ -106,14 +107,19 @@ pub fn layer_prediction(
     };
 
     // Laplace value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).
+    // Without `feedforward_uncertainty` the value parents do not propagate their
+    // uncertainty, so the term is zero and the marginal predicted precision collapses
+    // onto the conditional one: every layer then behaves as the top layer already does.
     let mut value_coupling_variance = Array1::<Float>::zeros(n);
-    for i in 0..n {
-        let mut s = 0.0;
-        for j in 0..p {
-            let w = weights[[i, j]];
-            s += w * w * ppv[j];
+    if feedforward_uncertainty {
+        for i in 0..n {
+            let mut s = 0.0;
+            for j in 0..p {
+                let w = weights[[i, j]];
+                s += w * w * ppv[j];
+            }
+            value_coupling_variance[i] = s;
         }
-        value_coupling_variance[i] = s;
     }
 
     // Conditional (π̂) and marginal (π̃) predicted precisions, written in place.
@@ -182,6 +188,7 @@ mod tests {
             true,
             false,
             true,
+            true,
         );
         // rows: [1,0]·[1,2]=1, [0,1]·[1,2]=2, [1,1]·[1,2]=3
         assert!((child.expected_mean[0] - 1.0).abs() < 1e-12);
@@ -210,6 +217,7 @@ mod tests {
             true,
             false,
             true,
+            true,
         );
         // 3*2 + 5*1 = 11
         assert!((child.expected_mean[0] - 11.0).abs() < 1e-12);
@@ -236,10 +244,63 @@ mod tests {
             true,
             true, // is_input_layer
             true,
+            true,
         );
         assert_eq!(child.expected_precision, prior_precision);
         assert_eq!(child.conditional_expected_precision, prior_precision);
         assert!(child.effective_precision.iter().all(|&x| x == 0.0));
+    }
+
+    #[test]
+    fn test_feedforward_uncertainty_controls_the_value_coupling_variance() {
+        // With the flag off (the default) the value parents propagate nothing: the
+        // marginal predicted precision collapses onto the conditional one, which is
+        // exactly what a layer with no value parent already computes. The conditional
+        // is unaffected either way, since it never carried the parent's contribution.
+        let mut parent = LayerState::create(2, true);
+        // A parent that is genuinely uncertain, so the dropped term is non-zero.
+        parent.expected_precision.assign(&Array1::from(vec![0.5, 2.0]));
+        parent.expected_mean.assign(&Array1::from(vec![0.3, -0.7]));
+        let child_params = LayerParams::create(3);
+        let weights =
+            Matrix::from_shape_vec((3, 2), vec![0.7, -0.4, 0.2, 0.9, -0.5, 0.3]).unwrap();
+
+        let run = |feedforward_uncertainty: bool| {
+            let mut child = LayerState::create(3, true);
+            layer_prediction(
+                &mut child,
+                &child_params,
+                &parent,
+                &weights,
+                linear(),
+                1.0,
+                false,
+                true,  // has_volatility_parent
+                false, // is_input_layer
+                true,  // predict_precision
+                feedforward_uncertainty,
+            );
+            child
+        };
+
+        let off = run(false);
+        let on = run(true);
+
+        // On: the parent's uncertainty bleeds through, so the two differ.
+        assert!(
+            on.expected_precision
+                .iter()
+                .zip(on.conditional_expected_precision.iter())
+                .any(|(e, c)| (e - c).abs() > 1e-12),
+            "the value-coupling variance should separate the two precisions"
+        );
+        // Off: they coincide.
+        assert_eq!(off.expected_precision, off.conditional_expected_precision);
+        // The conditional is the same under both settings.
+        assert_eq!(
+            off.conditional_expected_precision,
+            on.conditional_expected_precision
+        );
     }
 
     #[test]
@@ -264,6 +325,7 @@ mod tests {
             true,  // has_volatility_parent
             false, // is_input_layer
             false, // predict_precision
+            true, // feedforward_uncertainty
         );
 
         assert_eq!(child.expected_precision, prior_precision);

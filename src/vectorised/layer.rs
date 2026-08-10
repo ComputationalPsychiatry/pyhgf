@@ -335,6 +335,12 @@ pub struct DeepNet {
     /// effective precision is zero and its volatility level is left untouched,
     /// so prediction produces only the expected means.
     pub predict_precision: bool,
+    /// Whether value parents propagate their uncertainty to their children's
+    /// predicted precision. With `false` (the default) they do not: the
+    /// value-coupling variance is dropped, so the marginal and the conditional
+    /// predicted precision coincide and the only uncertainty entering a layer is its
+    /// own volatility parent's. With `true` that term is carried.
+    pub feedforward_uncertainty: bool,
 }
 
 impl DeepNet {
@@ -420,6 +426,7 @@ impl DeepNet {
             max_posterior_precision: 1e10,
             precision_clipping_value: 1e-6,
             predict_precision: true,
+            feedforward_uncertainty: false,
         })
     }
 
@@ -430,11 +437,13 @@ impl DeepNet {
         max_posterior_precision: Float,
         precision_clipping_value: Float,
         predict_precision: bool,
+        feedforward_uncertainty: bool,
     ) -> Self {
         self.volatility_updates = volatility_updates;
         self.max_posterior_precision = max_posterior_precision;
         self.precision_clipping_value = precision_clipping_value;
         self.predict_precision = predict_precision;
+        self.feedforward_uncertainty = feedforward_uncertainty;
         self
     }
 
