@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import os
+import warnings
 from typing import Any, Callable, Optional, Union
 
 import equinox as eqx
@@ -29,7 +30,11 @@ from pyhgf.typing.vectorised import (
     Network,
     stack_layers,
 )
+from pyhgf.updates.vectorized.learning import (
+    vectorized_weight_gradient_factors,
+)
 from pyhgf.utils.vectorized_belief_propagation import (
+    _weight_gradients,
     batch_step,
     batched_prediction_pass,
     batched_prediction_states,
@@ -67,6 +72,21 @@ _VOL_STATE_FIELDS: frozenset[str] = frozenset(VOLATILITY_STATE_FIELDS)
 # outweigh the scan setup overhead.
 _SCAN_AUTO_THRESHOLD: int = 5
 _LAYER_OVERRIDE_FIELDS: frozenset[str] = _LAYER_STATE_FIELDS | _LAYER_PARAM_FIELDS
+
+
+class DeadGradientWarning(UserWarning):
+    """Some weight matrices receive essentially no learning signal.
+
+    Raised by :meth:`DeepNetwork.check_gradient_health` when part of the network is
+    training while another part receives (near-)zero gradients — typically the
+    matrices far from the observations. A network in this state silently degrades
+    into a random-feature readout: the live matrices fit against a frozen upper
+    stack, accuracy can look respectable, and nothing else reports the failure.
+
+    The two known causes are Bayesian absorption (each layer's inference consumes
+    most of the error message before passing the residual up) and float32
+    annihilation of the belief-side factor ``(μ − μ̂)·π`` at high precision.
+    """
 
 
 class DeepNetwork:
@@ -656,6 +676,32 @@ class DeepNetwork:
             predict_precision=self.predict_precision,
         )
 
+    def _ensure_optimizer_state(
+        self, optimizer: Optional[optax.GradientTransformation]
+    ) -> None:
+        """Install optimiser state, keeping it when the optimiser is equivalent.
+
+        The state is rebuilt only when there is none yet, or when the new optimiser's
+        state has a *different structure* from the carried one.
+        """
+        if optimizer is None:
+            return
+        # Every caller has already built the network; a state-less network
+        # cannot reach a learning step.
+        assert self.state is not None
+        weights = self.state.weights_tuple()
+        if self.opt_state is None:
+            self.opt_state = optimizer.init(weights)
+        elif self._optimizer is not optimizer:
+            # ``eval_shape`` traces the initialiser without allocating, so the
+            # comparison costs nothing on the common path.
+            candidate = jax.eval_shape(optimizer.init, weights)
+            if jax.tree_util.tree_structure(candidate) != jax.tree_util.tree_structure(
+                self.opt_state
+            ):
+                self.opt_state = optimizer.init(weights)
+        self._optimizer = optimizer
+
     def weight_initialisation(
         self,
         strategy: Optional[str] = None,
@@ -765,6 +811,7 @@ class DeepNetwork:
         weight_update: bool = True,
         time_step: float = 1.0,
         update_precisions: bool = True,
+        check_gradient_health: bool = True,
     ) -> "DeepNetwork":
         r"""Fit network to data.
 
@@ -795,6 +842,18 @@ class DeepNetwork:
             If True (default), the learning phase updates weights each step. If False,
             weights and ``opt_state`` are frozen. Useful for evaluating a fixed model on
             new data while still recording trajectories.
+        check_gradient_health :
+            If True (default), probe the per-matrix gradient magnitudes on the
+            last sample after training and raise :class:`DeadGradientWarning`
+            when part of the network receives no learning signal.
+        update_precisions :
+            If True (default), the carried confidence fields (value-level posterior
+            precision and the volatility level) evolve from sample to sample. If False, they
+            are reset to their pre-fit values after every sample.
+        time_step :
+            Uniform inference time step :math:`\\Delta t` applied at every
+            ``propagation_step``. Replaces the legacy ``net.state.time_step``
+            attribute (``NetworkState`` no longer carries it). Default ``1.0``.
 
         Returns
         -------
@@ -815,10 +874,7 @@ class DeepNetwork:
                     f"Unknown record field(s) {invalid}. Valid: {sorted(valid_fields)}."
                 )
 
-        # Initialise opt_state on first fit, or when the optimiser changes.
-        if self.opt_state is None or self._optimizer is not optimizer:
-            self.opt_state = optimizer.init(self.state.weights_tuple())
-            self._optimizer = optimizer
+        self._ensure_optimizer_state(optimizer)
 
         x = jnp.asarray(x)
         y = jnp.asarray(y)
@@ -840,7 +896,108 @@ class DeepNetwork:
             self.trajectories = None
             self.predictions = step_output
 
+        if check_gradient_health and weight_update:
+            self._warn_if_gradients_dead(x[-1], y[-1], learning_kind)
+
         return self
+
+    def check_gradient_health(
+        self,
+        x: Union[np.ndarray, jnp.ndarray],
+        y: Union[np.ndarray, jnp.ndarray],
+        learning_kind: str = "precision_weighted",
+        relative_floor: float = 1e-9,
+    ) -> dict:
+        """Measure the learning signal each weight matrix actually receives.
+
+        Runs one prediction + update sweep on ``(x, y)`` from the current state
+        (without mutating it), extracts the per-matrix child-side gradient factors,
+        and flags matrices whose signal is zero or negligible relative to the
+        largest. ``fit`` calls this automatically after training and warns.
+
+        Parameters
+        ----------
+        x, y :
+            One sample, shapes ``(n_input_features,)`` and ``(n_output_features,)``.
+        learning_kind :
+            The weight-gradient mode to probe — probe the one being trained with.
+        relative_floor :
+            A matrix counts as dead when its factor magnitude is exactly zero or
+            below this fraction of the largest matrix's magnitude.
+
+        Returns
+        -------
+        dict
+            ``"magnitudes"``: per-element max ``|u|`` (``None`` for the bottom
+            element). ``"dead"``: indices of matrices receiving no usable signal,
+            by either detector — magnitude (exactly zero, or negligible relative
+            to the largest) or quantisation (the child's belief displacement sits
+            within a few float32 ulps of its mean scale, so the belief-side factor
+            is rounding noise; belief-side kinds only). ``"quantised"``: the
+            subset flagged by the quantisation detector.
+        """
+        swept = update_sweep(
+            prediction_sweep(self.state, jnp.asarray(x)), jnp.asarray(y)
+        )
+        factors = _weight_gradients(
+            swept, learning_kind, kernel=vectorized_weight_gradient_factors
+        )
+        magnitudes = [
+            None if f is None else float(np.abs(np.asarray(f[0])).max())
+            for f in factors
+        ]
+        live = max((m for m in magnitudes if m is not None), default=0.0)
+        dead = {
+            i
+            for i, m in enumerate(magnitudes)
+            if m is not None and (m == 0.0 or m < live * relative_floor)
+        }
+
+        # Second detector: a displacement within a few float32 ulps of the mean
+        # scale makes ``(mean - expected_mean)`` pure rounding noise, so
+        # ``pe * precision`` returns quantisation garbage of healthy-looking
+        # magnitude. Measured directly: at precision 1e7 the factors read ~0.3
+        # while carrying no information.
+        quantised: list = []
+        eps32 = float(np.finfo(np.float32).eps)
+        for i in range(1, len(swept.layers)):
+            state = swept.layers[i - 1].state  # the child driving matrix i
+            pe = np.abs(np.asarray(state.value_prediction_error))
+            scale = np.maximum(
+                np.abs(np.asarray(state.mean)),
+                np.abs(np.asarray(state.expected_mean)),
+            )
+            ulps = pe / np.maximum(scale * eps32, 1e-300)
+            if float(np.median(ulps)) < 8.0:
+                quantised.append(i)
+        combined = sorted(dead | set(quantised))
+
+        return {"magnitudes": magnitudes, "dead": combined, "quantised": quantised}
+
+    def _warn_if_gradients_dead(self, x, y, learning_kind: str) -> None:
+        """Run the gradient health check and make a dead upper stack loud."""
+        health = self.check_gradient_health(x, y, learning_kind=learning_kind)
+        healthy = [
+            i
+            for i, m in enumerate(health["magnitudes"])
+            if m is not None and m > 0.0 and i not in health["dead"]
+        ]
+        # Warn only on *partial* death — the head-only-training signature. Uniform
+        # smallness (plain convergence) stays silent.
+        if health["dead"] and healthy:
+            warnings.warn(
+                f"Weight matrices {health['dead']} receive essentially no "
+                f"learning signal under learning_kind={learning_kind!r} while "
+                f"others do: only part of the network is training, and the rest "
+                f"acts as a frozen random-feature map. Likely causes: Bayesian "
+                f"absorption of the error message across layers, or float32 "
+                f"annihilation of (mean - expected_mean) * precision at high "
+                f"precision. Lower the pinned precisions or revisit the "
+                f"precision regime. Silence this check with "
+                f"check_gradient_health=False.",
+                DeadGradientWarning,
+                stacklevel=3,
+            )
 
     def predict(
         self,
@@ -954,10 +1111,7 @@ class DeepNetwork:
         self.state = update_sweep(self.state, y)
 
         if optimizer is not None:
-            # Initialise opt_state on first use, or when the optimiser changes.
-            if self.opt_state is None or self._optimizer is not optimizer:
-                self.opt_state = optimizer.init(self.state.weights_tuple())
-                self._optimizer = optimizer
+            self._ensure_optimizer_state(optimizer)
             self.state, self.opt_state = learn_sweep(
                 self.state, self.opt_state, optimizer, learning_kind
             )
@@ -1088,11 +1242,7 @@ class DeepNetwork:
                 "(batch, n_features)."
             )
 
-        if optimizer is not None and (
-            self.opt_state is None or self._optimizer is not optimizer
-        ):
-            self.opt_state = optimizer.init(self.state.weights_tuple())
-            self._optimizer = optimizer
+        self._ensure_optimizer_state(optimizer)
 
         self.state, self.opt_state, self.input_errors = batch_step(
             self.state,

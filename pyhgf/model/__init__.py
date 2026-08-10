@@ -14,7 +14,7 @@ from .add_nodes import (
     update_parameters,
 )
 from .builder import LayerConfig, resolve_coupling_fn
-from .deep_network import DeepNetwork
+from .deep_network import DeadGradientWarning, DeepNetwork
 from .error_types import (
     DescentError,
     ObservedMinusPredicted,
@@ -37,6 +37,7 @@ from .transplant import from_embedding, from_feedforward, from_linear, from_line
 
 __all__ = [
     "Network",
+    "DeadGradientWarning",
     "DeepNetwork",
     "LayerConfig",
     "resolve_coupling_fn",
