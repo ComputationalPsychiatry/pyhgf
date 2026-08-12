@@ -10,9 +10,10 @@ wise matrix operations instead of per-node updates.
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import os
 import warnings
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 import equinox as eqx
 import jax
@@ -229,6 +230,7 @@ class DeepNetwork:
         max_posterior_precision: float = 1e10,
         precision_clipping_value: float = 1e-6,
         update_input_layer: bool = False,
+        **network_kwargs,
     ) -> "DeepNetwork":
         """Build a network from a list of layer configurations.
 
@@ -252,6 +254,11 @@ class DeepNetwork:
             Bound applied to binary-layer predicted means.
         update_input_layer : bool, default False
             Whether the belief sweeps reach the top (input) layer.
+        **network_kwargs
+            Any remaining network-level constructor argument, such as
+            ``predict_precision`` or ``feedforward_uncertainty``. Forwarded
+            unchanged to :class:`DeepNetwork`, so a setting that has to be in
+            place before the state is built can be given here.
 
         Returns
         -------
@@ -289,6 +296,7 @@ class DeepNetwork:
             max_posterior_precision=max_posterior_precision,
             precision_clipping_value=precision_clipping_value,
             update_input_layer=update_input_layer,
+            **network_kwargs,
         )
 
         # Add layers in order
@@ -329,13 +337,14 @@ class DeepNetwork:
         Parameters
         ----------
         config : dict[str, Any]
-            Configuration dictionary with keys:
-            - "layers" (required): list of layer configs (each a dict or LayerConfig)
-            - "coupling_fn" (optional): default coupling function name or callable
-            - "volatility_updates" (optional): volatility update scheme
-            - "max_posterior_precision" (optional): precision upper bound
-            - "precision_clipping_value" (optional): binary-layer clipping bound
-            - "update_input_layer" (optional): whether the sweeps reach the top layer
+            Configuration dictionary. ``"layers"`` (a list of layer configs, each a
+            dict or a :class:`LayerConfig`) is required. Every other key naming a
+            constructor argument of :class:`DeepNetwork` is optional and is forwarded
+            to it, which covers ``"coupling_fn"``, ``"volatility_updates"``,
+            ``"max_posterior_precision"``, ``"precision_clipping_value"``,
+            ``"update_input_layer"``, ``"predict_precision"`` and
+            ``"feedforward_uncertainty"``. Keys naming nothing on the constructor are
+            ignored, so a config may carry annotations of its own.
 
         Returns
         -------
@@ -385,18 +394,13 @@ class DeepNetwork:
         ]
 
         # Extract network-level parameters
-        net_config = {
-            k: v
-            for k, v in config.items()
-            if k
-            in (
-                "coupling_fn",
-                "volatility_updates",
-                "max_posterior_precision",
-                "precision_clipping_value",
-                "update_input_layer",
-            )
-        }
+        # Read the network-level keys off the constructor signature rather than a
+        # list kept here, so a new constructor argument is accepted by ``from_dict``
+        # without a second edit. A network-level setting that reaches the state only
+        # at construction is unsettable afterwards, so a silently dropped key would
+        # build a network that does not match its own config.
+        network_fields = set(inspect.signature(cls.__init__).parameters) - {"self"}
+        net_config = {k: v for k, v in config.items() if k in network_fields}
 
         return cls.from_configs(configs, **net_config)
 

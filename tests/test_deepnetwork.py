@@ -9,7 +9,7 @@ import optax
 import pytest
 from pyhgf.rshgf import Network as RsNetwork
 
-from pyhgf.model import DeepNetwork
+from pyhgf.model import DeepNetwork, LayerConfig
 from pyhgf.model import Network as PyNetwork
 
 
@@ -1434,6 +1434,39 @@ def test_feedforward_uncertainty_leaves_the_conditional_precision_alone():
 def test_feedforward_uncertainty_defaults_to_off():
     """Value parents do not propagate their uncertainty unless asked to."""
     assert DeepNetwork().feedforward_uncertainty is False
+
+
+def test_from_dict_forwards_network_level_settings():
+    """A network-level key of the config reaches the network and its state.
+
+    The belief sweeps read the copy on the state, so a key that reached only the network
+    object would leave the built network running the default rule while its config says
+    otherwise.
+    """
+    net = DeepNetwork.from_dict({
+        "layers": [{"size": 2}, {"size": 3}],
+        "feedforward_uncertainty": True,
+        "predict_precision": False,
+    })
+    assert net.feedforward_uncertainty is True
+    assert net.state.feedforward_uncertainty is True
+    assert net.predict_precision is False
+    assert net.state.predict_precision is False
+
+
+def test_from_dict_ignores_keys_that_name_nothing():
+    """Keys outside the constructor stay ignored, so configs may be annotated."""
+    net = DeepNetwork.from_dict({"layers": [{"size": 2}, {"size": 3}], "note": "x"})
+    assert net.n_layers == 2
+
+
+def test_from_configs_forwards_network_level_settings():
+    """``from_configs`` passes any remaining keyword to the constructor."""
+    net = DeepNetwork.from_configs(
+        [LayerConfig(size=2), LayerConfig(size=3)], feedforward_uncertainty=True
+    )
+    assert net.feedforward_uncertainty is True
+    assert net.state.feedforward_uncertainty is True
 
 
 # ---------------------------------------------------------------------------
