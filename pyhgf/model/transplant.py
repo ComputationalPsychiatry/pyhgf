@@ -65,6 +65,7 @@ def from_linear(
     linear: eqx.nn.Linear,
     leaf_kwargs: Optional[dict] = None,
     layer_kwargs: Optional[dict] = None,
+    network_kwargs: Optional[dict] = None,
 ) -> DeepNetwork:
     """Build a two-layer network computing exactly ``linear(x)``.
 
@@ -81,6 +82,11 @@ def from_linear(
         layer — e.g. the backprop-parity configuration.
     layer_kwargs :
         Extra ``add_layer`` keyword arguments for the top (input) layer.
+    network_kwargs :
+        Constructor arguments for the :class:`DeepNetwork` itself, such as
+        ``feedforward_uncertainty``. These reach the network's state when it is
+        built and cannot be set afterwards, so they belong here rather than in
+        the per-layer keyword sets.
 
     Returns
     -------
@@ -89,7 +95,7 @@ def from_linear(
     """
     out_features, in_features = linear.weight.shape
     net = (
-        DeepNetwork()
+        DeepNetwork(**(network_kwargs or {}))
         .add_layer(size=out_features, add_constant_input=False, **(leaf_kwargs or {}))
         .add_layer(
             size=in_features,
@@ -104,6 +110,7 @@ def from_linears(
     linears: list,
     leaf_kwargs: Optional[dict] = None,
     layer_kwargs: Optional[dict] = None,
+    network_kwargs: Optional[dict] = None,
 ) -> DeepNetwork:
     """Build a two-layer network stacking several Linears that share one input.
 
@@ -125,6 +132,11 @@ def from_linears(
         layer.
     layer_kwargs :
         Extra ``add_layer`` keyword arguments for the top (input) layer.
+    network_kwargs :
+        Constructor arguments for the :class:`DeepNetwork` itself, such as
+        ``feedforward_uncertainty``. These reach the network's state when it is
+        built and cannot be set afterwards, so they belong here rather than in
+        the per-layer keyword sets.
 
     Returns
     -------
@@ -145,7 +157,7 @@ def from_linears(
     )
     out_features, in_features = weight.shape
     net = (
-        DeepNetwork()
+        DeepNetwork(**(network_kwargs or {}))
         .add_layer(size=out_features, add_constant_input=False, **(leaf_kwargs or {}))
         .add_layer(
             size=in_features,
@@ -162,6 +174,7 @@ def from_feedforward(
     activation: Callable = jax.nn.gelu,
     leaf_kwargs: Optional[dict] = None,
     layer_kwargs: Optional[dict] = None,
+    network_kwargs: Optional[dict] = None,
 ) -> DeepNetwork:
     """Build a three-layer network computing exactly ``fc2(activation(fc1(x)))``.
 
@@ -183,8 +196,12 @@ def from_feedforward(
     leaf_kwargs :
         Extra ``add_layer`` keyword arguments for the bottom (observed) layer.
     layer_kwargs :
-        Extra ``add_layer`` keyword arguments for the hidden and input layers — e.g. the
-        backprop-parity configuration.
+        Extra ``add_layer`` keyword arguments for the hidden and input layers.
+    network_kwargs :
+        Constructor arguments for the :class:`DeepNetwork` itself, such as
+        ``feedforward_uncertainty``. These reach the network's state when it is
+        built and cannot be set afterwards, so they belong here rather than in
+        the per-layer keyword sets.
 
     Returns
     -------
@@ -194,7 +211,7 @@ def from_feedforward(
     hidden, in_features = fc1.weight.shape
     out_features = fc2.weight.shape[0]
     net = (
-        DeepNetwork()
+        DeepNetwork(**(network_kwargs or {}))
         .add_layer(size=out_features, add_constant_input=False, **(leaf_kwargs or {}))
         .add_layer(
             size=hidden,
@@ -221,6 +238,7 @@ def from_embedding(
     embedding: eqx.nn.Embedding,
     leaf_kwargs: Optional[dict] = None,
     layer_kwargs: Optional[dict] = None,
+    network_kwargs: Optional[dict] = None,
 ) -> DeepNetwork:
     """Build a two-layer network reproducing a table lookup from one-hot inputs.
 
@@ -239,6 +257,11 @@ def from_embedding(
         layer.
     layer_kwargs :
         Extra ``add_layer`` keyword arguments for the top (input) layer.
+    network_kwargs :
+        Constructor arguments for the :class:`DeepNetwork` itself, such as
+        ``feedforward_uncertainty``. These reach the network's state when it is
+        built and cannot be set afterwards, so they belong here rather than in
+        the per-layer keyword sets.
 
     Returns
     -------
@@ -247,7 +270,7 @@ def from_embedding(
     """
     num_embeddings, embedding_size = embedding.weight.shape
     net = (
-        DeepNetwork()
+        DeepNetwork(**(network_kwargs or {}))
         .add_layer(size=embedding_size, add_constant_input=False, **(leaf_kwargs or {}))
         .add_layer(
             size=num_embeddings, add_constant_input=False, **(layer_kwargs or {})

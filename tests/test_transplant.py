@@ -146,3 +146,27 @@ def test_from_linears_stacks_and_validates():
     no_bias = eqx.nn.Linear(4, 3, use_bias=False, key=k3)
     with pytest.raises(ValueError, match="bias"):
         from_linears([a, no_bias])
+
+
+def test_network_kwargs_reach_the_transplanted_networks():
+    """Network-level settings are set at construction, not written afterwards.
+
+    The transplant builders start from a bare ``DeepNetwork``, so a setting that only
+    the constructor can place in the state has to travel with the call.
+    """
+    key = random.key(0)
+    k1, k2 = random.split(key)
+    linear = eqx.nn.Linear(4, 3, key=k1)
+    embedding = eqx.nn.Embedding(6, 3, key=k2)
+    fc1 = eqx.nn.Linear(4, 8, key=k1)
+    fc2 = eqx.nn.Linear(8, 4, key=k2)
+
+    for net in (
+        from_linear(linear, network_kwargs=dict(feedforward_uncertainty=True)),
+        from_embedding(embedding, network_kwargs=dict(feedforward_uncertainty=True)),
+        from_feedforward(fc1, fc2, network_kwargs=dict(feedforward_uncertainty=True)),
+    ):
+        assert net.feedforward_uncertainty is True
+        assert net.state.feedforward_uncertainty is True
+
+    assert from_linear(linear).state.feedforward_uncertainty is False
