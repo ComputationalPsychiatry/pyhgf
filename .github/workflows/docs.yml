@@ -3,8 +3,6 @@ name: Build and Deploy
 on:
   release:
     types: [published]
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -54,19 +52,9 @@ jobs:
           # notebook execution cache (nb_execution_mode = "cache") instead.
           uv run sphinx-build -j 1 -T -b html docs/source docs/build/html
 
-      # 5. Deploy the documentation for the 'release' event
+      # 5. Deploy the documentation
       - name: Deploy Stable 🚀
-        if: github.event_name == 'release'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: docs/build/html
           branch: gh-pages
-
-      # 6. Deploy the documentation for pull requests (Dev version)
-      - name: Deploy Dev 🚀
-        if: github.event_name == 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: docs/build/html
-          branch: gh-pages
-          target-folder: dev
