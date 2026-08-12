@@ -5,6 +5,7 @@ on:
       types: [published]
     pull_request:
       types: [opened, synchronize, reopened]
+    merge_group:
 
 jobs:
   test:
