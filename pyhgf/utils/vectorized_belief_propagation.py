@@ -29,6 +29,13 @@ from pyhgf.updates.vectorized.categorical import (
     vectorized_categorical_prediction,
     vectorized_categorical_prediction_error,
 )
+from pyhgf.updates.vectorized.continuous import (
+    ValueChild,
+    VolatilityChild,
+    vectorized_continuous_posterior_update,
+    vectorized_continuous_prediction,
+    vectorized_continuous_prediction_error,
+)
 from pyhgf.updates.vectorized.learning import (
     vectorized_weight_gradient,
     vectorized_weight_gradient_factors,
@@ -1419,3 +1426,212 @@ def batched_prediction_states(network: Network, x: jnp.ndarray) -> tuple:
         return tuple(elem.state for elem in _prediction_sweep(network, xi).layers)
 
     return jax.vmap(one)(x)
+
+
+# ---------------------------------------------------------------------------
+# DAG networks
+# ---------------------------------------------------------------------------
+#
+# Continuous networks are DAGs rather than chains: each layer can have one
+# value-parent layer and one volatility-parent layer, recorded on the *parent*
+# as ``value_child_idx`` / ``volatility_child_idx``. The builder guarantees
+# that every parent has a higher index than its children, so the prediction
+# sweep runs top-down in descending index order and the update sweep runs
+# bottom-up in ascending order.
+
+
+def _assert_continuous_network(network: Network) -> None:
+    """Check that every element is a continuous ``Layer`` (no stacks, no mixing)."""
+    for i, elem in enumerate(network.layers):
+        if isinstance(elem, LayerStack):
+            raise NotImplementedError(
+                "Continuous networks do not support LayerStack elements yet."
+            )
+        if elem.kind != "continuous":
+            raise ValueError(
+                f"Layer {i} has kind {elem.kind!r}: continuous sweeps require "
+                "an all-continuous network."
+            )
+
+
+def _continuous_parent_maps(
+    network: Network,
+) -> tuple[list, list]:
+    """Invert the child indices into per-layer parent indices.
+
+    Returns ``(value_parent_of, volatility_parent_of)``, each one entry per layer
+    holding the parent's index or ``None``.
+    """
+    n = len(network.layers)
+    value_parent_of: list = [None] * n
+    volatility_parent_of: list = [None] * n
+    for j, elem in enumerate(network.layers):
+        if elem.value_child_idx is not None:
+            value_parent_of[elem.value_child_idx] = j
+        if elem.volatility_child_idx is not None:
+            volatility_parent_of[elem.volatility_child_idx] = j
+    return value_parent_of, volatility_parent_of
+
+
+def _continuous_prediction_sweep(
+    network: Network,
+    value_parent_of: list,
+    volatility_parent_of: list,
+    *,
+    time_step: float = 1.0,
+) -> Network:
+    """Top-down prediction sweep over a continuous network.
+
+    Predicts every layer from its value and volatility parents, in descending
+    index order so parents are always predicted before their children. Nothing
+    is clamped: observations enter in :func:`_continuous_update_sweep`. The
+    parent maps come from :func:`_continuous_parent_maps`.
+    """
+    elements = list(network.layers)
+    for i in range(len(elements) - 1, -1, -1):
+        elem = elements[i]
+        vp = value_parent_of[i]
+        vlp = volatility_parent_of[i]
+        new_state = vectorized_continuous_prediction(
+            child_state=elem.state,
+            params=elem.params,
+            time_step=time_step,
+            value_parent_state=None if vp is None else elements[vp].state,
+            weights=None if vp is None else elements[vp].weights_in,
+            coupling_fn=None if vp is None else elements[vp].coupling_fn,
+            volatility_parent_state=(None if vlp is None else elements[vlp].state),
+            volatility_weights=(
+                None if vlp is None else elements[vlp].volatility_weights_in
+            ),
+            is_static_leaf=elem.is_input_layer and vlp is None,
+        )
+        elements[i] = dataclasses.replace(elem, state=new_state)
+
+    return dataclasses.replace(network, layers=tuple(elements))
+
+
+def _continuous_update_sweep(
+    network: Network,
+    y: jnp.ndarray,
+    value_parent_of: list,
+    *,
+    time_step: float = 1.0,
+) -> Network:
+    """Bottom-up prediction-error and posterior-update sweep.
+
+    Clamps the observations on layer 0, computes its prediction errors, then
+    walks the layers in ascending order: each layer's posterior integrates the
+    prediction errors of its value and volatility children (already computed,
+    since children carry lower indices), and its own prediction errors are then
+    written for the parents above. ``value_parent_of`` comes from
+    :func:`_continuous_parent_maps`; the volatility side is read off each
+    layer's ``has_volatility_parent``.
+    """
+    elements = list(network.layers)
+
+    # Clamp the observations and compute the leaf prediction errors.
+    leaf_state = dataclasses.replace(elements[0].state, mean=y)
+    leaf_state = vectorized_continuous_prediction_error(
+        leaf_state, has_volatility_parent=elements[0].has_volatility_parent
+    )
+    elements[0] = dataclasses.replace(elements[0], state=leaf_state)
+
+    for i in range(1, len(elements)):
+        elem = elements[i]
+
+        value_child = None
+        if elem.value_child_idx is not None:
+            child_elem = elements[elem.value_child_idx]
+            value_child = ValueChild(
+                state=child_elem.state,
+                weights=elem.weights_in,
+                coupling_fn=elem.coupling_fn,
+                # Only layer 0 is clamped, and the update loop below skips it,
+                # so its posterior precision is the one that never moves.
+                precision_is_clamped=child_elem.is_input_layer,
+            )
+
+        volatility_child = None
+        if elem.volatility_child_idx is not None:
+            child_elem = elements[elem.volatility_child_idx]
+            volatility_child = VolatilityChild(
+                state=child_elem.state,
+                kappa=elem.volatility_weights_in,
+                params=child_elem.params,
+            )
+
+        if value_child is None and volatility_child is None:
+            # A layer nobody names as parent receives no message; nothing to do.
+            continue
+
+        new_state = vectorized_continuous_posterior_update(
+            elem.state,
+            value_child=value_child,
+            volatility_child=volatility_child,
+            volatility_updates=network.volatility_updates,
+            time_step=time_step,
+            max_posterior_precision=network.max_posterior_precision,
+        )
+
+        # Prediction errors are only needed when a parent above will read them.
+        if value_parent_of[i] is not None or elem.has_volatility_parent:
+            new_state = vectorized_continuous_prediction_error(
+                new_state, has_volatility_parent=elem.has_volatility_parent
+            )
+
+        elements[i] = dataclasses.replace(elem, state=new_state)
+
+    return dataclasses.replace(network, layers=tuple(elements))
+
+
+@eqx.filter_jit
+def run_continuous_scan(
+    network: Network,
+    ys: jnp.ndarray,
+    time_steps: jnp.ndarray,
+    record: tuple = (),
+) -> tuple:
+    """Filter a sequence of observations through a continuous network.
+
+    Runs ``jax.lax.scan`` over (prediction sweep, update sweep) pairs. There
+    is no weight learning: the coupling matrices are parameters of the filter.
+
+    Parameters
+    ----------
+    network :
+        The initial continuous network state.
+    ys :
+        Observations clamped on layer 0 at each step, shape ``(T, n_obs)``.
+    time_steps :
+        Per-step time steps, shape ``(T,)``.
+    record :
+        Tuple of ``LayerState`` field names to record at every step. With an
+        empty tuple (default) the per-step output is layer 0's ``expected_mean``
+        alone; otherwise it is ``(traj_step, prediction)``.
+
+    Returns
+    -------
+    ``(final_network, step_output)`` with per-step outputs stacked along a
+    leading ``(T,)`` axis.
+    """
+    # The topology is static, so validate and invert it once rather than once
+    # per sweep inside the scan body.
+    _assert_continuous_network(network)
+    value_parent_of, volatility_parent_of = _continuous_parent_maps(network)
+
+    def body(net, xs):
+        y, dt = xs
+        predicted = _continuous_prediction_sweep(
+            net, value_parent_of, volatility_parent_of, time_step=dt
+        )
+        updated = _continuous_update_sweep(predicted, y, value_parent_of, time_step=dt)
+        prediction = updated.layers[0].state.expected_mean
+        if record:
+            traj_step = {
+                field: tuple(getattr(elem.state, field) for elem in updated.layers)
+                for field in record
+            }
+            return updated, (traj_step, prediction)
+        return updated, prediction
+
+    return jax.lax.scan(body, network, (ys, time_steps))

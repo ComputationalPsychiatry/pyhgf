@@ -354,6 +354,25 @@ Categorical layers
     vectorized_categorical_prediction
     vectorized_categorical_prediction_error
 
+Continuous layers
+-----------------
+
+.. currentmodule:: pyhgf.updates.vectorized.continuous
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorized.continuous
+
+    ValueChild
+    VolatilityChild
+    vectorized_continuous_prediction
+    vectorized_continuous_prediction_error
+    vectorized_continuous_value_prediction_error
+    vectorized_continuous_volatility_prediction_error
+    vectorized_continuous_posterior_update
+    vectorized_continuous_posterior_update_standard
+    vectorized_continuous_posterior_update_ehgf
+    vectorized_continuous_posterior_update_unbounded
+
 Vectorized learning
 -------------------
 
@@ -598,6 +617,7 @@ Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork
    propagation_step
    prediction_pass
    run_scan
+   run_continuous_scan
    prediction_sweep
    update_sweep
    learn_sweep

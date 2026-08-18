@@ -61,12 +61,27 @@ def test_layer_state_create_defaults():
 
 
 def test_layer_params_create_defaults():
-    """LayerParams.create matches the legacy class's defaults."""
+    """LayerParams.create matches the legacy class's defaults.
+
+    Parameter fields are kind-specific: the volatile constructor allocates the
+    internal-volatility field only, the continuous constructor the other three.
+    """
     n = 4
     p = LayerParams.create(n)
     assert jnp.all(p.tonic_volatility_vol == -4.0)
-    for fname in LayerParams.__dataclass_fields__:
-        assert getattr(p, fname).shape == (n,), fname
+    assert p.tonic_volatility_vol.shape == (n,)
+    for fname in ("tonic_volatility", "tonic_drift", "autoconnection_strength"):
+        assert getattr(p, fname) is None, fname
+
+    c = LayerParams.create_continuous(n)
+    assert c.tonic_volatility_vol is None
+    for fname, value in (
+        ("tonic_volatility", -4.0),
+        ("tonic_drift", 0.0),
+        ("autoconnection_strength", 1.0),
+    ):
+        assert jnp.all(getattr(c, fname) == value), fname
+        assert getattr(c, fname).shape == (n,), fname
 
 
 def test_layer_state_is_pytree():

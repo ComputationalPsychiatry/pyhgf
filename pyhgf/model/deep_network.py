@@ -43,6 +43,7 @@ from pyhgf.utils.vectorized_belief_propagation import (
     learn_sweep,
     prediction_pass,
     prediction_sweep,
+    run_continuous_scan,
     run_scan,
     update_sweep,
 )
@@ -66,6 +67,12 @@ _LAYER_PARAM_FIELDS: frozenset[str] = frozenset(LayerParams.__dataclass_fields__
 # volatility parent — a state override for one of these on such a layer is
 # dropped rather than re-allocating the array.
 _VOL_STATE_FIELDS: frozenset[str] = frozenset(VOLATILITY_STATE_FIELDS)
+# ``LayerParams`` fields carried by continuous layers only.
+_CONTINUOUS_PARAM_FIELDS: frozenset[str] = frozenset({
+    "tonic_volatility",
+    "tonic_drift",
+    "autoconnection_strength",
+})
 
 # Minimum identical-layer count for ``add_layer_stack`` to auto-collapse the
 # block into a ``LayerStack`` (i.e. switch the propagation kernels to
@@ -206,6 +213,16 @@ class DeepNetwork:
         self.fully_connected: list[bool] = []
         self.coupling_fns: list[Callable] = []  # per-layer coupling functions
         self.volatility_parents: list[bool] = []
+        # Continuous-layer topology: for each layer, the index of the layer it
+        # is the value / volatility parent of (``None`` when it has no such
+        # child), plus the base strengths and connectivity of its W and κ
+        # matrices (see ``_fan_in_matrix``). Other kinds carry the resolved
+        # defaults here and never read them.
+        self.value_children: list[Optional[int]] = []
+        self.volatility_children: list[Optional[int]] = []
+        self.value_couplings: list[float] = []
+        self.volatility_couplings: list[float] = []
+        self.volatility_fully_connected: list[bool] = []
         # Indices of consecutive layers to collapse into a ``LayerStack`` at
         # ``_init_state`` time. Each entry is a ``(start, end_exclusive)`` half-
         # open interval over ``self.layer_sizes``, populated automatically by
@@ -220,6 +237,14 @@ class DeepNetwork:
         # Per-sample input-layer errors from the last batch_update call,
         # shape (batch, n_input_features).
         self.input_errors: Optional[jnp.ndarray] = None
+
+    @property
+    def _is_continuous(self) -> bool:
+        """Whether this is a continuous network.
+
+        Kinds cannot mix within a network, so layer 0 decides for all of them.
+        """
+        return bool(self.layer_kinds) and self.layer_kinds[0] == "continuous"
 
     @classmethod
     def from_configs(
@@ -306,8 +331,10 @@ class DeepNetwork:
             if layer_coupling_fn is None:
                 layer_coupling_fn = net_coupling_fn
 
-            # Prepare per-layer parameter overrides
-            overrides = {}
+            # Prepare per-layer parameter overrides. Annotated as ``Any`` so
+            # unpacking below type-checks against ``add_layer``'s typed
+            # keyword parameters, not just the float-valued ``**kwargs``.
+            overrides: dict[str, Any] = {}
             if config.tonic_volatility_vol is not None:
                 overrides["tonic_volatility_vol"] = config.tonic_volatility_vol
 
@@ -408,13 +435,18 @@ class DeepNetwork:
         self,
         size: int,
         kind: str = "volatile",
-        add_constant_input: bool = True,
+        add_constant_input: Optional[bool] = None,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
         volatility_parent: bool = True,
+        value_children: Optional[int] = None,
+        volatility_children: Optional[int] = None,
+        value_coupling: Optional[float] = None,
+        volatility_coupling: Optional[float] = None,
+        volatility_fully_connected: Optional[bool] = None,
         **kwargs,
     ) -> "DeepNetwork":
-        """Add a layer of nodes.
+        r"""Add a layer of nodes.
 
         Parameters
         ----------
@@ -433,9 +465,16 @@ class DeepNetwork:
             expected mean is the softmax across the layer's nodes, and the observation
             clamped during :meth:`fit` must be one-hot. Only valid as the output
             (bottom) layer. See ``docs/source/notebooks/1.1-Binary_HGF.ipynb`` for the
-            binary case.
+            binary case. ``"continuous"`` uses regular continuous state nodes with the
+            standard HGF drift semantics; continuous layers cannot mix with the other
+            kinds, are filtered with :meth:`input_data` rather than :meth:`fit`, and
+            connect through explicit value / volatility parent edges (see
+            *value_children* / *volatility_children*).
         add_constant_input :
-            If `True`, add a bias term to the layer's predictions.
+            If `True`, add a bias term to the layer's predictions. ``None`` (default)
+            resolves to `True` for volatile/binary/categorical layers and `False` for
+            continuous layers, whose per-node ``tonic_drift`` already plays the bias
+            role (passing `True` with a continuous layer raises).
         fully_connected :
             If `True` (default), each node in this layer connects to every node in the
             child layer (dense weight matrix).  If False, nodes connect one-to-one with
@@ -449,7 +488,44 @@ class DeepNetwork:
             mean_vol and precision_vol are predicted and updated each step. If False,
             the value level has no volatility source and does not undergo a Gaussian
             random walk (its conditional predicted precision equals the prior
-            precision).
+            precision). Volatile layers only — continuous layers have no internal
+            volatility level and ignore this argument.
+        value_children :
+            Continuous layers only. Index of the existing layer this layer is the
+            *value parent* of. When neither *value_children* nor
+            *volatility_children* is given, the chain default applies: the new layer
+            becomes the value parent of the previously added layer. Naming a parent
+            explicitly replaces the chain default entirely, so a layer given only
+            *volatility_children* is not a value parent of anything.
+        volatility_children :
+            Continuous layers only. Index of the existing layer this layer is the
+            *volatility parent* of. The κ matrix connecting the two is fixed at
+            construction (see *volatility_coupling*) and never learned.
+        value_coupling :
+            Continuous layers only — base value coupling strength (defaults to
+            ``1.0``). Dense ``weights_in`` entries are ``value_coupling /
+            n_parents``, so the drift a child receives is ``value_coupling``
+            times the *average* of :math:`g(\hat{\mu})` over the parent layer,
+            invariant to the parent layer's width; one-to-one edges keep
+            ``value_coupling`` on the diagonal (fan-in 1). Volatile and binary
+            layers have no fixed value coupling — their weights are learned, or
+            set via :meth:`weight_initialisation`.
+        volatility_coupling :
+            Continuous layers only — base volatility coupling strength
+            :math:`\kappa_0` (defaults to ``1.0``). Dense κ entries are
+            :math:`\kappa_0 / n_{\mathrm{parents}}` — the fan-in normalisation
+            makes the phasic volatility a child receives :math:`\kappa_0` times
+            the *average* of the parent layer's means, invariant to the parent
+            layer's width (and its MGF correction the variance of that average).
+            One-to-one κ has fan-in 1 and keeps :math:`\kappa_0` on the diagonal.
+            Mirrors the drift-averaging the volatile backend applies on value
+            edges.
+        volatility_fully_connected :
+            Continuous layers only. If True (the default), κ is dense: every node
+            of this layer modulates the volatility of every node of the child
+            layer. If False, κ is diagonal (one-to-one), which requires equal
+            sizes and is the only connectivity supported by the ``"unbounded"``
+            volatility update.
         **kwargs :
             Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`
             (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,
@@ -477,14 +553,70 @@ class DeepNetwork:
             "volatile-state": "volatile",
             "binary-state": "binary",
             "categorical-state": "categorical",
+            "continuous-state": "continuous",
         }
         kind = _kind_aliases.get(kind, kind)
 
-        valid_kinds = {"volatile", "binary", "categorical"}
+        valid_kinds = {"volatile", "binary", "categorical", "continuous"}
         if kind not in valid_kinds:
             raise ValueError(
                 f"Invalid layer kind '{kind}'. Choose from {sorted(valid_kinds)}."
             )
+
+        # Continuous layers form their own network type: the sweeps, the edge
+        # semantics (drift vs. direct prediction), and the entry point
+        # (``input_data`` vs. ``fit``) all differ, so mixing is rejected.
+        if self.layer_kinds and self._is_continuous != (kind == "continuous"):
+            raise ValueError(
+                "Continuous layers cannot mix with volatile/binary/"
+                "categorical layers in one network."
+            )
+
+        # The continuous-only arguments all default to ``None`` so an explicit
+        # value on another kind is an error rather than a silent no-op.
+        if kind != "continuous":
+            misplaced = [
+                name
+                for name, value in (
+                    ("value_children", value_children),
+                    ("volatility_children", volatility_children),
+                    ("value_coupling", value_coupling),
+                    ("volatility_coupling", volatility_coupling),
+                    ("volatility_fully_connected", volatility_fully_connected),
+                )
+                if value is not None
+            ]
+            if misplaced:
+                raise ValueError(
+                    f"{', '.join(misplaced)} are only valid for continuous layers."
+                )
+
+        if kind == "continuous":
+            if add_constant_input:
+                raise ValueError(
+                    "Continuous layers cannot use add_constant_input=True: the "
+                    "per-node tonic_drift already provides a constant offset."
+                )
+            add_constant_input = False
+        elif add_constant_input is None:
+            add_constant_input = True
+
+        value_coupling = 1.0 if value_coupling is None else value_coupling
+        volatility_coupling = (
+            1.0 if volatility_coupling is None else volatility_coupling
+        )
+        volatility_fully_connected = (
+            True if volatility_fully_connected is None else volatility_fully_connected
+        )
+
+        value_child, volatility_child = self._resolve_continuous_children(
+            kind=kind,
+            size=size,
+            value_children=value_children,
+            volatility_children=volatility_children,
+            volatility_fully_connected=volatility_fully_connected,
+        )
+
         if kind == "categorical" and self.layer_sizes:
             # A softmax couples every node of the layer into one choice; that
             # is only meaningful for the observed (bottom) layer, where the
@@ -500,6 +632,18 @@ class DeepNetwork:
                 f"Unknown layer override(s): {invalid_keys}. "
                 f"Valid fields are {sorted(_LAYER_OVERRIDE_FIELDS)}."
             )
+        # Parameter fields are kind-specific: reject an override the layer's
+        # kind would silently ignore.
+        wrong_params = [
+            k
+            for k in kwargs
+            if k in _LAYER_PARAM_FIELDS
+            and (k in _CONTINUOUS_PARAM_FIELDS) != (kind == "continuous")
+        ]
+        if wrong_params:
+            raise ValueError(
+                f"Parameter override(s) {wrong_params} do not apply to {kind!r} layers."
+            )
 
         if not fully_connected:
             if add_constant_input:
@@ -507,10 +651,18 @@ class DeepNetwork:
                     "One-to-one layers (fully_connected=False) cannot use "
                     "add_constant_input=True."
                 )
-            if self.layer_sizes and self.layer_sizes[-1] != size:
+            # The value edge connects this layer to its value child — the
+            # previous layer for the chain kinds, the resolved child for
+            # continuous layers.
+            child_for_size = (
+                value_child
+                if kind == "continuous"
+                else (len(self.layer_sizes) - 1 if self.layer_sizes else None)
+            )
+            if child_for_size is not None and self.layer_sizes[child_for_size] != size:
                 raise ValueError(
                     f"One-to-one layers require the same size as the child "
-                    f"layer ({self.layer_sizes[-1]}), got {size}."
+                    f"layer ({self.layer_sizes[child_for_size]}), got {size}."
                 )
 
         self.layer_sizes.append(size)
@@ -522,6 +674,11 @@ class DeepNetwork:
             coupling_fn if coupling_fn is not None else self.coupling_fn
         )
         self.volatility_parents.append(volatility_parent)
+        self.value_children.append(value_child)
+        self.volatility_children.append(volatility_child)
+        self.value_couplings.append(float(value_coupling))
+        self.volatility_couplings.append(float(volatility_coupling))
+        self.volatility_fully_connected.append(bool(volatility_fully_connected))
         # Eagerly rebuild the Network so ``self.state`` is always queryable
         # after construction. Cheap for typical depths; only triggers fresh
         # array allocations, no JIT trace.
@@ -531,6 +688,85 @@ class DeepNetwork:
         self.opt_state = None
         self._optimizer = None
         return self
+
+    def _resolve_continuous_children(
+        self,
+        *,
+        kind: str,
+        size: int,
+        value_children: Optional[int],
+        volatility_children: Optional[int],
+        volatility_fully_connected: bool,
+    ) -> tuple[Optional[int], Optional[int]]:
+        """Validate and resolve the child indices of a new continuous layer.
+
+        Returns ``(value_child, volatility_child)`` — the indices of the layers the new
+        layer is the value / volatility parent of, applying the chain default (previous
+        layer becomes the value child) when neither parent argument names a layer
+        explicitly.
+        """
+        if kind != "continuous":
+            return None, None
+
+        n_existing = len(self.layer_sizes)
+        if value_children is None and volatility_children is None:
+            value_child = n_existing - 1 if n_existing else None
+        else:
+            value_child = value_children
+        volatility_child = volatility_children
+
+        for name, child in (
+            ("value_children", value_child),
+            ("volatility_children", volatility_child),
+        ):
+            if child is None:
+                continue
+            if not 0 <= int(child) < n_existing:
+                raise IndexError(
+                    f"{name}={child} does not name an existing layer "
+                    f"(network has {n_existing} layers)."
+                )
+
+        if value_child is not None and value_child in self.value_children:
+            raise ValueError(
+                f"Layer {value_child} already has a value parent "
+                f"(layer {self.value_children.index(value_child)})."
+            )
+        if (
+            volatility_child is not None
+            and volatility_child in self.volatility_children
+        ):
+            raise ValueError(
+                f"Layer {volatility_child} already has a volatility parent "
+                f"(layer {self.volatility_children.index(volatility_child)})."
+            )
+
+        if volatility_child is not None:
+            child_size = self.layer_sizes[volatility_child]
+            if not volatility_fully_connected and child_size != size:
+                raise ValueError(
+                    f"A one-to-one volatility coupling requires equal sizes "
+                    f"(child layer {volatility_child} has {child_size} nodes, "
+                    f"this layer {size})."
+                )
+            if self.volatility_updates == "unbounded":
+                # The unbounded update is derived for a single volatility
+                # child per node and ignores value children.
+                if volatility_fully_connected and not (size == 1 and child_size == 1):
+                    raise ValueError(
+                        "The 'unbounded' volatility update requires a "
+                        "one-to-one volatility coupling "
+                        "(volatility_fully_connected=False). Use 'standard' "
+                        "or 'eHGF' for fully connected volatility parents."
+                    )
+                if value_child is not None:
+                    raise ValueError(
+                        "Under the 'unbounded' volatility update a volatility "
+                        "parent cannot also be a value parent. Use 'standard' "
+                        "or 'eHGF' for mixed parents."
+                    )
+
+        return value_child, volatility_child
 
     def add_layer_stack(
         self,
@@ -578,7 +814,8 @@ class DeepNetwork:
             Self for method chaining.
         """
         auto_scan = (
-            len(layer_sizes) >= _SCAN_AUTO_THRESHOLD
+            kind == "volatile"
+            and len(layer_sizes) >= _SCAN_AUTO_THRESHOLD
             and len(set(layer_sizes)) == 1
             and len(self.layer_sizes) > 0
             and self.layer_sizes[-1] == layer_sizes[0]
@@ -609,6 +846,9 @@ class DeepNetwork:
         All inter-layer weights are set to ``1.0``. Use :meth:`weight_initialisation`
         after construction to apply Xavier, He, orthogonal, or sparse initialisation.
         """
+        if self._is_continuous:
+            return self._init_continuous_state()
+
         layers: list[Layer] = []
 
         for i, size in enumerate(self.layer_sizes):
@@ -692,6 +932,116 @@ class DeepNetwork:
             feedforward_uncertainty=self.feedforward_uncertainty,
         )
 
+    def _fan_in_matrix(
+        self,
+        child: Optional[int],
+        size: int,
+        strength: float,
+        dense: bool,
+    ) -> Optional[jnp.ndarray]:
+        """Build one fixed coupling matrix of a continuous layer, or ``None``.
+
+        Used for both W (``value_coupling``) and κ (``volatility_coupling``). Dense
+        entries are ``strength / size``, so what the child receives — the drift or the
+        phasic volatility — is the base strength times the *average* of this layer,
+        invariant to its width. One-to-one edges have fan-in 1 and keep the base
+        strength on the diagonal.
+        """
+        if child is None:
+            return None
+        child_size = self.layer_sizes[child]
+        if dense:
+            return jnp.full((child_size, size), strength / size)
+        return strength * jnp.eye(child_size, size)
+
+    def _init_continuous_state(self) -> Network:
+        """Build the ``Network`` PyTree of an all-continuous network.
+
+        Both coupling matrices are fixed at construction and share the fan-in rule of
+        :meth:`_fan_in_matrix`.
+        """
+        n = len(self.layer_sizes)
+        has_vol_parent = [False] * n
+        for j in range(n):
+            child = self.volatility_children[j]
+            if child is not None:
+                has_vol_parent[child] = True
+
+        layers: list[Layer] = []
+        for i, size in enumerate(self.layer_sizes):
+            overrides = self.layer_overrides[i]
+
+            state = LayerState.create_continuous(
+                size, has_volatility_parent=has_vol_parent[i]
+            )
+            # Only fields the continuous state allocates can be overridden; the
+            # internal-volatility fields stay ``None``.
+            state_overrides = {
+                k: jnp.full(size, v)
+                for k, v in overrides.items()
+                if k in _LAYER_STATE_FIELDS and getattr(state, k) is not None
+            }
+            if state_overrides:
+                state = dataclasses.replace(state, **state_overrides)
+
+            param_kwargs = {}
+            if i == 0:
+                # Observation-leaf convention, mirroring the nodalised backend
+                # (``Network.input_idxs``): a clamped leaf performs no
+                # autoregression of its own and its volatility exponent is
+                # zeroed, so the observation noise is 1/exp(0) plus whatever a
+                # volatility parent contributes. Overridable per layer.
+                param_kwargs.update({
+                    "autoconnection_strength": 0.0,
+                    "tonic_volatility": 0.0,
+                })
+            param_kwargs.update({
+                k: v for k, v in overrides.items() if k in _CONTINUOUS_PARAM_FIELDS
+            })
+            params = LayerParams.create_continuous(n_nodes=size, **param_kwargs)
+
+            value_child = self.value_children[i]
+            weights_in = self._fan_in_matrix(
+                child=value_child,
+                size=size,
+                strength=self.value_couplings[i],
+                dense=self.fully_connected[i],
+            )
+            volatility_child = self.volatility_children[i]
+            volatility_weights_in = self._fan_in_matrix(
+                child=volatility_child,
+                size=size,
+                strength=self.volatility_couplings[i],
+                dense=self.volatility_fully_connected[i],
+            )
+
+            layers.append(
+                Layer(
+                    state=state,
+                    params=params,
+                    weights_in=weights_in,
+                    coupling_fn=self.coupling_fns[i],
+                    add_constant_input=False,
+                    has_volatility_parent=has_vol_parent[i],
+                    is_input_layer=(i == 0),
+                    fully_connected=self.fully_connected[i],
+                    kind="continuous",
+                    value_child_idx=value_child,
+                    volatility_child_idx=volatility_child,
+                    volatility_weights_in=volatility_weights_in,
+                )
+            )
+
+        return Network(
+            layers=tuple(layers),
+            volatility_updates=self.volatility_updates,
+            max_posterior_precision=self.max_posterior_precision,
+            precision_clipping_value=self.precision_clipping_value,
+            update_input_layer=self.update_input_layer,
+            predict_precision=self.predict_precision,
+            feedforward_uncertainty=self.feedforward_uncertainty,
+        )
+
     def _ensure_optimizer_state(
         self, optimizer: Optional[optax.GradientTransformation]
     ) -> None:
@@ -751,6 +1101,7 @@ class DeepNetwork:
         """
         if strategy is None:
             return self
+        self._require_deep_backend("weight_initialisation")
 
         valid = {"xavier", "he", "orthogonal", "sparse"}
         if strategy not in valid:
@@ -817,6 +1168,99 @@ class DeepNetwork:
         self.state = dataclasses.replace(self.state, layers=tuple(new_elements))
         return self
 
+    def _require_deep_backend(self, method: str) -> None:
+        """Reject deep-network entry points on a continuous network."""
+        if self._is_continuous:
+            raise ValueError(
+                f"{method}() is not available for continuous networks: they "
+                "are filters, not trainable deep networks. Use input_data() "
+                "to run observations through the network."
+            )
+
+    def input_data(
+        self,
+        input_data: Union[np.ndarray, jnp.ndarray],
+        time_steps: Optional[Union[np.ndarray, jnp.ndarray]] = None,
+        record: Optional[tuple] = None,
+    ) -> "DeepNetwork":
+        r"""Filter a sequence of observations through a continuous network.
+
+        The vectorized equivalent of
+        :meth:`pyhgf.model.network.Network.input_data`: for every observation,
+        the top-down prediction sweep advances every layer's expected mean and
+        precisions, the observation is clamped on layer 0, and the bottom-up
+        sweep propagates prediction errors through the value- and
+        volatility-coupling edges. Continuous networks only.
+
+        Parameters
+        ----------
+        input_data :
+            Observations for layer 0, shape ``(T, n_obs)`` (or ``(T,)`` when
+            layer 0 has a single node).
+        time_steps :
+            Per-step time steps :math:`\Delta t`, shape ``(T,)``. Defaults to
+            ``1.0`` everywhere.
+        record :
+            Tuple of ``LayerState`` field names to record at every time step,
+            as in :meth:`fit`; the result lands in ``self.trajectories``.
+            ``None`` (default) records nothing and only the per-step
+            predictions are kept in ``self.predictions``.
+
+        Returns
+        -------
+        DeepNetwork
+            Self, with ``self.state`` advanced by the whole sequence.
+        """
+        if not self._is_continuous:
+            raise ValueError(
+                "input_data() is only available for continuous networks; use "
+                "fit() for volatile/binary/categorical networks."
+            )
+        assert self.state is not None
+
+        record_tuple: tuple = tuple(record) if record else ()
+        if record_tuple:
+            # Only fields this network actually allocates can be recorded — a
+            # continuous layer leaves the internal-volatility fields at ``None``,
+            # so asking for them would silently record nothing.
+            valid_fields = {
+                name
+                for name in LayerState.__dataclass_fields__
+                if any(
+                    getattr(elem.state, name) is not None for elem in self.state.layers
+                )
+            }
+            invalid = [f for f in record_tuple if f not in valid_fields]
+            if invalid:
+                raise ValueError(
+                    f"Unknown record field(s) {invalid}. Valid: {sorted(valid_fields)}."
+                )
+
+        y = jnp.asarray(input_data)
+        if y.ndim == 1:
+            y = y[:, None]
+        if y.shape[1] != self.layer_sizes[0]:
+            raise ValueError(
+                f"input_data has {y.shape[1]} features but layer 0 has "
+                f"{self.layer_sizes[0]} nodes."
+            )
+        if time_steps is None:
+            time_steps = jnp.ones(y.shape[0])
+        else:
+            time_steps = jnp.asarray(time_steps)
+
+        self.state, step_output = run_continuous_scan(
+            self.state, y, time_steps, record_tuple
+        )
+
+        if record_tuple:
+            self.trajectories, self.predictions = step_output
+        else:
+            self.trajectories = None
+            self.predictions = step_output
+
+        return self
+
     def fit(
         self,
         x: Union[np.ndarray, jnp.ndarray],
@@ -876,6 +1320,7 @@ class DeepNetwork:
         DeepNetwork
             Self with updated state and optimiser state.
         """
+        self._require_deep_backend("fit")
         if self.state is None:
             raise ValueError("Add at least one layer before calling fit.")
 
@@ -1031,6 +1476,7 @@ class DeepNetwork:
         jnp.ndarray
             Predictions, shape (n_samples, n_output_features) or (n_output_features,).
         """
+        self._require_deep_backend("predict")
         if self.state is None:
             raise ValueError("Add at least one layer before calling predict.")
 
@@ -1065,6 +1511,7 @@ class DeepNetwork:
         DeepNetwork
             Self, with ``self.state`` advanced by the prediction sweep.
         """
+        self._require_deep_backend("prediction")
         if self.state is None:
             raise ValueError("Add at least one layer before calling prediction.")
         x = jnp.asarray(x)
@@ -1119,6 +1566,7 @@ class DeepNetwork:
         DeepNetwork
             Self, with ``self.state`` (and, if learning, ``self.opt_state``) advanced.
         """
+        self._require_deep_backend("update")
         if self.state is None:
             raise ValueError("Add at least one layer before calling update.")
         y = jnp.asarray(y)
@@ -1155,6 +1603,7 @@ class DeepNetwork:
             The prediction error at the top layer, shape
             ``(n_input_features,)``.
         """
+        self._require_deep_backend("input_error")
         if self.state is None:
             raise ValueError("Add at least one layer before calling input_error.")
         return input_prediction_error(self.state)
@@ -1183,6 +1632,7 @@ class DeepNetwork:
             One batched ``LayerState`` per element — an opaque value to hand
             back to :meth:`batch_update`.
         """
+        self._require_deep_backend("predict_states")
         if self.state is None:
             raise ValueError("Add at least one layer before calling predict_states.")
         states = batched_prediction_states(self.state, jnp.asarray(x))
@@ -1248,6 +1698,7 @@ class DeepNetwork:
             Self, with ``self.state`` (and, if learning, ``self.opt_state``)
             advanced by one batch.
         """
+        self._require_deep_backend("batch_update")
         if self.state is None:
             raise ValueError("Add at least one layer before calling batch_update.")
         x = jnp.asarray(x)
