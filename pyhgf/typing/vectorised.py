@@ -101,6 +101,28 @@ class LayerState(eqx.Module):
             volatility_prediction_error=vol(0.0),
         )
 
+    @classmethod
+    def create_continuous(
+        cls, n_nodes: int, has_volatility_parent: bool = False
+    ) -> "LayerState":
+        """Initialise the state of a layer of regular continuous nodes."""
+        vope = jnp.zeros(n_nodes) if has_volatility_parent else None
+        return cls(
+            mean=jnp.zeros(n_nodes),
+            precision=jnp.ones(n_nodes),
+            expected_mean=jnp.zeros(n_nodes),
+            expected_precision=jnp.ones(n_nodes),
+            conditional_expected_precision=jnp.ones(n_nodes),
+            effective_precision=jnp.zeros(n_nodes),
+            value_prediction_error=jnp.zeros(n_nodes),
+            mean_vol=None,
+            precision_vol=None,
+            expected_mean_vol=None,
+            expected_precision_vol=None,
+            effective_precision_vol=None,
+            volatility_prediction_error=vope,
+        )
+
 
 # The six volatility-level fields of :class:`LayerState`, set to ``None`` on a
 # layer without a volatility parent (see :meth:`LayerState.create`).
@@ -115,17 +137,33 @@ VOLATILITY_STATE_FIELDS: tuple = (
 
 
 class LayerParams(eqx.Module):
-    """Per-layer static parameters.
+    r"""Per-layer static parameters.
 
-    Each field is an array with one entry per node in the layer.
+    Each field is an array with one entry per node in the layer, or ``None`` when
+    the field does not apply to the layer's kind: volatile layers carry
+    ``tonic_volatility_vol`` only, continuous layers carry the other three.
 
     Parameters
     ----------
     tonic_volatility_vol :
-        The tonic (baseline) volatility of the volatility level.
+        The tonic (baseline) volatility of the implied internal volatility level
+        (volatile layers only).
+    tonic_volatility :
+        The tonic (baseline) log-volatility :math:`\omega` of the node's own
+        Gaussian random walk (continuous layers only).
+    tonic_drift :
+        The constant drift :math:`\rho` added to the predicted mean at every
+        time step (continuous layers only).
+    autoconnection_strength :
+        The AR(1) coefficient :math:`\lambda \in [0, 1]` on the node's own mean
+        in the prediction; ``1.0`` is a pure random walk (continuous layers
+        only).
     """
 
-    tonic_volatility_vol: Array
+    tonic_volatility_vol: Optional[Array] = None
+    tonic_volatility: Optional[Array] = None
+    tonic_drift: Optional[Array] = None
+    autoconnection_strength: Optional[Array] = None
 
     @classmethod
     def create(
@@ -133,14 +171,29 @@ class LayerParams(eqx.Module):
         n_nodes: int,
         tonic_volatility_vol: float = -4.0,
     ) -> "LayerParams":
-        """Initialise layer params with defaults."""
+        """Initialise volatile-layer params with defaults."""
         return cls(
             tonic_volatility_vol=jnp.full(n_nodes, tonic_volatility_vol),
         )
 
+    @classmethod
+    def create_continuous(
+        cls,
+        n_nodes: int,
+        tonic_volatility: float = -4.0,
+        tonic_drift: float = 0.0,
+        autoconnection_strength: float = 1.0,
+    ) -> "LayerParams":
+        """Initialise continuous-layer params with the nodalised defaults."""
+        return cls(
+            tonic_volatility=jnp.full(n_nodes, tonic_volatility),
+            tonic_drift=jnp.full(n_nodes, tonic_drift),
+            autoconnection_strength=jnp.full(n_nodes, autoconnection_strength),
+        )
+
 
 class Layer(eqx.Module):
-    """One layer of the vectorised deep network.
+    r"""One layer of the vectorised deep network.
 
     ``weights_in`` is the matrix connecting the layer *below* (child) into this layer
     (parent). The bottom layer (index 0) has ``weights_in=None`` because no layer sits
@@ -167,7 +220,23 @@ class Layer(eqx.Module):
     fully_connected :
         Whether the incoming weights are fully connected.
     kind :
-        The kind of layer, one of ``"volatile"``, ``"binary"``, or ``"categorical"``.
+        The kind of layer, one of ``"volatile"``, ``"binary"``, ``"categorical"``,
+        or ``"continuous"``.
+    value_child_idx :
+        Continuous layers only — index (into ``Network.layers``) of the layer this
+        layer is the *value parent* of, or ``None``. ``weights_in`` then connects
+        that child into this layer, shape ``(n_child, n_self)``, and enters the
+        drift of the child's predicted mean. The chain convention of volatile
+        networks (``weights_in`` always connects the layer directly below) is a
+        special case with ``value_child_idx = self_index - 1``.
+    volatility_child_idx :
+        Continuous layers only — index of the layer this layer is the *volatility
+        parent* of, or ``None``. ``volatility_weights_in`` connects that child.
+    volatility_weights_in :
+        Volatility-coupling matrix :math:`\kappa`, shape ``(n_child, n_self)``,
+        connecting the volatility child named by ``volatility_child_idx`` into
+        this layer. Fixed at construction — never part of the learned weights
+        (excluded from :meth:`Network.weights_tuple`).
     """
 
     state: LayerState
@@ -178,7 +247,12 @@ class Layer(eqx.Module):
     has_volatility_parent: bool = field(static=True)
     is_input_layer: bool = field(static=True)
     fully_connected: bool = field(static=True)
-    kind: str = field(static=True)  # "volatile" | "binary" | "categorical"
+    kind: str = field(
+        static=True
+    )  # "volatile" | "binary" | "categorical" | "continuous"
+    value_child_idx: Optional[int] = field(static=True, default=None)
+    volatility_child_idx: Optional[int] = field(static=True, default=None)
+    volatility_weights_in: Optional[Array] = None
 
 
 class LayerStack(eqx.Module):
@@ -238,6 +312,10 @@ def stack_layers(layers: list) -> LayerStack:
     add_constant_input, has_volatility_parent, fully_connected) and have ``weights_in``
     of identical shape. Static fields are taken from the first layer; arrays are stacked
     along a new axis 0.
+
+    A ``LayerStack`` carries no DAG topology, so the continuous-layer fields
+    (``value_child_idx``, ``volatility_child_idx``, ``volatility_weights_in``) have no
+    counterpart here and continuous layers cannot be stacked.
 
     Parameters
     ----------
