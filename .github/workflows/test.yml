@@ -8,6 +8,7 @@ on:
     # This will run the action for pull requests from any branch
     branches:
       - '*'
+  merge_group:
 
 jobs:
   test:
