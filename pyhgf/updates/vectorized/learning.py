@@ -3,127 +3,141 @@
 
 """Vectorized weight learning for deep predictive coding networks."""
 
-from typing import Callable
+from typing import Callable, NamedTuple, Optional, Union
 
 import jax.numpy as jnp
 
 from pyhgf.typing.vectorised import LayerState
 
-# The accepted weight-update kinds. Both share the same base term and factorise
-# into a child-side and a parent-side vector (a rank-one product), which is why
-# the gradient below is assembled as a single outer product.
-SEPARABLE_KINDS: tuple = ("standard", "precision_weighted")
+# The accepted weight-update kinds. All three share the same base term and
+# factorise into a child-side and a parent-side vector (a rank-one product),
+# which is why the gradient below is assembled as a single outer product.
+SEPARABLE_KINDS: tuple = ("standard", "precision_weighted", "synaptic_uncertainty")
+
+#: Floor applied to precisions before any division.
+_EPS = 1e-30
 
 
-def vectorized_weight_gradient(
+def learning_weights_vectorized(
     parent_state: LayerState,
     child_state: LayerState,
     coupling_fn: Callable,
     kind: str = "precision_weighted",
     parent_has_constant: bool = False,
-    child_is_binary: bool = False,
-) -> jnp.ndarray:
-    r"""Per-layer weight gradient for the vectorised deep network.
+    child_kind: str = "continuous",
+) -> tuple:
+    r"""Per-layer weight-learning factors for the vectorised deep network.
 
-    Returns the *descent* gradient for the weight matrix. Sign-flipped from the natural
-    "ascent" formulation so it composes with standard optax (`apply_updates(weights,
-    updates)` performs ``weights + updates``; `optax.sgd(lr).update(grad, state, w)`
-    returns ``-lr * grad``; together they reproduce the legacy ``weights + lr * g``
-    rule with ``g = -grad``).
+    The single entry point of this module. One weight update has two halves and
+    this returns the pieces of both: the descent gradient that moves the
+    weight's mean, and the importance increment that raises its precision. They
+    are the first and second derivative of one layer-local energy, computed in
+    one pass rather than selected between.
 
-    The two *kind* values share the same base term, the value prediction error
-    :math:`\delta = \mu_\text{child} - \hat{\mu}_\text{child}` times the coupled
-    parent activation :math:`a = g(\mu_\text{parent})`; they differ only in what
-    scales it. Both are strictly *local*: the update for one weight only reads
-    the prediction error and precision at its child and the activation at its
-    parent. No reduction over other parents or children in the layer.
+    Both are rank-one and **share their parent-side factor**. The gradient is
+    :math:`u \otimes h` and the increment is :math:`p \otimes h^2`, with the
+    same coupled parent activation :math:`h_i = g(\mu_i)`, so three vectors
+    carry both quantities. Returning factors rather than assembled matrices
+    lets a batched caller average over samples and contract once
+    (``einsum('bi,bj->ij') / batch``): the same arithmetic, without
+    materialising one weight-matrix-sized array per sample.
 
-    - **standard** (``kind="standard"``) — the raw gradient of an *unweighted*
-      squared error, no metric:
-      :math:`g = \delta \otimes a`.
-      This coincides with the free-energy gradient only when the child precision
-      is one (e.g. the unit-precision output / categorical convention).
+    Both are strictly *local*: what one weight gets reads only the prediction
+    error and precision at its child and the activation at its parent, never a
+    reduction over the other parents or children in the layer.
 
-    - **precision_weighted** (``kind="precision_weighted"``) — the free-energy
-      gradient weighted by the child's *posterior* precision:
-      :math:`g = \delta \otimes a \cdot \pi_\text{child}`.
-      This is the **backprop-parity** mode. A moved interior belief shifts by
-      (routed error) / posterior precision, so weighting by that same posterior
-      precision cancels the division and reproduces the backpropagated gradient
-      node-for-node at *any* precision setting, not only the pinned recipe.
+    **The child-side gradient factor** starts from the value prediction error
+    :math:`\delta = \mu_\text{child} - \hat{\mu}_\text{child}`, and *kind*
+    decides what scales it:
+
+    - ``"standard"`` takes :math:`\delta` alone, the raw gradient of an
+      *unweighted* squared error. This coincides with the free-energy gradient
+      only where the child precision is one (the unit-precision output or
+      categorical convention).
+    - ``"precision_weighted"`` scales by the child's *posterior* precision,
+      :math:`\delta\,\pi_a`. This is the **backprop-parity** mode: a moved
+      interior belief shifts by (routed error) / posterior precision, so
+      weighting by that same posterior precision cancels the division and
+      reproduces the backpropagated gradient node for node at *any* precision
+      setting.
+    - ``"synaptic_uncertainty"`` charges the process noise between the weight and
+      its child on top, :math:`\delta\,\pi_a / (1 + \Omega_a \xi_a)`, so the
+      gradient and the increment become the two derivatives of one energy.
+      This is the kind the weight-belief rule descends, and the only one it
+      can: dividing it by the weight's own precision is the Gaussian
+      posterior step, so both halves of that update read the same evidence.
+      It is *not* backprop parity.
+
+    A binary child drops the precision factor either way: its ``precision``
+    field holds the Bernoulli variance :math:`p(1-p)`, which cancels through
+    the sigmoid in the gradient, so keeping it would count the same term
+    twice. That cancellation belongs to the *first* derivative only, and the
+    curvature below keeps it.
+
+    **The child-side importance factor** is the exact Hessian diagonal of the
+    layer-local variational energy: that energy is exactly quadratic in the
+    weights for any coupling function, because the coupling acts on the
+    activation while the map :math:`w_{ai} \mapsto w_{ai} h_i` stays linear, so
+    one observation adds :math:`\tilde{\xi}_a h_i^2` with no approximation and
+    no sampling. Where the evidence comes from depends on the child:
+
+    - A **binary** or **categorical** child is where the data are clamped, so
+      the evidence is the curvature of its own likelihood, per unit
+      :math:`p_a(1 - p_a)` with :math:`p_a` the child's expected mean. For the
+      categorical case the Hessian of the log-likelihood with respect to the
+      logits is :math:`\operatorname{diag}(\mathbf{p}) -
+      \mathbf{p}\mathbf{p}^{\top}`, whose diagonal is that expression. No
+      label enters it, since averaging the outer product of the residual over
+      labels drawn from the model returns the same matrix, so this is the
+      model's own expected curvature rather than an estimate built from
+      observed errors.
+    - A **continuous** child passes on the evidence it received from below,
+      softened by the process noise it had to cross,
+      :math:`\tilde\xi_a = (1/\xi_a + \Omega_a)^{-1}`. Both parts are already
+      cached by the sweeps: :math:`\xi_a = \pi_a - \tilde\pi_a`, the posterior
+      precision minus the marginal predicted precision, because a Gaussian
+      posterior precision is its prior plus its likelihood; and
+      :math:`\Omega_a = \gamma_a / \tilde\pi_a`, recovered from the effective
+      precision the prediction sweep writes as
+      :math:`\gamma_a = \Omega_a \tilde\pi_a`. Softening by :math:`\Omega_a`
+      alone is what distinguishes this from the conditional predicted
+      precision :math:`\hat\pi_a`, which softens by
+      :math:`1/\pi_a^{\text{prev}} + \Omega_a` and so also carries the node's
+      own prior variance from the previous step: information about the same
+      quantity for a time series, but about a *different* sample's activation
+      for exchangeable samples.
 
     Parameters
     ----------
     parent_state :
         Current state of the parent layer.
     child_state :
-        Current state of the child layer (with observations).
+        Current state of the child layer (with observations), after the update
+        sweep has written its posterior.
     coupling_fn :
         Coupling function applied to parent means.
     kind :
-        Gradient computation mode.
+        The metric the gradient is expressed in, one of
+        :data:`SEPARABLE_KINDS`. It also sets the importance convention:
+        ``"standard"`` uses unit observation precision on both halves.
     parent_has_constant :
         If True, the parent layer has a constant input node (mean = 1.0,
         precision = 1.0) appended to its activations after coupling.
-    child_is_binary :
-        If True, the child layer is a binary node, so the redundant precision
-        factor is dropped in ``precision_weighted`` (the Bernoulli variance
-        cancels through the sigmoid in the gradient).
+    child_kind :
+        The child layer's node kind, ``"binary"``, ``"categorical"`` or
+        anything else for a continuous one.
 
     Returns
     -------
-    grad :
-        Descent gradient, same shape as ``weights``. NaN / inf entries are
-        zeroed out so optax does not propagate them through its moment
+    factors :
+        The triple ``(u, h, p)``. The child-side gradient factor :math:`u` and
+        the child-side importance factor
+        :math:`p` have shape ``(n_children,)``; the shared parent-side factor
+        :math:`h` has shape ``(n_parents[+1],)``. The gradient is
+        ``u[:, None] * h[None, :]`` and the increment
+        ``p[:, None] * (h ** 2)[None, :]``. Non-finite entries are zeroed, so
+        optax never propagates a NaN or an inf through its moment
         accumulators.
-
-    Raises
-    ------
-    ValueError
-        If *kind* is unrecognised.
-    """
-    u, v = vectorized_weight_gradient_factors(
-        parent_state,
-        child_state,
-        coupling_fn,
-        kind=kind,
-        parent_has_constant=parent_has_constant,
-        child_is_binary=child_is_binary,
-    )
-    return u[:, None] * v[None, :]
-
-
-def vectorized_weight_gradient_factors(
-    parent_state: LayerState,
-    child_state: LayerState,
-    coupling_fn: Callable,
-    kind: str = "precision_weighted",
-    parent_has_constant: bool = False,
-    child_is_binary: bool = False,
-) -> tuple[jnp.ndarray, jnp.ndarray]:
-    """Child- and parent-side factors of the weight gradient.
-
-    The descent gradient of :func:`vectorized_weight_gradient` is a rank-one
-    product, ``grad = u[:, None] * v[None, :]``. Returning the two vectors
-    instead of their product lets a batched caller average gradients over many
-    samples with a single contraction (``einsum('bi,bj->ij') / batch``) — the
-    same arithmetic, but without materialising one weight-matrix-sized gradient
-    per sample, which is what dominates memory traffic at scale.
-
-    Non-finite entries are zeroed on the factors, matching the per-entry
-    zeroing of :func:`vectorized_weight_gradient` for vector-borne NaN/inf.
-
-    Parameters
-    ----------
-    parent_state, child_state, coupling_fn, kind, parent_has_constant, child_is_binary :
-        As in :func:`vectorized_weight_gradient`.
-
-    Returns
-    -------
-    (u, v) :
-        Child-side factor, shape ``(n_children,)``, and parent-side factor,
-        shape ``(n_parents[+1],)``, such that ``u[:, None] * v[None, :]``
-        equals the descent gradient.
 
     Raises
     ------
@@ -133,22 +147,259 @@ def vectorized_weight_gradient_factors(
     if kind not in SEPARABLE_KINDS:
         raise ValueError(f"Unknown kind '{kind}'. Expected one of {SEPARABLE_KINDS}.")
 
-    pe = child_state.mean - child_state.expected_mean
-    coupled_parent = coupling_fn(parent_state.mean)
+    # The shared parent-side factor, h_i = g(mu_i). A constant input node
+    # contributes a fixed activation of 1.0, so its weight counts as usage 1.
+    h = coupling_fn(parent_state.mean)
     if parent_has_constant:
-        coupled_parent = jnp.concatenate([coupled_parent, jnp.ones(1)])
+        h = jnp.concatenate([h, jnp.ones(1)])
+    h = jnp.where(jnp.isfinite(h), h, 0.0)
 
-    # The gradient is the outer product of a child-side factor (the prediction
-    # error, scaled by the child's posterior precision in ``precision_weighted``)
-    # and a parent-side factor (the coupled parent activation). NaN / inf are
-    # zeroed on each factor so optax does not propagate them.
-    u = pe
-    v = coupled_parent
-    if kind == "precision_weighted" and not child_is_binary:
-        u = u * child_state.precision  # posterior precision (backprop-parity gradient)
+    # The evidence the child received from below, and the factor by which the
+    # process noise between the weight and the child attenuates it. Both halves
+    # of the update read these, so they are formed once. The evidence is
+    # floored at zero: clipping can drive a posterior precision below its
+    # prediction, which must not turn the increment into a subtraction.
+    evidence = child_state.precision - child_state.expected_precision
+    floored = jnp.maximum(evidence, 0.0)
+    tonic = child_state.effective_precision / jnp.maximum(
+        child_state.expected_precision, _EPS
+    )
+    softening = 1.0 / (1.0 + tonic * floored)
 
-    u = jnp.where(jnp.isfinite(u), u, 0.0)
-    v = jnp.where(jnp.isfinite(v), v, 0.0)
+    # Child-side gradient factor, in descent form: sign-flipped from the
+    # natural "ascent" formulation so it composes with standard optax
+    # (apply_updates performs weights + updates, and sgd(lr).update returns
+    # -lr * grad).
+    u = child_state.mean - child_state.expected_mean
+    if kind != "standard" and child_kind != "binary":
+        u = u * child_state.precision  # posterior precision
+        if kind == "synaptic_uncertainty":
+            u = u * softening
+    u = -jnp.where(jnp.isfinite(u), u, 0.0)
 
-    # Descent sign, folded into the child-side factor.
-    return -u, v
+    # Child-side importance factor. A caller advancing only the means ignores
+    # it; the two array operations below are removed with it by dead-code
+    # elimination, so gating them on a flag would buy nothing.
+    if kind == "standard":
+        p = jnp.ones_like(child_state.mean)
+    elif child_kind in ("binary", "categorical"):
+        # Clamped discrete child: the curvature of its own likelihood.
+        prob = child_state.expected_mean
+        p = prob * (1.0 - prob)
+    else:
+        # A clamped continuous layer receives no message from below, so no
+        # evidence arrives and its own precision stands in. That fallback is
+        # the uniform clamp-precision convention and carries no per-unit
+        # curvature; seeding such a layer with the true curvature of its
+        # likelihood is separate work.
+        p = jnp.where(evidence > 0.0, floored * softening, child_state.precision)
+    p = jnp.where(jnp.isfinite(p), p, 0.0)
+
+    return u, h, p
+
+
+# ------------------------------------------------------ synaptic uncertainty
+
+#: Settings of the weight-belief rule and their defaults, as
+#: ``learning_kwargs`` accepts them (see :func:`resolve_synaptic_uncertainty_settings`).
+SYNAPTIC_UNCERTAINTY_DEFAULTS: dict = {
+    "window": None,
+    "prior_variance": 1.0,
+    "prior_mean": 0.0,
+    "learning_rate": 1.0,
+    "increment_scale": 1.0,
+}
+
+
+class SynapticUncertaintySettings(NamedTuple):
+    r"""Validated settings of the weight-belief rule.
+
+    Built from a ``learning_kwargs`` dictionary by
+    :func:`resolve_synaptic_uncertainty_settings`; every field is documented there.
+    """
+
+    window: float
+    prior_variance: float
+    prior_mean: float
+    learning_rate: float
+    increment_scale: float
+    prior_precision: float
+
+
+def resolve_synaptic_uncertainty_settings(
+    learning_kwargs: Optional[dict] = None,
+) -> SynapticUncertaintySettings:
+    r"""Validate the weight-belief rule's settings and fill in the defaults.
+
+    Each weight carries a Gaussian belief: the weight itself is the belief's
+    mean and the layer's ``weights_precision_delta`` its precision above the
+    prior. One update step does two things.
+
+    **Mean.** The update is :math:`\Delta w = -\alpha g/\pi + \text{reversion}`,
+    the incoming descent gradient :math:`g` divided by the weight's precision
+    and scaled by ``learning_rate`` :math:`\alpha`, plus a pull of the mean
+    toward ``prior_mean``. At the start :math:`\pi = \pi_p` everywhere, so the
+    rule begins as plain gradient descent at rate
+    :math:`\alpha \times \texttt{prior\_variance}` and departs from it only as
+    precision accumulates.
+
+    **Precision.** The increment is the curvature the data impose on that
+    weight, delivered as the importance factors of
+    :func:`learning_weights_vectorized` or as a full increment matrix. It then
+    relaxes toward the prior in precision form,
+    :math:`\pi \leftarrow \pi + H - (\pi - \pi_p)/N` with
+    :math:`N = \texttt{window}`. The fixed point is
+    :math:`\pi^\ast = N \bar{H} + \pi_p`, linear in the evidence at every
+    scale, and the mean reversion is precision-scaled,
+    :math:`(\pi_p / (N\pi))(\mu_p - w)`, so a weight the data have pinned is
+    also pulled back more gently.
+
+    Both halves are mean-field: each weight's gradient is divided by its own
+    precision, and the joint structure across the weights feeding one child is
+    not retained.
+
+    Parameters
+    ----------
+    learning_kwargs :
+        The settings, as ``DeepNetwork.fit(learning_kwargs=...)`` takes them.
+        Recognised keys, with the defaults of :data:`SYNAPTIC_UNCERTAINTY_DEFAULTS`:
+
+        ``window``
+            The memory window :math:`N`, in update steps. Importance decays
+            toward the prior at rate :math:`1/N`, so curvature older than
+            roughly :math:`N` steps no longer protects a weight. Required,
+            and at least 1.
+        ``prior_variance``
+            Variance of the per-weight prior belief, :math:`1/\pi_p`. Also the
+            effective learning rate before any importance has accumulated, so a
+            value that trains the model well under plain gradient descent is
+            the natural setting.
+        ``prior_mean``
+            Mean the weights revert toward.
+        ``learning_rate``
+            Multiplier :math:`\alpha` on the gradient part of the mean update.
+            It exists because the rule otherwise has no step size of its own:
+            the effective rate is :math:`\alpha/\pi`, and once the accumulated
+            curvature dominates the prior the rate is pinned at
+            :math:`\alpha/(N\bar{H})`. It sets the overall scale of every step
+            but not the *ratio* between the rate before and after importance
+            accumulates, which is :math:`1 + N\bar{H}/\pi_p` and is the depth
+            of protection the rule applies. It does not scale the reversion,
+            which stays at its :math:`1/N` rate, so ``window`` keeps meaning
+            one thing only: how long importance is remembered.
+        ``increment_scale``
+            Multiplier on the importance increment. It deepens protection
+            without touching anything else: the precision reaches
+            :math:`\pi_p + c\,N\bar{H}`, so the most protected weights slow by
+            :math:`c` times more, while the step size before any importance
+            accumulates, the reversion rate and the window are unchanged. A
+            uniform scale leaves rank orderings unchanged.
+
+        The gradient the rule descends is not among them: it is fixed to
+        ``"synaptic_uncertainty"``.
+
+    Returns
+    -------
+    SynapticUncertaintySettings
+        The validated settings, with the prior precision precomputed.
+
+    Raises
+    ------
+    ValueError
+        If a key is unrecognised, ``window`` is missing or below 1, or a
+        positive quantity is not positive.
+    """
+    settings = dict(SYNAPTIC_UNCERTAINTY_DEFAULTS)
+    given = dict(learning_kwargs or {})
+    unknown = sorted(set(given) - set(SYNAPTIC_UNCERTAINTY_DEFAULTS))
+    if unknown:
+        raise ValueError(
+            "Unknown learning_kwargs for learning_kind="
+            f"'synaptic_uncertainty': {unknown}. "
+            f"Expected a subset of {sorted(SYNAPTIC_UNCERTAINTY_DEFAULTS)}."
+        )
+    settings.update(given)
+
+    if settings["window"] is None:
+        raise ValueError(
+            "learning_kind='synaptic_uncertainty' requires "
+            "learning_kwargs={'window': N, ...}: "
+            "the memory window has no default, since it sets how long "
+            "importance is remembered."
+        )
+    window = float(settings["window"])
+    if window < 1:
+        raise ValueError(f"window must be at least 1, got {window}.")
+    prior_variance = float(settings["prior_variance"])
+    if prior_variance <= 0:
+        raise ValueError(f"prior_variance must be positive, got {prior_variance}.")
+    learning_rate = float(settings["learning_rate"])
+    if learning_rate <= 0:
+        raise ValueError(f"learning_rate must be positive, got {learning_rate}.")
+    increment_scale = float(settings["increment_scale"])
+    if increment_scale <= 0:
+        raise ValueError(f"increment_scale must be positive, got {increment_scale}.")
+    return SynapticUncertaintySettings(
+        window=window,
+        prior_variance=prior_variance,
+        prior_mean=float(settings["prior_mean"]),
+        learning_rate=learning_rate,
+        increment_scale=increment_scale,
+        prior_precision=1.0 / prior_variance,
+    )
+
+
+def vectorized_synaptic_uncertainty_update(
+    weights: jnp.ndarray,
+    precision_delta: jnp.ndarray,
+    gradient: jnp.ndarray,
+    importance,
+    settings: SynapticUncertaintySettings,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    r"""One weight matrix's belief update: new mean, new accumulated precision.
+
+    The rule is stated in :func:`resolve_synaptic_uncertainty_settings`. A
+    ``LayerStack`` carries a leading slice axis on every operand, which the ellipsis
+    broadcasting here handles unchanged.
+
+    Parameters
+    ----------
+    weights :
+        The belief means, i.e. the element's ``weights_mean``.
+    precision_delta :
+        The accumulated precision above the prior, same shape.
+    gradient :
+        The descent gradient, same shape.
+    importance :
+        Either the factor pair ``(p, q)`` of
+        :func:`learning_weights_vectorized`, batch-averaged, whose outer product
+        is the increment; or a full increment matrix of the weights' shape,
+        which is the exact batch contraction the evidence pass delivers.
+    settings :
+        The resolved settings.
+
+    Returns
+    -------
+    tuple of jnp.ndarray
+        The updated weights and the updated accumulated precision.
+    """
+    prior_precision = settings.prior_precision
+    pi = jnp.maximum(precision_delta + prior_precision, _EPS)
+
+    # The mean update divides by the pre-update precision and the reversion is
+    # precision-scaled, both as in the published rule.
+    reversion = (prior_precision / (settings.window * pi)) * (
+        settings.prior_mean - weights
+    )
+    update = -settings.learning_rate * gradient / pi + reversion
+
+    if isinstance(importance, tuple):
+        # Rank-one importance increment H[a, i] = p[a] * q[i].
+        p, q = importance
+        increment = p[..., :, None] * q[..., None, :]
+    else:
+        increment = importance
+    increment = settings.increment_scale * increment
+    new_delta = precision_delta + increment - precision_delta / settings.window
+
+    return weights + update, new_delta

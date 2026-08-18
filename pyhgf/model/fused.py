@@ -61,7 +61,7 @@ class _Core(NamedTuple):
 
     init_state: Any
     forward: Callable[[Any, jnp.ndarray], tuple[jnp.ndarray, Any]]
-    backward: Callable[[Any, Any, jnp.ndarray], tuple[jnp.ndarray, Any, tuple]]
+    backward: Callable[..., tuple[jnp.ndarray, Any, tuple]]
     write_back: Callable[[Any], None]
 
 
@@ -73,7 +73,8 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
     re-running the sweep — inside one trace, the handover is free.
     """
     optimizer = part.optimizer
-    learning_kind = part.learning_kind
+    learning_kind = part.gradient_kind
+    synaptic_uncertainty_settings = part.synaptic_uncertainty_settings
     update_precisions = part.update_precisions
     time_step = part.time_step
     layer_sizes = list(part.net.layer_sizes)
@@ -108,6 +109,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             optimizer=optimizer,
             learning_kind=learning_kind,
             update_precisions=update_precisions,
+            synaptic_uncertainty_settings=synaptic_uncertainty_settings,
             time_step=time_step,
             predicted=states,
         )
@@ -287,13 +289,21 @@ def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
         cache_q, cache_k, cache_v, cache_mix, cache_o = cache
         d_ctx, new_o, report_o = o_core.backward(state_o, cache_o, error)
         d_q, d_k, d_v = _mixing_backward(cache_mix, d_ctx)
-        error_q, new_q, report_q = q_core.backward(state_q, cache_q, d_q)
-        error_k, new_k, report_k = k_core.backward(state_k, cache_k, d_k)
-        error_v, new_v, report_v = v_core.backward(state_v, cache_v, d_v)
+        # Process the three input cores; errors and reports accumulate since they
+        # share the same input.
+        qkv_results = [
+            core.backward(s, c, d)
+            for core, s, c, d in [
+                (q_core, state_q, cache_q, d_q),
+                (k_core, state_k, cache_k, d_k),
+                (v_core, state_v, cache_v, d_v),
+            ]
+        ]
+        errors, new_states, reports = zip(*qkv_results)
         return (
-            error_q + error_k + error_v,
-            (new_q, new_k, new_v, new_o),
-            report_q + report_k + report_v + report_o,
+            errors[0] + errors[1] + errors[2],
+            (*new_states, new_o),
+            report_o + reports[0] + reports[1] + reports[2],
         )
 
     def write_back(state):
@@ -366,6 +376,8 @@ def _gpt_core(part: HybridGPT, path: str) -> _Core:
             )
             reports = reports + report
         if position_core is not None:
+            # The position part sees one row per position, so it receives the
+            # batch mean of the message.
             _, new_pos, report = position_core.backward(
                 state_pos, cache_pos, embedding_error.mean(axis=0)
             )
@@ -407,7 +419,7 @@ def _core(part, path: Optional[str] = None) -> _Core:
 
 
 class FusedPipeline:
-    """Run a part tree, one compiled program per training step.
+    r"""Run a part tree, one compiled program per training step.
 
     Holds every part's mutable state (the network beliefs and weights, the optimiser
     states) as one explicit pytree, and compiles a single step function: forward walk →

@@ -32,10 +32,11 @@ from pyhgf.typing.vectorised import (
     stack_layers,
 )
 from pyhgf.updates.vectorized.learning import (
-    vectorized_weight_gradient_factors,
+    SynapticUncertaintySettings,
+    resolve_synaptic_uncertainty_settings,
 )
 from pyhgf.utils.vectorized_belief_propagation import (
-    _weight_gradients,
+    _weight_quantities,
     batch_step,
     batched_prediction_pass,
     batched_prediction_states,
@@ -503,7 +504,7 @@ class DeepNetwork:
             construction (see *volatility_coupling*) and never learned.
         value_coupling :
             Continuous layers only — base value coupling strength (defaults to
-            ``1.0``). Dense ``weights_in`` entries are ``value_coupling /
+            ``1.0``). Dense ``weights_mean`` entries are ``value_coupling /
             n_parents``, so the drift a child receives is ``value_coupling``
             times the *average* of :math:`g(\hat{\mu})` over the parent layer,
             invariant to the parent layer's width; one-to-one edges keep
@@ -875,23 +876,23 @@ class DeepNetwork:
                     param_kwargs[k] = v
             params = LayerParams.create(n_nodes=size, **param_kwargs)
 
-            # `weights_in` lives on the parent (this Layer); layer 0 has none.
+            # `weights_mean` lives on the parent (this Layer); layer 0 has none.
             if i > 0:
                 prev_size = self.layer_sizes[i - 1]
                 n_parent_cols = size + (1 if self.add_constant_inputs[i] else 0)
                 if self.fully_connected[i]:
-                    weights_in = jnp.ones((prev_size, n_parent_cols))
+                    weights_mean = jnp.ones((prev_size, n_parent_cols))
                 else:
-                    weights_in = jnp.eye(prev_size, n_parent_cols)
+                    weights_mean = jnp.eye(prev_size, n_parent_cols)
             else:
-                weights_in = None
+                weights_mean = None
 
             coupling_fn = self.coupling_fns[i]
             layers.append(
                 Layer(
                     state=state,
                     params=params,
-                    weights_in=weights_in,
+                    weights_mean=weights_mean,
                     coupling_fn=coupling_fn,
                     add_constant_input=self.add_constant_inputs[i],
                     has_volatility_parent=self.volatility_parents[i],
@@ -1001,14 +1002,14 @@ class DeepNetwork:
             params = LayerParams.create_continuous(n_nodes=size, **param_kwargs)
 
             value_child = self.value_children[i]
-            weights_in = self._fan_in_matrix(
+            weights_mean = self._fan_in_matrix(
                 child=value_child,
                 size=size,
                 strength=self.value_couplings[i],
                 dense=self.fully_connected[i],
             )
             volatility_child = self.volatility_children[i]
-            volatility_weights_in = self._fan_in_matrix(
+            volatility_weights = self._fan_in_matrix(
                 child=volatility_child,
                 size=size,
                 strength=self.volatility_couplings[i],
@@ -1019,7 +1020,7 @@ class DeepNetwork:
                 Layer(
                     state=state,
                     params=params,
-                    weights_in=weights_in,
+                    weights_mean=weights_mean,
                     coupling_fn=self.coupling_fns[i],
                     add_constant_input=False,
                     has_volatility_parent=has_vol_parent[i],
@@ -1028,7 +1029,7 @@ class DeepNetwork:
                     kind="continuous",
                     value_child_idx=value_child,
                     volatility_child_idx=volatility_child,
-                    volatility_weights_in=volatility_weights_in,
+                    volatility_weights=volatility_weights,
                 )
             )
 
@@ -1041,6 +1042,75 @@ class DeepNetwork:
             predict_precision=self.predict_precision,
             feedforward_uncertainty=self.feedforward_uncertainty,
         )
+
+    def install_weight_belief(
+        self, layers: Optional[Sequence[int]] = None
+    ) -> "DeepNetwork":
+        """Give every weight a belief, leaving any already installed untouched.
+
+        The mean of each weight's belief is the weight itself; this adds the
+        second parameter, the accumulated precision above the prior, as an
+        array of zeros beside it (see
+        :attr:`pyhgf.typing.vectorised.Layer.weights_precision_delta`). Zero
+        precision_delta is the prior belief, so a network trained from a fresh install
+        starts exactly where plain descent at the prior variance starts.
+
+        ``learning_kind="synaptic_uncertainty"`` calls this itself, so it is
+        only needed to install a belief ahead of time, or on part of a network.
+
+        Parameters
+        ----------
+        layers :
+            Which elements receive one, as indices into ``state.layers`` where
+            ``0`` is the bottom layer. ``None`` (default) covers every element
+            holding a weight matrix. The bottom layer holds none, so naming it
+            raises.
+
+        Returns
+        -------
+        DeepNetwork
+            ``self``, with the beliefs installed.
+
+        Raises
+        ------
+        ValueError
+            If the network has no layers yet, or a named element holds no
+            weight matrix.
+        """
+        if self.state is None:
+            raise ValueError(
+                "Network has no layers yet. Call add_layer(...) before "
+                "install_weight_belief()."
+            )
+        selected = None if layers is None else {int(i) for i in layers}
+        if selected is not None:
+            holding = {
+                i
+                for i, elem in enumerate(self.state.layers)
+                if elem.weights_mean is not None
+            }
+            unheld = sorted(selected - holding)
+            if unheld:
+                raise ValueError(
+                    f"layers {unheld} hold no weight matrix, so they cannot carry "
+                    f"a weight belief. Layers holding one: {sorted(holding)}."
+                )
+        elements = []
+        for index, elem in enumerate(self.state.layers):
+            if (
+                elem.weights_mean is None
+                or elem.weights_precision_delta is not None
+                or (selected is not None and index not in selected)
+            ):
+                elements.append(elem)
+                continue
+            elements.append(
+                dataclasses.replace(
+                    elem, weights_precision_delta=jnp.zeros_like(elem.weights_mean)
+                )
+            )
+        self.state = dataclasses.replace(self.state, layers=tuple(elements))
+        return self
 
     def _ensure_optimizer_state(
         self, optimizer: Optional[optax.GradientTransformation]
@@ -1133,15 +1203,15 @@ class DeepNetwork:
 
         new_elements = list(self.state.layers)
         for i, elem in enumerate(new_elements):
-            if elem.weights_in is None:
+            if elem.weights_mean is None:
                 continue
             if isinstance(elem, LayerStack):
-                # Stack has weights_in shape (N, n_child, n_parent[+1]). Use
+                # Stack has weights_mean shape (N, n_child, n_parent[+1]). Use
                 # the same seed for every slice — matches the unrolled init's
                 # "same seed across all layers" semantics (necessary for
                 # byte-parity with the unrolled path; the underlying "all
                 # layers identical at init" pattern is a separate concern).
-                n_slices, n_children, n_parents = elem.weights_in.shape
+                n_slices, n_children, n_parents = elem.weights_mean.shape
                 per_slice = _init_matrix(
                     init_fn,
                     n_children,
@@ -1154,7 +1224,7 @@ class DeepNetwork:
                     per_slice, (n_slices, n_children, n_parents)
                 )
             else:
-                n_children, n_parents = elem.weights_in.shape
+                n_children, n_parents = elem.weights_mean.shape
                 new_weights = _init_matrix(
                     init_fn,
                     n_children,
@@ -1163,10 +1233,51 @@ class DeepNetwork:
                     seed,
                     kwargs,
                 )
-            new_elements[i] = dataclasses.replace(elem, weights_in=new_weights)
+            new_elements[i] = dataclasses.replace(elem, weights_mean=new_weights)
 
         self.state = dataclasses.replace(self.state, layers=tuple(new_elements))
         return self
+
+    def _resolve_learning(
+        self, learning_kind: str, learning_kwargs: Optional[dict]
+    ) -> tuple[str, Optional[SynapticUncertaintySettings]]:
+        """Resolve a learning kind into the gradient it descends and its settings.
+
+        ``'synaptic_uncertainty'`` names both the weight-belief rule and the
+        gradient it descends, so the kind comes back unchanged either way. What
+        selecting it adds is its settings, a step size taken from the belief
+        rather than an optimiser, and the belief installed on the
+        weight-carrying elements, which this does. Every other kind is a plain
+        gradient and carries no settings.
+
+        Parameters
+        ----------
+        learning_kind :
+            The kind requested by :meth:`fit` or :meth:`batch_update`.
+        learning_kwargs :
+            Settings for the belief rule, resolved by
+            :func:`~pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`.
+            Only meaningful for ``'synaptic_uncertainty'``.
+
+        Returns
+        -------
+        tuple
+            ``(gradient_kind, settings)``, the second being ``None`` for every
+            kind but ``'synaptic_uncertainty'``.
+        """
+        if learning_kind != "synaptic_uncertainty":
+            if learning_kwargs:
+                raise ValueError(
+                    "learning_kwargs is only used by "
+                    f"learning_kind='synaptic_uncertainty', not by {learning_kind!r}."
+                )
+            return learning_kind, None
+
+        # Resolved before the belief is installed, so invalid settings raise
+        # without leaving the network half-configured.
+        settings = resolve_synaptic_uncertainty_settings(learning_kwargs)
+        self.install_weight_belief()
+        return learning_kind, settings
 
     def _require_deep_backend(self, method: str) -> None:
         """Reject deep-network entry points on a continuous network."""
@@ -1265,8 +1376,9 @@ class DeepNetwork:
         self,
         x: Union[np.ndarray, jnp.ndarray],
         y: Union[np.ndarray, jnp.ndarray],
-        optimizer: optax.GradientTransformation,
+        optimizer: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
+        learning_kwargs: Optional[dict] = None,
         record: Optional[tuple] = None,
         weight_update: bool = True,
         time_step: float = 1.0,
@@ -1288,7 +1400,7 @@ class DeepNetwork:
             ``lr="adam"`` → ``optimizer=optax.adam(1e-3)``.
         learning_kind :
             Gradient computation mode passed to
-            :func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient`:
+            :func:`~pyhgf.updates.vectorized.learning.learning_weights_vectorized`:
             ``"standard"`` or ``"precision_weighted"`` (default), both reading
             the settled beliefs, strictly local per edge.
         record :
@@ -1335,6 +1447,16 @@ class DeepNetwork:
                     f"Unknown record field(s) {invalid}. Valid: {sorted(valid_fields)}."
                 )
 
+        gradient_kind, synaptic_uncertainty_settings = self._resolve_learning(
+            learning_kind, learning_kwargs
+        )
+
+        if synaptic_uncertainty_settings is None and optimizer is None:
+            raise ValueError(
+                f"learning_kind={learning_kind!r} needs an optimizer. Pass one, "
+                "or use learning_kind='synaptic_uncertainty', whose step size "
+                "is the belief's own variance."
+            )
         self._ensure_optimizer_state(optimizer)
 
         x = jnp.asarray(x)
@@ -1344,11 +1466,12 @@ class DeepNetwork:
             (self.state, self.opt_state),
             (x, y),
             optimizer,
-            learning_kind,
+            gradient_kind,
             weight_update,
             record_tuple,
             float(time_step),
             update_precisions,
+            synaptic_uncertainty_settings,
         )
 
         if record_tuple:
@@ -1358,7 +1481,7 @@ class DeepNetwork:
             self.predictions = step_output
 
         if check_gradient_health and weight_update:
-            self._warn_if_gradients_dead(x[-1], y[-1], learning_kind)
+            self._warn_if_gradients_dead(x[-1], y[-1], gradient_kind)
 
         return self
 
@@ -1400,9 +1523,7 @@ class DeepNetwork:
         swept = update_sweep(
             prediction_sweep(self.state, jnp.asarray(x)), jnp.asarray(y)
         )
-        factors = _weight_gradients(
-            swept, learning_kind, kernel=vectorized_weight_gradient_factors
-        )
+        factors = _weight_quantities(swept, learning_kind)
         magnitudes = [
             None if f is None else float(np.abs(np.asarray(f[0])).max())
             for f in factors
@@ -1644,6 +1765,7 @@ class DeepNetwork:
         y: Union[np.ndarray, jnp.ndarray],
         optimizer: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
+        learning_kwargs: Optional[dict] = None,
         update_precisions: bool = True,
         time_step: float = 1.0,
         predicted: Optional[tuple] = None,
@@ -1709,6 +1831,10 @@ class DeepNetwork:
                 "(batch, n_features)."
             )
 
+        gradient_kind, synaptic_uncertainty_settings = self._resolve_learning(
+            learning_kind, learning_kwargs
+        )
+
         self._ensure_optimizer_state(optimizer)
 
         self.state, self.opt_state, self.input_errors = batch_step(
@@ -1717,11 +1843,12 @@ class DeepNetwork:
             x,
             y,
             optimizer=optimizer,
-            learning_kind=learning_kind,
+            learning_kind=gradient_kind,
             update_precisions=update_precisions,
             time_step=float(time_step),
             predicted=predicted,
             sample_weight=None if sample_weight is None else jnp.asarray(sample_weight),
+            synaptic_uncertainty_settings=synaptic_uncertainty_settings,
         )
         return self
 

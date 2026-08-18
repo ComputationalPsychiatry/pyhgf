@@ -112,8 +112,8 @@ def test_transplanted_feedforward_learns_like_backprop_with_biases():
     def norm_rel(a, b):
         return float(jnp.linalg.norm(a - b) / jnp.linalg.norm(b))
 
-    d_w2b = -(net.state.layers[1].weights_in - w2b) / lr  # hidden→output block
-    d_w1b = -(net.state.layers[2].weights_in - w1b) / lr  # input→hidden block
+    d_w2b = -(net.state.layers[1].weights_mean - w2b) / lr  # hidden→output block
+    d_w1b = -(net.state.layers[2].weights_mean - w1b) / lr  # input→hidden block
     assert norm_rel(d_w1b, g_w1b) < 1e-2
     assert norm_rel(d_w2b, g_w2b) < 1e-2
     # PyHGF errors are observed-minus-predicted: the negative of the loss

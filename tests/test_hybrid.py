@@ -93,8 +93,8 @@ def _parity_ff_net(d: int, h: int, w1: jnp.ndarray, w2: jnp.ndarray) -> DeepNetw
         .add_layer(size=d, add_constant_input=False, **high_precision)
     )
     elements = list(net.state.layers)
-    elements[1] = dataclasses.replace(elements[1], weights_in=w1)
-    elements[2] = dataclasses.replace(elements[2], weights_in=w2)
+    elements[1] = dataclasses.replace(elements[1], weights_mean=w1)
+    elements[2] = dataclasses.replace(elements[2], weights_mean=w2)
     net.state = dataclasses.replace(net.state, layers=tuple(elements))
     return net
 
@@ -160,8 +160,8 @@ def test_mixed_pipeline_block_matches_backprop():
         return float(jnp.linalg.norm(a - b) / jnp.linalg.norm(b))
 
     # (b) The weights moved by the batch-averaged backprop gradient.
-    d_w1 = -(ff.net.state.layers[1].weights_in - w1) / lr
-    d_w2 = -(ff.net.state.layers[2].weights_in - w2) / lr
+    d_w1 = -(ff.net.state.layers[1].weights_mean - w1) / lr
+    d_w2 = -(ff.net.state.layers[2].weights_mean - w2) / lr
     assert norm_rel(d_w1, g_w1) < 1e-2
     assert norm_rel(d_w2, g_w2) < 1e-2
     # (c) The emitted input error is the loss gradient at the input.

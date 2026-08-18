@@ -51,12 +51,12 @@ def _weights_with_bias(weight: jnp.ndarray, bias: Optional[jnp.ndarray]) -> jnp.
 
 
 def _set_weights(net: DeepNetwork, weights: dict) -> DeepNetwork:
-    """Replace ``weights_in`` on the given layer indices."""
+    """Replace ``weights_mean`` on the given layer indices."""
     if net.state is None:
         raise ValueError("Add at least one layer before setting weights.")
     elements = list(net.state.layers)
     for i, w in weights.items():
-        elements[i] = dataclasses.replace(elements[i], weights_in=jnp.asarray(w))
+        elements[i] = dataclasses.replace(elements[i], weights_mean=jnp.asarray(w))
     net.state = dataclasses.replace(net.state, layers=tuple(elements))
     return net
 

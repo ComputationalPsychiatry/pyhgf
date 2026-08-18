@@ -37,8 +37,9 @@ from pyhgf.updates.vectorized.continuous import (
     vectorized_continuous_prediction_error,
 )
 from pyhgf.updates.vectorized.learning import (
-    vectorized_weight_gradient,
-    vectorized_weight_gradient_factors,
+    SynapticUncertaintySettings,
+    learning_weights_vectorized,
+    vectorized_synaptic_uncertainty_update,
 )
 from pyhgf.updates.vectorized.volatile import (
     vectorized_layer_posterior_update,
@@ -54,19 +55,19 @@ from pyhgf.updates.vectorized.volatile import (
 
 
 def _stack_slice(stack: LayerStack, index: int):
-    """Return ``(state, params, weights_in)`` of the stack slice at ``index``.
+    """Return ``(state, params, weights_mean)`` of the stack slice at ``index``.
 
     Index ``0`` is the bottommost slice, ``-1`` the topmost.
     """
     state = jax.tree_util.tree_map(lambda x: x[index], stack.state)
     params = jax.tree_util.tree_map(lambda x: x[index], stack.params)
-    return state, params, stack.weights_in[index]
+    return state, params, stack.weights_mean[index]
 
 
 def _parent_view(elem):
     """Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a parent.
 
-    Returns ``(state, weights_in, coupling_fn, add_constant_input)``. The four pieces
+    Returns ``(state, weights_mean, coupling_fn, add_constant_input)``. The four pieces
     ``propagation_step`` needs to predict a child below.
 
     For a ``LayerStack``, the parent is the *bottommost* slice (the slice closest to the
@@ -75,7 +76,7 @@ def _parent_view(elem):
     if isinstance(elem, LayerStack):
         state, _, weights = _stack_slice(elem, 0)
         return state, weights, elem.coupling_fn, elem.add_constant_input
-    return elem.state, elem.weights_in, elem.coupling_fn, elem.add_constant_input
+    return elem.state, elem.weights_mean, elem.coupling_fn, elem.add_constant_input
 
 
 def _child_view(elem):
@@ -164,7 +165,7 @@ def _predict_stack_from_parent(
     for a ``LayerStack`` parent, those of its bottommost slice.
 
     Scan step: predict slice ``k`` from slice ``k+1`` for ``k = N-2 ... 0`` using
-    ``stack.weights_in[k+1]`` and the stack's own coupling function and bias.
+    ``stack.weights_mean[k+1]`` and the stack's own coupling function and bias.
     The scan runs in reverse so the carry threads top-to-bottom through the stack.
     """
     top_slice_state, top_slice_params, _ = _stack_slice(stack, -1)
@@ -184,13 +185,13 @@ def _predict_stack_from_parent(
 
     # xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.
     # At step k, body(parent_state, xs[k]) → predict slice k. The "parent's
-    # weights" used to predict slice k come from slice k+1 — i.e. stack.weights_in[k+1].
+    # weights" used to predict slice k come from slice k+1 — i.e. stack.weights_mean[k+1].
     # A single-slice stack yields zero-length xs: the scan runs no steps and the
     # concatenation below just wraps the top state.
     n = stack.n_layers
     xs_child_state = jax.tree_util.tree_map(lambda x: x[: n - 1], stack.state)
     xs_child_params = jax.tree_util.tree_map(lambda x: x[: n - 1], stack.params)
-    xs_parent_weights = stack.weights_in[1:]  # shape (n-1, ...)
+    xs_parent_weights = stack.weights_mean[1:]  # shape (n-1, ...)
 
     def body(parent_state_carry, k_data):
         child_state, child_params, parent_weights_k = k_data
@@ -313,7 +314,7 @@ def _posterior_pe_layer(
     new_state = vectorized_layer_posterior_update(
         layer=parent.state,
         child=child_state,
-        weights=parent.weights_in,
+        weights=parent.weights_mean,
         coupling_fn=parent.coupling_fn,
         parent_has_constant=parent.add_constant_input,
         max_posterior_precision=max_posterior_precision,
@@ -342,7 +343,7 @@ def _top_precision_only(
     r"""Update the top layer's precision from the layer below, leaving its mean clamped.
 
     The top layer holds the predictors, and its mean is read back by the weight update
-    (:func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`
+    (:func:`~pyhgf.updates.vectorized.learning.learning_weights_vectorized`
     forms the parent-side factor from ``coupling_fn(parent.mean)``). Those weights must
     be learned against the predictors that were actually supplied, so the mean stays
     pinned to ``x`` and only its precision moves.
@@ -364,8 +365,8 @@ def _top_precision_only(
     """
     # Only called for a top element that has a layer below it, so it carries an
     # incoming matrix.
-    assert parent.weights_in is not None
-    weights = parent.weights_in
+    assert parent.weights_mean is not None
+    weights = parent.weights_mean
     if parent.add_constant_input:
         weights = weights[:, :-1]
 
@@ -464,7 +465,7 @@ def _posterior_pe_stack(
     _, new_full_state = jax.lax.scan(
         body,
         init=child_state_init,
-        xs=(stack.state, stack.params, stack.weights_in),
+        xs=(stack.state, stack.params, stack.weights_mean),
     )
     return dataclasses.replace(stack, state=new_full_state)
 
@@ -502,26 +503,26 @@ def _bottomup_posterior_pe(
 # ---------------------------------------------------------------------------
 
 
-def _layer_weight_op(kernel, parent: Layer, child_elem, learning_kind: str):
-    """Apply a per-layer weight kernel to a ``Layer`` parent and its child."""
+def _layer_weight_op(parent: Layer, child_elem, learning_kind: str):
+    """Learning factors for a ``Layer`` parent and its child."""
     child_state, child_kind, _ = _child_view(child_elem)
-    return kernel(
+    return learning_weights_vectorized(
         parent_state=parent.state,
         child_state=child_state,
         coupling_fn=parent.coupling_fn,
         kind=learning_kind,
         parent_has_constant=parent.add_constant_input,
-        child_is_binary=(child_kind == "binary"),
+        child_kind=child_kind,
     )
 
 
-def _stack_weight_op(kernel, stack: LayerStack, child_elem, learning_kind: str):
-    """Apply a per-layer weight kernel to every slice of a ``LayerStack``.
+def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str):
+    """Learning factors for every slice of a ``LayerStack``.
 
     The child of slice 0 is the layer below the stack (``child_elem``); the child of
     slice k>0 is slice k-1 within the stack. Pre-pend the external child's state to the
     stack's slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child slots, then
-    ``vmap`` the kernel over the N parent slices (``stack.state``) and the child slots.
+    ``vmap`` over the N parent slices (``stack.state``) and the child slots.
     """
     child_state, _, _ = _child_view(child_elem)
     child_state = _match_child_vol_structure(child_state, stack.has_volatility_parent)
@@ -533,23 +534,23 @@ def _stack_weight_op(kernel, stack: LayerStack, child_elem, learning_kind: str):
     )
 
     def per_slice(parent_state, child_state_for_slice):
-        return kernel(
+        return learning_weights_vectorized(
             parent_state=parent_state,
             child_state=child_state_for_slice,
             coupling_fn=stack.coupling_fn,
             kind=learning_kind,
             parent_has_constant=stack.add_constant_input,
-            child_is_binary=False,
+            child_kind="continuous",
         )
 
     return jax.vmap(per_slice)(stack.state, child_states)
 
 
-def _weight_op(kernel, parent_elem, child_elem, learning_kind: str):
-    """Dispatch a per-layer weight kernel on ``Layer`` vs ``LayerStack``."""
+def _weight_op(parent_elem, child_elem, learning_kind: str):
+    """Dispatch the learning factors on ``Layer`` vs ``LayerStack``."""
     if isinstance(parent_elem, LayerStack):
-        return _stack_weight_op(kernel, parent_elem, child_elem, learning_kind)
-    return _layer_weight_op(kernel, parent_elem, child_elem, learning_kind)
+        return _stack_weight_op(parent_elem, child_elem, learning_kind)
+    return _layer_weight_op(parent_elem, child_elem, learning_kind)
 
 
 # ---------------------------------------------------------------------------
@@ -632,10 +633,11 @@ def propagation_step(
     opt_state: optax.OptState,
     inputs: tuple,
     *,
-    optimizer: optax.GradientTransformation,
+    optimizer: Optional[optax.GradientTransformation],
     time_step: float = 1.0,
     learning_kind: str = "precision_weighted",
     weight_update: bool = True,
+    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
 ) -> tuple[tuple[Network, optax.OptState], jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -665,7 +667,7 @@ def propagation_step(
         The time elapsed since the previous step.
     learning_kind :
         The weight-gradient mode passed to
-        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.
+        :py:func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.
     weight_update :
         Whether to apply the weight-learning phase after belief propagation.
 
@@ -687,7 +689,7 @@ def propagation_step(
     # Optional weight-learning phase.
     if weight_update:
         new_network, new_opt_state = _learn_sweep(
-            swept, opt_state, optimizer, learning_kind
+            swept, opt_state, optimizer, learning_kind, synaptic_uncertainty_settings
         )
     else:
         new_network, new_opt_state = swept, opt_state
@@ -705,12 +707,13 @@ def propagation_step(
 def run_scan(
     init_carry: tuple,
     inputs: tuple,
-    optimizer: optax.GradientTransformation,
+    optimizer: Optional[optax.GradientTransformation],
     learning_kind: str,
     weight_update: bool,
     record: tuple,
     time_step: float = 1.0,
     update_precisions: bool = True,
+    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
 ) -> tuple:
     r"""Run ``jax.lax.scan`` over the belief-propagation step.
 
@@ -729,7 +732,7 @@ def run_scan(
         The optax optimiser used for the weight-learning phase.
     learning_kind :
         The weight-gradient mode passed to
-        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.
+        :py:func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.
     weight_update :
         Whether to apply the weight-learning phase at every step.
     record :
@@ -762,6 +765,7 @@ def run_scan(
             time_step=time_step,
             learning_kind=learning_kind,
             weight_update=weight_update,
+            synaptic_uncertainty_settings=synaptic_uncertainty_settings,
         )
         if not update_precisions:
             # Static-cascade mode: precisions are parameters, not filter state. Note
@@ -932,14 +936,14 @@ def _input_prediction_error(network: Network) -> jnp.ndarray:
     top = network.layers[-1]
     if isinstance(top, LayerStack):
         raise NotImplementedError("Top of network must be a Layer, not a LayerStack.")
-    if top.weights_in is None:
+    if top.weights_mean is None:
         raise ValueError(
             "The network has a single layer: there is no layer below the "
             "input layer to route an error from."
         )
     child_state, _, _ = _child_view(network.layers[-2])
 
-    weights = top.weights_in
+    weights = top.weights_mean
     if top.add_constant_input:
         # The bias column connects the constant node, not a real input.
         weights = weights[:, :-1]
@@ -970,24 +974,42 @@ def input_prediction_error(network: Network) -> jnp.ndarray:
     return _input_prediction_error(network)
 
 
-def _weight_gradients(
-    network: Network, learning_kind: str, kernel=vectorized_weight_gradient
-) -> tuple:
-    """Per-element weight gradients, without applying them.
+def _weight_quantities(network: Network, learning_kind: str) -> tuple:
+    """Per-element weight-learning factors, without applying them.
 
     Must run *after* :func:`_update_sweep`, so the per-layer states already carry their
     prediction errors / posteriors. Returns one entry per element, matched 1:1 to
     ``network.layers`` (``None`` for the bottom element, which has no incoming
-    weights). With the default kernel each entry is a gradient in descent form
-    (same shape as the element's ``weights_in``), ready for optax; with
-    :func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`
-    each entry is the rank-one factor pair ``(u, v)``.
+    weights); each entry is the factor tuple of
+    :func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.
+    Assemble them with :func:`_gradient_matrix` and :func:`_importance_pair`.
     """
     elements = network.layers
     return (None,) + tuple(
-        _weight_op(kernel, elements[i], elements[i - 1], learning_kind)
+        _weight_op(elements[i], elements[i - 1], learning_kind)
         for i in range(1, len(elements))
     )
+
+
+def _gradient_matrix(factors) -> Optional[jnp.ndarray]:
+    """Assemble the descent gradient from one element's factors."""
+    if factors is None:
+        return None
+    u, h = factors[0], factors[1]
+    return u[..., :, None] * h[..., None, :]
+
+
+def _importance_pair(factors) -> Optional[tuple]:
+    """Build the importance factor pair ``(p, h**2)`` from one element's factors.
+
+    The parent side is squared here rather than at the source, since both quantities
+    read the same activation. Squaring can overflow a finite activation, so the non-
+    finite guard is applied after it, matching the child side.
+    """
+    if factors is None:
+        return None
+    squared = factors[1] ** 2
+    return factors[2], jnp.where(jnp.isfinite(squared), squared, 0.0)
 
 
 def _apply_weight_updates(
@@ -996,32 +1018,105 @@ def _apply_weight_updates(
     opt_state: optax.OptState,
     optimizer: optax.GradientTransformation,
 ) -> tuple[Network, optax.OptState]:
-    """One optimiser step on every ``weights_in``, from precomputed gradients."""
+    """One optimiser step on every ``weights_mean``, from precomputed gradients."""
     elements = list(network.layers)
-    weights = tuple(elem.weights_in for elem in elements)
+    weights = tuple(elem.weights_mean for elem in elements)
 
     updates, new_opt_state = optimizer.update(grads, opt_state, weights)
     new_weights = optax.apply_updates(weights, updates)
     for i, new_w in enumerate(new_weights):
         if new_w is not None:
-            elements[i] = dataclasses.replace(elements[i], weights_in=new_w)
+            elements[i] = dataclasses.replace(elements[i], weights_mean=new_w)
 
     return dataclasses.replace(network, layers=tuple(elements)), new_opt_state
+
+
+def _apply_synaptic_uncertainty_updates(
+    network: Network,
+    grads: tuple,
+    importance: tuple,
+    settings: SynapticUncertaintySettings,
+) -> Network:
+    """Advance every weight belief one step, mean and precision together.
+
+    The rule needs no optimiser: the step size is the belief's own variance
+    (see
+    :func:`pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`),
+    so the update is applied here and both the mean (``weights_mean``) and the
+    accumulated precision (``weights_precision_delta``) are written back to
+    the element that carries them.
+
+    Parameters
+    ----------
+    network :
+        The network whose beliefs are advanced.
+    grads :
+        One descent gradient per element, ``None`` for the bottom element.
+    importance :
+        One importance entry per element, aligned with ``grads``.
+    settings :
+        The resolved settings of the rule.
+
+    Returns
+    -------
+    Network
+        The network with updated weights and precisions.
+
+    Raises
+    ------
+    ValueError
+        If an element holding weights carries no belief, which means the
+        install step was skipped.
+    """
+    elements = list(network.layers)
+    for i, elem in enumerate(elements):
+        if elem.weights_mean is None or grads[i] is None:
+            continue
+        if elem.weights_precision_delta is None:
+            raise ValueError(
+                f"layers[{i}] holds weights but no weight belief. Install one "
+                "with add_layer(weight_belief=True), or let "
+                "learning_kind='synaptic_uncertainty' install it."
+            )
+        new_weights, new_delta = vectorized_synaptic_uncertainty_update(
+            elem.weights_mean,
+            elem.weights_precision_delta,
+            grads[i],
+            importance[i],
+            settings,
+        )
+        elements[i] = dataclasses.replace(
+            elem, weights_mean=new_weights, weights_precision_delta=new_delta
+        )
+    return dataclasses.replace(network, layers=tuple(elements))
 
 
 def _learn_sweep(
     network: Network,
     opt_state: optax.OptState,
-    optimizer: optax.GradientTransformation,
+    optimizer: Optional[optax.GradientTransformation],
     learning_kind: str = "precision_weighted",
+    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
 ) -> tuple[Network, optax.OptState]:
-    """Weight-learning phase: prediction-error-driven gradients + an optimiser step.
+    """Weight-learning phase: prediction-error-driven gradients, then one step.
 
     Mirrors the weight-update block of :func:`propagation_step`. Must run *after*
     :func:`_update_sweep`, so the per-layer states already carry their prediction errors
-    / posteriors. Updates ``weights_in`` on every element that has them.
+    / posteriors. Updates ``weights_mean`` on every element that has them.
+
+    With ``synaptic_uncertainty_settings`` the weight-belief rule runs instead
+    of the optimiser: the gradients are formed from ``learning_kind`` as usual,
+    the importance increments alongside them, and both the means and the
+    precisions advance. The optimiser state is returned unchanged, since the
+    rule carries none.
     """
-    grads = _weight_gradients(network, learning_kind)
+    factors = _weight_quantities(network, learning_kind)
+    grads = tuple(_gradient_matrix(f) for f in factors)
+    if synaptic_uncertainty_settings is not None:
+        importance = tuple(_importance_pair(f) for f in factors)
+        return _apply_synaptic_uncertainty_updates(
+            network, grads, importance, synaptic_uncertainty_settings
+        ), opt_state
     return _apply_weight_updates(network, grads, opt_state, optimizer)
 
 
@@ -1029,14 +1124,17 @@ def _learn_sweep(
 def learn_sweep(
     network: Network,
     opt_state: optax.OptState,
-    optimizer: optax.GradientTransformation,
+    optimizer: Optional[optax.GradientTransformation],
     learning_kind: str,
+    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
 ) -> tuple[Network, optax.OptState]:
     """JIT-compiled weight-learning phase.
 
     See :func:`_learn_sweep`.
     """
-    return _learn_sweep(network, opt_state, optimizer, learning_kind)
+    return _learn_sweep(
+        network, opt_state, optimizer, learning_kind, synaptic_uncertainty_settings
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1138,7 +1236,7 @@ def sample_step(
         ``(n_output_features,)``.
     learning_kind :
         Weight-gradient mode, as in
-        :func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.
+        :func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.
     time_step :
         Inference time step for the prediction sweep.
 
@@ -1161,7 +1259,7 @@ def sample_step(
     )
     return (
         _input_prediction_error(updated),
-        _weight_gradients(updated, learning_kind),
+        tuple(_gradient_matrix(f) for f in _weight_quantities(updated, learning_kind)),
         _precision_increments(network, updated),
     )
 
@@ -1177,6 +1275,7 @@ def _batch_step(
     time_step: float = 1.0,
     predicted: Optional[tuple] = None,
     sample_weight: Optional[jnp.ndarray] = None,
+    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
 ) -> tuple[Network, Optional[optax.OptState], jnp.ndarray]:
     """One batch-synchronous learning step over many samples at once.
 
@@ -1234,6 +1333,13 @@ def _batch_step(
         element). When given, the internal prediction sweep is skipped and
         the update starts from these states — the forward pass a caller has
         already run is not repeated. ``x`` is ignored in that case.
+    synaptic_uncertainty_settings :
+        When given, the weight-belief rule runs in place of ``optimizer``:
+        each element's mean and accumulated precision advance together and
+        the optimiser state is left untouched (see
+        :func:`pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`
+        ).
+        ``learning_kind`` still selects the gradient the rule descends.
 
     Returns
     -------
@@ -1257,10 +1363,8 @@ def _batch_step(
     def finish_sample(swept: Network, yi):
         updated = _update_sweep(swept, yi, time_step=time_step)
         factors = None
-        if optimizer is not None:
-            factors = _weight_gradients(
-                updated, learning_kind, kernel=vectorized_weight_gradient_factors
-            )
+        if optimizer is not None or synaptic_uncertainty_settings is not None:
+            factors = _weight_quantities(updated, learning_kind)
         return (
             _input_prediction_error(updated),
             _precision_increments(network, updated),
@@ -1291,11 +1395,22 @@ def _batch_step(
         input_errors, increments, factors = jax.vmap(per_sample_predicted)(predicted, y)
 
     new_network = network
-    if optimizer is not None:
-        mean_grads = tuple(_contract_factors(f, sample_weight) for f in factors)
-        new_network, opt_state = _apply_weight_updates(
-            new_network, mean_grads, opt_state, optimizer
+    if optimizer is not None or synaptic_uncertainty_settings is not None:
+        mean_grads = tuple(
+            None if f is None else _contract_factors((f[0], f[1]), sample_weight)
+            for f in factors
         )
+        if synaptic_uncertainty_settings is not None:
+            importance = tuple(
+                _reduce_importance(_importance_pair(f), sample_weight) for f in factors
+            )
+            new_network = _apply_synaptic_uncertainty_updates(
+                new_network, mean_grads, importance, synaptic_uncertainty_settings
+            )
+        else:
+            new_network, opt_state = _apply_weight_updates(
+                new_network, mean_grads, opt_state, optimizer
+            )
 
     if update_precisions:
         if sample_weight is None:
@@ -1315,6 +1430,33 @@ def _batch_step(
 # Compiled entry point. The unjitted ``_batch_step`` is importable so a larger
 # compiled program (e.g. a fused pipeline step) can inline it.
 batch_step = eqx.filter_jit(_batch_step)
+
+
+def _reduce_importance(imp_factors, sample_weight=None) -> Optional[tuple]:
+    """Batch-mean importance factors from stacked per-sample factors.
+
+    ``imp_factors`` is ``None`` for the bottom element, or a ``(p, q)`` pair with a
+    leading batch axis (see :func:`_importance_pair`). Each side is averaged over the
+    batch separately. For a continuous child the child-side factor is identical across
+    the batch (every sample sweeps from the same state template, and the conditional
+    predicted precision is built from carried precisions and volatility states, not from
+    the sample's values), and a binary child contributes ones, so the outer product of
+    the two means equals the mean of the per-sample outer products.
+
+    ``sample_weight`` follows the semantics of :func:`_contract_factors`: a weighted
+    mean whose denominator is the weight the batch actually carries, so padded rows do
+    not dilute the increment.
+    """
+    if imp_factors is None:
+        return None
+    p, q = imp_factors
+    if sample_weight is None:
+        return p.mean(axis=0), q.mean(axis=0)
+    denominator = jnp.maximum(sample_weight.sum(), 1.0)
+    return (
+        jnp.tensordot(sample_weight, p, axes=(0, 0)) / denominator,
+        jnp.tensordot(sample_weight, q, axes=(0, 0)) / denominator,
+    )
 
 
 def _contract_factors(factors, sample_weight=None) -> Optional[jnp.ndarray]:
@@ -1497,11 +1639,11 @@ def _continuous_prediction_sweep(
             params=elem.params,
             time_step=time_step,
             value_parent_state=None if vp is None else elements[vp].state,
-            weights=None if vp is None else elements[vp].weights_in,
+            weights=None if vp is None else elements[vp].weights_mean,
             coupling_fn=None if vp is None else elements[vp].coupling_fn,
             volatility_parent_state=(None if vlp is None else elements[vlp].state),
             volatility_weights=(
-                None if vlp is None else elements[vlp].volatility_weights_in
+                None if vlp is None else elements[vlp].volatility_weights
             ),
             is_static_leaf=elem.is_input_layer and vlp is None,
         )
@@ -1544,7 +1686,7 @@ def _continuous_update_sweep(
             child_elem = elements[elem.value_child_idx]
             value_child = ValueChild(
                 state=child_elem.state,
-                weights=elem.weights_in,
+                weights=elem.weights_mean,
                 coupling_fn=elem.coupling_fn,
                 # Only layer 0 is clamped, and the update loop below skips it,
                 # so its posterior precision is the one that never moves.
@@ -1556,7 +1698,7 @@ def _continuous_update_sweep(
             child_elem = elements[elem.volatility_child_idx]
             volatility_child = VolatilityChild(
                 state=child_elem.state,
-                kappa=elem.volatility_weights_in,
+                kappa=elem.volatility_weights,
                 params=child_elem.params,
             )
 
