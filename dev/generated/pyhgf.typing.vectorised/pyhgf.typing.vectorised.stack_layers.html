@@ -540,8 +540,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error.html">pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.learning_weights_vectorized.html">pyhgf.updates.vectorized.learning.learning_weights_vectorized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.resolve_mesu_settings.html">pyhgf.updates.vectorized.learning.resolve_mesu_settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_mesu_update.html">pyhgf.updates.vectorized.learning.vectorized_mesu_update</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
@@ -739,7 +740,7 @@
 <span class="sig-prename descclassname"><span class="pre">pyhgf.typing.vectorised.</span></span><span class="sig-name descname"><span class="pre">stack_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/typing/vectorised.html#stack_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.typing.vectorised.stack_layers" title="Link to this definition">#</a></dt>
 <dd><p>Combine N identical <code class="docutils literal notranslate"><span class="pre">Layer</span></code> instances into a single <code class="docutils literal notranslate"><span class="pre">LayerStack</span></code>.</p>
 <p>All <code class="docutils literal notranslate"><span class="pre">Layer``s</span> <span class="pre">must</span> <span class="pre">share</span> <span class="pre">static-field</span> <span class="pre">values</span> <span class="pre">(kind,</span> <span class="pre">coupling_fn,</span>
-<span class="pre">add_constant_input,</span> <span class="pre">has_volatility_parent,</span> <span class="pre">fully_connected)</span> <span class="pre">and</span> <span class="pre">have</span> <span class="pre">``weights_in</span></code>
+<span class="pre">add_constant_input,</span> <span class="pre">has_volatility_parent,</span> <span class="pre">fully_connected)</span> <span class="pre">and</span> <span class="pre">have</span> <span class="pre">``weights_mean</span></code>
 of identical shape. Static fields are taken from the first layer; arrays are stacked
 along a new axis 0.</p>
 <dl class="field-list simple">

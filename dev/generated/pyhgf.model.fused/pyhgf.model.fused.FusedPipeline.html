@@ -540,8 +540,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error.html">pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.learning_weights_vectorized.html">pyhgf.updates.vectorized.learning.learning_weights_vectorized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.resolve_mesu_settings.html">pyhgf.updates.vectorized.learning.resolve_mesu_settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_mesu_update.html">pyhgf.updates.vectorized.learning.vectorized_mesu_update</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
@@ -794,13 +795,16 @@ head trained on integer targets. Must be a pure function of arrays.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.fused.FusedPipeline.__init__" title="pyhgf.model.fused.FusedPipeline.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(part[, error_fn, error_normalisation])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">evidence_pass</span></code>(x, xi)</p></td>
+<td><p>Per-weight importance increments from one evidence sweep.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge</span></code>()</p></td>
 <td><p>Write the held state back onto the wrapped parts; return the tree.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code>(x)</p></td>
 <td><p>Run the forward pass only — no error, no learning, no state change.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code>(x, target)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">step</span></code>(x, target)</p></td>
 <td><p>Advance the held state by one training step, in one compiled call.</p></td>
 </tr>
 </tbody>

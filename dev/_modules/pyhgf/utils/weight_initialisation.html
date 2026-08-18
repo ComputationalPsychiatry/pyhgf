@@ -996,7 +996,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Draw one ``weights_in`` matrix, keeping the bias column out of the statistics.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Draw one ``weights_mean`` matrix, keeping the bias column out of the statistics.</span>
 
 <span class="sd">    The bias column is not a connection to a parent, so it takes no part in either</span>
 <span class="sd">    half of an initialisation scheme. It is **excluded from the fan-in** and **initialised</span>

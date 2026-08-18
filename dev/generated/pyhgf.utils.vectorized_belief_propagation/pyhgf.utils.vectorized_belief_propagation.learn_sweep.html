@@ -540,8 +540,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error.html">pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.learning_weights_vectorized.html">pyhgf.updates.vectorized.learning.learning_weights_vectorized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.resolve_mesu_settings.html">pyhgf.updates.vectorized.learning.resolve_mesu_settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_mesu_update.html">pyhgf.updates.vectorized.learning.vectorized_mesu_update</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
@@ -736,7 +737,7 @@
 <h1>pyhgf.utils.vectorized_belief_propagation.learn_sweep<a class="headerlink" href="#pyhgf-utils-vectorized-belief-propagation-learn-sweep" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyhgf.utils.vectorized_belief_propagation.learn_sweep">
-<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">learn_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_kind</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/vectorized_belief_propagation.html#learn_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.learn_sweep" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyhgf.utils.vectorized_belief_propagation.</span></span><span class="sig-name descname"><span class="pre">learn_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesu_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/utils/vectorized_belief_propagation.html#learn_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.utils.vectorized_belief_propagation.learn_sweep" title="Link to this definition">#</a></dt>
 <dd><p>JIT-compiled weight-learning phase.</p>
 <p>See <code class="xref py py-func docutils literal notranslate"><span class="pre">_learn_sweep()</span></code>.</p>
 <dl class="field-list simple">
@@ -744,8 +745,9 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>network</strong> (<a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><em>Network</em></a>)</p></li>
 <li><p><strong>opt_state</strong> (<em>optax.OptState</em>)</p></li>
-<li><p><strong>optimizer</strong> (<em>optax.GradientTransformation</em>)</p></li>
+<li><p><strong>optimizer</strong> (<em>Optional</em><em>[</em><em>optax.GradientTransformation</em><em>]</em>)</p></li>
 <li><p><strong>learning_kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>mesu_settings</strong> (<em>Optional</em><em>[</em><em>MesuSettings</em><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>

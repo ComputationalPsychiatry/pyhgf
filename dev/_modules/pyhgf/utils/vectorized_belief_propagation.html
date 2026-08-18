@@ -831,9 +831,17 @@ window.runMermaid = runMermaid;</script>
     <span class="n">vectorized_categorical_prediction</span><span class="p">,</span>
     <span class="n">vectorized_categorical_prediction_error</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.continuous</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ValueChild</span><span class="p">,</span>
+    <span class="n">VolatilityChild</span><span class="p">,</span>
+    <span class="n">vectorized_continuous_posterior_update</span><span class="p">,</span>
+    <span class="n">vectorized_continuous_prediction</span><span class="p">,</span>
+    <span class="n">vectorized_continuous_prediction_error</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">vectorized_weight_gradient</span><span class="p">,</span>
-    <span class="n">vectorized_weight_gradient_factors</span><span class="p">,</span>
+    <span class="n">MesuSettings</span><span class="p">,</span>
+    <span class="n">learning_weights_vectorized</span><span class="p">,</span>
+    <span class="n">vectorized_mesu_update</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.volatile</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">vectorized_layer_posterior_update</span><span class="p">,</span>
@@ -849,19 +857,19 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_stack_slice</span><span class="p">(</span><span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ``(state, params, weights_in)`` of the stack slice at ``index``.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ``(state, params, weights_mean)`` of the stack slice at ``index``.</span>
 
 <span class="sd">    Index ``0`` is the bottommost slice, ``-1`` the topmost.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
     <span class="n">params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_parent_view</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a parent.</span>
 
-<span class="sd">    Returns ``(state, weights_in, coupling_fn, add_constant_input)``. The four pieces</span>
+<span class="sd">    Returns ``(state, weights_mean, coupling_fn, add_constant_input)``. The four pieces</span>
 <span class="sd">    ``propagation_step`` needs to predict a child below.</span>
 
 <span class="sd">    For a ``LayerStack``, the parent is the *bottommost* slice (the slice closest to the</span>
@@ -870,7 +878,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
         <span class="n">state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">_stack_slice</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">add_constant_input</span>
-    <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">add_constant_input</span>
+    <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">add_constant_input</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_child_view</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
@@ -959,7 +967,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    for a ``LayerStack`` parent, those of its bottommost slice.</span>
 
 <span class="sd">    Scan step: predict slice ``k`` from slice ``k+1`` for ``k = N-2 ... 0`` using</span>
-<span class="sd">    ``stack.weights_in[k+1]`` and the stack&#39;s own coupling function and bias.</span>
+<span class="sd">    ``stack.weights_mean[k+1]`` and the stack&#39;s own coupling function and bias.</span>
 <span class="sd">    The scan runs in reverse so the carry threads top-to-bottom through the stack.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">top_slice_state</span><span class="p">,</span> <span class="n">top_slice_params</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_stack_slice</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -979,13 +987,13 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.</span>
     <span class="c1"># At step k, body(parent_state, xs[k]) → predict slice k. The &quot;parent&#39;s</span>
-    <span class="c1"># weights&quot; used to predict slice k come from slice k+1 — i.e. stack.weights_in[k+1].</span>
+    <span class="c1"># weights&quot; used to predict slice k come from slice k+1 — i.e. stack.weights_mean[k+1].</span>
     <span class="c1"># A single-slice stack yields zero-length xs: the scan runs no steps and the</span>
     <span class="c1"># concatenation below just wraps the top state.</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">n_layers</span>
     <span class="n">xs_child_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
     <span class="n">xs_child_params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[:</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
-    <span class="n">xs_parent_weights</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># shape (n-1, ...)</span>
+    <span class="n">xs_parent_weights</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># shape (n-1, ...)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">parent_state_carry</span><span class="p">,</span> <span class="n">k_data</span><span class="p">):</span>
         <span class="n">child_state</span><span class="p">,</span> <span class="n">child_params</span><span class="p">,</span> <span class="n">parent_weights_k</span> <span class="o">=</span> <span class="n">k_data</span>
@@ -1108,7 +1116,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_layer_posterior_update</span><span class="p">(</span>
         <span class="n">layer</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
         <span class="n">child</span><span class="o">=</span><span class="n">child_state</span><span class="p">,</span>
-        <span class="n">weights</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">weights_in</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
         <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
@@ -1137,7 +1145,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the top layer&#39;s precision from the layer below, leaving its mean clamped.</span>
 
 <span class="sd">    The top layer holds the predictors, and its mean is read back by the weight update</span>
-<span class="sd">    (:func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`</span>
+<span class="sd">    (:func:`~pyhgf.updates.vectorized.learning.learning_weights_vectorized`</span>
 <span class="sd">    forms the parent-side factor from ``coupling_fn(parent.mean)``). Those weights must</span>
 <span class="sd">    be learned against the predictors that were actually supplied, so the mean stays</span>
 <span class="sd">    pinned to ``x`` and only its precision moves.</span>
@@ -1159,8 +1167,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Only called for a top element that has a layer below it, so it carries an</span>
     <span class="c1"># incoming matrix.</span>
-    <span class="k">assert</span> <span class="n">parent</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">weights_in</span>
+    <span class="k">assert</span> <span class="n">parent</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">weights_mean</span>
     <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">:</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
@@ -1259,7 +1267,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">_</span><span class="p">,</span> <span class="n">new_full_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
         <span class="n">body</span><span class="p">,</span>
         <span class="n">init</span><span class="o">=</span><span class="n">child_state_init</span><span class="p">,</span>
-        <span class="n">xs</span><span class="o">=</span><span class="p">(</span><span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_in</span><span class="p">),</span>
+        <span class="n">xs</span><span class="o">=</span><span class="p">(</span><span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_full_state</span><span class="p">)</span>
 
@@ -1297,26 +1305,26 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_layer_weight_op</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a per-layer weight kernel to a ``Layer`` parent and its child.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_layer_weight_op</span><span class="p">(</span><span class="n">parent</span><span class="p">:</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning factors for a ``Layer`` parent and its child.&quot;&quot;&quot;</span>
     <span class="n">child_state</span><span class="p">,</span> <span class="n">child_kind</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span>
+    <span class="k">return</span> <span class="n">learning_weights_vectorized</span><span class="p">(</span>
         <span class="n">parent_state</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
         <span class="n">child_state</span><span class="o">=</span><span class="n">child_state</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
         <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
-        <span class="n">child_is_binary</span><span class="o">=</span><span class="p">(</span><span class="n">child_kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">),</span>
+        <span class="n">child_kind</span><span class="o">=</span><span class="n">child_kind</span><span class="p">,</span>
     <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_stack_weight_op</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a per-layer weight kernel to every slice of a ``LayerStack``.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_stack_weight_op</span><span class="p">(</span><span class="n">stack</span><span class="p">:</span> <span class="n">LayerStack</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning factors for every slice of a ``LayerStack``.</span>
 
 <span class="sd">    The child of slice 0 is the layer below the stack (``child_elem``); the child of</span>
 <span class="sd">    slice k&gt;0 is slice k-1 within the stack. Pre-pend the external child&#39;s state to the</span>
 <span class="sd">    stack&#39;s slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child slots, then</span>
-<span class="sd">    ``vmap`` the kernel over the N parent slices (``stack.state``) and the child slots.</span>
+<span class="sd">    ``vmap`` over the N parent slices (``stack.state``) and the child slots.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">child_elem</span><span class="p">)</span>
     <span class="n">child_state</span> <span class="o">=</span> <span class="n">_match_child_vol_structure</span><span class="p">(</span><span class="n">child_state</span><span class="p">,</span> <span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">)</span>
@@ -1328,23 +1336,23 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">per_slice</span><span class="p">(</span><span class="n">parent_state</span><span class="p">,</span> <span class="n">child_state_for_slice</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">learning_weights_vectorized</span><span class="p">(</span>
             <span class="n">parent_state</span><span class="o">=</span><span class="n">parent_state</span><span class="p">,</span>
             <span class="n">child_state</span><span class="o">=</span><span class="n">child_state_for_slice</span><span class="p">,</span>
             <span class="n">coupling_fn</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
             <span class="n">kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
             <span class="n">parent_has_constant</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
-            <span class="n">child_is_binary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">child_kind</span><span class="o">=</span><span class="s2">&quot;continuous&quot;</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">per_slice</span><span class="p">)(</span><span class="n">stack</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">child_states</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_weight_op</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch a per-layer weight kernel on ``Layer`` vs ``LayerStack``.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_weight_op</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch the learning factors on ``Layer`` vs ``LayerStack``.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_stack_weight_op</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_layer_weight_op</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_stack_weight_op</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_layer_weight_op</span><span class="p">(</span><span class="n">parent_elem</span><span class="p">,</span> <span class="n">child_elem</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -1429,10 +1437,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">],</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
     <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">mesu_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MesuSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Single propagation step through the network.</span>
 
@@ -1462,7 +1471,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The time elapsed since the previous step.</span>
 <span class="sd">    learning_kind :</span>
 <span class="sd">        The weight-gradient mode passed to</span>
-<span class="sd">        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.</span>
+<span class="sd">        :py:func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.</span>
 <span class="sd">    weight_update :</span>
 <span class="sd">        Whether to apply the weight-learning phase after belief propagation.</span>
 
@@ -1484,7 +1493,7 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># Optional weight-learning phase.</span>
     <span class="k">if</span> <span class="n">weight_update</span><span class="p">:</span>
         <span class="n">new_network</span><span class="p">,</span> <span class="n">new_opt_state</span> <span class="o">=</span> <span class="n">_learn_sweep</span><span class="p">(</span>
-            <span class="n">swept</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span>
+            <span class="n">swept</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">mesu_settings</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">new_network</span><span class="p">,</span> <span class="n">new_opt_state</span> <span class="o">=</span> <span class="n">swept</span><span class="p">,</span> <span class="n">opt_state</span>
@@ -1505,12 +1514,13 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_scan</span><span class="p">(</span>
     <span class="n">init_carry</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">],</span>
     <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">record</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">mesu_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MesuSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run ``jax.lax.scan`` over the belief-propagation step.</span>
 
@@ -1529,7 +1539,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The optax optimiser used for the weight-learning phase.</span>
 <span class="sd">    learning_kind :</span>
 <span class="sd">        The weight-gradient mode passed to</span>
-<span class="sd">        :py:func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.</span>
+<span class="sd">        :py:func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.</span>
 <span class="sd">    weight_update :</span>
 <span class="sd">        Whether to apply the weight-learning phase at every step.</span>
 <span class="sd">    record :</span>
@@ -1562,6 +1572,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
             <span class="n">weight_update</span><span class="o">=</span><span class="n">weight_update</span><span class="p">,</span>
+            <span class="n">mesu_settings</span><span class="o">=</span><span class="n">mesu_settings</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">update_precisions</span><span class="p">:</span>
             <span class="c1"># Static-cascade mode: precisions are parameters, not filter state. Note</span>
@@ -1739,14 +1750,14 @@ window.runMermaid = runMermaid;</script>
     <span class="n">top</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Top of network must be a Layer, not a LayerStack.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">top</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">top</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;The network has a single layer: there is no layer below the &quot;</span>
             <span class="s2">&quot;input layer to route an error from.&quot;</span>
         <span class="p">)</span>
     <span class="n">child_state</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_child_view</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
 
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">top</span><span class="o">.</span><span class="n">weights_in</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">top</span><span class="o">.</span><span class="n">weights_mean</span>
     <span class="k">if</span> <span class="n">top</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">:</span>
         <span class="c1"># The bias column connects the constant node, not a real input.</span>
         <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -1780,24 +1791,42 @@ window.runMermaid = runMermaid;</script>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_weight_gradients</span><span class="p">(</span>
-    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">vectorized_weight_gradient</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-element weight gradients, without applying them.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_weight_quantities</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-element weight-learning factors, without applying them.</span>
 
 <span class="sd">    Must run *after* :func:`_update_sweep`, so the per-layer states already carry their</span>
 <span class="sd">    prediction errors / posteriors. Returns one entry per element, matched 1:1 to</span>
 <span class="sd">    ``network.layers`` (``None`` for the bottom element, which has no incoming</span>
-<span class="sd">    weights). With the default kernel each entry is a gradient in descent form</span>
-<span class="sd">    (same shape as the element&#39;s ``weights_in``), ready for optax; with</span>
-<span class="sd">    :func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors`</span>
-<span class="sd">    each entry is the rank-one factor pair ``(u, v)``.</span>
+<span class="sd">    weights); each entry is the factor tuple of</span>
+<span class="sd">    :func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.</span>
+<span class="sd">    Assemble them with :func:`_gradient_matrix` and :func:`_importance_pair`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">elements</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">layers</span>
     <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span>
-        <span class="n">_weight_op</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span><span class="p">)</span>
+        <span class="n">_weight_op</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
     <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gradient_matrix</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assemble the descent gradient from one element&#39;s factors.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">factors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">factors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">factors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">h</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_importance_pair</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the importance factor pair ``(p, h**2)`` from one element&#39;s factors.</span>
+
+<span class="sd">    The parent side is squared here rather than at the source, since both quantities</span>
+<span class="sd">    read the same activation. Squaring can overflow a finite activation, so the non-</span>
+<span class="sd">    finite guard is applied after it, matching the child side.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">factors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">squared</span> <span class="o">=</span> <span class="n">factors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">factors</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">squared</span><span class="p">),</span> <span class="n">squared</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_apply_weight_updates</span><span class="p">(</span>
@@ -1806,32 +1835,101 @@ window.runMermaid = runMermaid;</script>
     <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
     <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;One optimiser step on every ``weights_in``, from precomputed gradients.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One optimiser step on every ``weights_mean``, from precomputed gradients.&quot;&quot;&quot;</span>
     <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
-    <span class="n">weights</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">)</span>
 
     <span class="n">updates</span><span class="p">,</span> <span class="n">new_opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
     <span class="n">new_weights</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">new_w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_weights</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">new_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">weights_in</span><span class="o">=</span><span class="n">new_w</span><span class="p">)</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">weights_mean</span><span class="o">=</span><span class="n">new_w</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">)),</span> <span class="n">new_opt_state</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_mesu_updates</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">grads</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">importance</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">MesuSettings</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Advance every weight belief one step, mean and precision together.</span>
+
+<span class="sd">    The rule needs no optimiser: the step size is the belief&#39;s own variance</span>
+<span class="sd">    (see :func:`pyhgf.updates.vectorized.learning.resolve_mesu_settings`), so</span>
+<span class="sd">    the update is applied here and both the mean (``weights_mean``) and the</span>
+<span class="sd">    accumulated precision (``weights_precision_delta``) are written back to</span>
+<span class="sd">    the element that carries them.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The network whose beliefs are advanced.</span>
+<span class="sd">    grads :</span>
+<span class="sd">        One descent gradient per element, ``None`` for the bottom element.</span>
+<span class="sd">    importance :</span>
+<span class="sd">        One importance entry per element, aligned with ``grads``.</span>
+<span class="sd">    settings :</span>
+<span class="sd">        The resolved settings of the rule.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Network</span>
+<span class="sd">        The network with updated weights and precisions.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If an element holding weights carries no belief, which means the</span>
+<span class="sd">        install step was skipped.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elements</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">grads</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_precision_delta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] holds weights but no weight belief. Install one &quot;</span>
+                <span class="s2">&quot;with add_layer(weight_belief=True), or let &quot;</span>
+                <span class="s2">&quot;learning_kind=&#39;mesu&#39; install it.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">new_weights</span><span class="p">,</span> <span class="n">new_delta</span> <span class="o">=</span> <span class="n">vectorized_mesu_update</span><span class="p">(</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">,</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">weights_precision_delta</span><span class="p">,</span>
+            <span class="n">grads</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">importance</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">settings</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">elem</span><span class="p">,</span> <span class="n">weights_mean</span><span class="o">=</span><span class="n">new_weights</span><span class="p">,</span> <span class="n">weights_precision_delta</span><span class="o">=</span><span class="n">new_delta</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_learn_sweep</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
     <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">],</span>
     <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+    <span class="n">mesu_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MesuSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weight-learning phase: prediction-error-driven gradients + an optimiser step.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weight-learning phase: prediction-error-driven gradients, then one step.</span>
 
 <span class="sd">    Mirrors the weight-update block of :func:`propagation_step`. Must run *after*</span>
 <span class="sd">    :func:`_update_sweep`, so the per-layer states already carry their prediction errors</span>
-<span class="sd">    / posteriors. Updates ``weights_in`` on every element that has them.</span>
+<span class="sd">    / posteriors. Updates ``weights_mean`` on every element that has them.</span>
+
+<span class="sd">    With ``mesu_settings`` the weight-belief rule runs instead of the optimiser: the</span>
+<span class="sd">    gradients are formed from ``learning_kind`` as usual, the importance increments</span>
+<span class="sd">    alongside them, and both the means and the precisions advance. The optimiser state</span>
+<span class="sd">    is returned unchanged, since the rule carries none.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">grads</span> <span class="o">=</span> <span class="n">_weight_gradients</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+    <span class="n">factors</span> <span class="o">=</span> <span class="n">_weight_quantities</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_gradient_matrix</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mesu_settings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">importance</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_importance_pair</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_apply_mesu_updates</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">grads</span><span class="p">,</span> <span class="n">importance</span><span class="p">,</span> <span class="n">mesu_settings</span><span class="p">),</span> <span class="n">opt_state</span>
     <span class="k">return</span> <span class="n">_apply_weight_updates</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
 
 
@@ -1841,14 +1939,15 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">learn_sweep</span><span class="p">(</span>
     <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
     <span class="n">opt_state</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">],</span>
     <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">mesu_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MesuSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled weight-learning phase.</span>
 
 <span class="sd">    See :func:`_learn_sweep`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_learn_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_learn_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">mesu_settings</span><span class="p">)</span></div>
 
 
 
@@ -1956,7 +2055,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        ``(n_output_features,)``.</span>
 <span class="sd">    learning_kind :</span>
 <span class="sd">        Weight-gradient mode, as in</span>
-<span class="sd">        :func:`pyhgf.updates.vectorized.learning.vectorized_weight_gradient`.</span>
+<span class="sd">        :func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.</span>
 <span class="sd">    time_step :</span>
 <span class="sd">        Inference time step for the prediction sweep.</span>
 
@@ -1979,7 +2078,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">_input_prediction_error</span><span class="p">(</span><span class="n">updated</span><span class="p">),</span>
-        <span class="n">_weight_gradients</span><span class="p">(</span><span class="n">updated</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">),</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">_gradient_matrix</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_weight_quantities</span><span class="p">(</span><span class="n">updated</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)),</span>
         <span class="n">_precision_increments</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">updated</span><span class="p">),</span>
     <span class="p">)</span></div>
 
@@ -1996,6 +2095,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mesu_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MesuSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Network</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">OptState</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;One batch-synchronous learning step over many samples at once.</span>
 
@@ -2053,6 +2153,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        element). When given, the internal prediction sweep is skipped and</span>
 <span class="sd">        the update starts from these states — the forward pass a caller has</span>
 <span class="sd">        already run is not repeated. ``x`` is ignored in that case.</span>
+<span class="sd">    mesu_settings :</span>
+<span class="sd">        When given, the weight-belief rule runs in place of ``optimizer``:</span>
+<span class="sd">        each element&#39;s mean and accumulated precision advance together and</span>
+<span class="sd">        the optimiser state is left untouched (see</span>
+<span class="sd">        :func:`pyhgf.updates.vectorized.learning.resolve_mesu_settings`).</span>
+<span class="sd">        ``learning_kind`` still selects the gradient the rule descends.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -2076,10 +2182,8 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">finish_sample</span><span class="p">(</span><span class="n">swept</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">yi</span><span class="p">):</span>
         <span class="n">updated</span> <span class="o">=</span> <span class="n">_update_sweep</span><span class="p">(</span><span class="n">swept</span><span class="p">,</span> <span class="n">yi</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">)</span>
         <span class="n">factors</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">factors</span> <span class="o">=</span> <span class="n">_weight_gradients</span><span class="p">(</span>
-                <span class="n">updated</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">vectorized_weight_gradient_factors</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mesu_settings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="n">_weight_quantities</span><span class="p">(</span><span class="n">updated</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">_input_prediction_error</span><span class="p">(</span><span class="n">updated</span><span class="p">),</span>
             <span class="n">_precision_increments</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">updated</span><span class="p">),</span>
@@ -2110,11 +2214,22 @@ window.runMermaid = runMermaid;</script>
         <span class="n">input_errors</span><span class="p">,</span> <span class="n">increments</span><span class="p">,</span> <span class="n">factors</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">per_sample_predicted</span><span class="p">)(</span><span class="n">predicted</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
     <span class="n">new_network</span> <span class="o">=</span> <span class="n">network</span>
-    <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">mean_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_contract_factors</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">)</span>
-        <span class="n">new_network</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">_apply_weight_updates</span><span class="p">(</span>
-            <span class="n">new_network</span><span class="p">,</span> <span class="n">mean_grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span>
+    <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mesu_settings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mean_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_contract_factors</span><span class="p">((</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">sample_weight</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mesu_settings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">importance</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="n">_reduce_importance</span><span class="p">(</span><span class="n">_importance_pair</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">sample_weight</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span>
+            <span class="p">)</span>
+            <span class="n">new_network</span> <span class="o">=</span> <span class="n">_apply_mesu_updates</span><span class="p">(</span>
+                <span class="n">new_network</span><span class="p">,</span> <span class="n">mean_grads</span><span class="p">,</span> <span class="n">importance</span><span class="p">,</span> <span class="n">mesu_settings</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_network</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">_apply_weight_updates</span><span class="p">(</span>
+                <span class="n">new_network</span><span class="p">,</span> <span class="n">mean_grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">,</span> <span class="n">optimizer</span>
+            <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">update_precisions</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2134,6 +2249,33 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># Compiled entry point. The unjitted ``_batch_step`` is importable so a larger</span>
 <span class="c1"># compiled program (e.g. a fused pipeline step) can inline it.</span>
 <span class="n">batch_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">_batch_step</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reduce_importance</span><span class="p">(</span><span class="n">imp_factors</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch-mean importance factors from stacked per-sample factors.</span>
+
+<span class="sd">    ``imp_factors`` is ``None`` for the bottom element, or a ``(p, q)`` pair with a</span>
+<span class="sd">    leading batch axis (see :func:`_importance_pair`). Each side is averaged over the</span>
+<span class="sd">    batch separately. For a continuous child the child-side factor is identical across</span>
+<span class="sd">    the batch (every sample sweeps from the same state template, and the conditional</span>
+<span class="sd">    predicted precision is built from carried precisions and volatility states, not from</span>
+<span class="sd">    the sample&#39;s values), and a binary child contributes ones, so the outer product of</span>
+<span class="sd">    the two means equals the mean of the per-sample outer products.</span>
+
+<span class="sd">    ``sample_weight`` follows the semantics of :func:`_contract_factors`: a weighted</span>
+<span class="sd">    mean whose denominator is the weight the batch actually carries, so padded rows do</span>
+<span class="sd">    not dilute the increment.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">imp_factors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="n">imp_factors</span>
+    <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">q</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sample_weight</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">,</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">,</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_contract_factors</span><span class="p">(</span><span class="n">factors</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -2254,6 +2396,229 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">one</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span></div>
 
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># DAG networks</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># Continuous networks are DAGs rather than chains: each layer can have one</span>
+<span class="c1"># value-parent layer and one volatility-parent layer, recorded on the *parent*</span>
+<span class="c1"># as ``value_child_idx`` / ``volatility_child_idx``. The builder guarantees</span>
+<span class="c1"># that every parent has a higher index than its children, so the prediction</span>
+<span class="c1"># sweep runs top-down in descending index order and the update sweep runs</span>
+<span class="c1"># bottom-up in ascending order.</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_continuous_network</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that every element is a continuous ``Layer`` (no stacks, no mixing).&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Continuous networks do not support LayerStack elements yet.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Layer </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> has kind </span><span class="si">{</span><span class="n">elem</span><span class="o">.</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">: continuous sweeps require &quot;</span>
+                <span class="s2">&quot;an all-continuous network.&quot;</span>
+            <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_continuous_parent_maps</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Invert the child indices into per-layer parent indices.</span>
+
+<span class="sd">    Returns ``(value_parent_of, volatility_parent_of)``, each one entry per layer</span>
+<span class="sd">    holding the parent&#39;s index or ``None``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="n">value_parent_of</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="n">volatility_parent_of</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">value_child_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">value_parent_of</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">value_child_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">volatility_child_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">volatility_parent_of</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">volatility_child_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+    <span class="k">return</span> <span class="n">value_parent_of</span><span class="p">,</span> <span class="n">volatility_parent_of</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_continuous_prediction_sweep</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-down prediction sweep over a continuous network.</span>
+
+<span class="sd">    Predicts every layer from its value and volatility parents, in descending</span>
+<span class="sd">    index order so parents are always predicted before their children. Nothing</span>
+<span class="sd">    is clamped: observations enter in :func:`_continuous_update_sweep`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_assert_continuous_network</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+    <span class="n">value_parent_of</span><span class="p">,</span> <span class="n">volatility_parent_of</span> <span class="o">=</span> <span class="n">_continuous_parent_maps</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">vp</span> <span class="o">=</span> <span class="n">value_parent_of</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">vlp</span> <span class="o">=</span> <span class="n">volatility_parent_of</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_continuous_prediction</span><span class="p">(</span>
+            <span class="n">child_state</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">value_parent_state</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">vp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elements</span><span class="p">[</span><span class="n">vp</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">vp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elements</span><span class="p">[</span><span class="n">vp</span><span class="p">]</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">,</span>
+            <span class="n">coupling_fn</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">vp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elements</span><span class="p">[</span><span class="n">vp</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+            <span class="n">volatility_parent_state</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">vlp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elements</span><span class="p">[</span><span class="n">vlp</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="p">),</span>
+            <span class="n">volatility_weights</span><span class="o">=</span><span class="p">(</span>
+                <span class="kc">None</span> <span class="k">if</span> <span class="n">vlp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elements</span><span class="p">[</span><span class="n">vlp</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_weights</span>
+            <span class="p">),</span>
+            <span class="n">is_observed_leaf</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">is_input_layer</span> <span class="ow">and</span> <span class="n">vlp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_observed_leaf</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a layer is the clamped observation root (has no children).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">value_child_idx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">elem</span><span class="o">.</span><span class="n">volatility_child_idx</span> <span class="ow">is</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_continuous_update_sweep</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bottom-up prediction-error and posterior-update sweep.</span>
+
+<span class="sd">    Clamps the observations on the input layers, computes its prediction errors, then</span>
+<span class="sd">    walks the layers in ascending order: each layer&#39;s posterior integrates the</span>
+<span class="sd">    prediction errors of its value and volatility children (already computed,</span>
+<span class="sd">    since children carry lower indices), and its own prediction errors are then</span>
+<span class="sd">    written for the parents above.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_assert_continuous_network</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+    <span class="n">value_parent_of</span><span class="p">,</span> <span class="n">volatility_parent_of</span> <span class="o">=</span> <span class="n">_continuous_parent_maps</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+
+    <span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+
+    <span class="c1"># Clamp the observations and compute the leaf prediction errors.</span>
+    <span class="n">leaf_state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">leaf_state</span> <span class="o">=</span> <span class="n">vectorized_continuous_prediction_error</span><span class="p">(</span>
+        <span class="n">leaf_state</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">volatility_parent_of</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state</span><span class="o">=</span><span class="n">leaf_state</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)):</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">value_child</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">value_child_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">child_elem</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">value_child_idx</span><span class="p">]</span>
+            <span class="n">value_child</span> <span class="o">=</span> <span class="n">ValueChild</span><span class="p">(</span>
+                <span class="n">state</span><span class="o">=</span><span class="n">child_elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+                <span class="n">weights</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">,</span>
+                <span class="n">coupling_fn</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
+                <span class="n">is_observed_leaf</span><span class="o">=</span><span class="n">_is_observed_leaf</span><span class="p">(</span><span class="n">child_elem</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">volatility_child</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">volatility_child_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">child_elem</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">volatility_child_idx</span><span class="p">]</span>
+            <span class="n">volatility_child</span> <span class="o">=</span> <span class="n">VolatilityChild</span><span class="p">(</span>
+                <span class="n">state</span><span class="o">=</span><span class="n">child_elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+                <span class="n">kappa</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">volatility_weights</span><span class="p">,</span>
+                <span class="n">params</span><span class="o">=</span><span class="n">child_elem</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value_child</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">volatility_child</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># A layer nobody names as parent receives no message; nothing to do.</span>
+            <span class="k">continue</span>
+
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_continuous_posterior_update</span><span class="p">(</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">value_child</span><span class="o">=</span><span class="n">value_child</span><span class="p">,</span>
+            <span class="n">volatility_child</span><span class="o">=</span><span class="n">volatility_child</span><span class="p">,</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Prediction errors are only needed when a parent above will read them.</span>
+        <span class="k">if</span> <span class="n">value_parent_of</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">volatility_parent_of</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_state</span> <span class="o">=</span> <span class="n">vectorized_continuous_prediction_error</span><span class="p">(</span>
+                <span class="n">new_state</span><span class="p">,</span>
+                <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">volatility_parent_of</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">continuous_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled top-down prediction sweep for continuous networks.</span>
+
+<span class="sd">    See :func:`_continuous_prediction_sweep`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_continuous_prediction_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">)</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">continuous_update_sweep</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled bottom-up posterior sweep for continuous networks.</span>
+
+<span class="sd">    See :func:`_continuous_update_sweep`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_continuous_update_sweep</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">)</span>
+
+
+<span class="nd">@eqx</span><span class="o">.</span><span class="n">filter_jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_continuous_scan</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">Network</span><span class="p">,</span>
+    <span class="n">ys</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">time_steps</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">record</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter a sequence of observations through a continuous network.</span>
+
+<span class="sd">    Runs ``jax.lax.scan`` over (prediction sweep, update sweep) pairs. There</span>
+<span class="sd">    is no weight learning: the coupling matrices are parameters of the filter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The initial continuous network state.</span>
+<span class="sd">    ys :</span>
+<span class="sd">        Observations clamped on the input layers at each step, shape ``(T, n_obs)``.</span>
+<span class="sd">    time_steps :</span>
+<span class="sd">        Per-step time steps, shape ``(T,)``.</span>
+<span class="sd">    record :</span>
+<span class="sd">        Tuple of ``LayerState`` field names to record at every step. With an</span>
+<span class="sd">        empty tuple (default) the per-step output is the input layers&#39;</span>
+<span class="sd">        ``expected_mean`` alone; otherwise it is ``(traj_step, prediction)``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ``(final_network, step_output)`` with per-step outputs stacked along a</span>
+<span class="sd">    leading ``(T,)`` axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">xs</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="n">_continuous_update_sweep</span><span class="p">(</span>
+            <span class="n">_continuous_prediction_sweep</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">dt</span><span class="p">),</span> <span class="n">y</span><span class="p">,</span> <span class="n">time_step</span><span class="o">=</span><span class="n">dt</span>
+        <span class="p">)</span>
+        <span class="n">prediction</span> <span class="o">=</span> <span class="n">updated</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">expected_mean</span>
+        <span class="k">if</span> <span class="n">record</span><span class="p">:</span>
+            <span class="n">traj_step</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">field</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">updated</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">record</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">updated</span><span class="p">,</span> <span class="p">(</span><span class="n">traj_step</span><span class="p">,</span> <span class="n">prediction</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">updated</span><span class="p">,</span> <span class="n">prediction</span>
+
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">))</span>
 </pre></div>
 
                 </article>

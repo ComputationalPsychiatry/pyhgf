@@ -54,6 +54,8 @@
     <script src="../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="icon" href="../../_static/logo_small.svg"/>
@@ -540,8 +542,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error.html">pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.learning_weights_vectorized.html">pyhgf.updates.vectorized.learning.learning_weights_vectorized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.resolve_mesu_settings.html">pyhgf.updates.vectorized.learning.resolve_mesu_settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_mesu_update.html">pyhgf.updates.vectorized.learning.vectorized_mesu_update</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
@@ -736,20 +739,37 @@
 <h1>pyhgf.typing.vectorised.LayerParams<a class="headerlink" href="#pyhgf-typing-vectorised-layerparams" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.typing.vectorised.LayerParams">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.typing.vectorised.</span></span><span class="sig-name descname"><span class="pre">LayerParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tonic_volatility_vol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/typing/vectorised.html#LayerParams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.typing.vectorised.LayerParams" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.typing.vectorised.</span></span><span class="sig-name descname"><span class="pre">LayerParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tonic_volatility_vol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tonic_volatility</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tonic_drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autoconnection_strength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/typing/vectorised.html#LayerParams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.typing.vectorised.LayerParams" title="Link to this definition">#</a></dt>
 <dd><p>Per-layer static parameters.</p>
-<p>Each field is an array with one entry per node in the layer.</p>
+<p>Each field is an array with one entry per node in the layer, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when
+the field does not apply to the layer’s kind: volatile layers carry
+<code class="docutils literal notranslate"><span class="pre">tonic_volatility_vol</span></code> only, continuous layers carry the other three.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>tonic_volatility_vol</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>jax.Array</em></a>) – The tonic (baseline) volatility of the volatility level.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tonic_volatility_vol</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>jax.Array</em></a><em> | </em><em>None</em>) – The tonic (baseline) volatility of the implied internal volatility level
+(volatile layers only).</p></li>
+<li><p><strong>tonic_volatility</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>jax.Array</em></a><em> | </em><em>None</em>) – The tonic (baseline) log-volatility <span class="math notranslate nohighlight">\(\\omega\)</span> of the node’s own
+Gaussian random walk (continuous layers only).</p></li>
+<li><p><strong>tonic_drift</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>jax.Array</em></a><em> | </em><em>None</em>) – The constant drift <span class="math notranslate nohighlight">\(\\rho\)</span> added to the predicted mean at every
+time step (continuous layers only).</p></li>
+<li><p><strong>autoconnection_strength</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>jax.Array</em></a><em> | </em><em>None</em>) – The AR(1) coefficient <span class="math notranslate nohighlight">\(\\lambda \\in [0, 1]\)</span> on the node’s own mean
+in the prediction; <code class="docutils literal notranslate"><span class="pre">1.0</span></code> is a pure random walk (continuous layers
+only).</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.typing.vectorised.LayerParams.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tonic_volatility_vol</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyhgf.typing.vectorised.LayerParams.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tonic_volatility_vol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tonic_volatility</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tonic_drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autoconnection_strength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyhgf.typing.vectorised.LayerParams.__init__" title="Link to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>tonic_volatility_vol</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a>)</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tonic_volatility_vol</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>tonic_volatility</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>tonic_drift</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>autoconnection_strength</strong> (<a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -760,11 +780,14 @@
 <p class="rubric">Methods</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.typing.vectorised.LayerParams.__init__" title="pyhgf.typing.vectorised.LayerParams.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(tonic_volatility_vol)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.typing.vectorised.LayerParams.__init__" title="pyhgf.typing.vectorised.LayerParams.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([tonic_volatility_vol, ...])</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create</span></code>(n_nodes[, tonic_volatility_vol])</p></td>
-<td><p>Initialise layer params with defaults.</p></td>
+<td><p>Initialise volatile-layer params with defaults.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_continuous</span></code>(n_nodes[, ...])</p></td>
+<td><p>Initialise continuous-layer params with the nodalised defaults.</p></td>
 </tr>
 </tbody>
 </table>
@@ -772,7 +795,16 @@
 <p class="rubric">Attributes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tonic_volatility_vol</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">autoconnection_strength</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tonic_drift</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tonic_volatility</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tonic_volatility_vol</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>

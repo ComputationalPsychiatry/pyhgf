@@ -540,8 +540,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.categorical/pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error.html">pyhgf.updates.vectorized.categorical.vectorized_categorical_prediction_error</a></li>
 </ul>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html">pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.learning_weights_vectorized.html">pyhgf.updates.vectorized.learning.learning_weights_vectorized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.resolve_mesu_settings.html">pyhgf.updates.vectorized.learning.resolve_mesu_settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_mesu_update.html">pyhgf.updates.vectorized.learning.vectorized_mesu_update</a></li>
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../pyhgf.model/pyhgf.model.Network.html">pyhgf.model.Network</a></li>
@@ -736,7 +737,7 @@
 <h1>pyhgf.model.hybrid.EquinoxAdapter<a class="headerlink" href="#pyhgf-model-hybrid-equinoxadapter" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyhgf.model.hybrid.EquinoxAdapter">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.hybrid.</span></span><span class="sig-name descname"><span class="pre">EquinoxAdapter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backward_fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/hybrid.html#EquinoxAdapter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.hybrid.EquinoxAdapter" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pyhgf.model.hybrid.</span></span><span class="sig-name descname"><span class="pre">EquinoxAdapter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backward_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/hybrid.html#EquinoxAdapter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.hybrid.EquinoxAdapter" title="Link to this definition">#</a></dt>
 <dd><p>A frozen part: a fixed calculation that routes errors but never learns.</p>
 <p>Declares a forward function and its hand-derived backward companion — no
 automatic differentiation is involved at any point:</p>
@@ -751,17 +752,19 @@ output into the error at the input, using only the cache.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>forward_fn</strong> (<em>Callable</em><em>[</em><em>[</em><em>jnp.ndarray</em><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><em>jnp.ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>]</em><em>]</em>)</p></li>
 <li><p><strong>backward_fn</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><em>DescentError</em><em>]</em><em>, </em><em>DescentError</em><em>]</em>)</p></li>
+<li><p><strong>evidence_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><em>jnp.ndarray</em><em>]</em><em>, </em><em>jnp.ndarray</em><em>]</em><em>]</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyhgf.model.hybrid.EquinoxAdapter.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backward_fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/hybrid.html#EquinoxAdapter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.hybrid.EquinoxAdapter.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backward_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/pyhgf/model/hybrid.html#EquinoxAdapter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyhgf.model.hybrid.EquinoxAdapter.__init__" title="Link to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>forward_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>]</em><em>]</em>)</p></li>
 <li><p><strong>backward_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><em>DescentError</em><em>]</em><em>, </em><em>DescentError</em><em>]</em>)</p></li>
+<li><p><strong>evidence_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.jax.dev/en/latest/_autosummary/jax.Array.html#jax.Array" title="(in JAX)"><em>Array</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -770,7 +773,7 @@ output into the error at the input, using only the cache.</p></li>
 <p class="rubric">Methods</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.hybrid.EquinoxAdapter.__init__" title="pyhgf.model.hybrid.EquinoxAdapter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(forward_fn, backward_fn)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pyhgf.model.hybrid.EquinoxAdapter.__init__" title="pyhgf.model.hybrid.EquinoxAdapter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(forward_fn, backward_fn[, evidence_fn])</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_state</span></code>()</p></td>

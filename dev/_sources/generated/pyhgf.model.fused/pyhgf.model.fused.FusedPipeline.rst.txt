@@ -14,6 +14,7 @@
    .. autosummary::
    
       ~FusedPipeline.__init__
+      ~FusedPipeline.evidence_pass
       ~FusedPipeline.merge
       ~FusedPipeline.predict
       ~FusedPipeline.step

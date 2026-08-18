@@ -834,10 +834,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">stack_layers</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">vectorized_weight_gradient_factors</span><span class="p">,</span>
+    <span class="n">MESU_GRADIENT_KIND</span><span class="p">,</span>
+    <span class="n">resolve_mesu_settings</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">_weight_gradients</span><span class="p">,</span>
+    <span class="n">_weight_quantities</span><span class="p">,</span>
     <span class="n">batch_step</span><span class="p">,</span>
     <span class="n">batched_prediction_pass</span><span class="p">,</span>
     <span class="n">batched_prediction_states</span><span class="p">,</span>
@@ -845,6 +846,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">learn_sweep</span><span class="p">,</span>
     <span class="n">prediction_pass</span><span class="p">,</span>
     <span class="n">prediction_sweep</span><span class="p">,</span>
+    <span class="n">run_continuous_scan</span><span class="p">,</span>
     <span class="n">run_scan</span><span class="p">,</span>
     <span class="n">update_sweep</span><span class="p">,</span>
 <span class="p">)</span>
@@ -868,6 +870,12 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># volatility parent — a state override for one of these on such a layer is</span>
 <span class="c1"># dropped rather than re-allocating the array.</span>
 <span class="n">_VOL_STATE_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">VOLATILITY_STATE_FIELDS</span><span class="p">)</span>
+<span class="c1"># ``LayerParams`` fields carried by continuous layers only.</span>
+<span class="n">_CONTINUOUS_PARAM_FIELDS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span>
+    <span class="s2">&quot;tonic_volatility&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tonic_drift&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">,</span>
+<span class="p">})</span>
 
 <span class="c1"># Minimum identical-layer count for ``add_layer_stack`` to auto-collapse the</span>
 <span class="c1"># block into a ``LayerStack`` (i.e. switch the propagation kernels to</span>
@@ -1015,6 +1023,18 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># per-layer coupling functions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Continuous-layer topology: for each layer, the index of the layer it</span>
+        <span class="c1"># is the value / volatility parent of (``None`` when it has no such</span>
+        <span class="c1"># child), plus the base strengths and connectivity of its W and κ</span>
+        <span class="c1"># matrices. Dense entries are strength / fan-in, so what a child</span>
+        <span class="c1"># receives (drift or phasic volatility) is the base strength times the</span>
+        <span class="c1"># *average* of its parent layer. Entries stay ``None``/defaults for</span>
+        <span class="c1"># other kinds.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_couplings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_couplings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_fully_connected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Indices of consecutive layers to collapse into a ``LayerStack`` at</span>
         <span class="c1"># ``_init_state`` time. Each entry is a ``(start, end_exclusive)`` half-</span>
         <span class="c1"># open interval over ``self.layer_sizes``, populated automatically by</span>
@@ -1116,8 +1136,10 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">layer_coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">layer_coupling_fn</span> <span class="o">=</span> <span class="n">net_coupling_fn</span>
 
-            <span class="c1"># Prepare per-layer parameter overrides</span>
-            <span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Prepare per-layer parameter overrides. Annotated as ``Any`` so</span>
+            <span class="c1"># unpacking below type-checks against ``add_layer``&#39;s typed</span>
+            <span class="c1"># keyword parameters, not just the float-valued ``**kwargs``.</span>
+            <span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility_vol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">overrides</span><span class="p">[</span><span class="s2">&quot;tonic_volatility_vol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tonic_volatility_vol</span>
 
@@ -1218,13 +1240,18 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;volatile&quot;</span><span class="p">,</span>
-        <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">add_constant_input</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value_coupling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">volatility_fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a layer of nodes.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add a layer of nodes.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1243,9 +1270,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            expected mean is the softmax across the layer&#39;s nodes, and the observation</span>
 <span class="sd">            clamped during :meth:`fit` must be one-hot. Only valid as the output</span>
 <span class="sd">            (bottom) layer. See ``docs/source/notebooks/1.1-Binary_HGF.ipynb`` for the</span>
-<span class="sd">            binary case.</span>
+<span class="sd">            binary case. ``&quot;continuous&quot;`` uses regular continuous state nodes with the</span>
+<span class="sd">            standard HGF drift semantics; continuous layers cannot mix with the other</span>
+<span class="sd">            kinds, are filtered with :meth:`input_data` rather than :meth:`fit`, and</span>
+<span class="sd">            connect through explicit value / volatility parent edges (see</span>
+<span class="sd">            *value_children* / *volatility_children*).</span>
 <span class="sd">        add_constant_input :</span>
-<span class="sd">            If `True`, add a bias term to the layer&#39;s predictions.</span>
+<span class="sd">            If `True`, add a bias term to the layer&#39;s predictions. ``None`` (default)</span>
+<span class="sd">            resolves to `True` for volatile/binary/categorical layers and `False` for</span>
+<span class="sd">            continuous layers, whose per-node ``tonic_drift`` already plays the bias</span>
+<span class="sd">            role (passing `True` with a continuous layer raises).</span>
 <span class="sd">        fully_connected :</span>
 <span class="sd">            If `True` (default), each node in this layer connects to every node in the</span>
 <span class="sd">            child layer (dense weight matrix).  If False, nodes connect one-to-one with</span>
@@ -1259,7 +1293,42 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            mean_vol and precision_vol are predicted and updated each step. If False,</span>
 <span class="sd">            the value level has no volatility source and does not undergo a Gaussian</span>
 <span class="sd">            random walk (its conditional predicted precision equals the prior</span>
-<span class="sd">            precision).</span>
+<span class="sd">            precision). Volatile layers only — continuous layers have no internal</span>
+<span class="sd">            volatility level and ignore this argument.</span>
+<span class="sd">        value_children :</span>
+<span class="sd">            Continuous layers only. Index of the existing layer this layer is the</span>
+<span class="sd">            *value parent* of. When neither *value_children* nor</span>
+<span class="sd">            *volatility_children* is given, the chain default applies: the new layer</span>
+<span class="sd">            becomes the value parent of the previously added layer. Naming a parent</span>
+<span class="sd">            explicitly replaces the chain default entirely, so a layer given only</span>
+<span class="sd">            *volatility_children* is not a value parent of anything.</span>
+<span class="sd">        volatility_children :</span>
+<span class="sd">            Continuous layers only. Index of the existing layer this layer is the</span>
+<span class="sd">            *volatility parent* of. The κ matrix connecting the two is fixed at</span>
+<span class="sd">            construction (see *volatility_coupling*) and never learned.</span>
+<span class="sd">        value_coupling :</span>
+<span class="sd">            Continuous layers only — base value coupling strength (default</span>
+<span class="sd">            ``1.0``). Dense ``weights_mean`` entries are ``value_coupling /</span>
+<span class="sd">            n_parents``, so the drift a child receives is ``value_coupling``</span>
+<span class="sd">            times the *average* of :math:`g(\hat{\mu})` over the parent layer,</span>
+<span class="sd">            invariant to the parent layer&#39;s width; one-to-one edges keep</span>
+<span class="sd">            ``value_coupling`` on the diagonal (fan-in 1). Volatile/binary</span>
+<span class="sd">            layers ignore it (their weights are learned or set via</span>
+<span class="sd">            :meth:`weight_initialisation`).</span>
+<span class="sd">        volatility_coupling :</span>
+<span class="sd">            Base volatility coupling strength :math:`\kappa_0` (default ``1.0``).</span>
+<span class="sd">            Dense κ entries are :math:`\kappa_0 / n_{\mathrm{parents}}` — the</span>
+<span class="sd">            fan-in normalisation makes the phasic volatility a child receives</span>
+<span class="sd">            :math:`\kappa_0` times the *average* of the parent layer&#39;s means,</span>
+<span class="sd">            invariant to the parent layer&#39;s width (and its MGF correction the</span>
+<span class="sd">            variance of that average). One-to-one κ has fan-in 1 and keeps</span>
+<span class="sd">            :math:`\kappa_0` on the diagonal. Mirrors the drift-averaging the</span>
+<span class="sd">            volatile backend applies on value edges.</span>
+<span class="sd">        volatility_fully_connected :</span>
+<span class="sd">            If True (default), κ is dense: every node of this layer modulates the</span>
+<span class="sd">            volatility of every node of the child layer. If False, κ is diagonal</span>
+<span class="sd">            (one-to-one), which requires equal sizes and is the only connectivity</span>
+<span class="sd">            supported by the ``&quot;unbounded&quot;`` volatility update.</span>
 <span class="sd">        **kwargs :</span>
 <span class="sd">            Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`</span>
 <span class="sd">            (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,</span>
@@ -1287,14 +1356,53 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">&quot;volatile-state&quot;</span><span class="p">:</span> <span class="s2">&quot;volatile&quot;</span><span class="p">,</span>
             <span class="s2">&quot;binary-state&quot;</span><span class="p">:</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span>
             <span class="s2">&quot;categorical-state&quot;</span><span class="p">:</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;continuous-state&quot;</span><span class="p">:</span> <span class="s2">&quot;continuous&quot;</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="n">_kind_aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
 
-        <span class="n">valid_kinds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;volatile&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;categorical&quot;</span><span class="p">}</span>
+        <span class="n">valid_kinds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;volatile&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;categorical&quot;</span><span class="p">,</span> <span class="s2">&quot;continuous&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_kinds</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Invalid layer kind &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. Choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
+
+        <span class="c1"># Continuous layers form their own network type: the sweeps, the edge</span>
+        <span class="c1"># semantics (drift vs. direct prediction), and the entry point</span>
+        <span class="c1"># (``input_data`` vs. ``fit``) all differ, so mixing is rejected.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span>
+            <span class="n">was_continuous</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span>
+            <span class="k">if</span> <span class="n">was_continuous</span> <span class="o">!=</span> <span class="p">(</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Continuous layers cannot mix with volatile/binary/&quot;</span>
+                    <span class="s2">&quot;categorical layers in one network.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">add_constant_input</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Continuous layers cannot use add_constant_input=True: the &quot;</span>
+                    <span class="s2">&quot;per-node tonic_drift already provides a constant offset.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">add_constant_input</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">add_constant_input</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">add_constant_input</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;continuous&quot;</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;value_children / volatility_children are only valid for &quot;</span>
+                <span class="s2">&quot;continuous layers.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">value_child</span><span class="p">,</span> <span class="n">volatility_child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_continuous_children</span><span class="p">(</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+            <span class="n">value_children</span><span class="o">=</span><span class="n">value_children</span><span class="p">,</span>
+            <span class="n">volatility_children</span><span class="o">=</span><span class="n">volatility_children</span><span class="p">,</span>
+            <span class="n">volatility_fully_connected</span><span class="o">=</span><span class="n">volatility_fully_connected</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;categorical&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span>
             <span class="c1"># A softmax couples every node of the layer into one choice; that</span>
             <span class="c1"># is only meaningful for the observed (bottom) layer, where the</span>
@@ -1310,6 +1418,18 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">&quot;Unknown layer override(s): </span><span class="si">{</span><span class="n">invalid_keys</span><span class="si">}</span><span class="s2">. &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;Valid fields are </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_LAYER_OVERRIDE_FIELDS</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
+        <span class="c1"># Parameter fields are kind-specific: reject an override the layer&#39;s</span>
+        <span class="c1"># kind would silently ignore.</span>
+        <span class="n">wrong_params</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">k</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_LAYER_PARAM_FIELDS</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">_CONTINUOUS_PARAM_FIELDS</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">wrong_params</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter override(s) </span><span class="si">{</span><span class="n">wrong_params</span><span class="si">}</span><span class="s2"> do not apply to </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2"> layers.&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">fully_connected</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">add_constant_input</span><span class="p">:</span>
@@ -1317,10 +1437,18 @@ window.runMermaid = runMermaid;</script>
                     <span class="s2">&quot;One-to-one layers (fully_connected=False) cannot use &quot;</span>
                     <span class="s2">&quot;add_constant_input=True.&quot;</span>
                 <span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">size</span><span class="p">:</span>
+            <span class="c1"># The value edge connects this layer to its value child — the</span>
+            <span class="c1"># previous layer for the chain kinds, the resolved child for</span>
+            <span class="c1"># continuous layers.</span>
+            <span class="n">child_for_size</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">value_child</span>
+                <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span>
+                <span class="k">else</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">child_for_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">child_for_size</span><span class="p">]</span> <span class="o">!=</span> <span class="n">size</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;One-to-one layers require the same size as the child &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;layer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;layer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">child_for_size</span><span class="p">]</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
@@ -1332,6 +1460,11 @@ window.runMermaid = runMermaid;</script>
             <span class="n">coupling_fn</span> <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">volatility_parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value_child</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">volatility_child</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_couplings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value_coupling</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_couplings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">volatility_coupling</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volatility_fully_connected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">volatility_fully_connected</span><span class="p">))</span>
         <span class="c1"># Eagerly rebuild the Network so ``self.state`` is always queryable</span>
         <span class="c1"># after construction. Cheap for typical depths; only triggers fresh</span>
         <span class="c1"># array allocations, no JIT trace.</span>
@@ -1341,6 +1474,85 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_continuous_children</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">value_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">volatility_children</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">volatility_fully_connected</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate and resolve the child indices of a new continuous layer.</span>
+
+<span class="sd">        Returns ``(value_child, volatility_child)`` — the indices of the layers the new</span>
+<span class="sd">        layer is the value / volatility parent of, applying the chain default (previous</span>
+<span class="sd">        layer becomes the value child) when neither parent argument names a layer</span>
+<span class="sd">        explicitly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">n_existing</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value_children</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">volatility_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">value_child</span> <span class="o">=</span> <span class="n">n_existing</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">n_existing</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value_child</span> <span class="o">=</span> <span class="n">value_children</span>
+        <span class="n">volatility_child</span> <span class="o">=</span> <span class="n">volatility_children</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;value_children&quot;</span><span class="p">,</span> <span class="n">value_child</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;volatility_children&quot;</span><span class="p">,</span> <span class="n">volatility_child</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_existing</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">child</span><span class="si">}</span><span class="s2"> does not name an existing layer &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(network has </span><span class="si">{</span><span class="n">n_existing</span><span class="si">}</span><span class="s2"> layers).&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value_child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">value_child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Layer </span><span class="si">{</span><span class="n">value_child</span><span class="si">}</span><span class="s2"> already has a value parent &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(layer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value_children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">value_child</span><span class="p">)</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">volatility_child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">volatility_child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_children</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Layer </span><span class="si">{</span><span class="n">volatility_child</span><span class="si">}</span><span class="s2"> already has a volatility parent &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(layer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">volatility_child</span><span class="p">)</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">volatility_child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">child_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">volatility_child</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">volatility_fully_connected</span> <span class="ow">and</span> <span class="n">child_size</span> <span class="o">!=</span> <span class="n">size</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;A one-to-one volatility coupling requires equal sizes &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(child layer </span><span class="si">{</span><span class="n">volatility_child</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="n">child_size</span><span class="si">}</span><span class="s2"> nodes, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;this layer </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">).&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">==</span> <span class="s2">&quot;unbounded&quot;</span><span class="p">:</span>
+                <span class="c1"># The unbounded update is derived for a single volatility</span>
+                <span class="c1"># child per node and ignores value children.</span>
+                <span class="k">if</span> <span class="n">volatility_fully_connected</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">child_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;The &#39;unbounded&#39; volatility update requires a &quot;</span>
+                        <span class="s2">&quot;one-to-one volatility coupling &quot;</span>
+                        <span class="s2">&quot;(volatility_fully_connected=False). Use &#39;standard&#39; &quot;</span>
+                        <span class="s2">&quot;or &#39;eHGF&#39; for fully connected volatility parents.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">value_child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Under the &#39;unbounded&#39; volatility update a volatility &quot;</span>
+                        <span class="s2">&quot;parent cannot also be a value parent. Use &#39;standard&#39; &quot;</span>
+                        <span class="s2">&quot;or &#39;eHGF&#39; for mixed parents.&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">value_child</span><span class="p">,</span> <span class="n">volatility_child</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_layer_stack</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1388,7 +1600,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Self for method chaining.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">auto_scan</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_SCAN_AUTO_THRESHOLD</span>
+            <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;volatile&quot;</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_SCAN_AUTO_THRESHOLD</span>
             <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span>
             <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1419,6 +1632,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        All inter-layer weights are set to ``1.0``. Use :meth:`weight_initialisation`</span>
 <span class="sd">        after construction to apply Xavier, He, orthogonal, or sparse initialisation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_continuous_state</span><span class="p">()</span>
+
         <span class="n">layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">):</span>
@@ -1445,23 +1661,23 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">param_kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
             <span class="n">params</span> <span class="o">=</span> <span class="n">LayerParams</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
 
-            <span class="c1"># `weights_in` lives on the parent (this Layer); layer 0 has none.</span>
+            <span class="c1"># `weights_mean` lives on the parent (this Layer); layer 0 has none.</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">prev_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
                 <span class="n">n_parent_cols</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
-                    <span class="n">weights_in</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">))</span>
+                    <span class="n">weights_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">weights_in</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">)</span>
+                    <span class="n">weights_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">prev_size</span><span class="p">,</span> <span class="n">n_parent_cols</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">weights_in</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">weights_mean</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="n">coupling_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">Layer</span><span class="p">(</span>
                     <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
                     <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
-                    <span class="n">weights_in</span><span class="o">=</span><span class="n">weights_in</span><span class="p">,</span>
+                    <span class="n">weights_mean</span><span class="o">=</span><span class="n">weights_mean</span><span class="p">,</span>
                     <span class="n">coupling_fn</span><span class="o">=</span><span class="n">coupling_fn</span><span class="p">,</span>
                     <span class="n">add_constant_input</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">add_constant_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                     <span class="n">has_volatility_parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_parents</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
@@ -1501,6 +1717,178 @@ window.runMermaid = runMermaid;</script>
             <span class="n">predict_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span><span class="p">,</span>
             <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
         <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_continuous_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the ``Network`` PyTree of an all-continuous network.</span>
+
+<span class="sd">        Both coupling matrices are fixed at construction and share the fan-in</span>
+<span class="sd">        rule: dense entries are ``strength / n_parents`` (``value_coupling``</span>
+<span class="sd">        for W, ``volatility_coupling`` for κ), so what a child receives — the</span>
+<span class="sd">        drift or the phasic volatility — is the base strength times the</span>
+<span class="sd">        average of its parent layer; one-to-one edges keep the base strength</span>
+<span class="sd">        on the diagonal (fan-in 1).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
+        <span class="n">has_vol_parent</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">has_vol_parent</span><span class="p">[</span><span class="n">child</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">):</span>
+            <span class="n">overrides</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_overrides</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="n">state</span> <span class="o">=</span> <span class="n">LayerState</span><span class="o">.</span><span class="n">create_continuous</span><span class="p">(</span>
+                <span class="n">size</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">has_vol_parent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="c1"># Only fields the continuous state allocates can be overridden; the</span>
+            <span class="c1"># internal-volatility fields stay ``None``.</span>
+            <span class="n">state_overrides</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_LAYER_STATE_FIELDS</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">state_overrides</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="o">**</span><span class="n">state_overrides</span><span class="p">)</span>
+
+            <span class="n">param_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Observation-leaf convention, mirroring the nodalised backend</span>
+                <span class="c1"># (``Network.input_idxs``): a clamped leaf performs no</span>
+                <span class="c1"># autoregression of its own and its volatility exponent is</span>
+                <span class="c1"># zeroed, so the observation noise is 1/exp(0) plus whatever a</span>
+                <span class="c1"># volatility parent contributes. Overridable per layer.</span>
+                <span class="n">param_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                    <span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                    <span class="s2">&quot;tonic_volatility&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                <span class="p">})</span>
+            <span class="n">param_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_CONTINUOUS_PARAM_FIELDS</span>
+            <span class="p">})</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">LayerParams</span><span class="o">.</span><span class="n">create_continuous</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
+
+            <span class="n">value_child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_children</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">value_child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">child_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">value_child</span><span class="p">]</span>
+                <span class="n">coupling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="c1"># Fan-in normalisation, as for κ below: each child node</span>
+                    <span class="c1"># averages this layer&#39;s activations, at the base strength.</span>
+                    <span class="n">weights_mean</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">child_size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span> <span class="n">coupling</span> <span class="o">/</span> <span class="n">size</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">weights_mean</span> <span class="o">=</span> <span class="n">coupling</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">child_size</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">weights_mean</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">volatility_child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">volatility_child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">child_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="n">volatility_child</span><span class="p">]</span>
+                <span class="n">coupling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_couplings</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">volatility_fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="c1"># Fan-in normalisation: each child node averages this</span>
+                    <span class="c1"># layer&#39;s means, at base strength κ₀.</span>
+                    <span class="n">volatility_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">child_size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span> <span class="n">coupling</span> <span class="o">/</span> <span class="n">size</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">volatility_weights</span> <span class="o">=</span> <span class="n">coupling</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">child_size</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">volatility_weights</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Layer</span><span class="p">(</span>
+                    <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+                    <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                    <span class="n">weights_mean</span><span class="o">=</span><span class="n">weights_mean</span><span class="p">,</span>
+                    <span class="n">coupling_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coupling_fns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">has_vol_parent</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">is_input_layer</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="n">fully_connected</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous&quot;</span><span class="p">,</span>
+                    <span class="n">value_child_idx</span><span class="o">=</span><span class="n">value_child</span><span class="p">,</span>
+                    <span class="n">volatility_child_idx</span><span class="o">=</span><span class="n">volatility_child</span><span class="p">,</span>
+                    <span class="n">volatility_weights</span><span class="o">=</span><span class="n">volatility_weights</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Network</span><span class="p">(</span>
+            <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">layers</span><span class="p">),</span>
+            <span class="n">volatility_updates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span><span class="p">,</span>
+            <span class="n">max_posterior_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_posterior_precision</span><span class="p">,</span>
+            <span class="n">precision_clipping_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
+            <span class="n">update_input_layer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_input_layer</span><span class="p">,</span>
+            <span class="n">predict_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span><span class="p">,</span>
+            <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">install_weight_belief</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Give every weight a belief, leaving any already installed untouched.</span>
+
+<span class="sd">        The mean of each weight&#39;s belief is the weight itself; this adds the</span>
+<span class="sd">        second parameter, the accumulated precision above the prior, as an</span>
+<span class="sd">        array of zeros beside it (see</span>
+<span class="sd">        :attr:`pyhgf.typing.vectorised.Layer.weights_precision_delta`). Zero</span>
+<span class="sd">        precision_delta is the prior belief, so a network trained from a fresh install</span>
+<span class="sd">        starts exactly where plain descent at the prior variance starts.</span>
+
+<span class="sd">        ``learning_kind=&quot;mesu&quot;`` calls this itself, so it is only needed to</span>
+<span class="sd">        install a belief ahead of time, or on part of a network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        layers :</span>
+<span class="sd">            Which elements receive one, as indices into ``state.layers`` where</span>
+<span class="sd">            ``0`` is the bottom layer. ``None`` (default) covers every element</span>
+<span class="sd">            holding a weight matrix. The bottom layer holds none, so naming it</span>
+<span class="sd">            raises.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            ``self``, with the beliefs installed.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the network has no layers yet, or a named element holds no</span>
+<span class="sd">            weight matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Network has no layers yet. Call add_layer(...) before &quot;</span>
+                <span class="s2">&quot;install_weight_belief().&quot;</span>
+            <span class="p">)</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">layers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">selected</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">holding</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">i</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            <span class="n">unheld</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">selected</span> <span class="o">-</span> <span class="n">holding</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">unheld</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;layers </span><span class="si">{</span><span class="n">unheld</span><span class="si">}</span><span class="s2"> hold no weight matrix, so they cannot carry &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;a weight belief. Layers holding one: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">holding</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_precision_delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">selected</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="n">elem</span><span class="p">,</span> <span class="n">weights_precision_delta</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_optimizer_state</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span>
@@ -1561,6 +1949,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">strategy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;weight_initialisation&quot;</span><span class="p">)</span>
 
         <span class="n">valid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xavier&quot;</span><span class="p">,</span> <span class="s2">&quot;he&quot;</span><span class="p">,</span> <span class="s2">&quot;orthogonal&quot;</span><span class="p">,</span> <span class="s2">&quot;sparse&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">:</span>
@@ -1592,15 +1981,15 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">new_elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_elements</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
-                <span class="c1"># Stack has weights_in shape (N, n_child, n_parent[+1]). Use</span>
+                <span class="c1"># Stack has weights_mean shape (N, n_child, n_parent[+1]). Use</span>
                 <span class="c1"># the same seed for every slice — matches the unrolled init&#39;s</span>
                 <span class="c1"># &quot;same seed across all layers&quot; semantics (necessary for</span>
                 <span class="c1"># byte-parity with the unrolled path; the underlying &quot;all</span>
                 <span class="c1"># layers identical at init&quot; pattern is a separate concern).</span>
-                <span class="n">n_slices</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span>
+                <span class="n">n_slices</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span>
                 <span class="n">per_slice</span> <span class="o">=</span> <span class="n">_init_matrix</span><span class="p">(</span>
                     <span class="n">init_fn</span><span class="p">,</span>
                     <span class="n">n_children</span><span class="p">,</span>
@@ -1613,7 +2002,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">per_slice</span><span class="p">,</span> <span class="p">(</span><span class="n">n_slices</span><span class="p">,</span> <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span><span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span>
+                <span class="n">n_children</span><span class="p">,</span> <span class="n">n_parents</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span>
                 <span class="n">new_weights</span> <span class="o">=</span> <span class="n">_init_matrix</span><span class="p">(</span>
                     <span class="n">init_fn</span><span class="p">,</span>
                     <span class="n">n_children</span><span class="p">,</span>
@@ -1622,17 +2011,102 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">seed</span><span class="p">,</span>
                     <span class="n">kwargs</span><span class="p">,</span>
                 <span class="p">)</span>
-            <span class="n">new_elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">weights_in</span><span class="o">=</span><span class="n">new_weights</span><span class="p">)</span>
+            <span class="n">new_elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">weights_mean</span><span class="o">=</span><span class="n">new_weights</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_elements</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_require_deep_backend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reject deep-network entry points on a continuous network.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">() is not available for continuous networks: they &quot;</span>
+                <span class="s2">&quot;are filters, not trainable deep networks. Use input_data() &quot;</span>
+                <span class="s2">&quot;to run observations through the network.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">time_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">record</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Filter a sequence of observations through a continuous network.</span>
+
+<span class="sd">        The vectorized equivalent of</span>
+<span class="sd">        :meth:`pyhgf.model.network.Network.input_data`: for every observation,</span>
+<span class="sd">        the top-down prediction sweep advances every layer&#39;s expected mean and</span>
+<span class="sd">        precisions, the observation is clamped on layer 0, and the bottom-up</span>
+<span class="sd">        sweep propagates prediction errors through the value- and</span>
+<span class="sd">        volatility-coupling edges. Continuous networks only.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_data :</span>
+<span class="sd">            Observations for layer 0, shape ``(T, n_obs)`` (or ``(T,)`` when</span>
+<span class="sd">            layer 0 has a single node).</span>
+<span class="sd">        time_steps :</span>
+<span class="sd">            Per-step time steps :math:`\Delta t`, shape ``(T,)``. Defaults to</span>
+<span class="sd">            ``1.0`` everywhere.</span>
+<span class="sd">        record :</span>
+<span class="sd">            Tuple of ``LayerState`` field names to record at every time step,</span>
+<span class="sd">            as in :meth:`fit`; the result lands in ``self.trajectories``.</span>
+<span class="sd">            ``None`` (default) records nothing and only the per-step</span>
+<span class="sd">            predictions are kept in ``self.predictions``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DeepNetwork</span>
+<span class="sd">            Self, with ``self.state`` advanced by the whole sequence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;input_data() is only available for continuous networks; use &quot;</span>
+                <span class="s2">&quot;fit() for volatile/binary/categorical networks.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">record_tuple</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">record</span><span class="p">)</span> <span class="k">if</span> <span class="n">record</span> <span class="k">else</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="n">record_tuple</span><span class="p">:</span>
+            <span class="n">valid_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">invalid</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">record_tuple</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_fields</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">invalid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unknown record field(s) </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2">. Valid: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_fields</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;input_data has </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> features but layer 0 has &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> nodes.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">time_steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time_steps</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">time_steps</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">step_output</span> <span class="o">=</span> <span class="n">run_continuous_scan</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">,</span> <span class="n">record_tuple</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">record_tuple</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">step_output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectories</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">step_output</span>
+
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-        <span class="n">optimizer</span><span class="p">:</span> <span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+        <span class="n">learning_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">record</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
@@ -1654,7 +2128,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            ``lr=&quot;adam&quot;`` → ``optimizer=optax.adam(1e-3)``.</span>
 <span class="sd">        learning_kind :</span>
 <span class="sd">            Gradient computation mode passed to</span>
-<span class="sd">            :func:`~pyhgf.updates.vectorized.learning.vectorized_weight_gradient`:</span>
+<span class="sd">            :func:`~pyhgf.updates.vectorized.learning.learning_weights_vectorized`:</span>
 <span class="sd">            ``&quot;standard&quot;`` or ``&quot;precision_weighted&quot;`` (default), both reading</span>
 <span class="sd">            the settled beliefs, strictly local per edge.</span>
 <span class="sd">        record :</span>
@@ -1686,6 +2160,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        DeepNetwork</span>
 <span class="sd">            Self with updated state and optimiser state.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;fit&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling fit.&quot;</span><span class="p">)</span>
 
@@ -1700,6 +2175,26 @@ window.runMermaid = runMermaid;</script>
                     <span class="sa">f</span><span class="s2">&quot;Unknown record field(s) </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2">. Valid: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_fields</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
+        <span class="c1"># Resolve learning configuration: mesu uses weight beliefs with fixed gradient,</span>
+        <span class="c1"># other kinds use the gradient directly without settings.</span>
+        <span class="k">if</span> <span class="n">learning_kind</span> <span class="o">!=</span> <span class="s2">&quot;mesu&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">learning_kwargs</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;learning_kwargs is only used by learning_kind=&#39;mesu&#39;, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;not by </span><span class="si">{</span><span class="n">learning_kind</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">gradient_kind</span><span class="p">,</span> <span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">resolve_mesu_settings</span><span class="p">(</span><span class="n">learning_kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">install_weight_belief</span><span class="p">()</span>
+            <span class="n">gradient_kind</span> <span class="o">=</span> <span class="n">MESU_GRADIENT_KIND</span>
+
+        <span class="k">if</span> <span class="n">mesu_settings</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;learning_kind=</span><span class="si">{</span><span class="n">learning_kind</span><span class="si">!r}</span><span class="s2"> needs an optimizer. Pass one, &quot;</span>
+                <span class="s2">&quot;or use learning_kind=&#39;mesu&#39;, whose step size is the belief&#39;s &quot;</span>
+                <span class="s2">&quot;own variance.&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_optimizer_state</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1709,11 +2204,12 @@ window.runMermaid = runMermaid;</script>
             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">),</span>
             <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
             <span class="n">optimizer</span><span class="p">,</span>
-            <span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">gradient_kind</span><span class="p">,</span>
             <span class="n">weight_update</span><span class="p">,</span>
             <span class="n">record_tuple</span><span class="p">,</span>
             <span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
             <span class="n">update_precisions</span><span class="p">,</span>
+            <span class="n">mesu_settings</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">record_tuple</span><span class="p">:</span>
@@ -1723,7 +2219,7 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">step_output</span>
 
         <span class="k">if</span> <span class="n">check_gradient_health</span> <span class="ow">and</span> <span class="n">weight_update</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_if_gradients_dead</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">learning_kind</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn_if_gradients_dead</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">gradient_kind</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -1765,9 +2261,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">swept</span> <span class="o">=</span> <span class="n">update_sweep</span><span class="p">(</span>
             <span class="n">prediction_sweep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="n">factors</span> <span class="o">=</span> <span class="n">_weight_gradients</span><span class="p">(</span>
-            <span class="n">swept</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">vectorized_weight_gradient_factors</span>
-        <span class="p">)</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="n">_weight_quantities</span><span class="p">(</span><span class="n">swept</span><span class="p">,</span> <span class="n">learning_kind</span><span class="p">)</span>
         <span class="n">magnitudes</span> <span class="o">=</span> <span class="p">[</span>
             <span class="kc">None</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">factors</span>
@@ -1841,6 +2335,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        jnp.ndarray</span>
 <span class="sd">            Predictions, shape (n_samples, n_output_features) or (n_output_features,).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;predict&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling predict.&quot;</span><span class="p">)</span>
 
@@ -1875,6 +2370,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        DeepNetwork</span>
 <span class="sd">            Self, with ``self.state`` advanced by the prediction sweep.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;prediction&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling prediction.&quot;</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -1929,6 +2425,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        DeepNetwork</span>
 <span class="sd">            Self, with ``self.state`` (and, if learning, ``self.opt_state``) advanced.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;update&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling update.&quot;</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
@@ -1965,6 +2462,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            The prediction error at the top layer, shape</span>
 <span class="sd">            ``(n_input_features,)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;input_error&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling input_error.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">input_prediction_error</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
@@ -1993,6 +2491,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            One batched ``LayerState`` per element — an opaque value to hand</span>
 <span class="sd">            back to :meth:`batch_update`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;predict_states&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling predict_states.&quot;</span><span class="p">)</span>
         <span class="n">states</span> <span class="o">=</span> <span class="n">batched_prediction_states</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
@@ -2004,6 +2503,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+        <span class="n">learning_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">predicted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2058,6 +2558,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Self, with ``self.state`` (and, if learning, ``self.opt_state``)</span>
 <span class="sd">            advanced by one batch.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_require_deep_backend</span><span class="p">(</span><span class="s2">&quot;batch_update&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Add at least one layer before calling batch_update.&quot;</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -2068,6 +2569,20 @@ window.runMermaid = runMermaid;</script>
                 <span class="s2">&quot;(batch, n_features).&quot;</span>
             <span class="p">)</span>
 
+        <span class="c1"># Resolve learning configuration: mesu uses weight beliefs with fixed gradient,</span>
+        <span class="c1"># other kinds use the gradient directly without settings.</span>
+        <span class="k">if</span> <span class="n">learning_kind</span> <span class="o">!=</span> <span class="s2">&quot;mesu&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">learning_kwargs</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;learning_kwargs is only used by learning_kind=&#39;mesu&#39;, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;not by </span><span class="si">{</span><span class="n">learning_kind</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">gradient_kind</span><span class="p">,</span> <span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">resolve_mesu_settings</span><span class="p">(</span><span class="n">learning_kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">install_weight_belief</span><span class="p">()</span>
+            <span class="n">gradient_kind</span> <span class="o">=</span> <span class="n">MESU_GRADIENT_KIND</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_optimizer_state</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_errors</span> <span class="o">=</span> <span class="n">batch_step</span><span class="p">(</span>
@@ -2076,11 +2591,12 @@ window.runMermaid = runMermaid;</script>
             <span class="n">x</span><span class="p">,</span>
             <span class="n">y</span><span class="p">,</span>
             <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
-            <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">learning_kind</span><span class="o">=</span><span class="n">gradient_kind</span><span class="p">,</span>
             <span class="n">update_precisions</span><span class="o">=</span><span class="n">update_precisions</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">time_step</span><span class="p">),</span>
             <span class="n">predicted</span><span class="o">=</span><span class="n">predicted</span><span class="p">,</span>
             <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">),</span>
+            <span class="n">mesu_settings</span><span class="o">=</span><span class="n">mesu_settings</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 

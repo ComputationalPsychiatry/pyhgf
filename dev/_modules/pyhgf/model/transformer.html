@@ -983,6 +983,45 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">_merge_heads</span><span class="p">(</span><span class="n">d_q</span><span class="p">),</span> <span class="n">_merge_heads</span><span class="p">(</span><span class="n">d_k</span><span class="p">),</span> <span class="n">_merge_heads</span><span class="p">(</span><span class="n">d_v</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_mixing_evidence</span><span class="p">(</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">xi_ctx</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Route an evidence precision back through the mixing, coefficients squared.</span>
+
+<span class="sd">    Follows :func:`_mixing_backward` step for step, with every linear</span>
+<span class="sd">    coefficient squared: where an error travels through a coefficient</span>
+<span class="sd">    :math:`c`, a precision travels through :math:`c^2` (the diagonal</span>
+<span class="sd">    treatment used throughout the evidence pass; cross terms between</span>
+<span class="sd">    coefficients are dropped). The softmax&#39;s squared Jacobian has the closed</span>
+<span class="sd">    form</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \xi^{(s)}_{ik} = a_{ik}^2\left[(1 - 2 a_{ik})\,\xi^{(a)}_{ik}</span>
+<span class="sd">        + \textstyle\sum_j a_{ij}^2 \xi^{(a)}_{ij}\right]</span>
+
+<span class="sd">    obtained by expanding :math:`\sum_j a_{ij}^2 (\delta_{jk} - a_{ik})^2</span>
+<span class="sd">    \xi^{(a)}_{ij}`; the expression is non-negative by construction and is</span>
+<span class="sd">    clipped at zero against rounding. Masked positions carry zero attention</span>
+<span class="sd">    and drop out automatically, as in the backward.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">attn</span><span class="p">,</span> <span class="n">qh</span><span class="p">,</span> <span class="n">kh</span><span class="p">,</span> <span class="n">vh</span> <span class="o">=</span> <span class="n">cache</span>
+    <span class="n">head_dim</span> <span class="o">=</span> <span class="n">qh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">xi_ctx_h</span> <span class="o">=</span> <span class="n">_split_heads</span><span class="p">(</span><span class="n">xi_ctx</span><span class="p">,</span> <span class="n">attn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">attn_sq</span> <span class="o">=</span> <span class="n">attn</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">xi_attn</span> <span class="o">=</span> <span class="n">xi_ctx_h</span> <span class="o">@</span> <span class="p">(</span><span class="n">vh</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">xi_v</span> <span class="o">=</span> <span class="n">attn_sq</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">@</span> <span class="n">xi_ctx_h</span>
+    <span class="n">row_total</span> <span class="o">=</span> <span class="p">(</span><span class="n">attn_sq</span> <span class="o">*</span> <span class="n">xi_attn</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">xi_scores</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+        <span class="n">attn_sq</span> <span class="o">*</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">attn</span><span class="p">)</span> <span class="o">*</span> <span class="n">xi_attn</span> <span class="o">+</span> <span class="n">row_total</span><span class="p">),</span> <span class="mf">0.0</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">head_dim</span><span class="p">)</span>
+    <span class="n">xi_q</span> <span class="o">=</span> <span class="n">xi_scores</span> <span class="o">@</span> <span class="n">kh</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">xi_k</span> <span class="o">=</span> <span class="n">xi_scores</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">@</span> <span class="n">qh</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">return</span> <span class="n">_merge_heads</span><span class="p">(</span><span class="n">xi_q</span><span class="p">),</span> <span class="n">_merge_heads</span><span class="p">(</span><span class="n">xi_k</span><span class="p">),</span> <span class="n">_merge_heads</span><span class="p">(</span><span class="n">xi_v</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="HybridGPT">
 <a class="viewcode-back" href="../../../generated/pyhgf.model.transformer/pyhgf.model.transformer.HybridGPT.html#pyhgf.model.transformer.HybridGPT">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HybridGPT</span><span class="p">:</span>

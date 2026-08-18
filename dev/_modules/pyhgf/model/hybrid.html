@@ -821,8 +821,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">Nothing resembling backpropagation runs anywhere: no global computation graph, no</span>
 <span class="sd">automatic differentiation.</span>
 
-<span class="sd">Error convention: the arrays passed between parts are *descent* errors — the gradient of</span>
-<span class="sd">the loss with respect to that signal, the same object a backprop library would hand</span>
+<span class="sd">Error convention: the arrays passed between parts are *descent* errors — the gradient</span>
+<span class="sd">of the loss with respect to that signal, the same object a backprop library would hand</span>
 <span class="sd">around. PyHGF&#39;s internal prediction errors follow the opposite, observed-minus-predicted</span>
 <span class="sd">convention; the executor converts between the two at the learning part&#39;s boundary, in</span>
 <span class="sd">exactly one place.</span>
@@ -842,6 +842,10 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.deep_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.error_types</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescentError</span><span class="p">,</span> <span class="n">ObservedMinusPredicted</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.updates.vectorized.learning</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MESU_GRADIENT_KIND</span><span class="p">,</span>
+    <span class="n">resolve_mesu_settings</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;PCModule&quot;</span><span class="p">,</span>
@@ -964,6 +968,17 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Use the ready-made constructors :func:`gelu_adapter` and</span>
 <span class="sd">    :func:`layer_norm_adapter` for the standard Transformer pieces.</span>
+
+<span class="sd">    Evidence Convention</span>
+<span class="sd">    -------------------</span>
+<span class="sd">    ``evidence_fn(cache, xi) -&gt; xi_in`` optionally translates an evidence</span>
+<span class="sd">    precision at the part&#39;s output into one at its input, for the pipeline&#39;s</span>
+<span class="sd">    evidence pass (:meth:`pyhgf.model.FusedPipeline.evidence_pass`). Where the</span>
+<span class="sd">    backward formula applies the transpose of the (linearised) map,</span>
+<span class="sd">    ``error @ J.T``, the evidence formula applies the same map with squared</span>
+<span class="sd">    coefficients, ``xi @ (J * J).T``: precisions travel through squared</span>
+<span class="sd">    couplings. Parts without an ``evidence_fn`` stop the evidence pass with an</span>
+<span class="sd">    error rather than silently passing a wrong value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="EquinoxAdapter.__init__">
@@ -972,9 +987,11 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">forward_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]],</span>
         <span class="n">backward_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">DescentError</span><span class="p">],</span> <span class="n">DescentError</span><span class="p">],</span>
+        <span class="n">evidence_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward_fn</span> <span class="o">=</span> <span class="n">forward_fn</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">backward_fn</span> <span class="o">=</span> <span class="n">backward_fn</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backward_fn</span> <span class="o">=</span> <span class="n">backward_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evidence_fn</span> <span class="o">=</span> <span class="n">evidence_fn</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
@@ -993,23 +1010,33 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">gelu</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_gelu_backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_gelu_slope</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="c1"># Derivative of the tanh approximation</span>
     <span class="c1">#   gelu(x) = 0.5 x (1 + tanh(c (x + a x^3))),</span>
     <span class="c1">#   gelu&#39;(x) = 0.5 (1 + t) + 0.5 x (1 - t^2) c (1 + 3 a x^2),  t = tanh(...).</span>
-    <span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">=</span> <span class="n">cache</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">_GELU_C</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">_GELU_A</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span>
-    <span class="n">slope</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">_GELU_C</span> <span class="o">*</span> <span class="p">(</span>
+    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">_GELU_C</span> <span class="o">*</span> <span class="p">(</span>
         <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">_GELU_A</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">error</span> <span class="o">*</span> <span class="n">slope</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gelu_backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">=</span> <span class="n">cache</span>
+    <span class="k">return</span> <span class="n">error</span> <span class="o">*</span> <span class="n">_gelu_slope</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gelu_evidence</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="c1"># An elementwise map&#39;s Jacobian is diagonal, so the squared coupling is</span>
+    <span class="c1"># the squared slope: exact, no approximation.</span>
+    <span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">=</span> <span class="n">cache</span>
+    <span class="k">return</span> <span class="n">xi</span> <span class="o">*</span> <span class="n">_gelu_slope</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
 
 <div class="viewcode-block" id="gelu_adapter">
 <a class="viewcode-back" href="../../../generated/pyhgf.model.hybrid/pyhgf.model.hybrid.gelu_adapter.html#pyhgf.model.hybrid.gelu_adapter">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">gelu_adapter</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EquinoxAdapter</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a frozen GELU: the error is multiplied by the slope at the cached input.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">_gelu_forward</span><span class="p">,</span> <span class="n">_gelu_backward</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">_gelu_forward</span><span class="p">,</span> <span class="n">_gelu_backward</span><span class="p">,</span> <span class="n">_gelu_evidence</span><span class="p">)</span></div>
 
 
 
@@ -1044,7 +1071,19 @@ window.runMermaid = runMermaid;</script>
             <span class="o">-</span> <span class="n">normed</span> <span class="o">*</span> <span class="p">(</span><span class="n">scaled</span> <span class="o">*</span> <span class="n">normed</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
 
-    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="c1"># The Jacobian&#39;s diagonal dominates: entry (i, i) is</span>
+        <span class="c1"># gamma_i (1 - 1/D - normed_i^2/D) / std, and the off-diagonal</span>
+        <span class="c1"># entries are smaller by a factor of the row width D. The evidence</span>
+        <span class="c1"># keeps the squared diagonal term and drops the off-diagonal</span>
+        <span class="c1"># couplings, consistent with the diagonal treatment everywhere else</span>
+        <span class="c1"># in the evidence pass.</span>
+        <span class="n">normed</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">normed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">width</span> <span class="o">-</span> <span class="n">normed</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">width</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
+        <span class="k">return</span> <span class="n">xi</span> <span class="o">*</span> <span class="n">diagonal</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span></div>
 
 
 
@@ -1070,7 +1109,11 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">error</span> <span class="o">@</span> <span class="n">weight</span>
 
-    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="c1"># Exact: a linear map&#39;s squared coupling is the squared weight.</span>
+        <span class="k">return</span> <span class="n">xi</span> <span class="o">@</span> <span class="n">weight</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span></div>
 
 
 
@@ -1117,6 +1160,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        weights (the beliefs still update).</span>
 <span class="sd">    learning_kind :</span>
 <span class="sd">        Weight-gradient mode, as in :meth:`~pyhgf.model.DeepNetwork.fit`.</span>
+<span class="sd">        ``&quot;mesu&quot;`` selects the weight-belief rule, whose settings come from</span>
+<span class="sd">        ``learning_kwargs`` and whose step size is each weight&#39;s own belief</span>
+<span class="sd">        variance, so ``optimizer`` is then unused.</span>
+<span class="sd">    learning_kwargs :</span>
+<span class="sd">        Settings of the learning rule, used by ``learning_kind=&quot;mesu&quot;`` (see</span>
+<span class="sd">        :func:`pyhgf.updates.vectorized.learning.resolve_mesu_settings`).</span>
 <span class="sd">    update_precisions :</span>
 <span class="sd">        Whether the precision state adapts across batches (see</span>
 <span class="sd">        :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —</span>
@@ -1133,14 +1182,29 @@ window.runMermaid = runMermaid;</script>
         <span class="n">net</span><span class="p">:</span> <span class="n">DeepNetwork</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;precision_weighted&quot;</span><span class="p">,</span>
+        <span class="n">learning_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">net</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_kind</span> <span class="o">=</span> <span class="n">learning_kind</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learning_kwargs</span> <span class="o">=</span> <span class="n">learning_kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_precisions</span> <span class="o">=</span> <span class="n">update_precisions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time_step</span> <span class="o">=</span> <span class="n">time_step</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_step</span> <span class="o">=</span> <span class="n">time_step</span>
+        <span class="c1"># The rule is resolved once here rather than per step: the settings are</span>
+        <span class="c1"># static, and the executor stages one compiled program per part.</span>
+        <span class="k">if</span> <span class="n">learning_kind</span> <span class="o">!=</span> <span class="s2">&quot;mesu&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">learning_kwargs</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;learning_kwargs is only used by learning_kind=&#39;mesu&#39;, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;not by </span><span class="si">{</span><span class="n">learning_kind</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gradient_kind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">learning_kind</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">resolve_mesu_settings</span><span class="p">(</span><span class="n">learning_kwargs</span><span class="p">)</span>
+            <span class="n">net</span><span class="o">.</span><span class="n">install_weight_belief</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gradient_kind</span> <span class="o">=</span> <span class="n">MESU_GRADIENT_KIND</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>

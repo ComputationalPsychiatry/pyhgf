@@ -840,6 +840,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">HybridGPT</span><span class="p">,</span>
     <span class="n">MultiHeadAttention</span><span class="p">,</span>
     <span class="n">_mixing_backward</span><span class="p">,</span>
+    <span class="n">_mixing_evidence</span><span class="p">,</span>
     <span class="n">_mixing_forward</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils.vectorized_belief_propagation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -859,15 +860,169 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    :func:`step_report`). All are pure — the recursion over the tree happens while</span>
 <span class="sd">    tracing, staging one graph. ``write_back(state)`` copies a state pytree onto the</span>
 <span class="sd">    part objects the core was built from.</span>
+
+<span class="sd">    ``evidence(state, cache, xi)`` walks the tree like ``backward`` but carries</span>
+<span class="sd">    an evidence precision instead of an error: where the backward multiplies by</span>
+<span class="sd">    a coupling, the evidence multiplies by its square. It returns the evidence</span>
+<span class="sd">    precision at the tree&#39;s input and one entry per learning part (in pipeline</span>
+<span class="sd">    order) holding that part&#39;s per-weight importance increments. It reads the</span>
+<span class="sd">    state and never advances it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">init_state</span><span class="p">:</span> <span class="n">Any</span>
     <span class="n">forward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
-    <span class="n">backward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
+    <span class="n">backward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
     <span class="n">write_back</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">evidence</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_adapter_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">DeepNetworkAdapter</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_evidence_walk</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">,</span>
+    <span class="n">states</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">xi_flat</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ledgers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;One learning part&#39;s evidence recursion: per-layer increments and routing.</span>
+
+<span class="sd">    The evidence precision :math:`\xi` arriving at the part&#39;s bottom</span>
+<span class="sd">    (output) layer is combined with each layer&#39;s process noise,</span>
+<span class="sd">    :math:`\tilde\xi = (1/\xi + \Omega)^{-1}`, consumed by the layer&#39;s</span>
+<span class="sd">    weight increments :math:`\tilde\xi_a h_i^2` (batch-averaged by one</span>
+<span class="sd">    contraction), and propagated to the layer above through the squared</span>
+<span class="sd">    weights and the squared coupling slope,</span>
+<span class="sd">    :math:`\xi_j = g&#39;(\hat\mu_j)^2 \sum_a w_{aj}^2 \tilde\xi_a`. The</span>
+<span class="sd">    process noise is recovered from the states the forward already cached,</span>
+<span class="sd">    via :math:`\Omega = 1/\hat\pi_{\text{cond}} - 1/\pi`; for a clamped</span>
+<span class="sd">    observed layer the two precisions coincide and the noise is zero.</span>
+
+<span class="sd">    With ``ledgers``, the same two factors are contracted into the input space</span>
+<span class="sd">    instead of onto the diagonal: an activation :math:`\mathbf{h}` weighted by</span>
+<span class="sd">    the evidence its layer carries, summed over the batch. One Bayesian update</span>
+<span class="sd">    on a linear-Gaussian child adds :math:`\tilde\xi_a</span>
+<span class="sd">    \mathbf{h}\mathbf{h}^{\!\top}` to the precision of the weights feeding</span>
+<span class="sd">    output unit :math:`a`, so this matrix is that correction accumulated, with</span>
+<span class="sd">    the per-unit factor summed over the output units into one weight per</span>
+<span class="sd">    sample. Its diagonal is the summed increment, and its eigenvectors are the</span>
+<span class="sd">    input directions the data have constrained.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network :</span>
+<span class="sd">        The part&#39;s network (weights and carried template states).</span>
+<span class="sd">    states :</span>
+<span class="sd">        The per-sample predicted layer states the forward cached, one batched</span>
+<span class="sd">        ``LayerState`` per element.</span>
+<span class="sd">    xi_flat :</span>
+<span class="sd">        Evidence precision at the part&#39;s bottom layer, ``(rows, n_out)``.</span>
+<span class="sd">    path :</span>
+<span class="sd">        The part&#39;s path, for error messages.</span>
+<span class="sd">    ledgers :</span>
+<span class="sd">        Whether to accumulate the input-space matrices as well as the</span>
+<span class="sd">        diagonal increments. Off by default, since the training path consumes</span>
+<span class="sd">        the increments alone and each matrix costs ``n_in`` times a layer&#39;s</span>
+<span class="sd">        input width.</span>
+<span class="sd">    normalisation :</span>
+<span class="sd">        How the batch contraction is averaged, matching the pipeline&#39;s</span>
+<span class="sd">        ``error_normalisation`` so that the increment is the curvature of the</span>
+<span class="sd">        same averaged objective the error descends. ``&quot;active&quot;`` divides by</span>
+<span class="sd">        the number of rows carrying evidence, ``&quot;rows&quot;`` by the row count.</span>
+<span class="sd">        They differ only when the seed zeroes some rows, as a padding mask</span>
+<span class="sd">        does.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xi_flat :</span>
+<span class="sd">        Evidence precision at the part&#39;s top (input) layer, ``(rows, n_in)``.</span>
+<span class="sd">    increments :</span>
+<span class="sd">        One increment matrix per weight-carrying element, in layer order.</span>
+<span class="sd">    ledgers :</span>
+<span class="sd">        The evidence-weighted input covariance :math:`\mathbb{E}_b\big[(\sum_a</span>
+<span class="sd">        \tilde\xi_{ba})\,\mathbf{h}_b\mathbf{h}_b^{\!\top}\big]`, one</span>
+<span class="sd">        ``(n_in, n_in)`` array per weight-carrying element in the same order,</span>
+<span class="sd">        or an empty tuple without ``ledgers``.</span>
+<span class="sd">    covariances :</span>
+<span class="sd">        The same contraction with every sample weighted equally,</span>
+<span class="sd">        :math:`\mathbb{E}_b[\mathbf{h}_b\mathbf{h}_b^{\!\top}]`, which</span>
+<span class="sd">        separates what the activations alone say from what the evidence</span>
+<span class="sd">        weighting adds. Empty without ``ledgers``.</span>
+<span class="sd">    factors :</span>
+<span class="sd">        The uncontracted pair every quantity above is built from, one</span>
+<span class="sd">        ``(xi_tilde, h)`` per weight-carrying element: the per-sample</span>
+<span class="sd">        effective evidence precision at that layer&#39;s output units,</span>
+<span class="sd">        ``(rows, n_out)``, and the activation feeding it, ``(rows, n_in)``,</span>
+<span class="sd">        with the constant column included where the layer has one. Keeping</span>
+<span class="sd">        them makes contractions the walk does not itself form available to a</span>
+<span class="sd">        caller, including one matrix per output unit rather than one shared</span>
+<span class="sd">        across them. Empty without ``ledgers``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">layers</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="s2">&quot;coupling_fn&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;The evidence pass supports plain Layer elements only; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;part </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2"> holds a LayerStack.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">xi_child</span> <span class="o">=</span> <span class="n">xi_flat</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">xi_child</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># The error is averaged over the rows that carry one (see</span>
+    <span class="c1"># ``FusedPipeline.error_normalisation``); averaging the curvature over</span>
+    <span class="c1"># every row instead would deliver the Hessian of a different objective,</span>
+    <span class="c1"># smaller by the share of rows the mask zeroes.</span>
+    <span class="k">if</span> <span class="n">normalisation</span> <span class="o">==</span> <span class="s2">&quot;active&quot;</span><span class="p">:</span>
+        <span class="n">carrying</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">xi_child</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">carrying</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">xi_child</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xi_child</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">increments</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ledgers_out</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">covariances</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">factors</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)):</span>
+        <span class="n">child_state</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">parent_state</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">carried</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">precision</span><span class="p">,</span> <span class="mf">1e-30</span><span class="p">)</span>
+        <span class="n">conditional</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">conditional_expected_precision</span><span class="p">,</span> <span class="mf">1e-30</span><span class="p">)</span>
+        <span class="n">omega</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">conditional</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">carried</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">xi_tilde</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">xi_child</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">xi_child</span><span class="p">,</span> <span class="mf">1e-30</span><span class="p">)</span> <span class="o">+</span> <span class="n">omega</span><span class="p">),</span>
+            <span class="mf">0.0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span>
+        <span class="n">mu_parent</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">mu_parent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">h</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="mi">1</span><span class="p">))],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">increments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ba,bj-&gt;aj&quot;</span><span class="p">,</span> <span class="n">xi_tilde</span><span class="p">,</span> <span class="n">h</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ledgers</span><span class="p">:</span>
+            <span class="n">weighted</span> <span class="o">=</span> <span class="n">h</span> <span class="o">*</span> <span class="n">xi_tilde</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">ledgers_out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weighted</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">h</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">)</span>
+            <span class="n">covariances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">h</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">)</span>
+            <span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">xi_tilde</span><span class="p">,</span> <span class="n">h</span><span class="p">))</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">weights_mean</span>
+        <span class="k">if</span> <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">slope</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">mu_parent</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">mu_parent</span><span class="o">.</span><span class="n">shape</span>
+        <span class="p">)</span>
+        <span class="n">xi_child</span> <span class="o">=</span> <span class="n">slope</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">xi_tilde</span> <span class="o">@</span> <span class="n">weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">xi_child</span><span class="p">,</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">increments</span><span class="p">),</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">ledgers_out</span><span class="p">),</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">covariances</span><span class="p">),</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">factors</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_adapter_core</span><span class="p">(</span>
+    <span class="n">part</span><span class="p">:</span> <span class="n">DeepNetworkAdapter</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of a learning part: sweep forward, batch learning backward.</span>
 
 <span class="sd">    The state is the pair (network, optimiser state). The forward pass keeps the per-</span>
@@ -875,7 +1030,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    re-running the sweep — inside one trace, the handover is free.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">optimizer</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">optimizer</span>
-    <span class="n">learning_kind</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">learning_kind</span>
+    <span class="n">learning_kind</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">gradient_kind</span>
+    <span class="n">mesu_settings</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">mesu_settings</span>
     <span class="n">update_precisions</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">update_precisions</span>
     <span class="n">time_step</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">time_step</span>
     <span class="n">layer_sizes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">)</span>
@@ -910,6 +1066,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
             <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
             <span class="n">update_precisions</span><span class="o">=</span><span class="n">update_precisions</span><span class="p">,</span>
+            <span class="n">mesu_settings</span><span class="o">=</span><span class="n">mesu_settings</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">predicted</span><span class="o">=</span><span class="n">states</span><span class="p">,</span>
         <span class="p">)</span>
@@ -939,10 +1096,36 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
         <span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">opt_state</span> <span class="o">=</span> <span class="n">state</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read-only evidence recursion; see :func:`_evidence_walk`.&quot;&quot;&quot;</span>
+        <span class="n">network</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">states</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">xi_flat</span><span class="p">,</span> <span class="n">increments</span><span class="p">,</span> <span class="n">ledgers</span><span class="p">,</span> <span class="n">covariances</span><span class="p">,</span> <span class="n">factors</span> <span class="o">=</span> <span class="n">_evidence_walk</span><span class="p">(</span>
+            <span class="n">network</span><span class="p">,</span>
+            <span class="n">states</span><span class="p">,</span>
+            <span class="n">xi</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xi</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="n">path</span><span class="p">,</span>
+            <span class="n">ledgers</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">normalisation</span><span class="o">=</span><span class="n">normalisation</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">xi_in</span> <span class="o">=</span> <span class="n">xi_flat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">xi</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;part&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+                <span class="s2">&quot;increments&quot;</span><span class="p">:</span> <span class="n">increments</span><span class="p">,</span>
+                <span class="s2">&quot;ledgers&quot;</span><span class="p">:</span> <span class="n">ledgers</span><span class="p">,</span>
+                <span class="s2">&quot;covariances&quot;</span><span class="p">:</span> <span class="n">covariances</span><span class="p">,</span>
+                <span class="s2">&quot;factors&quot;</span><span class="p">:</span> <span class="n">factors</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">xi_in</span><span class="p">,</span> <span class="n">entry</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_frozen_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">EquinoxAdapter</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_frozen_core</span><span class="p">(</span>
+    <span class="n">part</span><span class="p">:</span> <span class="n">EquinoxAdapter</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of a frozen part: its formula pair, cache threaded explicitly.</span>
 
 <span class="sd">    A frozen part has no learnable state, so its state pytree is empty.</span>
@@ -955,15 +1138,32 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">part</span><span class="o">.</span><span class="n">backward_fn</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">),</span> <span class="n">state</span><span class="p">,</span> <span class="p">()</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">xi</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xi_out</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">part</span><span class="o">.</span><span class="n">evidence_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The frozen part </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2"> declares no evidence_fn, so the &quot;</span>
+                <span class="s2">&quot;evidence pass cannot cross it.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xi_out</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">evidence_fn</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">xi_out</span><span class="p">,</span> <span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_sequential_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">PCSequential</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_sequential_core</span><span class="p">(</span>
+    <span class="n">part</span><span class="p">:</span> <span class="n">PCSequential</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of a chain: children forward in order, backward in reverse.</span>
 
 <span class="sd">    The state is a tuple of the children&#39;s states, built from the child cores.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cores</span> <span class="o">=</span> <span class="p">[</span><span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.parts[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">parts</span><span class="p">)]</span>
+    <span class="n">cores</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.parts[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+    <span class="p">]</span>
 
     <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">init_state</span> <span class="k">for</span> <span class="n">core</span> <span class="ow">in</span> <span class="n">cores</span><span class="p">)</span>
 
@@ -986,17 +1186,24 @@ window.runMermaid = runMermaid;</script>
         <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">child_state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cores</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
             <span class="n">core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">child_state</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">caches</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+        <span class="n">entries</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cores</span><span class="p">))):</span>
+            <span class="n">xi</span><span class="p">,</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">cores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">caches</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">xi</span><span class="p">)</span>
+            <span class="n">entries</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span>  <span class="c1"># keep pipeline order, not visit order</span>
+        <span class="k">return</span> <span class="n">xi</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_residual_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">Residual</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_residual_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">Residual</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the shortcut junction: the branch&#39;s messages add back.</span>
 
 <span class="sd">    State is obtained from the branch via its _Core&#39;s init_state pytree. The shortcut</span>
 <span class="sd">    itself has no state (it just routes signals), so the pytree is just the branch&#39;s</span>
 <span class="sd">    state.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">inner</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">branch</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.branch&quot;</span><span class="p">)</span>
+    <span class="n">inner</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">branch</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.branch&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">y</span><span class="p">,</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">inner</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
@@ -1006,10 +1213,16 @@ window.runMermaid = runMermaid;</script>
         <span class="n">error_in</span><span class="p">,</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">report</span> <span class="o">=</span> <span class="n">inner</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">error</span> <span class="o">+</span> <span class="n">error_in</span><span class="p">,</span> <span class="n">new_state</span><span class="p">,</span> <span class="n">report</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">inner</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">inner</span><span class="o">.</span><span class="n">write_back</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+        <span class="n">xi_in</span><span class="p">,</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">inner</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">xi</span> <span class="o">+</span> <span class="n">xi_in</span><span class="p">,</span> <span class="n">entries</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">inner</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">inner</span><span class="o">.</span><span class="n">write_back</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_fused_qkv_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_fused_qkv_attention_core</span><span class="p">(</span>
+    <span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the attention core over one fused query/key/value part.</span>
 
 <span class="sd">    The part emits the stacked ``[q | k | v]`` streams, split after the part</span>
@@ -1017,8 +1230,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    maps as one matrix product.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">part</span><span class="o">.</span><span class="n">wqkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="n">qkv_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">wqkv</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.wqkv&quot;</span><span class="p">)</span>
-    <span class="n">o_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">wo</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.wo&quot;</span><span class="p">)</span>
+    <span class="n">qkv_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">wqkv</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.wqkv&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
+    <span class="n">o_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">wo</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.wo&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="n">n_heads</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">n_heads</span>
     <span class="n">init_state_pytree</span> <span class="o">=</span> <span class="p">(</span><span class="n">qkv_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">,</span> <span class="n">o_core</span><span class="o">.</span><span class="n">init_state</span><span class="p">)</span>
 
@@ -1043,10 +1256,21 @@ window.runMermaid = runMermaid;</script>
         <span class="n">qkv_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">o_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+        <span class="n">state_qkv</span><span class="p">,</span> <span class="n">state_o</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">cache_qkv</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">xi_ctx</span><span class="p">,</span> <span class="n">entries_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span>
+        <span class="n">xi_q</span><span class="p">,</span> <span class="n">xi_k</span><span class="p">,</span> <span class="n">xi_v</span> <span class="o">=</span> <span class="n">_mixing_evidence</span><span class="p">(</span><span class="n">cache_mix</span><span class="p">,</span> <span class="n">xi_ctx</span><span class="p">)</span>
+        <span class="n">xi_qkv</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">xi_q</span><span class="p">,</span> <span class="n">xi_k</span><span class="p">,</span> <span class="n">xi_v</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">xi_in</span><span class="p">,</span> <span class="n">entries_qkv</span> <span class="o">=</span> <span class="n">qkv_core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state_qkv</span><span class="p">,</span> <span class="n">cache_qkv</span><span class="p">,</span> <span class="n">xi_qkv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">xi_in</span><span class="p">,</span> <span class="n">entries_qkv</span> <span class="o">+</span> <span class="n">entries_o</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_attention_core</span><span class="p">(</span>
+    <span class="n">part</span><span class="p">:</span> <span class="n">MultiHeadAttention</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the attention composite: Q/K/V, the mixing, then O.</span>
 
 <span class="sd">    Backward, the output error returns through O, is re-routed across positions by the</span>
@@ -1058,10 +1282,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    construction.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">wqkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_fused_qkv_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_fused_qkv_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="n">n_heads</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">n_heads</span>
     <span class="n">q_core</span><span class="p">,</span> <span class="n">k_core</span><span class="p">,</span> <span class="n">v_core</span><span class="p">,</span> <span class="n">o_core</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">_core</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="p">(</span><span class="s2">&quot;wq&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wq</span><span class="p">),</span>
             <span class="p">(</span><span class="s2">&quot;wk&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">wk</span><span class="p">),</span>
@@ -1089,23 +1313,52 @@ window.runMermaid = runMermaid;</script>
         <span class="n">cache_q</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">cache</span>
         <span class="n">d_ctx</span><span class="p">,</span> <span class="n">new_o</span><span class="p">,</span> <span class="n">report_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
         <span class="n">d_q</span><span class="p">,</span> <span class="n">d_k</span><span class="p">,</span> <span class="n">d_v</span> <span class="o">=</span> <span class="n">_mixing_backward</span><span class="p">(</span><span class="n">cache_mix</span><span class="p">,</span> <span class="n">d_ctx</span><span class="p">)</span>
-        <span class="n">error_q</span><span class="p">,</span> <span class="n">new_q</span><span class="p">,</span> <span class="n">report_q</span> <span class="o">=</span> <span class="n">q_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_q</span><span class="p">,</span> <span class="n">cache_q</span><span class="p">,</span> <span class="n">d_q</span><span class="p">)</span>
-        <span class="n">error_k</span><span class="p">,</span> <span class="n">new_k</span><span class="p">,</span> <span class="n">report_k</span> <span class="o">=</span> <span class="n">k_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_k</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">d_k</span><span class="p">)</span>
-        <span class="n">error_v</span><span class="p">,</span> <span class="n">new_v</span><span class="p">,</span> <span class="n">report_v</span> <span class="o">=</span> <span class="n">v_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">state_v</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">d_v</span><span class="p">)</span>
+        <span class="c1"># Process the three input cores; errors and reports accumulate since they</span>
+        <span class="c1"># share the same input.</span>
+        <span class="n">qkv_results</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">q_core</span><span class="p">,</span> <span class="n">state_q</span><span class="p">,</span> <span class="n">cache_q</span><span class="p">,</span> <span class="n">d_q</span><span class="p">),</span>
+                <span class="p">(</span><span class="n">k_core</span><span class="p">,</span> <span class="n">state_k</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">d_k</span><span class="p">),</span>
+                <span class="p">(</span><span class="n">v_core</span><span class="p">,</span> <span class="n">state_v</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">d_v</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">errors</span><span class="p">,</span> <span class="n">new_states</span><span class="p">,</span> <span class="n">reports</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">qkv_results</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="n">error_q</span> <span class="o">+</span> <span class="n">error_k</span> <span class="o">+</span> <span class="n">error_v</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">new_q</span><span class="p">,</span> <span class="n">new_k</span><span class="p">,</span> <span class="n">new_v</span><span class="p">,</span> <span class="n">new_o</span><span class="p">),</span>
-            <span class="n">report_q</span> <span class="o">+</span> <span class="n">report_k</span> <span class="o">+</span> <span class="n">report_v</span> <span class="o">+</span> <span class="n">report_o</span><span class="p">,</span>
+            <span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">errors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">errors</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="p">(</span><span class="o">*</span><span class="n">new_states</span><span class="p">,</span> <span class="n">new_o</span><span class="p">),</span>
+            <span class="n">report_o</span> <span class="o">+</span> <span class="n">reports</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">reports</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">reports</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">write_back</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">child_state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">q_core</span><span class="p">,</span> <span class="n">k_core</span><span class="p">,</span> <span class="n">v_core</span><span class="p">,</span> <span class="n">o_core</span><span class="p">),</span> <span class="n">state</span><span class="p">):</span>
             <span class="n">core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">child_state</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+        <span class="n">state_q</span><span class="p">,</span> <span class="n">state_k</span><span class="p">,</span> <span class="n">state_v</span><span class="p">,</span> <span class="n">state_o</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">cache_q</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">cache_mix</span><span class="p">,</span> <span class="n">cache_o</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">xi_ctx</span><span class="p">,</span> <span class="n">entries_o</span> <span class="o">=</span> <span class="n">o_core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state_o</span><span class="p">,</span> <span class="n">cache_o</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span>
+        <span class="n">xi_q</span><span class="p">,</span> <span class="n">xi_k</span><span class="p">,</span> <span class="n">xi_v</span> <span class="o">=</span> <span class="n">_mixing_evidence</span><span class="p">(</span><span class="n">cache_mix</span><span class="p">,</span> <span class="n">xi_ctx</span><span class="p">)</span>
+        <span class="c1"># Process the three input cores; evidence and entries accumulate since they</span>
+        <span class="c1"># share the same input.</span>
+        <span class="n">qkv_results</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">core</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">q_core</span><span class="p">,</span> <span class="n">state_q</span><span class="p">,</span> <span class="n">cache_q</span><span class="p">,</span> <span class="n">xi_q</span><span class="p">),</span>
+                <span class="p">(</span><span class="n">k_core</span><span class="p">,</span> <span class="n">state_k</span><span class="p">,</span> <span class="n">cache_k</span><span class="p">,</span> <span class="n">xi_k</span><span class="p">),</span>
+                <span class="p">(</span><span class="n">v_core</span><span class="p">,</span> <span class="n">state_v</span><span class="p">,</span> <span class="n">cache_v</span><span class="p">,</span> <span class="n">xi_v</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">xi_ins</span><span class="p">,</span> <span class="n">entries_list</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">qkv_results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">xi_ins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">xi_ins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">xi_ins</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">entries_o</span> <span class="o">+</span> <span class="n">entries_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">entries_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">entries_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_gpt_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">HybridGPT</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_gpt_core</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="n">HybridGPT</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the core of the full Transformer: embeddings, blocks, and head.</span>
 
 <span class="sd">    The forward pass takes integer token ids, not feature arrays: the one-hot encoding</span>
@@ -1116,16 +1369,16 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    State is obtained from the pipeline and optional embedding parts via their</span>
 <span class="sd">    respective _Core init_state pytrees. Frozen embeddings contribute empty states.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">pipeline_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">pipeline</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.pipeline&quot;</span><span class="p">)</span>
+    <span class="n">pipeline_core</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">pipeline</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.pipeline&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="n">token_core</span> <span class="o">=</span> <span class="p">(</span>
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">token_part</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">token_part</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.token_part&quot;</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">token_part</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.token_part&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">position_core</span> <span class="o">=</span> <span class="p">(</span>
         <span class="kc">None</span>
         <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">position_part</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">position_part</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.position_part&quot;</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">position_part</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.position_part&quot;</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">tok_table</span><span class="p">,</span> <span class="n">pos_table</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">tok_table</span><span class="p">,</span> <span class="n">part</span><span class="o">.</span><span class="n">pos_table</span>
 
@@ -1168,6 +1421,8 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
             <span class="n">reports</span> <span class="o">=</span> <span class="n">reports</span> <span class="o">+</span> <span class="n">report</span>
         <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># The position part sees one row per position, so it receives the</span>
+            <span class="c1"># batch mean of the message.</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">new_pos</span><span class="p">,</span> <span class="n">report</span> <span class="o">=</span> <span class="n">position_core</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span>
                 <span class="n">state_pos</span><span class="p">,</span> <span class="n">cache_pos</span><span class="p">,</span> <span class="n">embedding_error</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="p">)</span>
@@ -1182,25 +1437,46 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">position_core</span><span class="o">.</span><span class="n">write_back</span><span class="p">(</span><span class="n">state_pos</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+        <span class="n">state_pipe</span><span class="p">,</span> <span class="n">state_tok</span><span class="p">,</span> <span class="n">state_pos</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="n">cache_pipe</span><span class="p">,</span> <span class="n">cache_tok</span><span class="p">,</span> <span class="n">cache_pos</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">embedding_lam</span><span class="p">,</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">pipeline_core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state_pipe</span><span class="p">,</span> <span class="n">cache_pipe</span><span class="p">,</span> <span class="n">xi</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">token_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">token_core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state_tok</span><span class="p">,</span> <span class="n">cache_tok</span><span class="p">,</span> <span class="n">embedding_lam</span><span class="p">)</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="n">entries</span> <span class="o">+</span> <span class="n">entry</span>
+        <span class="k">if</span> <span class="n">position_core</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># The position part sees one row per position, so it receives the</span>
+            <span class="c1"># batch mean, mirroring the backward&#39;s routing.</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">position_core</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span>
+                <span class="n">state_pos</span><span class="p">,</span> <span class="n">cache_pos</span><span class="p">,</span> <span class="n">embedding_lam</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="n">entries</span> <span class="o">+</span> <span class="n">entry</span>
+        <span class="k">return</span> <span class="n">embedding_lam</span><span class="p">,</span> <span class="n">entries</span>
+
+    <span class="k">return</span> <span class="n">_Core</span><span class="p">(</span><span class="n">init_state_pytree</span><span class="p">,</span> <span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">,</span> <span class="n">write_back</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the functional core for a part tree, by its type.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Core</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the functional core for a part tree, by its type.</span>
+
+<span class="sd">    ``normalisation`` is the pipeline&#39;s ``error_normalisation``, carried down so that a</span>
+<span class="sd">    part forming evidence increments averages them over the same rows the error is</span>
+<span class="sd">    averaged over.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">part</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">DeepNetworkAdapter</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_adapter_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_adapter_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">EquinoxAdapter</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_frozen_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_frozen_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">PCSequential</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_sequential_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_sequential_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">Residual</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_residual_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_residual_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">MultiHeadAttention</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_attention_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">HybridGPT</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_gpt_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_gpt_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">normalisation</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
         <span class="s2">&quot;FusedPipeline supports DeepNetworkAdapter, EquinoxAdapter, &quot;</span>
         <span class="s2">&quot;PCSequential, Residual, MultiHeadAttention, and HybridGPT trees; &quot;</span>
@@ -1211,7 +1487,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="FusedPipeline">
 <a class="viewcode-back" href="../../../generated/pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html#pyhgf.model.fused.FusedPipeline">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FusedPipeline</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a part tree, one compiled program per training step.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run a part tree, one compiled program per training step.</span>
 
 <span class="sd">    Holds every part&#39;s mutable state (the network beliefs and weights, the optimiser</span>
 <span class="sd">    states) as one explicit pytree, and compiles a single step function: forward walk →</span>
@@ -1270,7 +1546,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_normalisation</span><span class="si">!r}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span> <span class="o">=</span> <span class="n">_core</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">normalisation</span><span class="o">=</span><span class="n">error_normalisation</span><span class="p">)</span>
         <span class="c1"># Own the carried state: the init pytree shares its arrays with the</span>
         <span class="c1"># part objects it was built from, and the step donates its input</span>
         <span class="c1"># buffers, so donating the shared originals would delete them out</span>
@@ -1301,7 +1577,15 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">donate</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">xi</span><span class="p">):</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_core_fns</span><span class="o">.</span><span class="n">evidence</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">xi</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># No donation: the evidence pass reads the state and must leave it</span>
+        <span class="c1"># usable for the next step.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evidence</span> <span class="o">=</span> <span class="n">eqx</span><span class="o">.</span><span class="n">filter_jit</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -1342,6 +1626,66 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">input_error</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">evidence_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">xi</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Per-weight importance increments from one evidence sweep.</span>
+
+<span class="sd">        Runs the forward pass, then walks the tree backwards carrying an</span>
+<span class="sd">        evidence precision instead of an error: a per-unit non-negative</span>
+<span class="sd">        weight saying how strongly the loss curves at each output unit.</span>
+<span class="sd">        Where the backward walk multiplies an error by a coupling, the</span>
+<span class="sd">        evidence walk multiplies the precision by the coupling&#39;s square, and</span>
+<span class="sd">        inside each learning part the layer-by-layer recursion</span>
+<span class="sd">        :math:`\xi_j = g&#39;(\hat\mu_j)^2 \sum_a w_{aj}^2 \tilde\xi_a`</span>
+<span class="sd">        (with :math:`\tilde\xi = (1/\xi + \Omega)^{-1}` absorbing</span>
+<span class="sd">        each layer&#39;s process noise) yields, per weight, the increment</span>
+<span class="sd">        :math:`\tilde\xi_a h_i^2` averaged over the batch.</span>
+
+<span class="sd">        The same two factors are also contracted into the input space, one</span>
+<span class="sd">        matrix per weight matrix rather than one number per weight, which is</span>
+<span class="sd">        what a rule that turns an update rather than only shortening it needs</span>
+<span class="sd">        (see the ``&quot;ledgers&quot;`` entry below).</span>
+
+<span class="sd">        The weights and beliefs are read, not advanced: this is a</span>
+<span class="sd">        measurement, not a training step.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x :</span>
+<span class="sd">            Inputs, as :meth:`step` takes them.</span>
+<span class="sd">        xi :</span>
+<span class="sd">            The evidence precision at the tree&#39;s output, shaped like the</span>
+<span class="sd">            output. For a categorical head trained by cross entropy this is</span>
+<span class="sd">            ``probs * (1 - probs)``, the curvature of the categorical</span>
+<span class="sd">            log-likelihood with the label integrated out; rows the loss</span>
+<span class="sd">            masks out should carry zeros, which propagate to nothing.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            One entry per learning part, in pipeline order. Each is a dict</span>
+<span class="sd">            holding the part&#39;s ``&quot;part&quot;`` path and three tuples, one element</span>
+<span class="sd">            per weight matrix in the part&#39;s layer order:</span>
+
+<span class="sd">            - ``&quot;increments&quot;``, the per-weight increment</span>
+<span class="sd">              :math:`\tilde\xi_a h_i^2` (matching ``weights_mean`` shapes,</span>
+<span class="sd">              constant column included);</span>
+<span class="sd">            - ``&quot;ledgers&quot;``, the evidence-weighted input covariance</span>
+<span class="sd">              :math:`\mathbb{E}_b[(\sum_a \tilde\xi_{ba})\,</span>
+<span class="sd">              \mathbf{h}_b\mathbf{h}_b^{\!\top}]`, shape</span>
+<span class="sd">              ``(n_in, n_in)``, whose diagonal is the increment summed over</span>
+<span class="sd">              output units and whose eigenvectors are the input directions</span>
+<span class="sd">              the data have constrained;</span>
+<span class="sd">            - ``&quot;covariances&quot;``, the same contraction with every sample</span>
+<span class="sd">              weighted equally, so the evidence weighting&#39;s effect on the</span>
+<span class="sd">              directions can be read off by comparison;</span>
+<span class="sd">            - ``&quot;factors&quot;``, the uncontracted pair ``(xi_tilde, h)`` the other</span>
+<span class="sd">              three are built from, shapes ``(rows, n_out)`` and</span>
+<span class="sd">              ``(rows, n_in)``. A caller wanting a contraction this method does</span>
+<span class="sd">              not form, such as one matrix per output unit instead of one</span>
+<span class="sd">              shared across them, builds it from these.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evidence</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">xi</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the held state back onto the wrapped parts; return the tree.&quot;&quot;&quot;</span>

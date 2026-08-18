@@ -21,7 +21,9 @@
       ~DeepNetwork.fit
       ~DeepNetwork.from_configs
       ~DeepNetwork.from_dict
+      ~DeepNetwork.input_data
       ~DeepNetwork.input_error
+      ~DeepNetwork.install_weight_belief
       ~DeepNetwork.load
       ~DeepNetwork.plot_layers
       ~DeepNetwork.predict

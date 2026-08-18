@@ -23,9 +23,13 @@
 
    .. autosummary::
    
+      ~Layer.value_child_idx
+      ~Layer.volatility_child_idx
+      ~Layer.volatility_weights
+      ~Layer.weights_precision_delta
       ~Layer.state
       ~Layer.params
-      ~Layer.weights_in
+      ~Layer.weights_mean
       ~Layer.coupling_fn
       ~Layer.add_constant_input
       ~Layer.has_volatility_parent

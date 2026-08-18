@@ -995,11 +995,14 @@ and are used internally by <a class="reference internal" href="generated/pyhgf.m
 <h4><a class="toc-backref" href="#id34" role="doc-backlink">Vectorized learning</a><a class="headerlink" href="#vectorized-learning" title="Link to this heading">#</a></h4>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient" title="pyhgf.updates.vectorized.learning.vectorized_weight_gradient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_weight_gradient</span></code></a>(parent_state, ...)</p></td>
-<td><p>Per-layer weight gradient for the vectorised deep network.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.learning_weights_vectorized.html#pyhgf.updates.vectorized.learning.learning_weights_vectorized" title="pyhgf.updates.vectorized.learning.learning_weights_vectorized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">learning_weights_vectorized</span></code></a>(parent_state, ...)</p></td>
+<td><p>Per-layer weight-learning factors for the vectorised deep network.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors" title="pyhgf.updates.vectorized.learning.vectorized_weight_gradient_factors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_weight_gradient_factors</span></code></a>(...[, ...])</p></td>
-<td><p>Child- and parent-side factors of the weight gradient.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.resolve_mesu_settings.html#pyhgf.updates.vectorized.learning.resolve_mesu_settings" title="pyhgf.updates.vectorized.learning.resolve_mesu_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_mesu_settings</span></code></a>([learning_kwargs])</p></td>
+<td><p>Validate the weight-belief rule's settings and fill in the defaults.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_mesu_update.html#pyhgf.updates.vectorized.learning.vectorized_mesu_update" title="pyhgf.updates.vectorized.learning.vectorized_mesu_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vectorized_mesu_update</span></code></a>(weights, ...)</p></td>
+<td><p>One weight matrix's belief update: new mean, new accumulated precision.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1439,16 +1442,16 @@ probabilistic networks.</p>
 <h3><a class="toc-backref" href="#id53" role="doc-backlink">Vectorized networks</a><a class="headerlink" href="#vectorized-networks" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams" title="pyhgf.typing.vectorised.LayerParams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerParams</span></code></a>(tonic_volatility_vol)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams" title="pyhgf.typing.vectorised.LayerParams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerParams</span></code></a>([tonic_volatility_vol, ...])</p></td>
 <td><p>Per-layer static parameters.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerState.html#pyhgf.typing.vectorised.LayerState" title="pyhgf.typing.vectorised.LayerState"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerState</span></code></a>(mean, precision, expected_mean, ...)</p></td>
 <td><p>Vectorised per-layer state, as an <code class="docutils literal notranslate"><span class="pre">eqx.Module</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Layer.html#pyhgf.typing.vectorised.Layer" title="pyhgf.typing.vectorised.Layer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Layer</span></code></a>(state, params, weights_in, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Layer.html#pyhgf.typing.vectorised.Layer" title="pyhgf.typing.vectorised.Layer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Layer</span></code></a>(state, params, weights_mean, ...[, ...])</p></td>
 <td><p>One layer of the vectorised deep network.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerStack.html#pyhgf.typing.vectorised.LayerStack" title="pyhgf.typing.vectorised.LayerStack"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerStack</span></code></a>(state, params, weights_in, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerStack.html#pyhgf.typing.vectorised.LayerStack" title="pyhgf.typing.vectorised.LayerStack"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerStack</span></code></a>(state, params, weights_mean, ...)</p></td>
 <td><p>N identical layers stacked into one PyTree with a leading <code class="docutils literal notranslate"><span class="pre">(N,)</span></code> axis.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Network.html#pyhgf.typing.vectorised.Network" title="pyhgf.typing.vectorised.Network"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Network</span></code></a>(layers, volatility_updates, ...[, ...])</p></td>

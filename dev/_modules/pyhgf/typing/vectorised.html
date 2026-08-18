@@ -903,6 +903,28 @@ window.runMermaid = runMermaid;</script>
             <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span>
             <span class="n">effective_precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
             <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_continuous</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerState&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialise the state of a layer of regular continuous nodes.&quot;&quot;&quot;</span>
+        <span class="n">vope</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)</span> <span class="k">if</span> <span class="n">has_volatility_parent</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">expected_mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">expected_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">effective_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">mean_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">precision_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">expected_mean_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">expected_precision_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">effective_precision_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">vope</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -922,17 +944,33 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="LayerParams">
 <a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LayerParams</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-layer static parameters.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Per-layer static parameters.</span>
 
-<span class="sd">    Each field is an array with one entry per node in the layer.</span>
+<span class="sd">    Each field is an array with one entry per node in the layer, or ``None`` when</span>
+<span class="sd">    the field does not apply to the layer&#39;s kind: volatile layers carry</span>
+<span class="sd">    ``tonic_volatility_vol`` only, continuous layers carry the other three.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    tonic_volatility_vol :</span>
-<span class="sd">        The tonic (baseline) volatility of the volatility level.</span>
+<span class="sd">        The tonic (baseline) volatility of the implied internal volatility level</span>
+<span class="sd">        (volatile layers only).</span>
+<span class="sd">    tonic_volatility :</span>
+<span class="sd">        The tonic (baseline) log-volatility :math:`\\omega` of the node&#39;s own</span>
+<span class="sd">        Gaussian random walk (continuous layers only).</span>
+<span class="sd">    tonic_drift :</span>
+<span class="sd">        The constant drift :math:`\\rho` added to the predicted mean at every</span>
+<span class="sd">        time step (continuous layers only).</span>
+<span class="sd">    autoconnection_strength :</span>
+<span class="sd">        The AR(1) coefficient :math:`\\lambda \\in [0, 1]` on the node&#39;s own mean</span>
+<span class="sd">        in the prediction; ``1.0`` is a pure random walk (continuous layers</span>
+<span class="sd">        only).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tonic_volatility</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tonic_drift</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">autoconnection_strength</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
@@ -940,9 +978,24 @@ window.runMermaid = runMermaid;</script>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerParams&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise layer params with defaults.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise volatile-layer params with defaults.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">tonic_volatility_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_continuous</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">tonic_drift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerParams&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise continuous-layer params with the nodalised defaults.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="p">),</span>
+            <span class="n">tonic_drift</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_drift</span><span class="p">),</span>
+            <span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="p">),</span>
         <span class="p">)</span></div>
 
 
@@ -952,10 +1005,10 @@ window.runMermaid = runMermaid;</script>
 <span class="k">class</span><span class="w"> </span><span class="nc">Layer</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;One layer of the vectorised deep network.</span>
 
-<span class="sd">    ``weights_in`` is the matrix connecting the layer *below* (child) into this layer</span>
-<span class="sd">    (parent). The bottom layer (index 0) has ``weights_in=None`` because no layer sits</span>
-<span class="sd">    below it. Shape: ``(n_child, n_self[+1])``; the optional ``+1`` column carries the</span>
-<span class="sd">    bias when ``add_constant_input=True``.</span>
+<span class="sd">    ``weights_mean`` holds the *incoming* weights: the matrix connecting the layer</span>
+<span class="sd">    *below* (child) into this layer (parent). The bottom layer (index 0) has</span>
+<span class="sd">    ``weights_mean=None`` because no layer sits below it. Shape: ``(n_child, n_self[+1])``;</span>
+<span class="sd">    the optional ``+1`` column carries the bias when ``add_constant_input=True``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -963,9 +1016,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The per-layer state (see :py:class:`LayerState`).</span>
 <span class="sd">    params :</span>
 <span class="sd">        The per-layer static parameters (see :py:class:`LayerParams`).</span>
-<span class="sd">    weights_in :</span>
-<span class="sd">        The matrix connecting the layer below (child) into this layer, or `None`</span>
-<span class="sd">        for the bottom layer.</span>
+<span class="sd">    weights_mean :</span>
+<span class="sd">        The incoming weights, i.e. the matrix connecting the layer below (child)</span>
+<span class="sd">        into this layer, or `None` for the bottom layer. Also the mean of each</span>
+<span class="sd">        weight&#39;s belief where one is installed.</span>
 <span class="sd">    coupling_fn :</span>
 <span class="sd">        The coupling function applied to the incoming weights.</span>
 <span class="sd">    add_constant_input :</span>
@@ -977,18 +1031,44 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    fully_connected :</span>
 <span class="sd">        Whether the incoming weights are fully connected.</span>
 <span class="sd">    kind :</span>
-<span class="sd">        The kind of layer, one of ``&quot;volatile&quot;``, ``&quot;binary&quot;``, or ``&quot;categorical&quot;``.</span>
+<span class="sd">        The kind of layer, one of ``&quot;volatile&quot;``, ``&quot;binary&quot;``, ``&quot;categorical&quot;``,</span>
+<span class="sd">        or ``&quot;continuous&quot;``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">state</span><span class="p">:</span> <span class="n">LayerState</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span>
-    <span class="n">weights_in</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">weights_mean</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># &quot;volatile&quot; | &quot;binary&quot; | &quot;categorical&quot;</span></div>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">static</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>  <span class="c1"># &quot;volatile&quot; | &quot;binary&quot; | &quot;categorical&quot; | &quot;continuous&quot;</span>
+    <span class="c1">#: Weight-belief precision, the second parameter of the belief each weight</span>
+    <span class="c1">#: carries: ``weights_mean`` is the belief&#39;s mean and this its accumulated</span>
+    <span class="c1">#: precision **above the prior**, same shape.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: The delta over the prior is stored rather than the precision itself</span>
+    <span class="c1">#: because it starts at zero, so a per-step increment far below the prior precision</span>
+    <span class="c1">#: accumulates exactly.</span>
+    <span class="n">weights_precision_delta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: Continuous layers only — index (into ``Network.layers``) of the layer this</span>
+    <span class="c1">#: layer is the *value parent* of, or ``None``. ``weights_mean`` then connects</span>
+    <span class="c1">#: that child into this layer, shape ``(n_child, n_self)``, and enters the</span>
+    <span class="c1">#: drift of the child&#39;s predicted mean. The chain convention of volatile</span>
+    <span class="c1">#: networks (``weights_mean`` always connects the layer directly below) is a</span>
+    <span class="c1">#: special case with ``value_child_idx = self_index - 1``.</span>
+    <span class="n">value_child_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1">#: Continuous layers only — index of the layer this layer is the *volatility</span>
+    <span class="c1">#: parent* of, or ``None``. ``volatility_weights`` connects that child.</span>
+    <span class="n">volatility_child_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1">#: Volatility-coupling matrix :math:`\kappa`, shape ``(n_child, n_self)``,</span>
+    <span class="c1">#: connecting the volatility child named by ``volatility_child_idx`` into</span>
+    <span class="c1">#: this layer. Fixed at construction — never part of the learned weights</span>
+    <span class="c1">#: (excluded from :meth:`Network.weights_tuple`).</span>
+    <span class="n">volatility_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -998,7 +1078,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;N identical layers stacked into one PyTree with a leading ``(N,)`` axis.</span>
 
 <span class="sd">    ``state``/``params`` have leading axis ``N`` (each field shape goes from</span>
-<span class="sd">    ``(n_nodes,)`` to ``(N, n_nodes)``). ``weights_in`` goes from</span>
+<span class="sd">    ``(n_nodes,)`` to ``(N, n_nodes)``). ``weights_mean`` goes from</span>
 <span class="sd">    ``(n_child, n_self[+1])`` to ``(N, n_child, n_self[+1])``. Slice index 0 is the</span>
 <span class="sd">    *bottommost* slice in the stack (closest to layer 0 of the network); slice ``N-1``</span>
 <span class="sd">    is the topmost.</span>
@@ -1006,8 +1086,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Validation constraints, enforced at build time:</span>
 
 <span class="sd">    * The layer immediately below the stack must have the same node count as the stack</span>
-<span class="sd">    width (so ``weights_in[0]`` shape matches).</span>
-<span class="sd">    * ``weights_in[k]`` for k &gt; 0 is a square ``(W, W+bias)`` block connecting slice k</span>
+<span class="sd">    width (so ``weights_mean[0]`` shape matches).</span>
+<span class="sd">    * ``weights_mean[k]`` for k &gt; 0 is a square ``(W, W+bias)`` block connecting slice k</span>
 <span class="sd">    (parent) to slice k-1 (child) within the stack.</span>
 
 <span class="sd">    Parameters</span>
@@ -1017,7 +1097,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    params :</span>
 <span class="sd">        The stacked per-layer static parameters, each field with a leading</span>
 <span class="sd">        ``(N,)`` axis.</span>
-<span class="sd">    weights_in :</span>
+<span class="sd">    weights_mean :</span>
 <span class="sd">        The stacked incoming weight matrices, shape ``(N, n_child, n_self[+1])``.</span>
 <span class="sd">    coupling_fn :</span>
 <span class="sd">        The coupling function shared by all stacked layers.</span>
@@ -1035,13 +1115,17 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">state</span><span class="p">:</span> <span class="n">LayerState</span>  <span class="c1"># each field shape: (N, n_nodes)</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span>  <span class="c1"># each field shape: (N, n_nodes)</span>
-    <span class="n">weights_in</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># shape: (N, n_child, n_self[+1])</span>
+    <span class="n">weights_mean</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># shape: (N, n_child, n_self[+1])</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">n_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+    <span class="n">n_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1">#: The stacked weight-belief precisions, shape ``(N, n_child, n_self[+1])``,</span>
+    <span class="c1">#: or ``None`` when the stack carries no weight belief. Holds the precision_delta</span>
+    <span class="c1">#: over the prior, exactly as :attr:`Layer.weights_precision_delta`.</span>
+    <span class="n">weights_precision_delta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -1051,7 +1135,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine N identical ``Layer`` instances into a single ``LayerStack``.</span>
 
 <span class="sd">    All ``Layer``s must share static-field values (kind, coupling_fn,</span>
-<span class="sd">    add_constant_input, has_volatility_parent, fully_connected) and have ``weights_in``</span>
+<span class="sd">    add_constant_input, has_volatility_parent, fully_connected) and have ``weights_mean``</span>
 <span class="sd">    of identical shape. Static fields are taken from the first layer; arrays are stacked</span>
 <span class="sd">    along a new axis 0.</span>
 
@@ -1088,15 +1172,15 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">&quot;Cannot stack layers with differing coupling_fn identities. &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;Hoist the function to module scope so all layers share it.&quot;</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] has weights_in=None (bottom layer of the network &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] has weights_mean=None (bottom layer of the network &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;can&#39;t be inside a LayerStack).&quot;</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">].weights_in.shape=</span><span class="si">{</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> differs &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;from layers[0].weights_in.shape=</span><span class="si">{</span><span class="n">first</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">].weights_mean.shape=</span><span class="si">{</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> differs &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;from layers[0].weights_mean.shape=</span><span class="si">{</span><span class="n">first</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
     <span class="n">stacked_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
@@ -1105,18 +1189,33 @@ window.runMermaid = runMermaid;</script>
     <span class="n">stacked_params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="o">*</span><span class="n">xs</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="o">*</span><span class="p">(</span><span class="n">lay</span><span class="o">.</span><span class="n">params</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">stacked_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">])</span>
+    <span class="n">stacked_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">])</span>
+    <span class="c1"># A belief is stacked only when every slice carries one, since the stacked</span>
+    <span class="c1"># field is one array across the whole stack.</span>
+    <span class="n">carries_belief</span> <span class="o">=</span> <span class="p">[</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_precision_delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cannot stack layers where only some carry a weight belief: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span><span class="si">}</span><span class="s2"> have &quot;</span>
+            <span class="s2">&quot;weights_precision_delta. Install it on every layer or none.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">stacked_precision</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_precision_delta</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">)</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">LayerStack</span><span class="p">(</span>
         <span class="n">state</span><span class="o">=</span><span class="n">stacked_state</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="n">stacked_params</span><span class="p">,</span>
-        <span class="n">weights_in</span><span class="o">=</span><span class="n">stacked_weights</span><span class="p">,</span>
+        <span class="n">weights_mean</span><span class="o">=</span><span class="n">stacked_weights</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="n">add_constant_input</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
         <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
         <span class="n">fully_connected</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
         <span class="n">n_layers</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">),</span>
+        <span class="n">weights_precision_delta</span><span class="o">=</span><span class="n">stacked_precision</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
@@ -1190,13 +1289,13 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">out</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">weights_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-element ``weights_in`` tuple, matched 1:1 to ``self.layers``.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-element ``weights_mean`` tuple, matched 1:1 to ``self.layers``.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Legacy-shape views used by existing tests and the Rust-parity</span>
     <span class="c1"># cross-check. These are not used in the hot path — the kernels read</span>
-    <span class="c1"># ``layer.state`` / ``layer.weights_in`` directly. For ``LayerStack``</span>
+    <span class="c1"># ``layer.state`` / ``layer.weights_mean`` directly. For ``LayerStack``</span>
     <span class="c1"># elements these views flatten the stack into its constituent slices</span>
     <span class="c1"># so consumers see the unrolled shape.</span>
     <span class="c1"># ------------------------------------------------------------------</span>
@@ -1212,9 +1311,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">n_layers</span><span class="p">):</span>
-                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-            <span class="k">elif</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="p">)</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="nd">@property</span>
