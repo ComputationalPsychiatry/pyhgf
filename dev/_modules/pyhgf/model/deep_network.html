@@ -958,6 +958,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">update_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize a VectorizedDeepNetwork.</span>
 
@@ -987,6 +988,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        update_input_layer :</span>
 <span class="sd">            Whether the belief sweeps reach the top (input) layer, which holds the</span>
 <span class="sd">            predictors. Defaults to ``False``.</span>
+<span class="sd">        feedforward_uncertainty :</span>
+<span class="sd">            Whether value parents propagate their uncertainty to their children&#39;s</span>
+<span class="sd">            predicted precision. With ``False`` (the default) they do not: the</span>
+<span class="sd">            value-coupling variance is dropped, the marginal and the conditional</span>
+<span class="sd">            predicted precision coincide, and the only uncertainty entering a layer is</span>
+<span class="sd">            its own volatility parent&#39;s, which makes every layer behave as the top</span>
+<span class="sd">            layer already does. With ``True`` a volatile layer&#39;s marginal predicted</span>
+<span class="sd">            precision carries the value-coupling variance, so a parent that is unsure</span>
+<span class="sd">            makes its children less precise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="o">=</span> <span class="n">coupling_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">volatility_updates</span> <span class="o">=</span> <span class="n">volatility_updates</span>
@@ -994,6 +1004,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">precision_clipping_value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_input_layer</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">update_input_layer</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">predict_precision</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feedforward_uncertainty</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">feedforward_uncertainty</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_sizes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer_kinds</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.</span>
@@ -1484,6 +1495,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">precision_clipping_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
             <span class="n">update_input_layer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_input_layer</span><span class="p">,</span>
             <span class="n">predict_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_precision</span><span class="p">,</span>
+            <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_optimizer_state</span><span class="p">(</span>

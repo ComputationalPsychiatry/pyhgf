@@ -1150,6 +1150,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    predict_precision :</span>
 <span class="sd">        Whether the prediction sweep advances the precisions — see</span>
 <span class="sd">        :func:`pyhgf.updates.vectorized.volatile.prediction.vectorized_layer_prediction`.</span>
+<span class="sd">    feedforward_uncertainty :</span>
+<span class="sd">        Whether value parents propagate their uncertainty to their children&#39;s</span>
+<span class="sd">        predicted precision — see :class:`pyhgf.model.DeepNetwork`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">layers</span><span class="p">:</span> <span class="nb">tuple</span>
@@ -1158,6 +1161,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
     <span class="n">update_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>

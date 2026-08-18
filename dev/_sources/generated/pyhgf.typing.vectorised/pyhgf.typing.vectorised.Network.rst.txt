@@ -25,6 +25,7 @@
 
    .. autosummary::
    
+      ~Network.feedforward_uncertainty
       ~Network.n_layers
       ~Network.n_total_slices
       ~Network.params

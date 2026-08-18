@@ -888,6 +888,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerState</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Predict expected mean/precision for all nodes in a volatile-node layer.</span>
 
@@ -945,6 +946,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        If False, the value level has no volatility source at all, so it does not</span>
 <span class="sd">        undergo a Gaussian random walk: the diffusion term is dropped and the</span>
 <span class="sd">        conditional predicted precision equals the prior precision.</span>
+<span class="sd">    feedforward_uncertainty :</span>
+<span class="sd">        Whether the value parents propagate their uncertainty to this layer. With</span>
+<span class="sd">        ``False`` (the default) they do not: the value-coupling variance is dropped,</span>
+<span class="sd">        so the marginal and the conditional predicted precision coincide and the only</span>
+<span class="sd">        uncertainty entering the layer is its own volatility parent&#39;s. With ``True``</span>
+<span class="sd">        the parent&#39;s uncertainty bleeds through as the law of total variance requires.</span>
 <span class="sd">    predict_precision :</span>
 <span class="sd">        Whether the prediction step advances the precisions at all. With ``False``</span>
 <span class="sd">        both predicted precisions are held at the layer&#39;s prior precision, the</span>
@@ -1015,18 +1022,29 @@ window.runMermaid = runMermaid;</script>
         <span class="c1">#     Σ_j (t · W[i, j] · g&#39;(μ̂_j))² / π̃_j,</span>
         <span class="c1"># using the parent&#39;s marginal predicted precision π̃_j (= `expected_precision`).</span>
         <span class="c1"># The constant-bias parent (if any) has infinite precision and contributes zero.</span>
-        <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
-        <span class="n">g_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
-            <span class="c1"># The constant node never varies: zero derivative, infinite precision.</span>
-            <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">parent_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">])])</span>
-            <span class="n">g_prime</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">g_prime</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
-        <span class="c1"># Σ_j (t · W[i, j] · g&#39;_j)² / π_j, computed as (W²) @ (g&#39;² / π): the</span>
-        <span class="c1"># weight-dependent factor is a constant matrix, so the per-node sum is a</span>
-        <span class="c1"># matrix product with a per-node vector.</span>
-        <span class="c1"># The variance carries no time step (deviation from the Network class).</span>
-        <span class="n">per_parent_variance</span> <span class="o">=</span> <span class="n">g_prime</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">parent_precision</span>
-        <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">per_parent_variance</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">feedforward_uncertainty</span><span class="p">:</span>
+            <span class="c1"># No uncertainty is propagated by the value parents: the child&#39;s predicted</span>
+            <span class="c1"># precision comes from its own prior and its own volatility parent alone,</span>
+            <span class="c1"># which is what :func:`vectorized_root_prediction` already does for the top</span>
+            <span class="c1"># layer. The parent&#39;s derivative is not needed, so the autodiff call goes</span>
+            <span class="c1"># with it.</span>
+            <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">parent_state</span><span class="o">.</span><span class="n">expected_precision</span>
+            <span class="n">g_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
+                <span class="c1"># The constant node never varies: zero derivative, infinite precision.</span>
+                <span class="n">parent_precision</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
+                    <span class="n">parent_precision</span><span class="p">,</span>
+                    <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jnp</span><span class="o">.</span><span class="n">inf</span><span class="p">]),</span>
+                <span class="p">])</span>
+                <span class="n">g_prime</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">g_prime</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+            <span class="c1"># Σ_j (t · W[i, j] · g&#39;_j)² / π_j, computed as (W²) @ (g&#39;² / π): the</span>
+            <span class="c1"># weight-dependent factor is a constant matrix, so the per-node sum is a</span>
+            <span class="c1"># matrix product with a per-node vector.</span>
+            <span class="c1"># The variance carries no time step (deviation from the Network class).</span>
+            <span class="n">per_parent_variance</span> <span class="o">=</span> <span class="n">g_prime</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">parent_precision</span>
+            <span class="n">value_coupling_variance</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">per_parent_variance</span><span class="p">)</span>
 
         <span class="c1"># Conditional predicted precision π̂_a — the precision of x_a given a specific</span>
         <span class="c1"># value of x_b (own AR-plus-volatility variance only, no parent-uncertainty</span>

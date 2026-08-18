@@ -904,6 +904,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict a single ``Layer`` child from a parent view.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;binary&quot;</span><span class="p">:</span>
@@ -935,6 +936,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
             <span class="n">is_input_layer</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">is_input_layer</span><span class="p">,</span>
             <span class="n">predict_precision</span><span class="o">=</span><span class="n">predict_precision</span><span class="p">,</span>
+            <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">new_state</span><span class="p">)</span>
 
@@ -948,6 +950,7 @@ window.runMermaid = runMermaid;</script>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-down sweep over a ``LayerStack``.</span>
 
@@ -971,6 +974,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
         <span class="n">is_input_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">predict_precision</span><span class="o">=</span><span class="n">predict_precision</span><span class="p">,</span>
+        <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.</span>
@@ -996,6 +1000,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">stack</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
             <span class="n">is_input_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">predict_precision</span><span class="o">=</span><span class="n">predict_precision</span><span class="p">,</span>
+            <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">new_child_state</span><span class="p">,</span> <span class="n">new_child_state</span>
 
@@ -1023,6 +1028,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict ``child_elem`` from ``parent_elem``.</span>
 
@@ -1041,6 +1047,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">parent_has_const</span><span class="p">,</span>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">predict_precision</span><span class="o">=</span><span class="n">predict_precision</span><span class="p">,</span>
+            <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">_predict_layer_from_parent</span><span class="p">(</span>
         <span class="n">child_elem</span><span class="p">,</span>
@@ -1051,6 +1058,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
         <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">precision_clipping_value</span><span class="p">,</span>
         <span class="n">predict_precision</span><span class="o">=</span><span class="n">predict_precision</span><span class="p">,</span>
+        <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
     <span class="p">)</span>
 
 
@@ -1602,6 +1610,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
             <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">precision_clipping_value</span><span class="p">,</span>
             <span class="n">predict_precision</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">predict_precision</span><span class="p">,</span>
+            <span class="n">feedforward_uncertainty</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">feedforward_uncertainty</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
