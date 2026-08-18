@@ -6,16 +6,36 @@ the nodalised backend. Every test builds the same topology twice — once with t
 nodalised :class:`pyhgf.model.Network`, once with the vectorized
 :class:`pyhgf.model.DeepNetwork` continuous layers — runs the same observations through
 both, and compares the per-node trajectories.
+
+The tests at the bottom of the file exercise the update kernels and the sweep guards
+directly, for the paths the builder cannot reach on its own.
 """
+
+import dataclasses
 
 import jax.numpy as jnp
 import pytest
 
 from pyhgf.model import Network
 from pyhgf.model.deep_network import DeepNetwork
+from pyhgf.typing.vectorised import LayerParams, LayerStack, LayerState
+from pyhgf.updates.vectorized.continuous import (
+    ValueChild,
+    VolatilityChild,
+    vectorized_continuous_posterior_update,
+    vectorized_continuous_posterior_update_ehgf,
+    vectorized_continuous_posterior_update_standard,
+)
+from pyhgf.utils.vectorized_belief_propagation import run_continuous_scan
 
 U = jnp.array([0.2, 0.5, -0.3, 1.0, 0.1, -0.7, 0.4])
 FIELDS = ("mean", "precision", "expected_mean", "expected_precision")
+
+
+def _state(**fields) -> LayerState:
+    """Build a one-node continuous ``LayerState``, overriding the named fields."""
+    base = LayerState.create_continuous(1, has_volatility_parent=True)
+    return dataclasses.replace(base, **{k: jnp.array([v]) for k, v in fields.items()})
 
 
 def assert_parity(nod: Network, vec: DeepNetwork, node_to_layer: dict):
@@ -276,6 +296,14 @@ def test_builder_validation():
         with pytest.raises(ValueError, match="only valid for continuous layers"):
             DeepNetwork().add_layer(2).add_layer(2, **kwargs)
 
+    # child indices must name an existing layer
+    with pytest.raises(IndexError, match="does not name an existing layer"):
+        (
+            DeepNetwork()
+            .add_layer(2, kind="continuous")
+            .add_layer(2, kind="continuous", volatility_children=5)
+        )
+
     # a child can have at most one parent of each type
     with pytest.raises(ValueError, match="already has a value parent"):
         (
@@ -283,6 +311,26 @@ def test_builder_validation():
             .add_layer(2, kind="continuous")
             .add_layer(2, kind="continuous")
             .add_layer(2, kind="continuous", value_children=0)
+        )
+    with pytest.raises(ValueError, match="already has a volatility parent"):
+        (
+            DeepNetwork(volatility_updates="standard")
+            .add_layer(2, kind="continuous")
+            .add_layer(2, kind="continuous", volatility_children=0)
+            .add_layer(2, kind="continuous", volatility_children=0)
+        )
+
+    # a one-to-one κ needs matching widths
+    with pytest.raises(ValueError, match="requires equal sizes"):
+        (
+            DeepNetwork()
+            .add_layer(2, kind="continuous")
+            .add_layer(
+                3,
+                kind="continuous",
+                volatility_children=0,
+                volatility_fully_connected=False,
+            )
         )
 
     # unbounded requires one-to-one volatility coupling
@@ -292,6 +340,21 @@ def test_builder_validation():
             .add_layer(2, kind="continuous")
             .add_layer(2, kind="continuous")
             .add_layer(2, kind="continuous", volatility_children=1)
+        )
+
+    # ...and rejects a parent that is both a value and a volatility parent
+    with pytest.raises(ValueError, match="cannot also be a value parent"):
+        (
+            DeepNetwork(volatility_updates="unbounded")
+            .add_layer(1, kind="continuous")
+            .add_layer(1, kind="continuous")
+            .add_layer(
+                1,
+                kind="continuous",
+                value_children=1,
+                volatility_children=0,
+                volatility_fully_connected=False,
+            )
         )
 
     # kind-specific parameter overrides
@@ -312,6 +375,13 @@ def test_builder_validation():
     # and input_data is rejected on volatile networks
     with pytest.raises(ValueError, match="continuous"):
         DeepNetwork().add_layer(2).add_layer(2).input_data(jnp.zeros((3, 2)))
+
+    # observations must be as wide as layer 0
+    continuous = (
+        DeepNetwork().add_layer(2, kind="continuous").add_layer(2, kind="continuous")
+    )
+    with pytest.raises(ValueError, match="but layer 0 has"):
+        continuous.input_data(jnp.zeros((3, 5)))
 
 
 def test_record_field_validation():
@@ -410,3 +480,172 @@ def test_value_coupling_strength():
         .input_data(U, record=FIELDS)
     )
     assert_parity(nod, vec, {0: (0, 0), 1: (1, 0)})
+
+
+def test_state_overrides():
+    """Per-layer state overrides reach the filter."""
+    nod = (
+        Network(volatility_updates="standard")
+        .add_nodes()
+        .add_nodes(
+            value_children=0,
+            node_parameters={"mean": 0.5, "precision": 2.0},
+        )
+        .input_data(input_data=U)
+    )
+    vec = (
+        DeepNetwork(volatility_updates="standard")
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous", mean=0.5, precision=2.0)
+        .input_data(U, record=FIELDS)
+    )
+    assert_parity(nod, vec, {0: (0, 0), 1: (1, 0)})
+
+
+def test_input_data_without_record():
+    """Without ``record`` only the one-step-ahead predictions are kept."""
+
+    def build():
+        return (
+            DeepNetwork(volatility_updates="standard")
+            .add_layer(1, kind="continuous")
+            .add_layer(1, kind="continuous")
+        )
+
+    plain = build().input_data(U)
+    assert plain.trajectories is None
+    assert plain.predictions.shape == (len(U), 1)
+
+    # Recording changes what is reported, never what is filtered.
+    recorded = build().input_data(U, record=FIELDS)
+    assert jnp.allclose(plain.predictions, recorded.predictions)
+    assert jnp.allclose(plain.predictions, recorded.trajectories["expected_mean"][0])
+
+
+def test_continuous_sweeps_reject_other_networks():
+    """The continuous scan refuses networks it cannot interpret."""
+    volatile = DeepNetwork().add_layer(2).add_layer(2)
+    with pytest.raises(ValueError, match="all-continuous network"):
+        run_continuous_scan(volatile.state, jnp.zeros((3, 2)), jnp.ones(3))
+
+    # Continuous layers cannot be stacked and cannot mix with volatile ones, so
+    # the only way to present a LayerStack to the sweep is to splice one in.
+    stacked = (
+        DeepNetwork()
+        .add_layer(size=4)
+        .add_layer_stack(layer_sizes=[4] * 5)
+        .add_layer(size=2)
+    )
+    stack = next(e for e in stacked.state.layers if isinstance(e, LayerStack))
+    continuous = (
+        DeepNetwork(volatility_updates="standard")
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+    )
+    spliced = dataclasses.replace(continuous.state, layers=(stack,))
+    with pytest.raises(NotImplementedError, match="LayerStack"):
+        run_continuous_scan(spliced, jnp.zeros((3, 4)), jnp.ones(3))
+
+
+def test_layer_without_children_is_skipped():
+    """A layer nobody names as parent receives no message and stays at its prior."""
+    net = (
+        DeepNetwork(volatility_updates="standard")
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+    )
+    # Detach the top layer: the builder's chain default always gives a layer a
+    # child, so this topology can only be reached by editing the PyTree.
+    elements = list(net.state.layers)
+    elements[2] = dataclasses.replace(
+        elements[2], value_child_idx=None, volatility_child_idx=None
+    )
+    net.state = dataclasses.replace(net.state, layers=tuple(elements))
+    detached = net.state.layers[2].state
+
+    net.input_data(U, record=("mean", "precision"))
+
+    assert jnp.allclose(net.trajectories["mean"][2], detached.mean)
+    assert jnp.allclose(net.trajectories["precision"][2], detached.precision)
+    # The two layers that are still connected keep filtering.
+    assert not jnp.allclose(net.trajectories["mean"][1], detached.mean)
+
+
+def _value_child() -> ValueChild:
+    """Build a one-node value child with a linear coupling."""
+    return ValueChild(
+        state=_state(
+            precision=3.0,
+            expected_precision=2.0,
+            conditional_expected_precision=2.5,
+            value_prediction_error=0.4,
+        ),
+        weights=jnp.array([[0.8]]),
+        coupling_fn=lambda x: x,
+        precision_is_clamped=False,
+    )
+
+
+def _volatility_child() -> VolatilityChild:
+    """Build a one-node volatility child."""
+    return VolatilityChild(
+        state=_state(
+            mean=0.2,
+            precision=2.0,
+            expected_mean=0.1,
+            expected_precision=1.6,
+            conditional_expected_precision=1.8,
+            effective_precision=0.3,
+            volatility_prediction_error=0.5,
+        ),
+        kappa=jnp.array([[1.0]]),
+        params=LayerParams.create_continuous(1),
+    )
+
+
+def test_ehgf_with_a_value_child_only():
+    """EHGF differs from the standard scheme only in the mean's denominator.
+
+    The dispatcher never routes a layer without a volatility child to the eHGF update,
+    so this exercises the kernel directly.
+    """
+    parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
+    child = _value_child()
+
+    standard = vectorized_continuous_posterior_update_standard(
+        parent, value_child=child
+    )
+    ehgf = vectorized_continuous_posterior_update_ehgf(parent, value_child=child)
+
+    # A linear coupling has g'' = 0, so the precision increment does not depend
+    # on where the derivatives are evaluated and the two schemes agree.
+    assert jnp.allclose(standard.precision, ehgf.precision)
+
+    # The mean shift shares a numerator: the standard scheme divides it by the
+    # posterior precision, eHGF by the predicted one.
+    assert not jnp.allclose(standard.mean, ehgf.mean)
+    assert jnp.allclose(
+        (ehgf.mean - parent.expected_mean) * parent.expected_precision,
+        (standard.mean - parent.expected_mean) * standard.precision,
+    )
+
+
+def test_posterior_dispatch_errors():
+    """The dispatcher rejects an unusable scheme rather than dropping an edge."""
+    parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
+
+    with pytest.raises(ValueError, match="pure volatility parents"):
+        vectorized_continuous_posterior_update(
+            parent,
+            value_child=_value_child(),
+            volatility_child=_volatility_child(),
+            volatility_updates="unbounded",
+        )
+
+    with pytest.raises(ValueError, match="Invalid volatility_updates"):
+        vectorized_continuous_posterior_update(
+            parent,
+            volatility_child=_volatility_child(),
+            volatility_updates="nonsense",
+        )
