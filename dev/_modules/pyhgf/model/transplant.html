@@ -869,6 +869,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">linear</span><span class="p">:</span> <span class="n">eqx</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">,</span>
     <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">network_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a two-layer network computing exactly ``linear(x)``.</span>
 
@@ -885,6 +886,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        layer — e.g. the backprop-parity configuration.</span>
 <span class="sd">    layer_kwargs :</span>
 <span class="sd">        Extra ``add_layer`` keyword arguments for the top (input) layer.</span>
+<span class="sd">    network_kwargs :</span>
+<span class="sd">        Constructor arguments for the :class:`DeepNetwork` itself, such as</span>
+<span class="sd">        ``feedforward_uncertainty``. These reach the network&#39;s state when it is</span>
+<span class="sd">        built and cannot be set afterwards, so they belong here rather than in</span>
+<span class="sd">        the per-layer keyword sets.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -893,7 +899,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">out_features</span><span class="p">,</span> <span class="n">in_features</span> <span class="o">=</span> <span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">DeepNetwork</span><span class="p">()</span>
+        <span class="n">DeepNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">network_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">out_features</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">leaf_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
             <span class="n">size</span><span class="o">=</span><span class="n">in_features</span><span class="p">,</span>
@@ -909,6 +915,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">linears</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">network_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a two-layer network stacking several Linears that share one input.</span>
 
@@ -930,6 +937,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        layer.</span>
 <span class="sd">    layer_kwargs :</span>
 <span class="sd">        Extra ``add_layer`` keyword arguments for the top (input) layer.</span>
+<span class="sd">    network_kwargs :</span>
+<span class="sd">        Constructor arguments for the :class:`DeepNetwork` itself, such as</span>
+<span class="sd">        ``feedforward_uncertainty``. These reach the network&#39;s state when it is</span>
+<span class="sd">        built and cannot be set afterwards, so they belong here rather than in</span>
+<span class="sd">        the per-layer keyword sets.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -950,7 +962,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="n">out_features</span><span class="p">,</span> <span class="n">in_features</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">DeepNetwork</span><span class="p">()</span>
+        <span class="n">DeepNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">network_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">out_features</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">leaf_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
             <span class="n">size</span><span class="o">=</span><span class="n">in_features</span><span class="p">,</span>
@@ -969,6 +981,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">activation</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">gelu</span><span class="p">,</span>
     <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">network_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a three-layer network computing exactly ``fc2(activation(fc1(x)))``.</span>
 
@@ -990,8 +1003,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    leaf_kwargs :</span>
 <span class="sd">        Extra ``add_layer`` keyword arguments for the bottom (observed) layer.</span>
 <span class="sd">    layer_kwargs :</span>
-<span class="sd">        Extra ``add_layer`` keyword arguments for the hidden and input layers — e.g. the</span>
-<span class="sd">        backprop-parity configuration.</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for the hidden and input layers.</span>
+<span class="sd">    network_kwargs :</span>
+<span class="sd">        Constructor arguments for the :class:`DeepNetwork` itself, such as</span>
+<span class="sd">        ``feedforward_uncertainty``. These reach the network&#39;s state when it is</span>
+<span class="sd">        built and cannot be set afterwards, so they belong here rather than in</span>
+<span class="sd">        the per-layer keyword sets.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1001,7 +1018,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">hidden</span><span class="p">,</span> <span class="n">in_features</span> <span class="o">=</span> <span class="n">fc1</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">out_features</span> <span class="o">=</span> <span class="n">fc2</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">DeepNetwork</span><span class="p">()</span>
+        <span class="n">DeepNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">network_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">out_features</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">leaf_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
             <span class="n">size</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span>
@@ -1031,6 +1048,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">embedding</span><span class="p">:</span> <span class="n">eqx</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">,</span>
     <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">network_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a two-layer network reproducing a table lookup from one-hot inputs.</span>
 
@@ -1049,6 +1067,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        layer.</span>
 <span class="sd">    layer_kwargs :</span>
 <span class="sd">        Extra ``add_layer`` keyword arguments for the top (input) layer.</span>
+<span class="sd">    network_kwargs :</span>
+<span class="sd">        Constructor arguments for the :class:`DeepNetwork` itself, such as</span>
+<span class="sd">        ``feedforward_uncertainty``. These reach the network&#39;s state when it is</span>
+<span class="sd">        built and cannot be set afterwards, so they belong here rather than in</span>
+<span class="sd">        the per-layer keyword sets.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -1057,7 +1080,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">num_embeddings</span><span class="p">,</span> <span class="n">embedding_size</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">DeepNetwork</span><span class="p">()</span>
+        <span class="n">DeepNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">network_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">leaf_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
         <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span>
             <span class="n">size</span><span class="o">=</span><span class="n">num_embeddings</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">layer_kwargs</span> <span class="ow">or</span> <span class="p">{})</span>

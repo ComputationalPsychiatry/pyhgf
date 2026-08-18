@@ -812,9 +812,10 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">equinox</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">eqx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
@@ -1039,6 +1040,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e10</span><span class="p">,</span>
         <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
         <span class="n">update_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">network_kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeepNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a network from a list of layer configurations.</span>
 
@@ -1062,6 +1064,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            Bound applied to binary-layer predicted means.</span>
 <span class="sd">        update_input_layer : bool, default False</span>
 <span class="sd">            Whether the belief sweeps reach the top (input) layer.</span>
+<span class="sd">        **network_kwargs</span>
+<span class="sd">            Any remaining network-level constructor argument, such as</span>
+<span class="sd">            ``predict_precision`` or ``feedforward_uncertainty``. Forwarded</span>
+<span class="sd">            unchanged to :class:`DeepNetwork`, so a setting that has to be in</span>
+<span class="sd">            place before the state is built can be given here.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1099,6 +1106,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">max_posterior_precision</span><span class="o">=</span><span class="n">max_posterior_precision</span><span class="p">,</span>
             <span class="n">precision_clipping_value</span><span class="o">=</span><span class="n">precision_clipping_value</span><span class="p">,</span>
             <span class="n">update_input_layer</span><span class="o">=</span><span class="n">update_input_layer</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">network_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Add layers in order</span>
@@ -1139,13 +1147,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        config : dict[str, Any]</span>
-<span class="sd">            Configuration dictionary with keys:</span>
-<span class="sd">            - &quot;layers&quot; (required): list of layer configs (each a dict or LayerConfig)</span>
-<span class="sd">            - &quot;coupling_fn&quot; (optional): default coupling function name or callable</span>
-<span class="sd">            - &quot;volatility_updates&quot; (optional): volatility update scheme</span>
-<span class="sd">            - &quot;max_posterior_precision&quot; (optional): precision upper bound</span>
-<span class="sd">            - &quot;precision_clipping_value&quot; (optional): binary-layer clipping bound</span>
-<span class="sd">            - &quot;update_input_layer&quot; (optional): whether the sweeps reach the top layer</span>
+<span class="sd">            Configuration dictionary. ``&quot;layers&quot;`` (a list of layer configs, each a</span>
+<span class="sd">            dict or a :class:`LayerConfig`) is required. Every other key naming a</span>
+<span class="sd">            constructor argument of :class:`DeepNetwork` is optional and is forwarded</span>
+<span class="sd">            to it, which covers ``&quot;coupling_fn&quot;``, ``&quot;volatility_updates&quot;``,</span>
+<span class="sd">            ``&quot;max_posterior_precision&quot;``, ``&quot;precision_clipping_value&quot;``,</span>
+<span class="sd">            ``&quot;update_input_layer&quot;``, ``&quot;predict_precision&quot;`` and</span>
+<span class="sd">            ``&quot;feedforward_uncertainty&quot;``. Keys naming nothing on the constructor are</span>
+<span class="sd">            ignored, so a config may carry annotations of its own.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1195,18 +1204,13 @@ window.runMermaid = runMermaid;</script>
         <span class="p">]</span>
 
         <span class="c1"># Extract network-level parameters</span>
-        <span class="n">net_config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">k</span>
-            <span class="ow">in</span> <span class="p">(</span>
-                <span class="s2">&quot;coupling_fn&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;volatility_updates&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;max_posterior_precision&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;precision_clipping_value&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;update_input_layer&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">}</span>
+        <span class="c1"># Read the network-level keys off the constructor signature rather than a</span>
+        <span class="c1"># list kept here, so a new constructor argument is accepted by ``from_dict``</span>
+        <span class="c1"># without a second edit. A network-level setting that reaches the state only</span>
+        <span class="c1"># at construction is unsettable afterwards, so a silently dropped key would</span>
+        <span class="c1"># build a network that does not match its own config.</span>
+        <span class="n">network_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">}</span>
+        <span class="n">net_config</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">network_fields</span><span class="p">}</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_configs</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="o">**</span><span class="n">net_config</span><span class="p">)</span>
 
