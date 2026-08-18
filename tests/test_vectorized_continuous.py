@@ -442,10 +442,10 @@ def test_coupling_fan_in_normalisation():
         .add_layer(2, kind="continuous", value_coupling=0.6)
         .add_layer(4, kind="continuous", volatility_children=1, volatility_coupling=0.8)
     )
-    weights = dense.state.layers[1].weights_in
+    weights = dense.state.layers[1].weights_mean
     assert weights.shape == (2, 2)
     assert jnp.allclose(weights, 0.6 / 2)
-    kappa = dense.state.layers[2].volatility_weights_in
+    kappa = dense.state.layers[2].volatility_weights
     assert kappa.shape == (2, 4)
     assert jnp.allclose(kappa, 0.8 / 4)
 
@@ -461,7 +461,7 @@ def test_coupling_fan_in_normalisation():
             volatility_fully_connected=False,
         )
     )
-    kappa = one_to_one.state.layers[2].volatility_weights_in
+    kappa = one_to_one.state.layers[2].volatility_weights
     assert jnp.allclose(kappa, 0.8 * jnp.eye(2))
 
 

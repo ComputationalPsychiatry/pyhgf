@@ -283,7 +283,7 @@ def test_orthogonal_initialisation_survives_the_reshape():
 
     shapes = []
     for layer in net.state.layers[1:]:
-        weights = np.asarray(layer.weights_in)
+        weights = np.asarray(layer.weights_mean)
         if layer.add_constant_input:
             # The bias column is not a connection and takes no part in the
             # orthogonality; it is zeroed by ``_init_matrix``.
@@ -795,10 +795,10 @@ def test_constant_input_is_linearly_coupled():
     )
     elements = list(net.state.layers)
     elements[1] = dataclasses.replace(
-        elements[1], weights_in=jnp.concatenate([w1, b1[:, None]], axis=1)
+        elements[1], weights_mean=jnp.concatenate([w1, b1[:, None]], axis=1)
     )
     elements[2] = dataclasses.replace(
-        elements[2], weights_in=jnp.concatenate([w2, b2[:, None]], axis=1)
+        elements[2], weights_mean=jnp.concatenate([w2, b2[:, None]], axis=1)
     )
     net.state = dataclasses.replace(net.state, layers=tuple(elements))
 
@@ -807,10 +807,10 @@ def test_constant_input_is_linearly_coupled():
 
 
 def _set_weights(net: DeepNetwork, weights: dict) -> DeepNetwork:
-    """Replace ``weights_in`` on the given layers (index -> matrix)."""
+    """Replace ``weights_mean`` on the given layers (index -> matrix)."""
     elements = list(net.state.layers)
     for i, w in weights.items():
-        elements[i] = dataclasses.replace(elements[i], weights_in=jnp.asarray(w))
+        elements[i] = dataclasses.replace(elements[i], weights_mean=jnp.asarray(w))
     net.state = dataclasses.replace(net.state, layers=tuple(elements))
     return net
 
@@ -923,8 +923,8 @@ def test_ff_block_single_sweep_matches_backprop():
     )
 
     # The applied weight change divided by -lr is the descent gradient.
-    d_w1 = -(net.state.layers[1].weights_in - w1) / lr
-    d_w2 = -(net.state.layers[2].weights_in - w2) / lr
+    d_w1 = -(net.state.layers[1].weights_mean - w1) / lr
+    d_w2 = -(net.state.layers[2].weights_mean - w2) / lr
 
     assert _norm_rel_err(d_w1, g_w1) < 1e-2
     assert _norm_rel_err(d_w2, g_w2) < 1e-2
@@ -957,7 +957,7 @@ def test_input_side_gradient_precision_cancellation():
     net.prediction(x).update(
         y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
     )
-    d_w2 = -(net.state.layers[2].weights_in - w2) / lr
+    d_w2 = -(net.state.layers[2].weights_mean - w2) / lr
 
     assert _norm_rel_err(d_w2, g_w2) < 1e-3
 
@@ -1016,7 +1016,8 @@ def test_sample_step_matches_stateful_api():
     # loses ~(weight magnitude · float32 eps) / lr of absolute precision.
     for k in (1, 2):
         implied = (
-            -(net_learn.state.layers[k].weights_in - template.layers[k].weights_in) / lr
+            -(net_learn.state.layers[k].weights_mean - template.layers[k].weights_mean)
+            / lr
         )
         np.testing.assert_allclose(grads[k], implied, rtol=1e-3, atol=1e-4)
 
@@ -1053,8 +1054,8 @@ def test_batch_update_averages_and_is_batch_size_invariant():
 
     for k in (1, 2):
         np.testing.assert_allclose(
-            net.state.layers[k].weights_in,
-            template.layers[k].weights_in - lr * mean_grads[k],
+            net.state.layers[k].weights_mean,
+            template.layers[k].weights_mean - lr * mean_grads[k],
             rtol=1e-5,
             atol=1e-6,
         )
@@ -1076,8 +1077,8 @@ def test_batch_update_averages_and_is_batch_size_invariant():
     )
     for k in (1, 2):
         np.testing.assert_allclose(
-            net_twice.state.layers[k].weights_in,
-            net.state.layers[k].weights_in,
+            net_twice.state.layers[k].weights_mean,
+            net.state.layers[k].weights_mean,
             rtol=1e-6,
             atol=1e-7,
         )
@@ -1110,14 +1111,14 @@ def test_batch_update_freezing_flags():
             np.testing.assert_array_equal(
                 getattr(elem_after.state, field), getattr(elem_before.state, field)
             )
-    assert not np.allclose(net.state.layers[1].weights_in, w1)
+    assert not np.allclose(net.state.layers[1].weights_mean, w1)
 
     # Weights frozen, precisions adapting.
     net_frozen = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
     _set_weights(net_frozen, {1: w1, 2: w2})
     template_frozen = net_frozen.state
     net_frozen.batch_update(xb, yb)
-    np.testing.assert_array_equal(net_frozen.state.layers[1].weights_in, w1)
+    np.testing.assert_array_equal(net_frozen.state.layers[1].weights_mean, w1)
     assert not np.allclose(
         net_frozen.state.layers[1].state.precision,
         template_frozen.layers[1].state.precision,
@@ -1154,8 +1155,8 @@ def test_batch_update_from_predicted_states_matches():
 
     for k in (1, 2):
         np.testing.assert_allclose(
-            reused.state.layers[k].weights_in,
-            plain.state.layers[k].weights_in,
+            reused.state.layers[k].weights_mean,
+            plain.state.layers[k].weights_mean,
             rtol=1e-6,
             atol=1e-7,
         )
@@ -1242,9 +1243,9 @@ def test_input_layer_weight_gradient_sees_the_clamped_predictors():
     for flag in (False, True):
         net = _three_layer(flag)
         _set_weights(net, {1: np.eye(2, 4), 2: w})
-        before = np.asarray(net.state.layers[-1].weights_in).copy()
+        before = np.asarray(net.state.layers[-1].weights_mean).copy()
         net.prediction(x).update(y, optimizer=optax.sgd(1e-2))
-        grads.append(np.asarray(net.state.layers[-1].weights_in) - before)
+        grads.append(np.asarray(net.state.layers[-1].weights_mean) - before)
 
     # Same parent activation, same child error on this first step: same update.
     np.testing.assert_allclose(grads[0], grads[1], rtol=1e-6, atol=1e-7)
@@ -1564,8 +1565,8 @@ def test_input_layer_precision_ignores_the_constant_node():
     ``_top_precision_only`` drops the bias column before reading the routed evidence:
     the constant node is not a belief the network holds about the input, so its weights
     say nothing about how precise the observed predictors are. Its column is also what
-    makes ``weights_in`` one wider than the top layer's own precision, so leaving it in
-    would not even be shape-compatible.
+    makes ``weights_mean`` one wider than the top layer's own precision, so leaving it
+    in would not even be shape-compatible.
     """
     x, y = jnp.array([1.0, -1.0]), jnp.array([0.5, 0.5])
     rng = np.random.default_rng(11)
@@ -1624,7 +1625,7 @@ def test_fit_update_precisions_false_pins_precisions():
         )
 
     static = build()
-    before = np.asarray(static.state.layers[1].weights_in).copy()
+    before = np.asarray(static.state.layers[1].weights_mean).copy()
     static.fit(
         x,
         y,
@@ -1635,7 +1636,7 @@ def test_fit_update_precisions_false_pins_precisions():
     np.testing.assert_array_equal(
         static.state.layers[1].state.precision, jnp.full(4, 3.0)
     )
-    assert not np.allclose(np.asarray(static.state.layers[1].weights_in), before)
+    assert not np.allclose(np.asarray(static.state.layers[1].weights_mean), before)
 
     # The default carries, so the two modes genuinely diverge.
     dynamic = build().fit(x, y, optimizer=optax.sgd(1e-2), learning_kind="standard")
@@ -1697,10 +1698,12 @@ def test_optimizer_state_survives_a_fresh_optimizer_object():
         net, _, _ = _ff_net_with_weights(np.random.default_rng(31))
         sizes = []
         for _ in range(steps):
-            before = np.asarray(net.state.layers[2].weights_in).copy()
+            before = np.asarray(net.state.layers[2].weights_mean).copy()
             net.batch_update(x, y, optimizer=make_optimizer(), update_precisions=False)
             sizes.append(
-                float(np.abs(np.asarray(net.state.layers[2].weights_in) - before).max())
+                float(
+                    np.abs(np.asarray(net.state.layers[2].weights_mean) - before).max()
+                )
             )
         return net, sizes
 
@@ -1716,7 +1719,7 @@ def test_optimizer_state_survives_a_fresh_optimizer_object():
 
     # A rate change keeps the moments: the step scales with the new rate.
     net2, sizes = run(lambda: optax.adam(1e-2), steps=3)
-    before = np.asarray(net2.state.layers[2].weights_in).copy()
+    before = np.asarray(net2.state.layers[2].weights_mean).copy()
     net2.batch_update(x, y, optimizer=optax.adam(1e-1), update_precisions=False)
-    scaled = float(np.abs(np.asarray(net2.state.layers[2].weights_in) - before).max())
+    scaled = float(np.abs(np.asarray(net2.state.layers[2].weights_mean) - before).max())
     assert 8.0 < scaled / sizes[-1] < 12.0, (scaled, sizes[-1])

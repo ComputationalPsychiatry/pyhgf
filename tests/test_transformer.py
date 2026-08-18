@@ -305,10 +305,10 @@ def test_fused_qkv_through_hybrid_and_merge():
     reference = jax.vmap(gpt)(ids)
     np.testing.assert_allclose(pipeline.predict(ids), reference, rtol=1e-4, atol=1e-5)
 
-    before = np.asarray(qkv_parts[0].net.state.layers[1].weights_in)
+    before = np.asarray(qkv_parts[0].net.state.layers[1].weights_mean)
     pipeline.step(ids, targets)
     pipeline.merge()
-    after = np.asarray(qkv_parts[0].net.state.layers[1].weights_in)
+    after = np.asarray(qkv_parts[0].net.state.layers[1].weights_mean)
     assert not np.allclose(before, after)  # the fused weights learnt
 
 
@@ -397,8 +397,8 @@ def test_ff_swap_matches_backprop():
             [grads.blocks[i].ff.fc1.weight, grads.blocks[i].ff.fc1.bias[:, None]],
             axis=1,
         )
-        d_fc2 = -(net.state.layers[1].weights_in - w1b) / lr
-        d_fc1 = -(net.state.layers[2].weights_in - w2b) / lr
+        d_fc2 = -(net.state.layers[1].weights_mean - w1b) / lr
+        d_fc1 = -(net.state.layers[2].weights_mean - w2b) / lr
         assert _norm_rel(d_fc2, g_fc2) < 1e-2, f"block {i}, hidden→output"
         assert _norm_rel(d_fc1, g_fc1) < 1e-2, f"block {i}, input→hidden"
 
@@ -489,7 +489,7 @@ def test_full_pyhgf_gpt_matches_backprop():
     fused.merge()
 
     def delta(part, layer_index, reference):
-        return -(part.net.state.layers[layer_index].weights_in - reference) / lr
+        return -(part.net.state.layers[layer_index].weights_mean - reference) / lr
 
     # Attention tables and the head (no biases).
     for i, block in enumerate(gpt.blocks):
@@ -575,7 +575,7 @@ def test_binary_head_at_vocabulary_width():
 
     # (c) Weight update: the plain sigmoid-cross-entropy gradient.
     expected_grad = ((probs - one_hot)[..., None] * x[:, None, :]).mean(axis=0)
-    d_w = -(net.state.layers[1].weights_in - head.weight) / lr
+    d_w = -(net.state.layers[1].weights_mean - head.weight) / lr
     assert _norm_rel(d_w, expected_grad) < 1e-2
 
 
@@ -623,7 +623,7 @@ def test_categorical_head_matches_softmax_backprop():
     g_w, g_x = jax.grad(lambda w, x_: loss(w, x_), argnums=(0, 1))(head.weight, x)
 
     # (b) Weight update: the plain cross-entropy gradient.
-    d_w = -(net.state.layers[1].weights_in - head.weight) / lr
+    d_w = -(net.state.layers[1].weights_mean - head.weight) / lr
     assert _norm_rel(d_w, g_w) < 1e-2
     # (c) Input message: PyHGF errors are observed-minus-predicted — the
     # negative of the loss gradient at the input. The oracle's mean over the
@@ -706,7 +706,7 @@ def test_full_pyhgf_gpt_with_categorical_head():
     fused.merge()
 
     def delta(part, layer_index, reference):
-        return -(part.net.state.layers[layer_index].weights_in - reference) / lr
+        return -(part.net.state.layers[layer_index].weights_mean - reference) / lr
 
     d_head = delta(head_part, 1, gpt.head.weight)
     assert _norm_rel(d_head, grads.head.weight) < 2e-2, "categorical head"

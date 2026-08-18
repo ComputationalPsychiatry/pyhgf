@@ -182,7 +182,7 @@ def _init_matrix(
     seed: int,
     kwargs: dict,
 ) -> jnp.ndarray:
-    r"""Draw one ``weights_in`` matrix, keeping the bias column out of the statistics.
+    r"""Draw one ``weights_mean`` matrix, keeping the bias column out of the statistics.
 
     The bias column is not a connection to a parent, so it takes no part in either
     half of an initialisation scheme. It is **excluded from the fan-in** and **initialised

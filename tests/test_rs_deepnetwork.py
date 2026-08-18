@@ -94,7 +94,7 @@ def _inject_jax_weights(net, weights):
     """Write the given weight matrices into the JAX network's layers 1..n."""
     layers = list(net.state.layers)
     new_layers = [layers[0]] + [
-        dataclasses.replace(layer, weights_in=jnp.asarray(w))
+        dataclasses.replace(layer, weights_mean=jnp.asarray(w))
         for layer, w in zip(layers[1:], weights)
     ]
     net.state = dataclasses.replace(net.state, layers=tuple(new_layers))
@@ -390,7 +390,7 @@ def test_fit_trajectory_parity(optimizer, make_optax):
     jx.fit(x, y, make_optax())
 
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
-    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
@@ -457,7 +457,7 @@ def test_fit_parity_binary_output():
     preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
-    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
@@ -513,7 +513,7 @@ def test_batch_update_trajectory_parity(optimizer):
         )
         jx.batch_update(x, y, optimizer=optax_opt)
         np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
-    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
@@ -534,7 +534,7 @@ def test_batch_update_parity_pinned_precisions():
         )
         jx.batch_update(x, y, optimizer=optax.sgd(0.05), update_precisions=False)
     np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
-    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
@@ -572,7 +572,7 @@ def test_batch_update_parity_categorical_output():
         errors_rs = rs.batch_update(x, y, optimizer="adam", learning_rate=1e-2)
         jx.batch_update(x, y, optimizer=optax_opt)
     np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
-    jx_weights = [np.asarray(layer.weights_in) for layer in jx.state.layers[1:]]
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 

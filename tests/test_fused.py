@@ -83,8 +83,8 @@ def test_fused_adapter_tracks_backprop_twin():
         w2b = w2b - lr * g_w2b
 
         fused.merge()
-        assert _norm_rel(part.net.state.layers[2].weights_in, w1b) < 1e-4, f"{step}"
-        assert _norm_rel(part.net.state.layers[1].weights_in, w2b) < 1e-4, f"{step}"
+        assert _norm_rel(part.net.state.layers[2].weights_mean, w1b) < 1e-4, f"{step}"
+        assert _norm_rel(part.net.state.layers[1].weights_mean, w2b) < 1e-4, f"{step}"
         assert _norm_rel(input_error, per_sample_dx) < 1e-2, f"step {step}"
 
 
@@ -227,14 +227,14 @@ def test_fused_merge_writes_state_back():
         from_feedforward(fc1, fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
         optimizer=optax.adam(1e-3),
     )
-    before = adapter.net.state.layers[1].weights_in
+    before = adapter.net.state.layers[1].weights_mean
     fused = FusedPipeline(adapter)
     fused.step(
         jnp.asarray(rng.normal(size=(4, 6))), jnp.asarray(rng.normal(size=(4, 6)))
     )
-    assert jnp.allclose(adapter.net.state.layers[1].weights_in, before)  # untouched
+    assert jnp.allclose(adapter.net.state.layers[1].weights_mean, before)  # untouched
     fused.merge()
-    assert not jnp.allclose(adapter.net.state.layers[1].weights_in, before)
+    assert not jnp.allclose(adapter.net.state.layers[1].weights_mean, before)
     assert adapter.net.opt_state is fused.state[1]
 
 

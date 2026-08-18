@@ -98,7 +98,7 @@ def test_layer_static_fields_are_in_treedef_not_leaves():
     layer = Layer(
         state=LayerState.create(2),
         params=LayerParams.create(2),
-        weights_in=jnp.zeros((3, 2)),
+        weights_mean=jnp.zeros((3, 2)),
         coupling_fn=jnp.tanh,
         add_constant_input=True,
         has_volatility_parent=True,
@@ -107,7 +107,7 @@ def test_layer_static_fields_are_in_treedef_not_leaves():
         kind="volatile",
     )
     leaves = jtu.tree_leaves(layer)
-    # 13 (state) + 1 (params) + 1 (weights_in) = 15 array leaves
+    # 13 (state) + 1 (params) + 1 (weights_mean) = 15 array leaves
     assert len(leaves) == 15
     treedef_str = str(jtu.tree_structure(layer))
     # Statics show up inside the treedef, not as leaves.
@@ -116,11 +116,11 @@ def test_layer_static_fields_are_in_treedef_not_leaves():
 
 
 def test_layer_weights_in_can_be_none():
-    """The bottom layer carries weights_in=None (no child below)."""
+    """The bottom layer carries weights_mean=None (no child below)."""
     layer = Layer(
         state=LayerState.create(2),
         params=LayerParams.create(2),
-        weights_in=None,
+        weights_mean=None,
         coupling_fn=lambda x: x,
         add_constant_input=False,
         has_volatility_parent=True,
@@ -128,10 +128,10 @@ def test_layer_weights_in_can_be_none():
         fully_connected=True,
         kind="volatile",
     )
-    assert layer.weights_in is None
+    assert layer.weights_mean is None
     # tree_leaves still flattens cleanly.
     leaves = jtu.tree_leaves(layer)
-    # 13 + 1 = 14 leaves (no weights_in)
+    # 13 + 1 = 14 leaves (no weights_mean)
     assert len(leaves) == 14
 
 
@@ -140,7 +140,7 @@ def test_network_is_pytree_with_static_meta():
     layer = Layer(
         state=LayerState.create(2),
         params=LayerParams.create(2),
-        weights_in=None,
+        weights_mean=None,
         coupling_fn=jnp.tanh,
         add_constant_input=False,
         has_volatility_parent=True,
@@ -161,7 +161,7 @@ def test_network_jit_does_not_retrace_on_array_change():
     layer = Layer(
         state=LayerState.create(3),
         params=LayerParams.create(3),
-        weights_in=None,
+        weights_mean=None,
         coupling_fn=jnp.tanh,
         add_constant_input=False,
         has_volatility_parent=True,
@@ -188,7 +188,7 @@ def test_serialisation_roundtrip(tmp_path):
     layer = Layer(
         state=LayerState.create(2),
         params=LayerParams.create(2),
-        weights_in=jnp.arange(6.0).reshape(3, 2),
+        weights_mean=jnp.arange(6.0).reshape(3, 2),
         coupling_fn=jnp.tanh,
         add_constant_input=False,
         has_volatility_parent=True,
@@ -200,7 +200,7 @@ def test_serialisation_roundtrip(tmp_path):
     path = tmp_path / "net.eqx"
     eqx.tree_serialise_leaves(str(path), net)
     restored = eqx.tree_deserialise_leaves(str(path), net)
-    assert jnp.array_equal(restored.layers[0].weights_in, net.layers[0].weights_in)
+    assert jnp.array_equal(restored.layers[0].weights_mean, net.layers[0].weights_mean)
     assert restored.volatility_updates == net.volatility_updates
 
 
@@ -217,10 +217,10 @@ def test_deepnetwork_state_is_eqx_network():
     assert dn.state.n_layers == 3
     assert dn.state.get_layer_sizes() == [2, 3, 1]
     # Layer 0: no child below; layer 1 holds weights between layers 0 and 1.
-    assert dn.state.layers[0].weights_in is None
+    assert dn.state.layers[0].weights_mean is None
     assert dn.state.layers[0].is_input_layer is True
-    assert dn.state.layers[1].weights_in is not None
-    assert dn.state.layers[1].weights_in.shape == (2, 4)  # (prev_size, size + bias)
+    assert dn.state.layers[1].weights_mean is not None
+    assert dn.state.layers[1].weights_mean.shape == (2, 4)  # (prev_size, size + bias)
     # Statics propagated from the builder.
     assert dn.state.volatility_updates == "unbounded"
     assert dn.state.max_posterior_precision == 1e10
@@ -277,11 +277,11 @@ def test_deepnetwork_weights_property_legacy_shape():
         .weight_initialisation("xavier", key=jax.random.key(0))
     )
     weights = dn.state.weights
-    # Length n_layers - 1 (layer 0 has no weights_in).
+    # Length n_layers - 1 (layer 0 has no weights_mean).
     assert len(weights) == 2
-    # weights[i] == layers[i+1].weights_in.
-    np.testing.assert_array_equal(weights[0], dn.state.layers[1].weights_in)
-    np.testing.assert_array_equal(weights[1], dn.state.layers[2].weights_in)
+    # weights[i] == layers[i+1].weights_mean.
+    np.testing.assert_array_equal(weights[0], dn.state.layers[1].weights_mean)
+    np.testing.assert_array_equal(weights[1], dn.state.layers[2].weights_mean)
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +450,7 @@ def test_phase6_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
     assert preds.shape == (3, 4, 2)
     # Each network's state stays distinct (the weights diverged from the
     # stacked init).
-    assert final_network.layers[1].weights_in.shape == (3, 2, 4)
+    assert final_network.layers[1].weights_mean.shape == (3, 2, 4)
 
 
 def test_phase6_to_pandas_flattens_trajectories():
@@ -497,7 +497,7 @@ def test_phase8_stack_layers_builds_consistent_pytree():
         Layer(
             state=LayerState.create(5),
             params=LayerParams.create(5),
-            weights_in=jnp.zeros((5, 6)),
+            weights_mean=jnp.zeros((5, 6)),
             coupling_fn=coupling,
             add_constant_input=True,
             has_volatility_parent=True,
@@ -511,7 +511,7 @@ def test_phase8_stack_layers_builds_consistent_pytree():
     assert isinstance(stack, LayerStack)
     assert stack.n_layers == 4
     assert stack.state.mean.shape == (4, 5)
-    assert stack.weights_in.shape == (4, 5, 6)
+    assert stack.weights_mean.shape == (4, 5, 6)
     assert stack.coupling_fn is coupling
 
 
@@ -523,7 +523,7 @@ def test_phase8_stack_layers_rejects_mismatched_statics():
     layer_a = Layer(
         state=LayerState.create(5),
         params=LayerParams.create(5),
-        weights_in=jnp.zeros((5, 6)),
+        weights_mean=jnp.zeros((5, 6)),
         coupling_fn=coupling,
         add_constant_input=True,
         has_volatility_parent=True,
@@ -564,7 +564,7 @@ def test_phase8_add_layer_stack_auto_collapses_into_layerstack():
     stack = dn.state.layers[2]
     assert isinstance(stack, LayerStack)
     assert stack.n_layers == 5
-    assert stack.weights_in.shape == (5, 6, 7)
+    assert stack.weights_mean.shape == (5, 6, 7)
 
 
 def _phase8_build(scan, depth=5, width=6, seed=0):

@@ -381,8 +381,9 @@ Vectorized learning
 .. autosummary::
    :toctree: generated/pyhgf.updates.vectorized.learning
 
-    vectorized_weight_gradient
-    vectorized_weight_gradient_factors
+    learning_weights_vectorized
+    resolve_synaptic_uncertainty_settings
+    vectorized_synaptic_uncertainty_update
 
 Model
 *****

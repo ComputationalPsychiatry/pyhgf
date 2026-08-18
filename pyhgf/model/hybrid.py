@@ -19,8 +19,8 @@ the error at its output and hands the error at its *input* to the part behind it
 Nothing resembling backpropagation runs anywhere: no global computation graph, no
 automatic differentiation.
 
-Error convention: the arrays passed between parts are *descent* errors — the gradient of
-the loss with respect to that signal, the same object a backprop library would hand
+Error convention: the arrays passed between parts are *descent* errors — the gradient
+of the loss with respect to that signal, the same object a backprop library would hand
 around. PyHGF's internal prediction errors follow the opposite, observed-minus-predicted
 convention; the executor converts between the two at the learning part's boundary, in
 exactly one place.
@@ -40,6 +40,7 @@ import optax
 
 from pyhgf.model.deep_network import DeepNetwork
 from pyhgf.model.error_types import DescentError, ObservedMinusPredicted
+from pyhgf.updates.vectorized.learning import resolve_synaptic_uncertainty_settings
 
 __all__ = [
     "PCModule",
@@ -182,16 +183,19 @@ def _gelu_forward(x: jnp.ndarray) -> tuple[jnp.ndarray, tuple]:
     return jax.nn.gelu(x), (x,)
 
 
-def _gelu_backward(cache: tuple, error: jnp.ndarray) -> jnp.ndarray:
+def _gelu_slope(x: jnp.ndarray) -> jnp.ndarray:
     # Derivative of the tanh approximation
     #   gelu(x) = 0.5 x (1 + tanh(c (x + a x^3))),
     #   gelu'(x) = 0.5 (1 + t) + 0.5 x (1 - t^2) c (1 + 3 a x^2),  t = tanh(...).
-    (x,) = cache
     t = jnp.tanh(_GELU_C * (x + _GELU_A * x**3))
-    slope = 0.5 * (1.0 + t) + 0.5 * x * (1.0 - t**2) * _GELU_C * (
+    return 0.5 * (1.0 + t) + 0.5 * x * (1.0 - t**2) * _GELU_C * (
         1.0 + 3.0 * _GELU_A * x**2
     )
-    return error * slope
+
+
+def _gelu_backward(cache: tuple, error: jnp.ndarray) -> jnp.ndarray:
+    (x,) = cache
+    return error * _gelu_slope(x)
 
 
 def gelu_adapter() -> EquinoxAdapter:
@@ -295,6 +299,13 @@ class DeepNetworkAdapter(PCModule):
         weights (the beliefs still update).
     learning_kind :
         Weight-gradient mode, as in :meth:`~pyhgf.model.DeepNetwork.fit`.
+        ``"synaptic_uncertainty"`` selects the weight-belief rule, whose
+        settings come from ``learning_kwargs`` and whose step size is each
+        weight's own belief variance, so ``optimizer`` is then unused.
+    learning_kwargs :
+        Settings of the learning rule, used by
+        ``learning_kind="synaptic_uncertainty"`` (see
+        :func:`pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`).
     update_precisions :
         Whether the precision state adapts across batches (see
         :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —
@@ -309,14 +320,31 @@ class DeepNetworkAdapter(PCModule):
         net: DeepNetwork,
         optimizer: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
+        learning_kwargs: Optional[dict] = None,
         update_precisions: bool = False,
         time_step: float = 1.0,
     ):
         self.net = net
         self.optimizer = optimizer
         self.learning_kind = learning_kind
+        self.learning_kwargs = learning_kwargs
         self.update_precisions = update_precisions
         self.time_step = time_step
+        # The rule is resolved once here rather than per step: the settings are
+        # static, and the executor stages one compiled program per part.
+        if learning_kind != "synaptic_uncertainty":
+            if learning_kwargs:
+                raise ValueError(
+                    "learning_kwargs is only used by "
+                    f"learning_kind='synaptic_uncertainty', not by {learning_kind!r}."
+                )
+            self.gradient_kind, self.synaptic_uncertainty_settings = learning_kind, None
+        else:
+            self.synaptic_uncertainty_settings = resolve_synaptic_uncertainty_settings(
+                learning_kwargs
+            )
+            net.install_weight_belief()
+            self.gradient_kind = "synaptic_uncertainty"
 
     def init_state(self) -> tuple:
         """Return the ``(network, opt_state)`` state pytree.

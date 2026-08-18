@@ -195,10 +195,10 @@ class LayerParams(eqx.Module):
 class Layer(eqx.Module):
     r"""One layer of the vectorised deep network.
 
-    ``weights_in`` is the matrix connecting the layer *below* (child) into this layer
-    (parent). The bottom layer (index 0) has ``weights_in=None`` because no layer sits
-    below it. Shape: ``(n_child, n_self[+1])``; the optional ``+1`` column carries the
-    bias when ``add_constant_input=True``.
+    ``weights_mean`` holds the *incoming* weights: the matrix connecting the layer
+    *below* (child) into this layer (parent). The bottom layer (index 0) has
+    ``weights_mean=None`` because no layer sits below it. Shape: ``(n_child, n_self[+1])``;
+    the optional ``+1`` column carries the bias when ``add_constant_input=True``.
 
     Parameters
     ----------
@@ -206,9 +206,10 @@ class Layer(eqx.Module):
         The per-layer state (see :py:class:`LayerState`).
     params :
         The per-layer static parameters (see :py:class:`LayerParams`).
-    weights_in :
-        The matrix connecting the layer below (child) into this layer, or `None`
-        for the bottom layer.
+    weights_mean :
+        The incoming weights, i.e. the matrix connecting the layer below (child)
+        into this layer, or `None` for the bottom layer. Also the mean of each
+        weight's belief where one is installed.
     coupling_fn :
         The coupling function applied to the incoming weights.
     add_constant_input :
@@ -222,17 +223,23 @@ class Layer(eqx.Module):
     kind :
         The kind of layer, one of ``"volatile"``, ``"binary"``, ``"categorical"``,
         or ``"continuous"``.
+    weights_precision_delta :
+        Weight-belief precision, the second parameter of the belief each weight
+        carries: ``weights_mean`` is the belief's mean and this its accumulated
+        precision **above the prior**, same shape. The delta over the prior is
+        stored rather than the precision itself because it starts at zero, so a
+        per-step increment far below the prior precision accumulates exactly.
     value_child_idx :
         Continuous layers only — index (into ``Network.layers``) of the layer this
-        layer is the *value parent* of, or ``None``. ``weights_in`` then connects
+        layer is the *value parent* of, or ``None``. ``weights_mean`` then connects
         that child into this layer, shape ``(n_child, n_self)``, and enters the
         drift of the child's predicted mean. The chain convention of volatile
-        networks (``weights_in`` always connects the layer directly below) is a
+        networks (``weights_mean`` always connects the layer directly below) is a
         special case with ``value_child_idx = self_index - 1``.
     volatility_child_idx :
         Continuous layers only — index of the layer this layer is the *volatility
-        parent* of, or ``None``. ``volatility_weights_in`` connects that child.
-    volatility_weights_in :
+        parent* of, or ``None``. ``volatility_weights`` connects that child.
+    volatility_weights :
         Volatility-coupling matrix :math:`\kappa`, shape ``(n_child, n_self)``,
         connecting the volatility child named by ``volatility_child_idx`` into
         this layer. Fixed at construction — never part of the learned weights
@@ -241,7 +248,7 @@ class Layer(eqx.Module):
 
     state: LayerState
     params: LayerParams
-    weights_in: Optional[Array]
+    weights_mean: Optional[Array]
     coupling_fn: Callable = field(static=True)
     add_constant_input: bool = field(static=True)
     has_volatility_parent: bool = field(static=True)
@@ -250,16 +257,17 @@ class Layer(eqx.Module):
     kind: str = field(
         static=True
     )  # "volatile" | "binary" | "categorical" | "continuous"
+    weights_precision_delta: Optional[Array] = None
     value_child_idx: Optional[int] = field(static=True, default=None)
     volatility_child_idx: Optional[int] = field(static=True, default=None)
-    volatility_weights_in: Optional[Array] = None
+    volatility_weights: Optional[Array] = None
 
 
 class LayerStack(eqx.Module):
     """N identical layers stacked into one PyTree with a leading ``(N,)`` axis.
 
     ``state``/``params`` have leading axis ``N`` (each field shape goes from
-    ``(n_nodes,)`` to ``(N, n_nodes)``). ``weights_in`` goes from
+    ``(n_nodes,)`` to ``(N, n_nodes)``). ``weights_mean`` goes from
     ``(n_child, n_self[+1])`` to ``(N, n_child, n_self[+1])``. Slice index 0 is the
     *bottommost* slice in the stack (closest to layer 0 of the network); slice ``N-1``
     is the topmost.
@@ -267,8 +275,8 @@ class LayerStack(eqx.Module):
     Validation constraints, enforced at build time:
 
     * The layer immediately below the stack must have the same node count as the stack
-    width (so ``weights_in[0]`` shape matches).
-    * ``weights_in[k]`` for k > 0 is a square ``(W, W+bias)`` block connecting slice k
+    width (so ``weights_mean[0]`` shape matches).
+    * ``weights_mean[k]`` for k > 0 is a square ``(W, W+bias)`` block connecting slice k
     (parent) to slice k-1 (child) within the stack.
 
     Parameters
@@ -278,7 +286,7 @@ class LayerStack(eqx.Module):
     params :
         The stacked per-layer static parameters, each field with a leading
         ``(N,)`` axis.
-    weights_in :
+    weights_mean :
         The stacked incoming weight matrices, shape ``(N, n_child, n_self[+1])``.
     coupling_fn :
         The coupling function shared by all stacked layers.
@@ -296,25 +304,29 @@ class LayerStack(eqx.Module):
 
     state: LayerState  # each field shape: (N, n_nodes)
     params: LayerParams  # each field shape: (N, n_nodes)
-    weights_in: Array  # shape: (N, n_child, n_self[+1])
+    weights_mean: Array  # shape: (N, n_child, n_self[+1])
     coupling_fn: Callable = field(static=True)
     add_constant_input: bool = field(static=True)
     has_volatility_parent: bool = field(static=True)
     fully_connected: bool = field(static=True)
     kind: str = field(static=True)
     n_layers: int = field(static=True)
+    #: The stacked weight-belief precisions, shape ``(N, n_child, n_self[+1])``,
+    #: or ``None`` when the stack carries no weight belief. Holds the precision_delta
+    #: over the prior, exactly as :attr:`Layer.weights_precision_delta`.
+    weights_precision_delta: Optional[Array] = None
 
 
 def stack_layers(layers: list) -> LayerStack:
     """Combine N identical ``Layer`` instances into a single ``LayerStack``.
 
     All ``Layer``s must share static-field values (kind, coupling_fn,
-    add_constant_input, has_volatility_parent, fully_connected) and have ``weights_in``
+    add_constant_input, has_volatility_parent, fully_connected) and have ``weights_mean``
     of identical shape. Static fields are taken from the first layer; arrays are stacked
     along a new axis 0.
 
     A ``LayerStack`` carries no DAG topology, so the continuous-layer fields
-    (``value_child_idx``, ``volatility_child_idx``, ``volatility_weights_in``) have no
+    (``value_child_idx``, ``volatility_child_idx``, ``volatility_weights``) have no
     counterpart here and continuous layers cannot be stacked.
 
     Parameters
@@ -350,15 +362,15 @@ def stack_layers(layers: list) -> LayerStack:
                 f"Cannot stack layers with differing coupling_fn identities. "
                 f"Hoist the function to module scope so all layers share it."
             )
-        if lay.weights_in is None:
+        if lay.weights_mean is None:
             raise ValueError(
-                f"layers[{k}] has weights_in=None (bottom layer of the network "
+                f"layers[{k}] has weights_mean=None (bottom layer of the network "
                 f"can't be inside a LayerStack)."
             )
-        if lay.weights_in.shape != first.weights_in.shape:
+        if lay.weights_mean.shape != first.weights_mean.shape:
             raise ValueError(
-                f"layers[{k}].weights_in.shape={lay.weights_in.shape} differs "
-                f"from layers[0].weights_in.shape={first.weights_in.shape}."
+                f"layers[{k}].weights_mean.shape={lay.weights_mean.shape} differs "
+                f"from layers[0].weights_mean.shape={first.weights_mean.shape}."
             )
 
     stacked_state = jax.tree_util.tree_map(
@@ -367,18 +379,33 @@ def stack_layers(layers: list) -> LayerStack:
     stacked_params = jax.tree_util.tree_map(
         lambda *xs: jnp.stack(xs), *(lay.params for lay in layers)
     )
-    stacked_weights = jnp.stack([lay.weights_in for lay in layers])
+    stacked_weights = jnp.stack([lay.weights_mean for lay in layers])
+    # A belief is stacked only when every slice carries one, since the stacked
+    # field is one array across the whole stack.
+    carries_belief = [lay.weights_precision_delta is not None for lay in layers]
+    if any(carries_belief) and not all(carries_belief):
+        raise ValueError(
+            "Cannot stack layers where only some carry a weight belief: "
+            f"{sum(carries_belief)} of {len(layers)} have "
+            "weights_precision_delta. Install it on every layer or none."
+        )
+    stacked_precision = (
+        jnp.stack([lay.weights_precision_delta for lay in layers])
+        if all(carries_belief)
+        else None
+    )
 
     return LayerStack(
         state=stacked_state,
         params=stacked_params,
-        weights_in=stacked_weights,
+        weights_mean=stacked_weights,
         coupling_fn=first.coupling_fn,
         add_constant_input=first.add_constant_input,
         has_volatility_parent=first.has_volatility_parent,
         fully_connected=first.fully_connected,
         kind=first.kind,
         n_layers=len(layers),
+        weights_precision_delta=stacked_precision,
     )
 
 
@@ -449,13 +476,13 @@ class Network(eqx.Module):
         return out
 
     def weights_tuple(self) -> tuple:
-        """Per-element ``weights_in`` tuple, matched 1:1 to ``self.layers``."""
-        return tuple(elem.weights_in for elem in self.layers)
+        """Per-element ``weights_mean`` tuple, matched 1:1 to ``self.layers``."""
+        return tuple(elem.weights_mean for elem in self.layers)
 
     # ------------------------------------------------------------------
     # Legacy-shape views used by existing tests and the Rust-parity
     # cross-check. These are not used in the hot path — the kernels read
-    # ``layer.state`` / ``layer.weights_in`` directly. For ``LayerStack``
+    # ``layer.state`` / ``layer.weights_mean`` directly. For ``LayerStack``
     # elements these views flatten the stack into its constituent slices
     # so consumers see the unrolled shape.
     # ------------------------------------------------------------------
@@ -471,9 +498,9 @@ class Network(eqx.Module):
         for elem in self.layers:
             if isinstance(elem, LayerStack):
                 for k in range(elem.n_layers):
-                    out.append(elem.weights_in[k])
-            elif elem.weights_in is not None:
-                out.append(elem.weights_in)
+                    out.append(elem.weights_mean[k])
+            elif elem.weights_mean is not None:
+                out.append(elem.weights_mean)
         return tuple(out)
 
     @property
