@@ -40,6 +40,7 @@ __all__ = [
     "from_linear",
     "from_feedforward",
     "from_embedding",
+    "from_conv",
 ]
 
 
@@ -166,6 +167,59 @@ def from_linears(
         )
     )
     return _set_weights(net, {1: _weights_with_bias(weight, bias)})
+
+
+def from_conv(
+    kernel: jnp.ndarray,
+    bias: Optional[jnp.ndarray] = None,
+    leaf_kwargs: Optional[dict] = None,
+    layer_kwargs: Optional[dict] = None,
+    network_kwargs: Optional[dict] = None,
+) -> DeepNetwork:
+    """Build a shared-kernel network holding a transplanted convolution kernel.
+
+    Has the shape :func:`~pyhgf.model.conv.conv_patch_network` builds fresh.
+    ``kernel`` follows the PyTorch/``jax.lax.conv_general_dilated`` ``OIHW``
+    layout, ``(out_channels, in_channels, kh, kw)``; it is flattened
+    channel-major-then-spatial (``pyhgf.model.conv``'s patch convention) to
+    match the row a shared kernel is applied to, then handed to
+    :func:`from_linear`'s bias-folding convention. Pass the resulting network
+    as ``conv_block``'s ``patch_net`` to place it in a full pipeline.
+
+    Parameters
+    ----------
+    kernel :
+        Convolution weights, ``(out_channels, in_channels, kh, kw)``.
+    bias :
+        Optional per-output-channel bias.
+    leaf_kwargs :
+        Extra ``add_layer`` keyword arguments for the bottom (output) layer.
+    layer_kwargs :
+        Extra ``add_layer`` keyword arguments for the top (input) layer.
+    network_kwargs :
+        Constructor arguments for the :class:`DeepNetwork` itself, such as
+        ``feedforward_uncertainty``. These reach the network's state when it is
+        built and cannot be set afterwards, so they belong here rather than in
+        the per-layer keyword sets.
+
+    Returns
+    -------
+    DeepNetwork
+        A network whose ``predict`` reproduces the convolution kernel's map
+        over a single ``im2col``-flattened patch.
+    """
+    out_channels, in_channels, kh, kw = kernel.shape
+    flat_kernel = jnp.asarray(kernel).reshape(out_channels, in_channels * kh * kw)
+    net = (
+        DeepNetwork(**(network_kwargs or {}))
+        .add_layer(size=out_channels, add_constant_input=False, **(leaf_kwargs or {}))
+        .add_layer(
+            size=in_channels * kh * kw,
+            add_constant_input=bias is not None,
+            **(layer_kwargs or {}),
+        )
+    )
+    return _set_weights(net, {1: _weights_with_bias(flat_kernel, bias)})
 
 
 def from_feedforward(

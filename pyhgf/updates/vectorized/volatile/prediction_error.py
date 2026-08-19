@@ -126,7 +126,8 @@ def vectorized_layer_volatility_posterior_standard(
     )
     posterior_precision_vol = jnp.clip(
         layer.expected_precision_vol + precision_vol_contrib,
-        a_max=max_posterior_precision,
+        None,
+        max_posterior_precision,
     )
 
     # Mean using updated precision
@@ -215,7 +216,8 @@ def vectorized_layer_volatility_posterior_ehgf(
     )
     posterior_precision_vol = jnp.clip(
         layer.expected_precision_vol + precision_vol_contrib,
-        a_max=max_posterior_precision,
+        None,
+        max_posterior_precision,
     )
 
     return dataclasses.replace(
