@@ -38,6 +38,8 @@ from pyhgf.updates.vectorized.continuous import (
 )
 from pyhgf.updates.vectorized.learning import (
     SynapticUncertaintySettings,
+    clamped_layer_evidence,
+    evidence_pullback,
     learning_weights_vectorized,
     vectorized_synaptic_uncertainty_update,
 )
@@ -503,8 +505,14 @@ def _bottomup_posterior_pe(
 # ---------------------------------------------------------------------------
 
 
-def _layer_weight_op(parent: Layer, child_elem, learning_kind: str):
-    """Learning factors for a ``Layer`` parent and its child."""
+def _layer_weight_op(
+    parent: Layer, child_elem, learning_kind: str, child_evidence=None
+):
+    """Learning factors for a ``Layer`` parent and its child.
+
+    *child_evidence* is passed only by the evidence walk; ``None`` leaves
+    ``learning_weights_vectorized`` to recover the evidence from the cache.
+    """
     child_state, child_kind, _ = _child_view(child_elem)
     return learning_weights_vectorized(
         parent_state=parent.state,
@@ -513,16 +521,31 @@ def _layer_weight_op(parent: Layer, child_elem, learning_kind: str):
         kind=learning_kind,
         parent_has_constant=parent.add_constant_input,
         child_kind=child_kind,
+        child_evidence=child_evidence,
     )
 
 
-def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str):
-    """Learning factors for every slice of a ``LayerStack``.
+def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence=None):
+    """Learning factors for every slice of a ``LayerStack``, and the evidence above it.
 
     The child of slice 0 is the layer below the stack (``child_elem``); the child of
     slice k>0 is slice k-1 within the stack. Pre-pend the external child's state to the
     stack's slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child slots, then
     ``vmap`` over the N parent slices (``stack.state``) and the child slots.
+
+    The evidence walk cannot be vectorised the same way, because slice k's evidence is
+    a function of slice k-1's: it is a recursion, not a map. It is carried by a
+    ``scan`` that emits, per slice, the evidence *arriving* at that slice from below,
+    which is exactly what the slice's own increment needs; the scan's final carry is
+    the evidence leaving the top of the stack, for the element above it.
+
+    *evidence* is ``None`` for the learning kinds that never read the importance
+    factor; the walk is then skipped and the evidence above the stack is ``None`` too.
+
+    Returns
+    -------
+    tuple
+        The stacked factor triple, and the evidence at the top of the stack.
     """
     child_state, _, _ = _child_view(child_elem)
     child_state = _match_child_vol_structure(child_state, stack.has_volatility_parent)
@@ -533,7 +556,28 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str):
         stack.state,
     )
 
-    def per_slice(parent_state, child_state_for_slice):
+    def carry(evidence_below, slice_data):
+        slice_state, slice_weights = slice_data
+        above = evidence_pullback(
+            parent_state=slice_state,
+            child_evidence=evidence_below,
+            weights=slice_weights,
+            coupling_fn=stack.coupling_fn,
+            parent_has_constant=stack.add_constant_input,
+        )
+        return above, evidence_below
+
+    if evidence is None:
+        evidence_out = None
+        per_slice_evidence = jnp.zeros(stack.state.mean.shape)
+    else:
+        evidence_out, per_slice_evidence = jax.lax.scan(
+            carry, evidence, (stack.state, stack.weights_mean)
+        )
+
+    walking = evidence is not None
+
+    def per_slice(parent_state, child_state_for_slice, child_evidence):
         return learning_weights_vectorized(
             parent_state=parent_state,
             child_state=child_state_for_slice,
@@ -541,9 +585,11 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str):
             kind=learning_kind,
             parent_has_constant=stack.add_constant_input,
             child_kind="continuous",
+            child_evidence=child_evidence if walking else None,
         )
 
-    return jax.vmap(per_slice)(stack.state, child_states)
+    factors = jax.vmap(per_slice)(stack.state, child_states, per_slice_evidence)
+    return (factors, evidence_out) if walking else factors
 
 
 def _weight_op(parent_elem, child_elem, learning_kind: str):
@@ -975,7 +1021,7 @@ def input_prediction_error(network: Network) -> jnp.ndarray:
 
 
 def _weight_quantities(network: Network, learning_kind: str) -> tuple:
-    """Per-element weight-learning factors, without applying them.
+    r"""Per-element weight-learning factors, without applying them.
 
     Must run *after* :func:`_update_sweep`, so the per-layer states already carry their
     prediction errors / posteriors. Returns one entry per element, matched 1:1 to
@@ -983,12 +1029,58 @@ def _weight_quantities(network: Network, learning_kind: str) -> tuple:
     weights); each entry is the factor tuple of
     :func:`pyhgf.updates.vectorized.learning.learning_weights_vectorized`.
     Assemble them with :func:`_gradient_matrix` and :func:`_importance_pair`.
+
+    Under ``learning_kind="synaptic_uncertainty"`` the importance increment's
+    child-side factor is the evidence precision, and this walks it up the stack in its
+    own quantity: seeded at the clamped layer by
+    :func:`~pyhgf.updates.vectorized.learning.clamped_layer_evidence` and raised one
+    element at a time by
+    :func:`~pyhgf.updates.vectorized.learning.evidence_pullback`. This loop runs bottom
+    to top already, which is the order the recursion needs, so the walk costs one
+    matrix product per element and no extra sweep.
+
+    The evidence is *carried* rather than recovered from the filter's cache as
+    :math:`\pi_a - \tilde\pi_a`. The two agree in exact arithmetic only where the
+    filter's own chain is seeded with the clamped layer's likelihood curvature, which
+    it is not: a clamped categorical layer enters that chain at unit precision, because
+    that convention is what makes the message it routes exact cross-entropy
+    backpropagation. One variable cannot serve both roles, so the curvature gets its
+    own. Carrying it also removes a subtraction of two large nearly-equal precisions,
+    which loses every significant digit once a layer's precision has accumulated.
+
+    The other learning kinds never read the importance factor, so they skip the walk.
     """
     elements = network.layers
-    return (None,) + tuple(
-        _weight_op(elements[i], elements[i - 1], learning_kind)
-        for i in range(1, len(elements))
-    )
+    if learning_kind != "synaptic_uncertainty":
+        return (None,) + tuple(
+            _weight_op(elements[i], elements[i - 1], learning_kind)
+            for i in range(1, len(elements))
+        )
+
+    child_state, child_kind, _ = _child_view(elements[0])
+    evidence = clamped_layer_evidence(child_state, child_kind)
+
+    factors: list = [None]
+    for i in range(1, len(elements)):
+        parent = elements[i]
+        if isinstance(parent, LayerStack):
+            stack_factors, evidence = _stack_weight_op(
+                parent, elements[i - 1], learning_kind, evidence
+            )
+            factors.append(stack_factors)
+            continue
+        factors.append(
+            _layer_weight_op(parent, elements[i - 1], learning_kind, evidence)
+        )
+        if i + 1 < len(elements):
+            evidence = evidence_pullback(
+                parent_state=parent.state,
+                child_evidence=evidence,
+                weights=parent.weights_mean,
+                coupling_fn=parent.coupling_fn,
+                parent_has_constant=parent.add_constant_input,
+            )
+    return tuple(factors)
 
 
 def _gradient_matrix(factors) -> Optional[jnp.ndarray]:

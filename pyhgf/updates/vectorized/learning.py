@@ -6,6 +6,8 @@
 from typing import Callable, NamedTuple, Optional, Union
 
 import jax.numpy as jnp
+from jax import grad as jgrad
+from jax import vmap
 
 from pyhgf.typing.vectorised import LayerState
 
@@ -25,6 +27,7 @@ def learning_weights_vectorized(
     kind: str = "precision_weighted",
     parent_has_constant: bool = False,
     child_kind: str = "continuous",
+    child_evidence: Optional[jnp.ndarray] = None,
 ) -> tuple:
     r"""Per-layer weight-learning factors for the vectorised deep network.
 
@@ -93,19 +96,23 @@ def learning_weights_vectorized(
       observed errors.
     - A **continuous** child passes on the evidence it received from below,
       softened by the process noise it had to cross,
-      :math:`\tilde\xi_a = (1/\xi_a + \Omega_a)^{-1}`. Both parts are already
-      cached by the sweeps: :math:`\xi_a = \pi_a - \tilde\pi_a`, the posterior
-      precision minus the marginal predicted precision, because a Gaussian
-      posterior precision is its prior plus its likelihood; and
-      :math:`\Omega_a = \gamma_a / \tilde\pi_a`, recovered from the effective
+      :math:`\tilde\xi_a = (1/\xi_a + \Omega_a)^{-1}`, with
+      :math:`\Omega_a = \gamma_a / \tilde\pi_a` recovered from the effective
       precision the prediction sweep writes as
-      :math:`\gamma_a = \Omega_a \tilde\pi_a`. Softening by :math:`\Omega_a`
-      alone is what distinguishes this from the conditional predicted
-      precision :math:`\hat\pi_a`, which softens by
-      :math:`1/\pi_a^{\text{prev}} + \Omega_a` and so also carries the node's
-      own prior variance from the previous step: information about the same
-      quantity for a time series, but about a *different* sample's activation
-      for exchangeable samples.
+      :math:`\gamma_a = \Omega_a \tilde\pi_a`. The evidence :math:`\xi_a`
+      itself is supplied by the caller through *child_evidence*, carried up from
+      the clamped layer by :func:`evidence_pullback`, and the weight-belief rule
+      always supplies it.
+
+      Without it, :math:`\xi_a` falls back to :math:`\pi_a - \tilde\pi_a` from
+      the cache, which is the same quantity in exact arithmetic *only* where the
+      filter's own precision chain was seeded with the clamped layer's likelihood
+      curvature. It is not: a clamped categorical layer enters that chain at unit
+      precision, because that convention is what makes the message it routes exact
+      cross-entropy backpropagation. Reading the difference also subtracts two
+      large nearly-equal precisions, which loses every significant digit once a
+      layer's precision has accumulated. The fallback is kept for direct callers
+      reading the layer-local quantity; it is not what the rule descends.
 
     Parameters
     ----------
@@ -126,6 +133,15 @@ def learning_weights_vectorized(
     child_kind :
         The child layer's node kind, ``"binary"``, ``"categorical"`` or
         anything else for a continuous one.
+    child_evidence :
+        The child's evidence precision :math:`\xi_a`, supplied by a caller that
+        carries it up the stack itself (:func:`evidence_pullback`) rather than
+        letting it be recovered here as :math:`\pi_a - \tilde\pi_a`. When given,
+        it replaces that difference in the importance factor and the fallback
+        below never applies, since a carried evidence is non-negative by
+        construction. The gradient factor is unaffected: it reads the child's
+        posterior precision either way. ``None`` (default) recovers the evidence
+        from the cache.
 
     Returns
     -------
@@ -159,7 +175,10 @@ def learning_weights_vectorized(
     # of the update read these, so they are formed once. The evidence is
     # floored at zero: clipping can drive a posterior precision below its
     # prediction, which must not turn the increment into a subtraction.
-    evidence = child_state.precision - child_state.expected_precision
+    if child_evidence is None:
+        evidence = child_state.precision - child_state.expected_precision
+    else:
+        evidence = child_evidence
     floored = jnp.maximum(evidence, 0.0)
     tonic = child_state.effective_precision / jnp.maximum(
         child_state.expected_precision, _EPS
@@ -182,6 +201,11 @@ def learning_weights_vectorized(
     # elimination, so gating them on a flag would buy nothing.
     if kind == "standard":
         p = jnp.ones_like(child_state.mean)
+    elif child_evidence is not None:
+        # A carried evidence is already the right quantity for any child: the
+        # walk seeds a clamped discrete layer with its own p(1-p) and pulls that
+        # up, so no per-kind branch and no fallback are needed here.
+        p = floored * softening
     elif child_kind in ("binary", "categorical"):
         # Clamped discrete child: the curvature of its own likelihood.
         prob = child_state.expected_mean
@@ -347,6 +371,110 @@ def resolve_synaptic_uncertainty_settings(
         increment_scale=increment_scale,
         prior_precision=1.0 / prior_variance,
     )
+
+
+def clamped_layer_evidence(child_state: LayerState, child_kind: str) -> jnp.ndarray:
+    r"""Seed the evidence walk at the layer the data are clamped to.
+
+    A **binary or categorical** layer contributes the exact, label-free curvature
+    of its own likelihood, :math:`\xi_a = \hat{p}_a(1 - \hat{p}_a)`: the diagonal
+    of :math:`\operatorname{diag}(\mathbf{p}) - \mathbf{p}\mathbf{p}^\top`, which
+    is the Hessian of the categorical log-likelihood with respect to the logits.
+    No observed label enters it, so it is the model's own expected curvature
+    rather than one built from the errors that happened to occur.
+
+    A **continuous** layer contributes its own precision, which for a Gaussian
+    likelihood is that same curvature: the second derivative of
+    :math:`-\log \mathcal{N}(y; \mu, 1/\pi)` with respect to :math:`\mu` is
+    :math:`\pi`, whatever the residual. Nothing is approximated. What differs is
+    that the value is a *constant*, and two things follow from that. It varies
+    neither across units nor across samples, so unlike the discrete seed it says
+    nothing about which outputs the data constrain hardest, and every per-weight
+    difference the walk produces above such a layer comes from the activations
+    and the weight pullback alone. And wherever the precision expresses "this
+    layer is observed" rather than a modelled observation noise, its value is
+    arbitrary; since the seed multiplies through the whole chain, it then fixes
+    the scale of every accumulated weight precision above it, which trades
+    against the prior precision.
+
+    Parameters
+    ----------
+    child_state :
+        State of the clamped layer, after the update sweep.
+    child_kind :
+        ``"binary"``, ``"categorical"``, or anything else for a continuous layer.
+
+    Returns
+    -------
+    jnp.ndarray
+        The evidence precision at each node of the clamped layer.
+    """
+    if child_kind in ("binary", "categorical"):
+        prob = child_state.expected_mean
+        evidence = prob * (1.0 - prob)
+    else:
+        evidence = child_state.precision
+    return jnp.where(jnp.isfinite(evidence), evidence, 0.0)
+
+
+def evidence_pullback(
+    parent_state: LayerState,
+    child_evidence: jnp.ndarray,
+    weights: jnp.ndarray,
+    coupling_fn: Callable,
+    parent_has_constant: bool = False,
+) -> jnp.ndarray:
+    r"""Carry the evidence precision up one layer, by the squared-coupling recursion.
+
+    A Gaussian likelihood pulled back through a linear map of coefficient
+    :math:`c` has its precision multiplied by :math:`c^2`; children are
+    conditionally independent given the parent, so their pulled-back precisions
+    add:
+
+    .. math::
+
+        \xi_i = g'(\hat\mu_i)^2 \sum_a W_{ai}^2\, \tilde\xi_a
+
+    This is the upward mirror of the downward variance bleed-through, and
+    computationally it is curvature backpropagation: per sample,
+    :math:`\tilde\xi_a h_i^2` is the Gauss-Newton diagonal of the global loss
+    with respect to :math:`W_{ai}`, under the same diagonal treatment (cross
+    terms between different parents of one child are dropped).
+
+    Computed from the evidence carried in the walk rather than recovered as
+    :math:`\pi_a - \tilde\pi_a` from the filter's cache. The two agree in exact
+    arithmetic, but the difference of two large nearly-equal precisions loses
+    every significant digit once a layer's precision has accumulated, whereas a
+    carried quantity does not.
+
+    Parameters
+    ----------
+    parent_state :
+        State of the layer the evidence is being carried up to.
+    child_evidence :
+        Evidence precision at each node of the layer below, shape
+        ``(n_children,)``.
+    weights :
+        The matrix connecting them, shape ``(n_children, n_parents[+1])``. A bias
+        column is dropped: a constant input node is not a parent whose belief the
+        evidence can be about.
+    coupling_fn :
+        Coupling applied to parent means, differentiated at the parent's expected
+        mean.
+    parent_has_constant :
+        Whether *weights* carries that trailing bias column.
+
+    Returns
+    -------
+    jnp.ndarray
+        The evidence precision at each node of the parent layer, shape
+        ``(n_parents,)``.
+    """
+    if parent_has_constant:
+        weights = weights[..., :-1]
+    coupling_prime = vmap(jgrad(coupling_fn))(parent_state.expected_mean)
+    pulled = jnp.matmul(weights.T**2, child_evidence) * coupling_prime**2
+    return jnp.where(jnp.isfinite(pulled), jnp.maximum(pulled, 0.0), 0.0)
 
 
 def vectorized_synaptic_uncertainty_update(
