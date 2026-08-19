@@ -107,6 +107,40 @@ def test_effective_evidence_precision():
     )
     assert np.all(np.asarray(xi_tilde(clipped)) >= 0.0)
 
+    # The same floor also guards the softening denominator, 1 / (1 + omega * xi).
+    # Left unfloored, a negative evidence would inflate the gradient instead of
+    # attenuating it, and a large enough one would flip its sign.
+    clipped_noisy = dataclasses.replace(
+        clipped,
+        mean=jnp.array([1.0, -2.0, 0.5]),
+        expected_mean=jnp.zeros(n),
+        effective_precision=0.25 * jnp.array([4.0, 4.0, 4.0]),
+    )
+    u_ev, _, _ = learning_weights_vectorized(
+        parent, clipped_noisy, lambda m: m, kind="synaptic_uncertainty"
+    )
+    u_pw, _, _ = learning_weights_vectorized(
+        parent, clipped_noisy, lambda m: m, kind="precision_weighted"
+    )
+    np.testing.assert_allclose(u_ev, u_pw, rtol=1e-6)
+
+    # A supplied evidence replaces the cached difference and is softened by the
+    # same process noise. Asserted here because the networks the walk is
+    # exercised on end to end carry no volatility parent, so their omega is
+    # identically zero and the softening is inert in them.
+    noisy = dataclasses.replace(
+        base,
+        expected_precision=jnp.array([1.0, 2.0, 0.5]),
+        precision=jnp.array([5.0, 6.0, 2.5]),
+        effective_precision=0.25 * jnp.array([1.0, 2.0, 0.5]),
+    )
+    carried = jnp.array([2.0, 8.0, 1.0])
+    _, _, p = learning_weights_vectorized(
+        parent, noisy, lambda m: m, child_evidence=carried
+    )
+    carried_np = np.asarray(carried)
+    np.testing.assert_allclose(p, carried_np / (1.0 + 0.25 * carried_np), rtol=1e-6)
+
 
 def _step(weights, precision_delta, gradient, importance, **kwargs):
     """One belief step, returning ``(update, new_delta)``.
@@ -526,3 +560,126 @@ def test_install_weight_belief_is_explicit_and_idempotent():
 
     with pytest.raises(ValueError, match="hold no weight matrix"):
         net.install_weight_belief(layers=[0])
+
+
+def test_evidence_walk_curvature():
+    """The walk's increment is the Gauss-Newton diagonal; the sweep's is inflated.
+
+    The importance increment is meant to be the curvature the data impose on a
+    weight. Recovering the evidence from the filter's cache as
+    ``precision - expected_precision`` does not deliver that above the observed
+    layer, because the chain it is read from is seeded with the clamped layer's
+    unit precision rather than with the categorical curvature ``p(1 - p)``: the
+    interior increment comes out several times too large. Carrying the evidence
+    instead reproduces the autodiff Gauss-Newton diagonal.
+    """
+    from jax.nn import leaky_relu
+
+    from pyhgf.utils.vectorized_belief_propagation import (
+        _importance_pair,
+        _prediction_sweep,
+        _update_sweep,
+        _weight_quantities,
+    )
+
+    def build():
+        net = (
+            DeepNetwork(coupling_fn=leaky_relu)
+            .add_layer(size=3, kind="categorical", volatility_parent=False)
+            .add_layer(size=8, volatility_parent=False)
+            .add_layer(size=2, volatility_parent=False)
+        )
+        return net.weight_initialisation("he", key=jax.random.key(0))
+
+    net = build()
+    x = jnp.asarray([0.7, -0.4])
+    y = jnp.asarray([0.0, 1.0, 0.0])
+
+    def increments(learning_kind):
+        swept = _update_sweep(_prediction_sweep(net.state, x), y)
+        factors = _weight_quantities(swept, learning_kind)
+        pairs = [_importance_pair(f) for f in factors[1:]]
+        return [np.asarray(p[:, None] * h2[None, :]) for p, h2 in pairs]
+
+    # Ground truth: J^T (diag(p) - p p^T) J on the diagonal, by autodiff over the
+    # same weights, with the constant input node written out explicitly.
+    weights = [jnp.asarray(w) for w in net.state.weights]
+
+    def logits(params, features):
+        h = jnp.concatenate([leaky_relu(features), jnp.ones(1)])
+        h = leaky_relu(params[1] @ h)
+        return params[0] @ jnp.concatenate([h, jnp.ones(1)])
+
+    probs = jax.nn.softmax(logits(weights, x))
+    hessian = jnp.diag(probs) - jnp.outer(probs, probs)
+    jacobian = jax.jacobian(logits)(weights, x)
+    exact = [np.asarray(jnp.einsum("cij,cd,dij->ij", j, hessian, j)) for j in jacobian]
+
+    def median_ratio(got, want):
+        live = want > 1e-12
+        return float(np.median(got[live] / want[live]))
+
+    walked = increments("synaptic_uncertainty")
+
+    # Both matrices reproduce the Gauss-Newton diagonal: the head because its
+    # child is the clamped layer whose curvature seeds the walk, and the one
+    # above it because the walk carries that seed up rather than re-reading a
+    # chain the filter seeded at unit precision.
+    for got, want in zip(walked, exact):
+        assert median_ratio(got, want) == pytest.approx(1.0, abs=0.2)
+
+
+def test_evidence_walk_through_a_layer_stack():
+    """The walk carries the evidence through a stack's slices, by scan.
+
+    Slice k's evidence is a function of slice k-1's, so it cannot be mapped over the
+    slices the way the factors are; the scan that carries it must leave the stack with
+    the same evidence a chain of plain layers would.
+    """
+    from pyhgf.utils.vectorized_belief_propagation import (
+        _prediction_sweep,
+        _update_sweep,
+        _weight_quantities,
+    )
+
+    def build(stacked: bool):
+        net = (
+            DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+            .add_layer(size=3, kind="categorical", volatility_parent=False)
+            .add_layer(size=6, add_constant_input=True, volatility_parent=False)
+        )
+        sizes = [6] * 5
+        if stacked:
+            net = net.add_layer_stack(
+                layer_sizes=sizes, add_constant_input=True, volatility_parent=False
+            )
+        else:
+            for size in sizes:
+                net = net.add_layer(
+                    size=size, add_constant_input=True, volatility_parent=False
+                )
+        return net.add_layer(size=2, add_constant_input=False).weight_initialisation(
+            "he", key=jax.random.key(3)
+        )
+
+    stacked, plain = build(True), build(False)
+    assert any(type(e).__name__ == "LayerStack" for e in stacked.state.layers)
+    assert not any(type(e).__name__ == "LayerStack" for e in plain.state.layers)
+
+    x = jnp.asarray([0.6, -0.2])
+    y = jnp.asarray([0.0, 0.0, 1.0])
+
+    def top_factors(net):
+        swept = _update_sweep(_prediction_sweep(net.state, x), y)
+        return _weight_quantities(swept, "synaptic_uncertainty")[-1]
+
+    # The element above the stack sees the evidence the scan carried out of it,
+    # so its importance factor is the check that the recursion was not mapped.
+    got, want = np.asarray(top_factors(stacked)[2]), np.asarray(top_factors(plain)[2])
+
+    # Compared as a ratio, and with the scale asserted first. Six pullbacks leave
+    # the evidence around 1e-9, so any absolute tolerance loose enough to look
+    # reasonable is orders of magnitude larger than the quantity itself and the
+    # comparison passes whatever the stack did.
+    assert np.all(want > 0.0)
+    np.testing.assert_allclose(got / want, 1.0, rtol=1e-4)
