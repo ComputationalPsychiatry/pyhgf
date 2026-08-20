@@ -77,6 +77,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
     synaptic_uncertainty_settings = part.synaptic_uncertainty_settings
     update_precisions = part.update_precisions
     time_step = part.time_step
+    weight_reuse = part.weight_reuse
     layer_sizes = list(part.net.layer_sizes)
 
     # part.init_state() returns the (network, opt_state) pytree directly.
@@ -112,6 +113,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             synaptic_uncertainty_settings=synaptic_uncertainty_settings,
             time_step=time_step,
             predicted=states,
+            weight_reuse=weight_reuse,
         )
         update_norm = jnp.sqrt(
             sum(

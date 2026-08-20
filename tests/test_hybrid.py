@@ -176,7 +176,8 @@ def test_step_report_collects_update_and_error_norms():
     exactly one entry — the learning part — with positive update and error
     norms and its path inside the model.
     """
-    from pyhgf.model import from_feedforward, step_report
+    from pyhgf.model import step_report
+    from pyhgf.model.transplant import from_feedforward
 
     rng = np.random.default_rng(2)
     d, h, batch = 6, 12, 4

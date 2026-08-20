@@ -1368,6 +1368,7 @@ def _batch_step(
     predicted: Optional[tuple] = None,
     sample_weight: Optional[jnp.ndarray] = None,
     synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
+    weight_reuse: float = 1.0,
 ) -> tuple[Network, Optional[optax.OptState], jnp.ndarray]:
     """One batch-synchronous learning step over many samples at once.
 
@@ -1432,6 +1433,32 @@ def _batch_step(
         :func:`pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`
         ).
         ``learning_kind`` still selects the gradient the rule descends.
+    weight_reuse :
+        How many times each weight matrix is applied per sample, default ``1.0``
+        (once, the ordinary case).
+
+        This exists because "average over the batch" is also ambiguous when one
+        weight matrix is *reused* several times per sample. A weight shared across
+        ``k`` positions of a sample sees ``k`` rows per sample, so the plain mean
+        divides by ``k`` more than that weight's true per-sample quantities, which
+        sum over its ``k`` uses and average only over samples. Pass ``k`` to recover
+        those sums. The caller owns the count, since only it knows how the rows were
+        built (see :func:`pyhgf.model.conv.conv_block`, which passes the patch
+        count).
+
+        Both halves of the step are rescaled, so the weight-belief rule of
+        ``synaptic_uncertainty`` stays internally consistent: the gradient because
+        the chain rule sums a shared weight's uses, and the importance because the
+        curvature those uses impose accumulates the same way. Rescaling only the
+        gradient would move the mean ``k`` times faster while the belief tightened
+        at the one-use rate, leaving a step ``k`` times too large once accumulated
+        curvature dominates the prior.
+
+        The importance half carries a modelling assumption the gradient half does
+        not. Summing the gradient over uses is the chain rule; summing curvature
+        over them treats the ``k`` uses as independent observations, which
+        overlapping convolution patches are not. Where that matters, the same
+        correction can be had with a smaller ``k``.
 
     Returns
     -------
@@ -1492,10 +1519,21 @@ def _batch_step(
             None if f is None else _contract_factors((f[0], f[1]), sample_weight)
             for f in factors
         )
+        if weight_reuse != 1.0:
+            mean_grads = tuple(
+                None if g is None else g * weight_reuse for g in mean_grads
+            )
         if synaptic_uncertainty_settings is not None:
             importance = tuple(
                 _reduce_importance(_importance_pair(f), sample_weight) for f in factors
             )
+            if weight_reuse != 1.0:
+                # The increment is the outer product H[a, i] = p[a] * q[i], so
+                # scaling one factor scales it.
+                importance = tuple(
+                    None if imp is None else (imp[0] * weight_reuse, imp[1])
+                    for imp in importance
+                )
             new_network = _apply_synaptic_uncertainty_updates(
                 new_network, mean_grads, importance, synaptic_uncertainty_settings
             )

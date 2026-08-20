@@ -14,16 +14,6 @@ from .add_nodes import (
     update_parameters,
 )
 from .builder import LayerConfig, resolve_coupling_fn
-from .conv import (
-    avg_pool_adapter,
-    conv_block,
-    conv_output_shape,
-    conv_patch_network,
-    flatten_adapter,
-    im2col_adapter,
-    max_pool_adapter,
-    spatial_reshape_adapter,
-)
 from .deep_network import DeadGradientWarning, DeepNetwork
 from .error_types import (
     DescentError,
@@ -43,13 +33,6 @@ from .hybrid import (
 )
 from .network import Network
 from .transformer import HybridGPT, MultiHeadAttention, hybrid_from_gpt
-from .transplant import (
-    from_conv,
-    from_embedding,
-    from_feedforward,
-    from_linear,
-    from_linears,
-)
 
 __all__ = [
     "Network",
@@ -60,11 +43,6 @@ __all__ = [
     "DescentError",
     "ObservedMinusPredicted",
     "validate_error_convention",
-    "from_linear",
-    "from_linears",
-    "from_feedforward",
-    "from_embedding",
-    "from_conv",
     "PCModule",
     "EquinoxAdapter",
     "DeepNetworkAdapter",
@@ -73,14 +51,6 @@ __all__ = [
     "gelu_adapter",
     "layer_norm_adapter",
     "linear_adapter",
-    "im2col_adapter",
-    "avg_pool_adapter",
-    "max_pool_adapter",
-    "spatial_reshape_adapter",
-    "flatten_adapter",
-    "conv_patch_network",
-    "conv_block",
-    "conv_output_shape",
     "step_report",
     "FusedPipeline",
     "MultiHeadAttention",

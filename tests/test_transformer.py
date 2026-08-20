@@ -11,9 +11,11 @@ from pyhgf.model import (
     DeepNetworkAdapter,
     FusedPipeline,
     MultiHeadAttention,
-    from_feedforward,
     hybrid_from_gpt,
     linear_adapter,
+)
+from pyhgf.model.transplant import (
+    from_feedforward,
 )
 
 # Automatic differentiation appears in this file ONLY as a test oracle. The
@@ -176,7 +178,7 @@ def test_fused_qkv_matches_separate():
     weights by ``from_linears`` must follow the same training trajectory as
     three separate ``from_linear`` adapters, step for step.
     """
-    from pyhgf.model import from_linear, from_linears
+    from pyhgf.model.transplant import from_linear, from_linears
 
     rng = np.random.default_rng(2)
     dim, n_heads, seq_len, batch = 16, 4, 8, 3
@@ -271,7 +273,7 @@ def test_fused_qkv_through_hybrid_and_merge():
     carries the same weights), and after a training step ``merge`` must write the
     advanced fused weights back onto the part.
     """
-    from pyhgf.model import from_linears
+    from pyhgf.model.transplant import from_linears
 
     rng = np.random.default_rng(9)
     vocab, dim, n_heads, hidden, n_layers, seq_len = 11, 16, 4, 32, 1, 8
@@ -404,7 +406,7 @@ def test_ff_swap_matches_backprop():
 
 
 def _pyhgf_linear_part(linear, lr):
-    from pyhgf.model import from_linear
+    from pyhgf.model.transplant import from_linear
 
     return DeepNetworkAdapter(
         from_linear(linear, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
@@ -423,7 +425,7 @@ def test_full_pyhgf_gpt_matches_backprop():
     and (b) change every single weight matrix by the batch-averaged backprop gradient of
     the same loss. No backpropagation runs anywhere in the pipeline.
     """
-    from pyhgf.model import from_embedding
+    from pyhgf.model.transplant import from_embedding
 
     rng = np.random.default_rng(6)
     vocab, dim, n_heads, hidden, n_layers, seq_len = 11, 16, 4, 32, 2, 8
@@ -541,7 +543,7 @@ def test_binary_head_at_vocabulary_width():
     gradient. The remaining deviation from the reference model is therefore
     only 27 independent yes/no questions vs one 27-way choice.
     """
-    from pyhgf.model import from_linear
+    from pyhgf.model.transplant import from_linear
 
     rng = np.random.default_rng(8)
     vocab, dim, batch = 27, 16, 6
@@ -591,7 +593,7 @@ def test_categorical_head_matches_softmax_backprop():
     makes the raw residual the cross-entropy gradient in logit space, so the
     generic kernels produce these results with no special-casing.
     """
-    from pyhgf.model import from_linear
+    from pyhgf.model.transplant import from_linear
 
     rng = np.random.default_rng(10)
     vocab, dim, batch = 27, 16, 6
@@ -641,7 +643,7 @@ def test_full_pyhgf_gpt_with_categorical_head():
     matrix must change by the backprop gradient of the softmax
     cross-entropy loss; the objective caveat of the binary head disappears.
     """
-    from pyhgf.model import from_embedding, from_linear
+    from pyhgf.model.transplant import from_embedding, from_linear
 
     rng = np.random.default_rng(12)
     vocab, dim, n_heads, hidden, n_layers, seq_len = 11, 16, 4, 32, 2, 8

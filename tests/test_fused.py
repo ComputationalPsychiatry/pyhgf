@@ -10,10 +10,12 @@ from jax import random
 from pyhgf.model import (
     DeepNetworkAdapter,
     FusedPipeline,
+    hybrid_from_gpt,
+)
+from pyhgf.model.transplant import (
     from_embedding,
     from_feedforward,
     from_linear,
-    hybrid_from_gpt,
 )
 
 # The executor's gates, verified against

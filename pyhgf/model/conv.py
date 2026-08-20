@@ -1,15 +1,14 @@
 """Convolutional layers for the hybrid pipeline.
 
-A convolution is a weight-shared linear map over patches
-(``docs/source/notebooks/0.6-Deep_networks_implementation.md``, §4.6): extracting
-patches (im2col) and pooling are frozen, weightless spatial reshuffles with a
-closed-form backward; the only learned part is one small :class:`~pyhgf.model.DeepNetwork`
-applied identically to every patch, exactly the per-position batching
-:class:`~pyhgf.model.hybrid.DeepNetworkAdapter` already uses for token positions
-and attention tables.
+A convolution is a weight-shared linear map over patches: extracting patches
+(im2col) and pooling are frozen, weightless spatial reshuffles with a closed-form
+backward; the only learned part is one two-layer
+:class:`~pyhgf.model.DeepNetwork` applied identically to every patch, the same
+per-position batching :class:`~pyhgf.model.hybrid.DeepNetworkAdapter` applies to
+token positions and attention tables.
 
 Patch layout convention: patches are flattened channel-major-then-spatial,
-``index = c * kh * kw + i * kw + j`` — matching
+``index = c * kh * kw + i * kw + j``, matching
 ``jax.lax.conv_general_dilated_patches`` and a PyTorch-style kernel of shape
 ``(out_channels, in_channels, kh, kw)`` reshaped the same way.
 """
@@ -92,15 +91,15 @@ def im2col_adapter(
     """Build a frozen patch extractor: images in, one row per patch out.
 
     Forward, ``x`` of shape ``(batch, C, H, W)`` becomes ``(batch, n_patches, C*kh*kw)``
-    via ``jax.lax.conv_general_dilated_patches`` — the same "one row per sample" layout
-    :class:`~pyhgf.model.hybrid.DeepNetworkAdapter` already expects for token positions,
-    so the following per-patch network needs no special-casing. Backward (fold / col2im)
-    is the geometric adjoint: each of the ``kh*kw`` kernel taps is a strided slice of
-    the (padded) image, so its gradient is scattered back with
-    :func:`jax.numpy.ndarray.at.add` at the same stride — a closed-form sum over
-    overlapping patches, unrolled over the (small, static) kernel taps. Verified against
-    ``jax.vjp`` of this forward as a test oracle (see ``tests/test_conv.py``), never at
-    call time.
+    via ``jax.lax.conv_general_dilated_patches``, the same "one row per sample" layout
+    :class:`~pyhgf.model.hybrid.DeepNetworkAdapter` expects for token positions, so the
+    following per-patch network needs no special-casing. Backward (fold / col2im) is the
+    geometric adjoint: each of the ``kh*kw`` kernel taps is a strided slice of the
+    (padded) image, so its gradient is scattered back with
+    :func:`jax.numpy.ndarray.at.add` at the same stride, a closed-form sum over
+    overlapping patches unrolled over the statically-sized kernel taps. The adjoint is
+    written out rather than obtained by differentiating the forward at call time; it
+    matches ``jax.vjp`` of this forward (``tests/test_conv.py``).
     """
     kh, kw = filter_shape
     sh, sw = strides
@@ -141,10 +140,11 @@ def avg_pool_adapter(
     """Build a frozen average-pool: block-mean forward, uniform-split backward.
 
     Forward, each non-overlapping (or strided) window is averaged via
-    ``jax.lax.reduce_window``. Backward, the incoming gradient at one pooled position is
-    split evenly back across every position that fed it — exactly linear, same closed-
-    form spirit as :func:`~pyhgf.model.hybrid.linear_adapter`. Chosen over max-pool for
-    a discontinuity-free backward.
+    ``jax.lax.reduce_window``. The map is linear, so the backward is its transpose in
+    closed form, as in :func:`~pyhgf.model.hybrid.linear_adapter`: the incoming gradient
+    at one pooled position is split evenly back across every position that fed it. That
+    backward is continuous everywhere, unlike :func:`max_pool_adapter`'s, whose routing
+    jumps between taps as the winner changes.
     """
     ph, pw = pool_size
     sh, sw = stride if stride is not None else pool_size
@@ -179,16 +179,15 @@ def max_pool_adapter(
     """Build a frozen max-pool: block-max forward, winner-take-all backward.
 
     Forward, each non-overlapping (or strided) window's taps are gathered as an explicit
-    stack (same strided-slice-per-tap style as :func:`avg_pool_adapter`'s backward) and
-    reduced with ``jnp.max``, the winning tap index cached alongside. Backward routes
-    the incoming gradient only to the tap that won each window (``jnp.argmax``'s lowest-
-    index tie-break — matching common max-pool convention, and inconsequential for
-    continuous post-GELU activations), zero everywhere else — a closed-form scatter, not
-    the discontinuity-through-differentiation a subgradient would need.
+    stack (the same strided-slice-per-tap construction as :func:`avg_pool_adapter`'s
+    backward) and reduced with ``jnp.max``, the winning tap index cached alongside.
+    Backward routes the incoming gradient only to the tap that won each window and zero
+    everywhere else, a scatter written in closed form rather than obtained by
+    differentiating the maximum. Ties go to the lowest tap index, the tie-break
+    ``jnp.argmax`` applies.
     """
     ph, pw = pool_size
     sh, sw = stride if stride is not None else pool_size
-    n_taps = ph * pw
 
     def _taps(x: jnp.ndarray, h_out: int, w_out: int) -> jnp.ndarray:
         rows = []
@@ -230,8 +229,8 @@ def spatial_reshape_adapter(height: int, width: int) -> EquinoxAdapter:
 
     Maps ``(batch, n_patches, C)`` to ``(batch, C, H, W)`` and back, converting the
     output of the per-patch network into the spatial layout that pooling and the next
-    :func:`im2col_adapter` expect. A pure transpose plus reshape — no learned content,
-    backward is just the inverse reshape.
+    :func:`im2col_adapter` expect. A transpose followed by a reshape, with no learned
+    content, so the backward is the inverse reshape.
     """
 
     def forward(x: jnp.ndarray) -> tuple[jnp.ndarray, tuple]:
@@ -248,7 +247,7 @@ def spatial_reshape_adapter(height: int, width: int) -> EquinoxAdapter:
 
 
 def flatten_adapter(channels: int, height: int, width: int) -> EquinoxAdapter:
-    """Build a frozen flatten: spatial ``(batch, C, H, W)`` -> ``(batch, C*H*W)``."""
+    """Build a frozen flatten, mapping ``(batch, C, H, W)`` to ``(batch, C*H*W)``."""
 
     def forward(x: jnp.ndarray) -> tuple[jnp.ndarray, tuple]:
         batch = x.shape[0]
@@ -273,9 +272,10 @@ def conv_patch_network(
     """Build a fresh 2-layer :class:`DeepNetwork` computing one conv kernel's map.
 
     Same shape as :func:`~pyhgf.model.transplant.from_linear` (one weight matrix,
-    bias folded in as the input layer's constant node) but freshly initialised
-    rather than transplanted — this *is* the conv kernel, shared across every
-    patch via :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`'s per-row batching.
+    bias folded in as the input layer's constant node), initialised from ``key``
+    rather than copied from an existing layer. This network is the conv kernel
+    itself, shared across every patch by
+    :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`'s per-row batching.
 
     Parameters
     ----------
@@ -287,12 +287,12 @@ def conv_patch_network(
         PRNG key for weight initialisation.
     strategy :
         Forwarded to :meth:`DeepNetwork.weight_initialisation` (default ``"he"``,
-        appropriate for a GELU-coupled conv stack).
+        the scaling for the rectifier-style nonlinearity each conv block applies).
     leaf_kwargs :
-        Extra ``add_layer`` kwargs for the bottom (output) layer — e.g. the
-        backprop-parity configuration.
+        Extra ``add_layer`` keyword arguments for the bottom (output) layer, such
+        as the backprop-parity configuration.
     layer_kwargs :
-        Extra ``add_layer`` kwargs for the top (input) layer.
+        Extra ``add_layer`` keyword arguments for the top (input) layer.
     network_kwargs :
         Constructor arguments for the :class:`DeepNetwork` itself, such as
         ``feedforward_uncertainty``. These reach the network's state when it is
@@ -329,44 +329,95 @@ def conv_block(
     network_kwargs: Optional[dict] = None,
     patch_net: Optional[DeepNetwork] = None,
 ) -> tuple[PCSequential, tuple[int, int, int]]:
-    """Assemble one conv layer as a part tree: im2col -> shared kernel -> GELU -> pool.
+    """Assemble one conv layer as a part tree: im2col, shared kernel, GELU, pool.
 
-    A conv layer has exactly one weight table (unlike attention's four), so
-    plain :class:`~pyhgf.model.hybrid.PCSequential` composition of existing
-    primitives is enough — no bespoke composite class needed.
+    A conv layer has one weight table (attention has four), so it is composed
+    from the primitives above with :class:`~pyhgf.model.hybrid.PCSequential`
+    rather than through a dedicated class.
 
     Parameters
     ----------
+    in_channels :
+        Channels of the incoming feature map, whose shape is
+        ``(batch, in_channels, in_height, in_width)``.
+    out_channels :
+        Feature maps this block produces, one per kernel.
+    in_height :
+        Height of the incoming feature map. Fixed at build time: the reshape
+        back to spatial layout is sized from it, so feeding a different height
+        fails.
+    in_width :
+        Width of the incoming feature map, fixed at build time like
+        ``in_height``.
+    filter_shape :
+        Kernel size ``(kh, kw)``.
+    strides :
+        Convolution strides ``(sh, sw)``, one step per output position.
+    padding :
+        ``"SAME"`` (output size is the input size divided by the stride, rounded
+        up), ``"VALID"`` (no padding) or an explicit
+        ``((top, bottom), (left, right))``.
+    pool_size :
+        Pooling window ``(ph, pw)``. Use ``(1, 1)`` for no pooling. Must fit
+        within the convolution's output size.
+    pool_stride :
+        Step between pooling windows, defaulting to ``pool_size`` (non
+        overlapping windows).
     pool_kind :
-        ``"avg"`` (default, backward-compatible) for :func:`avg_pool_adapter`
-        or ``"max"`` for :func:`max_pool_adapter`.
+        ``"avg"`` for :func:`avg_pool_adapter` or ``"max"`` for
+        :func:`max_pool_adapter`.
+    optimizer :
+        Optax optimiser for the shared kernel. ``None`` freezes the weights
+        (the layer beliefs still update) under every ``learning_kind`` except
+        ``"synaptic_uncertainty"``, which carries its own step size and leaves
+        the optimiser unused either way.
     learning_kind :
         Weight-gradient mode, forwarded to
-        :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`. Note that
-        ``"synaptic_uncertainty"`` steps each weight by its own belief variance
-        and never calls the optimiser, so the ``n_patches`` gradient
-        compensation below — which rides on an :mod:`optax` transformation —
-        does not apply to it.
+        :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`. Under
+        ``"synaptic_uncertainty"`` each weight also carries a belief whose
+        variance *is* the step size, so no ``optimizer`` is needed and the
+        kernel keeps learning without one.
     learning_kwargs :
         Settings of the learning rule, used by
-        ``learning_kind="synaptic_uncertainty"``.
+        ``learning_kind="synaptic_uncertainty"``, which requires at least
+        ``{"window": N}``.
+    update_precisions :
+        Whether the kernel's precision state adapts across batches. Defaults to
+        False, the setting used for exact comparisons against backpropagation.
+    time_step :
+        Inference time step, forwarded to the adapter: one batch counts as one
+        observation of this duration.
+    key :
+        PRNG key for initialising a fresh kernel. Ignored when ``patch_net`` is
+        given.
+    leaf_kwargs :
+        Extra ``add_layer`` keyword arguments for the kernel network's bottom
+        (output) layer, such as the backprop-parity configuration.
+    layer_kwargs :
+        Extra ``add_layer`` keyword arguments for its top (input) layer.
     network_kwargs :
         Constructor arguments for the shared-kernel :class:`DeepNetwork`, such
         as ``feedforward_uncertainty``. Ignored when ``patch_net`` is given,
         since that network is already built.
     patch_net :
         A pre-built shared-kernel network to use in place of a freshly
-        initialised :func:`conv_patch_network` — e.g. one built by
-        :func:`~pyhgf.model.transplant.from_conv` to transplant a trained or
-        externally-initialised kernel. When given, ``key`` is ignored.
+        initialised :func:`conv_patch_network`, such as one built by
+        :func:`~pyhgf.model.transplant.from_conv` from a trained or externally
+        initialised kernel. When given, ``key`` is ignored.
+
+    Raises
+    ------
+    ValueError
+        If ``pool_kind`` is not ``"avg"`` or ``"max"``, or if ``pool_size``
+        is larger than the feature map the convolution produces.
 
     Returns
     -------
     part :
         The ``PCSequential`` to place in a larger pipeline.
     out_shape :
-        ``(out_channels, pooled_height, pooled_width)`` — feed forward into the
-        next block's ``in_channels``/``in_height``/``in_width``.
+        ``(out_channels, pooled_height, pooled_width)``, to pass on as the next
+        block's ``in_channels``, ``in_height`` and ``in_width``.
     """
     kh, kw = filter_shape
     h_out, w_out = conv_output_shape(
@@ -385,19 +436,20 @@ def conv_block(
 
     ph, pw = pool_size
     sh, sw = pool_stride if pool_stride is not None else pool_size
+    if ph > h_out or pw > w_out:
+        raise ValueError(
+            f"pool_size {pool_size} does not fit the {h_out}x{w_out} feature map "
+            f"a {filter_shape} convolution with strides {strides} and padding "
+            f"{padding!r} produces from a {in_height}x{in_width} input. Reduce "
+            "pool_size, or feed a larger input."
+        )
     pooled_h = (h_out - ph) // sh + 1
     pooled_w = (w_out - pw) // sw + 1
 
-    # DeepNetworkAdapter/_batch_step averages the weight gradient over every
-    # row it sees (docstring: "invariant to repeating the batch"). It sees
-    # batch*n_patches rows here, so its mean divides by n_patches too many
-    # times relative to a true convolution's gradient, which *sums* across
-    # the n_patches spatial applications of the shared kernel and averages
-    # only over the batch. Compensate by pre-scaling what the optimizer sees
-    # by n_patches (verified against a jax.grad oracle in test_conv.py).
+    # The adapter averages the weight gradient over every row it sees, and im2col
+    # feeds it one row per patch; passing the patch count as ``weight_reuse``
+    # recovers the sum over the patches the kernel is shared across.
     n_patches = h_out * w_out
-    if optimizer is not None:
-        optimizer = optax.chain(optax.scale(n_patches), optimizer)
 
     if pool_kind == "avg":
         pool = avg_pool_adapter(pool_size, (sh, sw))
@@ -415,6 +467,7 @@ def conv_block(
             learning_kwargs=learning_kwargs,
             update_precisions=update_precisions,
             time_step=time_step,
+            weight_reuse=n_patches,
         ),
         gelu_adapter(),
         spatial_reshape_adapter(h_out, w_out),

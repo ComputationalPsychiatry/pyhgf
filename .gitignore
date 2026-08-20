@@ -20,3 +20,6 @@ target*
 .benchmarks/
 pyhgf/*.so
 .python-version
+
+# Datasets the notebooks download on first run (0.6 caches CIFAR-10 here).
+data/
