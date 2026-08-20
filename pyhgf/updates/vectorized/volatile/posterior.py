@@ -292,8 +292,8 @@ def vectorized_layer_posterior_update(
             coupling_fn,
             child_is_input_layer=child_is_input_layer,
         ),
-        a_min=layer.expected_precision,
-        a_max=max_posterior_precision,
+        layer.expected_precision,
+        max_posterior_precision,
     )
 
     posterior_mean = vectorized_posterior_update_mean_value_level(

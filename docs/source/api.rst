@@ -424,6 +424,7 @@ of a trained Equinox module, translating its weights into PyHGF's layer layout.
    from_linear
    from_feedforward
    from_embedding
+   from_conv
 
 Declarative construction
 ========================
@@ -461,6 +462,28 @@ locally-learning networks and fixed operations compose into one model.
    linear_adapter
    layer_norm_adapter
    gelu_adapter
+
+Convolution
+===========
+
+A convolution as a weight-shared linear map over image patches: patch extraction and
+pooling are frozen parts, and the single learning part is one small
+:class:`~pyhgf.model.DeepNetwork` applied identically to every patch.
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.conv
+   :nosignatures:
+
+   conv_output_shape
+   im2col_adapter
+   avg_pool_adapter
+   max_pool_adapter
+   spatial_reshape_adapter
+   flatten_adapter
+   conv_patch_network
+   conv_block
 
 Transformer
 ===========

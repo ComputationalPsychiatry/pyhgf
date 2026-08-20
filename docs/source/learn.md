@@ -12,6 +12,7 @@ notebooks/0.2-Creating_networks.ipynb
 notebooks/0.3-Generalised_filtering.ipynb
 notebooks/0.4-Planning_and_acting.ipynb
 notebooks/0.5-Deep_learning.ipynb
+notebooks/0.6-Convolutional_networks.ipynb
 ```
 
 ```{toctree}
@@ -105,6 +106,13 @@ Planning and acting by simulating forward trajectories in predictive coding netw
 
 
 Learning in deep predictive coding networks using variational message passing for prospective configuration.
+:::
+
+:::{grid-item-card}  Convolutional networks
+:link: convolution
+:link-type: ref
+
+Building convolutions as a weight-shared layer on the hybrid pipeline, from first principles up to CIFAR-10.
 :::
 
 ::::

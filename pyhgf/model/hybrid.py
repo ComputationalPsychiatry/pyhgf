@@ -19,8 +19,8 @@ the error at its output and hands the error at its *input* to the part behind it
 Nothing resembling backpropagation runs anywhere: no global computation graph, no
 automatic differentiation.
 
-Error convention: the arrays passed between parts are *descent* errors — the gradient
-of the loss with respect to that signal, the same object a backprop library would hand
+Error convention: the arrays passed between parts are *descent* errors — the gradient of
+the loss with respect to that signal, the same object a backprop library would hand
 around. PyHGF's internal prediction errors follow the opposite, observed-minus-predicted
 convention; the executor converts between the two at the learning part's boundary, in
 exactly one place.
@@ -313,6 +313,16 @@ class DeepNetworkAdapter(PCModule):
     time_step :
         Inference time step — scales the precision leak per batch (one batch
         counts as one observation of duration ``time_step``).
+    weight_reuse :
+        How many times ``net``'s weights are applied per sample, default ``1.0``.
+        Set it when the caller feeds this part more rows than samples because the
+        wrapped network's weights are *shared* across several positions of each
+        sample: the plain batch mean then divides by the reuse count, which that
+        weight's true per-sample gradient and curvature sum over instead. It
+        rescales the mean gradient and, under
+        ``learning_kind="synaptic_uncertainty"``, the importance increment too, so
+        it reaches every learning path rather than only ``optimizer`` (see
+        :func:`pyhgf.utils.vectorized_belief_propagation._batch_step`).
     """
 
     def __init__(
@@ -323,6 +333,7 @@ class DeepNetworkAdapter(PCModule):
         learning_kwargs: Optional[dict] = None,
         update_precisions: bool = False,
         time_step: float = 1.0,
+        weight_reuse: float = 1.0,
     ):
         self.net = net
         self.optimizer = optimizer
@@ -330,6 +341,7 @@ class DeepNetworkAdapter(PCModule):
         self.learning_kwargs = learning_kwargs
         self.update_precisions = update_precisions
         self.time_step = time_step
+        self.weight_reuse = float(weight_reuse)
         # The rule is resolved once here rather than per step: the settings are
         # static, and the executor stages one compiled program per part.
         if learning_kind != "synaptic_uncertainty":

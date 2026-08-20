@@ -7,7 +7,7 @@ import numpy as np
 import optax
 from jax import random
 
-from pyhgf.model import from_embedding, from_feedforward, from_linear
+from pyhgf.model.transplant import from_embedding, from_feedforward, from_linear
 
 # The forward-parity checks below are learning-free wiring gates: a network
 # built from transplanted Equinox weights must reproduce the Equinox forward
@@ -125,7 +125,7 @@ def test_from_linears_stacks_and_validates():
     """Stack shared-input Linears, rejecting mismatched inputs or mixed biases."""
     import pytest
 
-    from pyhgf.model import from_linears
+    from pyhgf.model.transplant import from_linears
 
     k1, k2, k3 = random.split(random.key(0), 3)
     a = eqx.nn.Linear(4, 3, key=k1)

@@ -3,7 +3,10 @@
 
 from typing import Callable, NamedTuple, Optional, Union
 
-from jaxlib.xla_extension import PjitFunction
+try:
+    from jaxlib.xla_extension import PjitFunction
+except ImportError:  # removed in jaxlib >= 0.10
+    PjitFunction = Callable
 
 
 class AdjacencyLists(NamedTuple):
