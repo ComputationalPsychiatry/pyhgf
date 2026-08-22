@@ -58,8 +58,8 @@ def volatile_node_posterior_update(
     )
     precision_value = jnp.clip(
         precision_value,
-        a_min=attributes[node_idx]["expected_precision"],
-        a_max=max_posterior_precision,
+        attributes[node_idx]["expected_precision"],
+        max_posterior_precision,
     )
     attributes[node_idx]["precision"] = precision_value
 
@@ -140,8 +140,8 @@ def volatile_node_posterior_update_mean_field(
     )
     precision_value = jnp.clip(
         precision_value,
-        a_min=attributes[node_idx]["expected_precision"],
-        a_max=max_posterior_precision,
+        attributes[node_idx]["expected_precision"],
+        max_posterior_precision,
     )
     attributes[node_idx]["precision"] = precision_value
 

@@ -380,8 +380,8 @@ def _top_precision_only(
             coupling_fn=parent.coupling_fn,
             child_is_input_layer=child_is_input_layer,
         ),
-        a_min=parent.state.expected_precision,
-        a_max=max_posterior_precision,
+        parent.state.expected_precision,
+        max_posterior_precision,
     )
     new_state = dataclasses.replace(
         parent.state,
