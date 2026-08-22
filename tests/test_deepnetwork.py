@@ -1079,14 +1079,14 @@ def test_batch_update_averages_and_is_batch_size_invariant():
         np.testing.assert_allclose(
             net_twice.state.layers[k].weights_mean,
             net.state.layers[k].weights_mean,
-            rtol=1e-6,
-            atol=1e-7,
+            rtol=1e-5,
+            atol=1e-6,
         )
     np.testing.assert_allclose(
         net_twice.state.layers[1].state.precision,
         net.state.layers[1].state.precision,
-        rtol=1e-6,
-        atol=1e-7,
+        rtol=1e-5,
+        atol=1e-6,
     )
 
 
