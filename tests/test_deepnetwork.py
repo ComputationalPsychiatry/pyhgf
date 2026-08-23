@@ -368,8 +368,10 @@ def test_three_backends_binary_volatile():
     → 1 volatile input
 
     The constant is a value parent of the intermediate volatile node (shared across
-    all three backends).  All three update types are exercised.  Volatile-state nodes
-    carry no ``tonic_volatility``, so no explicit override is needed.
+    all three backends).  All three update types are exercised.  The nodalised
+    volatile nodes carry the ``tonic_volatility`` default of -4.0, so the
+    DeepNetwork is built with ``tonic_volatility=True``, whose layers carry the
+    same default.
 
     Tolerances
     ----------
@@ -397,6 +399,7 @@ def test_three_backends_binary_volatile():
             DeepNetwork(
                 volatility_updates=volatility_updates,
                 feedforward_uncertainty=True,
+                tonic_volatility=True,
             )
             .add_layer(size=n_targets, kind="binary")
             .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)

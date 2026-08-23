@@ -163,11 +163,12 @@ def add_volatile_state(
         "precision": 1.0,
         "expected_precision": 1.0,
         "autoconnection_strength": 0.0,
-        # Value-level tonic volatility ω. The default of 0.0 is the additive
-        # identity inside the log-volatility exponent, so out of the box the
-        # value level has no intrinsic volatility and diffuses only through the
-        # implicit volatility level — override to give it its own.
-        "tonic_volatility": 0.0,
+        # Value-level tonic volatility ω, sharing the continuous-state default
+        # of -4.0. It adds to the implicit volatility level's contribution
+        # inside the log-volatility exponent; 0.0 is the additive identity, so
+        # setting it removes the intrinsic volatility and the value level
+        # diffuses only through the volatility level.
+        "tonic_volatility": -4.0,
         # Volatility level parameters (implicit internal)
         "mean_vol": 0.0,
         "expected_mean_vol": 0.0,

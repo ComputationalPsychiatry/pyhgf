@@ -602,11 +602,12 @@ impl Network {
                         expected_mean: 0.0,
                         precision: 1.0,
                         expected_precision: 1.0,
-                        // Value-level tonic volatility ω: 0.0 is the additive
-                        // identity in the log-volatility exponent, so by default
-                        // the value level has no intrinsic volatility and
+                        // Value-level tonic volatility ω, sharing the
+                        // continuous-state default of -4.0. 0.0 is the additive
+                        // identity in the log-volatility exponent, so setting it
+                        // removes the intrinsic volatility and the value level
                         // diffuses only through the implicit volatility level.
-                        tonic_volatility: 0.0,
+                        tonic_volatility: -4.0,
                         tonic_drift: 0.0,
                         autoconnection_strength: 0.0,
                         current_variance: 1.0,
@@ -1806,11 +1807,10 @@ mod tests {
             None,
             None,
             None,
-            // The fused volatile node's value level has no tonic volatility, so
-            // the explicit value node must set tonic_volatility = 0.0 to match
-            // (its volatility parent keeps the default, mirroring the volatility
-            // level's tonic_volatility_vol).
-            Some(HashMap::from([("tonic_volatility".into(), 0.0)])),
+            // The fused volatile node's value level and the explicit value node
+            // share the tonic_volatility default of -4.0, so no override is
+            // needed to match.
+            None,
         );
         explicit_net.add_nodes(
             "continuous-state",
@@ -1857,11 +1857,10 @@ mod tests {
             None,
             None,
             None,
-            // The fused volatile node's value level has no tonic volatility, so
-            // the explicit value node must set tonic_volatility = 0.0 to match
-            // (its volatility parent keeps the default, mirroring the volatility
-            // level's tonic_volatility_vol).
-            Some(HashMap::from([("tonic_volatility".into(), 0.0)])),
+            // The fused volatile node's value level and the explicit value node
+            // share the tonic_volatility default of -4.0, so no override is
+            // needed to match.
+            None,
         );
         explicit_net.add_nodes(
             "continuous-state",
@@ -1908,11 +1907,10 @@ mod tests {
             None,
             None,
             None,
-            // The fused volatile node's value level has no tonic volatility, so
-            // the explicit value node must set tonic_volatility = 0.0 to match
-            // (its volatility parent keeps the default, mirroring the volatility
-            // level's tonic_volatility_vol).
-            Some(HashMap::from([("tonic_volatility".into(), 0.0)])),
+            // The fused volatile node's value level and the explicit value node
+            // share the tonic_volatility default of -4.0, so no override is
+            // needed to match.
+            None,
         );
         explicit_net.add_nodes(
             "continuous-state",

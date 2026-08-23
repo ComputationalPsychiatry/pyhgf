@@ -60,11 +60,11 @@ fn precision_update_volatility_level_ehgf(
 ) -> f64 {
     let s = &network.attributes.states[node_idx];
     let mean_vol = s.mean_vol; // volatility-level posterior mean (mean-first)
-    let tonic_volatility = s.tonic_volatility; // value-level ω (0.0 by default)
+    let tonic_volatility = s.tonic_volatility; // value-level ω (-4.0 by default)
     // value-level posterior variance at the previous step (σ = 1 / π)
     let previous_variance = s.current_variance;
 
-    // Volatility coupling is fixed at 1; ω defaults to 0.
+    // Volatility coupling is fixed at 1; ω defaults to -4.
     let predicted_volatility = time_step * (tonic_volatility + mean_vol).exp();
     let expected_precision = 1.0 / (previous_variance + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
@@ -163,7 +163,7 @@ fn unbounded_volatility_level_update(
     let s = &network.attributes.states[node_idx];
     let expected_mean_vol = s.expected_mean_vol;
     let expected_precision_vol = s.expected_precision_vol;
-    let tonic_volatility = s.tonic_volatility; // value-level ω (0.0 by default)
+    let tonic_volatility = s.tonic_volatility; // value-level ω (-4.0 by default)
     let mean = s.mean;
     let expected_mean = s.expected_mean;
     let precision = s.precision;
@@ -171,7 +171,7 @@ fn unbounded_volatility_level_update(
     let previous_variance = s.current_variance.max(1e-128); // previous-step variance (= 1 / precision at the previous step)
     let be_aux = (1.0 / precision) + (mean - expected_mean).powi(2);
 
-    // Canonical exponent at prediction (coupling fixed at 1, ω default 0):
+    // Canonical exponent at prediction (coupling fixed at 1, ω default -4):
     // y = log(time_step) + expected_mean_vol + ω
     let gamma_c = time_step.ln() + expected_mean_vol + tonic_volatility;
 
