@@ -73,11 +73,12 @@ def posterior_update_precision_volatility_level_ehgf(
     """
     time_step = attributes[-1]["time_step"]
     mean_vol = attributes[node_idx]["mean_vol"]  # volatility-level posterior mean
+    tonic_volatility = attributes[node_idx]["tonic_volatility"]  # value-level ω
     # value-level posterior variance at the previous step (σ = 1 / π)
     previous_variance = attributes[node_idx]["temp"]["current_variance"]
 
-    # Volatility coupling is fixed at 1.
-    predicted_volatility = time_step * jnp.exp(mean_vol)
+    # Volatility coupling is fixed at 1; ω defaults to 0.0.
+    predicted_volatility = time_step * jnp.exp(tonic_volatility + mean_vol)
     expected_precision = 1.0 / (previous_variance + predicted_volatility)
     effective_precision = predicted_volatility * expected_precision
     volatility_error_weight = (

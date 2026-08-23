@@ -159,6 +159,7 @@ class DeepNetwork:
         update_input_layer: bool = False,
         predict_precision: bool = True,
         feedforward_uncertainty: bool = False,
+        tonic_volatility: bool = False,
     ):
         r"""Initialize a VectorizedDeepNetwork.
 
@@ -197,6 +198,18 @@ class DeepNetwork:
             layer already does. With ``True`` a volatile layer's marginal predicted
             precision carries the value-coupling variance, so a parent that is unsure
             makes its children less precise.
+        tonic_volatility :
+            Whether volatile layers carry a value-level tonic volatility
+            :math:`\omega`. With ``False`` (the default) the parameter is
+            structurally absent: a layer has no intrinsic volatility at all and
+            only inherits volatility from its (implied) volatility parent. With
+            ``True`` every volatile layer carries it (default ``-4.0``,
+            overridable per layer via ``add_layer(..., tonic_volatility=...)``);
+            :math:`\omega` then adds to the volatility parent's contribution
+            inside the log-volatility exponent, and a layer built with
+            ``volatility_parent=False`` still diffuses at the fixed rate
+            :math:`\exp(\omega)`. Setting the value to ``0.0`` on a layer with a
+            volatility parent is exactly neutral.
         """
         self.coupling_fn = coupling_fn
         self.volatility_updates = volatility_updates
@@ -205,6 +218,7 @@ class DeepNetwork:
         self.update_input_layer = bool(update_input_layer)
         self.predict_precision = bool(predict_precision)
         self.feedforward_uncertainty = bool(feedforward_uncertainty)
+        self.tonic_volatility = bool(tonic_volatility)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -336,6 +350,8 @@ class DeepNetwork:
             # unpacking below type-checks against ``add_layer``'s typed
             # keyword parameters, not just the float-valued ``**kwargs``.
             overrides: dict[str, Any] = {}
+            if config.tonic_volatility is not None:
+                overrides["tonic_volatility"] = config.tonic_volatility
             if config.tonic_volatility_vol is not None:
                 overrides["tonic_volatility_vol"] = config.tonic_volatility_vol
 
@@ -370,8 +386,9 @@ class DeepNetwork:
             constructor argument of :class:`DeepNetwork` is optional and is forwarded
             to it, which covers ``"coupling_fn"``, ``"volatility_updates"``,
             ``"max_posterior_precision"``, ``"precision_clipping_value"``,
-            ``"update_input_layer"``, ``"predict_precision"`` and
-            ``"feedforward_uncertainty"``. Keys naming nothing on the constructor are
+            ``"update_input_layer"``, ``"predict_precision"``,
+            ``"feedforward_uncertainty"`` and ``"tonic_volatility"``. Keys naming
+            nothing on the constructor are
             ignored, so a config may carry annotations of its own.
 
         Returns
@@ -487,10 +504,12 @@ class DeepNetwork:
         volatility_parent :
             If True (default), this layer has an implied internal volatility parent:
             mean_vol and precision_vol are predicted and updated each step. If False,
-            the value level has no volatility source and does not undergo a Gaussian
-            random walk (its conditional predicted precision equals the prior
-            precision). Volatile layers only — continuous layers have no internal
-            volatility level and ignore this argument.
+            the value level's only volatility source is its tonic volatility, when
+            the network allocates one (``tonic_volatility=True``); without one it
+            does not undergo a Gaussian random walk at all (its conditional
+            predicted precision equals the prior precision). Volatile layers only —
+            continuous layers have no internal volatility level and ignore this
+            argument.
         value_children :
             Continuous layers only. Index of the existing layer this layer is the
             *value parent* of. When neither *value_children* nor
@@ -531,7 +550,8 @@ class DeepNetwork:
             Per-layer overrides for any field of :class:`pyhgf.typing.LayerState`
             (e.g. ``mean``, ``precision``, ``expected_mean``, ``expected_precision``,
             ``mean_vol``, ``precision_vol``, ...) or :class:`pyhgf.typing.LayerParams`
-            (``tonic_volatility_vol``).
+            (``tonic_volatility_vol``, plus ``tonic_volatility`` on networks built
+            with ``tonic_volatility=True``).
             Each value is broadcast to the layer's ``size``. Unknown names raise
             ``ValueError``. Defaults match ``LayerState.create`` and
             ``LayerParams.create``.
@@ -634,13 +654,23 @@ class DeepNetwork:
                 f"Valid fields are {sorted(_LAYER_OVERRIDE_FIELDS)}."
             )
         # Parameter fields are kind-specific: reject an override the layer's
-        # kind would silently ignore.
-        wrong_params = [
-            k
-            for k in kwargs
-            if k in _LAYER_PARAM_FIELDS
-            and (k in _CONTINUOUS_PARAM_FIELDS) != (kind == "continuous")
-        ]
+        # kind would silently ignore. ``tonic_volatility`` is shared between
+        # kinds: continuous layers always carry it, volatile layers only when
+        # the network-level flag allocates it.
+        wrong_params = []
+        for k in kwargs:
+            if k not in _LAYER_PARAM_FIELDS:
+                continue
+            if k == "tonic_volatility" and kind == "volatile":
+                if not self.tonic_volatility:
+                    raise ValueError(
+                        "A tonic_volatility override on a volatile layer "
+                        "requires the network to carry the parameter: build "
+                        "the DeepNetwork with tonic_volatility=True."
+                    )
+                continue
+            if (k in _CONTINUOUS_PARAM_FIELDS) != (kind == "continuous"):
+                wrong_params.append(k)
         if wrong_params:
             raise ValueError(
                 f"Parameter override(s) {wrong_params} do not apply to {kind!r} layers."
@@ -869,6 +899,9 @@ class DeepNetwork:
 
             # Per-layer params with overrides
             param_kwargs = dict(_LAYER_PARAM_DEFAULTS)
+            if self.tonic_volatility and self.layer_kinds[i] == "volatile":
+                # Pre-#409 default, restored behind the network-level flag.
+                param_kwargs["tonic_volatility"] = -4.0
             for k, v in overrides.items():
                 if k in _LAYER_PARAM_FIELDS:
                     param_kwargs[k] = v

@@ -352,6 +352,7 @@ fn trajectory_fields_for_type(node_type: &str) -> &'static [&'static str] {
             "expected_mean",
             "precision",
             "expected_precision",
+            "tonic_volatility",
             "tonic_drift",
             "autoconnection_strength",
             "current_variance",
@@ -601,9 +602,11 @@ impl Network {
                         expected_mean: 0.0,
                         precision: 1.0,
                         expected_precision: 1.0,
-                        // Volatile nodes carry no value-level tonic volatility; the
-                        // shared `tonic_volatility` field falls back to its Default
-                        // (0.0) and is never read by the volatile update path.
+                        // Value-level tonic volatility ω: 0.0 is the additive
+                        // identity in the log-volatility exponent, so by default
+                        // the value level has no intrinsic volatility and
+                        // diffuses only through the implicit volatility level.
+                        tonic_volatility: 0.0,
                         tonic_drift: 0.0,
                         autoconnection_strength: 0.0,
                         current_variance: 1.0,
@@ -1307,11 +1310,9 @@ fn apply_overrides_continuous(state: &mut NodeState, overrides: &HashMap<String,
 
 /// Apply parameter overrides for volatile-state nodes
 fn apply_overrides_volatile(state: &mut NodeState, overrides: &HashMap<String, f64>) {
-    // Volatile nodes share the continuous value-level fields *except*
-    // `tonic_volatility`, which they do not carry — so it is deliberately not
-    // accepted here (the volatile update path never reads it).
     for (key, &value) in overrides {
         match key.as_str() {
+            "tonic_volatility" => state.tonic_volatility = value,
             "mean" => state.mean = value,
             "expected_mean" => state.expected_mean = value,
             "precision" => state.precision = value,

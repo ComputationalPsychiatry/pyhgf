@@ -277,18 +277,23 @@ fn batched_volatile_prediction(
     } else if child_layer.has_volatility_parent {
         let emv = child.expected_mean_vol.as_ref().unwrap();
         let epv = child.expected_precision_vol.as_ref().unwrap();
+        // Per-node ω of the value level, zero when the params allocate none.
+        let tonic = params.tonic_volatility.as_ref();
+        let tonic_per_node =
+            ndarray::Array1::from_shape_fn(n, |i| tonic.map_or(0.0, |tv| tv[i]));
         let mut predicted_vol = Matrix::zeros((n, n_samples));
         Zip::from(predicted_vol.rows_mut())
             .and(emv.rows())
             .and(epv.rows())
-            .for_each(|mut out, em, ep| {
-                // Volatility coupling is fixed at 1 and the value level carries no
-                // tonic volatility of its own.
+            .and(&tonic_per_node)
+            .for_each(|mut out, em, ep, &w| {
+                // Volatility coupling is fixed at 1; ω enters the exponent
+                // additively.
                 Zip::from(&mut out)
                     .and(&em)
                     .and(&ep)
                     .for_each(|o, &m, &pvv| {
-                        *o = guarded_volatility(m + 1.0 / (pvv * 2.0), time_step);
+                        *o = guarded_volatility(w + m + 1.0 / (pvv * 2.0), time_step);
                     });
             });
         Zip::from(&mut child.conditional_expected_precision)
@@ -299,11 +304,14 @@ fn batched_volatile_prediction(
             .and(&value_coupling_variance)
             .for_each(|c, e, ef, &pr, &pv, &v| precision_triple(c, e, ef, pr, pv, v));
     } else {
-        // No volatility parent and no tonic volatility: the value level has no
-        // volatility source, so it does not undergo a Gaussian random walk. Ω is
-        // zero per node, leaving the conditional predicted precision equal to the
-        // prior precision.
-        let per_node = ndarray::Array1::<Float>::zeros(n);
+        // No volatility parent: without a tonic volatility the value level has
+        // no volatility source at all — Ω is zero per node and the conditional
+        // predicted precision equals the prior precision. With one, the value
+        // level still diffuses at the fixed rate exp(ω).
+        let per_node = match &params.tonic_volatility {
+            Some(tv) => tv.mapv(|w| guarded_volatility(w, time_step)),
+            None => ndarray::Array1::<Float>::zeros(n),
+        };
         Zip::from(child.conditional_expected_precision.rows_mut())
             .and(child.expected_precision.rows_mut())
             .and(child.effective_precision.rows_mut())
@@ -421,6 +429,8 @@ fn batched_prediction_error(
     // per sample), so the node rows run in parallel; every row's samples are
     // contiguous in the row-major layout.
     let (n, n_samples) = layer_state.mean.dim();
+    // Per-node ω of the value level, zero when the params allocate none.
+    let tonic = layer.params.tonic_volatility.as_ref();
     let emv = layer_state
         .expected_mean_vol
         .as_ref()
@@ -467,6 +477,7 @@ fn batched_prediction_error(
                         precision[[i, j]],
                         mean[[i, j]],
                         expected_mean[[i, j]],
+                        tonic.map_or(0.0, |tv| tv[i]),
                         time_step,
                         max_posterior_precision,
                     ),
@@ -478,6 +489,7 @@ fn batched_prediction_error(
                         precision[[i, j]],
                         mean[[i, j]],
                         expected_mean[[i, j]],
+                        tonic.map_or(0.0, |tv| tv[i]),
                         time_step,
                         max_posterior_precision,
                     ),

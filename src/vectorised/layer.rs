@@ -222,19 +222,29 @@ pub const LAYER_STATE_FIELDS: &[&str] = &[
 pub struct LayerParams {
     /// Tonic (baseline) volatility of the volatility level.
     pub tonic_volatility_vol: Vector,
+    /// Value-level tonic volatility ω, or `None` when the network does not
+    /// allocate it (the default): the value level then has no intrinsic
+    /// volatility and diffuses only through its volatility parent. Mirrors the
+    /// optional `tonic_volatility` field of the JAX `LayerParams`.
+    pub tonic_volatility: Option<Vector>,
 }
 
 impl LayerParams {
     /// Default per-node parameters, matching `LayerParams.create` in the JAX
-    /// backend: `tonic_volatility_vol = -4`.
+    /// backend: `tonic_volatility_vol = -4`, no value-level tonic volatility.
     pub fn create(n_nodes: usize) -> Self {
-        Self::create_with(n_nodes, -4.0)
+        Self::create_with(n_nodes, -4.0, None)
     }
 
     /// Per-node parameters with explicit scalar values broadcast to `n_nodes`.
-    pub fn create_with(n_nodes: usize, tonic_volatility_vol: Float) -> Self {
+    pub fn create_with(
+        n_nodes: usize,
+        tonic_volatility_vol: Float,
+        tonic_volatility: Option<Float>,
+    ) -> Self {
         Self {
             tonic_volatility_vol: Array1::from_elem(n_nodes, tonic_volatility_vol),
+            tonic_volatility: tonic_volatility.map(|tv| Array1::from_elem(n_nodes, tv)),
         }
     }
 }
@@ -290,6 +300,10 @@ pub struct LayerConfig {
     pub coupling_fn: &'static CouplingFn,
     /// Give the layer an internal volatility parent.
     pub volatility_parent: bool,
+    /// Value-level tonic volatility ω, or `None` (the default) to leave the
+    /// parameter unallocated: the value level then has no intrinsic volatility.
+    /// Set by `DeepNetwork(tonic_volatility=True)` (default −4 there).
+    pub tonic_volatility: Option<Float>,
     /// Tonic volatility of the volatility level (default −4).
     pub tonic_volatility_vol: Float,
     /// Initial-belief overrides applied to the layer's [`LayerState`] at build
@@ -310,6 +324,7 @@ impl LayerConfig {
             fully_connected: true,
             coupling_fn: &LINEAR,
             volatility_parent: true,
+            tonic_volatility: None,
             tonic_volatility_vol: -4.0,
             state_overrides: Vec::new(),
         }
@@ -389,7 +404,8 @@ impl DeepNet {
             for (name, value) in &cfg.state_overrides {
                 state.set_field(name, *value)?;
             }
-            let params = LayerParams::create_with(cfg.size, cfg.tonic_volatility_vol);
+            let params =
+                LayerParams::create_with(cfg.size, cfg.tonic_volatility_vol, cfg.tonic_volatility);
 
             // `weights_in` lives on the parent (this layer); the bottom layer
             // has no child below it, hence `None`.

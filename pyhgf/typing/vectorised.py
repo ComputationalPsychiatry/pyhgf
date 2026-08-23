@@ -141,7 +141,9 @@ class LayerParams(eqx.Module):
 
     Each field is an array with one entry per node in the layer, or ``None`` when
     the field does not apply to the layer's kind: volatile layers carry
-    ``tonic_volatility_vol`` only, continuous layers carry the other three.
+    ``tonic_volatility_vol`` (plus ``tonic_volatility`` when the value level's
+    own tonic volatility is enabled — see ``DeepNetwork(tonic_volatility=True)``),
+    continuous layers carry the other three.
 
     Parameters
     ----------
@@ -150,7 +152,9 @@ class LayerParams(eqx.Module):
         (volatile layers only).
     tonic_volatility :
         The tonic (baseline) log-volatility :math:`\omega` of the node's own
-        Gaussian random walk (continuous layers only).
+        Gaussian random walk. Continuous layers always carry it; volatile layers
+        carry it only when enabled, and ``None`` means the value level has no
+        intrinsic volatility at all.
     tonic_drift :
         The constant drift :math:`\rho` added to the predicted mean at every
         time step (continuous layers only).
@@ -170,10 +174,21 @@ class LayerParams(eqx.Module):
         cls,
         n_nodes: int,
         tonic_volatility_vol: float = -4.0,
+        tonic_volatility: Optional[float] = None,
     ) -> "LayerParams":
-        """Initialise volatile-layer params with defaults."""
+        """Initialise volatile-layer params with defaults.
+
+        ``tonic_volatility=None`` (the default) leaves the field structurally
+        absent: the value level has no intrinsic volatility and diffuses only
+        through its volatility parent.
+        """
         return cls(
             tonic_volatility_vol=jnp.full(n_nodes, tonic_volatility_vol),
+            tonic_volatility=(
+                None
+                if tonic_volatility is None
+                else jnp.full(n_nodes, tonic_volatility)
+            ),
         )
 
     @classmethod

@@ -369,3 +369,78 @@ def test_volatile_nonlinear_value_parent(mean_field_updates):
         nonlinear.node_trajectories[1]["mean"],
         linear.node_trajectories[1]["mean"],
     ), f"{label}: tanh coupling did not change the trajectory"
+
+
+@pytest.mark.parametrize("volatility_updates", UPDATE_TYPES)
+def test_volatile_tonic_volatility_matches_explicit(volatility_updates):
+    """The restored value-level ω matches the explicit construction exactly.
+
+    A fused volatile node given ``tonic_volatility=ω`` must equal the explicit
+    continuous + volatility-parent pair whose value node carries the same ω —
+    the ω = 0 default case is the equivalence already covered above, so this
+    exercises the restored parameter through the prediction and every
+    volatility posterior, on both backends.
+    """
+    timeseries = load_data("continuous")
+    omega = -4.0
+
+    for cls, label in [
+        (PyNetwork, f"{volatility_updates} py"),
+        (RsNetwork, f"{volatility_updates} rs"),
+    ]:
+        vol = (
+            cls(volatility_updates=volatility_updates)
+            .add_nodes()
+            .add_nodes(
+                kind="volatile-state",
+                value_children=0,
+                autoconnection_strength=1.0,
+                tonic_volatility=omega,
+            )
+            .input_data(input_data=timeseries)
+        )
+        exp = (
+            cls(volatility_updates=volatility_updates)
+            .add_nodes()
+            .add_nodes(value_children=0, tonic_volatility=omega)
+            .add_nodes(volatility_children=1)
+            .input_data(input_data=timeseries)
+        )
+
+        _assert_value_level_match(vol, 0, exp, 0, f"{label} tonic input")
+        _assert_value_level_match(vol, 1, exp, 1, f"{label} tonic")
+        _assert_vol_level_match(vol, 1, exp, 2, f"{label} tonic")
+
+
+def test_volatile_tonic_volatility_default_is_neutral():
+    """Confirm ω defaults to 0.0, the additive identity.
+
+    Passing it explicitly changes nothing, and a non-zero ω changes the filter.
+    """
+    timeseries = load_data("continuous")
+
+    def run(cls, **params):
+        return (
+            cls()
+            .add_nodes()
+            .add_nodes(
+                kind="volatile-state",
+                value_children=0,
+                autoconnection_strength=1.0,
+                **params,
+            )
+            .input_data(input_data=timeseries)
+        )
+
+    for cls, label in [(PyNetwork, "py"), (RsNetwork, "rs")]:
+        base = run(cls)
+        zero = run(cls, tonic_volatility=0.0)
+        neg = run(cls, tonic_volatility=-4.0)
+        for key in ["mean", "expected_precision"]:
+            assert np.array_equal(
+                base.node_trajectories[1][key], zero.node_trajectories[1][key]
+            ), f"{label}: explicit 0.0 is not neutral for {key}"
+        assert not np.allclose(
+            base.node_trajectories[1]["expected_precision"],
+            neg.node_trajectories[1]["expected_precision"],
+        ), f"{label}: ω = -4 left the filter unchanged"

@@ -51,6 +51,7 @@ def volatile_node_posterior_update_unbounded(
 
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
     expected_precision_vol = attributes[node_idx]["expected_precision_vol"]
+    tonic_volatility = attributes[node_idx]["tonic_volatility"]
 
     # All quantities that would otherwise pass through ``exp`` of a potentially
     # large number are kept in log-space. Materialising ``v = exp(γ)`` is correct
@@ -66,9 +67,9 @@ def volatile_node_posterior_update_unbounded(
     log_time_step = jnp.log(time_step)
     log_previous_variance = jnp.log(previous_variance)
 
-    # Canonical exponent at the prediction (coupling fixed at 1):
-    # γ = log(time_step) + expected_mean_vol
-    gamma_c = log_time_step + expected_mean_vol
+    # Canonical exponent at the prediction (coupling fixed at 1, ω default 0):
+    # γ = log(time_step) + expected_mean_vol + ω
+    gamma_c = log_time_step + expected_mean_vol + tonic_volatility
 
     # w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α).
     w_jm1 = sigmoid(gamma_c - log_previous_variance)
@@ -96,13 +97,13 @@ def volatile_node_posterior_update_unbounded(
     W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
     v_W = lambert_w0(W_arg)
     y_star = gamma_c + v_W - 0.5 / pihat_y
-    x_star = y_star - log_time_step
+    x_star = y_star - log_time_step - tonic_volatility
 
     # Log-space s2/w2/da2 — equivalent to the direct
-    #   s2 = time_step * exp(x_star); w2 = 1/(1 + previous_variance/s2);
+    #   s2 = time_step * exp(x_star + ω); w2 = 1/(1 + previous_variance/s2);
     #   da2 = be_aux/(previous_variance + s2) - 1
     # but without materialising ``s2 = inf`` (which injects 0·∞ NaN gradients).
-    log_s2 = log_time_step + x_star
+    log_s2 = log_time_step + x_star + tonic_volatility
     log_denom_s = jnp.logaddexp(
         log_previous_variance, log_s2
     )  # = log(previous_variance + s2)
@@ -142,7 +143,7 @@ def volatile_node_posterior_update_unbounded(
     # injects 0·∞ NaNs in the backward pass; ``logaddexp`` and ``exp(-positive)`` stay
     # bounded both forward and backward.
     # ----------------------------------------------------------------------------------
-    log_ey1 = log_time_step + mu1
+    log_ey1 = log_time_step + mu1 + tonic_volatility
     log_denom_1 = jnp.logaddexp(
         log_previous_variance, log_ey1
     )  # = log(previous_variance + ey1)
@@ -152,7 +153,7 @@ def volatile_node_posterior_update_unbounded(
         - 0.5 * expected_precision_vol * (mu1 - expected_mean_vol) ** 2
     )
 
-    log_ey2 = log_time_step + mu2
+    log_ey2 = log_time_step + mu2 + tonic_volatility
     log_denom_2 = jnp.logaddexp(log_previous_variance, log_ey2)
     I2 = (
         -0.5 * log_denom_2

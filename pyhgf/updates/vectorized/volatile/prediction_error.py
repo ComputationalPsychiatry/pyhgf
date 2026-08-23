@@ -15,7 +15,7 @@ import jax.numpy as jnp
 from jax.nn import sigmoid
 
 from pyhgf.math import lambert_w0
-from pyhgf.typing.vectorised import LayerState
+from pyhgf.typing.vectorised import LayerParams, LayerState
 
 # ---------------------------------------------------------------------------
 # 1.  Prediction errors
@@ -145,6 +145,7 @@ def vectorized_layer_volatility_posterior_standard(
 
 def vectorized_layer_volatility_posterior_ehgf(
     layer: LayerState,
+    params: LayerParams,
     time_step: float,
     max_posterior_precision: float = 1e10,
 ) -> LayerState:
@@ -162,6 +163,9 @@ def vectorized_layer_volatility_posterior_ehgf(
     ----------
     layer :
         Current layer state with ``volatility_prediction_error`` set.
+    params :
+        Layer parameters; provides the value level's tonic volatility when one
+        is allocated (``None`` enters the exponents as zero).
     time_step :
         Current time step (needed to recompute the effective precision and to
         reconstruct the pre-prediction variance).
@@ -176,6 +180,9 @@ def vectorized_layer_volatility_posterior_ehgf(
     """
     assert layer.expected_precision_vol is not None
     assert layer.expected_mean_vol is not None
+    tonic_volatility = (
+        params.tonic_volatility if params.tonic_volatility is not None else 0.0
+    )
 
     # Mean first using expected_precision_vol as approximation (coupling fixed at 1).
     precision_weighted_pe_vol = (
@@ -191,14 +198,16 @@ def vectorized_layer_volatility_posterior_ehgf(
     #   1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
     # so subtracting predicted_volatility cancels back to 1/precision_prev.
     predicted_volatility = time_step * jnp.exp(
-        layer.expected_mean_vol + 1.0 / (2.0 * layer.expected_precision_vol)
+        tonic_volatility
+        + layer.expected_mean_vol
+        + 1.0 / (2.0 * layer.expected_precision_vol)
     )
     previous_variance = jnp.maximum(
         1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
     )
 
     # Re-predict the value level's volatility and precision from the posterior mean.
-    repredicted_volatility = time_step * jnp.exp(posterior_mean_vol)
+    repredicted_volatility = time_step * jnp.exp(tonic_volatility + posterior_mean_vol)
     expected_precision = 1.0 / (previous_variance + repredicted_volatility)
     effective_precision = repredicted_volatility * expected_precision
     volatility_error_weight = (
@@ -229,6 +238,7 @@ def vectorized_layer_volatility_posterior_ehgf(
 
 def vectorized_layer_volatility_posterior_unbounded(
     layer: LayerState,
+    params: LayerParams,
     time_step: float,
     max_posterior_precision: float = 1e10,
 ) -> LayerState:
@@ -245,6 +255,9 @@ def vectorized_layer_volatility_posterior_unbounded(
     ----------
     layer :
         Current layer state with ``volatility_prediction_error`` set.
+    params :
+        Layer parameters; provides the value level's tonic volatility when one
+        is allocated (``None`` enters the exponents as zero).
     time_step :
         Current time step (needed to reconstruct the pre-prediction variance).
     max_posterior_precision :
@@ -258,6 +271,9 @@ def vectorized_layer_volatility_posterior_unbounded(
     """
     assert layer.expected_precision_vol is not None
     assert layer.expected_mean_vol is not None
+    tonic_volatility = (
+        params.tonic_volatility if params.tonic_volatility is not None else 0.0
+    )
 
     # Reconstruct previous_variance = 1/pi_prev_jm1 exactly from the *conditional* predicted
     # precision. The prediction step sets
@@ -269,7 +285,9 @@ def vectorized_layer_volatility_posterior_unbounded(
     # that behind — both were latent errors that only surfaced once value coupling
     # shifted the operating point. Volatility coupling is fixed at 1.
     predicted_volatility = time_step * jnp.exp(
-        layer.expected_mean_vol + 1.0 / (2.0 * layer.expected_precision_vol)
+        tonic_volatility
+        + layer.expected_mean_vol
+        + 1.0 / (2.0 * layer.expected_precision_vol)
     )
     previous_variance = jnp.maximum(
         1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
@@ -291,8 +309,8 @@ def vectorized_layer_volatility_posterior_unbounded(
     log_previous_variance = jnp.log(previous_variance)
 
     # Canonical exponent at prediction (coupling fixed at 1):
-    # γ = log(time_step) + expected_mean_vol
-    gamma_c = log_time_step + expected_mean_vol
+    # γ = log(time_step) + expected_mean_vol + ω
+    gamma_c = log_time_step + expected_mean_vol + tonic_volatility
 
     # w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α).
     w_jm1 = sigmoid(gamma_c - log_previous_variance)
@@ -321,10 +339,10 @@ def vectorized_layer_volatility_posterior_unbounded(
     W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
     v_W = lambert_w0(W_arg)
     y_star = gamma_c + v_W - 0.5 / pihat_y
-    x_star = y_star - log_time_step
+    x_star = y_star - log_time_step - tonic_volatility
 
     # Log-space s2/w2/da2 — never materialise ``s2 = inf`` (0·∞ NaN gradients).
-    log_s2 = log_time_step + x_star
+    log_s2 = log_time_step + x_star + tonic_volatility
     log_denom_s = jnp.logaddexp(
         log_previous_variance, log_s2
     )  # = log(previous_variance + s2)
@@ -359,7 +377,7 @@ def vectorized_layer_volatility_posterior_unbounded(
     # injects 0·∞ NaNs in the backward pass; ``logaddexp`` / ``exp(-positive)``
     # stay bounded both ways.
     # ------------------------------------------------------------------
-    log_ey1 = log_time_step + mu1
+    log_ey1 = log_time_step + mu1 + tonic_volatility
     log_denom_1 = jnp.logaddexp(
         log_previous_variance, log_ey1
     )  # = log(previous_variance + ey1)
@@ -369,7 +387,7 @@ def vectorized_layer_volatility_posterior_unbounded(
         - 0.5 * expected_precision_vol * (mu1 - expected_mean_vol) ** 2
     )
 
-    log_ey2 = log_time_step + mu2
+    log_ey2 = log_time_step + mu2 + tonic_volatility
     log_denom_2 = jnp.logaddexp(log_previous_variance, log_ey2)
     I2 = (
         -0.5 * log_denom_2
@@ -401,6 +419,7 @@ def vectorized_layer_volatility_posterior_unbounded(
 
 def vectorized_layer_prediction_error(
     layer: LayerState,
+    params: LayerParams,
     volatility_updates: str = "eHGF",
     time_step: float = 1.0,
     has_volatility_parent: bool = True,
@@ -420,6 +439,9 @@ def vectorized_layer_prediction_error(
     ----------
     layer :
         Current layer with ``mean`` and ``expected_mean`` set.
+    params :
+        Layer parameters; provides the value level's tonic volatility to the
+        eHGF and unbounded volatility posteriors when one is allocated.
     volatility_updates :
         One of ``"eHGF"`` (default), ``"standard"``, or ``"unbounded"``.
     time_step :
@@ -449,7 +471,7 @@ def vectorized_layer_prediction_error(
 
     if volatility_updates == "eHGF":
         layer = vectorized_layer_volatility_posterior_ehgf(
-            layer, time_step, max_posterior_precision=max_posterior_precision
+            layer, params, time_step, max_posterior_precision=max_posterior_precision
         )
     elif volatility_updates == "standard":
         layer = vectorized_layer_volatility_posterior_standard(
@@ -458,6 +480,7 @@ def vectorized_layer_prediction_error(
     elif volatility_updates == "unbounded":
         layer = vectorized_layer_volatility_posterior_unbounded(
             layer,
+            params,
             time_step,
             max_posterior_precision=max_posterior_precision,
         )

@@ -290,6 +290,7 @@ def _leaf_pe(
     else:
         new_state = vectorized_layer_prediction_error(
             layer=layer.state,
+            params=layer.params,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=layer.has_volatility_parent,
@@ -327,6 +328,7 @@ def _posterior_pe_layer(
     else:
         new_state = vectorized_layer_prediction_error(
             layer=new_state,
+            params=parent.params,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=parent.has_volatility_parent,
@@ -452,7 +454,9 @@ def _posterior_pe_stack(
         child_state_init, stack.has_volatility_parent
     )
 
-    def slice_posterior_pe(slice_state, slice_weights, child_state, is_leaf_child):
+    def slice_posterior_pe(
+        slice_state, slice_params, slice_weights, child_state, is_leaf_child
+    ):
         new_state = vectorized_layer_posterior_update(
             layer=slice_state,
             child=child_state,
@@ -464,6 +468,7 @@ def _posterior_pe_stack(
         )
         return vectorized_layer_prediction_error(
             layer=new_state,
+            params=slice_params,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=stack.has_volatility_parent,
@@ -471,15 +476,19 @@ def _posterior_pe_stack(
         )
 
     # Boundary: slice 0 from the external child.
-    slice0_state, _, slice0_weights = _stack_slice(stack, 0)
+    slice0_state, slice0_params, slice0_weights = _stack_slice(stack, 0)
     new_slice0 = slice_posterior_pe(
-        slice0_state, slice0_weights, child_state_init, child_is_input_layer
+        slice0_state,
+        slice0_params,
+        slice0_weights,
+        child_state_init,
+        child_is_input_layer,
     )
 
     def body(child_carry_state, slice_data):
-        slice_state, slice_weights = slice_data
+        slice_state, slice_params, slice_weights = slice_data
         new_state = slice_posterior_pe(
-            slice_state, slice_weights, child_carry_state, False
+            slice_state, slice_params, slice_weights, child_carry_state, False
         )
         return new_state, new_state
 
@@ -491,6 +500,7 @@ def _posterior_pe_stack(
         init=new_slice0,
         xs=(
             jax.tree_util.tree_map(lambda x: x[1:], stack.state),
+            jax.tree_util.tree_map(lambda x: x[1:], stack.params),
             stack.weights_mean[1:],
         ),
     )

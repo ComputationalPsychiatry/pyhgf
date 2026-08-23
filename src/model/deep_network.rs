@@ -48,6 +48,13 @@ pub struct DeepNetwork {
     precision_clipping_value: Float,
     predict_precision: bool,
     feedforward_uncertainty: bool,
+    /// Whether volatile layers carry a value-level tonic volatility ω. With
+    /// `false` (the default) the parameter is unallocated — a layer has no
+    /// intrinsic volatility and only inherits it from its volatility parent.
+    /// With `true` every volatile layer carries it (default −4, per-layer
+    /// override via the `tonic_volatility` kwarg of `add_layer`). Mirrors the
+    /// JAX `DeepNetwork(tonic_volatility=...)`.
+    tonic_volatility: bool,
     /// Network-level default coupling function name (validated at
     /// construction).
     default_coupling: String,
@@ -224,6 +231,7 @@ impl DeepNetwork {
         coupling_fn = "linear",
         predict_precision = true,
         feedforward_uncertainty = false,
+        tonic_volatility = false,
     ))]
     fn py_new(
         volatility_updates: &str,
@@ -232,6 +240,7 @@ impl DeepNetwork {
         coupling_fn: &str,
         predict_precision: bool,
         feedforward_uncertainty: bool,
+        tonic_volatility: bool,
     ) -> PyResult<Self> {
         let volatility_updates =
             VolatilityUpdate::parse(volatility_updates).map_err(PyValueError::new_err)?;
@@ -256,6 +265,7 @@ impl DeepNetwork {
             precision_clipping_value,
             predict_precision,
             feedforward_uncertainty,
+            tonic_volatility,
             default_coupling: coupling_fn.to_string(),
         })
     }
@@ -296,6 +306,10 @@ impl DeepNetwork {
         cfg.fully_connected = fully_connected;
         cfg.coupling_fn = cf;
         cfg.volatility_parent = volatility_parent;
+        if slf.tonic_volatility && layer_kind == LayerKind::Volatile {
+            // Pre-#409 default, restored behind the network-level flag.
+            cfg.tonic_volatility = Some(-4.0);
+        }
 
         if let Some(dict) = kwargs {
             for (key, value) in dict.iter() {
@@ -303,6 +317,16 @@ impl DeepNetwork {
                 let val: Float = value.extract()?;
                 match key.as_str() {
                     // LayerParams overrides (typed fields on the config).
+                    "tonic_volatility" => {
+                        if !slf.tonic_volatility {
+                            return Err(PyValueError::new_err(
+                                "A tonic_volatility override on a volatile layer \
+                                 requires the network to carry the parameter: build \
+                                 the DeepNetwork with tonic_volatility=True.",
+                            ));
+                        }
+                        cfg.tonic_volatility = Some(val);
+                    }
                     "tonic_volatility_vol" => cfg.tonic_volatility_vol = val,
                     // LayerState (initial-belief) overrides, applied at build
                     // time — e.g. `precision=2.0` or `expected_precision=1e10`.
@@ -312,8 +336,9 @@ impl DeepNetwork {
                     other => {
                         return Err(PyValueError::new_err(format!(
                             "Unknown layer override '{other}'. Valid: \
-                             tonic_volatility_vol, or any LayerState field \
-                             ({}).",
+                             tonic_volatility (with tonic_volatility=True on the \
+                             network), tonic_volatility_vol, or any LayerState \
+                             field ({}).",
                             LAYER_STATE_FIELDS.join(", ")
                         )))
                     }
