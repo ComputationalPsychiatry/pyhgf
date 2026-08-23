@@ -153,7 +153,7 @@ def predict_precision(
     *marginal* predicted precision (``expected_precision``) — the inverse of the
     marginal predictive variance, including the first-order Laplace value-coupling
     term. The bleed-through uses each parent's marginal predicted precision
-    :math:`\tilde{\pi}_b`, which generalises the artifact's two-node derivation to
+    :math:`\tilde{\pi}_b`, which generalises the artefact's two-node derivation to
     deep networks. The MGF correction
     :math:`\kappa^2 / (2\, \hat{\pi}_{\check{a}_j})` inside the exponent is the
     Jensen-inequality contribution of a Gaussian volatility parent through the

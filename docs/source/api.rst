@@ -220,85 +220,85 @@ Functions for setting observations on input nodes.
 
     set_observation
 
-Vectorized updates
+Vectorised updates
 ==================
 
-Layer-wise vectorized implementations of the HGF update equations for deep predictive
+Layer-wise vectorised implementations of the HGF update equations for deep predictive
 coding networks. These functions operate on entire layers instead of individual nodes
 and are used internally by :class:`pyhgf.model.DeepNetwork`.
 
 Volatile layers
 ---------------
 
-.. currentmodule:: pyhgf.updates.vectorized.volatile
+.. currentmodule:: pyhgf.updates.vectorised.volatile
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.volatile
+   :toctree: generated/pyhgf.updates.vectorised.volatile
 
-    vectorized_layer_prediction
-    vectorized_root_prediction
-    vectorized_layer_posterior_update
-    vectorized_posterior_update_precision_value_level
-    vectorized_posterior_update_mean_value_level
-    vectorized_layer_value_prediction_error
-    vectorized_layer_volatility_prediction_error
-    vectorized_layer_volatility_posterior_standard
-    vectorized_layer_volatility_posterior_ehgf
-    vectorized_layer_volatility_posterior_unbounded
-    vectorized_layer_prediction_error
+    vectorised_layer_prediction
+    vectorised_root_prediction
+    vectorised_layer_posterior_update
+    vectorised_posterior_update_precision_value_level
+    vectorised_posterior_update_mean_value_level
+    vectorised_layer_value_prediction_error
+    vectorised_layer_volatility_prediction_error
+    vectorised_layer_volatility_posterior_standard
+    vectorised_layer_volatility_posterior_ehgf
+    vectorised_layer_volatility_posterior_unbounded
+    vectorised_layer_prediction_error
 
 Binary layers
 -------------
 
-.. currentmodule:: pyhgf.updates.vectorized.binary
+.. currentmodule:: pyhgf.updates.vectorised.binary
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.binary
+   :toctree: generated/pyhgf.updates.vectorised.binary
 
-    vectorized_binary_prediction
-    vectorized_binary_prediction_error
+    vectorised_binary_prediction
+    vectorised_binary_prediction_error
 
 Categorical layers
 ------------------
 
-.. currentmodule:: pyhgf.updates.vectorized.categorical
+.. currentmodule:: pyhgf.updates.vectorised.categorical
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.categorical
+   :toctree: generated/pyhgf.updates.vectorised.categorical
 
-    vectorized_categorical_prediction
-    vectorized_categorical_prediction_error
+    vectorised_categorical_prediction
+    vectorised_categorical_prediction_error
 
 Continuous layers
 -----------------
 
-.. currentmodule:: pyhgf.updates.vectorized.continuous
+.. currentmodule:: pyhgf.updates.vectorised.continuous
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.continuous
+   :toctree: generated/pyhgf.updates.vectorised.continuous
 
     ValueChild
     VolatilityChild
-    vectorized_continuous_prediction
-    vectorized_continuous_prediction_error
-    vectorized_continuous_value_prediction_error
-    vectorized_continuous_volatility_prediction_error
-    vectorized_continuous_posterior_update
-    vectorized_continuous_posterior_update_standard
-    vectorized_continuous_posterior_update_ehgf
-    vectorized_continuous_posterior_update_unbounded
+    vectorised_continuous_prediction
+    vectorised_continuous_prediction_error
+    vectorised_continuous_value_prediction_error
+    vectorised_continuous_volatility_prediction_error
+    vectorised_continuous_posterior_update
+    vectorised_continuous_posterior_update_standard
+    vectorised_continuous_posterior_update_ehgf
+    vectorised_continuous_posterior_update_unbounded
 
-Vectorized learning
+Vectorised learning
 -------------------
 
-.. currentmodule:: pyhgf.updates.vectorized.learning
+.. currentmodule:: pyhgf.updates.vectorised.learning
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.learning
+   :toctree: generated/pyhgf.updates.vectorised.learning
 
-    learning_weights_vectorized
+    learning_weights_vectorised
     resolve_synaptic_uncertainty_settings
-    vectorized_synaptic_uncertainty_update
+    vectorised_synaptic_uncertainty_update
 
 Model
 *****
@@ -343,7 +343,7 @@ of a trained Equinox module, translating its weights into PyHGF's layer layout.
 Declarative construction
 ========================
 
-Build a :class:`~pyhgf.model.DeepNetwork` from serializable layer configurations, for
+Build a :class:`~pyhgf.model.DeepNetwork` from serialisable layer configurations, for
 configuration-driven experiments and reproducible hyperparameter sweeps.
 
 .. currentmodule:: pyhgf.model.builder
@@ -434,9 +434,9 @@ state passed explicitly.
 Plots
 *****
 
-Plotting functionalities to visualize parameters trajectories and correlations after
+Plotting functionalities to visualise parameters trajectories and correlations after
 observing new data. We are currently fully supporting Graphviz for network structure and
-Matplotlib for time series visualization. NetworkX is also available for some functions. 
+Matplotlib for time series visualisation. NetworkX is also available for some functions. 
 
 Matplotlib
 ==========
@@ -539,15 +539,15 @@ Low-level helpers used when sampling from a network's generative distribution.
 
    single_sample
 
-Vectorized belief propagation
+Vectorised belief propagation
 =============================
 
 Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork`.
 
-.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+.. currentmodule:: pyhgf.utils.vectorised_belief_propagation
 
 .. autosummary::
-   :toctree: generated/pyhgf.utils.vectorized_belief_propagation
+   :toctree: generated/pyhgf.utils.vectorised_belief_propagation
 
    propagation_step
    prediction_pass
@@ -603,7 +603,7 @@ Network structure
    AdjacencyLists
    UpdateSequence
 
-Vectorized networks
+Vectorised networks
 ===================
 
 .. currentmodule:: pyhgf.typing.vectorised

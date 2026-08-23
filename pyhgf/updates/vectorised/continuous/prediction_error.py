@@ -1,16 +1,16 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Vectorized prediction errors for layers of regular continuous nodes."""
+"""Vectorised prediction errors for layers of regular continuous nodes."""
 
 import dataclasses
 
 from pyhgf.typing.vectorised import LayerState
 
 
-def vectorized_continuous_value_prediction_error(layer: LayerState) -> LayerState:
+def vectorised_continuous_value_prediction_error(layer: LayerState) -> LayerState:
     r"""Compute the value prediction error for all nodes in a continuous layer.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`:
 
     .. math::
@@ -32,10 +32,10 @@ def vectorized_continuous_value_prediction_error(layer: LayerState) -> LayerStat
     )
 
 
-def vectorized_continuous_volatility_prediction_error(layer: LayerState) -> LayerState:
+def vectorised_continuous_volatility_prediction_error(layer: LayerState) -> LayerState:
     r"""Compute the volatility prediction error for all nodes in a continuous layer.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error`:
 
     .. math::
@@ -44,7 +44,7 @@ def vectorized_continuous_volatility_prediction_error(layer: LayerState) -> Laye
             + \tilde{\pi}_a^{(k)} \left( \delta_a^{(k)} \right)^2 - 1.
 
     The nodalised backend divides by the number of volatility parents; the
-    vectorized layer topology allows at most one volatility parent per layer, so
+    vectorised layer topology allows at most one volatility parent per layer, so
     no division is applied.
 
     Parameters
@@ -66,13 +66,13 @@ def vectorized_continuous_volatility_prediction_error(layer: LayerState) -> Laye
     return dataclasses.replace(layer, volatility_prediction_error=volatility_pe)
 
 
-def vectorized_continuous_prediction_error(
+def vectorised_continuous_prediction_error(
     layer: LayerState,
     has_volatility_parent: bool = False,
 ) -> LayerState:
     """Compute the prediction errors a continuous layer sends to its parents.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error`.
     The value prediction error is always computed; the volatility prediction
     error only when there is a volatility parent to consume it.
@@ -89,7 +89,7 @@ def vectorized_continuous_prediction_error(
     LayerState
         Updated layer state with the prediction errors set.
     """
-    layer = vectorized_continuous_value_prediction_error(layer)
+    layer = vectorised_continuous_value_prediction_error(layer)
     if has_volatility_parent:
-        layer = vectorized_continuous_volatility_prediction_error(layer)
+        layer = vectorised_continuous_volatility_prediction_error(layer)
     return layer

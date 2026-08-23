@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized posterior update for volatile node layers."""
+"""Vectorised posterior update for volatile node layers."""
 
 import dataclasses
 from typing import Callable
@@ -13,7 +13,7 @@ from jax import vmap
 from pyhgf.typing.vectorised import LayerState
 
 
-def vectorized_posterior_update_precision_value_level(
+def vectorised_posterior_update_precision_value_level(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
@@ -139,7 +139,7 @@ def vectorized_posterior_update_precision_value_level(
 
     # Second-order EKF correction: -g''(m_j) · Σ_i(w_ij · effective_child_prec_i · δ_a_i).
     # The same effective child precision (harmonic combination above) scales the g''δ_a
-    # term in eq. 50 of Weber et al. (2026), per the artifact §4.
+    # term in eq. 50 of Weber et al. (2026), per the artefact §4.
     sum_pi_vpe = jnp.matmul(
         weights.T, effective_child_precision * child.value_prediction_error
     )
@@ -152,7 +152,7 @@ def vectorized_posterior_update_precision_value_level(
     return posterior_precision
 
 
-def vectorized_posterior_update_mean_value_level(
+def vectorised_posterior_update_mean_value_level(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
@@ -218,7 +218,7 @@ def vectorized_posterior_update_mean_value_level(
     #     Δμ_b = κ · g'(μ̂_b) · g_a · δ_a / π_b,
     #     g_a  = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
     # using PyHGF's precision-weighted PE δ_a = π_y · w / π_a (so the raw residual
-    # w = y − μ̂_a substitutes out). The artifact's "Step 5" identity
+    # w = y − μ̂_a substitutes out). The artefact's "Step 5" identity
     # π_a = π̂_a + π_y collapses g_a → π̂_a only in the canonical scheme
     # (π̃_a = π̂_a); with the prediction-step correction active π_a = π̃_a + π_y
     # and g_a above is the joint-Gaussian-exact gain. The factor π_a/π_y relative
@@ -246,7 +246,7 @@ def vectorized_posterior_update_mean_value_level(
     return posterior_mean
 
 
-def vectorized_layer_posterior_update(
+def vectorised_layer_posterior_update(
     layer: LayerState,
     child: LayerState,
     weights: jnp.ndarray,
@@ -297,7 +297,7 @@ def vectorized_layer_posterior_update(
 
     # Update precision first, then mean
     posterior_precision = jnp.clip(
-        vectorized_posterior_update_precision_value_level(
+        vectorised_posterior_update_precision_value_level(
             layer,
             child,
             weights,
@@ -309,7 +309,7 @@ def vectorized_layer_posterior_update(
         max_posterior_precision,
     )
 
-    posterior_mean = vectorized_posterior_update_mean_value_level(
+    posterior_mean = vectorised_posterior_update_mean_value_level(
         layer,
         child,
         weights,

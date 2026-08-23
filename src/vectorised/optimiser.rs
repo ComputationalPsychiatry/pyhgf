@@ -7,12 +7,12 @@
 use crate::vectorised::layer::{DeepNet, Layer};
 use crate::vectorised::mat::{Float, Matrix, Vector};
 
-/// A gradient-descent optimizer over the network's weight matrices, mirroring
+/// A gradient-descent optimiser over the network's weight matrices, mirroring
 /// the optax transforms `fit` accepts. `PartialEq` lets the Python `fit`
-/// detect an optimizer change between calls and reset the state, matching the
+/// detect an optimiser change between calls and reset the state, matching the
 /// JAX class's re-initialisation on a new optax object.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Optimizer {
+pub enum Optimiser {
     /// Plain SGD: `w ← w − lr · grad`.
     Sgd { lr: Float },
     /// Adam (Kingma & Ba, 2015), matching `optax.adam` defaults.
@@ -24,15 +24,15 @@ pub enum Optimizer {
     },
 }
 
-impl Optimizer {
+impl Optimiser {
     /// `optax.sgd(lr)`.
     pub fn sgd(lr: Float) -> Self {
-        Optimizer::Sgd { lr }
+        Optimiser::Sgd { lr }
     }
 
     /// `optax.adam(lr)` with the standard `b1=0.9, b2=0.999, eps=1e-8`.
     pub fn adam(lr: Float) -> Self {
-        Optimizer::Adam {
+        Optimiser::Adam {
             lr,
             b1: 0.9,
             b2: 0.999,
@@ -41,7 +41,7 @@ impl Optimizer {
     }
 }
 
-/// Mutable optimizer state: a global step counter plus per-layer Adam moment
+/// Mutable optimiser state: a global step counter plus per-layer Adam moment
 /// pairs (`None` for layers without incoming weights, e.g. the bottom layer).
 #[derive(Debug, Clone)]
 pub struct OptState {
@@ -68,8 +68,8 @@ impl OptState {
     }
 }
 
-impl Optimizer {
-    /// Apply one optimizer step to every layer's `weights_in` from the matched
+impl Optimiser {
+    /// Apply one optimiser step to every layer's `weights_in` from the matched
     /// per-layer descent-gradient factors (`grads[i]` is `None` where the layer
     /// has no weights; otherwise `(u, v)` with `u[i]·v[j]` the gradient
     /// element). Updates `state` and the weight matrices in place — the
@@ -82,7 +82,7 @@ impl Optimizer {
     ) {
         // The step counter only feeds Adam's bias correction; SGD leaves it
         // untouched so a later switch to Adam starts from a fresh schedule.
-        if let Optimizer::Adam { .. } = self {
+        if let Optimiser::Adam { .. } = self {
             state.t += 1;
         }
         for (i, layer) in layers.iter_mut().enumerate() {
@@ -96,7 +96,7 @@ impl Optimizer {
                 .expect("gradient present but layer has no weights");
 
             match *self {
-                Optimizer::Sgd { lr } => {
+                Optimiser::Sgd { lr } => {
                     // w[i][j] += -lr · u[i]·v[j], in place (no temporaries).
                     ndarray::Zip::from(weights.rows_mut())
                         .and(u)
@@ -106,7 +106,7 @@ impl Optimizer {
                                 .for_each(|w, &vj| *w -= lr * (ui * vj));
                         });
                 }
-                Optimizer::Adam { lr, b1, b2, eps } => {
+                Optimiser::Adam { lr, b1, b2, eps } => {
                     let (m, mv) = state.moments[i]
                         .as_mut()
                         .expect("Adam moments missing for a weighted layer");
@@ -132,7 +132,7 @@ impl Optimizer {
         }
     }
 
-    /// Apply one optimizer step to every layer's `weights_in` from matched
+    /// Apply one optimiser step to every layer's `weights_in` from matched
     /// per-layer dense descent gradients (`grads[i]` is `None` where the layer
     /// has no weights). The dense twin of [`Self::apply`], for gradients that
     /// are not rank-one; [`crate::vectorised::network::DeepNet::batch_update`]
@@ -144,7 +144,7 @@ impl Optimizer {
         grads: &[Option<Matrix>],
     ) {
         // Same step-counter semantics as `apply`: only Adam advances it.
-        if let Optimizer::Adam { .. } = self {
+        if let Optimiser::Adam { .. } = self {
             state.t += 1;
         }
         for (i, layer) in layers.iter_mut().enumerate() {
@@ -158,12 +158,12 @@ impl Optimizer {
                 .expect("gradient present but layer has no weights");
 
             match *self {
-                Optimizer::Sgd { lr } => {
+                Optimiser::Sgd { lr } => {
                     ndarray::Zip::from(&mut *weights)
                         .and(grad)
                         .for_each(|w, &g| *w -= lr * g);
                 }
-                Optimizer::Adam { lr, b1, b2, eps } => {
+                Optimiser::Adam { lr, b1, b2, eps } => {
                     let (m, mv) = state.moments[i]
                         .as_mut()
                         .expect("Adam moments missing for a weighted layer");
@@ -207,7 +207,7 @@ mod tests {
             }
             g
         };
-        let opt = Optimizer::adam(0.01);
+        let opt = Optimiser::adam(0.01);
         for _ in 0..3 {
             opt.apply(
                 &mut state_a,
@@ -238,7 +238,7 @@ mod tests {
             Some((Vector::from_elem(1, 2.0), Vector::from_elem(2, 1.0))),
         ];
 
-        Optimizer::sgd(0.1).apply(&mut state, &mut net.layers, &grads);
+        Optimiser::sgd(0.1).apply(&mut state, &mut net.layers, &grads);
         let w = net.layers[1].weights_in.as_ref().unwrap();
         // w ← 1 − 0.1*2 = 0.8.
         assert!((w[[0, 0]] - 0.8).abs() < 1e-12);
@@ -253,7 +253,7 @@ mod tests {
             Some((Vector::from_elem(1, 3.0), Vector::from_elem(2, 1.0))),
         ];
 
-        Optimizer::adam(0.01).apply(&mut state, &mut net.layers, &grads);
+        Optimiser::adam(0.01).apply(&mut state, &mut net.layers, &grads);
         // First Adam step: m_hat/√v_hat ≈ sign(grad); update ≈ -lr = -0.01.
         let w = net.layers[1].weights_in.as_ref().unwrap();
         assert!((w[[0, 0]] - (1.0 - 0.01)).abs() < 1e-6);

@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized prediction for binary state node layers."""
+"""Vectorised prediction for binary state node layers."""
 
 import dataclasses
 from typing import Callable
@@ -12,7 +12,7 @@ from jax.nn import sigmoid
 from pyhgf.typing.vectorised import LayerState
 
 
-def vectorized_binary_prediction(
+def vectorised_binary_prediction(
     child_state: LayerState,
     parent_state: LayerState,
     weights: jnp.ndarray,

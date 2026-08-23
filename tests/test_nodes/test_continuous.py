@@ -43,7 +43,7 @@ def test_continuous_2_levels(mean_field_updates):
     """Test the 2-level continuous HGF: input node → value parent.
 
     The value parent has no volatility children, so ``volatility_updates`` does not
-    affect its update path and is not parametrized here. The JAX and Rust backends must
+    affect its update path and is not parametrised here. The JAX and Rust backends must
     produce identical trajectories for both values of ``mean_field_updates``.
     """
     timeseries = load_data("continuous")

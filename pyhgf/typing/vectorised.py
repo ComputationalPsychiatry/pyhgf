@@ -74,8 +74,8 @@ class LayerState(eqx.Module):
         set to ``None`` instead of being allocated. A frozen volatility level is
         never predicted or updated — every access to these fields sits behind a
         ``has_volatility_parent`` guard (see
-        :func:`pyhgf.updates.vectorized.volatile.prediction` and
-        :mod:`~pyhgf.updates.vectorized.volatile.prediction_error`) — so storing
+        :func:`pyhgf.updates.vectorised.volatile.prediction` and
+        :mod:`~pyhgf.updates.vectorised.volatile.prediction_error`) — so storing
         them would only carry dead arrays through the state. As ``None`` pytree
         nodes they hold no data and are skipped by every ``tree_map`` over the
         state (stacking, scanning, recording).
@@ -450,7 +450,7 @@ class Network(eqx.Module):
         :class:`pyhgf.model.DeepNetwork`.
     predict_precision :
         Whether the prediction sweep advances the precisions — see
-        :func:`pyhgf.updates.vectorized.volatile.prediction.vectorized_layer_prediction`.
+        :func:`pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`.
     feedforward_uncertainty :
         Whether value parents propagate their uncertainty to their children's
         predicted precision — see :class:`pyhgf.model.DeepNetwork`.

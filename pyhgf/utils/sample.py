@@ -66,7 +66,7 @@ def sample(
     # Generate a batch of RNG keys, one for each prediction.
     rng_keys_batch = random.split(rng_key, num=n_predictions)
 
-    # Use vmap to vectorize the single_prediction function over the batch of RNG keys.
+    # Use vmap to vectorise the single_prediction function over the batch of RNG keys.
     # This will return a dictionary of arrays.
     predictions = vmap(sample_fn)(rng_keys_batch)
 

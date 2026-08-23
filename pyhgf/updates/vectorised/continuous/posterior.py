@@ -1,8 +1,8 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-r"""Vectorized posterior updates for layers of regular continuous nodes.
+r"""Vectorised posterior updates for layers of regular continuous nodes.
 
-This module mirrors :mod:`pyhgf.updates.posterior.continuous` for vectorized
+This module mirrors :mod:`pyhgf.updates.posterior.continuous` for vectorised
 layers. A continuous layer can be the *value parent* of one layer (connected by a
 weight matrix :math:`W` entering the child's drift) and/or the *volatility parent*
 of one layer (connected by a fixed coupling matrix :math:`\kappa` entering the
@@ -308,7 +308,7 @@ def _finalize_precision(
 # ---------------------------------------------------------------------------
 
 
-def vectorized_continuous_posterior_update_standard(
+def vectorised_continuous_posterior_update_standard(
     layer: LayerState,
     value_child: Optional[ValueChild] = None,
     volatility_child: Optional[VolatilityChild] = None,
@@ -317,7 +317,7 @@ def vectorized_continuous_posterior_update_standard(
 ) -> LayerState:
     """Apply the standard HGF posterior update: precision first, then the mean.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update`.
 
     Parameters
@@ -369,7 +369,7 @@ def vectorized_continuous_posterior_update_standard(
     )
 
 
-def vectorized_continuous_posterior_update_ehgf(
+def vectorised_continuous_posterior_update_ehgf(
     layer: LayerState,
     value_child: Optional[ValueChild] = None,
     volatility_child: Optional[VolatilityChild] = None,
@@ -379,7 +379,7 @@ def vectorized_continuous_posterior_update_ehgf(
 ) -> LayerState:
     """Enhanced-HGF posterior update: mean first, then the safe precision.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf`:
     the mean update approximates the node precision with the expected precision,
     and the volatility-coupling precision increment is recomputed from the
@@ -436,7 +436,7 @@ def vectorized_continuous_posterior_update_ehgf(
     )
 
 
-def vectorized_continuous_posterior_update_unbounded(
+def vectorised_continuous_posterior_update_unbounded(
     layer: LayerState,
     volatility_child: VolatilityChild,
     time_step: float = 1.0,
@@ -445,14 +445,14 @@ def vectorized_continuous_posterior_update_unbounded(
 ) -> LayerState:
     """Unbounded posterior update for a pure volatility-parent layer.
 
-    Vectorized port of
+    Vectorised port of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded`
     (Lambert :math:`W_0` dual-quadratic expansion with a variational
     energy-based blend). The approximation is derived for a single volatility
     child per node, so the coupling must be one-to-one: ``kappa`` square and
     diagonal, each parent node coupled to exactly one child node. The layer must
     have no value child (the nodalised update ignores value children; the
-    vectorized builder rejects such a topology instead of silently dropping the
+    vectorised builder rejects such a topology instead of silently dropping the
     edge).
 
     Parameters
@@ -581,7 +581,7 @@ def vectorized_continuous_posterior_update_unbounded(
     )
 
 
-def vectorized_continuous_posterior_update(
+def vectorised_continuous_posterior_update(
     layer: LayerState,
     value_child: Optional[ValueChild] = None,
     volatility_child: Optional[VolatilityChild] = None,
@@ -622,7 +622,7 @@ def vectorized_continuous_posterior_update(
         Updated layer state with posterior ``precision`` and ``mean``.
     """
     if volatility_child is None or volatility_updates == "standard":
-        return vectorized_continuous_posterior_update_standard(
+        return vectorised_continuous_posterior_update_standard(
             layer,
             value_child=value_child,
             volatility_child=volatility_child,
@@ -630,7 +630,7 @@ def vectorized_continuous_posterior_update(
             mean_field_updates=mean_field_updates,
         )
     if volatility_updates == "eHGF":
-        return vectorized_continuous_posterior_update_ehgf(
+        return vectorised_continuous_posterior_update_ehgf(
             layer,
             value_child=value_child,
             volatility_child=volatility_child,
@@ -645,7 +645,7 @@ def vectorized_continuous_posterior_update(
                 "this layer also has a value child. Use 'standard' or 'eHGF' "
                 "volatility updates for mixed parents."
             )
-        return vectorized_continuous_posterior_update_unbounded(
+        return vectorised_continuous_posterior_update_unbounded(
             layer,
             volatility_child=volatility_child,
             time_step=time_step,

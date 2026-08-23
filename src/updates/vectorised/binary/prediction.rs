@@ -1,5 +1,5 @@
 //! Top-down prediction for binary leaf layers, mirroring
-//! `pyhgf/updates/vectorized/binary/prediction.py`.
+//! `pyhgf/updates/vectorised/binary/prediction.py`.
 
 use crate::math::{sigmoid, with_coupling, CouplingFn};
 use crate::updates::vectorised::push;
@@ -9,7 +9,7 @@ use crate::vectorised::mat::{Float, Matrix};
 /// Predict a binary (Bernoulli) leaf layer: `μ̂ = σ(W @ g(parent))`, clipped
 /// away from 0/1, with the Bernoulli variance stored as `expected_precision`.
 ///
-/// Mirrors `vectorized_binary_prediction`.
+/// Mirrors `vectorised_binary_prediction`.
 pub fn binary_prediction(
     child: &mut LayerState,
     parent: &LayerState,

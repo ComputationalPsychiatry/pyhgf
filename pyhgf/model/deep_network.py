@@ -1,9 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized deep predictive coding network.
+"""Vectorised deep predictive coding network.
 
-This module provides a vectorized implementation of deep HGF networks that uses layer-
+This module provides a vectorised implementation of deep HGF networks that uses layer-
 wise matrix operations instead of per-node updates.
 """
 
@@ -31,11 +31,11 @@ from pyhgf.typing.vectorised import (
     Network,
     stack_layers,
 )
-from pyhgf.updates.vectorized.learning import (
+from pyhgf.updates.vectorised.learning import (
     SynapticUncertaintySettings,
     resolve_synaptic_uncertainty_settings,
 )
-from pyhgf.utils.vectorized_belief_propagation import (
+from pyhgf.utils.vectorised_belief_propagation import (
     _weight_quantities,
     batch_step,
     batched_prediction_pass,
@@ -99,10 +99,10 @@ class DeadGradientWarning(UserWarning):
 
 
 class DeepNetwork:
-    """Deep predictive coding network with vectorized operations.
+    """Deep predictive coding network with vectorised operations.
 
     This class implements a deep hierarchical Gaussian filter using layer-wise
-    vectorized operations for efficient scaling to large networks.
+    vectorised operations for efficient scaling to large networks.
 
     Unlike the standard DeepNetwork which uses per-node updates with Python loops, this
     implementation uses JAX matrix operations to update all nodes in a layer
@@ -130,7 +130,7 @@ class DeepNetwork:
     --------
     >>> # Build a network with method chaining
     >>> net = (
-    ...     VectorizedDeepNetwork()
+    ...     VectorisedDeepNetwork()
     ...     .add_layer(size=10)  # Output layer
     ...     .add_layer(size=8)   # Hidden layer 1
     ...     .add_layer(size=6)   # Hidden layer 2
@@ -166,7 +166,7 @@ class DeepNetwork:
         tonic_volatility: bool = False,
         mean_field_updates: bool = False,
     ):
-        r"""Initialize a VectorizedDeepNetwork.
+        r"""Initialise a VectorisedDeepNetwork.
 
         Parameters
         ----------
@@ -272,7 +272,7 @@ class DeepNetwork:
         self.scan_blocks: list[tuple[int, int]] = []
         self.state: Optional[Network] = None
         self.opt_state: Optional[optax.OptState] = None
-        self._optimizer: Optional[optax.GradientTransformation] = None
+        self._optimiser: Optional[optax.GradientTransformation] = None
         self.trajectories: Optional[Network] = None
         self.predictions: Optional[jnp.ndarray] = None
         # Per-sample input-layer errors from the last batch_update call,
@@ -584,7 +584,7 @@ class DeepNetwork:
 
         Returns
         -------
-        VectorizedDeepNetwork
+        VectorisedDeepNetwork
             Self for method chaining.
 
         Raises
@@ -743,7 +743,7 @@ class DeepNetwork:
         # Optimiser state's shape depends on the weights tuple, so invalidate
         # any previously initialised ``opt_state``.
         self.opt_state = None
-        self._optimizer = None
+        self._optimiser = None
         return self
 
     def _resolve_continuous_children(
@@ -869,7 +869,7 @@ class DeepNetwork:
 
         Returns
         -------
-        VectorizedDeepNetwork
+        VectorisedDeepNetwork
             Self for method chaining.
         """
         auto_scan = (
@@ -896,7 +896,7 @@ class DeepNetwork:
         return self
 
     def _init_state(self) -> Network:
-        """Initialize network with uniform weights, as an Equinox ``Network`` PyTree.
+        """Initialise network with uniform weights, as an Equinox ``Network`` PyTree.
 
         All inter-layer weights are set to ``1.0``. Use :meth:`weight_initialisation`
         after construction to apply Xavier, He, orthogonal, or sparse initialisation.
@@ -1171,31 +1171,31 @@ class DeepNetwork:
         self.state = dataclasses.replace(self.state, layers=tuple(elements))
         return self
 
-    def _ensure_optimizer_state(
-        self, optimizer: Optional[optax.GradientTransformation]
+    def _ensure_optimiser_state(
+        self, optimiser: Optional[optax.GradientTransformation]
     ) -> None:
         """Install optimiser state, keeping it when the optimiser is equivalent.
 
         The state is rebuilt only when there is none yet, or when the new optimiser's
         state has a *different structure* from the carried one.
         """
-        if optimizer is None:
+        if optimiser is None:
             return
         # Every caller has already built the network; a state-less network
         # cannot reach a learning step.
         assert self.state is not None
         weights = self.state.weights_tuple()
         if self.opt_state is None:
-            self.opt_state = optimizer.init(weights)
-        elif self._optimizer is not optimizer:
+            self.opt_state = optimiser.init(weights)
+        elif self._optimiser is not optimiser:
             # ``eval_shape`` traces the initialiser without allocating, so the
             # comparison costs nothing on the common path.
-            candidate = jax.eval_shape(optimizer.init, weights)
+            candidate = jax.eval_shape(optimiser.init, weights)
             if jax.tree_util.tree_structure(candidate) != jax.tree_util.tree_structure(
                 self.opt_state
             ):
-                self.opt_state = optimizer.init(weights)
-        self._optimizer = optimizer
+                self.opt_state = optimiser.init(weights)
+        self._optimiser = optimiser
 
     def weight_initialisation(
         self,
@@ -1315,7 +1315,7 @@ class DeepNetwork:
             The kind requested by :meth:`fit` or :meth:`batch_update`.
         learning_kwargs :
             Settings for the belief rule, resolved by
-            :func:`~pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`.
+            :func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`.
             Only meaningful for ``'synaptic_uncertainty'``.
 
         Returns
@@ -1363,7 +1363,7 @@ class DeepNetwork:
     ) -> "DeepNetwork":
         r"""Filter a sequence of observations through a continuous network.
 
-        The vectorized equivalent of
+        The vectorised equivalent of
         :meth:`pyhgf.model.network.Network.input_data`: for every observation,
         the top-down prediction sweep advances every layer's expected mean and
         precisions, the observation is clamped on layer 0, and the bottom-up
@@ -1443,7 +1443,7 @@ class DeepNetwork:
         self,
         x: Union[np.ndarray, jnp.ndarray],
         y: Union[np.ndarray, jnp.ndarray],
-        optimizer: Optional[optax.GradientTransformation] = None,
+        optimiser: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
         learning_kwargs: Optional[dict] = None,
         record: Optional[tuple] = None,
@@ -1460,14 +1460,14 @@ class DeepNetwork:
             Input data, shape (n_samples, n_input_features).
         y :
             Target data, shape (n_samples, n_output_features).
-        optimizer :
+        optimiser :
             Any ``optax.GradientTransformation`` — e.g. ``optax.sgd(0.2)``,
             ``optax.adam(1e-3)``, or any chain. Migration from the legacy
-            ``lr=`` API: ``lr=0.2`` → ``optimizer=optax.sgd(0.2)``,
-            ``lr="adam"`` → ``optimizer=optax.adam(1e-3)``.
+            ``lr=`` API: ``lr=0.2`` → ``optimiser=optax.sgd(0.2)``,
+            ``lr="adam"`` → ``optimiser=optax.adam(1e-3)``.
         learning_kind :
             Gradient computation mode passed to
-            :func:`~pyhgf.updates.vectorized.learning.learning_weights_vectorized`:
+            :func:`~pyhgf.updates.vectorised.learning.learning_weights_vectorised`:
             ``"standard"`` or ``"precision_weighted"`` (default), both reading
             the settled beliefs, strictly local per edge.
         record :
@@ -1518,13 +1518,13 @@ class DeepNetwork:
             learning_kind, learning_kwargs
         )
 
-        if synaptic_uncertainty_settings is None and optimizer is None:
+        if synaptic_uncertainty_settings is None and optimiser is None:
             raise ValueError(
-                f"learning_kind={learning_kind!r} needs an optimizer. Pass one, "
+                f"learning_kind={learning_kind!r} needs an optimiser. Pass one, "
                 "or use learning_kind='synaptic_uncertainty', whose step size "
                 "is the belief's own variance."
             )
-        self._ensure_optimizer_state(optimizer)
+        self._ensure_optimiser_state(optimiser)
 
         x = jnp.asarray(x)
         y = jnp.asarray(y)
@@ -1532,7 +1532,7 @@ class DeepNetwork:
         (self.state, self.opt_state), step_output = run_scan(
             (self.state, self.opt_state),
             (x, y),
-            optimizer,
+            optimiser,
             gradient_kind,
             weight_update,
             record_tuple,
@@ -1714,7 +1714,7 @@ class DeepNetwork:
     def update(
         self,
         y: Union[np.ndarray, jnp.ndarray],
-        optimizer: Optional[optax.GradientTransformation] = None,
+        optimiser: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
     ) -> "DeepNetwork":
         """Run the bottom-up prediction-error + posterior-update sweep.
@@ -1724,27 +1724,27 @@ class DeepNetwork:
         error for every interior layer, in the correct bottom-up order. Belief states
         (means and precisions) are always updated.
 
-        If an ``optimizer`` is supplied, a weight-learning phase runs *after* the belief
+        If an ``optimiser`` is supplied, a weight-learning phase runs *after* the belief
         sweep: PE-driven gradients are formed and applied to every inter-layer weight
         matrix, with the optimiser state held on ``self.opt_state``. With
-        ``optimizer=None`` (default) the weights are left unchanged, exactly as
+        ``optimiser=None`` (default) the weights are left unchanged, exactly as
         :meth:`fit` would leave them with ``weight_update=False``.
 
         Typically called right after :meth:`prediction`, which sets up the predicted
         beliefs this sweep corrects, so a full local learning step without backprop is::
 
-            net.prediction(x).update(y, optimizer=optax.sgd(1e-2))
+            net.prediction(x).update(y, optimiser=optax.sgd(1e-2))
 
         Parameters
         ----------
         y :
             Observations clamped on the bottom layer, shape ``(n_output_features,)``.
             Single sample only.
-        optimizer :
+        optimiser :
             Optional ``optax.GradientTransformation``. If given, run the weight-learning
             phase and update ``self.opt_state``. If ``None``, only beliefs are updated.
         learning_kind :
-            Weight-gradient mode used when ``optimizer`` is supplied. One of
+            Weight-gradient mode used when ``optimiser`` is supplied. One of
             ``"standard"`` or ``"precision_weighted"`` (default). Both are
             strictly local. Each weight update reads only its own
             connection's prediction error, activation, and precision.
@@ -1762,10 +1762,10 @@ class DeepNetwork:
             raise ValueError("update() operates on a single sample (1D y).")
         self.state = update_sweep(self.state, y)
 
-        if optimizer is not None:
-            self._ensure_optimizer_state(optimizer)
+        if optimiser is not None:
+            self._ensure_optimiser_state(optimiser)
             self.state, self.opt_state = learn_sweep(
-                self.state, self.opt_state, optimizer, learning_kind
+                self.state, self.opt_state, optimiser, learning_kind
             )
         return self
 
@@ -1830,7 +1830,7 @@ class DeepNetwork:
         self,
         x: Union[np.ndarray, jnp.ndarray],
         y: Union[np.ndarray, jnp.ndarray],
-        optimizer: Optional[optax.GradientTransformation] = None,
+        optimiser: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
         learning_kwargs: Optional[dict] = None,
         update_precisions: bool = True,
@@ -1859,7 +1859,7 @@ class DeepNetwork:
             Predictors, shape ``(batch, n_input_features)``.
         y :
             Observations, shape ``(batch, n_output_features)``.
-        optimizer :
+        optimiser :
             Optax optimiser for the weight step. ``None`` (default) freezes
             the weights.
         learning_kind :
@@ -1902,14 +1902,14 @@ class DeepNetwork:
             learning_kind, learning_kwargs
         )
 
-        self._ensure_optimizer_state(optimizer)
+        self._ensure_optimiser_state(optimiser)
 
         self.state, self.opt_state, self.input_errors = batch_step(
             self.state,
             self.opt_state,
             x,
             y,
-            optimizer=optimizer,
+            optimiser=optimiser,
             learning_kind=gradient_kind,
             update_precisions=update_precisions,
             time_step=float(time_step),
@@ -1923,7 +1923,7 @@ class DeepNetwork:
         """Reset the network state."""
         self.state = self._init_state()
         self.opt_state = None
-        self._optimizer = None
+        self._optimiser = None
         return self
 
     def save(self, path: Union[str, os.PathLike]) -> "DeepNetwork":
@@ -1952,7 +1952,7 @@ class DeepNetwork:
         self.state = eqx.tree_deserialise_leaves(str(path), self.state)
         # The optimiser state's shape depends on the loaded weights — clear it.
         self.opt_state = None
-        self._optimizer = None
+        self._optimiser = None
         return self
 
     def to_pandas(self) -> pd.DataFrame:
@@ -2051,4 +2051,4 @@ class DeepNetwork:
 
     def __repr__(self) -> str:
         """Print string representation."""
-        return f"VectorizedDeepNetwork(nodes={self.n_nodes}, layers={self.layer_sizes})"
+        return f"VectorisedDeepNetwork(nodes={self.n_nodes}, layers={self.layer_sizes})"

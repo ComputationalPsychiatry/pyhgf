@@ -207,7 +207,7 @@ def trained_deep_network():
     net.fit(
         x=x,
         y=y,
-        optimizer=optax.sgd(0.05),
+        optimiser=optax.sgd(0.05),
         learning_kind="precision_weighted",
         record=RECORD_ALL,
     )

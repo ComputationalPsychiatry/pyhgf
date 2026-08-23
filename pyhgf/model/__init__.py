@@ -1,5 +1,5 @@
 from pyhgf.typing import LayerParams, LayerState
-from pyhgf.utils.vectorized_belief_propagation import prediction_pass as predict
+from pyhgf.utils.vectorised_belief_propagation import prediction_pass as predict
 
 from .add_nodes import (
     add_binary_state,

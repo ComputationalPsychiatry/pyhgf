@@ -94,7 +94,7 @@ def test_plot_layers_mean_ci_single_node_skips_band():
     from pyhgf.typing.vectorised import RECORD_ALL
 
     net = DeepNetwork().add_layer(size=1).add_layer(size=4).add_layer(size=3)
-    net.fit(x=x, y=y, optimizer=optax.adam(1e-3), record=RECORD_ALL)
+    net.fit(x=x, y=y, optimiser=optax.adam(1e-3), record=RECORD_ALL)
 
     axs = net.plot_layers(layers=0, mode="mean_ci")
     ax = axs[0, 0]

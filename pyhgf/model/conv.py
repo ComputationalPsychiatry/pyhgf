@@ -318,7 +318,7 @@ def conv_block(
     pool_size: tuple[int, int] = (2, 2),
     pool_stride: Optional[tuple[int, int]] = None,
     pool_kind: str = "avg",
-    optimizer: Optional[optax.GradientTransformation] = None,
+    optimiser: Optional[optax.GradientTransformation] = None,
     learning_kind: str = "precision_weighted",
     learning_kwargs: Optional[dict] = None,
     update_precisions: bool = False,
@@ -366,7 +366,7 @@ def conv_block(
     pool_kind :
         ``"avg"`` for :func:`avg_pool_adapter` or ``"max"`` for
         :func:`max_pool_adapter`.
-    optimizer :
+    optimiser :
         Optax optimiser for the shared kernel. ``None`` freezes the weights
         (the layer beliefs still update) under every ``learning_kind`` except
         ``"synaptic_uncertainty"``, which carries its own step size and leaves
@@ -375,7 +375,7 @@ def conv_block(
         Weight-gradient mode, forwarded to
         :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`. Under
         ``"synaptic_uncertainty"`` each weight also carries a belief whose
-        variance *is* the step size, so no ``optimizer`` is needed and the
+        variance *is* the step size, so no ``optimiser`` is needed and the
         kernel keeps learning without one.
     learning_kwargs :
         Settings of the learning rule, used by
@@ -462,7 +462,7 @@ def conv_block(
         im2col_adapter(filter_shape, strides, padding),
         DeepNetworkAdapter(
             patch_net,
-            optimizer=optimizer,
+            optimiser=optimiser,
             learning_kind=learning_kind,
             learning_kwargs=learning_kwargs,
             update_precisions=update_precisions,

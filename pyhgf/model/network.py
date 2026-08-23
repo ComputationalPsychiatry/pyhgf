@@ -74,7 +74,7 @@ class Network:
         step.
     scan_fn :
         The function that is passed to :py:func:`jax.lax.scan`. This is a pre-
-        parametrized version of :py:func:`pyhgf.networks.beliefs_propagation`.
+        parametrised version of :py:func:`pyhgf.networks.beliefs_propagation`.
     """
 
     def __init__(
@@ -84,7 +84,7 @@ class Network:
         mean_field_updates: bool = False,
         precision_clipping_value: float = 1e-6,
     ) -> None:
-        r"""Initialize an empty neural network.
+        r"""Initialise an empty neural network.
 
         Parameters
         ----------
@@ -102,7 +102,7 @@ class Network:
               volatility parents. In other cases, the regular HGF updates are applied.
         max_posterior_precision :
             Upper bound applied to every posterior precision write. Defaults to
-            ``1e10`` and is shared with the vectorized JAX and Rust
+            ``1e10`` and is shared with the vectorised JAX and Rust
             backends. Increase it to relax the cap, or lower it to be more conservative
             against precision blow-up.
         mean_field_updates :
@@ -118,7 +118,7 @@ class Network:
             forward filter stable in high-volatility regimes; a very small value
             (default ``1e-6``) keeps the bound from creating flat, zero-gradient
             plateaus that hurt gradient-based inference (HMC/NUTS, optimisation). Shared
-            with the vectorized JAX and Rust backends.
+            with the vectorised JAX and Rust backends.
 
         References
         ----------
@@ -502,7 +502,7 @@ class Network:
 
         .. note::
             When using a categorical state node, the `binary_parameters` can be used to
-            parametrize the implied collection of binary HGFs.
+            parametrise the implied collection of binary HGFs.
 
         .. note:
             When using `categorical-state`, the implied `n` binary HGFs are
@@ -650,7 +650,7 @@ class Network:
         return matplotlib.plot_correlations(network=self)
 
     def plot_network(self, backend: str = "graphviz"):
-        """Visualization of node network using GraphViz or Networkx."""
+        """Visualisation of node network using GraphViz or Networkx."""
         if backend == "graphviz":
             return graphviz.plot_network(network=self)
         elif backend == "networkx":

@@ -28,7 +28,7 @@ def dirichlet_node_prediction_error(
     2. Create a new cluster.
 
     The network always contains a temporary branch as the new cluster candidate. This
-    branch is parametrized under the new observation to assess its likelihood and the
+    branch is parametrised under the new observation to assess its likelihood and the
     previous clusters' likelihood.
 
     Parameters
@@ -196,7 +196,7 @@ def create_cluster(operands: tuple, edges: Edges, node_idx: int) -> Attributes:
         attributes[value_parent_idx]["observed"] = 0.0
         attributes[value_parent_idx]["mean"] = value
 
-        # initialize the new cluster using candidate values
+        # initialise the new cluster using candidate values
         attributes[value_parent_idx]["xis"] = jnp.where(
             cluster_idx == i,
             Normal().sufficient_statistics_from_parameters(
@@ -255,7 +255,7 @@ def get_candidate(
     # 1 - Likelihood of the new observation under each sampled cluster
     # ----------------------------------------------------------------
     ll_value = pdf(value, mus, sigmas)
-    ll_value /= ll_value.sum()  # normalize the weights
+    ll_value /= ll_value.sum()  # normalise the weights
 
     # 2- re-scale the weights using expected precision
     # ------------------------------------------------
@@ -336,7 +336,7 @@ def likely_cluster_proposal(
     # evidence for the new cluster proposal
     new_likelihood = pdf(new_mu, new_mu, new_sigma)
 
-    # standardize the measure of cluster specificity (ratio)
+    # standardise the measure of cluster specificity (ratio)
     ratio = new_likelihood / (new_likelihood + pre_existing_likelihood)
     ratio -= ratio.min()
     ratio /= ratio.max()
@@ -360,7 +360,7 @@ def likely_cluster_proposal(
 
     # 3 - Spread of the cluster
     # -------------------------
-    # large clusters should be favored over small clusters
+    # large clusters should be favoured over small clusters
     cluster_spread = pdf(1 / (new_sigma**2), 0.0, 5.0)
     cluster_spread -= cluster_spread.min()
     cluster_spread /= cluster_spread.max()
@@ -374,7 +374,7 @@ def clusters_likelihood(
     expected_mean: ArrayLike,
     expected_sigma: ArrayLike,
 ) -> ArrayLike:
-    """Likelihood of a parametrized candidate under the new observation.
+    """Likelihood of a parametrised candidate under the new observation.
 
     Parameters
     ----------

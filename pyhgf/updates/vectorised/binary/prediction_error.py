@@ -1,14 +1,14 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized prediction error for binary state node layers."""
+"""Vectorised prediction error for binary state node layers."""
 
 import dataclasses
 
 from pyhgf.typing.vectorised import LayerState
 
 
-def vectorized_binary_prediction_error(
+def vectorised_binary_prediction_error(
     layer: LayerState,
 ) -> LayerState:
     r"""Compute prediction errors for a binary state node layer.

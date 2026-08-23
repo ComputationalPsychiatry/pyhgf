@@ -40,7 +40,7 @@ import optax
 
 from pyhgf.model.deep_network import DeepNetwork
 from pyhgf.model.error_types import DescentError, ObservedMinusPredicted
-from pyhgf.updates.vectorized.learning import resolve_synaptic_uncertainty_settings
+from pyhgf.updates.vectorised.learning import resolve_synaptic_uncertainty_settings
 
 __all__ = [
     "PCModule",
@@ -61,20 +61,20 @@ class PCModule:
 
     1. **Declaration:** The part object (this class and its subclasses) declares
        which computations learn and which are frozen, along with their
-       configuration (optimizer, layer sizes, activation functions, etc.).
+       configuration (optimiser, layer sizes, activation functions, etc.).
 
     2. **State management:** Each part declares its state structure via
        :meth:`init_state`, which returns the state pytree this part holds
-       (network beliefs, optimizer moments, etc.). Execution is delegated to
+       (network beliefs, optimiser moments, etc.). Execution is delegated to
        :class:`~pyhgf.model.fused.FusedPipeline`.
 
     All subclasses **must** implement:
 
-    - ``__init__(...)``: Store part configuration (layer sizes, optimizer, etc.)
+    - ``__init__(...)``: Store part configuration (layer sizes, optimiser, etc.)
     - ``init_state()``: Return this part's state pytree
 
     The executor (:class:`~pyhgf.model.fused.FusedPipeline`) calls ``init_state()``
-    to initialize the part's state, threads it through forward/backward walks in
+    to initialise the part's state, threads it through forward/backward walks in
     one compiled JAX program, and writes it back via a ``merge()`` closure.
 
     Notes
@@ -111,7 +111,7 @@ class PCModule:
             )
 
     def init_state(self) -> Any:
-        """Initialize and return this part's state pytree.
+        """Initialise and return this part's state pytree.
 
         Called by :class:`~pyhgf.model.fused.FusedPipeline` during setup to
         build the full state pytree that is threaded through every training step:
@@ -294,18 +294,18 @@ class DeepNetworkAdapter(PCModule):
     net :
         The wrapped network. Its top (input) layer width is the part's input
         size; its bottom (output) layer width is the part's output size.
-    optimizer :
+    optimiser :
         Optax optimiser for the local weight step. ``None`` freezes the
         weights (the beliefs still update).
     learning_kind :
         Weight-gradient mode, as in :meth:`~pyhgf.model.DeepNetwork.fit`.
         ``"synaptic_uncertainty"`` selects the weight-belief rule, whose
         settings come from ``learning_kwargs`` and whose step size is each
-        weight's own belief variance, so ``optimizer`` is then unused.
+        weight's own belief variance, so ``optimiser`` is then unused.
     learning_kwargs :
         Settings of the learning rule, used by
         ``learning_kind="synaptic_uncertainty"`` (see
-        :func:`pyhgf.updates.vectorized.learning.resolve_synaptic_uncertainty_settings`).
+        :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`).
     update_precisions :
         Whether the precision state adapts across batches (see
         :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —
@@ -321,14 +321,14 @@ class DeepNetworkAdapter(PCModule):
         weight's true per-sample gradient and curvature sum over instead. It
         rescales the mean gradient and, under
         ``learning_kind="synaptic_uncertainty"``, the importance increment too, so
-        it reaches every learning path rather than only ``optimizer`` (see
-        :func:`pyhgf.utils.vectorized_belief_propagation._batch_step`).
+        it reaches every learning path rather than only ``optimiser`` (see
+        :func:`pyhgf.utils.vectorised_belief_propagation._batch_step`).
     """
 
     def __init__(
         self,
         net: DeepNetwork,
-        optimizer: Optional[optax.GradientTransformation] = None,
+        optimiser: Optional[optax.GradientTransformation] = None,
         learning_kind: str = "precision_weighted",
         learning_kwargs: Optional[dict] = None,
         update_precisions: bool = False,
@@ -336,7 +336,7 @@ class DeepNetworkAdapter(PCModule):
         weight_reuse: float = 1.0,
     ):
         self.net = net
-        self.optimizer = optimizer
+        self.optimiser = optimiser
         self.learning_kind = learning_kind
         self.learning_kwargs = learning_kwargs
         self.update_precisions = update_precisions
@@ -361,8 +361,8 @@ class DeepNetworkAdapter(PCModule):
     def init_state(self) -> tuple:
         """Return the ``(network, opt_state)`` state pytree.
 
-        ``opt_state`` is None when ``optimizer`` is None (weights frozen, beliefs
-        still update); otherwise it is initialized here if not already set.
+        ``opt_state`` is None when ``optimiser`` is None (weights frozen, beliefs
+        still update); otherwise it is initialised here if not already set.
 
         Raises
         ------
@@ -375,8 +375,8 @@ class DeepNetworkAdapter(PCModule):
             )
 
         opt_state = self.net.opt_state
-        if self.optimizer is not None and opt_state is None:
-            opt_state = self.optimizer.init(self.net.state.weights_tuple())
+        if self.optimiser is not None and opt_state is None:
+            opt_state = self.optimiser.init(self.net.state.weights_tuple())
 
         return (self.net.state, opt_state)
 

@@ -141,7 +141,7 @@ def gaussian_predictive_distribution(
 ) -> Array:
     r"""Density of the Gaussian-predictive distribution.
 
-    This distribution is parametrized by hyperparameters from the exponential family as:
+    This distribution is parametrised by hyperparameters from the exponential family as:
 
     .. math::
 
@@ -301,7 +301,7 @@ def dirichlet_kullback_leibler(alpha_1: ArrayLike, alpha_2: ArrayLike) -> Array:
     r"""Compute the Kullback-Leibler divergence between two Dirichlet distributions.
 
     The Kullback-Leibler divergence from the distribution :math:`Q` to the distribution
-    :math:`P`, two Dirichlet distributions parametrized by :math:`\alpha_2` and
+    :math:`P`, two Dirichlet distributions parametrised by :math:`\alpha_2` and
     :math:`\alpha_1` (respectively) is given by the following equation:
 
     .. math::

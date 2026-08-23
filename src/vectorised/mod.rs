@@ -2,8 +2,8 @@
 //! matrix primitives ([`mat`]), the whole-network sweep driver ([`network`]),
 //! and the weight optimisers ([`optimiser`]). The per-layer update kernels
 //! live in [`crate::updates::vectorised`], mirroring the JAX package split
-//! (`pyhgf/typing/vectorised.py` + `pyhgf/utils/vectorized_belief_propagation.py`
-//! vs `pyhgf/updates/vectorized/`).
+//! (`pyhgf/typing/vectorised.py` + `pyhgf/utils/vectorised_belief_propagation.py`
+//! vs `pyhgf/updates/vectorised/`).
 
 pub mod batched;
 pub mod layer;

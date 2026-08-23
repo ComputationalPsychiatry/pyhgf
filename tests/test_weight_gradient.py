@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import pytest
 
 from pyhgf.typing.vectorised import LayerState
-from pyhgf.updates.vectorized.learning import learning_weights_vectorized
+from pyhgf.updates.vectorised.learning import learning_weights_vectorised
 
 
 @pytest.fixture(autouse=True)
@@ -59,7 +59,7 @@ def test_precision_weighted_uses_posterior_precision():
     pi_pred = jnp.exp(jax.random.normal(k[5], (d_c,)))  # predicted (expected)
     parent = _state(a, pi_p, a, pi_p)
     child = _state(x, pi_post, xhat, pi_pred)  # distinct posterior vs predicted
-    u, h, _ = learning_weights_vectorized(
+    u, h, _ = learning_weights_vectorised(
         parent, child, lambda z: z, kind="precision_weighted"
     )
     got = u[:, None] * h[None, :]

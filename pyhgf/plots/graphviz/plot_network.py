@@ -13,7 +13,7 @@ from graphviz import Digraph
 
 
 def plot_network(network: Network) -> Source:
-    """Visualization of node network using GraphViz.
+    """Visualisation of node network using GraphViz.
 
     Parameters
     ----------

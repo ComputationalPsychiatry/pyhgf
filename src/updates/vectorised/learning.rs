@@ -1,5 +1,5 @@
 //! Weight learning for the vectorised deep-network backend, mirroring
-//! `pyhgf/updates/vectorized/learning.py`.
+//! `pyhgf/updates/vectorised/learning.py`.
 //!
 //! The per-layer weight gradient is a rank-one (outer) product of a child-side
 //! factor (the value prediction error, optionally scaled by the child's
@@ -23,7 +23,7 @@ pub enum WeightKind {
     PrecisionWeighted,
 }
 
-/// Zero out any non-finite entries so the optimizer never propagates NaN/inf
+/// Zero out any non-finite entries so the optimiser never propagates NaN/inf
 /// through its moment accumulators (matches the JAX `jnp.where(isfinite, …)`).
 fn sanitize(v: &Vector) -> Vector {
     v.mapv(|x| if x.is_finite() { x } else { 0.0 })
@@ -32,7 +32,7 @@ fn sanitize(v: &Vector) -> Vector {
 /// Child- and parent-side factors `(u, v)` of the descent weight gradient, such
 /// that `u[i] · v[j]` is the full gradient (shape `(n_child, n_parent[+1])`).
 ///
-/// Mirrors `vectorized_weight_gradient_factors`: `u = -δ` (scaled by the
+/// Mirrors `vectorised_weight_gradient_factors`: `u = -δ` (scaled by the
 /// child's posterior precision in `PrecisionWeighted` unless the child is
 /// binary), `v = g(parent.mean)` with a trailing `1` for the bias column.
 pub fn weight_gradient_factors(

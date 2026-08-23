@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized weight learning for deep predictive coding networks."""
+"""Vectorised weight learning for deep predictive coding networks."""
 
 from typing import Callable, NamedTuple, Optional, Union
 
@@ -20,7 +20,7 @@ SEPARABLE_KINDS: tuple = ("standard", "precision_weighted", "synaptic_uncertaint
 _EPS = 1e-30
 
 
-def learning_weights_vectorized(
+def learning_weights_vectorised(
     parent_state: LayerState,
     child_state: LayerState,
     coupling_fn: Callable,
@@ -269,7 +269,7 @@ def resolve_synaptic_uncertainty_settings(
 
     **Precision.** The increment is the curvature the data impose on that
     weight, delivered as the importance factors of
-    :func:`learning_weights_vectorized` or as a full increment matrix. It then
+    :func:`learning_weights_vectorised` or as a full increment matrix. It then
     relaxes toward the prior in precision form,
     :math:`\pi \leftarrow \pi + H - (\pi - \pi_p)/N` with
     :math:`N = \texttt{window}`. The fixed point is
@@ -477,7 +477,7 @@ def evidence_pullback(
     return jnp.where(jnp.isfinite(pulled), jnp.maximum(pulled, 0.0), 0.0)
 
 
-def vectorized_synaptic_uncertainty_update(
+def vectorised_synaptic_uncertainty_update(
     weights: jnp.ndarray,
     precision_delta: jnp.ndarray,
     gradient: jnp.ndarray,
@@ -500,7 +500,7 @@ def vectorized_synaptic_uncertainty_update(
         The descent gradient, same shape.
     importance :
         Either the factor pair ``(p, q)`` of
-        :func:`learning_weights_vectorized`, batch-averaged, whose outer product
+        :func:`learning_weights_vectorised`, batch-averaged, whose outer product
         is the increment; or a full increment matrix of the weights' shape,
         which is the exact batch contraction the evidence pass delivers.
     settings :

@@ -13,14 +13,14 @@
   <a href="https://badge.fury.io/py/pyhgf"><img src="https://badge.fury.io/py/pyhgf.svg" alt="pip"></a>
 </p>
 
-PyHGF is a Python library for creating and manipulating dynamic probabilistic networks for predictive coding. These networks approximate Bayesian inference by optimizing beliefs through the diffusion of predictions and precision-weighted prediction errors. The graph structure remains flexible during message-passing steps, allowing for dynamic adjustments. They can be used as a biologically plausible cognitive model in computational neuroscience or as a generalization of Bayesian filtering for designing efficient, modular decision-making agents. With the current version you can:
+PyHGF is a Python library for creating and manipulating dynamic probabilistic networks for predictive coding. These networks approximate Bayesian inference by optimising beliefs through the diffusion of predictions and precision-weighted prediction errors. The graph structure remains flexible during message-passing steps, allowing for dynamic adjustments. They can be used as a biologically plausible cognitive model in computational neuroscience or as a generalisation of Bayesian filtering for designing efficient, modular decision-making agents. With the current version you can:
 
-- Build arbitrarily sized networks with the **generalized Hierarchical Gaussian Filters** ([Weber et al., 2026](https://doi.org/10.7554/eLife.110174.1 ))
+- Build arbitrarily sized networks with the **generalised Hierarchical Gaussian Filters** ([Weber et al., 2026](https://doi.org/10.7554/eLife.110174.1 ))
 - Use **generalised Bayesian filtering** with distributions from the exponential family ([Mathys & Weber, 2020](https://doi.org/10.1007/978-3-030-64919-7_7))
 - Define custom **planning** and **action selection** functions throught trajectories sampling (e.g. sophisticated inference, [Friston et al., 2020](https://doi.org/10.1162/neco_a_01351))
 - Learn in **deep predictive coding networks** using a fast and scalable rethinking of prospective configuration ([Song et al., 2024](https://doi.org/10.1038/s41593-023-01514-1)) from closed-form updates and volatility learning.
 
-The framework support both a JAX and Rust backend. It is designed to be adaptable to other algorithms. The core functions are differentiable and JIT-compiled where applicable. The library is optimized for modularity and ease of use, allowing seamless integration with other libraries in the ecosystem for Bayesian inference and optimization. You can find the method paper describing the toolbox [here](https://arxiv.org/abs/2410.09206).
+The framework support both a JAX and Rust backend. It is designed to be adaptable to other algorithms. The core functions are differentiable and JIT-compiled where applicable. The library is optimised for modularity and ease of use, allowing seamless integration with other libraries in the ecosystem for Bayesian inference and optimisation. You can find the method paper describing the toolbox [here](https://arxiv.org/abs/2410.09206).
 
 * 📖 [API Documentation](https://computationalpsychiatry.github.io/pyhgf/api.html)  
 * ✏️ [Tutorials and examples](https://computationalpsychiatry.github.io/pyhgf/learn.html)  
@@ -54,9 +54,9 @@ You can find a deeper introduction to how to create and manipulate networks unde
 * 🎓 [Creating and manipulating networks of probabilistic nodes](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.2-Creating_networks.html)  
 
 
-### The Generalized Hierarchical Gaussian Filter
+### The Generalised Hierarchical Gaussian Filter
 
-Generalized Hierarchical Gaussian Filters (gHGF) are specific instances of dynamic networks where node encodes a Gaussian distribution that can inherit its value (mean) and volatility (variance) from other nodes. The presentation of a new observation at the lowest level of the hierarchy (i.e., the input node) triggers a recursive update of the nodes' belief (i.e., posterior distribution) through top-down predictions and bottom-up precision-weighted prediction errors. The resulting probabilistic network operates as a Bayesian filter, and a response function can parametrize actions/decisions given the current beliefs. By comparing those behaviours with actual outcomes, a surprise function can be optimized over a set of free parameters. The Hierarchical Gaussian Filter for binary and continuous inputs was first described in Mathys et al. (2011, 2014), and later implemented in the Matlab HGF Toolbox (part of [TAPAS](https://translationalneuromodeling.github.io/tapas) (Frässle et al. 2021).
+Generalised Hierarchical Gaussian Filters (gHGF) are specific instances of dynamic networks where node encodes a Gaussian distribution that can inherit its value (mean) and volatility (variance) from other nodes. The presentation of a new observation at the lowest level of the hierarchy (i.e., the input node) triggers a recursive update of the nodes' belief (i.e., posterior distribution) through top-down predictions and bottom-up precision-weighted prediction errors. The resulting probabilistic network operates as a Bayesian filter, and a response function can parametrise actions/decisions given the current beliefs. By comparing those behaviours with actual outcomes, a surprise function can be optimised over a set of free parameters. The Hierarchical Gaussian Filter for binary and continuous inputs was first described in Mathys et al. (2011, 2014), and later implemented in the Matlab HGF Toolbox (part of [TAPAS](https://translationalneuromodeling.github.io/tapas) (Frässle et al. 2021).
 
 You can find a deeper introduction on how does the gHGF works under the following link:
 
@@ -86,7 +86,7 @@ hgf = (
 # add new observations
 hgf.input_data(input_data=u)
 
-# visualization of the belief trajectories
+# visualisation of the belief trajectories
 hgf.plot_trajectories();
 ```
 </details>
@@ -170,7 +170,7 @@ clf_net = clf_net.add_layer(
 adam = optax.adam(1e-3)
 for epoch in range(80):
     clf_net.fit(
-        X_train, Y_train, optimizer=adam, learning_kind="standard", time_step=0.001
+        X_train, Y_train, optimiser=adam, learning_kind="standard", time_step=0.001
     )
 ```
 </details>
