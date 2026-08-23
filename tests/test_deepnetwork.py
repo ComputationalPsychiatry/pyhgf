@@ -555,6 +555,103 @@ def test_three_backends_binary_volatile():
         ), f"{label}: predictions: Python={preds_py} vs Rust={preds_rs}"
 
 
+def test_mean_field_parity_binary_volatile():
+    """DeepNetwork(mean_field_updates=True) matches Network(mean_field_updates=True).
+
+    Same architecture as ``test_three_backends_binary_volatile`` (binary output,
+    volatile intermediate/hidden/input, constant on the intermediate), run for several
+    steps with frozen weights (``lr=0``) so belief parity is tested independently of the
+    learning rule. The nodalised volatile nodes carry the ``tonic_volatility`` default
+    of -4.0, so the DeepNetwork is built with ``tonic_volatility=True``;
+    ``feedforward_uncertainty`` stays off on both sides — the mean-field prediction
+    carries no value-coupling variance.
+    """
+    n_targets = 1
+    n_hidden = 2
+    n_input = 1
+
+    np.random.seed(7)
+    x = np.random.randn(5, n_input)
+    y = np.random.choice([0.0, 1.0], size=(5, n_targets))
+
+    for volatility_updates in ["standard", "eHGF", "unbounded"]:
+        label = f"volatility_updates={volatility_updates}"
+        atol = 5e-2 if volatility_updates == "unbounded" else 1e-3
+
+        dn = (
+            DeepNetwork(
+                volatility_updates=volatility_updates,
+                tonic_volatility=True,
+                mean_field_updates=True,
+            )
+            .add_layer(size=n_targets, kind="binary")
+            .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
+            .add_layer(size=n_hidden)
+            .add_layer(size=n_input, add_constant_input=False)
+        )
+        dn.fit(x=x, y=y, optimizer=optax.sgd(0.0), check_gradient_health=False)
+
+        net = (
+            PyNetwork(volatility_updates=volatility_updates, mean_field_updates=True)
+            .add_nodes(kind="binary-state", n_nodes=n_targets)
+            .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
+            .add_nodes(kind="volatile-state", n_nodes=n_hidden, value_children=1)
+            .add_nodes(kind="constant-state", n_nodes=n_targets, value_children=1)
+            .add_nodes(kind="volatile-state", n_nodes=n_input, value_children=[2, 3])
+        )
+        x_idxs = tuple(
+            range(3 * n_targets + n_hidden, 3 * n_targets + n_hidden + n_input)
+        )
+        y_idxs = tuple(range(n_targets))
+        net.fit(x=x, y=y, inputs_x_idxs=x_idxs, inputs_y_idxs=y_idxs, lr=0.0)
+
+        # Intermediate (nodalised node 1 / JAX layer 1) and hidden (nodes
+        # 2..2+n_hidden / JAX layer 2) volatile states.
+        comparisons = [(1, 1, 0)] + [(2 * n_targets + i, 2, i) for i in range(n_hidden)]
+        for node_idx, layer_idx, pos in comparisons:
+            for field in ["mean", "precision", "mean_vol", "precision_vol"]:
+                py_val = float(net.last_attributes[node_idx][field])
+                jax_val = float(getattr(dn.state.layers[layer_idx].state, field)[pos])
+                assert np.allclose(jax_val, py_val, atol=atol), (
+                    f"{label}: node {node_idx} / layer {layer_idx}[{pos}] "
+                    f"diverge on {field}: JAX={jax_val} vs Python={py_val}"
+                )
+
+
+def test_mean_field_differs_from_relaxed():
+    """The flag changes the filter: relaxed and mean-field beliefs diverge."""
+    np.random.seed(7)
+    x = np.random.randn(5, 1)
+    y = np.random.choice([0.0, 1.0], size=(5, 1))
+
+    def run(mean_field_updates):
+        dn = (
+            DeepNetwork(tonic_volatility=True, mean_field_updates=mean_field_updates)
+            .add_layer(size=1, kind="binary")
+            .add_layer(size=1, add_constant_input=False, fully_connected=False)
+            .add_layer(size=2)
+            .add_layer(size=1, add_constant_input=False)
+        )
+        dn.fit(x=x, y=y, optimizer=optax.sgd(0.0), check_gradient_health=False)
+        return dn.state.layers[2].state.precision
+
+    assert not jnp.allclose(run(False), run(True), rtol=1e-6)
+
+
+def test_mean_field_flag_guards():
+    """The two incompatible configurations raise at their entry points."""
+    with pytest.raises(ValueError, match="feedforward_uncertainty"):
+        DeepNetwork(mean_field_updates=True, feedforward_uncertainty=True)
+
+    dn = DeepNetwork(mean_field_updates=True).add_layer(size=2).add_layer(size=3)
+    with pytest.raises(ValueError, match="synaptic_uncertainty"):
+        dn.fit(
+            x=np.zeros((1, 3)),
+            y=np.zeros((1, 2)),
+            learning_kind="synaptic_uncertainty",
+        )
+
+
 def test_add_layer_invalid_kind():
     """Invalid layer kind raises ValueError."""
     with pytest.raises(ValueError, match="Invalid layer kind"):

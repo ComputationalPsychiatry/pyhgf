@@ -21,6 +21,7 @@ def vectorized_continuous_prediction(
     volatility_parent_state: Optional[LayerState] = None,
     volatility_weights: Optional[jnp.ndarray] = None,
     is_static_leaf: bool = False,
+    mean_field_updates: bool = False,
 ) -> LayerState:
     r"""Predict expected mean and precisions for a layer of continuous nodes.
 
@@ -98,6 +99,12 @@ def vectorized_continuous_prediction(
         ``is_static_leaf=False``. Distinct from
         :attr:`~pyhgf.updates.vectorized.continuous.posterior.ValueChild.precision_is_clamped`,
         which holds for *every* clamped leaf.
+    mean_field_updates :
+        If ``True``, use the original mean-field prediction: the volatility
+        parent's MGF correction :math:`\kappa^2 / (2 \tilde{\pi})` and the value
+        parent's Laplace variance term are both dropped, so the conditional and
+        the marginal predicted precision coincide — matching
+        :func:`pyhgf.updates.prediction.continuous.predict_precision_mean_field`.
 
     Returns
     -------
@@ -121,25 +128,28 @@ def vectorized_continuous_prediction(
     )
 
     # 2. Total volatility, with the MGF correction κ²/(2 π̃) that treats the
-    # volatility parent as a full Gaussian rather than a point estimate.
+    # volatility parent as a full Gaussian rather than a point estimate; the
+    # mean-field scheme keeps the point estimate and drops the correction.
     total_volatility = params.tonic_volatility
     if volatility_parent_state is not None:
         assert volatility_weights is not None
         total_volatility = total_volatility + jnp.matmul(
             volatility_weights, volatility_parent_state.expected_mean
         )
-        total_volatility = total_volatility + jnp.matmul(
-            volatility_weights**2,
-            1.0 / (2.0 * volatility_parent_state.expected_precision),
-        )
+        if not mean_field_updates:
+            total_volatility = total_volatility + jnp.matmul(
+                volatility_weights**2,
+                1.0 / (2.0 * volatility_parent_state.expected_precision),
+            )
     predicted_volatility = time_step * jnp.exp(total_volatility)
     predicted_volatility = jnp.where(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
     # 3. Laplace value-coupling variance: Σ_b (t · W_ab · g'(μ̂_b))² / π̃_b.
+    # Absent under mean-field, where value parents enter at their means alone.
     value_coupling_variance = jnp.zeros_like(child_state.precision)
-    if value_parent_state is not None:
+    if value_parent_state is not None and not mean_field_updates:
         assert weights is not None and coupling_fn is not None
         g_prime = vmap(grad(coupling_fn))(value_parent_state.expected_mean)
         value_coupling_variance = (time_step**2) * jnp.matmul(

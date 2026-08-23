@@ -19,6 +19,7 @@ def vectorized_posterior_update_precision_value_level(
     weights: jnp.ndarray,
     coupling_fn: Callable,
     child_is_input_layer: bool = False,
+    mean_field_updates: bool = False,
 ) -> jnp.ndarray:
     r"""Update the precision of the value level for all nodes in a layer.
 
@@ -86,6 +87,11 @@ def vectorized_posterior_update_precision_value_level(
         :math:`\pi_a` for a continuous leaf, so :math:`\pi_y = 0` and the
         harmonic-combination form would incorrectly zero out the contribution.
         Defaults to ``False`` (interior child, full smoothing correction).
+    mean_field_updates :
+        If ``True``, skip the smoothing correction entirely and weight every
+        child contribution by the canonical predicted precision
+        :math:`\tilde{\pi}_a` — the original mean-field update
+        (:func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level_mean_field`).
 
     Returns
     -------
@@ -116,7 +122,11 @@ def vectorized_posterior_update_precision_value_level(
     # leaves carry no value-coupling bleed-through) so π_y = 0 and the harmonic
     # form would zero out. Short-circuit to the canonical predicted-precision
     # factor, matching the paper's Limit 3 (π_a → ∞).
-    if child_is_input_layer:
+    if mean_field_updates:
+        # Mean-field: canonical predicted precision for every child, leaf or
+        # interior (a leaf's marginal equals its conditional anyway).
+        effective_child_precision = child.expected_precision
+    elif child_is_input_layer:
         effective_child_precision = child.conditional_expected_precision
     else:
         pi_y = child.precision - child.expected_precision
@@ -152,6 +162,7 @@ def vectorized_posterior_update_mean_value_level(
     weights: jnp.ndarray,
     coupling_fn: Callable,
     posterior_precision: jnp.ndarray,
+    mean_field_updates: bool = False,
 ) -> jnp.ndarray:
     r"""Update the mean of the value level for all nodes in a layer.
 
@@ -197,6 +208,10 @@ def vectorized_posterior_update_mean_value_level(
         Already-updated value-level posterior precision :math:`\pi_b` for the
         parent layer; the precision-weighted PE is divided by this once, after
         accumulating across children.
+    mean_field_updates :
+        If ``True``, replace the joint-Gaussian gain by the canonical predicted
+        precision :math:`\tilde{\pi}_a` — the original mean-field update
+        (:func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level_mean_field`).
 
     Returns
     -------
@@ -219,12 +234,15 @@ def vectorized_posterior_update_mean_value_level(
     # element of P^{-1}h selected by the mean update versus the precision update.
     # For leaves PyHGF keeps π_a = π̃_a, so π_y = 0 and g_a → π̂_a, matching the
     # canonical leaf treatment used by the precision update.
-    pi_y = child.precision - child.expected_precision
-    gain_precision = (
-        child.conditional_expected_precision
-        * child.precision
-        / (child.conditional_expected_precision + pi_y)
-    )
+    if mean_field_updates:
+        gain_precision = child.expected_precision
+    else:
+        pi_y = child.precision - child.expected_precision
+        gain_precision = (
+            child.conditional_expected_precision
+            * child.precision
+            / (child.conditional_expected_precision + pi_y)
+        )
     weighted_pe = (
         jnp.matmul(weights.T, gain_precision * child.value_prediction_error)
         * coupling_prime
@@ -244,6 +262,7 @@ def vectorized_layer_posterior_update(
     parent_has_constant: bool = False,
     max_posterior_precision: float = 1e10,
     child_is_input_layer: bool = False,
+    mean_field_updates: bool = False,
 ) -> LayerState:
     """Update the value-level posterior for all nodes in a parent layer.
 
@@ -273,6 +292,9 @@ def vectorized_layer_posterior_update(
         If True, the child is the clamped observation leaf (binary or
         continuous output). The smoothing correction reduces to the
         canonical contribution (paper's Limit 3). Defaults to ``False``.
+    mean_field_updates :
+        If ``True``, both helpers use the original mean-field forms (canonical
+        child predicted precision, no smoothing correction).
 
     Returns
     -------
@@ -291,13 +313,19 @@ def vectorized_layer_posterior_update(
             weights,
             coupling_fn,
             child_is_input_layer=child_is_input_layer,
+            mean_field_updates=mean_field_updates,
         ),
         layer.expected_precision,
         max_posterior_precision,
     )
 
     posterior_mean = vectorized_posterior_update_mean_value_level(
-        layer, child, weights, coupling_fn, posterior_precision
+        layer,
+        child,
+        weights,
+        coupling_fn,
+        posterior_precision,
+        mean_field_updates=mean_field_updates,
     )
 
     return dataclasses.replace(

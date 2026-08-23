@@ -148,6 +148,7 @@ def vectorized_layer_volatility_posterior_ehgf(
     params: LayerParams,
     time_step: float,
     max_posterior_precision: float = 1e10,
+    mean_field_updates: bool = False,
 ) -> LayerState:
     """EHGF volatility-level posterior update (mean first, then safe precision).
 
@@ -172,6 +173,11 @@ def vectorized_layer_volatility_posterior_ehgf(
     max_posterior_precision :
         Upper bound applied to the volatility-level posterior precision.
         Default ``1e10``.
+    mean_field_updates :
+        Whether the prediction step ran the mean-field scheme. The reconstruction
+        of the pre-prediction variance must subtract exactly the predicted
+        volatility the prediction step added, so the MGF correction is dropped
+        here when it was dropped there.
 
     Returns
     -------
@@ -197,11 +203,10 @@ def vectorized_layer_volatility_posterior_ehgf(
     # Reconstruct the value level's previous variance (= 1/precision_prev) exactly:
     #   1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
     # so subtracting predicted_volatility cancels back to 1/precision_prev.
-    predicted_volatility = time_step * jnp.exp(
-        tonic_volatility
-        + layer.expected_mean_vol
-        + 1.0 / (2.0 * layer.expected_precision_vol)
-    )
+    log_volatility = tonic_volatility + layer.expected_mean_vol
+    if not mean_field_updates:
+        log_volatility = log_volatility + 1.0 / (2.0 * layer.expected_precision_vol)
+    predicted_volatility = time_step * jnp.exp(log_volatility)
     previous_variance = jnp.maximum(
         1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
     )
@@ -241,6 +246,7 @@ def vectorized_layer_volatility_posterior_unbounded(
     params: LayerParams,
     time_step: float,
     max_posterior_precision: float = 1e10,
+    mean_field_updates: bool = False,
 ) -> LayerState:
     """Unbounded volatility-level posterior update (Lambert W₀ dual-quadratic).
 
@@ -263,6 +269,9 @@ def vectorized_layer_volatility_posterior_unbounded(
     max_posterior_precision :
         Upper bound applied to the volatility-level posterior precision.
         Default ``1e10``.
+    mean_field_updates :
+        Whether the prediction step ran the mean-field scheme — the MGF term is
+        then absent from the reconstruction below, as it was from the prediction.
 
     Returns
     -------
@@ -279,16 +288,16 @@ def vectorized_layer_volatility_posterior_unbounded(
     # precision. The prediction step sets
     #     1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
     # where predicted_volatility carries the full log-volatility exponent, including
-    # the MGF correction 1 / (2 * pihat_vol). Subtracting the same predicted_volatility
-    # cancels back to 1/precision_prev. Using the marginal expected_precision here would
-    # leave the value-coupling variance behind, and omitting the MGF term would leave
-    # that behind — both were latent errors that only surfaced once value coupling
-    # shifted the operating point. Volatility coupling is fixed at 1.
-    predicted_volatility = time_step * jnp.exp(
-        tonic_volatility
-        + layer.expected_mean_vol
-        + 1.0 / (2.0 * layer.expected_precision_vol)
-    )
+    # the MGF correction 1 / (2 * pihat_vol) unless the prediction ran mean-field.
+    # Subtracting the same predicted_volatility cancels back to 1/precision_prev.
+    # Using the marginal expected_precision here would leave the value-coupling
+    # variance behind, and a mismatched MGF term would leave that behind — both were
+    # latent errors that only surfaced once value coupling shifted the operating
+    # point. Volatility coupling is fixed at 1.
+    log_volatility = tonic_volatility + layer.expected_mean_vol
+    if not mean_field_updates:
+        log_volatility = log_volatility + 1.0 / (2.0 * layer.expected_precision_vol)
+    predicted_volatility = time_step * jnp.exp(log_volatility)
     previous_variance = jnp.maximum(
         1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
     )
@@ -424,6 +433,7 @@ def vectorized_layer_prediction_error(
     time_step: float = 1.0,
     has_volatility_parent: bool = True,
     max_posterior_precision: float = 1e10,
+    mean_field_updates: bool = False,
 ) -> LayerState:
     """Compute prediction errors and apply the volatility-level posterior update.
 
@@ -454,6 +464,10 @@ def vectorized_layer_prediction_error(
     max_posterior_precision :
         Upper bound applied to the volatility-level posterior precision.
         Default ``1e10``.
+    mean_field_updates :
+        Whether the prediction step ran the mean-field scheme; threaded into the
+        eHGF and unbounded variance reconstructions so they subtract exactly what
+        the prediction added.
 
     Returns
     -------
@@ -471,7 +485,11 @@ def vectorized_layer_prediction_error(
 
     if volatility_updates == "eHGF":
         layer = vectorized_layer_volatility_posterior_ehgf(
-            layer, params, time_step, max_posterior_precision=max_posterior_precision
+            layer,
+            params,
+            time_step,
+            max_posterior_precision=max_posterior_precision,
+            mean_field_updates=mean_field_updates,
         )
     elif volatility_updates == "standard":
         layer = vectorized_layer_volatility_posterior_standard(
@@ -483,6 +501,7 @@ def vectorized_layer_prediction_error(
             params,
             time_step,
             max_posterior_precision=max_posterior_precision,
+            mean_field_updates=mean_field_updates,
         )
 
     return layer

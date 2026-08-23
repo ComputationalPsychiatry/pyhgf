@@ -120,6 +120,60 @@ def test_classic_three_level(volatility_updates):
     assert_parity(nod, vec, {0: (0, 0), 1: (1, 0), 2: (2, 0)})
 
 
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF", "unbounded"])
+def test_mean_field_three_level(volatility_updates):
+    """Mean-field parity on the classic 3-level continuous HGF.
+
+    Both backends run with ``mean_field_updates=True``: no MGF correction in the log-
+    volatility exponent, no Laplace value-coupling variance, and canonical child
+    precisions in the posterior messages.
+    """
+    nod = (
+        Network(volatility_updates=volatility_updates, mean_field_updates=True)
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=1)
+        .input_data(input_data=U)
+    )
+    vec = (
+        DeepNetwork(volatility_updates=volatility_updates, mean_field_updates=True)
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+        .add_layer(
+            1,
+            kind="continuous",
+            volatility_children=1,
+            volatility_fully_connected=(volatility_updates != "unbounded"),
+        )
+        .input_data(U, record=FIELDS)
+    )
+    assert_parity(nod, vec, {0: (0, 0), 1: (1, 0), 2: (2, 0)})
+
+
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF"])
+def test_mean_field_fully_connected(volatility_updates):
+    """Mean-field parity on dense width-2 layers with a dense volatility parent."""
+    nod = (
+        Network(volatility_updates=volatility_updates, mean_field_updates=True)
+        .add_nodes(n_nodes=2)
+        .add_nodes(n_nodes=2, value_children=([0, 1], [0.5, 0.5]))
+        .add_nodes(volatility_children=[2, 3])
+        .input_data(input_data=jnp.stack([U, U * 0.5 + 0.1], axis=1))
+    )
+    vec = (
+        DeepNetwork(volatility_updates=volatility_updates, mean_field_updates=True)
+        .add_layer(2, kind="continuous")
+        .add_layer(2, kind="continuous")
+        .add_layer(1, kind="continuous", volatility_children=1)
+        .input_data(jnp.stack([U, U * 0.5 + 0.1], axis=1), record=FIELDS)
+    )
+    assert_parity(
+        nod,
+        vec,
+        {0: (0, 0), 1: (0, 1), 2: (1, 0), 3: (1, 1), 4: (2, 0)},
+    )
+
+
 @pytest.mark.parametrize("volatility_updates", ["standard", "eHGF"])
 def test_fully_connected_layers(volatility_updates):
     """Width-2 layers with dense value coupling and a dense volatility parent.

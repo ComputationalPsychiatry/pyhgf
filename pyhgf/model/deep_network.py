@@ -121,6 +121,10 @@ class DeepNetwork:
         Upper bound applied to every posterior precision write. Defaults to ``1e10``.
     update_input_layer :
         Whether the belief sweeps reach the top (input) layer. Defaults to ``False``.
+    mean_field_updates :
+        If ``False`` (default), use the relaxed prediction and posterior updates. If
+        ``True``, use the original mean-field updates, matching the ``Network``
+        class.
 
     Examples
     --------
@@ -160,6 +164,7 @@ class DeepNetwork:
         predict_precision: bool = True,
         feedforward_uncertainty: bool = False,
         tonic_volatility: bool = False,
+        mean_field_updates: bool = False,
     ):
         r"""Initialize a VectorizedDeepNetwork.
 
@@ -210,7 +215,27 @@ class DeepNetwork:
             ``volatility_parent=False`` still diffuses at the fixed rate
             :math:`\exp(\omega)`. Setting the value to ``0.0`` on a layer with a
             volatility parent is exactly neutral.
+        mean_field_updates :
+            If ``False`` (default), use the relaxed prediction and posterior
+            updates, which lift the mean-field assumption on value-coupling edges
+            via Schur-complement and Laplace/MGF corrections. If ``True``, use the
+            original mean-field updates, matching
+            ``Network(mean_field_updates=True)``: the log-volatility exponent
+            carries no MGF correction, and every value message is weighted by the
+            child's canonical predicted precision instead of the smoothing
+            factors. The mean-field scheme carries no value-coupling variance, so
+            combining it with ``feedforward_uncertainty=True`` raises a
+            ``ValueError``; ``learning_kind='synaptic_uncertainty'`` is likewise
+            unavailable, since its curvature and evidence terms are derived from
+            the relaxed precisions.
         """
+        if mean_field_updates and feedforward_uncertainty:
+            raise ValueError(
+                "mean_field_updates=True is incompatible with "
+                "feedforward_uncertainty=True: the mean-field prediction treats "
+                "value parents as point estimates, so there is no value-coupling "
+                "variance to propagate."
+            )
         self.coupling_fn = coupling_fn
         self.volatility_updates = volatility_updates
         self.max_posterior_precision = float(max_posterior_precision)
@@ -219,6 +244,7 @@ class DeepNetwork:
         self.predict_precision = bool(predict_precision)
         self.feedforward_uncertainty = bool(feedforward_uncertainty)
         self.tonic_volatility = bool(tonic_volatility)
+        self.mean_field_updates = bool(mean_field_updates)
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -962,6 +988,7 @@ class DeepNetwork:
             update_input_layer=self.update_input_layer,
             predict_precision=self.predict_precision,
             feedforward_uncertainty=self.feedforward_uncertainty,
+            mean_field_updates=self.mean_field_updates,
         )
 
     def _fan_in_matrix(
@@ -1072,6 +1099,7 @@ class DeepNetwork:
             update_input_layer=self.update_input_layer,
             predict_precision=self.predict_precision,
             feedforward_uncertainty=self.feedforward_uncertainty,
+            mean_field_updates=self.mean_field_updates,
         )
 
     def install_weight_belief(
@@ -1303,6 +1331,14 @@ class DeepNetwork:
                     f"learning_kind='synaptic_uncertainty', not by {learning_kind!r}."
                 )
             return learning_kind, None
+
+        if self.mean_field_updates:
+            raise ValueError(
+                "learning_kind='synaptic_uncertainty' is derived from the "
+                "relaxed updates (its curvature and evidence terms read the "
+                "smoothing-corrected precisions) and is not available with "
+                "mean_field_updates=True."
+            )
 
         # Resolved before the belief is installed, so invalid settings raise
         # without leaving the network half-configured.

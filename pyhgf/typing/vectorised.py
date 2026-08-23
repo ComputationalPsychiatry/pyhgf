@@ -454,6 +454,10 @@ class Network(eqx.Module):
     feedforward_uncertainty :
         Whether value parents propagate their uncertainty to their children's
         predicted precision — see :class:`pyhgf.model.DeepNetwork`.
+    mean_field_updates :
+        If ``False`` (default), use the relaxed prediction and posterior updates.
+        If ``True``, use the original mean-field updates — see
+        :class:`pyhgf.model.DeepNetwork`.
     """
 
     layers: tuple
@@ -463,6 +467,7 @@ class Network(eqx.Module):
     update_input_layer: bool = field(static=True, default=False)
     predict_precision: bool = field(static=True, default=True)
     feedforward_uncertainty: bool = field(static=True, default=False)
+    mean_field_updates: bool = field(static=True, default=False)
 
     @property
     def n_layers(self) -> int:
