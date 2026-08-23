@@ -13,7 +13,7 @@ use crate::vectorised::layer::{
     DeepNet, LayerConfig, LayerKind, VolatilityUpdate, LAYER_STATE_FIELDS,
 };
 use crate::vectorised::mat::{Float, Matrix};
-use crate::vectorised::optimiser::{OptState, Optimizer};
+use crate::vectorised::optimiser::{OptState, Optimiser};
 use numpy::{PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -28,13 +28,13 @@ pub struct DeepNetwork {
     /// builder), so it is `Some` whenever `configs` is non-empty and
     /// construction errors surface at the offending `add_layer` call.
     net: Option<DeepNet>,
-    /// Optimizer state, allocated on the first `fit` after a (re)build and
-    /// reset whenever `fit` is called with a different optimizer.
+    /// Optimiser state, allocated on the first `fit` after a (re)build and
+    /// reset whenever `fit` is called with a different optimiser.
     opt_state: Option<OptState>,
-    /// The optimizer used by the previous `fit` call (for the reset-on-change
+    /// The optimiser used by the previous `fit` call (for the reset-on-change
     /// semantics, mirroring the JAX class re-initialising on a new optax
     /// object).
-    last_optimizer: Option<Optimizer>,
+    last_optimiser: Option<Optimiser>,
     /// Reusable scratch memory for `batch_update`: the batched per-chunk
     /// states persist across calls, so repeated steps at the same batch size
     /// allocate nothing. Cleared on every rebuild.
@@ -88,7 +88,7 @@ impl DeepNetwork {
         );
         self.net = Some(net);
         self.opt_state = None;
-        self.last_optimizer = None;
+        self.last_optimiser = None;
         self.batch_workspace = BatchWorkspace::default();
         self.forward_cache = None;
         Ok(())
@@ -199,13 +199,13 @@ fn extract_for_fit(x: &Bound<'_, PyAny>, expected_cols: usize, name: &str) -> Py
     Ok(mat)
 }
 
-/// Parse an optimizer name (`"adam"` or `"sgd"`) into an [`Optimizer`].
-fn parse_optimizer(name: &str, learning_rate: Float) -> PyResult<Optimizer> {
+/// Parse an optimiser name (`"adam"` or `"sgd"`) into an [`Optimiser`].
+fn parse_optimiser(name: &str, learning_rate: Float) -> PyResult<Optimiser> {
     match name.to_lowercase().as_str() {
-        "adam" => Ok(Optimizer::adam(learning_rate)),
-        "sgd" => Ok(Optimizer::sgd(learning_rate)),
+        "adam" => Ok(Optimiser::adam(learning_rate)),
+        "sgd" => Ok(Optimiser::sgd(learning_rate)),
         other => Err(PyValueError::new_err(format!(
-            "Unknown optimizer '{other}'. Use 'adam' or 'sgd'."
+            "Unknown optimiser '{other}'. Use 'adam' or 'sgd'."
         ))),
     }
 }
@@ -257,7 +257,7 @@ impl DeepNetwork {
             configs: Vec::new(),
             net: None,
             opt_state: None,
-            last_optimizer: None,
+            last_optimiser: None,
             batch_workspace: BatchWorkspace::default(),
             forward_cache: None,
             volatility_updates,
@@ -399,11 +399,11 @@ impl DeepNetwork {
 
     /// Train on `(x, y)`: prediction + update + weight learning per sample.
     /// Returns the per-sample output predictions `(n_samples, n_output)`.
-    /// Passing a different optimizer (or learning rate) than the previous call
-    /// resets the optimizer state, mirroring the JAX class.
+    /// Passing a different optimiser (or learning rate) than the previous call
+    /// resets the optimiser state, mirroring the JAX class.
     #[pyo3(signature = (
         x, y,
-        optimizer = "adam",
+        optimiser = "adam",
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
         weight_update = true,
@@ -415,13 +415,13 @@ impl DeepNetwork {
         py: Python<'py>,
         x: Bound<'py, PyAny>,
         y: Bound<'py, PyAny>,
-        optimizer: &str,
+        optimiser: &str,
         learning_rate: Float,
         learning_kind: &str,
         weight_update: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
-        let opt = parse_optimizer(optimizer, learning_rate)?;
+        let opt = parse_optimiser(optimiser, learning_rate)?;
         let kind = parse_weight_kind(learning_kind)?;
 
         slf.forward_cache = None;
@@ -437,11 +437,11 @@ impl DeepNetwork {
         }
 
         let this = &mut *slf;
-        // Reset the optimizer state when the optimizer changed since the last
+        // Reset the optimiser state when the optimiser changed since the last
         // fit (JAX re-initialises opt_state on a new optax object).
-        if this.last_optimizer != Some(opt) {
+        if this.last_optimiser != Some(opt) {
             this.opt_state = None;
-            this.last_optimizer = Some(opt);
+            this.last_optimiser = Some(opt);
         }
         if this.opt_state.is_none() {
             this.opt_state = Some(OptState::init(this.net.as_ref().unwrap()));
@@ -478,7 +478,7 @@ impl DeepNetwork {
     /// are then averaged and applied once, so the whole batch counts as a
     /// single observation. This differs from `fit`, which scans samples
     /// sequentially and lets the precisions adapt from one sample to the
-    /// next. `optimizer=None` (default) freezes the weights; pass `"adam"` or
+    /// next. `optimiser=None` (default) freezes the weights; pass `"adam"` or
     /// Forward phase of the two-phase batch step: predict the batch and keep
     /// the swept states cached, returning the output layer's expected means,
     /// shape `(n_samples, n_output_features)`. Pair with
@@ -524,7 +524,7 @@ impl DeepNetwork {
     /// `batch_update` does.
     #[pyo3(signature = (
         error,
-        optimizer = None,
+        optimiser = None,
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
         update_precisions = true,
@@ -535,14 +535,14 @@ impl DeepNetwork {
         mut slf: PyRefMut<'py, Self>,
         py: Python<'py>,
         error: Bound<'py, PyAny>,
-        optimizer: Option<&str>,
+        optimiser: Option<&str>,
         learning_rate: Float,
         learning_kind: &str,
         update_precisions: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
-        let opt = optimizer
-            .map(|name| parse_optimizer(name, learning_rate))
+        let opt = optimiser
+            .map(|name| parse_optimiser(name, learning_rate))
             .transpose()?;
         let kind = parse_weight_kind(learning_kind)?;
         slf.require_net()?;
@@ -564,9 +564,9 @@ impl DeepNetwork {
         }
         let this = &mut *slf;
         if let Some(opt) = opt {
-            if this.last_optimizer != Some(opt) {
+            if this.last_optimiser != Some(opt) {
                 this.opt_state = None;
-                this.last_optimizer = Some(opt);
+                this.last_optimiser = Some(opt);
             }
             if this.opt_state.is_none() {
                 this.opt_state = Some(OptState::init(this.net.as_ref().unwrap()));
@@ -599,7 +599,7 @@ impl DeepNetwork {
     /// squared-error loss gradient with respect to the predictors.
     #[pyo3(signature = (
         x, y,
-        optimizer = None,
+        optimiser = None,
         learning_rate = 1e-3,
         learning_kind = "precision_weighted",
         update_precisions = true,
@@ -611,14 +611,14 @@ impl DeepNetwork {
         py: Python<'py>,
         x: Bound<'py, PyAny>,
         y: Bound<'py, PyAny>,
-        optimizer: Option<&str>,
+        optimiser: Option<&str>,
         learning_rate: Float,
         learning_kind: &str,
         update_precisions: bool,
         time_step: Float,
     ) -> PyResult<Py<PyAny>> {
-        let opt = optimizer
-            .map(|name| parse_optimizer(name, learning_rate))
+        let opt = optimiser
+            .map(|name| parse_optimiser(name, learning_rate))
             .transpose()?;
         let kind = parse_weight_kind(learning_kind)?;
 
@@ -657,9 +657,9 @@ impl DeepNetwork {
         this.forward_cache = None;
         if let Some(opt) = opt {
             // Same reset-on-change semantics as `fit`.
-            if this.last_optimizer != Some(opt) {
+            if this.last_optimiser != Some(opt) {
                 this.opt_state = None;
-                this.last_optimizer = Some(opt);
+                this.last_optimiser = Some(opt);
             }
             if this.opt_state.is_none() {
                 this.opt_state = Some(OptState::init(this.net.as_ref().unwrap()));
@@ -667,7 +667,7 @@ impl DeepNetwork {
         }
         let net = this.net.as_mut().unwrap();
         // A stale opt_state from an earlier call is inert without an
-        // optimizer: the engine only steps the weights when both are given.
+        // optimiser: the engine only steps the weights when both are given.
         let opt_state = this.opt_state.as_mut();
         let workspace = &mut this.batch_workspace;
 

@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Vectorized prediction for categorical state node layers."""
+"""Vectorised prediction for categorical state node layers."""
 
 import dataclasses
 from typing import Callable
@@ -11,7 +11,7 @@ import jax.numpy as jnp
 from pyhgf.typing.vectorised import LayerState
 
 
-def vectorized_categorical_prediction(
+def vectorised_categorical_prediction(
     child_state: LayerState,
     parent_state: LayerState,
     weights: jnp.ndarray,
@@ -36,10 +36,10 @@ def vectorized_categorical_prediction(
     the weight gradients coincide with the cross-entropy backpropagation quantities.
 
     The softmax couples the nodes within the single categorical layer: each class's
-    expected mean depends on every class's logit through the shared normalization, so
+    expected mean depends on every class's logit through the shared normalisation, so
     the nodes are not independently local. The layer acts as one joint unit. That unit
     is still local with respect to the rest of the network: it reads only its parent's
-    state and routes its residual back to that parent. No global normalization or
+    state and routes its residual back to that parent. No global normalisation or
     non-local dependency exists beyond the within-layer softmax.
 
     Parameters

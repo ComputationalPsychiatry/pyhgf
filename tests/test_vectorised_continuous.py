@@ -1,9 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Parity tests: vectorized continuous layers vs.
+"""Parity tests: vectorised continuous layers vs.
 
 the nodalised backend. Every test builds the same topology twice — once with the
-nodalised :class:`pyhgf.model.Network`, once with the vectorized
+nodalised :class:`pyhgf.model.Network`, once with the vectorised
 :class:`pyhgf.model.DeepNetwork` continuous layers — runs the same observations through
 both, and compares the per-node trajectories.
 
@@ -19,14 +19,14 @@ import pytest
 from pyhgf.model import Network
 from pyhgf.model.deep_network import DeepNetwork
 from pyhgf.typing.vectorised import LayerParams, LayerStack, LayerState
-from pyhgf.updates.vectorized.continuous import (
+from pyhgf.updates.vectorised.continuous import (
     ValueChild,
     VolatilityChild,
-    vectorized_continuous_posterior_update,
-    vectorized_continuous_posterior_update_ehgf,
-    vectorized_continuous_posterior_update_standard,
+    vectorised_continuous_posterior_update,
+    vectorised_continuous_posterior_update_ehgf,
+    vectorised_continuous_posterior_update_standard,
 )
-from pyhgf.utils.vectorized_belief_propagation import run_continuous_scan
+from pyhgf.utils.vectorised_belief_propagation import run_continuous_scan
 
 U = jnp.array([0.2, 0.5, -0.3, 1.0, 0.1, -0.7, 0.4])
 FIELDS = ("mean", "precision", "expected_mean", "expected_precision")
@@ -39,10 +39,10 @@ def _state(**fields) -> LayerState:
 
 
 def assert_parity(nod: Network, vec: DeepNetwork, node_to_layer: dict):
-    """Compare nodalised node trajectories against vectorized layer trajectories.
+    """Compare nodalised node trajectories against vectorised layer trajectories.
 
     ``node_to_layer`` maps a nodalised node index to ``(layer_idx, node_idx)`` in the
-    vectorized network.
+    vectorised network.
     """
     for node, (layer, pos) in node_to_layer.items():
         for field in FIELDS:
@@ -422,7 +422,7 @@ def test_builder_validation():
 
     net = DeepNetwork().add_layer(2, kind="continuous").add_layer(2, kind="continuous")
     with pytest.raises(ValueError, match="input_data"):
-        net.fit(jnp.zeros((3, 2)), jnp.zeros((3, 2)), optimizer=optax.sgd(0.1))
+        net.fit(jnp.zeros((3, 2)), jnp.zeros((3, 2)), optimiser=optax.sgd(0.1))
     with pytest.raises(ValueError, match="input_data"):
         net.predict(jnp.zeros((3, 2)))
 
@@ -667,10 +667,10 @@ def test_ehgf_with_a_value_child_only():
     parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
     child = _value_child()
 
-    standard = vectorized_continuous_posterior_update_standard(
+    standard = vectorised_continuous_posterior_update_standard(
         parent, value_child=child
     )
-    ehgf = vectorized_continuous_posterior_update_ehgf(parent, value_child=child)
+    ehgf = vectorised_continuous_posterior_update_ehgf(parent, value_child=child)
 
     # A linear coupling has g'' = 0, so the precision increment does not depend
     # on where the derivatives are evaluated and the two schemes agree.
@@ -690,7 +690,7 @@ def test_posterior_dispatch_errors():
     parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
 
     with pytest.raises(ValueError, match="pure volatility parents"):
-        vectorized_continuous_posterior_update(
+        vectorised_continuous_posterior_update(
             parent,
             value_child=_value_child(),
             volatility_child=_volatility_child(),
@@ -698,7 +698,7 @@ def test_posterior_dispatch_errors():
         )
 
     with pytest.raises(ValueError, match="Invalid volatility_updates"):
-        vectorized_continuous_posterior_update(
+        vectorised_continuous_posterior_update(
             parent,
             volatility_child=_volatility_child(),
             volatility_updates="nonsense",

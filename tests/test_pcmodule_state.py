@@ -92,17 +92,17 @@ class TestDeepNetworkAdapterState:
             adapter.init_state()
 
     def test_init_state_with_frozen_weights(self, simple_network):
-        """init_state() with optimizer=None has opt_state=None."""
+        """init_state() with optimiser=None has opt_state=None."""
         network, opt_state = DeepNetworkAdapter(
-            simple_network, optimizer=None
+            simple_network, optimiser=None
         ).init_state()
         assert network is not None
         assert opt_state is None
 
-    def test_init_state_with_optimizer(self, simple_network):
-        """init_state() with optimizer initializes opt_state."""
+    def test_init_state_with_optimiser(self, simple_network):
+        """init_state() with optimiser initialises opt_state."""
         network, opt_state = DeepNetworkAdapter(
-            simple_network, optimizer=optax.sgd(0.1)
+            simple_network, optimiser=optax.sgd(0.1)
         ).init_state()
         assert network is not None
         assert opt_state is not None
@@ -232,9 +232,9 @@ class TestBackwardCompatibility:
     def test_existing_deep_network_adapter_construction(self):
         """DeepNetworkAdapter construction works unchanged."""
         net = DeepNetwork().add_layer(4).add_layer(8)
-        adapter = DeepNetworkAdapter(net, optimizer=optax.adam(1e-3))
+        adapter = DeepNetworkAdapter(net, optimiser=optax.adam(1e-3))
         assert adapter.net is net
-        assert adapter.optimizer is not None
+        assert adapter.optimiser is not None
 
     def test_existing_sequential_construction(self):
         """PCSequential construction works unchanged."""

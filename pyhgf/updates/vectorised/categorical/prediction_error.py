@@ -1,13 +1,13 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Vectorized prediction error for categorical state node layers."""
+"""Vectorised prediction error for categorical state node layers."""
 
 import dataclasses
 
 from pyhgf.typing.vectorised import LayerState
 
 
-def vectorized_categorical_prediction_error(
+def vectorised_categorical_prediction_error(
     layer: LayerState,
 ) -> LayerState:
     r"""Compute the prediction error of a categorical state node layer.

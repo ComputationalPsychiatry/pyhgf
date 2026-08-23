@@ -1,5 +1,5 @@
 //! Vectorised kernels for volatile-node layers (a value level plus an internal
-//! volatility level), mirroring `pyhgf/updates/vectorized/volatile/`.
+//! volatility level), mirroring `pyhgf/updates/vectorised/volatile/`.
 
 use crate::vectorised::mat::Float;
 pub mod posterior;

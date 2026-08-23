@@ -49,8 +49,8 @@ def test_fit():
                 .add_layer(size=n_input)
                 .weight_initialisation("xavier", key=jax.random.key(42))
             )
-            optimizer = optax.adam(1e-3) if lr == "adam" else optax.sgd(lr)
-            dn.fit(x=x, y=y, optimizer=optimizer, learning_kind=kind)
+            optimiser = optax.adam(1e-3) if lr == "adam" else optax.sgd(lr)
+            dn.fit(x=x, y=y, optimiser=optimiser, learning_kind=kind)
             preds_dn = dn.predict(np.array([[0.5]]))
 
             assert np.all(np.isfinite(np.asarray(preds_dn))), (
@@ -125,9 +125,9 @@ def test_categorical_learns_separable_classes():
     accuracy to one.
     """
     rng = np.random.default_rng(0)
-    centers = np.array([[0.0, 2.0], [-2.0, -1.0], [2.0, -1.0]], dtype=np.float32)
+    centres = np.array([[0.0, 2.0], [-2.0, -1.0], [2.0, -1.0]], dtype=np.float32)
     labels = np.repeat([0, 1, 2], 30)
-    x = (centers[labels] + rng.normal(scale=0.25, size=(90, 2))).astype(np.float32)
+    x = (centres[labels] + rng.normal(scale=0.25, size=(90, 2))).astype(np.float32)
     y_onehot = np.eye(3, dtype=np.float32)[labels]
 
     net = DeepNetwork(coupling_fn=jax.nn.leaky_relu).add_layer(
@@ -147,7 +147,7 @@ def test_categorical_learns_separable_classes():
         net.fit(
             jnp.array(x),
             jnp.array(y_onehot),
-            optimizer=adam,
+            optimiser=adam,
             learning_kind="standard",
             time_step=0.001,
         )
@@ -170,7 +170,7 @@ def test_predict():
         .add_layer(size=n_hidden)
         .add_layer(size=n_predictors)
     )
-    dn.fit(x=x_train, y=y_train, optimizer=optax.adam(1e-3))
+    dn.fit(x=x_train, y=y_train, optimiser=optax.adam(1e-3))
     preds = dn.predict(x_test)
 
     assert preds.shape == (3, n_targets)
@@ -186,7 +186,7 @@ def test_predict():
         .add_layer(size=n_hidden)
         .add_layer(size=n_predictors)
     )
-    dn_untrained.fit(x=x_train[:1], y=y_train[:1], optimizer=optax.sgd(0.0))
+    dn_untrained.fit(x=x_train[:1], y=y_train[:1], optimiser=optax.sgd(0.0))
     assert not np.allclose(preds, dn_untrained.predict(x_test), atol=1e-3)
 
 
@@ -289,7 +289,7 @@ def test_reset():
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     x = np.random.randn(5, 3)
     y = np.random.randn(5, 2)
-    dn.fit(x, y, optimizer=optax.sgd(0.1))
+    dn.fit(x, y, optimiser=optax.sgd(0.1))
     assert dn.state is not None
     assert dn.predictions is not None
 
@@ -298,7 +298,7 @@ def test_reset():
     # re-initialised to uniform weights. JIT caches live inside
     # ``eqx.filter_jit`` now; no instance-side bookkeeping to check.
     assert dn.opt_state is None
-    assert dn._optimizer is None
+    assert dn._optimiser is None
 
 
 def test_fully_connected_false():
@@ -327,7 +327,7 @@ def test_mean_field_differs_from_relaxed():
             .add_layer(size=2)
             .add_layer(size=1, add_constant_input=False)
         )
-        dn.fit(x=x, y=y, optimizer=optax.sgd(0.0), check_gradient_health=False)
+        dn.fit(x=x, y=y, optimiser=optax.sgd(0.0), check_gradient_health=False)
         return dn.state.layers[2].state.precision
 
     assert not jnp.allclose(run(False), run(True), rtol=1e-6)
@@ -380,7 +380,7 @@ def test_fit_invalid_learning_kind():
         dn.fit(
             x=np.zeros((5, 3)),
             y=np.zeros((5, 2)),
-            optimizer=optax.sgd(0.1),
+            optimiser=optax.sgd(0.1),
             learning_kind="kalman",
         )
 
@@ -402,7 +402,7 @@ def test_predict_with_no_layers_raises():
 def test_predict_1d_input():
     """Predict() with 1d input returns 1d output."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-    dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), optimizer=optax.sgd(0.1))
+    dn.fit(x=np.random.randn(5, 3), y=np.random.randn(5, 2), optimiser=optax.sgd(0.1))
     pred = dn.predict(np.array([0.1, 0.2, 0.3]))
     assert pred.ndim == 1
     assert pred.shape == (2,)
@@ -412,7 +412,7 @@ def test_repr():
     """__repr__ contains expected info."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     r = repr(dn)
-    assert "VectorizedDeepNetwork" in r
+    assert "VectorisedDeepNetwork" in r
     assert "nodes=5" in r
     assert "[2, 3]" in r
 
@@ -432,7 +432,7 @@ def test_fit_weight_update_false_freezes_weights():
     )
     weights_before = [np.asarray(w).copy() for w in dn.state.weights]
 
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), weight_update=False)
+    dn.fit(x=x, y=y, optimiser=optax.sgd(0.1), weight_update=False)
     for before, after in zip(weights_before, dn.state.weights):
         assert np.array_equal(before, np.asarray(after))
 
@@ -465,11 +465,11 @@ def test_fit_weight_update_toggle_retraces():
     )
 
     # First call with weight_update=False — weights frozen
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), weight_update=False)
+    dn.fit(x=x, y=y, optimiser=optax.sgd(0.1), weight_update=False)
     weights_after_frozen = [np.asarray(w).copy() for w in dn.state.weights]
 
     # Now flip to weight_update=True — must re-trace and actually update
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), weight_update=True)
+    dn.fit(x=x, y=y, optimiser=optax.sgd(0.1), weight_update=True)
     assert any(
         not np.array_equal(before, np.asarray(after))
         for before, after in zip(weights_after_frozen, dn.state.weights)
@@ -503,7 +503,7 @@ def test_input_layer_uses_prior_precision():
     net.fit(
         x=x,
         y=y,
-        optimizer=optax.sgd(0.0),
+        optimiser=optax.sgd(0.0),
         learning_kind="standard",
         record=("expected_precision",),
     )
@@ -673,7 +673,7 @@ def test_ff_block_single_sweep_matches_backprop():
 
     lr = 1e-3
     net.prediction(x).update(
-        y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+        y, optimiser=optax.sgd(lr), learning_kind="precision_weighted"
     )
 
     # The applied weight change divided by -lr is the descent gradient.
@@ -709,7 +709,7 @@ def test_input_side_gradient_precision_cancellation():
 
     lr = 1e-3
     net.prediction(x).update(
-        y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+        y, optimiser=optax.sgd(lr), learning_kind="precision_weighted"
     )
     d_w2 = -(net.state.layers[2].weights_mean - w2) / lr
 
@@ -734,7 +734,7 @@ def test_sample_step_matches_stateful_api():
     the volatility level), and (c) weight gradients matching the weight change one SGD
     step applies.
     """
-    from pyhgf.utils.vectorized_belief_propagation import sample_step
+    from pyhgf.utils.vectorised_belief_propagation import sample_step
 
     rng = np.random.default_rng(11)
     x = jnp.asarray(rng.normal(size=(_FF_D,)))
@@ -764,7 +764,7 @@ def test_sample_step_matches_stateful_api():
     net_learn = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
     _set_weights(net_learn, {1: w1, 2: w2})
     net_learn.prediction(x).update(
-        y, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+        y, optimiser=optax.sgd(lr), learning_kind="precision_weighted"
     )
     # atol: reconstructing the gradient from a float32 weight delta of ~lr·grad
     # loses ~(weight magnitude · float32 eps) / lr of absolute precision.
@@ -784,7 +784,7 @@ def test_batch_update_averages_and_is_batch_size_invariant():
     increments, and return per-sample input errors matching the pure per-sample step.
     Feeding the same batch twice over must produce the same step.
     """
-    from pyhgf.utils.vectorized_belief_propagation import sample_step
+    from pyhgf.utils.vectorised_belief_propagation import sample_step
 
     rng = np.random.default_rng(23)
     batch = 4
@@ -804,7 +804,7 @@ def test_batch_update_averages_and_is_batch_size_invariant():
     )  # hidden-layer value precision
 
     lr = 1e-2
-    net.batch_update(xb, yb, optimizer=optax.sgd(lr))
+    net.batch_update(xb, yb, optimiser=optax.sgd(lr))
 
     for k in (1, 2):
         np.testing.assert_allclose(
@@ -827,7 +827,7 @@ def test_batch_update_averages_and_is_batch_size_invariant():
     net_twice = _ff_net(hidden_kwargs={}, top_kwargs={}, leaf_kwargs={})
     _set_weights(net_twice, {1: w1, 2: w2})
     net_twice.batch_update(
-        jnp.concatenate([xb, xb]), jnp.concatenate([yb, yb]), optimizer=optax.sgd(lr)
+        jnp.concatenate([xb, xb]), jnp.concatenate([yb, yb]), optimiser=optax.sgd(lr)
     )
     for k in (1, 2):
         np.testing.assert_allclose(
@@ -845,7 +845,7 @@ def test_batch_update_averages_and_is_batch_size_invariant():
 
 
 def test_batch_update_freezing_flags():
-    """``update_precisions=False`` and ``optimizer=None`` freeze their targets.
+    """``update_precisions=False`` and ``optimiser=None`` freeze their targets.
 
     Without precision updates, the carried fields stay exactly at their template values
     while the weights still learn (the mode used for exact comparisons against
@@ -859,7 +859,7 @@ def test_batch_update_freezing_flags():
     # Precisions frozen, weights learning.
     net, w1, w2 = _ff_net_with_weights(rng)
     template = net.state
-    net.batch_update(xb, yb, optimizer=optax.sgd(1e-2), update_precisions=False)
+    net.batch_update(xb, yb, optimiser=optax.sgd(1e-2), update_precisions=False)
     for elem_before, elem_after in zip(template.layers, net.state.layers):
         for field in ("precision", "mean_vol", "precision_vol"):
             np.testing.assert_array_equal(
@@ -901,11 +901,11 @@ def test_batch_update_from_predicted_states_matches():
     np.testing.assert_allclose(
         fresh().predict_states(xb)[0], plain.predict(xb), rtol=1e-6, atol=1e-7
     )
-    plain.batch_update(xb, yb, optimizer=optax.sgd(1e-2))
+    plain.batch_update(xb, yb, optimiser=optax.sgd(1e-2))
 
     reused = fresh()
     _, states = reused.predict_states(xb)
-    reused.batch_update(xb, yb, optimizer=optax.sgd(1e-2), predicted=states)
+    reused.batch_update(xb, yb, optimiser=optax.sgd(1e-2), predicted=states)
 
     for k in (1, 2):
         np.testing.assert_allclose(
@@ -998,7 +998,7 @@ def test_input_layer_weight_gradient_sees_the_clamped_predictors():
         net = _three_layer(flag)
         _set_weights(net, {1: np.eye(2, 4), 2: w})
         before = np.asarray(net.state.layers[-1].weights_mean).copy()
-        net.prediction(x).update(y, optimizer=optax.sgd(1e-2))
+        net.prediction(x).update(y, optimiser=optax.sgd(1e-2))
         grads.append(np.asarray(net.state.layers[-1].weights_mean) - before)
 
     # Same parent activation, same child error on this first step: same update.
@@ -1072,10 +1072,10 @@ def test_input_layer_updated_under_batch_and_scan():
 
     for net in (
         _three_layer(True).fit(
-            x, y, optimizer=optax.sgd(1e-3), learning_kind="standard"
+            x, y, optimiser=optax.sgd(1e-3), learning_kind="standard"
         ),
         _three_layer(True).batch_update(
-            x, y, optimizer=optax.sgd(1e-3), learning_kind="standard"
+            x, y, optimiser=optax.sgd(1e-3), learning_kind="standard"
         ),
     ):
         precision = np.asarray(net.state.layers[-1].state.precision)
@@ -1097,7 +1097,7 @@ def test_input_layer_precision_tracks_the_routed_evidence_not_the_residual():
         )
         _set_weights(net, {1: weights})
         # Weights frozen, so nothing but the beliefs can move.
-        net.fit(x, y, optimizer=optax.sgd(0.0), weight_update=False)
+        net.fit(x, y, optimiser=optax.sgd(0.0), weight_update=False)
         return float(np.mean(np.asarray(net.state.layers[-1].state.precision)))
 
     explained = settle(jnp.asarray(np.asarray(x) @ w.T), w)
@@ -1281,7 +1281,7 @@ def test_predict_precision_false_freezes_the_clamped_top_layer():
     """The two flags compose: a swept top layer still gets no precision prediction.
 
     ``update_input_layer`` is what routes the top element through
-    :func:`~pyhgf.updates.vectorized.volatile.vectorized_root_prediction` — it is the
+    :func:`~pyhgf.updates.vectorised.volatile.vectorised_root_prediction` — it is the
     only layer with no parent above to predict it. With ``predict_precision`` off that
     root prediction has to freeze exactly as an interior layer does, or the top would
     keep diffusing while the rest of the hierarchy stood still.
@@ -1382,7 +1382,7 @@ def test_fit_update_precisions_false_pins_precisions():
     static.fit(
         x,
         y,
-        optimizer=optax.sgd(1e-2),
+        optimiser=optax.sgd(1e-2),
         learning_kind="standard",
         update_precisions=False,
     )
@@ -1392,7 +1392,7 @@ def test_fit_update_precisions_false_pins_precisions():
     assert not np.allclose(np.asarray(static.state.layers[1].weights_mean), before)
 
     # The default carries, so the two modes genuinely diverge.
-    dynamic = build().fit(x, y, optimizer=optax.sgd(1e-2), learning_kind="standard")
+    dynamic = build().fit(x, y, optimiser=optax.sgd(1e-2), learning_kind="standard")
     assert not np.allclose(np.asarray(dynamic.state.layers[1].state.precision), 3.0)
 
 
@@ -1437,22 +1437,22 @@ def test_fit_warns_when_only_the_head_trains():
 
     with pytest.warns(DeadGradientWarning):
         _stiff_deep_net().fit(
-            x, y, optimizer=optax.adam(1e-3), learning_kind="precision_weighted"
+            x, y, optimiser=optax.adam(1e-3), learning_kind="precision_weighted"
         )
 
 
-def test_optimizer_state_survives_a_fresh_optimizer_object():
+def test_optimiser_state_survives_a_fresh_optimiser_object():
     """Constructing the optimiser inside the loop must not reset its moments."""
     rng = np.random.default_rng(31)
     x = jnp.asarray(rng.normal(size=(32, _FF_D)).astype(np.float32))
     y = jnp.asarray(rng.normal(size=(32, _FF_D)).astype(np.float32))
 
-    def run(make_optimizer, steps=5):
+    def run(make_optimiser, steps=5):
         net, _, _ = _ff_net_with_weights(np.random.default_rng(31))
         sizes = []
         for _ in range(steps):
             before = np.asarray(net.state.layers[2].weights_mean).copy()
-            net.batch_update(x, y, optimizer=make_optimizer(), update_precisions=False)
+            net.batch_update(x, y, optimiser=make_optimiser(), update_precisions=False)
             sizes.append(
                 float(
                     np.abs(np.asarray(net.state.layers[2].weights_mean) - before).max()
@@ -1468,12 +1468,12 @@ def test_optimizer_state_survives_a_fresh_optimizer_object():
     assert fresh[-1] > fresh[0] * (1 + 1e-3), fresh
 
     # A different optimiser kind rebuilds the state instead of failing.
-    net.batch_update(x, y, optimizer=optax.sgd(1e-2), update_precisions=False)
+    net.batch_update(x, y, optimiser=optax.sgd(1e-2), update_precisions=False)
 
     # A rate change keeps the moments: the step scales with the new rate.
     net2, sizes = run(lambda: optax.adam(1e-2), steps=3)
     before = np.asarray(net2.state.layers[2].weights_mean).copy()
-    net2.batch_update(x, y, optimizer=optax.adam(1e-1), update_precisions=False)
+    net2.batch_update(x, y, optimiser=optax.adam(1e-1), update_precisions=False)
     scaled = float(np.abs(np.asarray(net2.state.layers[2].weights_mean) - before).max())
     assert 8.0 < scaled / sizes[-1] < 12.0, (scaled, sizes[-1])
 
@@ -1524,7 +1524,7 @@ def test_stack_on_observed_leaf_matches_unrolled(kind):
         net.fit(
             x,
             y,
-            optimizer=optax.sgd(0.05),
+            optimiser=optax.sgd(0.05),
             weight_update=False,
             check_gradient_health=False,
         )
@@ -1542,7 +1542,7 @@ def test_stack_on_observed_leaf_matches_unrolled(kind):
     # and kind, so the learned weights match too.
     scanned, unrolled = build(True), build(False)
     for net in (scanned, unrolled):
-        net.fit(x, y, optimizer=optax.sgd(0.05), check_gradient_health=False)
+        net.fit(x, y, optimiser=optax.sgd(0.05), check_gradient_health=False)
     stacked_weights = [
         np.asarray(w)
         for e in scanned.state.layers
@@ -1614,7 +1614,7 @@ def test_tonic_volatility_zero_is_exactly_neutral():
     off = _tonic_net(flag=False)
     zero = _tonic_net(flag=True, tonic_volatility=0.0)
     for net in (off, zero):
-        net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+        net.fit(x, y, optimiser=optax.sgd(0.1), check_gradient_health=False)
 
     assert np.array_equal(np.asarray(off.predict(x)), np.asarray(zero.predict(x)))
     for l_off, l_zero in zip(off.state.layers, zero.state.layers):
@@ -1631,7 +1631,7 @@ def test_tonic_volatility_default_changes_the_filter():
     off = _tonic_net(flag=False)
     on = _tonic_net(flag=True)
     for net in (off, on):
-        net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+        net.fit(x, y, optimiser=optax.sgd(0.1), check_gradient_health=False)
 
     assert not np.array_equal(np.asarray(off.predict(x)), np.asarray(on.predict(x)))
 
@@ -1651,7 +1651,7 @@ def test_tonic_volatility_diffuses_a_layer_without_volatility_parent():
             .add_layer(2)
             .weight_initialisation("xavier")
         )
-        net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+        net.fit(x, y, optimiser=optax.sgd(0.1), check_gradient_health=False)
         return np.asarray(net.state.layers[1].state.expected_precision)
 
     frozen = middle_precision(False)
@@ -1681,7 +1681,7 @@ def test_tonic_volatility_reaches_the_scanned_layer_stack():
     rng = np.random.default_rng(7)
     x = jnp.asarray(rng.normal(size=(8, 2)).astype(np.float32))
     y = jnp.asarray(rng.normal(size=(8, 4)).astype(np.float32))
-    net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+    net.fit(x, y, optimiser=optax.sgd(0.1), check_gradient_health=False)
     assert np.isfinite(np.asarray(net.predict(x))).all()
 
 

@@ -144,7 +144,7 @@ def test_mixed_pipeline_block_matches_backprop():
     lr = 1e-3
     ff = DeepNetworkAdapter(
         _parity_ff_net(d, h, w1, w2),
-        optimizer=optax.sgd(lr),
+        optimiser=optax.sgd(lr),
         learning_kind="precision_weighted",
     )
     block = Residual(PCSequential([layer_norm_adapter(ln), ff]))
@@ -188,7 +188,7 @@ def test_step_report_collects_update_and_error_norms():
     x = jnp.asarray(rng.normal(size=(batch, d)))
     target = jnp.asarray(rng.normal(size=(batch, d)))
 
-    ff = DeepNetworkAdapter(from_feedforward(fc1, fc2), optimizer=optax.sgd(1e-3))
+    ff = DeepNetworkAdapter(from_feedforward(fc1, fc2), optimiser=optax.sgd(1e-3))
     block = Residual(PCSequential([layer_norm_adapter(ln), ff]))
     fused = FusedPipeline(block)
 

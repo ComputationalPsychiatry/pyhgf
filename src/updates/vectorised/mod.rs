@@ -1,5 +1,5 @@
 //! Vectorised (whole-layer, matrix-multiply) update kernels, mirroring
-//! `pyhgf/updates/vectorized/` file for file: one submodule per node kind
+//! `pyhgf/updates/vectorised/` file for file: one submodule per node kind
 //! (`volatile`, `binary`, `categorical`), each with its `prediction`,
 //! `prediction_error`, and (for volatile) `posterior` kernels, plus the
 //! rank-one weight-gradient in [`learning`].

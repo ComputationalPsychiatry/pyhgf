@@ -150,7 +150,7 @@ def validate_error_convention(
     import jax
     import jax.numpy as jnp
 
-    # Initialize state
+    # Initialise state
     state = part.init_state()
 
     # Handle both attribute-based (EquinoxAdapter, forward_fn/backward_fn) and

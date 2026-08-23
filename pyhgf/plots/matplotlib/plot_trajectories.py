@@ -55,7 +55,7 @@ def plot_trajectories(
 
     Examples
     --------
-    Visualization of nodes' trajectories from a three-level continuous HGF model.
+    Visualisation of nodes' trajectories from a three-level continuous HGF model.
 
     .. plot::
 
@@ -82,7 +82,7 @@ def plot_trajectories(
         # Plot
         hgf.plot_trajectories();
 
-    Visualization of nodes' trajectories from a three-level binary HGF model.
+    Visualisation of nodes' trajectories from a three-level binary HGF model.
 
     .. plot::
 
@@ -136,7 +136,7 @@ def plot_trajectories(
                 else "#c44e52"
             )
 
-        # use different colors for each node
+        # use different colours for each node
         plot_nodes(
             network=network,
             node_idxs=node_idx,

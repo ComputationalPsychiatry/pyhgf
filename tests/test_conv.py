@@ -232,7 +232,7 @@ def test_conv_block_parity_matches_backprop():
         filter_shape=(kh, kw),
         padding="SAME",
         pool_size=(1, 1),
-        optimizer=optax.sgd(lr),
+        optimiser=optax.sgd(lr),
         leaf_kwargs=_PARITY_LEAF,
         layer_kwargs=_PARITY,
     )
@@ -475,7 +475,7 @@ def test_conv_block_parity_matches_backprop_under_adam():
 
     lr = 1e-3
     part, adapter, weights0 = _transplanted_block(
-        kernel0, bias0, height, width, optimizer=optax.adam(lr)
+        kernel0, bias0, height, width, optimiser=optax.adam(lr)
     )
     fused = FusedPipeline(part)
     fused.step(x, target)  # error_fn default: out - target
@@ -516,14 +516,14 @@ def test_adam_absorbs_the_shared_kernel_reuse_factor():
         return np.asarray(adapter.net.state.layers[1].weights_mean - weights0)
 
     n_patches = 36
-    adam_1 = step(1.0, optimizer=optax.adam(1e-3))
-    adam_n = step(n_patches, optimizer=optax.adam(1e-3))
+    adam_1 = step(1.0, optimiser=optax.adam(1e-3))
+    adam_n = step(n_patches, optimiser=optax.adam(1e-3))
     np.testing.assert_allclose(adam_n, adam_1, rtol=1e-4, atol=1e-9)
 
     # Under SGD the same factor passes straight through, which is the regime the
     # correction exists for.
-    sgd_1 = step(1.0, optimizer=optax.sgd(1e-3))
-    sgd_n = step(n_patches, optimizer=optax.sgd(1e-3))
+    sgd_1 = step(1.0, optimiser=optax.sgd(1e-3))
+    sgd_n = step(n_patches, optimiser=optax.sgd(1e-3))
     np.testing.assert_allclose(sgd_n, sgd_1 * n_patches, rtol=1e-3, atol=1e-9)
 
 
@@ -542,7 +542,7 @@ def _belief_step(kernel0, bias0, weight_reuse, steps=1, window=100):
         learning_kwargs={"window": window},
     )
     adapter.weight_reuse = float(weight_reuse)
-    assert adapter.optimizer is None
+    assert adapter.optimiser is None
     fused = FusedPipeline(part)
     for _ in range(steps):
         fused.step(x, target)
@@ -556,7 +556,7 @@ def _belief_step(kernel0, bias0, weight_reuse, steps=1, window=100):
 
 
 def test_weight_belief_rule_learns_without_any_optimiser():
-    """The belief rule carries both halves of the step with ``optimizer=None``.
+    """The belief rule carries both halves of the step with ``optimiser=None``.
 
     Its step size is each weight's own belief variance, so the kernel has to keep
     learning with no optimiser present, and the accumulated precision has to grow

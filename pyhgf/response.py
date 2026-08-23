@@ -169,7 +169,7 @@ def binary_softmax_inverse_temperature(
     response_function_inputs=ArrayLike,
     response_function_parameters=ArrayLike,
 ) -> Array:
-    r"""Surprise from a binary softmax parametrized by the inverse temperature.
+    r"""Surprise from a binary softmax parametrised by the inverse temperature.
 
     The probability of choosing A is given by:
 

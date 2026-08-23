@@ -76,7 +76,7 @@ impl AdamState {
 
 /// One Adam step (Kingma & Ba, 2015) for a single weight, shared by the
 /// per-node [`AdamState`] and the vectorised
-/// [`crate::vectorised::optimiser::Optimizer`] so the update formula has a
+/// [`crate::vectorised::optimiser::Optimiser`] so the update formula has a
 /// single source of truth.
 ///
 /// Updates the moment estimates `m`/`v` in place and returns

@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized prediction update for volatile node layers."""
+"""Vectorised prediction update for volatile node layers."""
 
 import dataclasses
 from typing import Callable, Optional
@@ -22,8 +22,8 @@ def _predict_volatility_level(
     r"""Advance a layer's internal volatility level and read off its diffusion term.
 
     Shared by every value-level prediction, whether the layer is predicted from a
-    parent (:func:`vectorized_layer_prediction`) or from nothing at all
-    (:func:`vectorized_root_prediction`).
+    parent (:func:`vectorised_layer_prediction`) or from nothing at all
+    (:func:`vectorised_root_prediction`).
 
     Returns ``(expected_mean_vol, expected_precision_vol, effective_precision_vol,
     predicted_volatility)``. The last is :math:`\Omega_a^{(k)}`, the variance the
@@ -95,7 +95,7 @@ def _predict_volatility_level(
     )
 
 
-def vectorized_layer_prediction(
+def vectorised_layer_prediction(
     child_state: LayerState,
     parent_state: LayerState,
     weights: jnp.ndarray,
@@ -127,7 +127,7 @@ def vectorized_layer_prediction(
     :math:`\tilde{\pi}_a` (``expected_precision``) adds the first-order Laplace
     value-coupling contribution from each value parent. The bleed-through term uses
     the parent's *marginal* predicted precision :math:`\tilde{\pi}_b`
-    (``parent_state.expected_precision``), which generalises the artifact's
+    (``parent_state.expected_precision``), which generalises the artefact's
     two-node :math:`\hat{\pi}_b` to deep networks by propagating each parent's full
     marginal predictive variance. The volatility-coupling correction
     :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})` enters :math:`\Omega_a^{(k)}`
@@ -158,7 +158,7 @@ def vectorized_layer_prediction(
         value-coupling variance.
     predict_precision :
         Whether the prediction step advances the precisions; see
-        :func:`vectorized_layer_prediction`.
+        :func:`vectorised_layer_prediction`.
     has_volatility_parent :
         If True (default), the layer has an implied internal volatility parent
         whose state (``mean_vol``, ``precision_vol``) is predicted and updated.
@@ -253,7 +253,7 @@ def vectorized_layer_prediction(
         if not feedforward_uncertainty:
             # No uncertainty is propagated by the value parents: the child's predicted
             # precision comes from its own prior and its own volatility parent alone,
-            # which is what :func:`vectorized_root_prediction` already does for the top
+            # which is what :func:`vectorised_root_prediction` already does for the top
             # layer. The parent's derivative is not needed, so the autodiff call goes
             # with it.
             value_coupling_variance = jnp.zeros_like(child_state.precision)
@@ -323,7 +323,7 @@ def vectorized_layer_prediction(
     )
 
 
-def vectorized_root_prediction(
+def vectorised_root_prediction(
     layer_state: LayerState,
     params: LayerParams,
     time_step: float,
@@ -338,7 +338,7 @@ def vectorized_root_prediction(
     parent's top-down prediction. Everything else about it is still predicted: the
     volatility level advances exactly as it does anywhere else, and the value-level
     predicted precisions follow the same chain as
-    :func:`vectorized_layer_prediction`, minus the value-coupling variance. The conditional and the
+    :func:`vectorised_layer_prediction`, minus the value-coupling variance. The conditional and the
     marginal predicted precision therefore coincide:
 
     .. math::
@@ -373,7 +373,7 @@ def vectorized_root_prediction(
         just the prior precision.
     mean_field_updates :
         If ``True``, drop the MGF correction from the log-volatility exponent —
-        see :func:`vectorized_layer_prediction`.
+        see :func:`vectorised_layer_prediction`.
 
     Returns
     -------
@@ -396,7 +396,7 @@ def vectorized_root_prediction(
         expected_precision = 1.0 / (1.0 / layer_state.precision + predicted_volatility)
         effective_precision = predicted_volatility * expected_precision
     else:
-        # Frozen, as in :func:`vectorized_layer_prediction`.
+        # Frozen, as in :func:`vectorised_layer_prediction`.
         expected_mean_vol = layer_state.mean_vol
         expected_precision_vol = layer_state.precision_vol
         effective_precision_vol = layer_state.effective_precision_vol

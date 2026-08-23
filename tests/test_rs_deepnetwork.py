@@ -226,8 +226,8 @@ def test_fit_validation_errors():
     y = np.zeros((4, 2))
     with pytest.raises(ValueError, match="same number of samples"):
         net.fit(x, np.zeros((3, 2)))
-    with pytest.raises(ValueError, match="Unknown optimizer"):
-        net.fit(x, y, optimizer="nope")
+    with pytest.raises(ValueError, match="Unknown optimiser"):
+        net.fit(x, y, optimiser="nope")
     with pytest.raises(ValueError, match="Unknown learning_kind"):
         net.fit(x, y, learning_kind="nope")
 
@@ -314,10 +314,10 @@ def test_two_phase_matches_batch_update():
         else:
             y = rng.normal(size=(17, out_size)).astype("float32")
 
-        errors_one = one.batch_update(x, y, optimizer="adam", learning_rate=1e-2)
+        errors_one = one.batch_update(x, y, optimiser="adam", learning_rate=1e-2)
         out = two.batch_forward(x)
         errors_two = two.batch_update_from_error(
-            out - y, optimizer="adam", learning_rate=1e-2
+            out - y, optimiser="adam", learning_rate=1e-2
         )
         np.testing.assert_allclose(errors_one, errors_two, rtol=1e-4, atol=1e-6)
         for w_one, w_two in zip(one.get_weights(), two.get_weights()):
@@ -374,10 +374,10 @@ def test_predict_parity_single_sample():
 
 
 @pytest.mark.parametrize(
-    ("optimizer", "make_optax"),
+    ("optimiser", "make_optax"),
     [("sgd", lambda: optax.sgd(0.05)), ("adam", lambda: optax.adam(1e-2))],
 )
-def test_fit_trajectory_parity(optimizer, make_optax):
+def test_fit_trajectory_parity(optimiser, make_optax):
     """Per sample predictions and final weights agree over a training run."""
     rng = np.random.default_rng(13)
     rs, jx = _matched_pair([2, 4, 3], rng)
@@ -385,7 +385,7 @@ def test_fit_trajectory_parity(optimizer, make_optax):
     y = rng.normal(size=(8, 2))
 
     preds_rs = rs.fit(
-        x, y, optimizer=optimizer, learning_rate=0.05 if optimizer == "sgd" else 1e-2
+        x, y, optimiser=optimiser, learning_rate=0.05 if optimiser == "sgd" else 1e-2
     )
     jx.fit(x, y, make_optax())
 
@@ -402,7 +402,7 @@ def test_fit_parity_standard_learning_kind():
     x = rng.normal(size=(6, 3))
     y = rng.normal(size=(6, 2))
     preds_rs = rs.fit(
-        x, y, optimizer="sgd", learning_rate=0.1, learning_kind="standard"
+        x, y, optimiser="sgd", learning_rate=0.1, learning_kind="standard"
     )
     jx.fit(x, y, optax.sgd(0.1), learning_kind="standard")
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
@@ -414,7 +414,7 @@ def test_fit_parity_time_step():
     rs, jx = _matched_pair([2, 3], rng)
     x = rng.normal(size=(6, 3))
     y = rng.normal(size=(6, 2))
-    preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05, time_step=0.7)
+    preds_rs = rs.fit(x, y, optimiser="sgd", learning_rate=0.05, time_step=0.7)
     jx.fit(x, y, optax.sgd(0.05), time_step=0.7)
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
@@ -437,7 +437,7 @@ def test_fit_parity_volatility_updates(volatility_updates):
     rs, jx = _matched_pair([2, 3], rng, volatility_updates=volatility_updates)
     x = rng.normal(size=(6, 3))
     y = rng.normal(size=(6, 2))
-    preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
+    preds_rs = rs.fit(x, y, optimiser="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
@@ -454,7 +454,7 @@ def test_fit_parity_binary_output():
     _inject_jax_weights(jx, weights)
     x = rng.normal(size=(8, 3))
     y = rng.integers(0, 2, size=(8, 2)).astype(float)
-    preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
+    preds_rs = rs.fit(x, y, optimiser="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
@@ -474,7 +474,7 @@ def test_fit_parity_categorical_output():
     _inject_jax_weights(jx, weights)
     x = rng.normal(size=(8, 4))
     y = np.eye(3)[rng.integers(0, 3, size=8)]
-    preds_rs = rs.fit(x, y, optimizer="sgd", learning_rate=0.05)
+    preds_rs = rs.fit(x, y, optimiser="sgd", learning_rate=0.05)
     jx.fit(x, y, optax.sgd(0.05))
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
@@ -486,8 +486,8 @@ def test_batch_update_validation():
     y = np.zeros((4, 2))
     with pytest.raises(ValueError, match="must be 2D"):
         net.batch_update(np.zeros(3), np.zeros(2))
-    with pytest.raises(ValueError, match="Unknown optimizer"):
-        net.batch_update(x, y, optimizer="nope")
+    with pytest.raises(ValueError, match="Unknown optimiser"):
+        net.batch_update(x, y, optimiser="nope")
     with pytest.raises(ValueError, match="Unknown learning_kind"):
         net.batch_update(x, y, learning_kind="nope")
     with pytest.raises(ValueError, match="same number of samples"):
@@ -497,21 +497,21 @@ def test_batch_update_validation():
         single.batch_update(np.zeros((4, 2)), np.zeros((4, 2)))
 
 
-@pytest.mark.parametrize("optimizer", ["sgd", "adam"])
-def test_batch_update_trajectory_parity(optimizer):
+@pytest.mark.parametrize("optimiser", ["sgd", "adam"])
+def test_batch_update_trajectory_parity(optimiser):
     """Input errors and weights agree with JAX over several batch steps."""
     rng = np.random.default_rng(30)
     rs, jx = _matched_pair([2, 4, 3], rng)
     make_optax = {"sgd": lambda: optax.sgd(0.05), "adam": lambda: optax.adam(1e-2)}
     lr = {"sgd": 0.05, "adam": 1e-2}
-    optax_opt = make_optax[optimizer]()
+    optax_opt = make_optax[optimiser]()
     for _ in range(5):
         x = rng.normal(size=(8, 3))
         y = rng.normal(size=(8, 2))
         errors_rs = rs.batch_update(
-            x, y, optimizer=optimizer, learning_rate=lr[optimizer]
+            x, y, optimiser=optimiser, learning_rate=lr[optimiser]
         )
-        jx.batch_update(x, y, optimizer=optax_opt)
+        jx.batch_update(x, y, optimiser=optax_opt)
         np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
@@ -528,11 +528,11 @@ def test_batch_update_parity_pinned_precisions():
         errors_rs = rs.batch_update(
             x,
             y,
-            optimizer="sgd",
+            optimiser="sgd",
             learning_rate=0.05,
             update_precisions=False,
         )
-        jx.batch_update(x, y, optimizer=optax.sgd(0.05), update_precisions=False)
+        jx.batch_update(x, y, optimiser=optax.sgd(0.05), update_precisions=False)
     np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
@@ -540,7 +540,7 @@ def test_batch_update_parity_pinned_precisions():
 
 
 def test_batch_update_frozen_weights():
-    """Without an optimizer the weights stay untouched; errors still agree."""
+    """Without an optimiser the weights stay untouched; errors still agree."""
     rng = np.random.default_rng(32)
     rs, jx = _matched_pair([2, 3], rng)
     weights_before = [np.array(w) for w in rs.get_weights()]
@@ -569,8 +569,8 @@ def test_batch_update_parity_categorical_output():
     # the optimiser state, which the Rust class keeps across calls.
     optax_opt = optax.adam(1e-2)
     for _ in range(3):
-        errors_rs = rs.batch_update(x, y, optimizer="adam", learning_rate=1e-2)
-        jx.batch_update(x, y, optimizer=optax_opt)
+        errors_rs = rs.batch_update(x, y, optimiser="adam", learning_rate=1e-2)
+        jx.batch_update(x, y, optimiser=optax_opt)
     np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
@@ -642,8 +642,8 @@ def test_tonic_volatility_parity_with_jax():
     np.testing.assert_allclose(
         np.asarray(rs.predict(x)), np.asarray(jx.predict(x)), **PARITY
     )
-    rs_out = np.asarray(rs.fit(x, y, optimizer="sgd", learning_rate=0.05))
-    jx.fit(x, y, optimizer=optax.sgd(0.05), check_gradient_health=False)
+    rs_out = np.asarray(rs.fit(x, y, optimiser="sgd", learning_rate=0.05))
+    jx.fit(x, y, optimiser=optax.sgd(0.05), check_gradient_health=False)
     np.testing.assert_allclose(
         np.asarray(rs.predict(x)), np.asarray(jx.predict(x)), **TRAJECTORY
     )
@@ -661,7 +661,7 @@ def test_tonic_volatility_changes_the_rust_filter():
         for s in (4, 3, 2):
             net = net.add_layer(s, **kw)
         net.weight_initialisation("xavier", seed=0)
-        net.fit(x, y, optimizer="sgd", learning_rate=0.05)
+        net.fit(x, y, optimiser="sgd", learning_rate=0.05)
         return np.asarray(net.predict(x))
 
     base = run(False)

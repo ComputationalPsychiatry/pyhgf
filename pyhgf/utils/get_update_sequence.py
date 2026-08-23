@@ -42,7 +42,7 @@ def get_update_sequence(
 ) -> UpdateSequence:
     """Generate an update sequence from the network's structure.
 
-    This function return an optimized update sequence considering the edges of the
+    This function return an optimised update sequence considering the edges of the
     network. The function ensures that the following principles apply:
     1. all children have computed prediction errors before the parent is updated.
     2. all children have been updated before the parent compute the prediction errors.
@@ -65,7 +65,7 @@ def get_update_sequence(
     update_sequence :
         The sequence of prediction error and posterior updates.
     """
-    # initialize the update and prediction sequences
+    # initialise the update and prediction sequences
     update_sequence: list = []
     prediction_sequence: list = []
 

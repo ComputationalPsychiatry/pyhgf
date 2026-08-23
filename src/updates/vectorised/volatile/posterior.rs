@@ -1,5 +1,5 @@
 //! Bottom-up value-level posterior for volatile-node layers, mirroring
-//! `pyhgf/updates/vectorized/volatile/posterior.py`.
+//! `pyhgf/updates/vectorised/volatile/posterior.py`.
 
 use crate::math::{with_coupling, CouplingFn};
 use crate::vectorised::layer::LayerState;
@@ -9,7 +9,7 @@ use ndarray::s;
 /// Update the value-level posterior (precision then mean) of a parent layer
 /// from its child's prediction errors.
 ///
-/// Mirrors `vectorized_layer_posterior_update`. `weights` is the parent's
+/// Mirrors `vectorised_layer_posterior_update`. `weights` is the parent's
 /// `weights_in`; the bias column is stripped when `parent_has_constant`.
 /// `coupling_fn` is the parent's, evaluated at the parent's expected mean.
 pub fn layer_posterior_update(

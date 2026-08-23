@@ -10,10 +10,10 @@ import pytest
 
 from pyhgf.model import DeepNetwork
 from pyhgf.typing.vectorised import LayerState
-from pyhgf.updates.vectorized.learning import (
-    learning_weights_vectorized,
+from pyhgf.updates.vectorised.learning import (
+    learning_weights_vectorised,
     resolve_synaptic_uncertainty_settings,
-    vectorized_synaptic_uncertainty_update,
+    vectorised_synaptic_uncertainty_update,
 )
 
 
@@ -23,7 +23,7 @@ def _importance(parent_state, child_state, coupling_fn, **kwargs):
     The entry point hands back the shared parent-side activation; the importance's own
     parent factor is its square.
     """
-    _, h, p = learning_weights_vectorized(
+    _, h, p = learning_weights_vectorised(
         parent_state, child_state, coupling_fn, **kwargs
     )
     return p, h**2
@@ -63,7 +63,7 @@ def test_effective_evidence_precision():
     )
 
     def xi_tilde(child):
-        _, _, p = learning_weights_vectorized(parent, child, lambda m: m)
+        _, _, p = learning_weights_vectorised(parent, child, lambda m: m)
         return p
 
     # Evidence is posterior minus marginal predicted; with no process noise it
@@ -116,10 +116,10 @@ def test_effective_evidence_precision():
         expected_mean=jnp.zeros(n),
         effective_precision=0.25 * jnp.array([4.0, 4.0, 4.0]),
     )
-    u_ev, _, _ = learning_weights_vectorized(
+    u_ev, _, _ = learning_weights_vectorised(
         parent, clipped_noisy, lambda m: m, kind="synaptic_uncertainty"
     )
-    u_pw, _, _ = learning_weights_vectorized(
+    u_pw, _, _ = learning_weights_vectorised(
         parent, clipped_noisy, lambda m: m, kind="precision_weighted"
     )
     np.testing.assert_allclose(u_ev, u_pw, rtol=1e-6)
@@ -135,7 +135,7 @@ def test_effective_evidence_precision():
         effective_precision=0.25 * jnp.array([1.0, 2.0, 0.5]),
     )
     carried = jnp.array([2.0, 8.0, 1.0])
-    _, _, p = learning_weights_vectorized(
+    _, _, p = learning_weights_vectorised(
         parent, noisy, lambda m: m, child_evidence=carried
     )
     carried_np = np.asarray(carried)
@@ -149,7 +149,7 @@ def _step(weights, precision_delta, gradient, importance, **kwargs):
     the mean, which is what the update rule states.
     """
     settings = resolve_synaptic_uncertainty_settings(kwargs)
-    new_weights, new_delta = vectorized_synaptic_uncertainty_update(
+    new_weights, new_delta = vectorised_synaptic_uncertainty_update(
         weights, precision_delta, gradient, importance, settings
     )
     return new_weights - weights, new_delta
@@ -244,7 +244,7 @@ def test_sgd_reduction_at_init():
         "window": window,
         "prior_variance": prior_variance,
     })
-    new_weights, new_delta = vectorized_synaptic_uncertainty_update(
+    new_weights, new_delta = vectorised_synaptic_uncertainty_update(
         w, precision_delta, g, (jnp.zeros(2), jnp.zeros(3)), settings
     )
     np.testing.assert_allclose(
@@ -328,7 +328,7 @@ def test_synaptic_uncertainty_fixed_point_is_linear_in_evidence():
     p, q = jnp.array([2.0]), jnp.array([0.5, 1.5])
     g = jnp.zeros((1, 2))
     for _ in range(2000):
-        w, precision_delta = vectorized_synaptic_uncertainty_update(
+        w, precision_delta = vectorised_synaptic_uncertainty_update(
             w, precision_delta, g, (p, q), settings
         )
 
@@ -378,13 +378,13 @@ def test_synaptic_uncertainty_matches_the_increment_it_divides():
     )
     identity = lambda m: m  # noqa: E731
 
-    u_ev, _, _ = learning_weights_vectorized(
+    u_ev, _, _ = learning_weights_vectorised(
         parent, state, identity, kind="synaptic_uncertainty"
     )
-    u_pw, _, _ = learning_weights_vectorized(
+    u_pw, _, _ = learning_weights_vectorised(
         parent, state, identity, kind="precision_weighted"
     )
-    _, _, p_inc = learning_weights_vectorized(
+    _, _, p_inc = learning_weights_vectorised(
         parent, state, identity, kind="synaptic_uncertainty"
     )
 
@@ -403,10 +403,10 @@ def test_synaptic_uncertainty_matches_the_increment_it_divides():
     # Where there is no process noise the two precision kinds coincide.
     quiet = dataclasses.replace(state, effective_precision=jnp.zeros(n))
     np.testing.assert_allclose(
-        learning_weights_vectorized(
+        learning_weights_vectorised(
             parent, quiet, identity, kind="synaptic_uncertainty"
         )[0],
-        learning_weights_vectorized(parent, quiet, identity, kind="precision_weighted")[
+        learning_weights_vectorised(parent, quiet, identity, kind="precision_weighted")[
             0
         ],
         rtol=1e-9,
@@ -498,7 +498,7 @@ def test_deepnetwork_integration():
 
     # Plain optax path is untouched, and carries no belief.
     dn_sgd = build()
-    dn_sgd.fit(x=x, y=y, optimizer=optax.sgd(0.1))
+    dn_sgd.fit(x=x, y=y, optimiser=optax.sgd(0.1))
     assert all(
         e is None
         for e in (
@@ -509,11 +509,11 @@ def test_deepnetwork_integration():
     assert bool(jnp.all(jnp.isfinite(dn_sgd.predict(np.array([[0.5]])))))
 
     # A gradient kind without an optimiser is refused rather than silently idle.
-    with pytest.raises(ValueError, match="needs an optimizer"):
+    with pytest.raises(ValueError, match="needs an optimiser"):
         build().fit(x=x, y=y)
     # learning_kwargs is only meaningful for the belief rule.
     with pytest.raises(ValueError, match="only used by"):
-        build().fit(x=x, y=y, optimizer=optax.sgd(0.1), learning_kwargs=kwargs)
+        build().fit(x=x, y=y, optimiser=optax.sgd(0.1), learning_kwargs=kwargs)
 
 
 def test_install_weight_belief_is_explicit_and_idempotent():
@@ -575,7 +575,7 @@ def test_evidence_walk_curvature():
     """
     from jax.nn import leaky_relu
 
-    from pyhgf.utils.vectorized_belief_propagation import (
+    from pyhgf.utils.vectorised_belief_propagation import (
         _importance_pair,
         _prediction_sweep,
         _update_sweep,
@@ -636,7 +636,7 @@ def test_evidence_walk_through_a_layer_stack():
     slices the way the factors are; the scan that carries it must leave the stack with
     the same evidence a chain of plain layers would.
     """
-    from pyhgf.utils.vectorized_belief_propagation import (
+    from pyhgf.utils.vectorised_belief_propagation import (
         _prediction_sweep,
         _update_sweep,
         _weight_quantities,

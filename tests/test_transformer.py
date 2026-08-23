@@ -222,7 +222,7 @@ def test_fused_qkv_matches_separate():
     def learner(linear_or_list, builder):
         return DeepNetworkAdapter(
             builder(linear_or_list, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
-            optimizer=optax.adam(1e-2),
+            optimiser=optax.adam(1e-2),
         )
 
     separate = FusedPipeline(
@@ -288,7 +288,7 @@ def test_fused_qkv_through_hybrid_and_merge():
                 leaf_kwargs=_PARITY_LEAF,
                 layer_kwargs=_PARITY,
             ),
-            optimizer=optax.adam(1e-3),
+            optimiser=optax.adam(1e-3),
         )
         for b in gpt.blocks
     ]
@@ -368,7 +368,7 @@ def test_ff_swap_matches_backprop():
                 leaf_kwargs=_PARITY_LEAF,
                 layer_kwargs=_PARITY,
             ),
-            optimizer=optax.sgd(lr),
+            optimiser=optax.sgd(lr),
             learning_kind="precision_weighted",
         )
         for block in gpt.blocks
@@ -410,7 +410,7 @@ def _pyhgf_linear_part(linear, lr):
 
     return DeepNetworkAdapter(
         from_linear(linear, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
-        optimizer=optax.sgd(lr),
+        optimiser=optax.sgd(lr),
         learning_kind="precision_weighted",
     )
 
@@ -456,7 +456,7 @@ def test_full_pyhgf_gpt_matches_backprop():
                 leaf_kwargs=_PARITY_LEAF,
                 layer_kwargs=_PARITY,
             ),
-            optimizer=optax.sgd(lr),
+            optimiser=optax.sgd(lr),
             learning_kind="precision_weighted",
         )
         for block in gpt.blocks
@@ -466,7 +466,7 @@ def test_full_pyhgf_gpt_matches_backprop():
             from_embedding(
                 getattr(gpt, name), leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY
             ),
-            optimizer=optax.sgd(lr),
+            optimiser=optax.sgd(lr),
             learning_kind="precision_weighted",
         )
         for name in ("tok_emb", "pos_emb")
@@ -565,7 +565,7 @@ def test_binary_head_at_vocabulary_width():
     )
 
     lr = 1e-3
-    net.batch_update(x, one_hot, optimizer=optax.sgd(lr), update_precisions=False)
+    net.batch_update(x, one_hot, optimiser=optax.sgd(lr), update_precisions=False)
 
     # (b) Input message: matches the sigmoid-cross-entropy gradient at x.
     def bce(x_row, y_row):
@@ -615,7 +615,7 @@ def test_categorical_head_matches_softmax_backprop():
     )
 
     lr = 1e-3
-    net.batch_update(x, one_hot, optimizer=optax.sgd(lr), update_precisions=False)
+    net.batch_update(x, one_hot, optimiser=optax.sgd(lr), update_precisions=False)
 
     # Oracle: batch-mean softmax cross-entropy gradients.
     def loss(w, x_):
@@ -664,7 +664,7 @@ def test_full_pyhgf_gpt_with_categorical_head():
             from_feedforward(
                 b.ff.fc1, b.ff.fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY
             ),
-            optimizer=optax.sgd(lr),
+            optimiser=optax.sgd(lr),
             learning_kind="precision_weighted",
         )
         for b in gpt.blocks
@@ -682,12 +682,12 @@ def test_full_pyhgf_gpt_with_categorical_head():
             leaf_kwargs=dict(kind="categorical", **_PARITY_LEAF),
             layer_kwargs=_PARITY,
         ),
-        optimizer=optax.sgd(lr),
+        optimiser=optax.sgd(lr),
         learning_kind="precision_weighted",
     )
     token_part = DeepNetworkAdapter(
         from_embedding(gpt.tok_emb, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
-        optimizer=optax.sgd(lr),
+        optimiser=optax.sgd(lr),
         learning_kind="precision_weighted",
     )
     hybrid = hybrid_from_gpt(

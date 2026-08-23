@@ -62,7 +62,7 @@ def plot_nodes(
 
     Examples
     --------
-    Visualization of nodes' trajectories from a three-level continuous HGF model.
+    Visualisation of nodes' trajectories from a three-level continuous HGF model.
 
     .. plot::
 

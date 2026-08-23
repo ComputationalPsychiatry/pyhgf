@@ -70,7 +70,7 @@ def plot_layers(
     figsize :
         Figure size in inches. Defaults to ``(3.5 * n_cols, 2.5 * n_rows)``.
     color :
-        The color of the lines (``"all"`` mode) or of the mean curve and
+        The colour of the lines (``"all"`` mode) or of the mean curve and
         confidence band (``"mean_ci"`` mode). When ``None`` (default),
         Matplotlib's default colour cycle is used.
     axs :

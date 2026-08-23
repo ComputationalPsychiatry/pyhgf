@@ -1,6 +1,6 @@
 //! Prediction errors and the volatility-level posterior updates for
 //! volatile-node layers, mirroring
-//! `pyhgf/updates/vectorized/volatile/prediction_error.py` (which, like here,
+//! `pyhgf/updates/vectorised/volatile/prediction_error.py` (which, like here,
 //! hosts the per-update-type volatility posteriors and the combined driver).
 
 use super::MIN_VOLATILITY;
@@ -11,7 +11,7 @@ use ndarray::Array1;
 
 /// Compute prediction errors and apply the volatility-level posterior update.
 ///
-/// Mirrors `vectorized_layer_prediction_error`: always sets the value PE
+/// Mirrors `vectorised_layer_prediction_error`: always sets the value PE
 /// `δ = mean − expected_mean`; when the layer has a volatility parent it also
 /// computes the volatility PE and dispatches the volatility-level posterior.
 /// `params` provides the value level's tonic volatility ω to the eHGF and
@@ -196,8 +196,8 @@ fn volatility_posterior_ehgf(
 /// variational energy-based softmax, with Gaussian mixture moment matching for
 /// the posterior precision.
 ///
-/// Mirrors `vectorized_layer_volatility_posterior_unbounded`
-/// (`pyhgf/updates/vectorized/volatile/prediction_error.py`) line by line,
+/// Mirrors `vectorised_layer_volatility_posterior_unbounded`
+/// (`pyhgf/updates/vectorised/volatile/prediction_error.py`) line by line,
 /// including the log-space rewrites: those exist there for gradient safety, but
 /// are kept here so both backends compute the *same* forward values.
 fn volatility_posterior_unbounded(

@@ -33,7 +33,7 @@ import jax.nn
 class LayerConfig:
     """Configuration for one layer in a DeepNetwork.
 
-    Encapsulates all per-layer settings so they can be serialized to/from JSON, YAML,
+    Encapsulates all per-layer settings so they can be serialised to/from JSON, YAML,
     or other formats. Each field corresponds to a parameter of
     :meth:`DeepNetwork.add_layer`.
 
@@ -76,9 +76,9 @@ class LayerConfig:
     tonic_volatility_vol: Optional[float] = None
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to a JSON-serializable dictionary.
+        """Convert to a JSON-serialisable dictionary.
 
-        Excludes None values for cleaner configs. Use this when serializing to JSON or
+        Excludes None values for cleaner configs. Use this when serialising to JSON or
         YAML to avoid cluttering the output.
 
         Returns

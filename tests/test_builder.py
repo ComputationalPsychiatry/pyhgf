@@ -4,7 +4,7 @@
 
 Validates that networks can be constructed from configuration dictionaries (JSON-like)
 and lists of LayerConfig objects, and that configs can be round-tripped to/from
-dictionaries for serialization.
+dictionaries for serialisation.
 """
 
 from __future__ import annotations
@@ -187,7 +187,7 @@ class TestDeepNetworkFromConfigs:
         ]
         net = DeepNetwork.from_configs(configs)
         assert net.n_layers == 2
-        # Verify state was initialized
+        # Verify state was initialised
         assert net.state is not None
 
     def test_from_configs_empty_raises(self):
@@ -293,7 +293,7 @@ class TestDeepNetworkFromDict:
         assert net.n_layers == 2
 
     def test_from_dict_json_round_trip(self):
-        """Configs can be serialized to JSON and back."""
+        """Configs can be serialised to JSON and back."""
         config = {
             "layers": [
                 {"size": 10},
@@ -304,10 +304,10 @@ class TestDeepNetworkFromDict:
             "volatility_updates": "unbounded",
         }
 
-        # Serialize to JSON
+        # Serialise to JSON
         json_str = json.dumps(config)
 
-        # Deserialize from JSON
+        # Deserialise from JSON
         loaded_config = json.loads(json_str)
 
         # Build from loaded config

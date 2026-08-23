@@ -1,5 +1,5 @@
 //! Top-down prediction for volatile-node layers, mirroring
-//! `pyhgf/updates/vectorized/volatile/prediction.py`.
+//! `pyhgf/updates/vectorised/volatile/prediction.py`.
 
 use super::guarded_volatility;
 use crate::math::{with_coupling, CouplingFn};
@@ -10,7 +10,7 @@ use ndarray::Array1;
 /// Predict the value- and volatility-level expectations for every node in a
 /// child layer from its parent.
 ///
-/// Mirrors `vectorized_layer_prediction`. `weights` is the parent's
+/// Mirrors `vectorised_layer_prediction`. `weights` is the parent's
 /// `weights_in` (shape `(n_child, n_parent[+1])`), `coupling_fn` is the
 /// parent's coupling function, and `params` are the *child's* layer parameters.
 ///

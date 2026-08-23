@@ -52,7 +52,7 @@ def test_fused_adapter_tracks_backprop_twin():
 
     part = DeepNetworkAdapter(
         from_feedforward(fc1, fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
-        optimizer=optax.sgd(lr),
+        optimiser=optax.sgd(lr),
         learning_kind="precision_weighted",
     )
     fused = FusedPipeline(part)
@@ -106,7 +106,7 @@ def test_fused_precisions_carry_across_steps():
         )
         part = DeepNetworkAdapter(
             from_feedforward(fc1, fc2, leaf_kwargs=leaf, layer_kwargs=layer),
-            optimizer=optax.adam(1e-3),
+            optimiser=optax.adam(1e-3),
             update_precisions=update_precisions,
         )
         fused = FusedPipeline(part)
@@ -144,7 +144,7 @@ def test_fused_gpt_trajectory_matches_backprop():
 
     def part(net):
         return DeepNetworkAdapter(
-            net, optimizer=optax.sgd(lr), learning_kind="precision_weighted"
+            net, optimiser=optax.sgd(lr), learning_kind="precision_weighted"
         )
 
     hybrid = hybrid_from_gpt(
@@ -227,7 +227,7 @@ def test_fused_merge_writes_state_back():
     fc2 = eqx.nn.Linear(12, 6, key=k2)
     adapter = DeepNetworkAdapter(
         from_feedforward(fc1, fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
-        optimizer=optax.adam(1e-3),
+        optimiser=optax.adam(1e-3),
     )
     before = adapter.net.state.layers[1].weights_mean
     fused = FusedPipeline(adapter)
@@ -248,7 +248,7 @@ def test_fused_predict_is_read_only():
     fc2 = eqx.nn.Linear(12, 6, key=k2)
     adapter = DeepNetworkAdapter(
         from_feedforward(fc1, fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
-        optimizer=optax.adam(1e-3),
+        optimiser=optax.adam(1e-3),
     )
     fused = FusedPipeline(adapter)
     x = jnp.asarray(rng.normal(size=(4, 6)))

@@ -2,7 +2,7 @@
 //!
 //! These compose the per-layer kernels of [`crate::updates::vectorised`] into the
 //! belief-propagation passes of the JAX driver
-//! (`pyhgf.utils.vectorized_belief_propagation`):
+//! (`pyhgf.utils.vectorised_belief_propagation`):
 //!
 //! * [`DeepNet::prediction_sweep`] — clamp the predictors on top, predict every
 //!   layer top→down.
@@ -18,7 +18,7 @@ use crate::updates::vectorised::learning::{weight_gradient_factors, WeightKind};
 use crate::updates::vectorised::{binary, categorical, softmax_inplace, volatile};
 use crate::vectorised::layer::{DeepNet, Layer, LayerKind};
 use crate::vectorised::mat::{Float, Matrix, Vector};
-use crate::vectorised::optimiser::{OptState, Optimizer};
+use crate::vectorised::optimiser::{OptState, Optimiser};
 use ndarray::{s, ArrayView1, ArrayView2};
 
 /// Predict a single child layer from its parent, in place, dispatching on the
@@ -226,7 +226,7 @@ impl DeepNet {
         &mut self,
         x: ArrayView1<Float>,
         y: ArrayView1<Float>,
-        optimizer: &Optimizer,
+        optimiser: &Optimiser,
         opt_state: &mut OptState,
         time_step: Float,
         learning_kind: WeightKind,
@@ -237,7 +237,7 @@ impl DeepNet {
         self.update_sweep(y, time_step);
         if weight_update {
             let grads = self.weight_gradient_factors(learning_kind);
-            optimizer.apply(opt_state, &mut self.layers, &grads);
+            optimiser.apply(opt_state, &mut self.layers, &grads);
         }
         output_pred
     }
@@ -305,7 +305,7 @@ impl DeepNet {
     /// [`Self::propagation_step`] driven sequentially, where the precisions
     /// adapt from one sample to the next.
     ///
-    /// With `optimizer` set, the batch-mean descent gradient drives one
+    /// With `optimiser` set, the batch-mean descent gradient drives one
     /// optimiser step; with `None` the weights are frozen. With
     /// `update_precisions`, the batch-mean change of the carried precision
     /// fields (the value-level posterior precision and the volatility level's
@@ -320,7 +320,7 @@ impl DeepNet {
         &mut self,
         x: ArrayView2<Float>,
         y: ArrayView2<Float>,
-        optimizer: Option<&Optimizer>,
+        optimiser: Option<&Optimiser>,
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
@@ -330,7 +330,7 @@ impl DeepNet {
             &mut crate::vectorised::batched::BatchWorkspace::default(),
             x,
             y,
-            optimizer,
+            optimiser,
             opt_state,
             time_step,
             learning_kind,
@@ -349,7 +349,7 @@ impl DeepNet {
         workspace: &mut crate::vectorised::batched::BatchWorkspace,
         x: ArrayView2<Float>,
         y: ArrayView2<Float>,
-        optimizer: Option<&Optimizer>,
+        optimiser: Option<&Optimiser>,
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
@@ -363,7 +363,7 @@ impl DeepNet {
             workspace,
             x,
             y,
-            optimizer,
+            optimiser,
             opt_state,
             time_step,
             learning_kind,
@@ -382,7 +382,7 @@ impl DeepNet {
         workspace: &mut crate::vectorised::batched::BatchWorkspace,
         x: ArrayView2<Float>,
         y: ArrayView2<Float>,
-        optimizer: Option<&Optimizer>,
+        optimiser: Option<&Optimiser>,
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
@@ -398,7 +398,7 @@ impl DeepNet {
         use rayon::prelude::*;
 
         let n_samples = x.nrows();
-        let learning = optimizer.is_some();
+        let learning = optimiser.is_some();
         let ranges = chunk_ranges(n_samples, n_chunks);
 
         // One workspace entry per chunk; entries beyond the chunk count are
@@ -432,7 +432,7 @@ impl DeepNet {
         self.combine_and_apply(
             chunk_outs,
             n_samples,
-            optimizer,
+            optimiser,
             opt_state,
             update_precisions,
         )
@@ -492,7 +492,7 @@ impl DeepNet {
         &mut self,
         workspace: &mut crate::vectorised::batched::BatchWorkspace,
         error: ArrayView2<Float>,
-        optimizer: Option<&Optimizer>,
+        optimiser: Option<&Optimiser>,
         opt_state: Option<&mut OptState>,
         time_step: Float,
         learning_kind: WeightKind,
@@ -537,7 +537,7 @@ impl DeepNet {
             );
         }
 
-        let learning = optimizer.is_some();
+        let learning = optimiser.is_some();
         let net: &DeepNet = self;
         let templates: Vec<&LayerState> = net.layers.iter().map(|layer| &layer.state).collect();
         let chunk_outs: Vec<ChunkOut> = ranges
@@ -566,7 +566,7 @@ impl DeepNet {
         Ok(self.combine_and_apply(
             chunk_outs,
             n_samples,
-            optimizer,
+            optimiser,
             opt_state,
             update_precisions,
         ))
@@ -580,7 +580,7 @@ impl DeepNet {
         &mut self,
         chunk_outs: Vec<ChunkOut>,
         n_samples: usize,
-        optimizer: Option<&Optimizer>,
+        optimiser: Option<&Optimiser>,
         opt_state: Option<&mut OptState>,
         update_precisions: bool,
     ) -> Matrix {
@@ -592,7 +592,7 @@ impl DeepNet {
                 .assign(&chunk.errors);
         }
 
-        if let (Some(opt), Some(state)) = (optimizer, opt_state) {
+        if let (Some(opt), Some(state)) = (optimiser, opt_state) {
             // Batch mean = chunk means weighted by chunk size.
             let mut grads: Vec<Option<Matrix>> = self
                 .layers
@@ -774,7 +774,7 @@ mod tests {
             },
         ];
         let mut net = DeepNet::from_configs(&configs).unwrap();
-        let opt = Optimizer::sgd(0.05);
+        let opt = Optimiser::sgd(0.05);
         let mut state = OptState::init(&net);
 
         let x = Array1::from_vec(vec![1.0]);
@@ -830,7 +830,7 @@ mod tests {
         let n_samples = 5;
         let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
         let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as Float * 0.4).sin());
-        let opt = Optimizer::adam(0.01);
+        let opt = Optimiser::adam(0.01);
 
         // Reference: the per-sample loop over the same template.
         let mut reference = make_net();
@@ -969,7 +969,7 @@ mod tests {
         let n_samples = 601; // odd, so the chunks are uneven
         let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
         let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as Float * 0.4).sin());
-        let opt = Optimizer::adam(0.01);
+        let opt = Optimiser::adam(0.01);
 
         let run = |n_chunks: usize| {
             let mut net = make_net();
@@ -1043,7 +1043,7 @@ mod tests {
                 }),
             )
         };
-        let opt = Optimizer::adam(0.01);
+        let opt = Optimiser::adam(0.01);
 
         let mut reused = make_net();
         let mut fresh = make_net();
@@ -1113,7 +1113,7 @@ mod tests {
                 Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
             let y =
                 Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i * 2 + j) as Float * 0.4).sin());
-            let opt = Optimizer::adam(0.01);
+            let opt = Optimiser::adam(0.01);
 
             let mut one_shot = make_net();
             let mut one_state = OptState::init(&one_shot);
@@ -1168,7 +1168,7 @@ mod tests {
         let configs = vec![LayerConfig::new(2), LayerConfig::new(3)];
         let mut seq = DeepNet::from_configs(&configs).unwrap();
         let mut bat = DeepNet::from_configs(&configs).unwrap();
-        let opt = Optimizer::sgd(0.05);
+        let opt = Optimiser::sgd(0.05);
         let mut seq_state = OptState::init(&seq);
         let mut bat_state = OptState::init(&bat);
 

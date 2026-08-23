@@ -1,6 +1,6 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Vectorized prediction update for layers of regular continuous nodes."""
+"""Vectorised prediction update for layers of regular continuous nodes."""
 
 import dataclasses
 from typing import Callable, Optional
@@ -11,7 +11,7 @@ from jax import grad, vmap
 from pyhgf.typing.vectorised import LayerParams, LayerState
 
 
-def vectorized_continuous_prediction(
+def vectorised_continuous_prediction(
     child_state: LayerState,
     params: LayerParams,
     time_step: float,
@@ -25,7 +25,7 @@ def vectorized_continuous_prediction(
 ) -> LayerState:
     r"""Predict expected mean and precisions for a layer of continuous nodes.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction.continuous.continuous_node_prediction`, applied
     to a whole layer at once with the value and volatility parents generalised to
     *layers* connected by matrices.
@@ -39,7 +39,7 @@ def vectorized_continuous_prediction(
 
     so the value parent nudges the child's own autoregressive state rather than
     replacing it (contrast with
-    :func:`pyhgf.updates.vectorized.volatile.prediction.vectorized_layer_prediction`,
+    :func:`pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`,
     where the parent's prediction fully determines the child's expected mean).
 
     The two predicted precisions follow the improved (piHGF) scheme of the
@@ -97,7 +97,7 @@ def vectorized_continuous_prediction(
         nodalised backend's input-node convention). A leaf *with* a volatility
         parent does walk, so it takes the regular path and must be passed with
         ``is_static_leaf=False``. Distinct from
-        :attr:`~pyhgf.updates.vectorized.continuous.posterior.ValueChild.precision_is_clamped`,
+        :attr:`~pyhgf.updates.vectorised.continuous.posterior.ValueChild.precision_is_clamped`,
         which holds for *every* clamped leaf.
     mean_field_updates :
         If ``True``, use the original mean-field prediction: the volatility

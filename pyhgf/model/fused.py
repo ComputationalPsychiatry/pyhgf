@@ -40,7 +40,7 @@ from pyhgf.model.transformer import (
     _mixing_backward,
     _mixing_forward,
 )
-from pyhgf.utils.vectorized_belief_propagation import (
+from pyhgf.utils.vectorised_belief_propagation import (
     _batch_step,
     _prediction_sweep,
 )
@@ -72,7 +72,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
     sample swept states as the cache, so the backward pass starts from them instead of
     re-running the sweep — inside one trace, the handover is free.
     """
-    optimizer = part.optimizer
+    optimiser = part.optimiser
     learning_kind = part.gradient_kind
     synaptic_uncertainty_settings = part.synaptic_uncertainty_settings
     update_precisions = part.update_precisions
@@ -107,7 +107,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             opt_state,
             flat_x,
             out - error.reshape(-1, error.shape[-1]),
-            optimizer=optimizer,
+            optimiser=optimiser,
             learning_kind=learning_kind,
             update_precisions=update_precisions,
             synaptic_uncertainty_settings=synaptic_uncertainty_settings,
@@ -256,7 +256,7 @@ def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
     input errors add, since all three read the same input.
 
     State is obtained from each of the four weight table cores (Q, K, V, O), which have
-    already been initialized via their respective ``init_state()`` calls during _core
+    already been initialised via their respective ``init_state()`` calls during _core
     construction.
     """
     if part.wqkv is not None:
@@ -564,7 +564,7 @@ def step_report(pipeline: FusedPipeline) -> list:
     labelled by the part's path inside the model. Reading the two side by side
     shows at a glance which parts are being over- or under-driven — the
     practical symptom of a mis-calibrated learning rate (see the architecture
-    guide on choosing the optimizer and rate).
+    guide on choosing the optimiser and rate).
 
     Parameters
     ----------

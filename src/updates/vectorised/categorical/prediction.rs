@@ -1,5 +1,5 @@
 //! Top-down prediction for categorical leaf layers, mirroring
-//! `pyhgf/updates/vectorized/categorical/prediction.py`.
+//! `pyhgf/updates/vectorised/categorical/prediction.py`.
 
 use crate::math::{with_coupling, CouplingFn};
 use crate::updates::vectorised::{push, softmax_inplace};
@@ -10,7 +10,7 @@ use ndarray::Array1;
 /// Predict a categorical (softmax) leaf layer: `μ̂ = softmax(W @ g(parent))`,
 /// with unit precisions and zero effective precision.
 ///
-/// Mirrors `vectorized_categorical_prediction`.
+/// Mirrors `vectorised_categorical_prediction`.
 pub fn categorical_prediction(
     child: &mut LayerState,
     parent: &LayerState,

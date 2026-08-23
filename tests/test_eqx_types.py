@@ -358,7 +358,7 @@ def test_record_selective_fields_only_in_trajectories():
     )
     x = np.random.RandomState(0).randn(5, 3).astype(np.float32)
     y = np.random.RandomState(1).randn(5, 2).astype(np.float32)
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), record=("expected_mean", "precision"))
+    dn.fit(x=x, y=y, optimiser=optax.sgd(0.1), record=("expected_mean", "precision"))
     assert set(dn.trajectories) == {"expected_mean", "precision"}
     # Per-layer T-leading arrays.
     assert dn.trajectories["expected_mean"][0].shape == (5, 2)
@@ -371,7 +371,7 @@ def test_record_unknown_field_raises():
     x = np.zeros((3, 3), dtype=np.float32)
     y = np.zeros((3, 2), dtype=np.float32)
     with pytest.raises(ValueError, match="Unknown record field"):
-        dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), record=("nope",))
+        dn.fit(x=x, y=y, optimiser=optax.sgd(0.1), record=("nope",))
 
 
 def test_record_all_constant_matches_all_layerstate_fields():
@@ -412,7 +412,7 @@ def test_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
     Because the network is a PyTree, N independent networks can be stacked on a leading
     axis and trained in a single vmapped scan call.
     """
-    from pyhgf.utils.vectorized_belief_propagation import run_scan
+    from pyhgf.utils.vectorised_belief_propagation import run_scan
 
     keys = jax.random.split(jax.random.key(0), 3)
     nets = [
@@ -426,9 +426,9 @@ def test_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
     stacked_network = jax.tree_util.tree_map(
         lambda *xs: jnp.stack(xs), *(n.state for n in nets)
     )
-    optimizer = optax.sgd(0.1)
+    optimiser = optax.sgd(0.1)
     # Each network gets its own opt_state.
-    stacked_opt_state = jax.vmap(optimizer.init)(stacked_network.weights_tuple())
+    stacked_opt_state = jax.vmap(optimiser.init)(stacked_network.weights_tuple())
 
     x = jnp.zeros((4, 3), dtype=jnp.float32)
     y = jnp.zeros((4, 2), dtype=jnp.float32)
@@ -437,7 +437,7 @@ def test_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
     (final_network, _), preds = ensemble_step(
         (stacked_network, stacked_opt_state),
         (x, y),
-        optimizer,
+        optimiser,
         "precision_weighted",
         True,
         (),
@@ -459,7 +459,7 @@ def test_to_pandas_flattens_trajectories():
     )
     x = np.random.RandomState(0).randn(4, 3).astype(np.float32)
     y = np.random.RandomState(1).randn(4, 2).astype(np.float32)
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), record=("expected_mean",))
+    dn.fit(x=x, y=y, optimiser=optax.sgd(0.1), record=("expected_mean",))
     df = dn.to_pandas()
     # 4 time steps × (layer 0: 2 nodes + layer 1: 3 nodes) = 5 columns.
     assert df.shape == (4, 5)
@@ -613,8 +613,8 @@ def test_scanned_fit_matches_unrolled_over_one_epoch():
     rng = np.random.default_rng(1)
     X = jnp.array(rng.standard_normal((20, 2)), dtype=jnp.float32)
     y = jnp.array((rng.uniform(size=(20,)) > 0.5).astype(np.float32).reshape(-1, 1))
-    u.fit(X, y, optimizer=optax.sgd(0.05), learning_kind="standard", time_step=1e-2)
-    s.fit(X, y, optimizer=optax.sgd(0.05), learning_kind="standard", time_step=1e-2)
+    u.fit(X, y, optimiser=optax.sgd(0.05), learning_kind="standard", time_step=1e-2)
+    s.fit(X, y, optimiser=optax.sgd(0.05), learning_kind="standard", time_step=1e-2)
 
     # Predictions during the scan step (per-sample output collected by run_scan).
     pred_diff = float(
@@ -642,7 +642,7 @@ def test_scanned_trajectories_match_unrolled():
     u.fit(
         X,
         y,
-        optimizer=optax.sgd(0.0),
+        optimiser=optax.sgd(0.0),
         learning_kind="standard",
         record=RECORD_ALL,
         time_step=1e-2,
@@ -650,7 +650,7 @@ def test_scanned_trajectories_match_unrolled():
     s.fit(
         X,
         y,
-        optimizer=optax.sgd(0.0),
+        optimiser=optax.sgd(0.0),
         learning_kind="standard",
         record=RECORD_ALL,
         time_step=1e-2,

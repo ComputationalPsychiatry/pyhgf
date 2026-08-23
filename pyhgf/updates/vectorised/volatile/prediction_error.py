@@ -1,9 +1,9 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 # Author: Aleksandrs Baskakovs <aleks@cas.au.dk>
 
-"""Vectorized prediction error and volatility posterior for volatile node layers.
+"""Vectorised prediction error and volatility posterior for volatile node layers.
 
-This module mirrors :mod:`pyhgf.updates.prediction_error.volatile` for vectorized
+This module mirrors :mod:`pyhgf.updates.prediction_error.volatile` for vectorised
 layers: it provides separate value and volatility prediction-error functions, per-
 update-type volatility posterior functions, and a combined driver that calls them in the
 correct order.
@@ -22,12 +22,12 @@ from pyhgf.typing.vectorised import LayerParams, LayerState
 # ---------------------------------------------------------------------------
 
 
-def vectorized_layer_value_prediction_error(
+def vectorised_layer_value_prediction_error(
     layer: LayerState,
 ) -> LayerState:
     """Compute the value prediction error for all nodes in a layer.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error`.
 
     Parent-count normalisation is applied in the prediction step instead
@@ -49,12 +49,12 @@ def vectorized_layer_value_prediction_error(
     return dataclasses.replace(layer, value_prediction_error=value_pe)
 
 
-def vectorized_layer_volatility_prediction_error(
+def vectorised_layer_volatility_prediction_error(
     layer: LayerState,
 ) -> LayerState:
     """Compute the volatility prediction error for all nodes in a layer.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error`.
 
     Note that we are not dividing by the number of parents here, since volatile nodes
@@ -65,7 +65,7 @@ def vectorized_layer_volatility_prediction_error(
     layer :
         Current layer.  Must already carry an up-to-date
         ``value_prediction_error`` (set by
-        :func:`vectorized_layer_value_prediction_error`).
+        :func:`vectorised_layer_value_prediction_error`).
 
     Returns
     -------
@@ -86,13 +86,13 @@ def vectorized_layer_volatility_prediction_error(
 # ---------------------------------------------------------------------------
 
 
-def vectorized_layer_volatility_posterior_standard(
+def vectorised_layer_volatility_posterior_standard(
     layer: LayerState,
     max_posterior_precision: float = 1e10,
 ) -> LayerState:
     """Update the volatility level using the standard ordering.
 
-    This is the vectorized equivalent of the standard volatility-level posterior
+    This is the vectorised equivalent of the standard volatility-level posterior
     update that first updates precision, then uses the updated precision to
     compute the mean update.
 
@@ -139,7 +139,7 @@ def vectorized_layer_volatility_posterior_standard(
     )
 
 
-def vectorized_layer_volatility_posterior_ehgf(
+def vectorised_layer_volatility_posterior_ehgf(
     layer: LayerState,
     params: LayerParams,
     time_step: float,
@@ -153,7 +153,7 @@ def vectorized_layer_volatility_posterior_ehgf(
     applies the safe precision update: the effective precision is recomputed from
     the just-updated posterior mean and the increment is floored at zero.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf.volatile_node_posterior_update_ehgf`.
 
     Parameters
@@ -237,7 +237,7 @@ def vectorized_layer_volatility_posterior_ehgf(
     )
 
 
-def vectorized_layer_volatility_posterior_unbounded(
+def vectorised_layer_volatility_posterior_unbounded(
     layer: LayerState,
     params: LayerParams,
     time_step: float,
@@ -250,7 +250,7 @@ def vectorized_layer_volatility_posterior_unbounded(
     variational energy-based softmax, with Gaussian mixture moment matching
     for the final posterior precision.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded`.
 
     Parameters
@@ -422,7 +422,7 @@ def vectorized_layer_volatility_posterior_unbounded(
 # ---------------------------------------------------------------------------
 
 
-def vectorized_layer_prediction_error(
+def vectorised_layer_prediction_error(
     layer: LayerState,
     params: LayerParams,
     volatility_updates: str = "eHGF",
@@ -433,7 +433,7 @@ def vectorized_layer_prediction_error(
 ) -> LayerState:
     """Compute prediction errors and apply the volatility-level posterior update.
 
-    This is the vectorized equivalent of
+    This is the vectorised equivalent of
     :func:`pyhgf.updates.prediction_error.volatile.volatile_node_prediction_error`.
     It first computes value and volatility prediction errors, then dispatches to
     the appropriate volatility-level posterior update depending on *volatility_updates*.
@@ -471,16 +471,16 @@ def vectorized_layer_prediction_error(
         Updated layer state with prediction errors and volatility posterior.
     """
     # 1. Value prediction error (always computed)
-    layer = vectorized_layer_value_prediction_error(layer)
+    layer = vectorised_layer_value_prediction_error(layer)
 
     if not has_volatility_parent:
         return layer
 
     # 2. Volatility prediction error and posterior update
-    layer = vectorized_layer_volatility_prediction_error(layer)
+    layer = vectorised_layer_volatility_prediction_error(layer)
 
     if volatility_updates == "eHGF":
-        layer = vectorized_layer_volatility_posterior_ehgf(
+        layer = vectorised_layer_volatility_posterior_ehgf(
             layer,
             params,
             time_step,
@@ -488,11 +488,11 @@ def vectorized_layer_prediction_error(
             mean_field_updates=mean_field_updates,
         )
     elif volatility_updates == "standard":
-        layer = vectorized_layer_volatility_posterior_standard(
+        layer = vectorised_layer_volatility_posterior_standard(
             layer, max_posterior_precision=max_posterior_precision
         )
     elif volatility_updates == "unbounded":
-        layer = vectorized_layer_volatility_posterior_unbounded(
+        layer = vectorised_layer_volatility_posterior_unbounded(
             layer,
             params,
             time_step,
