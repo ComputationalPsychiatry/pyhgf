@@ -5,7 +5,7 @@
 
 use super::MIN_VOLATILITY;
 use crate::math::{lambert_w0, logaddexp, sigmoid};
-use crate::vectorised::layer::{LayerState, VolatilityUpdate};
+use crate::vectorised::layer::{LayerParams, LayerState, VolatilityUpdate};
 use crate::vectorised::mat::Float;
 use ndarray::Array1;
 
@@ -14,8 +14,12 @@ use ndarray::Array1;
 /// Mirrors `vectorized_layer_prediction_error`: always sets the value PE
 /// `δ = mean − expected_mean`; when the layer has a volatility parent it also
 /// computes the volatility PE and dispatches the volatility-level posterior.
+/// `params` provides the value level's tonic volatility ω to the eHGF and
+/// unbounded posteriors when one is allocated (`None` enters the exponents as
+/// zero).
 pub fn layer_prediction_error(
     layer: &mut LayerState,
+    params: &LayerParams,
     volatility_updates: VolatilityUpdate,
     time_step: Float,
     has_volatility_parent: bool,
@@ -39,10 +43,10 @@ pub fn layer_prediction_error(
     match volatility_updates {
         VolatilityUpdate::Standard => volatility_posterior_standard(layer, max_posterior_precision),
         VolatilityUpdate::EHgf => {
-            volatility_posterior_ehgf(layer, time_step, max_posterior_precision)
+            volatility_posterior_ehgf(layer, params, time_step, max_posterior_precision)
         }
         VolatilityUpdate::Unbounded => {
-            volatility_posterior_unbounded(layer, time_step, max_posterior_precision)
+            volatility_posterior_unbounded(layer, params, time_step, max_posterior_precision)
         }
     }
 }
@@ -115,6 +119,7 @@ pub(crate) fn ehgf_vol_node(
     prec: Float,
     mean: Float,
     emean: Float,
+    tonic: Float,
     time_step: Float,
     max_posterior_precision: Float,
 ) -> (Float, Float) {
@@ -122,13 +127,13 @@ pub(crate) fn ehgf_vol_node(
     let posterior_mean_vol = em + (g * dpe) / (ep * 2.0);
 
     let pvol = |exponent: Float| time_step * exponent.exp();
-    // Reconstruct the value level's pre-prediction variance exactly. The value
-    // level carries no tonic volatility of its own.
+    // Reconstruct the value level's pre-prediction variance exactly. `tonic` is
+    // the value level's own ω, zero when the params allocate none.
     let mgf = 1.0 / (ep * 2.0);
-    let predicted_vol = pvol(em + mgf);
+    let predicted_vol = pvol(tonic + em + mgf);
     let previous_variance = (1.0 / cond - predicted_vol).max(MIN_VOLATILITY);
     // Re-predict volatility / precision from the posterior mean.
-    let repredicted_vol = pvol(posterior_mean_vol);
+    let repredicted_vol = pvol(tonic + posterior_mean_vol);
     let expected_precision = 1.0 / (previous_variance + repredicted_vol);
     let eff2 = repredicted_vol * expected_precision;
     let vew = (repredicted_vol - previous_variance) * expected_precision;
@@ -147,9 +152,11 @@ pub(crate) fn ehgf_vol_node(
 /// floored at zero.
 fn volatility_posterior_ehgf(
     state: &mut LayerState,
+    params: &LayerParams,
     time_step: Float,
     max_posterior_precision: Float,
 ) {
+    let tonic = params.tonic_volatility.as_ref();
     let eff = &state.effective_precision;
     let vpe = state.volatility_prediction_error.as_ref().unwrap();
     let epv = state.expected_precision_vol.as_ref().unwrap();
@@ -172,6 +179,7 @@ fn volatility_posterior_ehgf(
             prec[i],
             mean[i],
             emean[i],
+            tonic.map_or(0.0, |tv| tv[i]),
             time_step,
             max_posterior_precision,
         );
@@ -194,9 +202,11 @@ fn volatility_posterior_ehgf(
 /// are kept here so both backends compute the *same* forward values.
 fn volatility_posterior_unbounded(
     state: &mut LayerState,
+    params: &LayerParams,
     time_step: Float,
     max_posterior_precision: Float,
 ) {
+    let tonic = params.tonic_volatility.as_ref();
     let epv = state.expected_precision_vol.as_ref().unwrap();
     let emv = state.expected_mean_vol.as_ref().unwrap();
     let cond = &state.conditional_expected_precision;
@@ -213,6 +223,7 @@ fn volatility_posterior_unbounded(
             state.precision[i],
             state.mean[i],
             state.expected_mean[i],
+            tonic.map_or(0.0, |tv| tv[i]),
             time_step,
             max_posterior_precision,
         );
@@ -237,12 +248,13 @@ pub(crate) fn unbounded_vol_node(
     prec: Float,
     mean: Float,
     emean: Float,
+    tonic: Float,
     time_step: Float,
     max_posterior_precision: Float,
 ) -> (Float, Float) {
     // The dual-quadratic blend is numerically delicate (log-space energies,
     // Lambert W); compute it in f64 and cast the posterior pair back at the end.
-    let (em, ep, cond, marginal_ep, prec, mean, emean, time_step, max_posterior_precision) = (
+    let (em, ep, cond, marginal_ep, prec, mean, emean, tonic, time_step, max_posterior_precision) = (
         em as f64,
         ep as f64,
         cond as f64,
@@ -250,6 +262,7 @@ pub(crate) fn unbounded_vol_node(
         prec as f64,
         mean as f64,
         emean as f64,
+        tonic as f64,
         time_step as f64,
         max_posterior_precision as f64,
     );
@@ -258,16 +271,16 @@ pub(crate) fn unbounded_vol_node(
 
     // Reconstruct the pre-prediction variance exactly from the conditional
     // predicted precision (the prediction's full exponent, MGF included). The
-    // volatility coupling is fixed at 1 and the value level carries no tonic
-    // volatility of its own.
-    let predicted_volatility = time_step * (em + 1.0 / (2.0 * ep)).exp();
+    // volatility coupling is fixed at 1; `tonic` is the value level's own ω,
+    // zero when the params allocate none.
+    let predicted_volatility = time_step * (tonic + em + 1.0 / (2.0 * ep)).exp();
     let previous_variance = (1.0 / cond - predicted_volatility).max(MIN_VOLATILITY as f64);
     let d = mean - emean;
     let be_aux = 1.0 / prec + d * d;
 
     let log_previous_variance = previous_variance.ln();
     // Canonical exponent at prediction.
-    let gamma_c = log_time_step + em;
+    let gamma_c = log_time_step + em + tonic;
     // w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α).
     let w_jm1 = sigmoid(gamma_c - log_previous_variance);
     // Volatility PE with the *marginal* predicted precision.
@@ -283,9 +296,9 @@ pub(crate) fn unbounded_vol_node(
     let w_arg = log_w_arg.min(log_float_max).exp();
     let v_w = lambert_w0(w_arg);
     let y_star = gamma_c + v_w - 0.5 / pihat_y;
-    let x_star = y_star - log_time_step;
+    let x_star = y_star - log_time_step - tonic;
 
-    let log_s2 = log_time_step + x_star;
+    let log_s2 = log_time_step + x_star + tonic;
     let log_denom_s = logaddexp(log_previous_variance, log_s2);
     let w2 = sigmoid(log_s2 - log_previous_variance);
     let da2 = be_aux * (-log_denom_s).exp() - 1.0;
@@ -306,12 +319,12 @@ pub(crate) fn unbounded_vol_node(
     };
 
     // Variational energy-based softmax blend (log-space form).
-    let log_ey1 = log_time_step + mu1;
+    let log_ey1 = log_time_step + mu1 + tonic;
     let log_denom_1 = logaddexp(log_previous_variance, log_ey1);
     let i1 = -0.5 * log_denom_1
         - 0.5 * be_aux * (-log_denom_1).exp()
         - 0.5 * ep * (mu1 - em) * (mu1 - em);
-    let log_ey2 = log_time_step + mu2;
+    let log_ey2 = log_time_step + mu2 + tonic;
     let log_denom_2 = logaddexp(log_previous_variance, log_ey2);
     let i2 = -0.5 * log_denom_2
         - 0.5 * be_aux * (-log_denom_2).exp()
@@ -339,7 +352,8 @@ mod tests {
         layer.mean = Array1::from_vec(vec![1.0, 2.0, 3.0]);
         layer.expected_mean = Array1::from_vec(vec![0.5, 2.0, 4.0]);
 
-        layer_prediction_error(&mut layer, VolatilityUpdate::EHgf, 1.0, false, 1e10);
+        let params = LayerParams::create(3);
+        layer_prediction_error(&mut layer, &params, VolatilityUpdate::EHgf, 1.0, false, 1e10);
         assert!((layer.value_prediction_error[0] - 0.5).abs() < 1e-12);
         assert!((layer.value_prediction_error[1] - 0.0).abs() < 1e-12);
         assert!((layer.value_prediction_error[2] - (-1.0)).abs() < 1e-12);
@@ -359,7 +373,8 @@ mod tests {
         layer.expected_precision_vol = Some(Array1::from_vec(vec![1.0, 1.0]));
         layer.expected_mean_vol = Some(Array1::from_vec(vec![0.0, 0.0]));
 
-        layer_prediction_error(&mut layer, VolatilityUpdate::Standard, 1.0, true, 1e10);
+        let params = LayerParams::create(2);
+        layer_prediction_error(&mut layer, &params, VolatilityUpdate::Standard, 1.0, true, 1e10);
         assert!(layer.volatility_prediction_error.is_some());
         assert!(layer.precision_vol.is_some());
         assert!(layer.mean_vol.is_some());

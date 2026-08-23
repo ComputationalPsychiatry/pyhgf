@@ -164,17 +164,20 @@ def predict_precision_value_level(
 
     # Get value level parameters
     precision = attributes[node_idx]["precision"]
+    tonic_volatility = attributes[node_idx]["tonic_volatility"]
 
     # Get volatility level's expected mean and precision (already computed)
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
     expected_precision_vol = attributes[node_idx]["expected_precision_vol"]
 
-    # Total volatility = implicit volatility parent's expected mean + closed-form
+    # Total volatility = value-level tonic volatility ω (default -4.0) +
+    # implicit volatility parent's expected mean + closed-form
     # moment-generating-function correction 1/(2 π̂_vol) that arises from
-    # marginalising over the volatility parent's Gaussian. The volatility coupling
-    # is fixed at 1, and the value level carries no tonic volatility of its own;
-    # its diffusion is driven entirely by the volatility level.
-    total_volatility = expected_mean_vol + 1.0 / (2.0 * expected_precision_vol)
+    # marginalising over the volatility parent's Gaussian. The volatility
+    # coupling is fixed at 1.
+    total_volatility = (
+        tonic_volatility + expected_mean_vol + 1.0 / (2.0 * expected_precision_vol)
+    )
 
     # Compute predicted volatility
     predicted_volatility = time_step * jnp.exp(total_volatility)
@@ -342,10 +345,11 @@ def predict_precision_value_level_mean_field(
     time_step = attributes[-1]["time_step"]
 
     precision = attributes[node_idx]["precision"]
+    tonic_volatility = attributes[node_idx]["tonic_volatility"]
     expected_mean_vol = attributes[node_idx]["expected_mean_vol"]
 
-    # Volatility coupling is fixed at 1.
-    total_volatility = expected_mean_vol
+    # Volatility coupling is fixed at 1; ω defaults to -4.0.
+    total_volatility = tonic_volatility + expected_mean_vol
 
     predicted_volatility = time_step * jnp.exp(total_volatility)
     predicted_volatility = jnp.where(

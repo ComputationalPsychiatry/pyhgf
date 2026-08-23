@@ -606,3 +606,66 @@ def test_predict_parity_categorical_output():
     # A categorical output layer predicts a softmax; rows sum to one.
     np.testing.assert_allclose(out_rs.sum(axis=1), np.ones(5), **CONSISTENCY)
     np.testing.assert_allclose(out_rs, np.asarray(jx.predict(x)), **PARITY)
+
+
+# ---------------------------------------------------------------------------
+# Value-level tonic volatility (network flag, off by default)
+# ---------------------------------------------------------------------------
+
+
+def test_tonic_volatility_flag_gates_the_override():
+    """Without the network flag the per-layer override is rejected."""
+    with pytest.raises(ValueError, match="tonic_volatility=True"):
+        RsDeepNetwork().add_layer(4, tonic_volatility=-2.0)
+    # With the flag it is accepted.
+    RsDeepNetwork(tonic_volatility=True).add_layer(4, tonic_volatility=-2.0)
+
+
+def test_tonic_volatility_parity_with_jax():
+    """With ω enabled the two backends predict and fit the same trajectories."""
+    rng = np.random.default_rng(11)
+    sizes = [4, 3, 2]
+    layer_omegas = [-4.0, -2.0, -4.0]
+
+    rs = RsDeepNetwork(tonic_volatility=True)
+    jx = JaxDeepNetwork(tonic_volatility=True)
+    for s, omega in zip(sizes, layer_omegas):
+        rs = rs.add_layer(s, tonic_volatility=omega)
+        jx = jx.add_layer(size=s, tonic_volatility=omega)
+    weights = _random_weights(rs, rng)
+    rs.set_weights(weights)
+    _inject_jax_weights(jx, weights)
+
+    x = rng.normal(size=(12, sizes[-1]))
+    y = rng.normal(size=(12, sizes[0]))
+
+    np.testing.assert_allclose(
+        np.asarray(rs.predict(x)), np.asarray(jx.predict(x)), **PARITY
+    )
+    rs_out = np.asarray(rs.fit(x, y, optimizer="sgd", learning_rate=0.05))
+    jx.fit(x, y, optimizer=optax.sgd(0.05), check_gradient_health=False)
+    np.testing.assert_allclose(
+        np.asarray(rs.predict(x)), np.asarray(jx.predict(x)), **TRAJECTORY
+    )
+    assert np.isfinite(rs_out).all()
+
+
+def test_tonic_volatility_changes_the_rust_filter():
+    """ω = 0 is neutral and the flagged default (−4) is not, matching JAX."""
+    rng = np.random.default_rng(11)
+    x = rng.normal(size=(10, 2))
+    y = rng.normal(size=(10, 4))
+
+    def run(flag, **kw):
+        net = RsDeepNetwork(tonic_volatility=flag)
+        for s in (4, 3, 2):
+            net = net.add_layer(s, **kw)
+        net.weight_initialisation("xavier", seed=0)
+        net.fit(x, y, optimizer="sgd", learning_rate=0.05)
+        return np.asarray(net.predict(x))
+
+    base = run(False)
+    zero = run(True, tonic_volatility=0.0)
+    default = run(True)
+    np.testing.assert_array_equal(base, zero)
+    assert not np.array_equal(base, default)

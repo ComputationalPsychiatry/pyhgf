@@ -53,6 +53,10 @@ class LayerConfig:
         :func:`resolve_coupling_fn`.
     volatility_parent : bool, default True
         Whether the layer has an internal volatility parent.
+    tonic_volatility : Optional[float], default None
+        Per-layer override for the value level's tonic volatility. Only valid
+        when the network is built with ``tonic_volatility=True``, which is what
+        allocates the parameter.
     tonic_volatility_vol : Optional[float], default None
         Per-layer override for tonic_volatility_vol parameter.
 
@@ -68,6 +72,7 @@ class LayerConfig:
     fully_connected: bool = True
     coupling_fn: Optional[str] = None
     volatility_parent: bool = True
+    tonic_volatility: Optional[float] = None
     tonic_volatility_vol: Optional[float] = None
 
     def to_dict(self) -> dict[str, Any]:

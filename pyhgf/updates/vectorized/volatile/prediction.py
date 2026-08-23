@@ -29,19 +29,34 @@ def _predict_volatility_level(
     value level accumulates over this time step; it carries the closed-form
     moment-generating-function correction :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})`
     that comes from marginalising over the volatility level's Gaussian rather than
-    collapsing it to a point estimate. Volatility coupling is fixed at 1 and the
-    value level carries no tonic volatility of its own.
+    collapsing it to a point estimate. Volatility coupling is fixed at 1. The
+    value level carries a tonic volatility :math:`\omega` of its own only when
+    ``params.tonic_volatility`` is allocated (see
+    ``DeepNetwork(tonic_volatility=True)``); when it is ``None`` the diffusion is
+    driven entirely by the volatility level.
 
     Without a volatility parent the level is frozen: its three fields pass through
-    unchanged and the diffusion term is zero, so the value level does not undergo a
-    Gaussian random walk between observations.
+    unchanged. The diffusion term is then zero — unless the layer carries a tonic
+    volatility, in which case the value level still undergoes a Gaussian random
+    walk at the fixed rate :math:`\exp(\omega)`.
     """
     if not has_volatility_parent:
+        if params.tonic_volatility is None:
+            return (
+                state.mean_vol,
+                state.precision_vol,
+                state.effective_precision_vol,
+                jnp.zeros_like(state.precision),
+            )
+        predicted_volatility = time_step * jnp.exp(params.tonic_volatility)
+        predicted_volatility = jnp.where(
+            predicted_volatility > 1e-128, predicted_volatility, jnp.nan
+        )
         return (
             state.mean_vol,
             state.precision_vol,
             state.effective_precision_vol,
-            jnp.zeros_like(state.precision),
+            predicted_volatility,
         )
 
     assert state.mean_vol is not None
@@ -60,6 +75,8 @@ def _predict_volatility_level(
     effective_precision_vol = predicted_volatility_vol * expected_precision_vol
 
     total_volatility = expected_mean_vol + 1.0 / (2.0 * expected_precision_vol)
+    if params.tonic_volatility is not None:
+        total_volatility = total_volatility + params.tonic_volatility
     predicted_volatility = time_step * jnp.exp(total_volatility)
     predicted_volatility = jnp.where(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
@@ -139,8 +156,9 @@ def vectorized_layer_prediction(
     has_volatility_parent :
         If True (default), the layer has an implied internal volatility parent
         whose state (``mean_vol``, ``precision_vol``) is predicted and updated.
-        If False, the value level has no volatility source at all, so it does not
-        undergo a Gaussian random walk: the diffusion term is dropped and the
+        If False, the value level's only volatility source is its tonic
+        volatility, when one is allocated; without one it does not undergo a
+        Gaussian random walk at all: the diffusion term is dropped and the
         conditional predicted precision equals the prior precision.
     feedforward_uncertainty :
         Whether the value parents propagate their uncertainty to this layer. With
@@ -334,9 +352,10 @@ def vectorized_root_prediction(
         Time step :math:`t^{(k)}` for the prediction.
     has_volatility_parent :
         If True (default), the implied internal volatility parent is predicted and
-        contributes a diffusion term to the value level. If False, the value level has
-        no volatility source, so it does not drift between observations and the
-        predicted precision is just the prior precision.
+        contributes a diffusion term to the value level. If False, the value level
+        diffuses only through its tonic volatility, when one is allocated; without
+        one it does not drift between observations and the predicted precision is
+        just the prior precision.
 
     Returns
     -------

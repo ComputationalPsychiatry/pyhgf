@@ -233,20 +233,13 @@ def _build_network_dn(n_targets=3, n_hidden=8, n_predictors=4):
     )
 
 
-def _build_network_rs(n_targets=3, n_hidden=8, n_predictors=4):
-    """Build a 3-layer RsNetwork (targets → hidden → predictors)."""
-    return (
-        RsNetwork()
-        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-        .add_layer(size=n_hidden, coupling_strengths=1.0)
-        .add_layer(size=n_predictors, coupling_strengths=1.0)
-    )
-
-
 def test_weight_initialisation_strategies():
-    """All four strategies produce changed weights on both backends."""
+    """All four strategies produce changed weights.
+
+    The Rust ``DeepNetwork`` covers its own side in
+    ``test_rs_deepnetwork.py::test_weight_initialisation``.
+    """
     for strategy in ["xavier", "he", "orthogonal", "sparse"]:
-        # --- DeepNetwork ---
         dn = _build_network_dn()
         before = np.asarray(dn.state.weights[0]).copy()
         dn.weight_initialisation(strategy, key=jax.random.key(42))
@@ -254,11 +247,6 @@ def test_weight_initialisation_strategies():
         assert not np.array_equal(before, after), (
             f"DeepNetwork/{strategy}: weights unchanged by weight_initialisation"
         )
-
-        # --- RsNetwork ---
-        rs = _build_network_rs()
-        rs.weight_initialisation(strategy, seed=42)
-        # No error raised = success for Rust backend
 
 
 def test_orthogonal_initialisation_survives_the_reshape():
@@ -368,8 +356,10 @@ def test_three_backends_binary_volatile():
     → 1 volatile input
 
     The constant is a value parent of the intermediate volatile node (shared across
-    all three backends).  All three update types are exercised.  Volatile-state nodes
-    carry no ``tonic_volatility``, so no explicit override is needed.
+    all three backends).  All three update types are exercised.  The nodalised
+    volatile nodes carry the ``tonic_volatility`` default of -4.0, so the
+    DeepNetwork is built with ``tonic_volatility=True``, whose layers carry the
+    same default.
 
     Tolerances
     ----------
@@ -397,6 +387,7 @@ def test_three_backends_binary_volatile():
             DeepNetwork(
                 volatility_updates=volatility_updates,
                 feedforward_uncertainty=True,
+                tonic_volatility=True,
             )
             .add_layer(size=n_targets, kind="binary")
             .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
@@ -663,29 +654,12 @@ def test_fit_weight_update_false_freezes_weights():
     )
 
 
-def test_fit_weight_update_true_changes_weights():
-    """fit(weight_update=True) (default) actually changes the weights."""
-    np.random.seed(0)
-    x = np.random.randn(10, 3).astype(np.float32)
-    y = np.random.randn(10, 2).astype(np.float32)
-
-    dn = (
-        DeepNetwork()
-        .add_layer(size=2)
-        .add_layer(size=4)
-        .add_layer(size=3)
-        .weight_initialisation("xavier", key=jax.random.key(42))
-    )
-    weights_before = [np.asarray(w).copy() for w in dn.state.weights]
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1))
-    assert any(
-        not np.array_equal(before, np.asarray(after))
-        for before, after in zip(weights_before, dn.state.weights)
-    )
-
-
 def test_fit_weight_update_toggle_retraces():
-    """Toggling weight_update across calls."""
+    """Toggling weight_update across calls: frozen first, then learning.
+
+    The second call doubles as the ``weight_update=True`` (default) coverage — it must
+    actually change the weights the frozen call left untouched.
+    """
     np.random.seed(0)
     x = np.random.randn(5, 3).astype(np.float32)
     y = np.random.randn(5, 2).astype(np.float32)
@@ -715,8 +689,9 @@ def test_input_layer_uses_prior_precision():
 
     Layer 0 is the observation layer of a DeepNetwork — it has no value children, so it
     does not undergo a Gaussian random walk between samples and the volatility
-    contribution is skipped (mirroring the per-node continuous-node treatment). Volatile
-    layers carry no ``tonic_volatility``.
+    contribution is skipped (mirroring the per-node continuous-node treatment). The
+    default network allocates no value-level ``tonic_volatility``, and the input-leaf
+    override would drop its contribution anyway.
     """
     rng = np.random.default_rng(0)
     x = rng.standard_normal((5, 2)).astype(np.float32)
@@ -1293,19 +1268,6 @@ def test_input_layer_posterior_precision_is_carried_to_the_next_prediction():
     )
 
 
-def test_input_layer_flag_survives_from_dict():
-    """The flag is part of the network spec, not just the constructor."""
-    config = {
-        "layers": [{"size": 2}, {"size": 3}],
-        "update_input_layer": True,
-    }
-    assert DeepNetwork.from_dict(config).state.update_input_layer is True
-    assert (
-        DeepNetwork.from_dict({"layers": [{"size": 2}]}).state.update_input_layer
-        is False
-    )
-
-
 def test_input_layer_updated_under_batch_and_scan():
     """``fit`` and ``batch_update`` route through the same sweeps as ``update``.
 
@@ -1420,21 +1382,33 @@ def test_feedforward_uncertainty_defaults_to_off():
 
 
 def test_from_dict_forwards_network_level_settings():
-    """A network-level key of the config reaches the network and its state.
+    """Every network-level key of the config reaches the network and its state.
 
-    The belief sweeps read the copy on the state, so a key that reached only the network
-    object would leave the built network running the default rule while its config says
-    otherwise.
+    ``from_dict`` reads the accepted keys off the constructor signature, so one
+    test covers every flag at once: a key that reached only the network object
+    would leave the built network running the default rule while its config says
+    otherwise. ``tonic_volatility`` is asserted through the parameter it
+    allocates, since the state carries no copy of that flag.
     """
     net = DeepNetwork.from_dict({
         "layers": [{"size": 2}, {"size": 3}],
         "feedforward_uncertainty": True,
         "predict_precision": False,
+        "update_input_layer": True,
+        "tonic_volatility": True,
     })
     assert net.feedforward_uncertainty is True
     assert net.state.feedforward_uncertainty is True
     assert net.predict_precision is False
     assert net.state.predict_precision is False
+    assert net.state.update_input_layer is True
+    assert net.tonic_volatility is True
+    assert net.state.layers[0].params.tonic_volatility is not None
+
+    # Without the keys, every flag keeps its default.
+    plain = DeepNetwork.from_dict({"layers": [{"size": 2}]})
+    assert plain.state.update_input_layer is False
+    assert plain.state.layers[0].params.tonic_volatility is None
 
 
 def test_from_dict_ignores_keys_that_name_nothing():
@@ -1790,3 +1764,156 @@ def test_stack_on_observed_leaf_matches_unrolled(kind):
     ]
     for wa, wb in zip(stacked_weights, unrolled_weights):
         np.testing.assert_allclose(wa, wb, atol=1e-5, err_msg=kind)
+
+
+# ---------------------------------------------------------------------------
+# Value-level tonic volatility (network flag, off by default)
+# ---------------------------------------------------------------------------
+
+_TONIC_D = 3
+
+
+def _tonic_data(rng):
+    x = jnp.asarray(rng.normal(size=(8, 2)).astype(np.float32))
+    y = jnp.asarray(rng.normal(size=(8, _TONIC_D)).astype(np.float32))
+    return x, y
+
+
+def _tonic_net(**layer_kwargs_and_flag):
+    """Build a 3-layer net; ``flag`` sets the network flag, the rest go per layer."""
+    flag = layer_kwargs_and_flag.pop("flag", False)
+    kw = layer_kwargs_and_flag
+    return (
+        DeepNetwork(tonic_volatility=flag)
+        .add_layer(_TONIC_D, **kw)
+        .add_layer(3, **kw)
+        .add_layer(2, **kw)
+        .weight_initialisation("xavier")
+    )
+
+
+def test_tonic_volatility_off_leaves_the_parameter_out():
+    """Without the flag the field is structurally absent, and overrides raise."""
+    net = DeepNetwork().add_layer(4).add_layer(3)
+    assert all(layer.params.tonic_volatility is None for layer in net.state.layers)
+    with pytest.raises(ValueError, match="tonic_volatility=True"):
+        DeepNetwork().add_layer(4, tonic_volatility=-2.0)
+
+
+def test_tonic_volatility_on_allocates_the_parameter():
+    """The flag allocates ω at −4 by default, overridable per layer."""
+    net = (
+        DeepNetwork(tonic_volatility=True)
+        .add_layer(4)
+        .add_layer(3, tonic_volatility=-2.0)
+    )
+    np.testing.assert_allclose(net.state.layers[0].params.tonic_volatility, -4.0)
+    np.testing.assert_allclose(net.state.layers[1].params.tonic_volatility, -2.0)
+
+
+def test_tonic_volatility_zero_is_exactly_neutral():
+    """Confirm that ω = 0 reproduces the flag-off network bit for bit.
+
+    ω enters the log-volatility exponent additively, so the flag's default
+    (off) is not a third behaviour but the ω = 0 point of the same family.
+    """
+    x, y = _tonic_data(np.random.default_rng(7))
+
+    off = _tonic_net(flag=False)
+    zero = _tonic_net(flag=True, tonic_volatility=0.0)
+    for net in (off, zero):
+        net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+
+    assert np.array_equal(np.asarray(off.predict(x)), np.asarray(zero.predict(x)))
+    for l_off, l_zero in zip(off.state.layers, zero.state.layers):
+        assert np.array_equal(
+            np.asarray(l_off.state.expected_precision),
+            np.asarray(l_zero.state.expected_precision),
+        )
+
+
+def test_tonic_volatility_default_changes_the_filter():
+    """Confirm ω = −4 (the restored default) adds diffusion flag-off lacks."""
+    x, y = _tonic_data(np.random.default_rng(7))
+
+    off = _tonic_net(flag=False)
+    on = _tonic_net(flag=True)
+    for net in (off, on):
+        net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+
+    assert not np.array_equal(np.asarray(off.predict(x)), np.asarray(on.predict(x)))
+
+
+def test_tonic_volatility_diffuses_a_layer_without_volatility_parent():
+    """Confirm ω alone drives a random walk when no volatility parent exists.
+
+    The layer's predicted precision falls below the frozen (no-source) case.
+    """
+    x, y = _tonic_data(np.random.default_rng(7))
+
+    def middle_precision(flag, **kw):
+        net = (
+            DeepNetwork(tonic_volatility=flag)
+            .add_layer(_TONIC_D)
+            .add_layer(3, volatility_parent=False, **kw)
+            .add_layer(2)
+            .weight_initialisation("xavier")
+        )
+        net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+        return np.asarray(net.state.layers[1].state.expected_precision)
+
+    frozen = middle_precision(False)
+    diffusing = middle_precision(True, tonic_volatility=0.0)
+    assert (diffusing < frozen).all(), (diffusing, frozen)
+
+
+def test_tonic_volatility_reaches_the_scanned_layer_stack():
+    """Confirm a collapsed ``LayerStack`` carries ω through its stacked params.
+
+    Scanned-vs-unrolled parity is covered by
+    ``test_stack_on_observed_leaf_matches_unrolled``; here ω only has to land in the
+    stacked params and thread through the scan without breaking the sweeps.
+    """
+    from pyhgf.typing.vectorised import LayerStack
+
+    net = (
+        DeepNetwork(tonic_volatility=True)
+        .add_layer(4)
+        .add_layer_stack([4] * 6, tonic_volatility=-2.0)
+        .add_layer(2)
+        .weight_initialisation("xavier")
+    )
+    stack = next(e for e in net.state.layers if isinstance(e, LayerStack))
+    np.testing.assert_allclose(stack.params.tonic_volatility, -2.0)
+
+    rng = np.random.default_rng(7)
+    x = jnp.asarray(rng.normal(size=(8, 2)).astype(np.float32))
+    y = jnp.asarray(rng.normal(size=(8, 4)).astype(np.float32))
+    net.fit(x, y, optimizer=optax.sgd(0.1), check_gradient_health=False)
+    assert np.isfinite(np.asarray(net.predict(x))).all()
+
+
+def test_tonic_volatility_through_configs_and_dict():
+    """The per-layer ω value survives the config path.
+
+    The network-level flag itself is covered with the other constructor flags in
+    ``test_from_dict_forwards_network_level_settings``.
+    """
+    config = {
+        "layers": [
+            {"size": _TONIC_D},
+            {"size": 3, "tonic_volatility": -2.0},
+            {"size": 2},
+        ],
+        "tonic_volatility": True,
+    }
+    net = DeepNetwork.from_dict(config)
+    np.testing.assert_allclose(net.state.layers[1].params.tonic_volatility, -2.0)
+    np.testing.assert_allclose(net.state.layers[0].params.tonic_volatility, -4.0)
+
+    # A per-layer value without the network flag is rejected, not dropped.
+    with pytest.raises(ValueError, match="tonic_volatility=True"):
+        DeepNetwork.from_configs([
+            LayerConfig(size=2),
+            LayerConfig(size=2, tonic_volatility=-2.0),
+        ])

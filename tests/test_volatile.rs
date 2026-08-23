@@ -129,13 +129,10 @@ fn build_explicit_network(volatility_updates: &str, data: &[f64]) -> Network {
         None,
         None,
         None,
-        // The fused volatile node's value level has no tonic volatility, so the
-        // explicit value node must set tonic_volatility = 0.0 to match (its
-        // volatility parent keeps the default, mirroring tonic_volatility_vol).
-        Some(std::collections::HashMap::from([(
-            "tonic_volatility".into(),
-            0.0,
-        )])),
+        // The fused volatile node's value level and the explicit value node
+        // share the tonic_volatility default of -4.0, so no override is needed
+        // to match.
+        None,
     );
     net.add_nodes(
         "continuous-state",
