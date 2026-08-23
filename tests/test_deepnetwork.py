@@ -7,14 +7,12 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 import pytest
-from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf.model import DeepNetwork, LayerConfig
-from pyhgf.model import Network as PyNetwork
 
 
 def test_fit():
-    """Test that DeepNetwork and RsNetwork produce finite fit results.
+    """Test that DeepNetwork produces finite fit results.
 
     Network: 2 targets → 2+1 hidden₁ → 2+1 hidden₂ → 1+1 input.
     Tested across all combinations of coupling function and learning-rate mode.
@@ -30,7 +28,7 @@ def test_fit():
         ("tanh", (jnp.tanh,)),  # nonlinear
     ]
     # (learning_kind, lr, label) — lr is applied uniformly to all kinds.
-    # "adam" triggers the Adam optimiser on both backends.
+    # "adam" triggers the Adam optimiser.
     lr_variants = [
         ("precision_weighted", 0.1, "precision_weighted lr=0.1"),
         ("precision_weighted", "adam", "precision_weighted adam"),
@@ -41,7 +39,6 @@ def test_fit():
         for kind, lr, lr_label in lr_variants:
             label = f"coupling={coupling_name}, {lr_label}"
 
-            # --- DeepNetwork (JAX vectorized) ---
             dn = (
                 DeepNetwork(
                     coupling_fn=py_coupling_fn[0] if py_coupling_fn else lambda x: x
@@ -52,42 +49,12 @@ def test_fit():
                 .add_layer(size=n_input)
                 .weight_initialisation("xavier", key=jax.random.key(42))
             )
-            # DeepNetwork takes an optax optimizer; the Rust backend below still
-            # takes the raw ``lr`` (a float, or "adam"), so don't clobber ``lr``.
             optimizer = optax.adam(1e-3) if lr == "adam" else optax.sgd(lr)
             dn.fit(x=x, y=y, optimizer=optimizer, learning_kind=kind)
             preds_dn = dn.predict(np.array([[0.5]]))
 
-            # --- RsNetwork (Rust) ---
-            rs = (
-                RsNetwork()
-                .add_nodes(kind="continuous-state", n_nodes=n_targets)
-                .add_layer(size=n_h1, coupling_fn=coupling_name)
-                .add_layer(size=n_h2, coupling_fn=coupling_name)
-                .add_layer(size=n_input, coupling_fn=coupling_name)
-                .weight_initialisation("xavier", seed=42)
-            )
-            predictors = tuple(rs.layers[-1][:n_input])
-            rs.fit(
-                x=x.tolist(),
-                y=y.tolist(),
-                inputs_x_idxs=predictors,
-                inputs_y_idxs=tuple(range(n_targets)),
-                lr=lr,
-                learning_kind=kind,
-            )
-            preds_rs = rs.predict(
-                x=[[0.5]],
-                inputs_x_idxs=predictors,
-                inputs_y_idxs=tuple(range(n_targets)),
-            )
-
-            # Both should produce finite predictions
             assert np.all(np.isfinite(np.asarray(preds_dn))), (
                 f"{label}: DeepNetwork predictions contain NaN/Inf"
-            )
-            assert np.all(np.isfinite(np.asarray(preds_rs))), (
-                f"{label}: RsNetwork predictions contain NaN/Inf"
             )
 
 
@@ -344,278 +311,6 @@ def test_fully_connected_false():
     # Weight matrix should be identity-like
     w = np.asarray(dn.state.weights[0])
     assert np.allclose(w, np.eye(3)), f"Expected identity weight matrix, got {w}"
-
-
-def test_three_backends_binary_volatile():
-    """Compare all three backends on a binary-output + volatile-hidden architecture.
-
-    Architecture:
-    → 1 binary output
-    → 1 volatile value parent (1-to-1)
-    → 2 volatile hidden with constant input
-    → 1 volatile input
-
-    The constant is a value parent of the intermediate volatile node (shared across
-    all three backends).  All three update types are exercised.  The nodalised
-    volatile nodes carry the ``tonic_volatility`` default of -4.0, so the
-    DeepNetwork is built with ``tonic_volatility=True``, whose layers carry the
-    same default.
-
-    Tolerances
-    ----------
-    Rust vs Python (both float64) : atol=1e-6
-    JAX vs Rust (JAX uses float32) : atol=1e-3
-    """
-    n_targets = 1
-    n_hidden = 2
-    n_input = 1
-
-    np.random.seed(42)
-    x = np.random.randn(1, n_input)
-    y = np.random.choice([0.0, 1.0], size=(1, n_targets))
-
-    atol_rs_py = 1e-6  # Rust vs Python (both float64)
-    atol_jax = 1e-3  # JAX (float32) vs Rust
-
-    for volatility_updates in ["standard", "eHGF", "unbounded"]:
-        label = f"volatility_updates={volatility_updates}"
-        atol_jax_local = 5e-2 if volatility_updates == "unbounded" else atol_jax
-        atol_rs_py_local = 1e-2 if volatility_updates == "unbounded" else atol_rs_py
-
-        # --- DeepNetwork (JAX vectorized) ---
-        dn = (
-            DeepNetwork(
-                volatility_updates=volatility_updates,
-                feedforward_uncertainty=True,
-                tonic_volatility=True,
-            )
-            .add_layer(size=n_targets, kind="binary")
-            .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
-            .add_layer(size=n_hidden)
-            .add_layer(size=n_input, add_constant_input=False)
-        )
-        dn.fit(x=x, y=y, optimizer=optax.sgd(0.1))
-
-        # --- RsNetwork (Rust) ---
-        rs = (
-            RsNetwork(volatility_updates=volatility_updates)
-            .add_nodes(kind="binary-state", n_nodes=n_targets)
-            .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
-            .add_layer(size=n_hidden)
-            .add_layer(size=n_input, add_constant_input=False)
-        )
-        predictors = tuple(rs.layers[-1][:n_input])
-        targets_idxs = tuple(range(n_targets))
-        rs.fit(
-            x=x.tolist(),
-            y=y.tolist(),
-            inputs_x_idxs=predictors,
-            inputs_y_idxs=targets_idxs,
-            lr=0.1,
-        )
-
-        # --- Network (Python per-node) ---
-        net = (
-            PyNetwork(volatility_updates=volatility_updates)
-            .add_nodes(kind="binary-state", n_nodes=n_targets)
-            .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
-            .add_nodes(kind="volatile-state", n_nodes=n_hidden, value_children=1)
-            .add_nodes(kind="constant-state", n_nodes=n_targets, value_children=1)
-            .add_nodes(kind="volatile-state", n_nodes=n_input, value_children=[2, 3])
-        )
-        # Node layout: binary(0..n_targets), intermediate(n_targets..2*n_targets),
-        #              hidden(2*n_targets..2*n_targets+n_hidden),
-        #              constant(2*n_targets+n_hidden..3*n_targets+n_hidden),
-        #              input(3*n_targets+n_hidden..3*n_targets+n_hidden+n_input)
-        x_idxs = tuple(
-            range(3 * n_targets + n_hidden, 3 * n_targets + n_hidden + n_input)
-        )
-        y_idxs = tuple(range(n_targets))
-        net.fit(
-            x=x,
-            y=y,
-            inputs_x_idxs=x_idxs,
-            inputs_y_idxs=y_idxs,
-            lr=0.1,
-        )
-
-        # ---- Hidden-layer volatile states ----
-        # Rust/Python node layout: binary(0), intermediate(1), hidden(2..2+n_hidden)
-        # JAX: dn.state.layers[2] holds the hidden layer (index 2 in add_layer order)
-        for i in range(n_hidden):
-            node_idx = 2 * n_targets + i  # Rust/Python index
-
-            rs_mean = float(rs.node_trajectories[node_idx]["mean"][-1])
-            py_mean = float(net.last_attributes[node_idx]["mean"])
-            jax_mean = float(dn.state.layers[2].state.mean[i])
-
-            assert np.allclose(py_mean, rs_mean, atol=atol_rs_py_local), (
-                f"{label}: hidden[{i}] mean: Python={py_mean} vs Rust={rs_mean}"
-            )
-            assert np.allclose(jax_mean, rs_mean, atol=atol_jax_local), (
-                f"{label}: hidden[{i}] mean: JAX={jax_mean} vs Rust={rs_mean}"
-            )
-
-            rs_prec = float(rs.node_trajectories[node_idx]["precision"][-1])
-            py_prec = float(net.last_attributes[node_idx]["precision"])
-            jax_prec = float(dn.state.layers[2].state.precision[i])
-
-            assert np.allclose(py_prec, rs_prec, atol=atol_rs_py_local), (
-                f"{label}: hidden[{i}] precision: Python={py_prec} vs Rust={rs_prec}"
-            )
-            assert np.allclose(jax_prec, rs_prec, atol=atol_jax_local), (
-                f"{label}: hidden[{i}] precision: JAX={jax_prec} vs Rust={rs_prec}"
-            )
-
-            rs_mean_vol = float(rs.node_trajectories[node_idx]["mean_vol"][-1])
-            py_mean_vol = float(net.last_attributes[node_idx]["mean_vol"])
-            jax_mean_vol = float(dn.state.layers[2].state.mean_vol[i])
-
-            assert np.allclose(py_mean_vol, rs_mean_vol, atol=atol_rs_py_local), (
-                f"{label}: hidden[{i}] mean_vol: Python={py_mean_vol} vs Rust={rs_mean_vol}"
-            )
-            assert np.allclose(jax_mean_vol, rs_mean_vol, atol=atol_jax_local), (
-                f"{label}: hidden[{i}] mean_vol: JAX={jax_mean_vol} vs Rust={rs_mean_vol}"
-            )
-
-            rs_prec_vol = float(rs.node_trajectories[node_idx]["precision_vol"][-1])
-            py_prec_vol = float(net.last_attributes[node_idx]["precision_vol"])
-            jax_prec_vol = float(dn.state.layers[2].state.precision_vol[i])
-
-            assert np.allclose(py_prec_vol, rs_prec_vol, atol=atol_rs_py_local), (
-                f"{label}: hidden[{i}] precision_vol: Python={py_prec_vol} vs Rust={rs_prec_vol}"
-            )
-            assert np.allclose(jax_prec_vol, rs_prec_vol, atol=atol_jax_local), (
-                f"{label}: hidden[{i}] precision_vol: JAX={jax_prec_vol} vs Rust={rs_prec_vol}"
-            )
-
-        # ---- Coupling weights: hidden ← input ----
-        # JAX: weights[2] connects layer[2] (hidden, rows) to layer[3] (input, cols),
-        #      shape (n_hidden, n_input).
-        for j in range(n_hidden):
-            node_idx = 2 * n_targets + j
-            for k in range(n_input):
-                w_py = float(net.last_attributes[node_idx]["value_coupling_parents"][k])
-                w_rs = float(
-                    rs.node_trajectories[node_idx]["value_coupling_parents"][-1][k]
-                )
-                w_jax = float(dn.state.weights[2][j, k])
-
-                assert np.allclose(w_py, w_rs, atol=atol_rs_py_local), (
-                    f"{label}: weight hidden[{j}]←input[{k}]: Python={w_py} vs Rust={w_rs}"
-                )
-                assert np.allclose(w_jax, w_rs, atol=atol_jax_local), (
-                    f"{label}: weight hidden[{j}]←input[{k}]: JAX={w_jax} vs Rust={w_rs}"
-                )
-
-        # ---- Binary coupling weights ----
-        # All three backends now learn binary-to-parent weights via sigmoid coupling.
-        for j in range(n_targets):
-            w_py = float(net.last_attributes[j]["value_coupling_parents"][0])
-            w_rs = float(rs.node_trajectories[j]["value_coupling_parents"][-1][0])
-            w_jax = float(dn.state.weights[0][j, 0])
-
-            # All backends should have deviated from the initial weight of 1.0.
-            assert not np.allclose(w_py, 1.0, atol=1e-6), (
-                f"{label}: Python binary weight={w_py} should have changed from 1.0"
-            )
-            assert not np.allclose(w_rs, 1.0, atol=1e-6), (
-                f"{label}: Rust binary weight={w_rs} should have changed from 1.0"
-            )
-            assert not np.allclose(w_jax, 1.0, atol=1e-6), (
-                f"{label}: JAX binary weight={w_jax} should have changed from 1.0"
-            )
-            # Rust and Python (both float64) should agree closely.
-            assert np.allclose(w_py, w_rs, atol=atol_rs_py_local), (
-                f"{label}: binary weight Python={w_py} vs Rust={w_rs}"
-            )
-
-        # ---- Predictions ----
-        # All backends now use updated binary weights, so all predictions are comparable.
-        preds_rs = rs.predict(
-            x=[[0.5]],
-            inputs_x_idxs=predictors,
-            inputs_y_idxs=targets_idxs,
-        )
-        preds_py = net.predict(
-            x=np.array([[0.5]]),
-            inputs_x_idxs=x_idxs,
-            inputs_y_idxs=y_idxs,
-        )
-        preds_jax = dn.predict(np.array([[0.5]]))
-
-        # Rust and Python (both float64) should produce identical predictions.
-        # JAX (float32) may accumulate enough rounding error across layers to
-        # exceed atol_jax, so only finite-value correctness is checked there.
-        assert np.all(np.isfinite(np.asarray(preds_jax))), (
-            f"{label}: JAX predictions contain NaN/Inf"
-        )
-        assert np.allclose(
-            np.asarray(preds_py), np.asarray(preds_rs), atol=atol_rs_py
-        ), f"{label}: predictions: Python={preds_py} vs Rust={preds_rs}"
-
-
-def test_mean_field_parity_binary_volatile():
-    """DeepNetwork(mean_field_updates=True) matches Network(mean_field_updates=True).
-
-    Same architecture as ``test_three_backends_binary_volatile`` (binary output,
-    volatile intermediate/hidden/input, constant on the intermediate), run for several
-    steps with frozen weights (``lr=0``) so belief parity is tested independently of the
-    learning rule. The nodalised volatile nodes carry the ``tonic_volatility`` default
-    of -4.0, so the DeepNetwork is built with ``tonic_volatility=True``;
-    ``feedforward_uncertainty`` stays off on both sides — the mean-field prediction
-    carries no value-coupling variance.
-    """
-    n_targets = 1
-    n_hidden = 2
-    n_input = 1
-
-    np.random.seed(7)
-    x = np.random.randn(5, n_input)
-    y = np.random.choice([0.0, 1.0], size=(5, n_targets))
-
-    for volatility_updates in ["standard", "eHGF", "unbounded"]:
-        label = f"volatility_updates={volatility_updates}"
-        atol = 5e-2 if volatility_updates == "unbounded" else 1e-3
-
-        dn = (
-            DeepNetwork(
-                volatility_updates=volatility_updates,
-                tonic_volatility=True,
-                mean_field_updates=True,
-            )
-            .add_layer(size=n_targets, kind="binary")
-            .add_layer(size=n_targets, add_constant_input=False, fully_connected=False)
-            .add_layer(size=n_hidden)
-            .add_layer(size=n_input, add_constant_input=False)
-        )
-        dn.fit(x=x, y=y, optimizer=optax.sgd(0.0), check_gradient_health=False)
-
-        net = (
-            PyNetwork(volatility_updates=volatility_updates, mean_field_updates=True)
-            .add_nodes(kind="binary-state", n_nodes=n_targets)
-            .add_nodes(kind="volatile-state", n_nodes=n_targets, value_children=0)
-            .add_nodes(kind="volatile-state", n_nodes=n_hidden, value_children=1)
-            .add_nodes(kind="constant-state", n_nodes=n_targets, value_children=1)
-            .add_nodes(kind="volatile-state", n_nodes=n_input, value_children=[2, 3])
-        )
-        x_idxs = tuple(
-            range(3 * n_targets + n_hidden, 3 * n_targets + n_hidden + n_input)
-        )
-        y_idxs = tuple(range(n_targets))
-        net.fit(x=x, y=y, inputs_x_idxs=x_idxs, inputs_y_idxs=y_idxs, lr=0.0)
-
-        # Intermediate (nodalised node 1 / JAX layer 1) and hidden (nodes
-        # 2..2+n_hidden / JAX layer 2) volatile states.
-        comparisons = [(1, 1, 0)] + [(2 * n_targets + i, 2, i) for i in range(n_hidden)]
-        for node_idx, layer_idx, pos in comparisons:
-            for field in ["mean", "precision", "mean_vol", "precision_vol"]:
-                py_val = float(net.last_attributes[node_idx][field])
-                jax_val = float(getattr(dn.state.layers[layer_idx].state, field)[pos])
-                assert np.allclose(jax_val, py_val, atol=atol), (
-                    f"{label}: node {node_idx} / layer {layer_idx}[{pos}] "
-                    f"diverge on {field}: JAX={jax_val} vs Python={py_val}"
-                )
 
 
 def test_mean_field_differs_from_relaxed():

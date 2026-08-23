@@ -390,8 +390,8 @@ impl DeepNet {
         n_chunks: usize,
     ) -> Matrix {
         use crate::vectorised::batched::{
-            batched_precision_increments, batched_input_prediction_error,
-            batched_mean_weight_gradients, batched_prediction_sweep, batched_update_sweep,
+            batched_input_prediction_error, batched_mean_weight_gradients,
+            batched_precision_increments, batched_prediction_sweep, batched_update_sweep,
             reset_chunk,
         };
         use crate::vectorised::layer::LayerState;
@@ -499,8 +499,8 @@ impl DeepNet {
         update_precisions: bool,
     ) -> Result<Matrix, String> {
         use crate::vectorised::batched::{
-            batched_precision_increments, batched_input_prediction_error,
-            batched_mean_weight_gradients, batched_update_sweep,
+            batched_input_prediction_error, batched_mean_weight_gradients,
+            batched_precision_increments, batched_update_sweep,
         };
         use crate::vectorised::layer::LayerState;
         use rayon::prelude::*;

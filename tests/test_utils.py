@@ -9,7 +9,7 @@ from pytest import raises
 from pyhgf import load_data
 from pyhgf.model import Network
 from pyhgf.typing import AdjacencyLists, UpdateSequence
-from pyhgf.utils import add_parent, list_branches, remove_node, sample, set_coupling
+from pyhgf.utils import add_parent, list_branches, remove_node, sample
 from pyhgf.utils.beliefs_propagation import beliefs_propagation
 
 
@@ -233,51 +233,6 @@ def test_belief_propagation():
     )
 
 
-def test_learning():
-    """Test the learning method for deep networks."""
-    # here x represents the visual input (River / No River)
-    x = np.array([1.0, 1.0])
-    x += np.random.normal(size=x.shape) / 100
-
-    # y represents the auditory and olfactory stimuli
-    y = np.array([[1.0, 1.0], [1.0, 0.0]]).T
-
-    # fixed learning rate
-    network = (
-        Network(volatility_updates="unbounded")
-        .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
-        .add_nodes(
-            value_children=[0, 1],
-            autoconnection_strength=0,
-            coupling_fn=(jnp.tanh, jnp.tanh),
-        )
-        .add_nodes(value_children=2, autoconnection_strength=0, coupling_fn=(jnp.tanh,))
-    )
-
-    network.fit(x=x, y=y, inputs_x_idxs=(3,), inputs_y_idxs=(0, 1), lr=0.2)
-
-    # Precision-weighted learning rule with a fixed step size
-    network = (
-        Network(volatility_updates="unbounded")
-        .add_nodes(n_nodes=2, precision=2.0, expected_precision=2.0)
-        .add_nodes(
-            value_children=[0, 1],
-            autoconnection_strength=0,
-            coupling_fn=(jnp.tanh, jnp.tanh),
-        )
-        .add_nodes(value_children=2, autoconnection_strength=0, coupling_fn=(jnp.tanh,))
-    )
-
-    network.fit(
-        x=x,
-        y=y,
-        inputs_x_idxs=(3,),
-        inputs_y_idxs=(0, 1),
-        lr=0.2,
-        learning_kind="precision_weighted",
-    )
-
-
 def test_sample():
     """Test the sample function.
 
@@ -305,19 +260,3 @@ def test_sample():
 
     # Iterate over each key-value pair in the predictions dictionary.
     assert samples[0]["expected_mean"].shape[0] == n_predictions
-
-
-def test_set_coupling():
-    """Test the set_coupling function."""
-    network = Network().add_nodes(n_nodes=3).add_nodes(value_children=[0, 1, 2])
-
-    attributes = set_coupling(
-        attributes=network.attributes,
-        edges=network.edges,
-        parent_idx=3,
-        child_idx=0,
-        coupling=0.5,
-    )
-
-    assert attributes[0]["value_coupling_parents"][0] == 0.5
-    assert attributes[3]["value_coupling_children"][0] == 0.5

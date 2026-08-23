@@ -4,13 +4,10 @@ from .beliefs_propagation import beliefs_propagation
 from .fill_categorical_state_node import fill_categorical_state_node
 from .get_input_idxs import get_input_idxs
 from .get_update_sequence import get_update_sequence
-from .learning import learning
 from .list_branches import list_branches
-from .predict import predict_step
 from .remove_node import remove_node
 from .sample import sample
 from .sample_node_distribution import sample_node_distribution
-from .set_coupling import set_coupling
 from .to_pandas import to_pandas
 from .weight_initialisation import he_init, orthogonal_init, sparse_init, xavier_init
 
@@ -26,7 +23,4 @@ __all__ = [
     "remove_node",
     "sample_node_distribution",
     "sample",
-    "learning",
-    "predict_step",
-    "set_coupling",
 ]

@@ -353,7 +353,14 @@ mod tests {
         layer.expected_mean = Array1::from_vec(vec![0.5, 2.0, 4.0]);
 
         let params = LayerParams::create(3);
-        layer_prediction_error(&mut layer, &params, VolatilityUpdate::EHgf, 1.0, false, 1e10);
+        layer_prediction_error(
+            &mut layer,
+            &params,
+            VolatilityUpdate::EHgf,
+            1.0,
+            false,
+            1e10,
+        );
         assert!((layer.value_prediction_error[0] - 0.5).abs() < 1e-12);
         assert!((layer.value_prediction_error[1] - 0.0).abs() < 1e-12);
         assert!((layer.value_prediction_error[2] - (-1.0)).abs() < 1e-12);
@@ -374,7 +381,14 @@ mod tests {
         layer.expected_mean_vol = Some(Array1::from_vec(vec![0.0, 0.0]));
 
         let params = LayerParams::create(2);
-        layer_prediction_error(&mut layer, &params, VolatilityUpdate::Standard, 1.0, true, 1e10);
+        layer_prediction_error(
+            &mut layer,
+            &params,
+            VolatilityUpdate::Standard,
+            1.0,
+            true,
+            1e10,
+        );
         assert!(layer.volatility_prediction_error.is_some());
         assert!(layer.precision_vol.is_some());
         assert!(layer.mean_vol.is_some());

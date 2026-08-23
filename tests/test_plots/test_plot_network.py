@@ -34,9 +34,3 @@ def test_plot_network_categorical(categorical_network):
     """Render a categorical HGF (the only plotting function it exposes)."""
     categorical_network.plot_network()
     plt.close("all")
-
-
-def test_plot_network_networkx_volatile_state_nodes(volatile_state_network):
-    """Exercise the NetworkX rendering path for volatile-state (type 6) nodes."""
-    volatile_state_network.plot_network(backend="networkx")
-    plt.close("all")

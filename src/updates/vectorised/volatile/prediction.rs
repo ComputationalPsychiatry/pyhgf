@@ -96,9 +96,10 @@ pub fn layer_prediction(
         let emv = expected_mean_vol.as_ref().unwrap();
         let epv = expected_precision_vol.as_ref().unwrap();
         match &child_params.tonic_volatility {
-            Some(tv) => ndarray::Zip::from(emv).and(epv).and(tv).map_collect(
-                |&m, &pv, &w| guarded_volatility(w + m + 1.0 / (pv * 2.0), time_step),
-            ),
+            Some(tv) => ndarray::Zip::from(emv)
+                .and(epv)
+                .and(tv)
+                .map_collect(|&m, &pv, &w| guarded_volatility(w + m + 1.0 / (pv * 2.0), time_step)),
             None => ndarray::Zip::from(emv)
                 .and(epv)
                 .map_collect(|&m, &pv| guarded_volatility(m + 1.0 / (pv * 2.0), time_step)),
@@ -270,11 +271,12 @@ mod tests {
         // is unaffected either way, since it never carried the parent's contribution.
         let mut parent = LayerState::create(2, true);
         // A parent that is genuinely uncertain, so the dropped term is non-zero.
-        parent.expected_precision.assign(&Array1::from(vec![0.5, 2.0]));
+        parent
+            .expected_precision
+            .assign(&Array1::from(vec![0.5, 2.0]));
         parent.expected_mean.assign(&Array1::from(vec![0.3, -0.7]));
         let child_params = LayerParams::create(3);
-        let weights =
-            Matrix::from_shape_vec((3, 2), vec![0.7, -0.4, 0.2, 0.9, -0.5, 0.3]).unwrap();
+        let weights = Matrix::from_shape_vec((3, 2), vec![0.7, -0.4, 0.2, 0.9, -0.5, 0.3]).unwrap();
 
         let run = |feedforward_uncertainty: bool| {
             let mut child = LayerState::create(3, true);
@@ -336,7 +338,7 @@ mod tests {
             true,  // has_volatility_parent
             false, // is_input_layer
             false, // predict_precision
-            true, // feedforward_uncertainty
+            true,  // feedforward_uncertainty
         );
 
         assert_eq!(child.expected_precision, prior_precision);

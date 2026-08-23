@@ -190,27 +190,6 @@ def categorical_network():
 
 
 # ---------------------------------------------------------------------------
-# Volatile-state fixture (for the NetworkX rendering path)
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture(scope="session")
-def volatile_state_network():
-    """Build a small network mixing continuous-state and volatile-state nodes."""
-    rng = np.random.default_rng(0)
-    net = (
-        Network()
-        .add_nodes(kind="continuous-state", n_nodes=2)
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=2,
-            value_children=[0, 1],
-        )
-    )
-    return net.input_data(input_data=rng.standard_normal((5, 2)))
-
-
-# ---------------------------------------------------------------------------
 # DeepNetwork fixtures (for plot_layers / plot_deep_network)
 # ---------------------------------------------------------------------------
 

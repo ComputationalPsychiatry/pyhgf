@@ -95,51 +95,6 @@ Continuous nodes
     continuous_node_posterior_update
     continuous_node_posterior_update_mean_field
 
-Volatile nodes
---------------
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_value_level
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_value_level
-
-    posterior_update_precision_value_level
-    posterior_update_mean_value_level
-    posterior_update_precision_value_level_mean_field
-    posterior_update_mean_value_level_mean_field
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level
-
-    posterior_update_precision_volatility_level
-    posterior_update_mean_volatility_level
-    posterior_update_precision_volatility_level_ehgf
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update
-
-    volatile_node_posterior_update
-    volatile_node_posterior_update_mean_field
-    volatile_node_volatility_posterior_update_standard
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
-
-    volatile_node_posterior_update_ehgf
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
-
-    volatile_node_posterior_update_unbounded
-
 Exponential family
 ------------------
 
@@ -178,21 +133,6 @@ Continuous nodes
     predict_precision_mean_field
     continuous_node_prediction
     continuous_node_prediction_mean_field
-
-Volatile nodes
---------------
-
-.. currentmodule:: pyhgf.updates.prediction.volatile
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction.volatile
-
-    predict_precision_volatility_level
-    predict_mean_value_level
-    predict_precision_value_level
-    predict_precision_value_level_mean_field
-    volatile_node_prediction
-    volatile_node_prediction_mean_field
 
 Dirichlet processes
 -------------------
@@ -242,18 +182,6 @@ Continuous state nodes
     continuous_node_volatility_prediction_error
     continuous_node_prediction_error
 
-Volatile state nodes
---------------------
-
-.. currentmodule:: pyhgf.updates.prediction_error.volatile
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.volatile
-
-    volatile_node_value_prediction_error
-    volatile_node_volatility_prediction_error
-    volatile_node_prediction_error
-
 Dirichlet state nodes
 ---------------------
 
@@ -280,22 +208,10 @@ Exponential family
     prediction_error_update_exponential_family_fixed
     prediction_error_update_exponential_family_dynamic
 
-Learning
-========
-
-Weight learning rules applied after the prediction error step.
-
-.. currentmodule:: pyhgf.updates.learning
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.learning
-
-    learning_weights
-
 Observations
 ============
 
-Functions for setting observations and predictor values on input nodes.
+Functions for setting observations on input nodes.
 
 .. currentmodule:: pyhgf.updates.observation
 
@@ -303,7 +219,6 @@ Functions for setting observations and predictor values on input nodes.
    :toctree: generated/pyhgf.updates.observation
 
     set_observation
-    set_predictors
 
 Vectorized updates
 ==================
@@ -399,7 +314,6 @@ The main classes used to create probabilistic networks for binary or continuous 
    Network
    DeepNetwork
    DeadGradientWarning
-   add_volatile_state
    add_continuous_state
    add_constant_state
    add_binary_state
@@ -592,13 +506,10 @@ Utilities for manipulating neural networks.
    fill_categorical_state_node
    get_input_idxs
    get_update_sequence
-   learning
    list_branches
-   predict_step
    remove_node
    sample_node_distribution
    sample
-   set_coupling
    to_pandas
 
 Weight initialisation
@@ -691,7 +602,6 @@ Network structure
 
    AdjacencyLists
    UpdateSequence
-   LearningSequence
 
 Vectorized networks
 ===================
