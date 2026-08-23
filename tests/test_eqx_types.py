@@ -1,9 +1,12 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
-"""Phase 1 tests: Equinox PyTree types live next to the legacy NamedTuples.
+"""Tests of the Equinox PyTree types behind the vectorised deep network.
 
-These tests verify the new ``pyhgf.typing.vectorised`` module without touching any
-existing belief-propagation code path.
+Covers the ``pyhgf.typing.vectorised`` types (``LayerState``, ``LayerParams``,
+``Layer``, ``LayerStack``, ``Network``) as PyTrees — defaults, leaf structure, statics,
+serialisation — and the capabilities that representation provides on ``DeepNetwork``:
+optimiser-state handling, selective trajectory recording, save/load, vmapped ensembles,
+pandas export, and the scanned ``LayerStack`` against its unrolled equivalent.
 """
 
 from __future__ import annotations
@@ -32,7 +35,7 @@ def _make_network_no_weights(layers: tuple) -> Network:
 
 
 def test_layer_state_create_defaults():
-    """LayerState.create reproduces the legacy defaults (zeros / ones)."""
+    """LayerState.create fills means and errors with zeros, precisions with ones."""
     n = 5
     s = LayerState.create(n)
     # Zeros
@@ -61,7 +64,7 @@ def test_layer_state_create_defaults():
 
 
 def test_layer_params_create_defaults():
-    """LayerParams.create matches the legacy class's defaults.
+    """LayerParams constructors allocate only their kind's fields.
 
     Parameter fields are kind-specific: the volatile constructor allocates the
     internal-volatility field only, the continuous constructor the other three.
@@ -205,7 +208,7 @@ def test_serialisation_roundtrip(tmp_path):
 
 
 def test_deepnetwork_state_is_eqx_network():
-    """After Phase 2, ``DeepNetwork.state`` is an Equinox ``Network`` PyTree."""
+    """``DeepNetwork.state`` is an Equinox ``Network`` PyTree."""
     dn = (
         DeepNetwork()
         .add_layer(size=2)
@@ -229,8 +232,8 @@ def test_deepnetwork_state_is_eqx_network():
 def test_optax_handles_none_slot_in_weights_tuple():
     """``Network.weights_tuple()`` has ``None`` at index 0; optax handles it.
 
-    Phase 3 carries the optimiser state alongside the network in
-    ``jax.lax.scan``. ``optax.init`` / ``optax.update`` /
+    The optimiser state is carried alongside the network through
+    ``jax.lax.scan``, so ``optax.init`` / ``optax.update`` /
     ``optax.apply_updates`` must all walk past the ``None`` slot without
     crashing — none of the moment buffers should be created for the bottom
     layer (no weights below it). Round-trip the empty slot through the full
@@ -285,11 +288,11 @@ def test_deepnetwork_weights_property_legacy_shape():
 
 
 # ---------------------------------------------------------------------------
-# Phase 5 — builder ergonomics
+# Builder ergonomics
 # ---------------------------------------------------------------------------
 
 
-def test_phase5_eager_state_init_after_add_layer():
+def test_eager_state_init_after_add_layer():
     """``dn.state`` is populated on every ``add_layer``, not lazily."""
     dn = DeepNetwork()
     assert dn.state is None  # empty builder: nothing to initialise yet
@@ -304,24 +307,18 @@ def test_phase5_eager_state_init_after_add_layer():
     assert dn.state.get_layer_sizes() == [2, 3]
 
 
-def test_phase5_weight_initialisation_requires_key_not_seed():
-    """The legacy ``seed=int`` argument is removed; ``key=`` is the only path."""
+def test_weight_initialisation_rejects_seed_argument():
+    """``weight_initialisation`` accepts ``key=`` only; ``seed=int`` raises.
+
+    Same-key determinism is covered by ``test_weight_initialisation_deterministic`` in
+    test_deepnetwork.py.
+    """
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-
-    # `key=` is the supported API and is deterministic.
-    dn.weight_initialisation("xavier", key=jax.random.key(7))
-    weights_a = np.asarray(dn.state.weights[0])
-
-    dn.weight_initialisation("xavier", key=jax.random.key(7))
-    weights_b = np.asarray(dn.state.weights[0])
-    np.testing.assert_array_equal(weights_a, weights_b)
-
-    # `seed=` is no longer accepted.
     with pytest.raises(TypeError):
         dn.weight_initialisation("xavier", seed=7)
 
 
-def test_phase5_predict_free_function_matches_method():
+def test_predict_free_function_matches_method():
     """``predict(network, x)`` (free fn) returns the same as ``dn.predict(x)``."""
     from pyhgf.model import predict
 
@@ -339,7 +336,7 @@ def test_phase5_predict_free_function_matches_method():
     )
 
 
-def test_phase5_weight_initialisation_before_any_layer_raises():
+def test_weight_initialisation_before_any_layer_raises():
     """Calling ``weight_initialisation`` before any layer raises ``ValueError``."""
     dn = DeepNetwork()
     with pytest.raises(ValueError, match="at least one layer"):
@@ -347,11 +344,11 @@ def test_phase5_weight_initialisation_before_any_layer_raises():
 
 
 # ---------------------------------------------------------------------------
-# Phase 6 — selective recording, save/load, vmap ensembles, pandas export.
+# Selective recording, save/load, vmap ensembles, pandas export
 # ---------------------------------------------------------------------------
 
 
-def test_phase6_record_selective_fields_only_in_trajectories():
+def test_record_selective_fields_only_in_trajectories():
     """``fit(record=("expected_mean",))`` records only that field."""
     dn = (
         DeepNetwork()
@@ -368,7 +365,7 @@ def test_phase6_record_selective_fields_only_in_trajectories():
     assert dn.trajectories["precision"][1].shape == (5, 3)
 
 
-def test_phase6_record_unknown_field_raises():
+def test_record_unknown_field_raises():
     """``fit(record=("nope",))`` raises ``ValueError`` at validation time."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     x = np.zeros((3, 3), dtype=np.float32)
@@ -377,14 +374,14 @@ def test_phase6_record_unknown_field_raises():
         dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), record=("nope",))
 
 
-def test_phase6_record_all_constant_matches_all_layerstate_fields():
+def test_record_all_constant_matches_all_layerstate_fields():
     """``RECORD_ALL`` covers every ``LayerState`` field."""
     from pyhgf.typing.vectorised import RECORD_ALL
 
     assert set(RECORD_ALL) == set(LayerState.__dataclass_fields__.keys())
 
 
-def test_phase6_save_load_roundtrip(tmp_path):
+def test_save_load_roundtrip(tmp_path):
     """`save` then `load` into a fresh-but-identical topology restores weights."""
     key0 = jax.random.key(7)
     dn = (
@@ -409,12 +406,11 @@ def test_phase6_save_load_roundtrip(tmp_path):
         np.testing.assert_array_equal(before, np.asarray(after))
 
 
-def test_phase6_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
+def test_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
     """``eqx.filter_vmap(run_scan)`` works on a batched (Network, opt_state).
 
-    Demonstrates the ensemble-training capability unlocked by the Equinox
-    refactor: stack N independent networks on a leading axis, run them in
-    a single vmapped scan call.
+    Because the network is a PyTree, N independent networks can be stacked on a leading
+    axis and trained in a single vmapped scan call.
     """
     from pyhgf.utils.vectorized_belief_propagation import run_scan
 
@@ -453,7 +449,7 @@ def test_phase6_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
     assert final_network.layers[1].weights_mean.shape == (3, 2, 4)
 
 
-def test_phase6_to_pandas_flattens_trajectories():
+def test_to_pandas_flattens_trajectories():
     """``DeepNetwork.to_pandas`` exposes the trajectory dict as a wide table."""
     dn = (
         DeepNetwork()
@@ -476,7 +472,7 @@ def test_phase6_to_pandas_flattens_trajectories():
     }
 
 
-def test_phase6_to_pandas_without_record_raises():
+def test_to_pandas_without_record_raises():
     """`to_pandas` with no trajectories raises ``ValueError``."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
     with pytest.raises(ValueError, match="record"):
@@ -484,11 +480,11 @@ def test_phase6_to_pandas_without_record_raises():
 
 
 # ---------------------------------------------------------------------------
-# Phase 8 — LayerStack + scan dispatch.
+# LayerStack + scan dispatch
 # ---------------------------------------------------------------------------
 
 
-def test_phase8_stack_layers_builds_consistent_pytree():
+def test_stack_layers_builds_consistent_pytree():
     """``stack_layers`` produces a ``LayerStack`` with the right leaf shapes."""
     from pyhgf.typing.vectorised import LayerStack, stack_layers
 
@@ -515,7 +511,7 @@ def test_phase8_stack_layers_builds_consistent_pytree():
     assert stack.coupling_fn is coupling
 
 
-def test_phase8_stack_layers_rejects_mismatched_statics():
+def test_stack_layers_rejects_mismatched_statics():
     """``stack_layers`` rejects layers with differing static fields."""
     from pyhgf.typing.vectorised import stack_layers
 
@@ -536,7 +532,7 @@ def test_phase8_stack_layers_rejects_mismatched_statics():
         stack_layers([layer_a, layer_b])
 
 
-def test_phase8_add_layer_stack_auto_collapses_into_layerstack():
+def test_add_layer_stack_auto_collapses_into_layerstack():
     """``add_layer_stack`` auto-collapses ≥5 identical layers into a ``LayerStack``."""
     from pyhgf.typing.vectorised import LayerStack
 
@@ -567,7 +563,7 @@ def test_phase8_add_layer_stack_auto_collapses_into_layerstack():
     assert stack.weights_mean.shape == (5, 6, 7)
 
 
-def _phase8_build(scan, depth=5, width=6, seed=0):
+def _build_scanned_or_unrolled(scan, depth=5, width=6, seed=0):
     """Build either the unrolled or auto-scanned version of the same test network.
 
     ``depth`` defaults to 5 so the scanned branch trips the ``_SCAN_AUTO_THRESHOLD`` and
@@ -602,18 +598,18 @@ def _phase8_build(scan, depth=5, width=6, seed=0):
     return net.weight_initialisation("he", key=jax.random.key(seed))
 
 
-def test_phase8_parity_predict_before_training():
+def test_scanned_predict_matches_unrolled_before_training():
     """Scanned and unrolled networks produce byte-identical predictions at init."""
-    u, s = _phase8_build(scan=False), _phase8_build(scan=True)
+    u, s = _build_scanned_or_unrolled(scan=False), _build_scanned_or_unrolled(scan=True)
     rng = np.random.default_rng(0)
     X = jnp.array(rng.standard_normal((16, 2)), dtype=jnp.float32)
     diff = float(np.abs(np.asarray(u.predict(X)) - np.asarray(s.predict(X))).max())
     assert diff < 1e-6, f"prediction parity broke: max abs diff = {diff}"
 
 
-def test_phase8_parity_fit_one_epoch():
+def test_scanned_fit_matches_unrolled_over_one_epoch():
     """Scanned and unrolled networks produce byte-identical fits over one epoch."""
-    u, s = _phase8_build(scan=False), _phase8_build(scan=True)
+    u, s = _build_scanned_or_unrolled(scan=False), _build_scanned_or_unrolled(scan=True)
     rng = np.random.default_rng(1)
     X = jnp.array(rng.standard_normal((20, 2)), dtype=jnp.float32)
     y = jnp.array((rng.uniform(size=(20,)) > 0.5).astype(np.float32).reshape(-1, 1))
@@ -633,13 +629,13 @@ def test_phase8_parity_fit_one_epoch():
     assert fwd_diff < 1e-6, f"post-fit predictions diverged: max abs diff = {fwd_diff}"
 
 
-def test_phase8_parity_record_trajectory():
+def test_scanned_trajectories_match_unrolled():
     """Recording trajectories from a scanned network matches the unrolled one."""
     from pyhgf.typing.vectorised import RECORD_ALL
 
     depth = 5
-    u = _phase8_build(scan=False, depth=depth, width=6)
-    s = _phase8_build(scan=True, depth=depth, width=6)
+    u = _build_scanned_or_unrolled(scan=False, depth=depth, width=6)
+    s = _build_scanned_or_unrolled(scan=True, depth=depth, width=6)
     rng = np.random.default_rng(2)
     X = jnp.array(rng.standard_normal((8, 2)), dtype=jnp.float32)
     y = jnp.array((rng.uniform(size=(8,)) > 0.5).astype(np.float32).reshape(-1, 1))
@@ -680,7 +676,7 @@ def test_phase8_parity_record_trajectory():
         ), f"stack slice {k} != unrolled layer {unrolled_idx}"
 
 
-def test_phase8_auto_scan_skips_ineligible_configs():
+def test_auto_scan_skips_ineligible_configs():
     """When eligibility fails, ``add_layer_stack`` silently falls back to unrolled."""
     # Mixed widths: cannot collapse into a uniform-stack PyTree.
     net = DeepNetwork().add_layer(size=4).add_layer_stack(layer_sizes=[4, 8, 8, 8, 8])

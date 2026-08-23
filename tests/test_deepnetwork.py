@@ -602,19 +602,6 @@ def test_fit_invalid_learning_kind():
         )
 
 
-def test_fit_record_trajectories():
-    """fit(record=("expected_mean",)) stores the requested field's trajectory."""
-    dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
-    x = np.random.randn(5, 3)
-    y = np.random.randn(5, 2)
-    dn.fit(x=x, y=y, optimizer=optax.sgd(0.1), record=("expected_mean",))
-    assert dn.trajectories is not None
-    # New shape: dict[field, tuple[(T, n_nodes) per layer]]
-    assert set(dn.trajectories) == {"expected_mean"}
-    assert dn.trajectories["expected_mean"][0].shape == (5, 2)
-    assert dn.trajectories["expected_mean"][1].shape == (5, 3)
-
-
 def test_predict_before_fit_works_on_uniform_weights():
     """``predict()`` succeeds even before ``fit``."""
     dn = DeepNetwork().add_layer(size=2).add_layer(size=3)
