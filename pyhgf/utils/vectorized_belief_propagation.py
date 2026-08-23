@@ -423,20 +423,28 @@ def _match_child_vol_structure(child_state, has_volatility_parent):
 def _posterior_pe_stack(
     stack: LayerStack,
     child_state_init,
+    child_is_input_layer: bool,
     *,
     volatility_updates: str,
     max_posterior_precision: float,
     time_step: float = 1.0,
 ):
-    """Bottom-up sweep over a ``LayerStack``.
+    r"""Bottom-up sweep over a ``LayerStack``.
 
-    Posterior update + prediction error for every slice, scanning forward from slice 0
-    (bottommost) to slice N-1 (topmost). The carry is the child state below the current
-    slice, already carrying its prediction error; on the first iteration it is the
-    external ``child_state_init``.
+    Posterior update and prediction error for every slice, from slice 0 (bottommost)
+    to slice N-1 (topmost). The carry is the child state below the current slice,
+    already carrying its prediction error.
 
-    ``child_is_input_layer=False`` throughout — the element below a stack must be
-    interior, never the clamped observation leaf.
+    Slice 0 is the boundary and runs outside the scan: its child is the external
+    element below the stack, which may be the clamped observation leaf (volatile,
+    binary, or categorical), so it receives the real *child_is_input_layer* flag.
+    A leaf never moves its posterior precision, so its evidence
+    :math:`\pi_y = \pi_a - \tilde{\pi}_a` is identically zero and the interior
+    (harmonic) form of the smoothing correction would silently zero out the whole
+    message; the flag switches to the canonical factor instead. This mirrors
+    :func:`_predict_stack_from_parent`, which peels the *topmost* slice to meet
+    the external parent. Every scanned slice has a stack slice as its child,
+    interior by construction, so the scan runs with ``child_is_input_layer=False``.
     """
     # The scan carry becomes a stack slice each step, so seed it with the
     # child's state coerced to the stack's volatility structure.
@@ -444,30 +452,52 @@ def _posterior_pe_stack(
         child_state_init, stack.has_volatility_parent
     )
 
-    def body(child_carry_state, slice_data):
-        slice_state, _slice_params, slice_weights = slice_data
+    def slice_posterior_pe(slice_state, slice_weights, child_state, is_leaf_child):
         new_state = vectorized_layer_posterior_update(
             layer=slice_state,
-            child=child_carry_state,
+            child=child_state,
             weights=slice_weights,
             coupling_fn=stack.coupling_fn,
             parent_has_constant=stack.add_constant_input,
             max_posterior_precision=max_posterior_precision,
-            child_is_input_layer=False,
+            child_is_input_layer=is_leaf_child,
         )
-        new_state = vectorized_layer_prediction_error(
+        return vectorized_layer_prediction_error(
             layer=new_state,
             volatility_updates=volatility_updates,
             time_step=time_step,
             has_volatility_parent=stack.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
         )
+
+    # Boundary: slice 0 from the external child.
+    slice0_state, _, slice0_weights = _stack_slice(stack, 0)
+    new_slice0 = slice_posterior_pe(
+        slice0_state, slice0_weights, child_state_init, child_is_input_layer
+    )
+
+    def body(child_carry_state, slice_data):
+        slice_state, slice_weights = slice_data
+        new_state = slice_posterior_pe(
+            slice_state, slice_weights, child_carry_state, False
+        )
         return new_state, new_state
 
-    _, new_full_state = jax.lax.scan(
+    # Slices 1 .. N-1, each from the freshly updated slice below. A single-slice
+    # stack yields zero-length xs: the scan runs no steps and the concatenation
+    # below just wraps slice 0.
+    _, new_states_above = jax.lax.scan(
         body,
-        init=child_state_init,
-        xs=(stack.state, stack.params, stack.weights_mean),
+        init=new_slice0,
+        xs=(
+            jax.tree_util.tree_map(lambda x: x[1:], stack.state),
+            stack.weights_mean[1:],
+        ),
+    )
+    new_full_state = jax.tree_util.tree_map(
+        lambda first, above: jnp.concatenate([first[None, ...], above], axis=0),
+        new_slice0,
+        new_states_above,
     )
     return dataclasses.replace(stack, state=new_full_state)
 
@@ -486,6 +516,7 @@ def _bottomup_posterior_pe(
         return _posterior_pe_stack(
             parent_elem,
             child_state,
+            child_is_input_layer,
             volatility_updates=volatility_updates,
             max_posterior_precision=max_posterior_precision,
             time_step=time_step,
@@ -529,9 +560,11 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
     """Learning factors for every slice of a ``LayerStack``, and the evidence above it.
 
     The child of slice 0 is the layer below the stack (``child_elem``); the child of
-    slice k>0 is slice k-1 within the stack. Pre-pend the external child's state to the
-    stack's slices ``0 .. N-2`` along axis 0 to form the ``(N, ...)`` child slots, then
-    ``vmap`` over the N parent slices (``stack.state``) and the child slots.
+    slice k>0 is slice k-1 within the stack. Slice 0 is the boundary and is computed
+    on its own: its child keeps its actual kind, since it may be the clamped binary
+    or categorical observation layer, whose gradient and importance factors differ
+    from a continuous child's. The interior slices ``1 .. N-1`` all have a stack
+    slice as their child and are ``vmap``-ed together.
 
     The evidence walk cannot be vectorised the same way, because slice k's evidence is
     a function of slice k-1's: it is a recursion, not a map. It is carried by a
@@ -547,14 +580,7 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
     tuple
         The stacked factor triple, and the evidence at the top of the stack.
     """
-    child_state, _, _ = _child_view(child_elem)
-    child_state = _match_child_vol_structure(child_state, stack.has_volatility_parent)
-
-    child_states = jax.tree_util.tree_map(
-        lambda c, s: jnp.concatenate([c[None, ...], s[:-1]], axis=0),
-        child_state,
-        stack.state,
-    )
+    child_state, child_kind, _ = _child_view(child_elem)
 
     def carry(evidence_below, slice_data):
         slice_state, slice_weights = slice_data
@@ -577,18 +603,35 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
 
     walking = evidence is not None
 
-    def per_slice(parent_state, child_state_for_slice, child_evidence):
+    def slice_factors(parent_state, child_state_for_slice, child_evidence, kind):
         return learning_weights_vectorized(
             parent_state=parent_state,
             child_state=child_state_for_slice,
             coupling_fn=stack.coupling_fn,
             kind=learning_kind,
             parent_has_constant=stack.add_constant_input,
-            child_kind="continuous",
+            child_kind=kind,
             child_evidence=child_evidence if walking else None,
         )
 
-    factors = jax.vmap(per_slice)(stack.state, child_states, per_slice_evidence)
+    # Boundary: slice 0 from the external child, with the child's own kind.
+    first = slice_factors(
+        jax.tree_util.tree_map(lambda x: x[0], stack.state),
+        child_state,
+        per_slice_evidence[0],
+        child_kind,
+    )
+    # Interior slices 1 .. N-1, whose children are the stack's own slices. A
+    # single-slice stack maps over a zero-length axis and the concatenation
+    # below just wraps the boundary factors.
+    rest = jax.vmap(lambda p, c, e: slice_factors(p, c, e, "continuous"))(
+        jax.tree_util.tree_map(lambda x: x[1:], stack.state),
+        jax.tree_util.tree_map(lambda x: x[:-1], stack.state),
+        per_slice_evidence[1:],
+    )
+    factors = jax.tree_util.tree_map(
+        lambda f, r: jnp.concatenate([f[None, ...], r], axis=0), first, rest
+    )
     return (factors, evidence_out) if walking else factors
 
 
