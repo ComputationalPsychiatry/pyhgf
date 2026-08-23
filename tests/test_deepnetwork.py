@@ -1723,3 +1723,83 @@ def test_optimizer_state_survives_a_fresh_optimizer_object():
     net2.batch_update(x, y, optimizer=optax.adam(1e-1), update_precisions=False)
     scaled = float(np.abs(np.asarray(net2.state.layers[2].weights_mean) - before).max())
     assert 8.0 < scaled / sizes[-1] < 12.0, (scaled, sizes[-1])
+
+
+# ---------------------------------------------------------------------------
+# LayerStack directly above the observation layer
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("kind", ["volatile", "binary", "categorical"])
+def test_stack_on_observed_leaf_matches_unrolled(kind):
+    """A stack sitting directly on the observation layer matches the unrolled net.
+
+    The bottom-up sweeps peel the stack's boundary slice so the clamped leaf child is
+    handled with ``child_is_input_layer=True`` (and, in the learning factors, with its
+    own kind): a leaf never moves its posterior precision, so treating it as an interior
+    child would zero the evidence entering the whole stack.
+    """
+    from pyhgf.typing.vectorised import LayerStack
+
+    rng = np.random.default_rng(7)
+    x = jnp.asarray(rng.normal(size=(8, 2)).astype(np.float32))
+    if kind == "volatile":
+        y = rng.normal(size=(8, 4)).astype(np.float32)
+    elif kind == "binary":
+        y = rng.integers(0, 2, size=(8, 4)).astype(np.float32)
+    else:
+        y = np.eye(4, dtype=np.float32)[rng.integers(0, 4, size=8)]
+    y = jnp.asarray(y)
+
+    def build(stacked):
+        net = DeepNetwork().add_layer(4, kind=kind)
+        if stacked:
+            net.add_layer_stack([4] * 6)
+        else:
+            for _ in range(6):
+                net.add_layer(4)
+        return net.add_layer(2).weight_initialisation("xavier")
+
+    scanned, unrolled = build(True), build(False)
+    # The auto-collapse no longer refuses a leaf of any kind directly below.
+    stack_idx = next(
+        i for i, e in enumerate(scanned.state.layers) if isinstance(e, LayerStack)
+    )
+
+    # Belief sweeps: every slice state matches the unrolled layer it stands for.
+    for net in (scanned, unrolled):
+        net.fit(
+            x,
+            y,
+            optimizer=optax.sgd(0.05),
+            weight_update=False,
+            check_gradient_health=False,
+        )
+    stack = scanned.state.layers[stack_idx]
+    for k in range(6):
+        for field in ("mean", "precision", "expected_mean", "value_prediction_error"):
+            np.testing.assert_allclose(
+                np.asarray(getattr(stack.state, field)[k]),
+                np.asarray(getattr(unrolled.state.layers[stack_idx + k].state, field)),
+                atol=1e-6,
+                err_msg=f"{kind}: slice {k} field {field}",
+            )
+
+    # Weight learning: the boundary slice's factors carry the leaf's evidence
+    # and kind, so the learned weights match too.
+    scanned, unrolled = build(True), build(False)
+    for net in (scanned, unrolled):
+        net.fit(x, y, optimizer=optax.sgd(0.05), check_gradient_health=False)
+    stacked_weights = [
+        np.asarray(w)
+        for e in scanned.state.layers
+        if e.weights_mean is not None
+        for w in (e.weights_mean if isinstance(e, LayerStack) else [e.weights_mean])
+    ]
+    unrolled_weights = [
+        np.asarray(e.weights_mean)
+        for e in unrolled.state.layers
+        if e.weights_mean is not None
+    ]
+    for wa, wb in zip(stacked_weights, unrolled_weights):
+        np.testing.assert_allclose(wa, wb, atol=1e-5, err_msg=kind)

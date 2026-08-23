@@ -690,14 +690,16 @@ def test_phase8_auto_scan_skips_ineligible_configs():
     net = DeepNetwork().add_layer(size=4).add_layer_stack(layer_sizes=[6] * 5)
     assert net.scan_blocks == []
 
-    # Stack would sit directly above a binary leaf — scan body uses the
-    # value-prediction kernel and would corrupt the binary update.
+    # A stack directly above a binary leaf collapses too: the bottom-up sweeps
+    # peel the boundary slice, so the leaf child gets the same input-leaf
+    # treatment as the unrolled path (see
+    # ``test_stack_on_observed_leaf_matches_unrolled`` in test_deepnetwork.py).
     net = (
         DeepNetwork()
         .add_layer(size=1, kind="binary")
         .add_layer_stack(layer_sizes=[1] * 5)
     )
-    assert net.scan_blocks == []
+    assert net.scan_blocks == [(1, 6)]
 
     # Below the threshold even with all other constraints met.
     net = DeepNetwork().add_layer(size=4).add_layer_stack(layer_sizes=[4] * 4)

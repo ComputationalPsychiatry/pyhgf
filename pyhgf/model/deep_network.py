@@ -786,8 +786,10 @@ class DeepNetwork:
         the propagation kernels ``jax.lax.scan`` over them with a single trace.
 
         If any eligibility condition is not met (mixed sizes, fewer than 5 layers, width
-        mismatch with the layer below, direct binary- or categorical-leaf adjacency, or
-        no layer below), the layers are simply added one by one the usual way.
+        mismatch with the layer below, or no layer below), the layers are simply added
+        one by one the usual way. The layer below may be the observation layer of any
+        kind (volatile, binary, or categorical) since the stack sweeps treat their
+        bottom boundary with the same input-leaf conventions as the unrolled path.
 
         Parameters
         ----------
@@ -820,10 +822,6 @@ class DeepNetwork:
             and len(set(layer_sizes)) == 1
             and len(self.layer_sizes) > 0
             and self.layer_sizes[-1] == layer_sizes[0]
-            and not (
-                len(self.layer_sizes) == 1
-                and self.layer_kinds[0] in ("binary", "categorical")
-            )
         )
 
         start = len(self.layer_sizes)
