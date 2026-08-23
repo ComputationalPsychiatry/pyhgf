@@ -23,9 +23,6 @@ def vectorized_posterior_update_precision_value_level(
 ) -> jnp.ndarray:
     r"""Update the precision of the value level for all nodes in a layer.
 
-    This is the vectorized equivalent of
-    :func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level`.
-
     Implements the *posterior-step (smoothing) correction* of the relaxed HGF on
     value-coupling edges, in its **fully-corrected form** that pairs with the
     prediction-step (marginal-precision) correction. Lifting the mean-field
@@ -90,8 +87,7 @@ def vectorized_posterior_update_precision_value_level(
     mean_field_updates :
         If ``True``, skip the smoothing correction entirely and weight every
         child contribution by the canonical predicted precision
-        :math:`\tilde{\pi}_a` — the original mean-field update
-        (:func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level_mean_field`).
+        :math:`\tilde{\pi}_a` — the original mean-field update.
 
     Returns
     -------
@@ -166,9 +162,6 @@ def vectorized_posterior_update_mean_value_level(
 ) -> jnp.ndarray:
     r"""Update the mean of the value level for all nodes in a layer.
 
-    This is the vectorized equivalent of
-    :func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level`.
-
     Uses the joint-Gaussian (RTS-smoother) gain. Each value child contributes
 
     .. math::
@@ -210,8 +203,7 @@ def vectorized_posterior_update_mean_value_level(
         accumulating across children.
     mean_field_updates :
         If ``True``, replace the joint-Gaussian gain by the canonical predicted
-        precision :math:`\tilde{\pi}_a` — the original mean-field update
-        (:func:`pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level_mean_field`).
+        precision :math:`\tilde{\pi}_a` — the original mean-field update.
 
     Returns
     -------
@@ -266,9 +258,7 @@ def vectorized_layer_posterior_update(
 ) -> LayerState:
     """Update the value-level posterior for all nodes in a parent layer.
 
-    This is the vectorized equivalent of
-    :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_posterior_update`.
-    It updates the value level precision first, then the mean.
+    Updates the value level precision first, then the mean.
 
     Parameters
     ----------

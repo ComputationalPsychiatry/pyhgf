@@ -50,14 +50,6 @@ pub fn get_predictions_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
                             UpdateStep::PredictionContinuous
                         },
                     )),
-                    "volatile-state" => predictions.push((
-                        idx,
-                        if mf {
-                            UpdateStep::PredictionVolatileMeanField
-                        } else {
-                            UpdateStep::PredictionVolatile
-                        },
-                    )),
                     "binary-state" => predictions.push((idx, UpdateStep::PredictionBinary)),
                     _ => (),
                 }
@@ -136,16 +128,6 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
                         ));
                     }
                 }
-                "volatile-state" => {
-                    updates.push((
-                        idx,
-                        if mf {
-                            UpdateStep::PosteriorVolatileMeanField
-                        } else {
-                            UpdateStep::PosteriorVolatile
-                        },
-                    ));
-                }
                 _ => (),
             }
             has_update = true;
@@ -166,16 +148,6 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
             match (edge.node_type.as_str(), has_parents) {
                 ("continuous-state", true) => {
                     updates.push((idx, UpdateStep::PredictionErrorContinuous));
-                    has_update = true;
-                }
-                ("volatile-state", _) => {
-                    match network.volatility_updates.as_str() {
-                        "eHGF" => updates.push((idx, UpdateStep::PredictionErrorVolatileEhgf)),
-                        "unbounded" => {
-                            updates.push((idx, UpdateStep::PredictionErrorVolatileUnbounded))
-                        }
-                        _ => updates.push((idx, UpdateStep::PredictionErrorVolatile)),
-                    }
                     has_update = true;
                 }
                 ("ef-state", _) => {

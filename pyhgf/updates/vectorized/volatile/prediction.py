@@ -176,8 +176,7 @@ def vectorized_layer_prediction(
         If ``True``, the volatility level enters the log-volatility exponent at its
         expected mean alone — the MGF correction
         :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})` is dropped, matching the original
-        mean-field prediction of the nodalised backend
-        (:func:`pyhgf.updates.prediction.volatile.predict_precision_value_level_mean_field`).
+        mean-field prediction.
         Incompatible with ``feedforward_uncertainty`` (the mean-field scheme carries
         no value-coupling variance either); the network-level constructor enforces
         this.

@@ -96,16 +96,16 @@ def test_network():
 
 def test_constant_state_nodes_reject_invalid_parent_links():
     """Constant-state nodes must not be children of any other node."""
-    net = Network().add_nodes(kind="volatile-state")
+    net = Network().add_nodes(kind="continuous-state")
     net = net.add_nodes(kind="constant-state", value_children=0)
 
     with raises(ValueError, match="Constant-state nodes cannot have parents"):
-        net.add_nodes(kind="volatile-state", value_children=1)
+        net.add_nodes(kind="continuous-state", value_children=1)
 
     with raises(
         ValueError, match="Constant-state nodes cannot have volatility children"
     ):
-        Network().add_nodes(kind="volatile-state").add_nodes(
+        Network().add_nodes(kind="continuous-state").add_nodes(
             kind="constant-state", volatility_children=0
         )
 
@@ -315,120 +315,6 @@ def test_custom_sequence():
         branches_idx=branches_idx,
         input_data=u,
     )
-
-
-def test_network_adam_optimizer():
-    """Test Network.fit() with Adam optimizer covers learning.py Adam branch."""
-    n_targets, n_hidden, n_input = 2, 3, 1
-
-    net = (
-        Network()
-        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=n_hidden,
-            value_children=list(range(n_targets)),
-        )
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=n_input,
-            value_children=list(range(n_targets, n_targets + n_hidden)),
-        )
-    )
-
-    x_idxs = tuple(range(n_targets + n_hidden, n_targets + n_hidden + n_input))
-    y_idxs = tuple(range(n_targets))
-
-    np.random.seed(42)
-    x = np.random.randn(5, n_input)
-    y = np.random.randn(5, n_targets)
-
-    net.fit(
-        x=x,
-        y=y,
-        inputs_x_idxs=x_idxs,
-        inputs_y_idxs=y_idxs,
-        lr="adam",
-    )
-
-    assert net.last_attributes is not None
-    # Adam state should have been initialised
-    assert "adam_m" in net.attributes[n_targets]
-    assert "adam_t" in net.attributes[-1]
-
-
-def test_network_fit_record_trajectories():
-    """Test Network.fit() with record_trajectories=True."""
-    n_targets, n_hidden, n_input = 2, 3, 1
-
-    net = (
-        Network()
-        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=n_hidden,
-            value_children=list(range(n_targets)),
-        )
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=n_input,
-            value_children=list(range(n_targets, n_targets + n_hidden)),
-        )
-    )
-
-    x_idxs = tuple(range(n_targets + n_hidden, n_targets + n_hidden + n_input))
-    y_idxs = tuple(range(n_targets))
-
-    np.random.seed(42)
-    x = np.random.randn(5, n_input)
-    y = np.random.randn(5, n_targets)
-
-    net.fit(
-        x=x,
-        y=y,
-        inputs_x_idxs=x_idxs,
-        inputs_y_idxs=y_idxs,
-        lr=0.1,
-        record_trajectories=True,
-    )
-
-    assert net.node_trajectories is not None
-
-
-def test_network_predict():
-    """Test Network.predict() method."""
-    n_targets, n_hidden, n_input = 2, 3, 1
-
-    net = (
-        Network()
-        .add_nodes(kind="continuous-state", n_nodes=n_targets)
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=n_hidden,
-            value_children=list(range(n_targets)),
-        )
-        .add_nodes(
-            kind="volatile-state",
-            n_nodes=n_input,
-            value_children=list(range(n_targets, n_targets + n_hidden)),
-        )
-    )
-
-    x_idxs = tuple(range(n_targets + n_hidden, n_targets + n_hidden + n_input))
-    y_idxs = tuple(range(n_targets))
-
-    np.random.seed(42)
-    x = np.random.randn(5, n_input)
-    y = np.random.randn(5, n_targets)
-
-    net.fit(x=x, y=y, inputs_x_idxs=x_idxs, inputs_y_idxs=y_idxs, lr=0.1)
-
-    preds = net.predict(
-        x=np.array([[0.5]]),
-        inputs_x_idxs=x_idxs,
-        inputs_y_idxs=y_idxs,
-    )
-    assert np.all(np.isfinite(np.asarray(preds)))
 
 
 def test_network_input_data_no_trajectories():

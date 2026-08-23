@@ -86,23 +86,5 @@ class UpdateSequence(NamedTuple):
     action_steps: Optional[Sequence] = None
 
 
-class LearningSequence(NamedTuple):
-    """Set of update functions to update the weights of a deep network.
-
-    Parameters
-    ----------
-    prediction_steps :
-        The sequence of prediction steps applied top-down before observation.
-    update_steps :
-        The sequence of posterior and prediction-error update steps.
-    learning_steps :
-        The sequence of weight-learning steps applied after the update steps.
-    """
-
-    prediction_steps: Sequence
-    update_steps: Sequence
-    learning_steps: Sequence
-
-
 # a fully defined network
 NetworkParameters = tuple[Attributes, Edges, UpdateSequence]

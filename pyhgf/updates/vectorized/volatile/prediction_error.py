@@ -108,10 +108,6 @@ def vectorized_layer_volatility_posterior_standard(
     -------
     LayerState
         Updated layer state with ``precision_vol`` and ``mean_vol`` set.
-
-    See Also
-    --------
-    :mod:`pyhgf.updates.posterior.volatile.posterior_update_volatility_level`
     """
     assert layer.expected_precision_vol is not None
     assert layer.expected_mean_vol is not None

@@ -69,16 +69,15 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
             // Effective child precision under the smoothing correction. The
             // Schur derivation assumes a Gaussian-Gaussian value-coupling edge,
             // so the correction only applies when the child carries a Gaussian
-            // belief (continuous-state or volatile-state) AND is interior (has
+            // belief (continuous-state) AND is interior (has
             // children of its own). Binary, categorical, input/constant,
             // exponential-family, and Dirichlet children, plus any Gaussian
             // leaf, fall back to the canonical predicted-precision factor π̃_a
             // (paper's Limit 3, π_a → ∞).
             let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior =
-                matches!(child_node_type, "continuous-state" | "volatile-state")
-                    && (network.edges[child_idx].value_children.is_some()
-                        || network.edges[child_idx].volatility_children.is_some());
+            let child_is_gaussian_interior = child_node_type == "continuous-state"
+                && (network.edges[child_idx].value_children.is_some()
+                    || network.edges[child_idx].volatility_children.is_some());
             let effective_child_precision = if child_is_gaussian_interior {
                 // π_y = π_a − π̃_a; the Schur complement carries the *conditional*
                 // predicted precision π̂_a (stored on the child). Using the
@@ -157,10 +156,9 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
             // (exact multi-child marginal mean). Leaves / non-Gaussian children have
             // π_y = 0 so g_a collapses to the marginal, recovering the canonical gain.
             let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior =
-                matches!(child_node_type, "continuous-state" | "volatile-state")
-                    && (network.edges[child_idx].value_children.is_some()
-                        || network.edges[child_idx].volatility_children.is_some());
+            let child_is_gaussian_interior = child_node_type == "continuous-state"
+                && (network.edges[child_idx].value_children.is_some()
+                    || network.edges[child_idx].volatility_children.is_some());
             let gain_precision = if child_is_gaussian_interior {
                 let child_precision = child_state.precision;
                 let pi_y = child_precision - child_expected_precision;
@@ -288,8 +286,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
     let w_jm1 = 1.0 / (1.0 + previous_variance / v_jm1);
     // Volatility prediction error: da_jm1 = pihat_child * be_aux - 1, with
     // pihat_child the volatility child's *marginal* predicted precision. Matches the
-    // standard/eHGF volatility PE, the volatile-state node's fused update, and the
-    // Python backend; the earlier be_aux/(previous_variance+v_jm1) - 1 form used a
+    // standard/eHGF volatility PE and the Python backend; the earlier be_aux/(previous_variance+v_jm1) - 1 form used a
     // no-MGF/no-coupling conditional precision.
     let da_jm1 = child_state.expected_precision * be_aux - 1.0;
 
@@ -467,10 +464,9 @@ fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_
             };
 
             let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior =
-                matches!(child_node_type, "continuous-state" | "volatile-state")
-                    && (network.edges[child_idx].value_children.is_some()
-                        || network.edges[child_idx].volatility_children.is_some());
+            let child_is_gaussian_interior = child_node_type == "continuous-state"
+                && (network.edges[child_idx].value_children.is_some()
+                    || network.edges[child_idx].volatility_children.is_some());
             let effective_child_precision = if child_is_gaussian_interior {
                 let child_precision = child_state.precision;
                 let pi_y = child_precision - child_expected_precision;
