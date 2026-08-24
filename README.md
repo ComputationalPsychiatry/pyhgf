@@ -150,32 +150,9 @@ bivariate_normal = (
 
 The framework extends predictive coding to deep neural networks through *prospective configuration* ([Song et al., 2024](https://doi.org/10.1038/s41593-023-01514-1)): before updating any weight, the network first infers the most likely activations at every layer by settling prediction errors across the hierarchy, and only then adjusts the coupling strengths (weights). This two-phase infer-then-update cycle avoids the catastrophic interference that plagues standard backpropagation and naturally yields precision-weighted learning, where the balance of uncertainty between inputs and outputs controls the depth at which weights change.
 
-<details>
-<summary>Binary classification on a two-moons dataset</summary>
+![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif)
 
-```python
-from pyhgf.model import DeepNetwork
-import jax.numpy as jnp
-
-# Build a 2 → 16 → 16 → 1 (binary) predictive coding network
-clf_net = (
-    DeepNetwork(coupling_fn=jnp.tanh)
-    .add_layer(size=1, kind="binary")
-    .add_layer(size=16, tonic_volatility=-4.0)
-    .add_layer(size=16, tonic_volatility=-4.0)
-    .add_layer(size=2, add_constant_input=False, coupling_fn=lambda x: x)
-    .weight_initialisation("he", seed=0)
-)
-
-# Train for 100 epochs using the Adam optimiser
-for epoch in range(100):
-    clf_net.fit(X_train, y_train, lr=0.1, optimiser="adam")
-```
-</details>
-
-![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/two_moons_training.gif)
-
-* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Learning.html)
+* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Deep_learning.html)
 
 
 ## Acknowledgments
