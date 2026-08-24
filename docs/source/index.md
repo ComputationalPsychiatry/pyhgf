@@ -33,6 +33,8 @@ The last official release can be downloaded from PIP:
 
 `pip install pyhgf`
 
+This is the default CPU version optimised for sampling nodalised networks. If you want to use a GPU or JAX `>=0.7.0` please refer to the [installation page](https://computationalpsychiatry.github.io/pyhgf/install.html).
+
 The current version under development can be installed from the master branch of the GitHub folder:
 
 `pip install “git+https://github.com/ComputationalPsychiatry/pyhgf.git”`
@@ -148,36 +150,9 @@ bivariate_normal = (
 
 The framework extends predictive coding to deep neural networks through *prospective configuration* ([Song et al., 2024](https://doi.org/10.1038/s41593-023-01514-1)): before updating any weight, the network first infers the most likely activations at every layer by settling prediction errors across the hierarchy, and only then adjusts the coupling strengths (weights). This two-phase infer-then-update cycle avoids the catastrophic interference that plagues standard backpropagation and naturally yields precision-weighted learning, where the balance of uncertainty between inputs and outputs controls the depth at which weights change.
 
-<details>
-<summary>Multiclass classification on a three-branch spiral</summary>
-
-```python
-import jax
-import optax
-from pyhgf.model import DeepNetwork
-
-# Build a 2 → 8 × 4 → 3 (categorical) predictive coding network
-clf_net = DeepNetwork(coupling_fn=jax.nn.leaky_relu).add_layer(
-    size=3, kind="categorical"
-)
-for _ in range(4):
-    clf_net.add_layer(size=8, tonic_volatility=-80.0, tonic_volatility_vol=-8.0)
-clf_net = clf_net.add_layer(
-    size=2, add_constant_input=False, coupling_fn=lambda x: x, expected_precision=10e9
-).weight_initialisation("he", key=jax.random.key(0))
-
-# Train for 80 epochs using the Adam optimiser (Y_train is one-hot)
-adam = optax.adam(1e-3)
-for epoch in range(80):
-    clf_net.fit(
-        X_train, Y_train, optimiser=adam, learning_kind="standard", time_step=0.001
-    )
-```
-</details>
-
 ![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif)
 
-* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Learning.html)
+* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Deep_learning.html)
 
 
 ## Acknowledgments
@@ -200,6 +175,7 @@ This implementation of the Hierarchical Gaussian Filter was inspired by the orig
 ---
 hidden:
 ---
+Install <install.md>
 Learn <learn.md>
 API <api.rst>
 Cite <cite.md>
