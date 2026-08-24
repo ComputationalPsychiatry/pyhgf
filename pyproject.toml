@@ -5,7 +5,7 @@ authors = [
     { name = "Nicolas Legrand", email = "nicolas.legrand@cas.au.dk" }
 ]
 license = "GPL-3.0"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 readme = "README.md"
 keywords = ["reinforcement learning", "predictive coding", "neural networks", "graphs", "variational inference", "active inference", "causal inference"]
 classifiers = [
