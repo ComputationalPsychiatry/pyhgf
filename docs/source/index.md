@@ -33,6 +33,8 @@ The last official release can be downloaded from PIP:
 
 `pip install pyhgf`
 
+This is the default CPU version optimised for sampling nodalised networks. If you want to use a GPU or JAX `>=0.7.0` please refer to the [installation page](https://computationalpsychiatry.github.io/pyhgf/install.html).
+
 The current version under development can be installed from the master branch of the GitHub folder:
 
 `pip install “git+https://github.com/ComputationalPsychiatry/pyhgf.git”`
@@ -200,6 +202,7 @@ This implementation of the Hierarchical Gaussian Filter was inspired by the orig
 ---
 hidden:
 ---
+Install <install.md>
 Learn <learn.md>
 API <api.rst>
 Cite <cite.md>
