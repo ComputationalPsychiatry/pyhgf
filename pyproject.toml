@@ -29,7 +29,6 @@ dependencies = [
 
 [project.optional-dependencies]
 cuda12 = ["jax[cuda12]>=0.4.26; sys_platform == 'linux'"]
-cuda13 = ["jax[cuda13]>=0.7.2; sys_platform == 'linux'"]
 
 [project.urls]
 homepage = "https://computationalpsychiatry.github.io/pyhgf/"

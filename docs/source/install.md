@@ -29,18 +29,3 @@ The `cuda12` extra resolves inside the cap and needs nothing special:
 ```bash
 pip install "pyhgf[cuda12]"
 ```
-
-### CUDA 13
-
-JAX only ships its `cuda13` extra from version `0.7.2`, which will require an override on the command lin with UV:
-
-```bash
-uv pip install "pyhgf[cuda13]" --override <(printf 'jax[cuda13]\njaxlib\n')
-```
-
-With pip, which has no override mechanism, install pyhgf first and upgrade jax over the top:
-
-```bash
-pip install pyhgf
-pip install --upgrade "jax[cuda13]"
-```
