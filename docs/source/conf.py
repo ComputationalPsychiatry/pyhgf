@@ -36,6 +36,7 @@ bibtex_default_style = "unsrt"
 
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+templates_path = ["_templates"]
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -128,6 +129,9 @@ html_theme_options = {
     "logo": {
         "text": "pyhgf",
     },
+    # Display the pyhgf version used to build the docs next to the logo. The
+    # ``version`` component is the custom template in ``_templates``.
+    "navbar_start": ["navbar-logo", "version"],
     "show_nav_level": 2,
 }
 
