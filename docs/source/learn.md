@@ -11,8 +11,11 @@ notebooks/0.1-Theory.ipynb
 notebooks/0.2-Creating_networks.ipynb
 notebooks/0.3-Generalised_filtering.ipynb
 notebooks/0.4-Planning_and_acting.ipynb
-notebooks/0.5-Deep_learning.ipynb
-notebooks/0.6-Convolutional_networks.ipynb
+notebooks/0.5-Deep_networks_theory.ipynb
+notebooks/0.6-Prospective_configuration.ipynb
+notebooks/0.7-Deep_networks_implementation.ipynb
+notebooks/0.8-Convolutional_networks.ipynb
+notebooks/0.9-Transformers.ipynb
 ```
 
 ```{toctree}
@@ -99,8 +102,15 @@ Predict, filter and smooth any distribution from the exponential family using ge
 Planning and acting by simulating forward trajectories in predictive coding networks.
 :::
 
-:::{grid-item-card}  Deep learning
-:link: learning
+:::{grid-item-card}  Learning in deep networks: the theory
+:link: deep_networks_theory
+:link-type: ref
+
+What a predictive coding network optimises, when its local updates coincide with backpropagation, and where the two part company.
+:::
+
+:::{grid-item-card}  Prospective configuration
+:link: prospective_configuration
 :link-type: ref
 :img-top: ./images/three_spirals_training.gif
 
@@ -108,11 +118,25 @@ Planning and acting by simulating forward trajectories in predictive coding netw
 Learning in deep predictive coding networks using variational message passing for prospective configuration.
 :::
 
+:::{grid-item-card}  Building custom deep network architectures
+:link: deep_networks_implementation
+:link-type: ref
+
+The `DeepNetwork` class, the mixed-pipeline machinery, and the connectors that assemble larger architectures.
+:::
+
 :::{grid-item-card}  Convolutional networks
 :link: convolution
 :link-type: ref
 
 Building convolutions as a weight-shared layer on the hybrid pipeline, from first principles up to CIFAR-10.
+:::
+
+:::{grid-item-card}  Transformers
+:link: transformers
+:link-type: ref
+
+A GPT-style Transformer trained twice, with backpropagation and with PyHGF's belief updating.
 :::
 
 ::::

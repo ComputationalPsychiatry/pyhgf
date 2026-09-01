@@ -1,9 +1,5 @@
 # Installation
 
-```{eval-rst}
-:html_theme.sidebar_secondary.remove:
-```
-
 ## The standard install
 
 ```bash

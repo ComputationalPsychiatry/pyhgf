@@ -32,6 +32,7 @@ from .hybrid import (
 )
 from .network import Network
 from .transformer import HybridGPT, MultiHeadAttention, hybrid_from_gpt
+from .transplant import from_conv, from_embedding, from_feedforward, from_linear
 
 __all__ = [
     "Network",
@@ -42,6 +43,10 @@ __all__ = [
     "DescentError",
     "ObservedMinusPredicted",
     "validate_error_convention",
+    "from_linear",
+    "from_feedforward",
+    "from_embedding",
+    "from_conv",
     "PCModule",
     "EquinoxAdapter",
     "DeepNetworkAdapter",

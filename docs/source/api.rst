@@ -615,5 +615,5 @@ Vectorised networks
    LayerState
    Layer
    LayerStack
-   Network
+   VectorisedNetwork
    stack_layers

@@ -67,7 +67,8 @@ dev-dependencies = [
     "treescope>=0.1.9",
     "bokeh>=3.4.0",
     "nbconvert>=7.16.6",
-    "jupyterlab_myst>=2.4.2",
+    "jupyterlab>=4.5.0,<4.6.0",
+    "jupyterlab_myst>=2.7.0",
     "pre-commit>=4.3.0",
     "ruff>=0.14.7",
 ]

@@ -28,7 +28,7 @@ from pyhgf.typing.vectorised import (
     Layer,
     LayerParams,
     LayerState,
-    Network,
+    VectorisedNetwork,
     stack_layers,
 )
 from pyhgf.updates.vectorised.learning import (
@@ -128,20 +128,25 @@ class DeepNetwork:
 
     Examples
     --------
+    >>> import numpy as np
+    >>> import optax
+    >>> from pyhgf.model import DeepNetwork
     >>> # Build a network with method chaining
     >>> net = (
-    ...     VectorisedDeepNetwork()
-    ...     .add_layer(size=10)  # Output layer
-    ...     .add_layer(size=8)   # Hidden layer 1
-    ...     .add_layer(size=6)   # Hidden layer 2
-    ...     .add_layer(size=4)   # Input layer
+    ...     DeepNetwork()
+    ...     .add_layer(size=4)  # Output layer
+    ...     .add_layer(size=6)  # Hidden layer
+    ...     .add_layer(size=2)  # Input layer
     ... )
-    >>>
+    >>> net.n_layers
+    3
     >>> # Fit to data
-    >>> net.fit(x_train, y_train, lr=0.2)
-    >>>
+    >>> rng = np.random.default_rng(42)
+    >>> x_train, y_train = rng.normal(size=(8, 2)), rng.normal(size=(8, 4))
+    >>> net = net.fit(x_train, y_train, optimiser=optax.sgd(0.2))
     >>> # Make predictions
-    >>> predictions = net.predict(x_test)
+    >>> net.predict(x_train).shape
+    (8, 4)
 
     Notes
     -----
@@ -270,10 +275,10 @@ class DeepNetwork:
         # ``add_layer_stack`` when ≥ ``_SCAN_AUTO_THRESHOLD`` identical layers
         # sit on a compatible (matching-width, non-binary) layer below.
         self.scan_blocks: list[tuple[int, int]] = []
-        self.state: Optional[Network] = None
+        self.state: Optional[VectorisedNetwork] = None
         self.opt_state: Optional[optax.OptState] = None
         self._optimiser: Optional[optax.GradientTransformation] = None
-        self.trajectories: Optional[Network] = None
+        self.trajectories: Optional[VectorisedNetwork] = None
         self.predictions: Optional[jnp.ndarray] = None
         # Per-sample input-layer errors from the last batch_update call,
         # shape (batch, n_input_features).
@@ -736,7 +741,7 @@ class DeepNetwork:
         self.value_couplings.append(float(value_coupling))
         self.volatility_couplings.append(float(volatility_coupling))
         self.volatility_fully_connected.append(bool(volatility_fully_connected))
-        # Eagerly rebuild the Network so ``self.state`` is always queryable
+        # Eagerly rebuild the VectorisedNetwork so ``self.state`` is always queryable
         # after construction. Cheap for typical depths; only triggers fresh
         # array allocations, no JIT trace.
         self.state = self._init_state()
@@ -895,8 +900,8 @@ class DeepNetwork:
             self.scan_blocks.append((start, len(self.layer_sizes)))
         return self
 
-    def _init_state(self) -> Network:
-        """Initialise network with uniform weights, as an Equinox ``Network`` PyTree.
+    def _init_state(self) -> VectorisedNetwork:
+        """Initialise network with uniform weights, as a ``VectorisedNetwork`` PyTree.
 
         All inter-layer weights are set to ``1.0``. Use :meth:`weight_initialisation`
         after construction to apply Xavier, He, orthogonal, or sparse initialisation.
@@ -980,7 +985,7 @@ class DeepNetwork:
         else:
             elements = layers
 
-        return Network(
+        return VectorisedNetwork(
             layers=tuple(elements),
             volatility_updates=self.volatility_updates,
             max_posterior_precision=self.max_posterior_precision,
@@ -1013,8 +1018,8 @@ class DeepNetwork:
             return jnp.full((child_size, size), strength / size)
         return strength * jnp.eye(child_size, size)
 
-    def _init_continuous_state(self) -> Network:
-        """Build the ``Network`` PyTree of an all-continuous network.
+    def _init_continuous_state(self) -> VectorisedNetwork:
+        """Build the ``VectorisedNetwork`` PyTree of an all-continuous network.
 
         Both coupling matrices are fixed at construction and share the fan-in rule of
         :meth:`_fan_in_matrix`.
@@ -1091,7 +1096,7 @@ class DeepNetwork:
                 )
             )
 
-        return Network(
+        return VectorisedNetwork(
             layers=tuple(layers),
             volatility_updates=self.volatility_updates,
             max_posterior_precision=self.max_posterior_precision,

@@ -13,11 +13,12 @@ class AdjacencyLists(NamedTuple):
     """Indexes to a node's value and volatility parents.
 
     The variable `node_type` encode the type of state node:
+
     * 0: input node.
     * 1: binary state node.
     * 2: continuous state node.
-    * 3: exponential family state node - univariate Gaussian distribution with unknown
-        mean and unknown variance.
+    * 3: exponential family state node: univariate Gaussian distribution with
+      unknown mean and unknown variance.
     * 4: Dirichlet Process state node.
 
     The variable `coupling_fn` list the coupling functions between this nodes and the
