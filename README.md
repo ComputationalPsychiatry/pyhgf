@@ -89,7 +89,7 @@ hgf = (
 hgf.input_data(input_data=u)
 
 # visualisation of the belief trajectories
-hgf.plot_trajectories();
+hgf.plot_trajectories()
 ```
 </details>
 
@@ -103,12 +103,12 @@ hgf.plot_trajectories();
 ```python
 from pyhgf.response import binary_softmax_inverse_temperature
 
-# compute the model's surprise (-log(p)) 
+# compute the model's surprise (-log(p))
 # using the binary softmax with inverse temperature as the response model
 surprise = hgf.surprise(
     response_function=binary_softmax_inverse_temperature,
     response_function_inputs=y,
-    response_function_parameters=4.0
+    response_function_parameters=4.0,
 )
 print(f"Sum of surprises = {surprise.sum()}")
 ```

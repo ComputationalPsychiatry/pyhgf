@@ -16,8 +16,7 @@ def posterior_update_mean_continuous_node(
 ) -> float:
     r"""Continuous mean update without mean-field approximation.
 
-    1. Mean update from value coupling
-    ----------------------------------
+    .. rubric:: 1. Mean update from value coupling
 
     Each value child :math:`j` contributes
 
@@ -43,8 +42,7 @@ def posterior_update_mean_continuous_node(
     :math:`g_{a,j}` collapses to the marginal :math:`\tilde{\pi}_j`, recovering the
     canonical gain :math:`\hat{\pi}_j \, \pi_j / \pi_j = \tilde{\pi}_j`.
 
-    2. Mean update from volatility coupling
-    ---------------------------------------
+    .. rubric:: 2. Mean update from volatility coupling
 
     .. math::
 

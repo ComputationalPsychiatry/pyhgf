@@ -3,10 +3,11 @@
 """Tests of the Equinox PyTree types behind the vectorised deep network.
 
 Covers the ``pyhgf.typing.vectorised`` types (``LayerState``, ``LayerParams``,
-``Layer``, ``LayerStack``, ``Network``) as PyTrees — defaults, leaf structure, statics,
-serialisation — and the capabilities that representation provides on ``DeepNetwork``:
-optimiser-state handling, selective trajectory recording, save/load, vmapped ensembles,
-pandas export, and the scanned ``LayerStack`` against its unrolled equivalent.
+``Layer``, ``LayerStack``, ``VectorisedNetwork``) as PyTrees — defaults, leaf structure,
+statics, serialisation — and the capabilities that representation provides on
+``DeepNetwork``: optimiser-state handling, selective trajectory recording, save/load,
+vmapped ensembles, pandas export, and the scanned ``LayerStack`` against its unrolled
+equivalent.
 """
 
 from __future__ import annotations
@@ -22,12 +23,12 @@ import optax
 import pytest
 
 from pyhgf.model import DeepNetwork
-from pyhgf.typing.vectorised import Layer, LayerParams, LayerState, Network
+from pyhgf.typing.vectorised import Layer, LayerParams, LayerState, VectorisedNetwork
 
 
-def _make_network_no_weights(layers: tuple) -> Network:
-    """Test helper: build a Network with default statics."""
-    return Network(
+def _make_network_no_weights(layers: tuple) -> VectorisedNetwork:
+    """Test helper: build a VectorisedNetwork with default statics."""
+    return VectorisedNetwork(
         layers=layers,
         volatility_updates="eHGF",
         max_posterior_precision=1e10,
@@ -139,7 +140,7 @@ def test_layer_weights_in_can_be_none():
 
 
 def test_network_is_pytree_with_static_meta():
-    """Network round-trips through jtu.tree_(un)flatten."""
+    """VectorisedNetwork round-trips through jtu.tree_(un)flatten."""
     layer = Layer(
         state=LayerState.create(2),
         params=LayerParams.create(2),
@@ -160,7 +161,7 @@ def test_network_is_pytree_with_static_meta():
 
 
 def test_network_jit_does_not_retrace_on_array_change():
-    """JIT-compiling a function of Network re-uses the trace for new array values."""
+    """A jitted function of a VectorisedNetwork re-uses its trace for new values."""
     layer = Layer(
         state=LayerState.create(3),
         params=LayerParams.create(3),
@@ -175,7 +176,7 @@ def test_network_jit_does_not_retrace_on_array_change():
     net = _make_network_no_weights((layer,))
 
     @eqx.filter_jit
-    def sum_means(network: Network) -> jax.Array:
+    def sum_means(network: VectorisedNetwork) -> jax.Array:
         return jnp.sum(network.layers[0].state.mean)
 
     out1 = sum_means(net)
@@ -208,7 +209,7 @@ def test_serialisation_roundtrip(tmp_path):
 
 
 def test_deepnetwork_state_is_eqx_network():
-    """``DeepNetwork.state`` is an Equinox ``Network`` PyTree."""
+    """``DeepNetwork.state`` is an Equinox ``VectorisedNetwork`` PyTree."""
     dn = (
         DeepNetwork()
         .add_layer(size=2)
@@ -216,7 +217,7 @@ def test_deepnetwork_state_is_eqx_network():
         .add_layer(size=1)
         .weight_initialisation("xavier", key=jax.random.key(0))
     )
-    assert isinstance(dn.state, Network)
+    assert isinstance(dn.state, VectorisedNetwork)
     assert dn.state.n_layers == 3
     assert dn.state.get_layer_sizes() == [2, 3, 1]
     # Layer 0: no child below; layer 1 holds weights between layers 0 and 1.
@@ -230,7 +231,7 @@ def test_deepnetwork_state_is_eqx_network():
 
 
 def test_optax_handles_none_slot_in_weights_tuple():
-    """``Network.weights_tuple()`` has ``None`` at index 0; optax handles it.
+    """``VectorisedNetwork.weights_tuple()`` has ``None`` at index 0; optax handles it.
 
     The optimiser state is carried alongside the network through
     ``jax.lax.scan``, so ``optax.init`` / ``optax.update`` /
@@ -298,7 +299,7 @@ def test_eager_state_init_after_add_layer():
     assert dn.state is None  # empty builder: nothing to initialise yet
 
     dn.add_layer(size=2)
-    assert isinstance(dn.state, Network)
+    assert isinstance(dn.state, VectorisedNetwork)
     assert dn.state.n_layers == 1
     assert dn.state.get_layer_sizes() == [2]
 
@@ -407,7 +408,7 @@ def test_save_load_roundtrip(tmp_path):
 
 
 def test_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
-    """``eqx.filter_vmap(run_scan)`` works on a batched (Network, opt_state).
+    """``eqx.filter_vmap(run_scan)`` works on a batched (VectorisedNetwork, opt_state).
 
     Because the network is a PyTree, N independent networks can be stacked on a leading
     axis and trained in a single vmapped scan call.
@@ -422,7 +423,7 @@ def test_vmap_ensemble_run_scan_runs_n_networks_in_parallel():
         .weight_initialisation("xavier", key=k)
         for k in keys
     ]
-    # Stack the individual ``Network`` PyTrees along a new leading axis.
+    # Stack the individual ``VectorisedNetwork`` PyTrees along a new leading axis.
     stacked_network = jax.tree_util.tree_map(
         lambda *xs: jnp.stack(xs), *(n.state for n in nets)
     )

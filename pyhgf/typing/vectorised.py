@@ -245,7 +245,7 @@ class Layer(eqx.Module):
         stored rather than the precision itself because it starts at zero, so a
         per-step increment far below the prior precision accumulates exactly.
     value_child_idx :
-        Continuous layers only — index (into ``Network.layers``) of the layer this
+        Continuous layers only — index (into ``VectorisedNetwork.layers``) of the layer this
         layer is the *value parent* of, or ``None``. ``weights_mean`` then connects
         that child into this layer, shape ``(n_child, n_self)``, and enters the
         drift of the child's predicted mean. The chain convention of volatile
@@ -258,7 +258,7 @@ class Layer(eqx.Module):
         Volatility-coupling matrix :math:`\kappa`, shape ``(n_child, n_self)``,
         connecting the volatility child named by ``volatility_child_idx`` into
         this layer. Fixed at construction — never part of the learned weights
-        (excluded from :meth:`Network.weights_tuple`).
+        (excluded from :meth:`VectorisedNetwork.weights_tuple`).
     """
 
     state: LayerState
@@ -289,10 +289,10 @@ class LayerStack(eqx.Module):
 
     Validation constraints, enforced at build time:
 
-    * The layer immediately below the stack must have the same node count as the stack
-    width (so ``weights_mean[0]`` shape matches).
-    * ``weights_mean[k]`` for k > 0 is a square ``(W, W+bias)`` block connecting slice k
-    (parent) to slice k-1 (child) within the stack.
+    * The layer immediately below the stack must have the same node count as the
+      stack width (so ``weights_mean[0]`` shape matches).
+    * ``weights_mean[k]`` for k > 0 is a square ``(W, W+bias)`` block connecting
+      slice k (parent) to slice k-1 (child) within the stack.
 
     Parameters
     ----------
@@ -424,7 +424,7 @@ def stack_layers(layers: list) -> LayerStack:
     )
 
 
-class Network(eqx.Module):
+class VectorisedNetwork(eqx.Module):
     """Complete vectorised network state.
 
     ``time_step`` is *not* stored on the network — it is passed as a per-step input to
@@ -432,7 +432,7 @@ class Network(eqx.Module):
     ``input_data(time_steps=...)`` API.
 
     Optimiser state lives in a separate ``optax`` opt-state carried alongside
-    ``Network`` in the scan carry; it is not part of the network PyTree.
+    ``VectorisedNetwork`` in the scan carry; it is not part of the network PyTree.
 
     ``layers`` is a mixed tuple of ``Layer`` and ``LayerStack`` elements.
 

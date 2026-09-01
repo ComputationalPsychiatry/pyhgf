@@ -60,21 +60,24 @@ def plot_trajectories(
     .. plot::
 
         from pyhgf import load_data
-        from pyhgf.model import HGF
-
-        # Set up standard 3-level HGF for continuous inputs
-        hgf = HGF(
-            n_levels=3,
-            model_type="continuous",
-            initial_mean={"1": 1.04, "2": 1.0, "3": 1.0},
-            initial_precision={"1": 1e4, "2": 1e1, "3": 1e1},
-            tonic_volatility={"1": -13.0, "2": -2.0, "3": -2.0},
-            tonic_drift={"1": 0.0, "2": 0.0, "3": 0.0},
-            volatility_coupling={"1": 1.0, "2": 1.0},
-        )
+        from pyhgf.model import Network
 
         # Read USD-CHF data
         timeserie = load_data("continuous")
+
+        # Set up a standard 3-level network for continuous inputs
+        hgf = (
+            Network()
+            .add_nodes(precision=1e4)
+            .add_nodes(
+                precision=1e4,
+                mean=timeserie[0],
+                tonic_volatility=-13.0,
+                value_children=0,
+            )
+            .add_nodes(tonic_volatility=-2.0, volatility_children=1)
+            .add_nodes(tonic_volatility=-2.0, volatility_children=2)
+        )
 
         # Feed input
         hgf.input_data(input_data=timeserie)
@@ -87,21 +90,16 @@ def plot_trajectories(
     .. plot::
 
         from pyhgf import load_data
-        from pyhgf.model import HGF
-        import jax.numpy as jnp
+        from pyhgf.model import Network
 
         # Read binary input
         u, _ = load_data("binary")
 
-        three_levels_hgf = HGF(
-            n_levels=3,
-            model_type="binary",
-            initial_mean={"1": .0, "2": .5, "3": 0.},
-            initial_precision={"1": .0, "2": 1e4, "3": 1e1},
-            tonic_volatility={"1": None, "2": -6.0, "3": -2.0},
-            tonic_drift={"1": None, "2": 0.0, "3": 0.0},
-            volatility_coupling={"1": None, "2": 1.0},
-            binary_precision = jnp.inf,
+        three_levels_hgf = (
+            Network()
+            .add_nodes(kind="binary-state")
+            .add_nodes(value_children=0)
+            .add_nodes(volatility_children=1)
         )
 
         # Feed input

@@ -38,7 +38,9 @@ if TYPE_CHECKING:
 
 
 def get_update_sequence(
-    network: "Network", volatility_updates: str, mean_field_updates: bool = False
+    network: "Network",
+    volatility_updates: str,
+    mean_field_updates: bool = False,
 ) -> UpdateSequence:
     """Generate an update sequence from the network's structure.
 

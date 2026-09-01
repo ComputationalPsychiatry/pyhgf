@@ -241,9 +241,9 @@ def binary_surprise(
 
     Examples
     --------
-    >>> from pyhgf.binary import binary_surprise
+    >>> from pyhgf.math import binary_surprise
     >>> binary_surprise(x=1.0, expected_mean=0.7)
-    `Array(0.35667497, dtype=float32, weak_type=True)`
+    Array(0.35667497, dtype=float32, weak_type=True)
     """
     if clipping:
         expected_mean = jnp.clip(expected_mean, 1e-6, 1 - 1e-6)
@@ -288,7 +288,7 @@ def gaussian_surprise(
     --------
     >>> from pyhgf.math import gaussian_surprise
     >>> gaussian_surprise(x=2.0, expected_mean=0.0, expected_precision=1.0)
-    `Array(2.9189386, dtype=float32, weak_type=True)`
+    Array(2.9189386, dtype=float32, weak_type=True)
     """
     return jnp.array(0.5) * (
         jnp.log(jnp.array(2.0) * jnp.pi)

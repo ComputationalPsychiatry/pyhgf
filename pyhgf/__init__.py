@@ -142,7 +142,7 @@ def load_data(dataset: str) -> Union[tuple[np.ndarray, ...], np.ndarray]:
     The continuous time series is the standard USD-CHF conversion rates over time used
     in the Matlab examples.
 
-    The binary dataset is from Iglesias et al. (2013) [#] (see the full dataset
+    The binary dataset is from Iglesias et al. (2013) [#]_ (see the full dataset
     `here <https://www.research-collection.ethz.ch/handle/20.500.11850/454711)>`_. The
     binary set consist of one vector *u*, the observations, and one vector *y*, the
     decisions.

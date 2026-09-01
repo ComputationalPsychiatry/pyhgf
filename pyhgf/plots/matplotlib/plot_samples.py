@@ -23,7 +23,7 @@ def plot_samples(
 
     Parameters
     ----------
-    network : Network
+    network :
         Main Network instance.
     show_total_surprise :
         If `True`, plot the sum of surprises across all nodes in the bottom panel.

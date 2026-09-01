@@ -10,13 +10,18 @@ if TYPE_CHECKING:
 
 
 def plot_network(
-    network: "Network", figsize=(4, 4), node_size=700, ax=None, scale=1, arrow_size=35
+    network: "Network",
+    figsize=(4, 4),
+    node_size=700,
+    ax=None,
+    scale=1,
+    arrow_size=35,
 ):
     """Visualisation of node network using NetworkX and pydot layout.
 
     Parameters
     ----------
-    network : Network
+    network :
         An instance of main Network class.
     figsize : tuple, optional
         Figure size in inches (width, height), by default (4, 4)

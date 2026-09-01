@@ -19,7 +19,7 @@ from pyhgf.typing.vectorised import (
 from pyhgf.typing.vectorised import (
     Layer,
     LayerStack,
-    Network,
+    VectorisedNetwork,
 )
 from pyhgf.updates.vectorised.binary import (
     vectorised_binary_prediction,
@@ -689,7 +689,7 @@ def _set_top_predictors(elem, x):
     return dataclasses.replace(elem, state=new_state)
 
 
-def _sweeps_reach_top(network: Network) -> bool:
+def _sweeps_reach_top(network: VectorisedNetwork) -> bool:
     """Whether both sweeps should treat the top element as a member of the hierarchy.
 
     Gating the two sweeps on one predicate keeps them in step: a top element that
@@ -756,7 +756,7 @@ def _set_bottom_observations(elem, y):
 
 
 def propagation_step(
-    network: Network,
+    network: VectorisedNetwork,
     opt_state: optax.OptState,
     inputs: tuple,
     *,
@@ -765,7 +765,7 @@ def propagation_step(
     learning_kind: str = "precision_weighted",
     weight_update: bool = True,
     synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-) -> tuple[tuple[Network, optax.OptState], jnp.ndarray]:
+) -> tuple[tuple[VectorisedNetwork, optax.OptState], jnp.ndarray]:
     """Single propagation step through the network.
 
     Belief-propagation sweep — top-down prediction, leaf prediction error, then the
@@ -911,8 +911,8 @@ def run_scan(
 
 
 def _prediction_sweep(
-    network: Network, x: jnp.ndarray, *, time_step: float = 1.0
-) -> Network:
+    network: VectorisedNetwork, x: jnp.ndarray, *, time_step: float = 1.0
+) -> VectorisedNetwork:
     """Top-down prediction sweep, returning the updated network.
 
     Clamps the predictors on the top element and predicts every element from the one
@@ -949,8 +949,8 @@ def _prediction_sweep(
 
 
 def _update_sweep(
-    network: Network, y: jnp.ndarray, *, time_step: float = 1.0
-) -> Network:
+    network: VectorisedNetwork, y: jnp.ndarray, *, time_step: float = 1.0
+) -> VectorisedNetwork:
     """Bottom-up prediction-error + posterior-update sweep, returning the network.
 
     Clamps the observations on the bottom element, computes the leaf prediction error,
@@ -1005,7 +1005,7 @@ def _update_sweep(
 
 
 @eqx.filter_jit
-def prediction_sweep(network: Network, x: jnp.ndarray) -> Network:
+def prediction_sweep(network: VectorisedNetwork, x: jnp.ndarray) -> VectorisedNetwork:
     """JIT-compiled top-down prediction sweep.
 
     See :func:`_prediction_sweep`.
@@ -1014,7 +1014,9 @@ def prediction_sweep(network: Network, x: jnp.ndarray) -> Network:
 
 
 @eqx.filter_jit
-def update_sweep(network: Network, y: jnp.ndarray, time_step: float = 1.0) -> Network:
+def update_sweep(
+    network: VectorisedNetwork, y: jnp.ndarray, time_step: float = 1.0
+) -> VectorisedNetwork:
     """JIT-compiled bottom-up prediction-error + posterior sweep.
 
     See :func:`_update_sweep`.
@@ -1022,7 +1024,7 @@ def update_sweep(network: Network, y: jnp.ndarray, time_step: float = 1.0) -> Ne
     return _update_sweep(network, y, time_step=time_step)
 
 
-def _input_prediction_error(network: Network) -> jnp.ndarray:
+def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
     r"""Prediction error routed to the network's input (top) layer.
 
     This is the error message the top layer receives from the layer below it —
@@ -1103,7 +1105,7 @@ def _input_prediction_error(network: Network) -> jnp.ndarray:
 
 
 @eqx.filter_jit
-def input_prediction_error(network: Network) -> jnp.ndarray:
+def input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
     """JIT-compiled prediction error at the input (top) layer.
 
     See :func:`_input_prediction_error`.
@@ -1111,7 +1113,7 @@ def input_prediction_error(network: Network) -> jnp.ndarray:
     return _input_prediction_error(network)
 
 
-def _weight_quantities(network: Network, learning_kind: str) -> tuple:
+def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
     r"""Per-element weight-learning factors, without applying them.
 
     Must run *after* :func:`_update_sweep`, so the per-layer states already carry their
@@ -1196,11 +1198,11 @@ def _importance_pair(factors) -> Optional[tuple]:
 
 
 def _apply_weight_updates(
-    network: Network,
+    network: VectorisedNetwork,
     grads: tuple,
     opt_state: optax.OptState,
     optimiser: optax.GradientTransformation,
-) -> tuple[Network, optax.OptState]:
+) -> tuple[VectorisedNetwork, optax.OptState]:
     """One optimiser step on every ``weights_mean``, from precomputed gradients."""
     elements = list(network.layers)
     weights = tuple(elem.weights_mean for elem in elements)
@@ -1215,11 +1217,11 @@ def _apply_weight_updates(
 
 
 def _apply_synaptic_uncertainty_updates(
-    network: Network,
+    network: VectorisedNetwork,
     grads: tuple,
     importance: tuple,
     settings: SynapticUncertaintySettings,
-) -> Network:
+) -> VectorisedNetwork:
     """Advance every weight belief one step, mean and precision together.
 
     The rule needs no optimiser: the step size is the belief's own variance
@@ -1242,7 +1244,7 @@ def _apply_synaptic_uncertainty_updates(
 
     Returns
     -------
-    Network
+    VectorisedNetwork
         The network with updated weights and precisions.
 
     Raises
@@ -1275,12 +1277,12 @@ def _apply_synaptic_uncertainty_updates(
 
 
 def _learn_sweep(
-    network: Network,
+    network: VectorisedNetwork,
     opt_state: optax.OptState,
     optimiser: Optional[optax.GradientTransformation],
     learning_kind: str = "precision_weighted",
     synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-) -> tuple[Network, optax.OptState]:
+) -> tuple[VectorisedNetwork, optax.OptState]:
     """Weight-learning phase: prediction-error-driven gradients, then one step.
 
     Mirrors the weight-update block of :func:`propagation_step`. Must run *after*
@@ -1305,12 +1307,12 @@ def _learn_sweep(
 
 @eqx.filter_jit
 def learn_sweep(
-    network: Network,
+    network: VectorisedNetwork,
     opt_state: optax.OptState,
     optimiser: Optional[optax.GradientTransformation],
     learning_kind: str,
     synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-) -> tuple[Network, optax.OptState]:
+) -> tuple[VectorisedNetwork, optax.OptState]:
     """JIT-compiled weight-learning phase.
 
     See :func:`_learn_sweep`.
@@ -1332,7 +1334,7 @@ def learn_sweep(
 _CARRIED_FIELDS: tuple = ("precision", "mean_vol", "precision_vol")
 
 
-def _precision_increments(before: Network, after: Network) -> tuple:
+def _precision_increments(before: VectorisedNetwork, after: VectorisedNetwork) -> tuple:
     """Per-element change of the carried precision fields, ``after - before``.
 
     Returns one ``dict`` per element, keyed by field name. For a ``Layer``
@@ -1351,7 +1353,9 @@ def _precision_increments(before: Network, after: Network) -> tuple:
     )
 
 
-def apply_precision_increments(network: Network, increments: tuple) -> Network:
+def apply_precision_increments(
+    network: VectorisedNetwork, increments: tuple
+) -> VectorisedNetwork:
     """Add precision increments (see :func:`_precision_increments`) to a network.
 
     Used by :func:`batch_step` to carry the batch-averaged precision change into the
@@ -1371,7 +1375,9 @@ def apply_precision_increments(network: Network, increments: tuple) -> Network:
     return dataclasses.replace(network, layers=tuple(new_elements))
 
 
-def _restore_precisions(network: Network, template: Network) -> Network:
+def _restore_precisions(
+    network: VectorisedNetwork, template: VectorisedNetwork
+) -> VectorisedNetwork:
     """Reset the carried precision fields to a template's values.
 
     The inverse of carrying: with this applied after every propagation step, each
@@ -1392,7 +1398,7 @@ def _restore_precisions(network: Network, template: Network) -> Network:
 
 
 def sample_step(
-    network: Network,
+    network: VectorisedNetwork,
     x: jnp.ndarray,
     y: jnp.ndarray,
     learning_kind: str = "precision_weighted",
@@ -1448,7 +1454,7 @@ def sample_step(
 
 
 def _batch_step(
-    network: Network,
+    network: VectorisedNetwork,
     opt_state: Optional[optax.OptState],
     x: jnp.ndarray,
     y: jnp.ndarray,
@@ -1460,7 +1466,7 @@ def _batch_step(
     sample_weight: Optional[jnp.ndarray] = None,
     synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
     weight_reuse: float = 1.0,
-) -> tuple[Network, Optional[optax.OptState], jnp.ndarray]:
+) -> tuple[VectorisedNetwork, Optional[optax.OptState], jnp.ndarray]:
     """One batch-synchronous learning step over many samples at once.
 
     Every sample in the batch is processed from the *same* state template —
@@ -1570,7 +1576,7 @@ def _batch_step(
     # avoids materialising one weight-matrix-sized gradient per sample under
     # vmap — the same arithmetic, a batch factor less memory traffic. Every
     # gradient kind is separable, so this is the only path.
-    def finish_sample(swept: Network, yi):
+    def finish_sample(swept: VectorisedNetwork, yi):
         updated = _update_sweep(swept, yi, time_step=time_step)
         factors = None
         if optimiser is not None or synaptic_uncertainty_settings is not None:
@@ -1704,7 +1710,7 @@ def _contract_factors(factors, sample_weight=None) -> Optional[jnp.ndarray]:
 
 
 @eqx.filter_jit
-def prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
+def prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.ndarray:
     """Forward-only sweep through the network.
 
     Sets the predictors on the top element and runs the top-down prediction sweep —
@@ -1728,7 +1734,7 @@ def prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
 
 
 @eqx.filter_jit
-def batched_prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
+def batched_prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.ndarray:
     """Forward-only sweep for a batch of samples, compiled once and reused.
 
     The batched equivalent of :func:`prediction_pass`: every row of ``x`` is
@@ -1755,7 +1761,7 @@ def batched_prediction_pass(network: Network, x: jnp.ndarray) -> jnp.ndarray:
 
 
 @eqx.filter_jit
-def batched_prediction_states(network: Network, x: jnp.ndarray) -> tuple:
+def batched_prediction_states(network: VectorisedNetwork, x: jnp.ndarray) -> tuple:
     """Batched forward sweep returning the per-sample swept states.
 
     Like :func:`batched_prediction_pass`, but keeps what the sweep computed:
@@ -1803,7 +1809,7 @@ def batched_prediction_states(network: Network, x: jnp.ndarray) -> tuple:
 # bottom-up in ascending order.
 
 
-def _assert_continuous_network(network: Network) -> None:
+def _assert_continuous_network(network: VectorisedNetwork) -> None:
     """Check that every element is a continuous ``Layer`` (no stacks, no mixing)."""
     for i, elem in enumerate(network.layers):
         if isinstance(elem, LayerStack):
@@ -1818,7 +1824,7 @@ def _assert_continuous_network(network: Network) -> None:
 
 
 def _continuous_parent_maps(
-    network: Network,
+    network: VectorisedNetwork,
 ) -> tuple[list, list]:
     """Invert the child indices into per-layer parent indices.
 
@@ -1837,12 +1843,12 @@ def _continuous_parent_maps(
 
 
 def _continuous_prediction_sweep(
-    network: Network,
+    network: VectorisedNetwork,
     value_parent_of: list,
     volatility_parent_of: list,
     *,
     time_step: float = 1.0,
-) -> Network:
+) -> VectorisedNetwork:
     """Top-down prediction sweep over a continuous network.
 
     Predicts every layer from its value and volatility parents, in descending
@@ -1875,12 +1881,12 @@ def _continuous_prediction_sweep(
 
 
 def _continuous_update_sweep(
-    network: Network,
+    network: VectorisedNetwork,
     y: jnp.ndarray,
     value_parent_of: list,
     *,
     time_step: float = 1.0,
-) -> Network:
+) -> VectorisedNetwork:
     """Bottom-up prediction-error and posterior-update sweep.
 
     Clamps the observations on layer 0, computes its prediction errors, then
@@ -1951,7 +1957,7 @@ def _continuous_update_sweep(
 
 @eqx.filter_jit
 def run_continuous_scan(
-    network: Network,
+    network: VectorisedNetwork,
     ys: jnp.ndarray,
     time_steps: jnp.ndarray,
     record: tuple = (),

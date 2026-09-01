@@ -57,9 +57,12 @@ jobs:
         run: uv run maturin develop --release
 
       # Step 8: Run Tests and Generate Coverage Report
+      # NOTE: `pyhgf/` is listed alongside `./tests/` so that `--doctest-modules`
+      # collects the `Examples` sections of the docstrings. The flag applies to the
+      # whole invocation, so it only reaches the package when the package is a target.
       - name: Run tests and coverage
         run: |
-          uv run pytest ./tests/ --cov=./pyhgf/ --cov-report=xml --cov-branch
+          uv run pytest ./tests/ pyhgf/ --doctest-modules --cov=./pyhgf/ --cov-report=xml --cov-branch
 
       # Step 9: Upload Coverage Report to Codecov
       - name: Upload coverage reports to Codecov

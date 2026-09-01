@@ -19,8 +19,8 @@ the error at its output and hands the error at its *input* to the part behind it
 Nothing resembling backpropagation runs anywhere: no global computation graph, no
 automatic differentiation.
 
-Error convention: the arrays passed between parts are *descent* errors — the gradient of
-the loss with respect to that signal, the same object a backprop library would hand
+Error convention: the arrays passed between parts are *descent* errors — the gradient
+of the loss with respect to that signal, the same object a backprop library would hand
 around. PyHGF's internal prediction errors follow the opposite, observed-minus-predicted
 convention; the executor converts between the two at the learning part's boundary, in
 exactly one place.
@@ -143,8 +143,8 @@ class EquinoxAdapter(PCModule):
     - ``backward_fn(cache, error) -> error_in`` translates the error at the
       output into the error at the input, using only the cache.
 
-    Error Convention
-    ----------------
+    .. rubric:: Error convention
+
     Both forward_fn and backward_fn use the **descent-error convention**
     (see :mod:`pyhgf.model.error_types`):
 
@@ -266,8 +266,8 @@ class DeepNetworkAdapter(PCModule):
     computation as :meth:`~pyhgf.model.DeepNetwork.batch_update`, staged
     in-trace) and threads the error at the network's input onward.
 
-    Error Convention Bridge
-    -----------------------
+    .. rubric:: Error convention bridge
+
     This part is where the pipeline's **descent-error convention** meets
     **PyHGF's observed-minus-predicted convention** (see :mod:`pyhgf.model.error_types`).
     The executor performs the conversion at this single boundary:

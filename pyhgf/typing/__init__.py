@@ -24,7 +24,7 @@ from pyhgf.typing.vectorised import (
     LayerParams,
     LayerStack,
     LayerState,
-    Network,
+    VectorisedNetwork,
     stack_layers,
 )
 
@@ -41,7 +41,7 @@ __all__ = [
     "LayerParams",
     "LayerStack",
     "LayerState",
-    "Network",
     "RECORD_ALL",
+    "VectorisedNetwork",
     "stack_layers",
 ]
