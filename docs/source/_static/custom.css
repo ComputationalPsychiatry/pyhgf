@@ -1,3 +1,16 @@
+/* Version badge shown in the navbar next to the logo */
+.navbar-version {
+  align-self: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--pst-color-text-muted);
+  background-color: var(--pst-color-surface);
+  border: 1px solid var(--pst-color-border);
+}
+
 /* Make all grid cards equal height */
 .sd-card {
   height: 100%;

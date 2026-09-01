@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" width="480" height="240">
+  <style>
+    .bg     { fill: #ffffff; }
+    .grid   { fill: #b7b7c8; fill-opacity: .30; stroke: #1a1a1a; stroke-width: 1.1; }
+    .rule   { stroke: #1a1a1a; stroke-width: .5; opacity: .45; }
+    .kernel { fill: #3d5e8b; fill-opacity: .14; stroke: #3d5e8b; stroke-width: 2; }
+    .fmap   { fill: #d8cae1; }
+    .conn   { stroke: #3d5e8b; stroke-width: 1.6; fill: none; }
+    .arrow  { fill: #3d5e8b; }
+    .lbl    { fill: #1a1a1a; font: italic 13px Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .klbl   { fill: #3d5e8b; font: italic 12px Arial, Helvetica, sans-serif; }
+    .maplbl { fill: #3d5e8b; font: italic 10.5px Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .cap    { fill: #1a1a1a; font: 10.5px Arial, Helvetica, sans-serif; text-anchor: middle; opacity: .7; }
+    .sub    { font-size: 8.5px; font-style: normal; }
+    @media (prefers-color-scheme: dark) {
+      .bg     { fill: #1b1b1b; }
+      .grid   { fill: #b7b7c8; fill-opacity: .16; stroke: #e8e8ec; }
+      .rule   { stroke: #c9c9d1; }
+      .kernel { fill: #7fa3d4; fill-opacity: .18; stroke: #7fa3d4; }
+      .fmap   { fill: #d8cae1; }
+      .conn   { stroke: #7fa3d4; }
+      .arrow  { fill: #7fa3d4; }
+      .lbl    { fill: #ececf0; }
+      .klbl   { fill: #7fa3d4; }
+      .maplbl { fill: #7fa3d4; }
+      .cap    { fill: #ececf0; }
+    }
+  </style>
+
+  <rect class="bg" width="480" height="240"/>
+
+  <!-- the kernel, named where it cannot be confused with the moving box -->
+  <rect class="kernel" x="45" y="28" width="12" height="12"/>
+  <text class="klbl" x="63" y="38">k<tspan class="sub" dy="3">h</tspan><tspan dy="-3"> × k</tspan><tspan class="sub" dy="3">w</tspan></text>
+
+  <!-- input feature map: 5 x 5 -->
+  <rect class="grid" x="45" y="52" width="130" height="130"/>
+  <g class="rule">
+    <path d="M71,52 L71,182  M97,52 L97,182  M123,52 L123,182  M149,52 L149,182"/>
+    <path d="M45,78 L175,78  M45,104 L175,104  M45,130 L175,130  M45,156 L175,156"/>
+  </g>
+
+  <!-- one shared kernel, stepping across every position -->
+  <rect class="kernel" x="45" y="52" width="78" height="78">
+    <animateTransform attributeName="transform" type="translate" calcMode="discrete"
+      values="0 0; 26 0; 52 0; 0 26; 26 26; 52 26; 0 52; 26 52; 52 52"
+      dur="10.8s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- the single learned map, in the notebook's own form -->
+  <text class="maplbl" x="262" y="105">C<tspan class="sub" dy="3">out</tspan><tspan dy="-3"> ← C</tspan><tspan class="sub" dy="3">in</tspan><tspan dy="-3"> · k</tspan><tspan class="sub" dy="3">h</tspan><tspan dy="-3"> · k</tspan><tspan class="sub" dy="3">w</tspan></text>
+  <path class="conn" d="M192,117 L332,117"/>
+  <polygon class="arrow" points="341,117 331,112 331,122"/>
+  <text class="cap" x="262" y="135">shared at every position</text>
+
+  <!-- output feature map: 3 x 3, filling in as the kernel visits each position -->
+  <rect class="grid" x="352" y="78" width="78" height="78"/>
+  <g class="fmap">
+    <rect x="352" y="78"  width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.001;.005;1"/></rect>
+    <rect x="378" y="78"  width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.1111;.1151;1"/></rect>
+    <rect x="404" y="78"  width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.2222;.2262;1"/></rect>
+    <rect x="352" y="104" width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.3333;.3373;1"/></rect>
+    <rect x="378" y="104" width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.4444;.4484;1"/></rect>
+    <rect x="404" y="104" width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.5556;.5596;1"/></rect>
+    <rect x="352" y="130" width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.6667;.6707;1"/></rect>
+    <rect x="378" y="130" width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7778;.7818;1"/></rect>
+    <rect x="404" y="130" width="26" height="26" opacity="0"><animate attributeName="opacity" dur="10.8s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.8889;.8929;1"/></rect>
+  </g>
+  <g class="rule">
+    <path d="M378,78 L378,156  M404,78 L404,156"/>
+    <path d="M352,104 L430,104  M352,130 L430,130"/>
+  </g>
+
+  <text class="lbl" x="110" y="204">C<tspan class="sub" dy="3.5">in</tspan><tspan dy="-3.5"> × H × W</tspan></text>
+  <text class="lbl" x="391" y="204">C<tspan class="sub" dy="3.5">out</tspan><tspan dy="-3.5"> × H′ × W′</tspan></text>
+
+  <text class="cap" x="240" y="228">stride 1, no padding: H′ = H − k<tspan class="sub" dy="2.5">h</tspan><tspan dy="-2.5"> + 1</tspan></text>
+</svg>

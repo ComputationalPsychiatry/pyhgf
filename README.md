@@ -20,7 +20,7 @@ PyHGF is a Python library for creating and manipulating dynamic probabilistic ne
 - Define custom **planning** and **action selection** functions throught trajectories sampling (e.g. sophisticated inference, [Friston et al., 2020](https://doi.org/10.1162/neco_a_01351))
 - Learn in **deep predictive coding networks** using a fast and scalable rethinking of prospective configuration ([Song et al., 2024](https://doi.org/10.1038/s41593-023-01514-1)) from closed-form updates and volatility learning.
 
-The framework support both a JAX and Rust backend. It is designed to be adaptable to other algorithms. The core functions are differentiable and JIT-compiled where applicable. The library is optimised for modularity and ease of use, allowing seamless integration with other libraries in the ecosystem for Bayesian inference and optimisation. You can find the method paper describing the toolbox [here](https://arxiv.org/abs/2410.09206).
+The framework support both a JAX and Rust backend. It is designed to be adaptable to other algorithms. The core functions are differentiable and JIT-compiled where applicable. The library is optimised for modularity and ease of use, allowing seamless integration with other libraries in the ecosystem for Bayesian inference and optimisation. You can find the method paper describing the toolbox [here](https://doi.org/10.1371/journal.pcbi.1014340).
 
 * 📖 [API Documentation](https://computationalpsychiatry.github.io/pyhgf/api.html)  
 * ✏️ [Tutorials and examples](https://computationalpsychiatry.github.io/pyhgf/learn.html)  
@@ -51,18 +51,17 @@ Dynamic networks are fully defined by the following variables:
 <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/graph_network.svg" align="center" alt="networks" style="width:100%; height:auto;">
 
 
-You can find a deeper introduction to how to create and manipulate networks under the following link:
+The generative model behind these update functions, and the tools to assemble networks from probabilistic nodes, are covered in the following tutorials:
 
-* 🎓 [Creating and manipulating networks of probabilistic nodes](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.2-Creating_networks.html)  
+| Tutorial | Colab |
+| --- | --- |
+| [Introduction to the Generalised Hierarchical Gaussian Filter](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Theory.ipynb) |
+| [Creating and manipulating networks of probabilistic nodes](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.2-Creating_networks.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.2-Creating_networks.ipynb) |
 
 
 ### The Generalised Hierarchical Gaussian Filter
 
 Generalised Hierarchical Gaussian Filters (gHGF) are specific instances of dynamic networks where node encodes a Gaussian distribution that can inherit its value (mean) and volatility (variance) from other nodes. The presentation of a new observation at the lowest level of the hierarchy (i.e., the input node) triggers a recursive update of the nodes' belief (i.e., posterior distribution) through top-down predictions and bottom-up precision-weighted prediction errors. The resulting probabilistic network operates as a Bayesian filter, and a response function can parametrise actions/decisions given the current beliefs. By comparing those behaviours with actual outcomes, a surprise function can be optimised over a set of free parameters. The Hierarchical Gaussian Filter for binary and continuous inputs was first described in Mathys et al. (2011, 2014), and later implemented in the Matlab HGF Toolbox (part of [TAPAS](https://translationalneuromodeling.github.io/tapas) (Frässle et al. 2021).
-
-You can find a deeper introduction on how does the gHGF works under the following link:
-
-* 🎓 [Introduction to the Hierarchical Gaussian Filter](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.1-Theory.html#theory)  
 
 #### Model fitting
 
@@ -142,17 +141,46 @@ bivariate_normal = (
 ```
 </details>
 
-![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/multivariate_normal.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/multivariate_normal.gif" alt="multivariate normal" width="100%">
+</p>
 
-* 🎓 [Generalised Bayesian filtering](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.3-Generalised_filtering.html)
+| Tutorial | Colab |
+| --- | --- |
+| [Generalised Bayesian Filtering of exponential family distributions](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.3-Generalised_filtering.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.3-Generalised_filtering.ipynb) |
+
+### Planning and acting
+
+Filtering describes the perceptual side of an agent: how beliefs are updated once an observation arrives. The same network can also be run forwards, sampling trajectories from its own generative model to estimate the outcomes that each candidate action would produce. Actions are then selected from the relevance of those planned trajectories, which covers policies such as sophisticated inference ([Friston et al., 2020](https://doi.org/10.1162/neco_a_01351)).
+
+<img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/planning.png" align="center" alt="planning" style="width:100%; height:auto;">
+
+| Tutorial | Colab |
+| --- | --- |
+| [Planning and acting with predictive coding networks](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.4-Planning_and_acting.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.4-Planning_and_acting.ipynb) |
 
 ### Learning in deep predictive coding networks
 
 The framework extends predictive coding to deep neural networks through *prospective configuration* ([Song et al., 2024](https://doi.org/10.1038/s41593-023-01514-1)): before updating any weight, the network first infers the most likely activations at every layer by settling prediction errors across the hierarchy, and only then adjusts the coupling strengths (weights). This two-phase infer-then-update cycle avoids the catastrophic interference that plagues standard backpropagation and naturally yields precision-weighted learning, where the balance of uncertainty between inputs and outputs controls the depth at which weights change.
 
-![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/deep_networks_theory.svg" alt="deep networks theory" width="100%">
+</p>
 
-* 🎓 [Deep Bayesian predictive coding](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Deep_learning.html)
+| Tutorial | Colab |
+| --- | --- |
+| [Learning in deep predictive coding networks: the theory](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.5-Deep_networks_theory.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.5-Deep_networks_theory.ipynb) |
+| [Learning in deep networks with prospective configuration](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.6-Prospective_configuration.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.6-Prospective_configuration.ipynb) |
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/three_spirals_training.gif" alt="three spirals training" width="100%">
+</p>
+
+| Tutorial | Colab |
+| --- | --- |
+| [Building custom deep network architectures](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.7-Deep_networks_implementation.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.7-Deep_networks_implementation.ipynb) |
+| [Convolutional predictive coding networks](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.8-Convolutional_networks.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.8-Convolutional_networks.ipynb) |
+| [Transformer predictive coding networks](https://computationalpsychiatry.github.io/pyhgf/notebooks/0.9-Transformers.html) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.9-Transformers.ipynb) |
 
 
 ## Acknowledgments
@@ -171,12 +199,12 @@ The development of PyHGF is supported by:
 
 ## References
 
-1. Legrand, N., Weber, L., Waade, P. T., Daugaard, A. H. M., Khodadadi, M., Mikuš, N., & Mathys, C. (2024). pyhgf: A neural network library for predictive coding (Version 1). arXiv. https://doi.org/10.48550/ARXIV.2410.09206  
-2. Mathys, C. (2011). A Bayesian foundation for individual learning under uncertainty. In Frontiers in Human Neuroscience (Vol. 5). Frontiers Media SA. https://doi.org/10.3389/fnhum.2011.00039  
-3. Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K. H., Friston, K. J., & Stephan, K. E. (2014). Uncertainty in perception and the hierarchical Gaussian filter. Frontiers in Human Neuroscience, 8. https://doi.org/10.3389/fnhum.2014.00825  
-4. Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, & Christoph Mathys. (2026). The generalized Hierarchical Gaussian Filter. eLife 15:RP110174. https://doi.org/10.7554/eLife.110174.1 
-5. Frässle, S., Aponte, E. A., Bollmann, S., Brodersen, K. H., Do, C. T., Harrison, O. K., Harrison, S. J., Heinzle, J., Iglesias, S., Kasper, L., Lomakina, E. I., Mathys, C., Müller-Schrader, M., Pereira, I., Petzschner, F. H., Raman, S., Schöbi, D., Toussaint, B., Weber, L. A., … Stephan, K. E. (2021). TAPAS: An Open-Source Software Package for Translational Neuromodeling and Computational Psychiatry. In Frontiers in Psychiatry (Vol. 12). Frontiers Media SA. https://doi.org/10.3389/fpsyt.2021.680811  
-6. Iglesias, S., Kasper, L., Harrison, S. J., Manka, R., Mathys, C., & Stephan, K. E. (2021). Cholinergic and dopaminergic effects on prediction error and uncertainty responses during sensory associative learning. In NeuroImage (Vol. 226, p. 117590). Elsevier BV. https://doi.org/10.1016/j.neuroimage.2020.117590 
-7. Mathys, C., Weber, L. (2020). Hierarchical Gaussian Filtering of Sufficient Statistic Time Series for Active Inference. In: Verbelen, T., Lanillos, P., Buckley, C.L., De Boom, C. (eds) Active Inference. IWAI 2020. Communications in Computer and Information Science, vol 1326. Springer, Cham. https://doi.org/10.1007/978-3-030-64919-7_7
-8. Friston, K., Da Costa, L., Hafner, D., Hesp, C., & Parr, T. (2021). Sophisticated Inference. Neural Computation, 33(3), 713–763. https://doi.org/10.1162/neco_a_01351 
-9. Song, Y., Millidge, B., Salvatori, T. et al. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nat Neurosci 27, 348–358 (2024). https://doi.org/10.1038/s41593-023-01514-1 
+1. Legrand, N., Weber, L., Waade, P. T., Møller Daugaard, A. H., Khodadadi, M., Mikuš, N., & Mathys, C. (2026). pyhgf: A neural network library for predictive coding. *PLOS Computational Biology*, *22*(6), Article e1014340. https://doi.org/10.1371/journal.pcbi.1014340
+2. Mathys, C., Daunizeau, J., Friston, K. J., & Stephan, K. E. (2011). A Bayesian foundation for individual learning under uncertainty. *Frontiers in Human Neuroscience*, *5*, Article 39. https://doi.org/10.3389/fnhum.2011.00039
+3. Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K. H., Friston, K. J., & Stephan, K. E. (2014). Uncertainty in perception and the Hierarchical Gaussian Filter. *Frontiers in Human Neuroscience*, *8*, Article 825. https://doi.org/10.3389/fnhum.2014.00825
+4. Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., & Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. *eLife*, *15*, Article RP110174. https://doi.org/10.7554/eLife.110174.1
+5. Frässle, S., Aponte, E. A., Bollmann, S., Brodersen, K. H., Do, C. T., Harrison, O. K., Harrison, S. J., Heinzle, J., Iglesias, S., Kasper, L., Lomakina, E. I., Mathys, C., Müller-Schrader, M., Pereira, I., Petzschner, F. H., Raman, S., Schöbi, D., Toussaint, B., Weber, L. A., … Stephan, K. E. (2021). TAPAS: An open-source software package for translational neuromodeling and computational psychiatry. *Frontiers in Psychiatry*, *12*, Article 680811. https://doi.org/10.3389/fpsyt.2021.680811
+6. Iglesias, S., Kasper, L., Harrison, S. J., Manka, R., Mathys, C., & Stephan, K. E. (2021). Cholinergic and dopaminergic effects on prediction error and uncertainty responses during sensory associative learning. *NeuroImage*, *226*, Article 117590. https://doi.org/10.1016/j.neuroimage.2020.117590
+7. Mathys, C., & Weber, L. (2020). Hierarchical Gaussian filtering of sufficient statistic time series for active inference. In T. Verbelen, P. Lanillos, C. L. Buckley, & C. De Boom (Eds.), *Active inference* (Communications in Computer and Information Science, Vol. 1326, pp. 52–58). Springer. https://doi.org/10.1007/978-3-030-64919-7_7
+8. Friston, K., Da Costa, L., Hafner, D., Hesp, C., & Parr, T. (2021). Sophisticated inference. *Neural Computation*, *33*(3), 713–763. https://doi.org/10.1162/neco_a_01351
+9. Song, Y., Millidge, B., Salvatori, T., Lukasiewicz, T., Xu, Z., & Bogacz, R. (2024). Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. *Nature Neuroscience*, *27*(2), 348–358. https://doi.org/10.1038/s41593-023-01514-1

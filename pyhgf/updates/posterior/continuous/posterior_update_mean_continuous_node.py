@@ -294,8 +294,8 @@ def posterior_update_mean_continuous_node_mean_field(
     References
     ----------
     .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
-       Mathys, C. (2023). The generalized Hierarchical Gaussian Filter (Version 1).
-       arXiv. https://doi.org/10.48550/ARXIV.2305.10937
+       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife, 15,
+       RP110174. https://doi.org/10.7554/eLife.110174.1
 
     """
     (

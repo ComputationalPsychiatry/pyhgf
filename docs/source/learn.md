@@ -105,6 +105,7 @@ Planning and acting by simulating forward trajectories in predictive coding netw
 :::{grid-item-card}  Learning in deep networks: the theory
 :link: deep_networks_theory
 :link-type: ref
+:img-top: ./images/deep_networks_theory.svg
 
 What a predictive coding network optimises, when its local updates coincide with backpropagation, and where the two part company.
 :::
@@ -121,6 +122,7 @@ Learning in deep predictive coding networks using variational message passing fo
 :::{grid-item-card}  Building custom deep network architectures
 :link: deep_networks_implementation
 :link-type: ref
+:img-top: ./images/deep_networks_implementation.svg
 
 The `DeepNetwork` class, the mixed-pipeline machinery, and the connectors that assemble larger architectures.
 :::
@@ -128,6 +130,7 @@ The `DeepNetwork` class, the mixed-pipeline machinery, and the connectors that a
 :::{grid-item-card}  Convolutional networks
 :link: convolution
 :link-type: ref
+:img-top: ./images/convolution.svg
 
 Building convolutions as a weight-shared layer on the hybrid pipeline, from first principles up to CIFAR-10.
 :::
@@ -135,6 +138,7 @@ Building convolutions as a weight-shared layer on the hybrid pipeline, from firs
 :::{grid-item-card}  Transformers
 :link: transformers
 :link-type: ref
+:img-top: ./images/transformers.svg
 
 A GPT-style Transformer trained twice, with backpropagation and with PyHGF's belief updating.
 :::

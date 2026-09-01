@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" width="480" height="240">
+  <style>
+    .bg     { fill: #ffffff; }
+    .learns { fill: #b7b7c8; fill-opacity: .18; stroke: #1a1a1a; stroke-width: 1.2; }
+    .frozen { fill: #b7b7c8; fill-opacity: .30; stroke: #1a1a1a; stroke-width: 1.2; stroke-dasharray: 5 3; }
+    .belief { fill: #d8cae1; stroke: #1a1a1a; stroke-width: .8; }
+    .wire   { stroke: #1a1a1a; stroke-width: .55; fill: none; opacity: .40; }
+    .fwd    { stroke: #3d5e8b; stroke-width: 1.6; fill: none; }
+    .fwdh   { fill: #3d5e8b; }
+    .bwd    { stroke: #a02c2c; stroke-width: 1.6; fill: none; }
+    .bwdh   { fill: #a02c2c; }
+    .part   { fill: #1a1a1a; font: 10px Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .note   { fill: #1a1a1a; font: 9px Arial, Helvetica, sans-serif; text-anchor: middle; opacity: .65; }
+    .fwdl   { fill: #3d5e8b; font: 10.5px Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .bwdl   { fill: #a02c2c; font: 10.5px Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .bwdlx  { fill: #a02c2c; font: 9px Arial, Helvetica, sans-serif; opacity: .85; }
+    @media (prefers-color-scheme: dark) {
+      .bg     { fill: #1b1b1b; }
+      .learns { fill: #b7b7c8; fill-opacity: .10; stroke: #e8e8ec; }
+      .frozen { fill: #b7b7c8; fill-opacity: .16; stroke: #c9c9d1; }
+      .belief { fill: #d8cae1; stroke: #1a1a1a; }
+      .wire   { stroke: #c9c9d1; opacity: .45; }
+      .fwd    { stroke: #7fa3d4; } .fwdh { fill: #7fa3d4; } .fwdl { fill: #7fa3d4; }
+      .bwd    { stroke: #e07b7e; } .bwdh { fill: #e07b7e; } .bwdl { fill: #e07b7e; }
+      .bwdlx  { fill: #e07b7e; }
+      .part, .note { fill: #ececf0; }
+    }
+  </style>
+
+  <rect class="bg" width="480" height="240"/>
+
+  <!-- forward: compute my output from my input -->
+  <text class="fwdl" x="240" y="31">forward</text>
+  <path class="fwd" d="M40,42 L432,42"/>
+  <polygon class="fwdh" points="441,42 431,37 431,47"/>
+
+  <!-- learning parts: a PyHGF network wrapped by DeepNetworkAdapter -->
+  <rect class="learns" x="30"  y="56" width="120" height="92" rx="6"/>
+  <rect class="learns" x="330" y="56" width="120" height="92" rx="6"/>
+
+  <!-- frozen part: a fixed transformation, no weights -->
+  <rect class="frozen" x="186" y="70" width="108" height="64" rx="6"/>
+  <text class="note" x="240" y="98">activation</text>
+  <text class="note" x="240" y="111">norm · reshape</text>
+
+  <path class="wire" d="M55,80 L90,80 M55,80 L90,102 M55,80 L90,124 M55,102 L90,80 M55,102 L90,102 M55,102 L90,124 M55,124 L90,80 M55,124 L90,102 M55,124 L90,124 M90,80 L125,91 M90,80 L125,113 M90,102 L125,91 M90,102 L125,113 M90,124 L125,91 M90,124 L125,113 M355,91 L390,80 M355,91 L390,102 M355,91 L390,124 M355,113 L390,80 M355,113 L390,102 M355,113 L390,124 M390,80 L425,91 M390,80 L425,113 M390,102 L425,91 M390,102 L425,113 M390,124 L425,91 M390,124 L425,113 "/>
+  <circle class="belief" cx="55" cy="80" r="6"/><circle class="belief" cx="55" cy="102" r="6"/><circle class="belief" cx="55" cy="124" r="6"/><circle class="belief" cx="90" cy="80" r="6"/><circle class="belief" cx="90" cy="102" r="6"/><circle class="belief" cx="90" cy="124" r="6"/><circle class="belief" cx="125" cy="91" r="6"/><circle class="belief" cx="125" cy="113" r="6"/><circle class="belief" cx="355" cy="91" r="6"/><circle class="belief" cx="355" cy="113" r="6"/><circle class="belief" cx="390" cy="80" r="6"/><circle class="belief" cx="390" cy="102" r="6"/><circle class="belief" cx="390" cy="124" r="6"/><circle class="belief" cx="425" cy="91" r="6"/><circle class="belief" cx="425" cy="113" r="6"/>
+
+  <!-- part-to-part hand-off -->
+  <path class="fwd" d="M150,102 L177,102"/><polygon class="fwdh" points="186,102 176,97 176,107"/>
+  <path class="fwd" d="M294,102 L321,102"/><polygon class="fwdh" points="330,102 320,97 320,107"/>
+
+  <text class="part" x="90"  y="164">DeepNetworkAdapter</text>
+  <text class="note" x="90"  y="176">learns</text>
+  <text class="part" x="240" y="164">frozen part</text>
+  <text class="note" x="240" y="176">no weights</text>
+  <text class="part" x="390" y="164">DeepNetworkAdapter</text>
+  <text class="note" x="390" y="176">learns</text>
+
+  <!-- backward: receive the error at my output, hand back the error at my input -->
+  <path class="bwd" d="M440,194 L48,194"/>
+  <polygon class="bwdh" points="39,194 49,189 49,199"/>
+  <text class="bwdl" x="240" y="212">descent error</text>
+  <text class="bwdlx" x="39" y="212">input_errors</text>
+</svg>

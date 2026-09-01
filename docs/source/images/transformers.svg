@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" width="480" height="240">
+  <style>
+    .bg    { fill: #ffffff; }
+    .node  { fill: #d8cae1; stroke: #1a1a1a; stroke-width: 1.1; }
+    .qnode { fill: #3d5e8b; stroke: #1a1a1a; stroke-width: 1.1; }
+    .mnode { fill: #b7b7c8; fill-opacity: .45; stroke: #1a1a1a; stroke-width: 1.1; stroke-dasharray: 3 2; }
+    .attn  { stroke: #3d5e8b; fill: none; stroke-linecap: round; }
+    .mask  { stroke: #7f7f7f; stroke-width: 1.1; fill: none; stroke-dasharray: 4 3; opacity: .8; }
+    .lbl   { fill: #4d4d4d; font: italic 12px Arial, Helvetica, sans-serif; text-anchor: middle; }
+    .qlbl  { fill: #ffffff; }
+    .mlbl  { fill: #1a1a1a; font: italic 12px Arial, Helvetica, sans-serif; text-anchor: middle; opacity: .6; }
+    .key   { fill: #1a1a1a; font: 11px Arial, Helvetica, sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      .bg    { fill: #1b1b1b; }
+      .node  { fill: #d8cae1; stroke: #1a1a1a; }
+      .qnode { fill: #7fa3d4; stroke: #e8e8ec; }
+      .mnode { fill: #b7b7c8; fill-opacity: .18; stroke: #c9c9d1; }
+      .attn  { stroke: #7fa3d4; }
+      .mask  { stroke: #9a9a9a; }
+      .lbl   { fill: #4d4d4d; }
+      .qlbl  { fill: #1b1b1b; }
+      .mlbl  { fill: #ececf0; }
+      .key   { fill: #ececf0; }
+    }
+  </style>
+
+  <rect class="bg" width="480" height="240"/>
+
+  <!-- x5 attends to every earlier position; weight shown as stroke width -->
+  <g class="attn">
+    <path d="M367,163 Q328,110 289,163" stroke-width="3.2"/>
+    <path d="M367,163 Q289,80  211,163" stroke-width="2.2"/>
+    <path d="M367,163 Q250,55  133,163" stroke-width="1.4"/>
+    <path d="M367,163 Q211,35  55,163"  stroke-width="0.9"/>
+  </g>
+
+  <!-- the future position is masked -->
+  <path class="mask" d="M367,163 Q406,138 445,163"/>
+
+  <g>
+    <circle class="node"  cx="55"  cy="178" r="15"/>
+    <circle class="node"  cx="133" cy="178" r="15"/>
+    <circle class="node"  cx="211" cy="178" r="15"/>
+    <circle class="node"  cx="289" cy="178" r="15"/>
+    <circle class="qnode" cx="367" cy="178" r="15"/>
+    <circle class="mnode" cx="445" cy="178" r="15"/>
+  </g>
+
+  <g class="lbl">
+    <text x="55"  y="182">x₁</text>
+    <text x="133" y="182">x₂</text>
+    <text x="211" y="182">x₃</text>
+    <text x="289" y="182">x₄</text>
+    <text class="qlbl" x="367" y="182">x₅</text>
+  </g>
+  <text class="mlbl" x="445" y="182">x₆</text>
+
+  <!-- legend -->
+  <g>
+    <path class="attn" d="M120,212 L148,212" stroke-width="2.2"/>
+    <text class="key" x="154" y="216">attention</text>
+    <path class="mask" d="M262,212 L290,212"/>
+    <text class="key" x="296" y="216">masked</text>
+  </g>
+</svg>
