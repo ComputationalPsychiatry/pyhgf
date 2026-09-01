@@ -141,7 +141,9 @@ bivariate_normal = (
 ```
 </details>
 
-![gif](https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/multivariate_normal.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ComputationalPsychiatry/pyhgf/master/docs/source/images/multivariate_normal.gif" alt="multivariate normal" width="100%">
+</p>
 
 | Tutorial | Colab |
 | --- | --- |
