@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.spatial\_reshape\_adapter
+==========================================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: spatial_reshape_adapter

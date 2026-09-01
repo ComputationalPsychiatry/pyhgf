@@ -1,0 +1,6 @@
+﻿pyhgf.model.transplant.from\_conv
+=================================
+
+.. currentmodule:: pyhgf.model.transplant
+
+.. autofunction:: from_conv

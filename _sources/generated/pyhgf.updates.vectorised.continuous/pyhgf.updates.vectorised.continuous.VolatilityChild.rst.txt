@@ -1,0 +1,32 @@
+﻿pyhgf.updates.vectorised.continuous.VolatilityChild
+===================================================
+
+.. currentmodule:: pyhgf.updates.vectorised.continuous
+
+.. autoclass:: VolatilityChild
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~VolatilityChild.__init__
+      ~VolatilityChild.count
+      ~VolatilityChild.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~VolatilityChild.kappa
+      ~VolatilityChild.params
+      ~VolatilityChild.state
+   
+   

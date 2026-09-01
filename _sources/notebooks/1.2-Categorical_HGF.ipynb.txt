@@ -128,7 +128,7 @@
    "id": "5cf4027a-be50-42cf-88d7-e0847c1f9930",
    "metadata": {},
    "source": [
-    "The Dirichlet distributions are parametrized in such a way that it goes from a \"skewed\" distribution to a centred distribution to another \"skewed\" distribution. The resulting sequence of categorical observations then looks like this:"
+    "The Dirichlet distributions are parametrised in such a way that it goes from a \"skewed\" distribution to a centred distribution to another \"skewed\" distribution. The resulting sequence of categorical observations then looks like this:"
    ]
   },
   {

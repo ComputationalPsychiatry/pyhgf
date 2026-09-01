@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.max\_pool\_adapter
+===================================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: max_pool_adapter

@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorised.learning.resolve\_synaptic\_uncertainty\_settings
+==========================================================================
+
+.. currentmodule:: pyhgf.updates.vectorised.learning
+
+.. autofunction:: resolve_synaptic_uncertainty_settings

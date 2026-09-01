@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorised.continuous.vectorised\_continuous\_posterior\_update
+=============================================================================
+
+.. currentmodule:: pyhgf.updates.vectorised.continuous
+
+.. autofunction:: vectorised_continuous_posterior_update

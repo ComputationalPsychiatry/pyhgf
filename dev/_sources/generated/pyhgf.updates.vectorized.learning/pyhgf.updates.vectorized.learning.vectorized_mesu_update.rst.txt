@@ -1,6 +1,0 @@
-﻿pyhgf.updates.vectorized.learning.vectorized\_mesu\_update
-==========================================================
-
-.. currentmodule:: pyhgf.updates.vectorized.learning
-
-.. autofunction:: vectorized_mesu_update

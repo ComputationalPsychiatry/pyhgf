@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.flatten\_adapter
+=================================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: flatten_adapter

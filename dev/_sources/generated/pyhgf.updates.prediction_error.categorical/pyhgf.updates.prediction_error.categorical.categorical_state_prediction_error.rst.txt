@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction\_error.categorical.categorical\_state\_prediction\_error
-=================================================================================
-
-.. currentmodule:: pyhgf.updates.prediction_error.categorical
-
-.. autofunction:: categorical_state_prediction_error

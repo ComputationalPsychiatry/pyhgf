@@ -1,0 +1,1393 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyhgf.model.conv &#8212; pyhgf 0.3.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=35b888ae" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../../../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/model/conv';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.model.conv</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pyhgf.model.conv</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Convolutional layers for the hybrid pipeline.</span>
+
+<span class="sd">A convolution is a weight-shared linear map over patches: extracting patches</span>
+<span class="sd">(im2col) and pooling are frozen, weightless spatial reshuffles with a closed-form</span>
+<span class="sd">backward; the only learned part is one two-layer</span>
+<span class="sd">:class:`~pyhgf.model.DeepNetwork` applied identically to every patch, the same</span>
+<span class="sd">per-position batching :class:`~pyhgf.model.hybrid.DeepNetworkAdapter` applies to</span>
+<span class="sd">token positions and attention tables.</span>
+
+<span class="sd">Patch layout convention: patches are flattened channel-major-then-spatial,</span>
+<span class="sd">``index = c * kh * kw + i * kw + j``, matching</span>
+<span class="sd">``jax.lax.conv_general_dilated_patches`` and a PyTorch-style kernel of shape</span>
+<span class="sd">``(out_channels, in_channels, kh, kw)`` reshaped the same way.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">optax</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.deep_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DeepNetworkAdapter</span><span class="p">,</span>
+    <span class="n">EquinoxAdapter</span><span class="p">,</span>
+    <span class="n">PCSequential</span><span class="p">,</span>
+    <span class="n">gelu_adapter</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"im2col_adapter"</span><span class="p">,</span>
+    <span class="s2">"avg_pool_adapter"</span><span class="p">,</span>
+    <span class="s2">"max_pool_adapter"</span><span class="p">,</span>
+    <span class="s2">"spatial_reshape_adapter"</span><span class="p">,</span>
+    <span class="s2">"flatten_adapter"</span><span class="p">,</span>
+    <span class="s2">"conv_patch_network"</span><span class="p">,</span>
+    <span class="s2">"conv_block"</span><span class="p">,</span>
+    <span class="s2">"conv_output_shape"</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">Padding</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_same_padding</span><span class="p">(</span><span class="n">in_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""One axis of TF/JAX-style ``"SAME"`` padding: out = ceil(in / stride)."""</span>
+    <span class="n">out_size</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="o">-</span><span class="n">in_size</span> <span class="o">//</span> <span class="n">stride</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">out_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">stride</span> <span class="o">+</span> <span class="n">kernel_size</span> <span class="o">-</span> <span class="n">in_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">lo</span> <span class="o">=</span> <span class="n">total</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">lo</span><span class="p">,</span> <span class="n">total</span> <span class="o">-</span> <span class="n">lo</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_padding</span><span class="p">(</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">Padding</span><span class="p">,</span> <span class="n">in_h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">in_w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kh</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kw</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sh</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sw</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+    <span class="k">if</span> <span class="n">padding</span> <span class="o">==</span> <span class="s2">"SAME"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_same_padding</span><span class="p">(</span><span class="n">in_h</span><span class="p">,</span> <span class="n">kh</span><span class="p">,</span> <span class="n">sh</span><span class="p">),</span> <span class="n">_same_padding</span><span class="p">(</span><span class="n">in_w</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">padding</span> <span class="o">==</span> <span class="s2">"VALID"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"padding must be 'SAME', 'VALID' or an explicit pair, got </span><span class="si">{</span><span class="n">padding</span><span class="si">!r}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">padding</span>
+
+
+<div class="viewcode-block" id="conv_output_shape">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.conv_output_shape.html#pyhgf.model.conv.conv_output_shape">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">conv_output_shape</span><span class="p">(</span>
+    <span class="n">in_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">in_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">filter_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">strides</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">Padding</span> <span class="o">=</span> <span class="s2">"SAME"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Return the ``(height, width)`` a convolution produces, without running it."""</span>
+    <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span> <span class="o">=</span> <span class="n">filter_shape</span>
+    <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="n">strides</span>
+    <span class="p">(</span><span class="n">ph_lo</span><span class="p">,</span> <span class="n">ph_hi</span><span class="p">),</span> <span class="p">(</span><span class="n">pw_lo</span><span class="p">,</span> <span class="n">pw_hi</span><span class="p">)</span> <span class="o">=</span> <span class="n">_resolve_padding</span><span class="p">(</span>
+        <span class="n">padding</span><span class="p">,</span> <span class="n">in_height</span><span class="p">,</span> <span class="n">in_width</span><span class="p">,</span> <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span>
+    <span class="p">)</span>
+    <span class="n">h_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_height</span> <span class="o">+</span> <span class="n">ph_lo</span> <span class="o">+</span> <span class="n">ph_hi</span> <span class="o">-</span> <span class="n">kh</span><span class="p">)</span> <span class="o">//</span> <span class="n">sh</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">w_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_width</span> <span class="o">+</span> <span class="n">pw_lo</span> <span class="o">+</span> <span class="n">pw_hi</span> <span class="o">-</span> <span class="n">kw</span><span class="p">)</span> <span class="o">//</span> <span class="n">sw</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span></div>
+
+
+
+<div class="viewcode-block" id="im2col_adapter">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.im2col_adapter.html#pyhgf.model.conv.im2col_adapter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">im2col_adapter</span><span class="p">(</span>
+    <span class="n">filter_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">strides</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">Padding</span> <span class="o">=</span> <span class="s2">"SAME"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EquinoxAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a frozen patch extractor: images in, one row per patch out.</span>
+
+<span class="sd">    Forward, ``x`` of shape ``(batch, C, H, W)`` becomes ``(batch, n_patches, C*kh*kw)``</span>
+<span class="sd">    via ``jax.lax.conv_general_dilated_patches``, the same "one row per sample" layout</span>
+<span class="sd">    :class:`~pyhgf.model.hybrid.DeepNetworkAdapter` expects for token positions, so the</span>
+<span class="sd">    following per-patch network needs no special-casing. Backward (fold / col2im) is the</span>
+<span class="sd">    geometric adjoint: each of the ``kh*kw`` kernel taps is a strided slice of the</span>
+<span class="sd">    (padded) image, so its gradient is scattered back with</span>
+<span class="sd">    :func:`jax.numpy.ndarray.at.add` at the same stride, a closed-form sum over</span>
+<span class="sd">    overlapping patches unrolled over the statically-sized kernel taps. The adjoint is</span>
+<span class="sd">    written out rather than obtained by differentiating the forward at call time; it</span>
+<span class="sd">    matches ``jax.vjp`` of this forward (``tests/test_conv.py``).</span>
+<span class="sd">    """</span>
+    <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span> <span class="o">=</span> <span class="n">filter_shape</span>
+    <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="n">strides</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span> <span class="o">=</span> <span class="n">_resolve_padding</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
+        <span class="n">patches</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">conv_general_dilated_patches</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">filter_shape</span><span class="o">=</span><span class="p">(</span><span class="n">kh</span><span class="p">,</span> <span class="n">kw</span><span class="p">),</span> <span class="n">window_strides</span><span class="o">=</span><span class="p">(</span><span class="n">sh</span><span class="p">,</span> <span class="n">sw</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="p">[</span><span class="n">ph</span><span class="p">,</span> <span class="n">pw</span><span class="p">]</span>
+        <span class="p">)</span>  <span class="c1"># (batch, C*kh*kw, h_out, w_out)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ckk</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">ckk</span><span class="p">,</span> <span class="n">h_out</span> <span class="o">*</span> <span class="n">w_out</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flat</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">,</span> <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_shape</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">,</span> <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x_shape</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">)</span>
+        <span class="n">h_pad</span> <span class="o">=</span> <span class="n">height</span> <span class="o">+</span> <span class="n">ph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">ph</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">w_pad</span> <span class="o">=</span> <span class="n">width</span> <span class="o">+</span> <span class="n">pw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pw</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">grad_padded</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">h_pad</span><span class="p">,</span> <span class="n">w_pad</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">error</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">kh</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">kw</span><span class="p">):</span>
+                <span class="n">h_end</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">sh</span> <span class="o">*</span> <span class="p">(</span><span class="n">h_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">w_end</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="n">sw</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">grad_padded</span> <span class="o">=</span> <span class="n">grad_padded</span><span class="o">.</span><span class="n">at</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">:</span><span class="n">h_end</span><span class="p">:</span><span class="n">sh</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">w_end</span><span class="p">:</span><span class="n">sw</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                    <span class="n">e</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">grad_padded</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">ph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">ph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">height</span><span class="p">,</span> <span class="n">pw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">pw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">width</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="avg_pool_adapter">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.avg_pool_adapter.html#pyhgf.model.conv.avg_pool_adapter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">avg_pool_adapter</span><span class="p">(</span>
+    <span class="n">pool_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EquinoxAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a frozen average-pool: block-mean forward, uniform-split backward.</span>
+
+<span class="sd">    Forward, each non-overlapping (or strided) window is averaged via</span>
+<span class="sd">    ``jax.lax.reduce_window``. The map is linear, so the backward is its transpose in</span>
+<span class="sd">    closed form, as in :func:`~pyhgf.model.hybrid.linear_adapter`: the incoming gradient</span>
+<span class="sd">    at one pooled position is split evenly back across every position that fed it. That</span>
+<span class="sd">    backward is continuous everywhere, unlike :func:`max_pool_adapter`'s, whose routing</span>
+<span class="sd">    jumps between taps as the winner changes.</span>
+<span class="sd">    """</span>
+    <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span> <span class="o">=</span> <span class="n">pool_size</span>
+    <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="n">stride</span> <span class="k">if</span> <span class="n">stride</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pool_size</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">h_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="n">ph</span><span class="p">)</span> <span class="o">//</span> <span class="n">sh</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">w_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="n">pw</span><span class="p">)</span> <span class="o">//</span> <span class="n">sw</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">reduce_window</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">lax</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span><span class="p">),</span> <span class="s2">"VALID"</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ph</span> <span class="o">*</span> <span class="n">pw</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_shape</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">ph</span> <span class="o">*</span> <span class="n">pw</span><span class="p">)</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">error</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ph</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pw</span><span class="p">):</span>
+                <span class="n">h_end</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">sh</span> <span class="o">*</span> <span class="p">(</span><span class="n">h_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">w_end</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="n">sw</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">grad</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">at</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">:</span><span class="n">h_end</span><span class="p">:</span><span class="n">sh</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">w_end</span><span class="p">:</span><span class="n">sw</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">error</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">grad</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="max_pool_adapter">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.max_pool_adapter.html#pyhgf.model.conv.max_pool_adapter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">max_pool_adapter</span><span class="p">(</span>
+    <span class="n">pool_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EquinoxAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a frozen max-pool: block-max forward, winner-take-all backward.</span>
+
+<span class="sd">    Forward, each non-overlapping (or strided) window's taps are gathered as an explicit</span>
+<span class="sd">    stack (the same strided-slice-per-tap construction as :func:`avg_pool_adapter`'s</span>
+<span class="sd">    backward) and reduced with ``jnp.max``, the winning tap index cached alongside.</span>
+<span class="sd">    Backward routes the incoming gradient only to the tap that won each window and zero</span>
+<span class="sd">    everywhere else, a scatter written in closed form rather than obtained by</span>
+<span class="sd">    differentiating the maximum. Ties go to the lowest tap index, the tie-break</span>
+<span class="sd">    ``jnp.argmax`` applies.</span>
+<span class="sd">    """</span>
+    <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span> <span class="o">=</span> <span class="n">pool_size</span>
+    <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="n">stride</span> <span class="k">if</span> <span class="n">stride</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pool_size</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_taps</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">h_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ph</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pw</span><span class="p">):</span>
+                <span class="n">h_end</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">sh</span> <span class="o">*</span> <span class="p">(</span><span class="n">h_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">w_end</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="n">sw</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">:</span><span class="n">h_end</span><span class="p">:</span><span class="n">sh</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">w_end</span><span class="p">:</span><span class="n">sw</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (n_taps, batch, channels, h_out, w_out)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">h_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="n">ph</span><span class="p">)</span> <span class="o">//</span> <span class="n">sh</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">w_out</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="n">pw</span><span class="p">)</span> <span class="o">//</span> <span class="n">sw</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">stacked</span> <span class="o">=</span> <span class="n">_taps</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">stacked</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">winner</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">stacked</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (batch, channels, h_out, w_out)</span>
+        <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">,</span> <span class="n">winner</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">x_shape</span><span class="p">,</span> <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">,</span> <span class="n">winner</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">error</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ph</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pw</span><span class="p">):</span>
+                <span class="n">h_end</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">sh</span> <span class="o">*</span> <span class="p">(</span><span class="n">h_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">w_end</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="n">sw</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_out</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">grad</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">at</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">:</span><span class="n">h_end</span><span class="p">:</span><span class="n">sh</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">w_end</span><span class="p">:</span><span class="n">sw</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                    <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">winner</span> <span class="o">==</span> <span class="n">idx</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">grad</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="spatial_reshape_adapter">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.spatial_reshape_adapter.html#pyhgf.model.conv.spatial_reshape_adapter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spatial_reshape_adapter</span><span class="p">(</span><span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EquinoxAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a frozen reshape between patch rows and the spatial layout.</span>
+
+<span class="sd">    Maps ``(batch, n_patches, C)`` to ``(batch, C, H, W)`` and back, converting the</span>
+<span class="sd">    output of the per-patch network into the spatial layout that pooling and the next</span>
+<span class="sd">    :func:`im2col_adapter` expect. A transpose followed by a reshape, with no learned</span>
+<span class="sd">    content, so the backward is the inverse reshape.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+        <span class="n">batch</span><span class="p">,</span> <span class="n">n_patches</span><span class="p">,</span> <span class="n">channels</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">spatial</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">spatial</span><span class="p">,</span> <span class="p">(</span><span class="n">channels</span><span class="p">,)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">channels</span><span class="p">,)</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">error</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="flatten_adapter">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.flatten_adapter.html#pyhgf.model.conv.flatten_adapter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">flatten_adapter</span><span class="p">(</span><span class="n">channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EquinoxAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a frozen flatten, mapping ``(batch, C, H, W)`` to ``(batch, C*H*W)``."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">channels</span> <span class="o">*</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">),</span> <span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="n">cache</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">error</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">EquinoxAdapter</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">backward</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="conv_patch_network">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.conv_patch_network.html#pyhgf.model.conv.conv_patch_network">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">conv_patch_network</span><span class="p">(</span>
+    <span class="n">in_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"he"</span><span class="p">,</span>
+    <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">network_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepNetwork</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build a fresh 2-layer :class:`DeepNetwork` computing one conv kernel's map.</span>
+
+<span class="sd">    Same shape as :func:`~pyhgf.model.transplant.from_linear` (one weight matrix,</span>
+<span class="sd">    bias folded in as the input layer's constant node), initialised from ``key``</span>
+<span class="sd">    rather than copied from an existing layer. This network is the conv kernel</span>
+<span class="sd">    itself, shared across every patch by</span>
+<span class="sd">    :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`'s per-row batching.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    in_features :</span>
+<span class="sd">        ``in_channels * kh * kw``, the flattened patch size.</span>
+<span class="sd">    out_channels :</span>
+<span class="sd">        Number of output feature maps this kernel produces.</span>
+<span class="sd">    key :</span>
+<span class="sd">        PRNG key for weight initialisation.</span>
+<span class="sd">    strategy :</span>
+<span class="sd">        Forwarded to :meth:`DeepNetwork.weight_initialisation` (default ``"he"``,</span>
+<span class="sd">        the scaling for the rectifier-style nonlinearity each conv block applies).</span>
+<span class="sd">    leaf_kwargs :</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for the bottom (output) layer, such</span>
+<span class="sd">        as the backprop-parity configuration.</span>
+<span class="sd">    layer_kwargs :</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for the top (input) layer.</span>
+<span class="sd">    network_kwargs :</span>
+<span class="sd">        Constructor arguments for the :class:`DeepNetwork` itself, such as</span>
+<span class="sd">        ``feedforward_uncertainty``. These reach the network's state when it is</span>
+<span class="sd">        built and cannot be set afterwards, so they belong here rather than in</span>
+<span class="sd">        the per-layer keyword sets.</span>
+<span class="sd">    """</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">DeepNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">network_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">leaf_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">in_features</span><span class="p">,</span> <span class="n">add_constant_input</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">layer_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">net</span><span class="o">.</span><span class="n">weight_initialisation</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="conv_block">
+<a class="viewcode-back" href="../../../generated/pyhgf.model.conv/pyhgf.model.conv.conv_block.html#pyhgf.model.conv.conv_block">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">conv_block</span><span class="p">(</span>
+    <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">in_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">in_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">filter_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">strides</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">padding</span><span class="p">:</span> <span class="n">Padding</span> <span class="o">=</span> <span class="s2">"SAME"</span><span class="p">,</span>
+    <span class="n">pool_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">pool_stride</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pool_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"avg"</span><span class="p">,</span>
+    <span class="n">optimiser</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">optax</span><span class="o">.</span><span class="n">GradientTransformation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">learning_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"precision_weighted"</span><span class="p">,</span>
+    <span class="n">learning_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">update_precisions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">time_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jax</span><span class="o">.</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">leaf_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">network_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">patch_net</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeepNetwork</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PCSequential</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Assemble one conv layer as a part tree: im2col, shared kernel, GELU, pool.</span>
+
+<span class="sd">    A conv layer has one weight table (attention has four), so it is composed</span>
+<span class="sd">    from the primitives above with :class:`~pyhgf.model.hybrid.PCSequential`</span>
+<span class="sd">    rather than through a dedicated class.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    in_channels :</span>
+<span class="sd">        Channels of the incoming feature map, whose shape is</span>
+<span class="sd">        ``(batch, in_channels, in_height, in_width)``.</span>
+<span class="sd">    out_channels :</span>
+<span class="sd">        Feature maps this block produces, one per kernel.</span>
+<span class="sd">    in_height :</span>
+<span class="sd">        Height of the incoming feature map. Fixed at build time: the reshape</span>
+<span class="sd">        back to spatial layout is sized from it, so feeding a different height</span>
+<span class="sd">        fails.</span>
+<span class="sd">    in_width :</span>
+<span class="sd">        Width of the incoming feature map, fixed at build time like</span>
+<span class="sd">        ``in_height``.</span>
+<span class="sd">    filter_shape :</span>
+<span class="sd">        Kernel size ``(kh, kw)``.</span>
+<span class="sd">    strides :</span>
+<span class="sd">        Convolution strides ``(sh, sw)``, one step per output position.</span>
+<span class="sd">    padding :</span>
+<span class="sd">        ``"SAME"`` (output size is the input size divided by the stride, rounded</span>
+<span class="sd">        up), ``"VALID"`` (no padding) or an explicit</span>
+<span class="sd">        ``((top, bottom), (left, right))``.</span>
+<span class="sd">    pool_size :</span>
+<span class="sd">        Pooling window ``(ph, pw)``. Use ``(1, 1)`` for no pooling. Must fit</span>
+<span class="sd">        within the convolution's output size.</span>
+<span class="sd">    pool_stride :</span>
+<span class="sd">        Step between pooling windows, defaulting to ``pool_size`` (non</span>
+<span class="sd">        overlapping windows).</span>
+<span class="sd">    pool_kind :</span>
+<span class="sd">        ``"avg"`` for :func:`avg_pool_adapter` or ``"max"`` for</span>
+<span class="sd">        :func:`max_pool_adapter`.</span>
+<span class="sd">    optimiser :</span>
+<span class="sd">        Optax optimiser for the shared kernel. ``None`` freezes the weights</span>
+<span class="sd">        (the layer beliefs still update) under every ``learning_kind`` except</span>
+<span class="sd">        ``"synaptic_uncertainty"``, which carries its own step size and leaves</span>
+<span class="sd">        the optimiser unused either way.</span>
+<span class="sd">    learning_kind :</span>
+<span class="sd">        Weight-gradient mode, forwarded to</span>
+<span class="sd">        :class:`~pyhgf.model.hybrid.DeepNetworkAdapter`. Under</span>
+<span class="sd">        ``"synaptic_uncertainty"`` each weight also carries a belief whose</span>
+<span class="sd">        variance *is* the step size, so no ``optimiser`` is needed and the</span>
+<span class="sd">        kernel keeps learning without one.</span>
+<span class="sd">    learning_kwargs :</span>
+<span class="sd">        Settings of the learning rule, used by</span>
+<span class="sd">        ``learning_kind="synaptic_uncertainty"``, which requires at least</span>
+<span class="sd">        ``{"window": N}``.</span>
+<span class="sd">    update_precisions :</span>
+<span class="sd">        Whether the kernel's precision state adapts across batches. Defaults to</span>
+<span class="sd">        False, the setting used for exact comparisons against backpropagation.</span>
+<span class="sd">    time_step :</span>
+<span class="sd">        Inference time step, forwarded to the adapter: one batch counts as one</span>
+<span class="sd">        observation of this duration.</span>
+<span class="sd">    key :</span>
+<span class="sd">        PRNG key for initialising a fresh kernel. Ignored when ``patch_net`` is</span>
+<span class="sd">        given.</span>
+<span class="sd">    leaf_kwargs :</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for the kernel network's bottom</span>
+<span class="sd">        (output) layer, such as the backprop-parity configuration.</span>
+<span class="sd">    layer_kwargs :</span>
+<span class="sd">        Extra ``add_layer`` keyword arguments for its top (input) layer.</span>
+<span class="sd">    network_kwargs :</span>
+<span class="sd">        Constructor arguments for the shared-kernel :class:`DeepNetwork`, such</span>
+<span class="sd">        as ``feedforward_uncertainty``. Ignored when ``patch_net`` is given,</span>
+<span class="sd">        since that network is already built.</span>
+<span class="sd">    patch_net :</span>
+<span class="sd">        A pre-built shared-kernel network to use in place of a freshly</span>
+<span class="sd">        initialised :func:`conv_patch_network`, such as one built by</span>
+<span class="sd">        :func:`~pyhgf.model.transplant.from_conv` from a trained or externally</span>
+<span class="sd">        initialised kernel. When given, ``key`` is ignored.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``pool_kind`` is not ``"avg"`` or ``"max"``, or if ``pool_size``</span>
+<span class="sd">        is larger than the feature map the convolution produces.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    part :</span>
+<span class="sd">        The ``PCSequential`` to place in a larger pipeline.</span>
+<span class="sd">    out_shape :</span>
+<span class="sd">        ``(out_channels, pooled_height, pooled_width)``, to pass on as the next</span>
+<span class="sd">        block's ``in_channels``, ``in_height`` and ``in_width``.</span>
+<span class="sd">    """</span>
+    <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span> <span class="o">=</span> <span class="n">filter_shape</span>
+    <span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span> <span class="o">=</span> <span class="n">conv_output_shape</span><span class="p">(</span>
+        <span class="n">in_height</span><span class="p">,</span> <span class="n">in_width</span><span class="p">,</span> <span class="n">filter_shape</span><span class="p">,</span> <span class="n">strides</span><span class="p">,</span> <span class="n">padding</span>
+    <span class="p">)</span>
+    <span class="n">in_features</span> <span class="o">=</span> <span class="n">in_channels</span> <span class="o">*</span> <span class="n">kh</span> <span class="o">*</span> <span class="n">kw</span>
+    <span class="k">if</span> <span class="n">patch_net</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">patch_net</span> <span class="o">=</span> <span class="n">conv_patch_network</span><span class="p">(</span>
+            <span class="n">in_features</span><span class="p">,</span>
+            <span class="n">out_channels</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+            <span class="n">leaf_kwargs</span><span class="o">=</span><span class="n">leaf_kwargs</span><span class="p">,</span>
+            <span class="n">layer_kwargs</span><span class="o">=</span><span class="n">layer_kwargs</span><span class="p">,</span>
+            <span class="n">network_kwargs</span><span class="o">=</span><span class="n">network_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">ph</span><span class="p">,</span> <span class="n">pw</span> <span class="o">=</span> <span class="n">pool_size</span>
+    <span class="n">sh</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="n">pool_stride</span> <span class="k">if</span> <span class="n">pool_stride</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pool_size</span>
+    <span class="k">if</span> <span class="n">ph</span> <span class="o">&gt;</span> <span class="n">h_out</span> <span class="ow">or</span> <span class="n">pw</span> <span class="o">&gt;</span> <span class="n">w_out</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"pool_size </span><span class="si">{</span><span class="n">pool_size</span><span class="si">}</span><span class="s2"> does not fit the </span><span class="si">{</span><span class="n">h_out</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">w_out</span><span class="si">}</span><span class="s2"> feature map "</span>
+            <span class="sa">f</span><span class="s2">"a </span><span class="si">{</span><span class="n">filter_shape</span><span class="si">}</span><span class="s2"> convolution with strides </span><span class="si">{</span><span class="n">strides</span><span class="si">}</span><span class="s2"> and padding "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">padding</span><span class="si">!r}</span><span class="s2"> produces from a </span><span class="si">{</span><span class="n">in_height</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">in_width</span><span class="si">}</span><span class="s2"> input. Reduce "</span>
+            <span class="s2">"pool_size, or feed a larger input."</span>
+        <span class="p">)</span>
+    <span class="n">pooled_h</span> <span class="o">=</span> <span class="p">(</span><span class="n">h_out</span> <span class="o">-</span> <span class="n">ph</span><span class="p">)</span> <span class="o">//</span> <span class="n">sh</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">pooled_w</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_out</span> <span class="o">-</span> <span class="n">pw</span><span class="p">)</span> <span class="o">//</span> <span class="n">sw</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># The adapter averages the weight gradient over every row it sees, and im2col</span>
+    <span class="c1"># feeds it one row per patch; passing the patch count as ``weight_reuse``</span>
+    <span class="c1"># recovers the sum over the patches the kernel is shared across.</span>
+    <span class="n">n_patches</span> <span class="o">=</span> <span class="n">h_out</span> <span class="o">*</span> <span class="n">w_out</span>
+
+    <span class="k">if</span> <span class="n">pool_kind</span> <span class="o">==</span> <span class="s2">"avg"</span><span class="p">:</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">avg_pool_adapter</span><span class="p">(</span><span class="n">pool_size</span><span class="p">,</span> <span class="p">(</span><span class="n">sh</span><span class="p">,</span> <span class="n">sw</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">pool_kind</span> <span class="o">==</span> <span class="s2">"max"</span><span class="p">:</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">max_pool_adapter</span><span class="p">(</span><span class="n">pool_size</span><span class="p">,</span> <span class="p">(</span><span class="n">sh</span><span class="p">,</span> <span class="n">sw</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pool_kind must be 'avg' or 'max', got </span><span class="si">{</span><span class="n">pool_kind</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">part</span> <span class="o">=</span> <span class="n">PCSequential</span><span class="p">([</span>
+        <span class="n">im2col_adapter</span><span class="p">(</span><span class="n">filter_shape</span><span class="p">,</span> <span class="n">strides</span><span class="p">,</span> <span class="n">padding</span><span class="p">),</span>
+        <span class="n">DeepNetworkAdapter</span><span class="p">(</span>
+            <span class="n">patch_net</span><span class="p">,</span>
+            <span class="n">optimiser</span><span class="o">=</span><span class="n">optimiser</span><span class="p">,</span>
+            <span class="n">learning_kind</span><span class="o">=</span><span class="n">learning_kind</span><span class="p">,</span>
+            <span class="n">learning_kwargs</span><span class="o">=</span><span class="n">learning_kwargs</span><span class="p">,</span>
+            <span class="n">update_precisions</span><span class="o">=</span><span class="n">update_precisions</span><span class="p">,</span>
+            <span class="n">time_step</span><span class="o">=</span><span class="n">time_step</span><span class="p">,</span>
+            <span class="n">weight_reuse</span><span class="o">=</span><span class="n">n_patches</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">gelu_adapter</span><span class="p">(),</span>
+        <span class="n">spatial_reshape_adapter</span><span class="p">(</span><span class="n">h_out</span><span class="p">,</span> <span class="n">w_out</span><span class="p">),</span>
+        <span class="n">pool</span><span class="p">,</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">part</span><span class="p">,</span> <span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">pooled_h</span><span class="p">,</span> <span class="n">pooled_w</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2026, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

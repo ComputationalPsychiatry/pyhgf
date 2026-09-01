@@ -259,7 +259,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "Sequential sampling (2 chains in 1 job)\n",
       "NUTS: [tonic_volatility]\n"
      ]

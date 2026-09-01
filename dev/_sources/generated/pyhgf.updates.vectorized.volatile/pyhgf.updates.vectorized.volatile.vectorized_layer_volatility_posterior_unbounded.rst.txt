@@ -1,6 +1,0 @@
-﻿pyhgf.updates.vectorized.volatile.vectorized\_layer\_volatility\_posterior\_unbounded
-=====================================================================================
-
-.. currentmodule:: pyhgf.updates.vectorized.volatile
-
-.. autofunction:: vectorized_layer_volatility_posterior_unbounded

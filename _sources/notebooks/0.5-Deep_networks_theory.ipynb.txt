@@ -1,0 +1,559 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "6bdb3af4",
+   "metadata": {},
+   "source": [
+    "(deep_networks_theory)=\n",
+    "# Learning in deep predictive coding networks: the theory\n",
+    "\n",
+    "Backpropagation has underpinned the optimisation of deep networks for decades. It comes with uncontestable advantages, effectively fuelling the development of modern AI, but still has downsides, such as interference during training, catastrophic forgetting, or poor biological realism, which in turn has shaped the development of hardware.\n",
+    "\n",
+    "[Predictive coding](https://en.wikipedia.org/wiki/Predictive_coding) (PC) is the go-to alternative and has proved efficient in tasks typically faced by biological organisms {cite:p}`Song2024`, in which the error back-propagation algorithm can be seen as a special case {cite:p}`Whittington2019`. But it has also been historically neglected by the deep learning community as usually slower to train and difficult to scale to deep architectures.\n",
+    "\n",
+    "In some sense, PyHGF belongs to the PC lineage, while being slightly non-traditional in its objectives (initially solving inference from sequential data) and in its implementation (closed-form variational updates to find relaxation points instead of iterative gradient descent). This has a main advantage: the training time wall effectively vanishes, and predictive  coding networks such as the ones handled by PyHGF can be advantageously applied to  discrimination tasks in deep and wide architectures {cite:p}`Baskakovs2026`. What makes them unusual is *how* they learn: using a combination of belief updating,  precision-weighted prediction error  propagation, and Hebbian weight learning. But similarly, in these networks, error backpropagation is found to be a special case of the network parametrisation.\n",
+    "\n",
+    "In this section, we expose the theory and differentiate PyHGF from traditional backpropagation and other predictive coding architectures, assuming no prior familiarity with PyHGF, predictive coding, or the mathematics of learning. We cover 1. how deep networks normally learn, 2. how a predictive-coding network learns instead, 3. the theorem saying when the two coincide and its proof, 4. the regimes where predictive coding does something genuinely different, and 5. where PyHGF sits on that map.\n",
+    "\n",
+    "Several companion pages complete the picture of this chapter: the [DeepNetwork implementation page](0.7-Deep_networks_implementation.ipynb) shows how these ideas become code, the [prospective configuration tutorial](0.6-Prospective_configuration.ipynb) walks through a worked classification example, and concrete implementations of [convolutional networks](0.8-Convolutional_networks.ipynb) and [transformers](0.9-Transformers.ipynb) are demonstrated afterwards.\n",
+    "\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0e23cb28-27d8-4dae-9f92-8d5983e2b352",
+   "metadata": {},
+   "source": [
+    "## Backpropagation: learning in deep neural networks\n",
+    "\n",
+    "A **deep network** is a stack of neural layers. Each layer holds a vector of **activations** (numbers describing what the layer currently represents) and is connected to the next by a matrix of **weights**, the adjustable parameters that the network learns. Data $x$ enter at one end, are transformed layer by layer (each layer multiplies by its weights and applies a nonlinearity), and a prediction $\\hat{y}$ comes out the other end. A **loss function** measures how wrong that prediction is compared to an observed outcome $y$.\n",
+    "\n",
+    "Training the neural network means adjusting every weight to make the loss smaller.  The central tool is the **gradient**: for each weight, the derivative of the loss with respect to that weight (i.e., how much and in which direction the loss would change if the weight moved a little). **Gradient descent** repeatedly nudges every weight a small step against its gradient."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8e283da7-c83f-46a2-b511-e02c81a7b216",
+   "metadata": {},
+   "source": [
+    "```{note}\n",
+    "In the rest of this document, we use the PyHGF bottom-up approach of network creation, meaning that we index layers by $\\ell$, with layer $0$ being the output ($y$) and $\\ell$ growing toward the input ($x$). We write $\\mu_\\ell$ and $\\hat{\\mu}_\\ell$ for the forward and backward activations of layer $\\ell$, $W_\\ell$ for the matrix of weights connecting layer $\\ell+1$ to layer $\\ell$, and $g$ for the nonlinearity (a bias is folded into $W_\\ell$ as an always-on constant input).\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6be673a2",
+   "metadata": {},
+   "source": [
+    "The forward pass computes, layer by layer,\n",
+    "\n",
+    "$$\n",
+    "\\hat{\\mu}_\\ell = W_\\ell \\, g(\\hat{\\mu}_{\\ell+1}),\n",
+    "$$ (eq-forward)\n",
+    "\n",
+    "The hat on $\\hat{\\mu}_\\ell$ marking a *predicted / computed* quantity. For an input $x$, a target $y$, and the standard squared error, the loss is \n",
+    "\n",
+    "$$ L = \\frac{1}{2} \\cdot \\lVert f(x) - y \\rVert^2 $$\n",
+    "\n",
+    "with $f(x)$ the network's output."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "87e851d5-c8b9-470d-bafa-8713eca840ae",
+   "metadata": {},
+   "source": [
+    "The gradients themselves come from **backpropagation**: an application of the calculus **chain rule** that sweeps backward through the network. An early weight affects the loss only through everything downstream of it, so its gradient is a long product of \"how each layer affects the next\"; backpropagation assembles those products efficiently by introducing, for each layer, an **error** vector\n",
+    "\n",
+    "$$ \\delta_\\ell := \\frac{\\partial L}{\\partial \\hat{\\mu}_\\ell} $$\n",
+    "\n",
+    "computed from the output backwards:\n",
+    "\n",
+    "$$\n",
+    "\\delta_0 = \\frac{\\partial L}{\\partial \\hat{\\mu}_0} = f(x) - y,\n",
+    "\\qquad\n",
+    "\\delta_{\\ell+1} = g'(\\hat{\\mu}_{\\ell+1}) \\odot \\big(W_\\ell^\\top \\delta_\\ell\\big),\n",
+    "$$\n",
+    "\n",
+    "where $g'$ is the derivative of the nonlinearity, $\\odot$ multiplies entry by entry, and $W_\\ell^\\top$ is the transpose of the weight matrix. Once the errors are known, each weight's gradient is an **outer product**, the error at the layer below times the activity at the layer above:\n",
+    "\n",
+    "$$\n",
+    "\\frac{\\partial L}{\\partial W_\\ell} = \\delta_\\ell \\, g(\\hat{\\mu}_{\\ell+1})^\\top .\n",
+    "$$\n",
+    "\n",
+    "Backpropagation has a single activation per layer, the forward-pass value $\\hat{\\mu}_{\\ell+1}$, so both the slope $g'$ and the activity $g$ are read there. Predictive coding will have two values to choose between, and which one enters where is what §3 turns on."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b62d5245-2123-4656-b912-d3bd1fc82082",
+   "metadata": {},
+   "source": [
+    "## Predictive coding\n",
+    "\n",
+    "**Predictive coding** (PC) is a different way to organise the same computation, drawn from theoretical neuroscience. Instead of activations, each layer holds **beliefs**: a belief is a guess (a **mean**, written $\\mu$) plus a confidence in that guess (a **precision**, written $\\pi$, the inverse of a variance). Each layer *predicts* the layer below it through the very same forward map {eq}`eq-forward`, with $g$ now read as the **coupling function**. The mismatch between what a layer predicted and what it observed is the **prediction error**\n",
+    "\n",
+    "$$\n",
+    "\\varepsilon_\\ell = \\mu_\\ell - \\hat{\\mu}_\\ell .\n",
+    "$$"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "48d6b565-5e0f-43cb-95ff-3b67481da293",
+   "metadata": {},
+   "source": [
+    ":::{important} \n",
+    "\n",
+    "Backpropagation and predictive coding often use opposite definitions of error terms. $\\varepsilon$ (PC) follows the **observed − predicted** convention, while $\\delta$ (backpropagation) follows the **predicted - observed** convention. So, at a clamped output with unit precision $\\varepsilon_0 = y - f(x) = -\\delta_0$.\n",
+    "\n",
+    "This notation is more natural for PC networks, as the precision-weighted error is what is used to update beliefs at the higher layer (see the [theory notebook](0.1-Theory.ipynb)). When building hybrid architectures (see [the next tutorial](deep_networks_implementation)), the sign of the error is automatically reverted when crossing boundaries between PC networks and handwritten backpropagation components.\n",
+    ":::"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "23ae4900-8e50-4709-908d-fb8b8b78551b",
+   "metadata": {},
+   "source": [
+    "The whole network is scored by one quantity, the **variational free energy** $F$ for Gaussian beliefs, simply the sum of every layer's squared prediction error weighted by the precision of that prediction:\n",
+    "\n",
+    "$$\n",
+    "F = \\sum_\\ell \\frac{\\hat{\\pi}_\\ell}{2} \\lVert \\mu_\\ell - \\hat{\\mu}_\\ell \\rVert^2\n",
+    "  \\;+\\; \\text{const} .\n",
+    "$$"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "032119e1",
+   "metadata": {},
+   "source": [
+    "The constant absorbs a $-\\tfrac{1}{2}\\sum_\\ell \\log \\hat{\\pi}_\\ell$ term, which is genuinely constant only while the precisions are fixed parameters. The precision here is the *predicted* one, $\\hat{\\pi}_\\ell$, because it is the precision of the prediction against which the residual is measured.\n",
+    "\n",
+    "A precise layer (high $\\hat{\\pi}_\\ell$) is penalised more for the same error, so it \"insists\" on its predictions; an imprecise layer tolerates mismatch. Learning happens in two nested motions, both descending this same $F$:\n",
+    "\n",
+    "1. **Beliefs settle.** *Clamp* the observation on the output layer (fix\n",
+    "   $\\mu_0 = y$; a clamped observation is just a belief that is not allowed to\n",
+    "   move), hold the weights fixed, and let every interior belief slide down the\n",
+    "   free energy, $\\dot{\\mu}_\\ell = -\\partial F / \\partial \\mu_\\ell$. Each\n",
+    "   belief is pulled toward its own top-down prediction and pushed by the\n",
+    "   prediction error of the layer below, gated by the local slope of $g$. In\n",
+    "   the textbook variant this relaxation runs for many iterations, until the\n",
+    "   beliefs reach an equilibrium.\n",
+    "2. **Weights nudge.** Each connection then adjusts from purely *local*\n",
+    "   quantities, the precision-weighted error on one side\n",
+    "   $$\n",
+    "   e_\\ell := \\hat{\\pi}_\\ell\\,(\\mu_\\ell - \\hat{\\mu}_\\ell)\n",
+    "           = \\hat{\\pi}_\\ell\\,\\varepsilon_\\ell\n",
+    "   $$\n",
+    "  and the activity on the other:\n",
+    "  $$\n",
+    "  \\Delta W_\\ell \\;\\propto\\; e_\\ell \\; g(\\mu_{\\ell+1})^\\top\n",
+    "  $$\n",
+    "\n",
+    "This weight rule is **Hebbian** (\"cells that fire together wire together\"): the update to a connection is a product of the two quantities available at its two ends. Nothing in it sweeps backward through the network; no part ever\n",
+    "sees the whole model. That locality is the point of predictive coding."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "04886e55-7325-4d5a-a1c9-08f6a2de434b",
+   "metadata": {},
+   "source": [
+    "## Closed-form predictive coding with hierarchical Gaussian filtering\n",
+    "*\n",
+    "In {cite:p}`Baskakovs2026` we introduced an alternative way to build and update similar PC coding networks built on top of hierarchical Gaussian filtering (HGF) machinery, which replaces the iterative relaxation step with *closed-form updates* (predict once, correct each belief once, nudge the weights once) using the exact update equations of the generalised HGF {cite:p}`Weber2026`.\n",
+    "\n",
+    "In this language, the layer above is the *value parent* of the layer below: the parent's belief generates the child's prediction. When a child layer $\\ell$ produces a prediction error, its parent $\\ell+1$ updates its belief using only three things it already has: its own prediction, the connection $W_\\ell$, and the child's error.\n",
+    "\n",
+    "```{note}\n",
+    "The HGF is initially designed for time-resolved latent state inference, which requires prediction to be made from the previous state position. But here, applying this principle to iterations in a set of predictor-outcome pairs would be meaningless, as the previous label should not influence the current prediction. Therefore, the `DeepNetwork` class uses a modified update equation that only relies on the expectations (which only come from the parents), instead of the previous mean.\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "559de917-bfda-430f-9c55-9cfc8814cac8",
+   "metadata": {},
+   "source": [
+    "First, the child packages its prediction error together with its own confidence into the **precision-weighted prediction error** it sends upward:\n",
+    "\n",
+    "$$\n",
+    "e_\\ell := \\hat{\\pi}_\\ell \\, \\varepsilon_\\ell\n",
+    "$$\n",
+    "\n",
+    "The parent then updates its **precision**, adding a \"bottom-up\" contribution routed through the connection. Writing $j$ for a node of the parent layer $\\ell+1$ and $i$ for a node of the fully-connected child layer $\\ell$,\n",
+    "\n",
+    "$$\n",
+    "\\pi_j \\;=\\; \\underbrace{\\hat{\\pi}_j}_{\\text{parent's prior confidence}}\n",
+    "\\;+\\; \\underbrace{g'(\\hat{\\mu}_j)^2 \\sum_i W_{ij}^2 \\, \\hat{\\pi}_i\n",
+    "\\;-\\; g''(\\hat{\\mu}_j) \\sum_i W_{ij} \\, e_i}_{\\text{ (arriving from the children)}}\n",
+    "$$ (eq-precision-update)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7c2dc8e8-46c6-4d1f-8ff4-778a52bd3fbe",
+   "metadata": {},
+   "source": [
+    "Second, the parent updates its **mean** by taking a step, sized by one over its *posterior* precision, in the direction of the routed child error:\n",
+    "\n",
+    "$$\n",
+    "\\mu_{\\ell+1} \\;=\\; \\hat{\\mu}_{\\ell+1} \\;+\\; \\frac{1}{\\pi_{\\ell+1}}\\;\n",
+    "g'(\\hat{\\mu}_{\\ell+1}) \\odot \\big(W_\\ell^\\top e_\\ell\\big).\n",
+    "$$ (eq-mean-update)\n",
+    "\n",
+    "Two features of this equation carry the whole of §3. The step is divided by the **posterior** precision $\\pi_{\\ell+1}$ from {eq}`eq-precision-update`, not by the prior confidence $\\hat{\\pi}_{\\ell+1}$. And the slope is read at the **expected** mean $\\hat{\\mu}_{\\ell+1}$, the parent's own prediction, exactly as in the precision update above: the posterior mean the equation solves for never enters the slope, which is also what makes the update explicit rather than implicit in $\\mu_{\\ell+1}$.\n",
+    "\n",
+    "```{note}\n",
+    "Evaluating the coupling derivatives at the prediction is a property of the volatile layers a `DeepNetwork` is built from (`pyhgf.updates.vectorised.volatile.posterior`), where the prediction is the natural reference point because each iteration is an independent predictor-outcome pair. The continuous layers used for time series filtering read them at the posterior mean instead: the previous posterior mean under the standard update, the freshly written one under the eHGF update, which updates the mean first.\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cca85efb-2915-4a5c-b62c-8c254469a466",
+   "metadata": {},
+   "source": [
+    "## When predictive coding equals backpropagation\n",
+    "\n",
+    "There is a specific, well-understood point in the landscape of predictive-coding  models where PC weight updates recover BP. The existence of this point has actually  been a central argument in favor of PC, but it is crucial to understand that PC can  have a range of behaviours around that point that makes it genuinely more interesting.\n",
+    "\n",
+    "In this section, we state the condition, prove the equivalence, and illustrate it numerically."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "84d741f0-2228-4d2e-817c-a788b3de7aa9",
+   "metadata": {},
+   "source": [
+    "(silent-interior)=\n",
+    "### A silent interior\n",
+    "\n",
+    "Predictive coding reproduces exactly backpropagation's gradients when two things \n",
+    "hold: the interior is **silent**, and every interior layer relays the routed error \n",
+    "at full strength rather than attenuating it. We call silent interior the behaviour \n",
+    "of hidden activities when they stay at their forward-pass values even after the \n",
+    "observation arrives at the output: $\\mu_\\ell \\approx \\hat{\\mu}_\\ell$, up to a \n",
+    "shift that vanishes as the interior precision grows.\n",
+    "\n",
+    "When the interior is silent (i.e., when the activation of the forward pass matches \n",
+    "the activation of the backward pass), the only effective prediction error \n",
+    "in the network is at the output. Every interior layer merely relays the forward pass, \n",
+    "and each connection's local update (error on one side) ×\n",
+    "(activity on the other) is precisely the chain-rule gradient. If instead the hidden \n",
+    "layers moved to satisfy the target, their errors would no longer be backpropagation's \n",
+    "errors, and the two would diverge.\n",
+    "\n",
+    "In the classical settling formulation, where precisions are fixed parameters, the \n",
+    "silent interior is the whole condition {cite:p}`whittington:2017,millidge:2020`. \n",
+    "In the HGF, precisions themselves can be updated and reflect \n",
+    "activation uncertainty. Therefore, error is more likely to propagate following a BP \n",
+    "gradient in a network made of confident activations, but as errors appear, and as we \n",
+    "are logging this uncertainty, the gradient of learning will diverge from BP.\n",
+    "\n",
+    "It is therefore straightforward to recover the BP gradient by pinning neurons' precision \n",
+    "to some high number, and disregarding any precision update. This is a way to learn efficiently \n",
+    "using local updates and PyHGF PyHGF-only backend, but it is also a more limited way."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "731f584f-ffce-45ed-86e7-c3dba138c088",
+   "metadata": {},
+   "source": [
+    "```{prf:definition} Silent interior\n",
+    ":label: def-silent-interior\n",
+    "\n",
+    "The interior of a network is **silent** when every hidden belief stays at its\n",
+    "forward-pass value once the observation arrives at the output,\n",
+    "$\\mu_\\ell \\approx \\hat{\\mu}_\\ell$, up to a displacement that vanishes as the\n",
+    "interior precision grows. *Silent* does not mean *frozen*: the interior still shifts by an\n",
+    "infinitesimal amount, just enough to carry the gradient onward. The movement is\n",
+    "just too small to change *what the activations represent*, but is never\n",
+    "literally zero.\n",
+    "```\n",
+    "\n",
+    "```{prf:definition} Pinning\n",
+    ":label: def-pinning\n",
+    "\n",
+    "An interior layer is **pinned** when its posterior precision is held at its\n",
+    "prior (predicted) value, $\\pi_\\ell = \\hat{\\pi}_\\ell$, so the bottom-up\n",
+    "contribution of {eq}`eq-precision-update` is never written. Pinning to a *large*\n",
+    "value additionally keeps the layer silent ({prf:ref}`def-silent-interior`).\n",
+    "\n",
+    "**In code:** build the hidden and input layers with\n",
+    "`add_layer(..., precision=1e4, expected_precision=1e4)`, unit precision on the\n",
+    "observed output layer, and fit with `update_precisions=False`.\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "96b0ba9f-443e-41c9-b3ed-3b4ddcba6e80",
+   "metadata": {},
+   "source": [
+    "```{prf:theorem} Pinned single-sweep predictive coding reproduces backpropagation\n",
+    ":label: thm-pc-backprop\n",
+    "\n",
+    "Run the single belief propagation with every interior precision **pinned** to a\n",
+    "large constant ({prf:ref}`def-pinning`). Clamping the target seeds the output\n",
+    "with the *negative* loss gradient, $e_0 = y - f(x) = -\\delta_0$ for a\n",
+    "squared-error output, $\\text{one-hot} - \\text{softmax}$ for a categorical head;\n",
+    "the same sign, since $\\partial L / \\partial(\\text{logits}) =\n",
+    "\\text{softmax} - \\text{one-hot}$. Then the upward messages obey\n",
+    "\n",
+    "$$\n",
+    "e_{\\ell+1} \\;=\\; g'(\\hat{\\mu}_{\\ell+1}) \\odot \\big(W_\\ell^\\top\\, e_\\ell\\big),\n",
+    "\\tag{★}\n",
+    "$$\n",
+    "\n",
+    "which is exactly backpropagation's error recursion (BP). The recursion preserves\n",
+    "sign, so by induction down the stack $e_\\ell = -\\delta_\\ell$ at every layer.\n",
+    "Pinning to a *large* constant additionally keeps the interior silent\n",
+    "({prf:ref}`def-silent-interior`), so the activity entering the Hebbian outer\n",
+    "product converges to its forward-pass value and the local weight step is the\n",
+    "backpropagation *descent step*, node for node:\n",
+    "\n",
+    "$$\n",
+    "\\Delta W_\\ell \\propto e_\\ell\\, g(\\mu_{\\ell+1})^\\top\n",
+    "= -\\,\\delta_\\ell\\, g(\\mu_{\\ell+1})^\\top\n",
+    "\\;\\longrightarrow\\; -\\,\\delta_\\ell\\, g(\\hat{\\mu}_{\\ell+1})^\\top\n",
+    "= -\\,\\frac{\\partial L}{\\partial W_\\ell}\n",
+    "$$\n",
+    "\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9ecb191e-2513-41ad-8383-ac6cd49e42ef",
+   "metadata": {},
+   "source": [
+    "(precision-ratio)=\n",
+    "### The proof: the precision ratio $r$\n",
+    "\n",
+    "**Goal.** Rewrite the HGF mean update as a recursion in the upward \n",
+    "messages $e_\\ell$, compare it line for line with backpropagation, and close the \n",
+    "gaps between the two. The whole argument turns on one quantity:\n",
+    "\n",
+    "```{prf:definition} Precision ratio\n",
+    ":label: def-precision-ratio\n",
+    "\n",
+    "The ratio of a layer's prior (predicted) to posterior precision,\n",
+    "\n",
+    "$$\n",
+    "r_\\ell = \\frac{\\hat{\\pi}_\\ell}{\\pi_\\ell} \\in (0,1].\n",
+    "$$\n",
+    "\n",
+    "$r_\\ell$ is a **per-unit** quantity, one ratio per node, not a single number per\n",
+    "layer. It is at most $1$, and pinning precisions sets $r_\\ell = 1$ exactly.\n",
+    "\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "db8c6f83-3ee9-4244-8035-18bcd30bdf24",
+   "metadata": {},
+   "source": [
+    "```{prf:proof}\n",
+    "**Step 1: read off the parent's own residual.** The parent's residual is just\n",
+    "its displacement from its prediction. Subtract $\\hat{\\mu}_{\\ell+1}$ from both\n",
+    "sides of {eq}`eq-mean-update`:\n",
+    "\n",
+    "$$\n",
+    "\\varepsilon_{\\ell+1} = \\mu_{\\ell+1} - \\hat{\\mu}_{\\ell+1}\n",
+    "= \\frac{1}{\\pi_{\\ell+1}}\\; g'(\\hat{\\mu}_{\\ell+1}) \\odot \\big(W_\\ell^\\top e_\\ell\\big).\n",
+    "$$ (eq-displacement)\n",
+    "\n",
+    "**Step 2: form the parent's own upward message.** By the definition of the\n",
+    "upward message, the parent's message to *its* parent is\n",
+    "$e_{\\ell+1} = \\hat{\\pi}_{\\ell+1}\\,\\varepsilon_{\\ell+1}$. Multiply\n",
+    "{eq}`eq-displacement` by $\\hat{\\pi}_{\\ell+1}$:\n",
+    "\n",
+    "$$\n",
+    "\\boxed{\\;e_{\\ell+1} \\;=\\; \\underbrace{\\frac{\\hat{\\pi}_{\\ell+1}}{\\pi_{\\ell+1}}}_{\\displaystyle r_{\\ell+1}}\\;\n",
+    "g'(\\hat{\\mu}_{\\ell+1}) \\odot \\big(W_\\ell^\\top e_\\ell\\big)\\;}\n",
+    "\\tag{HGF}\n",
+    "$$\n",
+    "\n",
+    "The gain in front is exactly the precision ratio of\n",
+    "{prf:ref}`def-precision-ratio`.\n",
+    "\n",
+    "**Step 3: compare with backpropagation.** Put (HGF) next to (BP):\n",
+    "\n",
+    "$$\n",
+    "\\text{HGF:}\\quad e_{\\ell+1} = r_{\\ell+1}\\, g'(\\hat{\\mu}_{\\ell+1}) \\odot (W_\\ell^\\top e_\\ell),\n",
+    "\\qquad\n",
+    "\\text{BP:}\\quad \\delta_{\\ell+1} = g'(\\hat{\\mu}_{\\ell+1}) \\odot (W_\\ell^\\top \\delta_\\ell).\n",
+    "$$\n",
+    "\n",
+    "The two routes are now identical; they thread the error through the same matrix and read the slope at the same\n",
+    "point, the forward-pass value $\\hat{\\mu}_{\\ell+1}$. Only two discrepancies separate the recursions:\n",
+    "\n",
+    "1. The per-unit gain  $r_{\\ell+1}\\le 1$ that hierarchical Gaussian filtering applies at each step and backpropagation does not. This is a byproduct of the Bayesian filtering mechanism that reflects how much nodes are allowed to move under prediction error. Backpropagation does not support this.\n",
+    "\n",
+    "2. The Hebbian outer product that supports the weight updates multiplies the message by the *posterior* activity $g(\\mu_{\\ell+1})$, whereas backpropagation's gradient $\\partial L / \\partial W_\\ell = \\delta_\\ell\\, g(\\hat{\\mu}_{\\ell+1})^\\top$ reads the activity at the forward-pass value. This is the main mechanism behind [prospective configuration](prospective_configuration).\n",
+    "\n",
+    "The exact error backpropagation can therefore be recovered by mitigating these discrepancies. **(1)** is removed by setting $r_{\\ell+1}=1$, which we can obtain by fixing precision and expected precision to identical values and by removing the precision update so they don't diverge over time. **(2)** is mitigated by having a difference between the mean (backward pass) and the expected mean (forward pass) as small as possible ($\\mu_{\\ell+1} \\simeq \\hat{\\mu}_{\\ell+1}$). The parent moves by an amount divided by its (large) posterior precision. Make the interior precisions huge, then\n",
+    "\n",
+    "$$\n",
+    "\\varepsilon_{\\ell+1} = \\frac{1}{\\pi_{\\ell+1}}\\,g'\\odot(W_\\ell^\\top e_\\ell)\n",
+    "= O(1/\\Pi) \\longrightarrow 0 ,\n",
+    "$$\n",
+    "\n",
+    "A very confident layer barely moves off its prediction, with an error converging to $0$. The precision-weighted learning update then restores the full gradient by multiplying this error again by the posterior precision. When the precision and expected precision are constants, this effectively recovers the precision ratio $r_{\\ell+1}=\\hat{\\pi}_{\\ell+1}/\\pi_{\\ell+1}$.\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "84a8ff2f",
+   "metadata": {},
+   "source": [
+    ":::{hint} Is it just backpropagation?\n",
+    "\n",
+    "This proof shows that under some restricted conditions, Bayesian filtering in a deep neural \n",
+    "network and weight updates derived from prospective configuration coincide exactly with error \n",
+    "backpropagation. PyHGF's mean update's division by the pinned precision and the `precision_weighted` \n",
+    "weight gradient's multiplication by it (`pyhgf.updates.vectorised.learning`) produces\n",
+    "the same reverse-mode vector–Jacobian product `jax.grad` would build.  \n",
+    "\n",
+    "The notable difference is that PyHGF never differentiates a graph; it reaches those numbers by\n",
+    "local message passing on a generative model. The equivalence is a coincidence of two derivations\n",
+    "(variational inference on one side, the chain rule on the other), and it holds *only* when precisions\n",
+    "equal expected precision and when they are set to high values. \n",
+    "\n",
+    "The equivalence itself is established in prior work: that silent-interior\n",
+    "predictive coding reproduces backpropagation is the theorem of\n",
+    "{cite:t}`whittington:2017`, made exact on multilayer perceptrons by\n",
+    "{cite:t}`song:2020`, shown to approximate backpropagation along arbitrary\n",
+    "computation graphs by {cite:t}`millidge:2020`, and made exact on any\n",
+    "computation graph by {cite:t}`Salvatori2021`.  \n",
+    "\n",
+    "What is specific here is the *route*\n",
+    "to it: the equivalence is expressed through the hierarchical Gaussian\n",
+    "filter's own confidence (precision) machinery, and it is reached in a *single sweep*\n",
+    "rather than the settle-to-equilibrium loop. Relaxing this condition will produce largely different \n",
+    "behaviours, prospective configuration, which is argued to reduce interference\n",
+    "between updates and to help online and continual learning. The two are not in conflict; \n",
+    "they are the two ends of one axis, and the\n",
+    "precision ratio $r = \\hat{\\pi}/\\pi$ is that axis's coordinate. The open \n",
+    "challenge for this family \n",
+    "of deep predictive coding networks is therefore to find how to settle in the right \n",
+    "configuration depending on the learning context.\n",
+    ":::"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "89d5c72b",
+   "metadata": {},
+   "source": [
+    "## Where PyHGF sits\n",
+    "\n",
+    "![One learning step in a deep PyHGF network: predictions sweep down, prediction errors travel back up and revise each layer's posterior, then the weights are nudged.](https://computationalpsychiatry.github.io/pyhgf/_images/deep_networks_theory.svg)\n",
+    "\n",
+    "*The three passes of a single step. Predictions flow from the clamped predictors $x$ down to the output $y$; prediction errors then travel back up, each layer's posterior being revised as its error arrives; finally every weight is nudged by its own amount. The input layer is clamped, so it carries no posterior update of its own.*\n",
+    "\n",
+    "PyHGF is *single-sweep* predictive coding — predict once, correct beliefs\n",
+    "once, nudge weights once per batch — with the confidence machinery kept\n",
+    "explicit throughout. There is one regime where PC provably learns in *fewer* steps than\n",
+    "backpropagation: **faster saddle-to-saddle escape in deeper-than-wide\n",
+    "networks.** Deep networks trained from a small initialisation descend the\n",
+    "loss in a staircase — long flat plateaus (**saddle points**, where the\n",
+    "gradient nearly vanishes and training crawls) punctuated by sudden drops.\n",
+    "Because PC learns on the rescaled loss $L / s(\\theta)$, its gradient carries\n",
+    "an extra term that is nonzero *even where the plain loss is flat*, so it\n",
+    "slides off those plateaus sooner: the degenerate, slow-to-escape saddles of\n",
+    "the loss become benign in the rescaled energy {cite:p}`innocenti:2024`.\n",
+    "\n",
+    "Exploring these behaviours means leaving the silent regime on\n",
+    "purpose.** Prospective configuration, faster adaptation, and interference\n",
+    "resistance all live at the *moving-interior* end. Reaching it needs three\n",
+    "things the current scheme lacks: released precisions (letting $r$ drop\n",
+    "below $1$, so the interior can move), a settling loop (so it relaxes to an\n",
+    "equilibrium instead of taking one sweep), and non-stationary or continual\n",
+    "tasks (where the benefit would show)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1aa9c89c-d5ee-417b-ba9f-3222613a20cd",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "source": [
+    "# System configuration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "0f4cce04-f88a-434a-b38a-844a284c9e13",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Last updated: Tue, 01 Sep 2026\n",
+      "\n",
+      "Python implementation: CPython\n",
+      "Python version       : 3.12.13\n",
+      "IPython version      : 9.16.1\n",
+      "\n",
+      "pyhgf : 0.3.0\n",
+      "jax   : 0.6.2\n",
+      "jaxlib: 0.6.2\n",
+      "\n",
+      "platform: 1.0.8\n",
+      "\n",
+      "Watermark: 2.6.0\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "%load_ext watermark\n",
+    "%watermark -n -u -v -iv -w -p pyhgf,jax,jaxlib"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.13"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

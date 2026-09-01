@@ -130,7 +130,7 @@
    },
    "source": [
     "## Simulate behaviours from a one-armed bandit task\n",
-    "Using a given task structure, we simulate behaviours from a group of participants assuming that they are updating beliefs of environmental volatility using a two-level Hierarchical Gaussian Filter, using a simple sigmoid as a response function parametrized by an inverse temperature parameter. For each participant, the inverse temperature and the tonic volatility at the second level are free parameters that will be estimated during the inference step."
+    "Using a given task structure, we simulate behaviours from a group of participants assuming that they are updating beliefs of environmental volatility using a two-level Hierarchical Gaussian Filter, using a simple sigmoid as a response function parametrised by an inverse temperature parameter. For each participant, the inverse temperature and the tonic volatility at the second level are free parameters that will be estimated during the inference step."
    ]
   },
   {
@@ -323,7 +323,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "/home/nicolas/git/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/numba/dispatch/basic.py:214: UserWarning: Numba will use object mode to run JAXOp{input_types=(TensorType(float64, shape=(20,)), TensorType(float64, shape=(20,)), TensorType(float64, shape=())), output_types=(TensorType(float64, shape=(20,)), TensorType(float64, shape=(20,))), jax_func=<function JAXOp.pullback.<locals>.vjp_operation at 0x751cd9266700>}'s perform method. Set `pytensor.config.compiler_verbose = True` to see more details.\n",
       "  warnings.warn(\n",
       "/home/nicolas/git/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/numba/dispatch/basic.py:214: UserWarning: Numba will use object mode to run JAXOp{input_types=(TensorType(float64, shape=(20,)), TensorType(float64, shape=(20,))), output_types=(TensorType(float64, shape=()),), jax_func=<function wrap_jax.<locals>.decorator.<locals>.wrapper.<locals>.flattened_function at 0x751d00596700>}'s perform method. Set `pytensor.config.compiler_verbose = True` to see more details.\n",
@@ -382,7 +382,7 @@
     "tags": []
    },
    "source": [
-    "## Visualizing parameters recovery"
+    "## Visualising parameters recovery"
    ]
   },
   {

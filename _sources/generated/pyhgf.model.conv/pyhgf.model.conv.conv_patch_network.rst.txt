@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.conv\_patch\_network
+=====================================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: conv_patch_network

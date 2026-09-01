@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.im2col\_adapter
+================================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: im2col_adapter

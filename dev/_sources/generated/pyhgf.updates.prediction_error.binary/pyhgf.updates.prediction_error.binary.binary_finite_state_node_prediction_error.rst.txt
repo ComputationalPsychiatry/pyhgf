@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction\_error.binary.binary\_finite\_state\_node\_prediction\_error
-=====================================================================================
-
-.. currentmodule:: pyhgf.updates.prediction_error.binary
-
-.. autofunction:: binary_finite_state_node_prediction_error

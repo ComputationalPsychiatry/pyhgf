@@ -1,6 +1,0 @@
-﻿pyhgf.typing.vectorised.stack\_layers
-=====================================
-
-.. currentmodule:: pyhgf.typing.vectorised
-
-.. autofunction:: stack_layers

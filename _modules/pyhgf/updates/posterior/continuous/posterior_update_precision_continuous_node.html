@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node &#8212; pyhgf 0.3.0 documentation</title>
+    <title>pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node &#8212; pyhgf 0.3.1 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/plot_directive.css" />
@@ -36,15 +36,15 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=112603e0" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=35b888ae" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../../../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../../../_static/documentation_options.js?v=4621528c"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -53,182 +53,17 @@
     <script src="../../../../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
-
-
 
 
 
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
-    defaultStyle.textContent = `pre.mermaid {
-    /* Same as .mermaid-container > pre */
-    display: block;
-    width: 100%;
-}
-
-pre.mermaid > svg {
-    /* Same as .mermaid-container > pre > svg */
-    height: 500px;
-    width: 100%;
-    max-width: 100% !important;
-}`;
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
     document.head.appendChild(defaultStyle);
 
     const fullscreenStyle = document.createElement('style');
-    fullscreenStyle.textContent = `.mermaid-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-}
-
-.mermaid-container > pre {
-    display: block;
-    width: 100%;
-}
-
-.mermaid-container > pre > svg {
-    height: 500px;
-    width: 100%;
-    max-width: 100% !important;
-}
-
-.mermaid-fullscreen-btn {
-    width: 28px;
-    height: 28px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    font-size: 14px;
-    line-height: 1;
-    padding: 0;
-    color: #333;
-}
-
-.mermaid-fullscreen-btn:hover {
-    opacity: 100% !important;
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
-}
-
-.mermaid-fullscreen-btn.dark-theme {
-    background: rgba(50, 50, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #e0e0e0;
-}
-
-.mermaid-fullscreen-btn.dark-theme:hover {
-    background: rgba(60, 60, 60, 1);
-    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
-}
-
-.mermaid-fullscreen-modal {
-    display: none;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 95vw;
-    height: 100vh;
-    background: rgba(255, 255, 255, 0.98);
-    z-index: 9999;
-    padding: 20px;
-    overflow: auto;
-}
-
-.mermaid-fullscreen-modal.dark-theme {
-    background: rgba(0, 0, 0, 0.98);
-}
-
-.mermaid-fullscreen-modal.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen {
-    position: relative;
-    width: 95vw;
-    height: 90vh;
-    max-width: 95vw;
-    max-height: 90vh;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    overflow: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen.dark-theme {
-    background: #1a1a1a;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-}
-
-.mermaid-container-fullscreen pre.mermaid {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen .mermaid svg {
-    height: 100% !important;
-    width: 100% !important;
-    cursor: grab;
-}
-
-.mermaid-fullscreen-close {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s;
-    font-size: 24px;
-    line-height: 1;
-    color: #333;
-}
-
-.mermaid-fullscreen-close:hover {
-    background: white;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-    transform: scale(1.1);
-}
-
-.mermaid-fullscreen-close.dark-theme {
-    background: rgba(50, 50, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #e0e0e0;
-}
-
-.mermaid-fullscreen-close.dark-theme:hover {
-    background: rgba(60, 60, 60, 1);
-    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
-}
-
-.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
-    display: none !important;
-}`;
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
     document.head.appendChild(fullscreenStyle);
 }
 
@@ -273,6 +108,32 @@ let darkTheme = isDarkTheme();
 let modal = null;
 let modalContent = null;
 let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
 
 const runMermaid = async (rerun) => {
     console.log("Running mermaid diagrams, rerun =", rerun);
@@ -280,7 +141,15 @@ const runMermaid = async (rerun) => {
     let all_mermaids = document.querySelectorAll(".mermaid");
 
     if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
         all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
             if(!el.hasAttribute("data-original-code")) {
                 // store original code
                 // console.log(`Storing original code for first run: `, el.innerHTML);
@@ -297,42 +166,100 @@ const runMermaid = async (rerun) => {
                 el.setAttribute('data-original-code', el.innerHTML);
             }
         });
-        await mermaid.run();
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
     }
 
     all_mermaids = document.querySelectorAll(".mermaid");
-    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
 
-    if ("False" === "True") {
-        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
         if(mermaids_to_add_zoom > 0) {
-            var svgs = d3.selectAll("");
-            if(all_mermaids.length !== mermaids_processed.length) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
                 setTimeout(() => runMermaid(false), 200);
                 return;
-            } else if(svgs.size() !== mermaids_to_add_zoom) {
-                setTimeout(() => runMermaid(false), 200);
-                return;
-            } else {
-                svgs.each(function() {
-                    var svg = d3.select(this);
-                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
-                    var inner = svg.select("g");
-                    var zoom = d3.zoom().on("zoom", function(event) {
-                        inner.attr("transform", event.transform);
-                    });
-                    svg.call(zoom);
-                });
             }
+            addZoomToSvgs(svgs);
         }
-    } else if(all_mermaids.length !== mermaids_processed.length) {
+    } else if(mermaids_active.length !== mermaids_processed.length) {
         // Wait for mermaid to process all diagrams
         setTimeout(() => runMermaid(false), 200);
         return;
     }
 
     // Stop here if not adding fullscreen capability
-    if ("True" !== "True") return;
+    if (!true) return;
 
     if (modal !== null ) {
         // Destroy existing modal
@@ -355,7 +282,7 @@ const runMermaid = async (rerun) => {
     modalContent = modal.querySelector('.mermaid-container-fullscreen');
     const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
 
-    const closeModal = () => {
+    closeModal = () => {
         modal.classList.remove('active');
         modalContent.innerHTML = '';
         document.body.style.overflow = ''
@@ -366,12 +293,6 @@ const runMermaid = async (rerun) => {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeModal();
-        }
-    });
-
     document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
         if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
             mermaidDiv.closest('.mermaid-fullscreen-modal')) {
@@ -391,8 +312,8 @@ const runMermaid = async (rerun) => {
         const fullscreenBtn = document.createElement('button');
         fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
         fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
-        fullscreenBtn.textContent = '⛶';
-        fullscreenBtn.style.opacity = '50%';
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
 
         // Calculate dynamic position based on diagram's margin and padding
         const diagramStyle = window.getComputedStyle(mermaidDiv);
@@ -404,7 +325,7 @@ const runMermaid = async (rerun) => {
         fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
 
         fullscreenBtn.addEventListener('click', () => {
-            previousScrollOffset = [window.scroll, window.scrollY];
+            previousScrollOffset = [window.scrollX, window.scrollY];
             const clone = mermaidDiv.cloneNode(true);
             modalContent.innerHTML = '';
             modalContent.appendChild(clone);
@@ -416,9 +337,9 @@ const runMermaid = async (rerun) => {
                 svg.style.width = '100%';
                 svg.style.height = 'auto';
                 svg.style.maxWidth = '100%';
-                svg.style.sdisplay = 'block';
+                svg.style.display = 'block';
 
-                if ("False" === "True") {
+                if (false) {
                     setTimeout(() => {
                         const g = svg.querySelector('g');
                         if (g) {
@@ -441,8 +362,11 @@ const runMermaid = async (rerun) => {
     });
 };
 
+
+
 const load = async () => {
     initStyles();
+
 
     await runMermaid(true);
 
@@ -452,10 +376,8 @@ const load = async () => {
             darkTheme = newDarkTheme;
             console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
             await mermaid.initialize(
-                {...JSON.parse(
-                    `{"startOnLoad": false}`
-                ),
-                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
                 }
             );
             await runMermaid(true);
@@ -480,10 +402,8 @@ const load = async () => {
 
 console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
 mermaid.initialize(
-    {...JSON.parse(
-        `{"startOnLoad": false}`
-    ),
-    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
     }
 );
 
@@ -576,6 +496,9 @@ window.runMermaid = runMermaid;</script>
   
 </a></div>
     
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
   </div>
   
   <div class="col-lg-9 navbar-header-items">
@@ -586,6 +509,13 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../../learn.html">
     Learn
@@ -728,6 +658,13 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../../../learn.html">
     Learn
@@ -895,7 +832,7 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># ----------------------------------------------------------------------------------</span>
 <span class="c1"># Shared building blocks</span>
 <span class="c1">#</span>
-<span class="c1"># The four &quot;observed value&quot; precision updates are the cross-product of two orthogonal</span>
+<span class="c1"># The four "observed value" precision updates are the cross-product of two orthogonal</span>
 <span class="c1"># choices: the value-coupling factor (smoothing/relaxed vs. mean-field) and the</span>
 <span class="c1"># volatility-coupling increment (standard γ-formula vs. enhanced-HGF safe update). The</span>
 <span class="c1"># helpers below isolate each piece so the leaf updates are one-line compositions and</span>
@@ -904,26 +841,26 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether any value or volatility child reported an observation.</span>
+<span class="w">    </span><span class="sd">"""Return whether any value or volatility child reported an observation.</span>
 
 <span class="sd">    If all children are unobserved the node simply ages its precision via</span>
 <span class="sd">    :func:`precision_update_missing_values`; otherwise the regular prediction-error</span>
 <span class="sd">    integration applies.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">observations</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
+            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">"observed"</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">children_idx</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">])</span>
+            <span class="n">observations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">children_idx</span><span class="p">][</span><span class="s2">"observed"</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">observations</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_smoothing_child_precision</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">value_child_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Effective child precision under the relaxed posterior-step (smoothing) update.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Effective child precision under the relaxed posterior-step (smoothing) update.</span>
 
 <span class="sd">    The child-precision factor :math:`\hat{\pi}_a` is replaced by the harmonic</span>
 <span class="sd">    combination :math:`\hat{\pi}_a \pi_y / (\hat{\pi}_a + \pi_y)`, with</span>
@@ -934,19 +871,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    (type 1), categorical (5), input/constant (0), exponential family (3), Dirichlet</span>
 <span class="sd">    (4), and any Gaussian leaf (types 2/6 with no children) — fall back to the</span>
 <span class="sd">    canonical predicted-precision factor :math:`\tilde{\pi}_a` (:math:`\pi_a \to \infty`).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">child_node_type</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">node_type</span>
     <span class="n">child_is_gaussian_interior</span> <span class="o">=</span> <span class="n">child_node_type</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
         <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="ow">or</span> <span class="n">edges</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="p">)</span>
-    <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="n">child_expected_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">child_is_gaussian_interior</span><span class="p">:</span>
         <span class="c1"># π_y = π_a − π̃_a (bottom-up evidence precision, against the marginal).</span>
-        <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+        <span class="n">child_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">"precision"</span><span class="p">]</span>
         <span class="n">pi_y</span> <span class="o">=</span> <span class="n">child_precision</span> <span class="o">-</span> <span class="n">child_expected_precision</span>
-        <span class="n">child_cond</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;conditional_expected_precision&quot;</span>
+        <span class="n">child_cond</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">"temp"</span><span class="p">][</span>
+            <span class="s2">"conditional_expected_precision"</span>
         <span class="p">]</span>
         <span class="k">return</span> <span class="n">child_cond</span> <span class="o">*</span> <span class="n">pi_y</span> <span class="o">/</span> <span class="p">(</span><span class="n">child_cond</span> <span class="o">+</span> <span class="n">pi_y</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">child_expected_precision</span>
@@ -955,11 +892,11 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">_mean_field_child_precision</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">value_child_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Effective child precision under the mean-field update (no smoothing correction).</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Effective child precision under the mean-field update (no smoothing correction).</span>
 
 <span class="sd">    Always the canonical predicted precision :math:`\tilde{\pi}_a`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_value_coupling_pwpe</span><span class="p">(</span>
@@ -968,12 +905,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">effective_precision_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Precision-weighted prediction error from value-coupled children.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Precision-weighted prediction error from value-coupled children.</span>
 
 <span class="sd">    Implements eq. 50 of [1]_: each child contributes</span>
-<span class="sd">    :math:`\pi_a (\kappa^2 g&#39;^2 - \kappa g&#39;&#39; \delta_a)`, with the child-precision</span>
+<span class="sd">    :math:`\pi_a (\kappa^2 g'^2 - \kappa g'' \delta_a)`, with the child-precision</span>
 <span class="sd">    factor :math:`\pi_a` supplied by ``effective_precision_fn`` (smoothing or</span>
-<span class="sd">    mean-field). The :math:`g&#39;`/:math:`g&#39;&#39;` derivatives reduce to the linear case</span>
+<span class="sd">    mean-field). The :math:`g'`/:math:`g''` derivatives reduce to the linear case</span>
 <span class="sd">    (:math:`\kappa^2`, ``0``) when no coupling function is set.</span>
 
 <span class="sd">    References</span>
@@ -981,14 +918,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;</span>
 <span class="sd">       Mathys, C. (2026). The generalized hierarchical Gaussian filter.</span>
 <span class="sd">       doi:10.7554/elife.110174.1</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pwpe</span>
 
     <span class="k">for</span> <span class="n">value_child_idx</span><span class="p">,</span> <span class="n">value_coupling</span><span class="p">,</span> <span class="n">coupling_fn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
         <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">value_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;value_coupling_children&quot;</span><span class="p">],</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"value_coupling_children"</span><span class="p">],</span>
         <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">coupling_fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># linear coupling</span>
@@ -996,14 +933,14 @@ window.runMermaid = runMermaid;</script>
             <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># non-linear coupling</span>
             <span class="n">coupling_fn_prime</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="n">value_coupling</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">)(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"mean"</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
             <span class="p">)</span>
-            <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;value_prediction_error&quot;</span>
+            <span class="n">value_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">"temp"</span><span class="p">][</span>
+                <span class="s2">"value_prediction_error"</span>
             <span class="p">]</span>
             <span class="n">coupling_fn_second</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">value_coupling</span>
-                <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+                <span class="o">*</span> <span class="n">grad</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"mean"</span><span class="p">])</span>
                 <span class="o">*</span> <span class="n">value_prediction_error</span>
             <span class="p">)</span>
 
@@ -1015,7 +952,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">pwpe</span> <span class="o">+=</span> <span class="p">(</span>
             <span class="n">effective_child_precision</span>
             <span class="o">*</span> <span class="p">(</span><span class="n">coupling_fn_prime</span> <span class="o">-</span> <span class="n">coupling_fn_second</span><span class="p">)</span>
-            <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+            <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">value_child_idx</span><span class="p">][</span><span class="s2">"observed"</span><span class="p">]</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">pwpe</span>
@@ -1027,21 +964,21 @@ window.runMermaid = runMermaid;</script>
     <span class="n">volatility_child_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the standard HGF volatility-coupling precision increment.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute the standard HGF volatility-coupling precision increment.</span>
 
 <span class="sd">    With :math:`\gamma` the effective precision computed at the prediction step and</span>
-<span class="sd">    :math:`\Delta` the child&#39;s volatility prediction error, the increment is</span>
+<span class="sd">    :math:`\Delta` the child's volatility prediction error, the increment is</span>
 <span class="sd">    :math:`\tfrac12 (\kappa \gamma)^2 + (\kappa \gamma)^2 \Delta - \tfrac12 \kappa^2</span>
 <span class="sd">    \gamma \Delta`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># volatility weigthed precision for the volatility child (γ)</span>
-    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-        <span class="s2">&quot;effective_precision&quot;</span>
+    <span class="n">effective_precision</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"temp"</span><span class="p">][</span>
+        <span class="s2">"effective_precision"</span>
     <span class="p">]</span>
 
     <span class="c1"># retrieve the volatility prediction error</span>
-    <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span>
-        <span class="s2">&quot;volatility_prediction_error&quot;</span>
+    <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"temp"</span><span class="p">][</span>
+        <span class="s2">"volatility_prediction_error"</span>
     <span class="p">]</span>
 
     <span class="c1"># cancel the prediction error if the child value was not observed</span>
@@ -1052,7 +989,7 @@ window.runMermaid = runMermaid;</script>
         <span class="o">*</span> <span class="n">volatility_coupling</span><span class="o">**</span><span class="mi">2</span>
         <span class="o">*</span> <span class="n">effective_precision</span>
         <span class="o">*</span> <span class="n">volatility_prediction_error</span>
-    <span class="p">)</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"observed"</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_volatility_coupling_pwpe</span><span class="p">(</span>
@@ -1061,17 +998,17 @@ window.runMermaid = runMermaid;</script>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">increment_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">Array</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Precision-weighted prediction error from volatility-coupled children.</span>
+<span class="w">    </span><span class="sd">"""Precision-weighted prediction error from volatility-coupled children.</span>
 
 <span class="sd">    Sums ``increment_fn`` (standard or enhanced-HGF) over the volatility children.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">if</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pwpe</span>
 
     <span class="k">for</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
         <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_children</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_children&quot;</span><span class="p">],</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"volatility_coupling_children"</span><span class="p">],</span>
     <span class="p">):</span>
         <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">increment_fn</span><span class="p">(</span>
             <span class="n">attributes</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">volatility_child_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span>
@@ -1081,7 +1018,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_finalize_precision</span><span class="p">(</span><span class="n">expected_precision</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">pwpe</span><span class="p">:</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add the precision-weighted prediction error and clamp to a positive value.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Add the precision-weighted prediction error and clamp to a positive value."""</span>
     <span class="n">posterior_precision</span> <span class="o">=</span> <span class="n">expected_precision</span> <span class="o">+</span> <span class="n">pwpe</span>
     <span class="c1"># ensure the new precision is greater than 0</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">posterior_precision</span> <span class="o">&gt;</span> <span class="mf">1e-128</span><span class="p">,</span> <span class="n">posterior_precision</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
@@ -1089,13 +1026,13 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="posterior_update_precision_continuous_node">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the precision of a state node using the volatility prediction errors.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Update the precision of a state node using the volatility prediction errors.</span>
 
 <span class="sd">    #. Precision update from value coupling.</span>
 
@@ -1119,8 +1056,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    .. math::</span>
 
 <span class="sd">            \pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}</span>
-<span class="sd">            \hat{\pi}_j^{(k)} * (\kappa_j^2 * g&#39;_{j,b}(\mu_b^(k-1))^2 -</span>
-<span class="sd">            g&#39;&#39;_{j,b}(\mu_b^(k-1))*\delta_j)</span>
+<span class="sd">            \hat{\pi}_j^{(k)} * (\kappa_j^2 * g'_{j,b}(\mu_b^(k-1))^2 -</span>
+<span class="sd">            g''_{j,b}(\mu_b^(k-1))*\delta_j)</span>
 
 <span class="sd">    #. Precision update from volatility coupling.</span>
 
@@ -1182,7 +1119,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       Mathys, C. (2026). The generalized hierarchical Gaussian filter.</span>
 <span class="sd">       doi:10.7554/elife.110174.1</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># ----------------------------------------------------------------------------------</span>
     <span class="c1"># Decide which update to use depending on the presence of observed value in the</span>
     <span class="c1"># children nodes. If no values were observed, the precision should increase</span>
@@ -1200,9 +1137,9 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="precision_update">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute new precision in the case of observed values.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute new precision in the case of observed values.</span>
 
 <span class="sd">    Applies the canonical value- and volatility-coupling posterior-precision updates</span>
 <span class="sd">    (eq. 50 of [1]_), augmented by the *relaxed* posterior-step (smoothing) correction</span>
@@ -1215,8 +1152,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        \frac{\hat{\pi}_a \, \pi_y}{\hat{\pi}_a + \pi_y}, \qquad</span>
 <span class="sd">        \pi_y = \pi_a - \tilde{\pi}_a,</span>
 
-<span class="sd">    where :math:`\hat{\pi}_a` is the child&#39;s *conditional* predicted precision</span>
-<span class="sd">    (stored as ``child.temp[&quot;conditional_expected_precision&quot;]``) and</span>
+<span class="sd">    where :math:`\hat{\pi}_a` is the child's *conditional* predicted precision</span>
+<span class="sd">    (stored as ``child.temp["conditional_expected_precision"]``) and</span>
 <span class="sd">    :math:`\tilde{\pi}_a` its *marginal* predicted precision</span>
 <span class="sd">    (``child.expected_precision``). The Schur complement uses the conditional;</span>
 <span class="sd">    substituting the marginal would double-count parent uncertainty. Non-Gaussian</span>
@@ -1244,22 +1181,22 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &amp;</span>
 <span class="sd">       Mathys, C. (2026). The generalized hierarchical Gaussian filter.</span>
 <span class="sd">       doi:10.7554/elife.110174.1</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_smoothing_child_precision</span><span class="p">)</span>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_standard_volatility_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="precision_update_missing_values">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_missing_values.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_missing_values">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_missing_values</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute new precision in the case of missing observations.</span>
+<span class="w">    </span><span class="sd">"""Compute new precision in the case of missing observations.</span>
 
 <span class="sd">    When no value or volatility child reports an observation at the current step,</span>
 <span class="sd">    the node simply ages its precision by one step of its random walk: there are no</span>
@@ -1282,31 +1219,31 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The new posterior precision in the case of missing values in all child</span>
 <span class="sd">        nodes. The new precision decreases proportionally to the time elapsed,</span>
 <span class="sd">        accounting for the influence of volatility parents.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># List the node&#39;s volatility parents</span>
+<span class="sd">    """</span>
+    <span class="c1"># List the node's volatility parents</span>
     <span class="n">volatility_parents_idxs</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]</span><span class="o">.</span><span class="n">volatility_parents</span>
 
     <span class="c1"># Get the tonic volatility from the node</span>
-    <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
+    <span class="n">total_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"tonic_volatility"</span><span class="p">]</span>
 
     <span class="c1"># Look at the (optional) volatility parents and add their value to the tonic</span>
     <span class="c1"># volatility to get the total volatility</span>
     <span class="k">if</span> <span class="n">volatility_parents_idxs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">volatility_parents_idx</span><span class="p">,</span> <span class="n">volatility_coupling</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="n">volatility_parents_idxs</span><span class="p">,</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;volatility_coupling_parents&quot;</span><span class="p">],</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"volatility_coupling_parents"</span><span class="p">],</span>
         <span class="p">):</span>
             <span class="n">total_volatility</span> <span class="o">+=</span> <span class="p">(</span>
-                <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_parents_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+                <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_parents_idx</span><span class="p">][</span><span class="s2">"mean"</span><span class="p">]</span>
             <span class="p">)</span>
 
     <span class="c1"># compute the new predicted_volatility from the total volatility</span>
-    <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
+    <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"time_step"</span><span class="p">]</span>
     <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">total_volatility</span><span class="p">)</span>
 
     <span class="c1"># Estimate the new precision for the continuous state node</span>
     <span class="n">posterior_precision_missing_values</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
+        <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"precision"</span><span class="p">])</span> <span class="o">+</span> <span class="n">predicted_volatility</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">posterior_precision_missing_values</span></div>
@@ -1315,9 +1252,9 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="precision_update_mean_field">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_mean_field">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_mean_field</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute new precision in the case of observed values.</span>
+<span class="w">    </span><span class="sd">"""Compute new precision in the case of observed values.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1337,26 +1274,26 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The new posterior precision when at least one of the children has</span>
 <span class="sd">        observed a new value. We then use the regular HGF update for volatility</span>
 <span class="sd">        coupling.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_mean_field_child_precision</span>
     <span class="p">)</span>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_standard_volatility_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="posterior_update_precision_continuous_node_mean_field">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_mean_field">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span>
     <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Update the precision of a state node using the volatility prediction errors.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Update the precision of a state node using the volatility prediction errors.</span>
 
 <span class="sd">    #. Precision update from value coupling.</span>
 
@@ -1380,8 +1317,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    .. math::</span>
 
 <span class="sd">            \pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}</span>
-<span class="sd">            \hat{\pi}_j^{(k)} * (\kappa_j^2 * g&#39;_{j,b}(\mu_b^(k-1))^2 -</span>
-<span class="sd">            g&#39;&#39;_{j,b}(\mu_b^(k-1))*\delta_j)</span>
+<span class="sd">            \hat{\pi}_j^{(k)} * (\kappa_j^2 * g'_{j,b}(\mu_b^(k-1))^2 -</span>
+<span class="sd">            g''_{j,b}(\mu_b^(k-1))*\delta_j)</span>
 
 <span class="sd">    #. Precision update from volatility coupling.</span>
 
@@ -1448,7 +1385,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">       Mathys, C. (2026). The generalized Hierarchical Gaussian Filter. eLife Sciences</span>
 <span class="sd">       Publications, Ltd. https://doi.org/10.7554/elife.110174.1</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
         <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_mean_field</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
@@ -1464,13 +1401,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">volatility_child_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Enhanced-HGF &quot;safe&quot; volatility-coupling precision increment.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Enhanced-HGF "safe" volatility-coupling precision increment.</span>
 
 <span class="sd">    Implements the volatility-coupling precision update of the enhanced HGF (Mathys</span>
-<span class="sd">    et al.; TAPAS ``hgf_volatility_update`` ``&#39;ehgf&#39;`` branch). Two features</span>
+<span class="sd">    et al.; TAPAS ``hgf_volatility_update`` ``'ehgf'`` branch). Two features</span>
 <span class="sd">    distinguish it from the standard increment:</span>
 
-<span class="sd">    1. The effective precision is **recomputed from the parent&#39;s just-updated</span>
+<span class="sd">    1. The effective precision is **recomputed from the parent's just-updated</span>
 <span class="sd">       posterior mean** :math:`\mu_b^{(k)}` (the eHGF updates the mean first), rather</span>
 <span class="sd">       than reusing the prediction-step effective precision evaluated at</span>
 <span class="sd">       :math:`\hat{\mu}_b^{(k)}`.</span>
@@ -1482,17 +1419,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    re-predicted child precision (``expected_precision``),</span>
 <span class="sd">    :math:`\gamma = \nu \hat{\pi}` the ``effective_precision``,</span>
 <span class="sd">    :math:`w = (\nu - \sigma^{(k-1)}) \hat{\pi}` the volatility-error weight and</span>
-<span class="sd">    :math:`\Delta` the child&#39;s ``volatility_prediction_error``, the increment is</span>
+<span class="sd">    :math:`\Delta` the child's ``volatility_prediction_error``, the increment is</span>
 <span class="sd">    :math:`\max(0, \tfrac12 \kappa^2 \gamma (\gamma + w \Delta))`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;time_step&quot;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="n">time_step</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"time_step"</span><span class="p">]</span>
     <span class="c1"># Parent posterior mean (the eHGF performs the mean update first).</span>
-    <span class="n">mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"mean"</span><span class="p">]</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"tonic_volatility"</span><span class="p">]</span>
     <span class="c1"># Child posterior variance at the previous time step (σ = 1 / π).</span>
-    <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;temp&quot;</span><span class="p">][</span><span class="s2">&quot;current_variance&quot;</span><span class="p">]</span>
+    <span class="n">previous_variance</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"temp"</span><span class="p">][</span><span class="s2">"current_variance"</span><span class="p">]</span>
 
-    <span class="c1"># Re-predict the child&#39;s volatility and precision from the parent posterior mean.</span>
+    <span class="c1"># Re-predict the child's volatility and precision from the parent posterior mean.</span>
     <span class="n">predicted_volatility</span> <span class="o">=</span> <span class="n">time_step</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
         <span class="n">volatility_coupling</span> <span class="o">*</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">tonic_volatility</span>
     <span class="p">)</span>
@@ -1502,10 +1439,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">predicted_volatility</span> <span class="o">-</span> <span class="n">previous_variance</span>
     <span class="p">)</span> <span class="o">*</span> <span class="n">expected_precision</span>
     <span class="n">volatility_prediction_error</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;precision&quot;</span><span class="p">]</span>
+        <span class="mf">1.0</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"precision"</span><span class="p">]</span>
         <span class="o">+</span> <span class="p">(</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
-            <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"mean"</span><span class="p">]</span>
+            <span class="o">-</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="o">**</span> <span class="mi">2</span>
     <span class="p">)</span> <span class="o">*</span> <span class="n">expected_precision</span> <span class="o">-</span> <span class="mf">1.0</span>
@@ -1518,14 +1455,14 @@ window.runMermaid = runMermaid;</script>
         <span class="o">*</span> <span class="p">(</span><span class="n">effective_precision</span> <span class="o">+</span> <span class="n">volatility_error_weight</span> <span class="o">*</span> <span class="n">volatility_prediction_error</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="c1"># cancel the contribution if the child value was not observed</span>
-    <span class="k">return</span> <span class="n">increment</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">&quot;observed&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">increment</span> <span class="o">*</span> <span class="n">attributes</span><span class="p">[</span><span class="n">volatility_child_idx</span><span class="p">][</span><span class="s2">"observed"</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="precision_update_ehgf">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_ehgf</span><span class="p">(</span><span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enhanced-HGF precision update for observed values (relaxed value coupling).</span>
+<span class="w">    </span><span class="sd">"""Enhanced-HGF precision update for observed values (relaxed value coupling).</span>
 
 <span class="sd">    The value-coupling contribution is identical to :func:`precision_update` (the</span>
 <span class="sd">    relaxed posterior-step correction); the volatility-coupling contribution uses the</span>
@@ -1546,22 +1483,22 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    posterior_precision :</span>
 <span class="sd">        The new posterior precision.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_smoothing_child_precision</span><span class="p">)</span>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_ehgf_volatility_precision_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="precision_update_ehgf_mean_field">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_ehgf_mean_field">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">precision_update_ehgf_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enhanced-HGF precision update for observed values (mean-field value coupling).</span>
+<span class="w">    </span><span class="sd">"""Enhanced-HGF precision update for observed values (mean-field value coupling).</span>
 
 <span class="sd">    The value-coupling contribution is identical to :func:`precision_update_mean_field`</span>
 <span class="sd">    (no smoothing correction); the volatility-coupling contribution uses the enhanced-</span>
@@ -1582,24 +1519,24 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    posterior_precision :</span>
 <span class="sd">        The new posterior precision.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pwpe</span> <span class="o">=</span> <span class="n">_value_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_mean_field_child_precision</span>
     <span class="p">)</span>
     <span class="n">pwpe</span> <span class="o">+=</span> <span class="n">_volatility_coupling_pwpe</span><span class="p">(</span>
         <span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">_ehgf_volatility_precision_increment</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_finalize_precision</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="n">node_idx</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">],</span> <span class="n">pwpe</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="posterior_update_precision_continuous_node_ehgf">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_ehgf</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the relaxed enhanced-HGF precision or missing-value update.</span>
+<span class="w">    </span><span class="sd">"""Route to the relaxed enhanced-HGF precision or missing-value update.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1616,7 +1553,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    posterior_precision :</span>
 <span class="sd">        The new posterior precision.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
         <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_ehgf</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
@@ -1628,11 +1565,11 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="posterior_update_precision_continuous_node_ehgf_mean_field">
 <a class="viewcode-back" href="../../../../../generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf_mean_field">[docs]</a>
-<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="s2">&quot;node_idx&quot;</span><span class="p">))</span>
+<span class="nd">@partial</span><span class="p">(</span><span class="n">jit</span><span class="p">,</span> <span class="n">static_argnames</span><span class="o">=</span><span class="p">(</span><span class="s2">"edges"</span><span class="p">,</span> <span class="s2">"node_idx"</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">posterior_update_precision_continuous_node_ehgf_mean_field</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route to the enhanced-HGF precision update (mean-field) or the missing path.</span>
+<span class="w">    </span><span class="sd">"""Route to the enhanced-HGF precision update (mean-field) or the missing path.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1649,7 +1586,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    posterior_precision :</span>
 <span class="sd">        The new posterior precision.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">cond</span><span class="p">(</span>
         <span class="n">_has_observations</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">),</span>
         <span class="n">Partial</span><span class="p">(</span><span class="n">precision_update_ehgf_mean_field</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">node_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">),</span>
@@ -1686,8 +1623,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1721,7 +1658,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

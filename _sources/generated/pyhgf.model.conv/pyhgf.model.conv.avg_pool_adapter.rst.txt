@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.avg\_pool\_adapter
+===================================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: avg_pool_adapter

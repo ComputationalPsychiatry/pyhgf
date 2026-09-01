@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorised.volatile.vectorised\_layer\_posterior\_update
+======================================================================
+
+.. currentmodule:: pyhgf.updates.vectorised.volatile
+
+.. autofunction:: vectorised_layer_posterior_update

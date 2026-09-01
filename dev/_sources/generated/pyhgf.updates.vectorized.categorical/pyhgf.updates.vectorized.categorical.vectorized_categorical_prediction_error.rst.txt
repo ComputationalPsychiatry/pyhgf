@@ -1,6 +1,0 @@
-﻿pyhgf.updates.vectorized.categorical.vectorized\_categorical\_prediction\_error
-===============================================================================
-
-.. currentmodule:: pyhgf.updates.vectorized.categorical
-
-.. autofunction:: vectorized_categorical_prediction_error

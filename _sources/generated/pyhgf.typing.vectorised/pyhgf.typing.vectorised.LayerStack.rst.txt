@@ -23,9 +23,10 @@
 
    .. autosummary::
    
+      ~LayerStack.weights_precision_delta
       ~LayerStack.state
       ~LayerStack.params
-      ~LayerStack.weights_in
+      ~LayerStack.weights_mean
       ~LayerStack.coupling_fn
       ~LayerStack.add_constant_input
       ~LayerStack.has_volatility_parent

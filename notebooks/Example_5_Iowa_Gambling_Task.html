@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Modelling win-frequency bias in the Iowa Gambling Task &#8212; pyhgf 0.3.0 documentation</title>
+    <title>Modelling win-frequency bias in the Iowa Gambling Task &#8212; pyhgf 0.3.1 documentation</title>
   
   
   
@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -37,15 +37,15 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=35b888ae" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../_static/documentation_options.js?v=4621528c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -54,7 +54,7 @@
     <script src="../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script type="application/vnd.jupyter.widget-state+json">{"state": {"27dbb0e996c24f6697bc06c6a0ab807b": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "33d2a49ca33f4393951aaa96f6895664": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_27dbb0e996c24f6697bc06c6a0ab807b", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.932       1           1279.92 draws/s      0:00:01    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           1.505       1           1275.06 draws/s      0:00:01    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.932       1           1279.92 draws/s      0:00:01    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           1.505       1           1275.06 draws/s      0:00:01    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}, "11c250d7ccee41ad8daf189a419ee68c": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "4f82cf8f16784a019ab68a6bb65b410e": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_11c250d7ccee41ad8daf189a419ee68c", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.459       7           101.11 draws/s       0:00:19    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.666       7           103.02 draws/s       0:00:19    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.459       7           101.11 draws/s       0:00:19    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.666       7           103.02 draws/s       0:00:19    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"e95609af23d1440c8eb4d04768aecfef": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "73220c8830e14deab0f4d2771e66b951": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_e95609af23d1440c8eb4d04768aecfef", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           1.215       3           759.40 draws/s       0:00:02    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           0.964       3           768.16 draws/s       0:00:02    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           1.215       3           759.40 draws/s       0:00:02    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           0.964       3           768.16 draws/s       0:00:02    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}, "f366d53465c14ed08557a463d22ec825": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "82cdba119eca43eaa0309a1110c9cfff": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_f366d53465c14ed08557a463d22ec825", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           0.615       7           126.11 draws/s       0:00:15    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           0.319       15          122.14 draws/s       0:00:16    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           0.615       7           126.11 draws/s       0:00:15    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           0.319       15          122.14 draws/s       0:00:16    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/Example_5_Iowa_Gambling_Task';</script>
@@ -146,6 +146,9 @@
   
 </a></div>
     
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
   </div>
   
   <div class="col-lg-9 navbar-header-items">
@@ -156,6 +159,13 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="../learn.html">
     Learn
@@ -300,6 +310,13 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="../learn.html">
     Learn
@@ -394,7 +411,8 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
   <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
@@ -415,7 +433,15 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_learning.html">Deep Bayesian predictive coding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Learning in deep predictive coding networks: the theory</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.6-Prospective_configuration.html">Learning in deep networks with prospective configuration</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.7-Deep_networks_implementation.html">Building custom deep network architectures</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.8-Convolutional_networks.html">Convolutional predictive coding networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.9-Transformers.html">Transformer predictive coding networks</a></li>
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
@@ -546,16 +572,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">beliefs_propagation</span>
 
-<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;jax_enable_x64&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>  <span class="c1"># this is required for the softmax</span>
+<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">"jax_enable_x64"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>  <span class="c1"># this is required for the softmax</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"figure.constrained_layout.use"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 </pre></div>
 </div>
 </div>
 </div>
 <section id="simulating-data">
 <h2>Simulating data<a class="headerlink" href="#simulating-data" title="Link to this heading">#</a></h2>
-<p>Below we simulate the data for the four decks according to the reward dynamics described in <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id19" title="Woo-Young Ahn, Georgi Vasilev, Sung-Ha Lee, Jerome R Busemeyer, John K Kruschke, Antoine Bechara, and Jasmin Vassileva. Decision-making in stimulant and opiate addicts in protracted abstinence: evidence from computational modeling with pure users. Front. Psychol., 5:849, August 2014.">Ahn <em>et al.</em>, 2014</a>]</span>.</p>
+<p>Below we simulate the data for the four decks according to the reward dynamics described in <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id27" title="Woo-Young Ahn, Georgi Vasilev, Sung-Ha Lee, Jerome R Busemeyer, John K Kruschke, Antoine Bechara, and Jasmin Vassileva. Decision-making in stimulant and opiate addicts in protracted abstinence: evidence from computational modeling with pure users. Front. Psychol., 5:849, August 2014.">Ahn <em>et al.</em>, 2014</a>]</span>.</p>
 <section id="deck-1">
 <h3>Deck 1<a class="headerlink" href="#deck-1" title="Link to this heading">#</a></h3>
 <p>Deck 1, one of the disadvantageous decks, has a baseline reward of 100 but has a high likelihood (50%) of also containing a punishment of -150 to -350. This means that in 50% of the cases, the total reward will be 100 and in the other 50% of cases it will be 100 - (150 to 350).</p>
@@ -571,12 +597,12 @@
     <span class="p">[</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="o">-</span><span class="mi">175</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">225</span><span class="p">,</span> <span class="o">-</span><span class="mi">250</span><span class="p">,</span> <span class="o">-</span><span class="mi">275</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">325</span><span class="p">,</span> <span class="o">-</span><span class="mi">350</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">num_trials</span>
 <span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 1: </span><span class="si">{</span><span class="n">deck1</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 1: </span><span class="si">{</span><span class="n">deck1</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 1: -2425.0
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 1: -4125.0
 </pre></div>
 </div>
 </div>
@@ -593,12 +619,12 @@
 <span class="c1"># 50% chance to add something between -150 and -350</span>
 <span class="n">deck2</span> <span class="o">+=</span> <span class="o">-</span><span class="mf">1250.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 2: </span><span class="si">{</span><span class="n">deck2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 2: </span><span class="si">{</span><span class="n">deck2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 2: -5000.0
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 2: -2500.0
 </pre></div>
 </div>
 </div>
@@ -617,12 +643,12 @@
     <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 3: </span><span class="si">{</span><span class="n">deck3</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 3: </span><span class="si">{</span><span class="n">deck3</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 3: 2250.0
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 3: 2375.0
 </pre></div>
 </div>
 </div>
@@ -639,12 +665,12 @@
 <span class="c1"># 50% chance to add something between -150 and -350</span>
 <span class="n">deck4</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">250</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 4: </span><span class="si">{</span><span class="n">deck4</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 4: </span><span class="si">{</span><span class="n">deck4</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 4: 3250.0
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Total value of Deck 4: 2000.0
 </pre></div>
 </div>
 </div>
@@ -654,7 +680,7 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Turning the above code into a single function</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_decks</span><span class="p">(</span><span class="n">num_trials</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a dataset.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Simulate a dataset."""</span>
     <span class="c1"># Set a random seed for reproducibility</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>
 
@@ -666,7 +692,7 @@
         <span class="p">[</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="o">-</span><span class="mi">175</span><span class="p">,</span> <span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="o">-</span><span class="mi">225</span><span class="p">,</span> <span class="o">-</span><span class="mi">250</span><span class="p">,</span> <span class="o">-</span><span class="mi">275</span><span class="p">,</span> <span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">325</span><span class="p">,</span> <span class="o">-</span><span class="mi">350</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">num_trials</span>
     <span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 1: </span><span class="si">{</span><span class="n">deck1</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 1: </span><span class="si">{</span><span class="n">deck1</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># set default value to 100.0</span>
     <span class="n">deck2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
@@ -674,7 +700,7 @@
     <span class="c1"># 10% chance to add -1250</span>
     <span class="n">deck2</span> <span class="o">+=</span> <span class="o">-</span><span class="mf">1250.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 2: </span><span class="si">{</span><span class="n">deck2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 2: </span><span class="si">{</span><span class="n">deck2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># set default value to 100.0</span>
     <span class="n">deck3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">50.0</span>
@@ -684,7 +710,7 @@
         <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">num_trials</span>
     <span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 3: </span><span class="si">{</span><span class="n">deck3</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 3: </span><span class="si">{</span><span class="n">deck3</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># set default value to 100.0</span>
     <span class="n">deck4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">*</span> <span class="mf">50.0</span>
@@ -692,7 +718,7 @@
     <span class="c1"># 50% chance to add -250</span>
     <span class="n">deck4</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">250</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">num_trials</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total value of Deck 4: </span><span class="si">{</span><span class="n">deck4</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total value of Deck 4: </span><span class="si">{</span><span class="n">deck4</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">decks</span> <span class="o">=</span> <span class="p">[</span><span class="n">deck1</span><span class="p">,</span> <span class="n">deck2</span><span class="p">,</span> <span class="n">deck3</span><span class="p">,</span> <span class="n">deck4</span><span class="p">]</span>
 
@@ -722,7 +748,7 @@ Total value of Deck 4: 1750.0
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize the decks</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the decks</span>
 
 <span class="c1"># the HGF trials start at 1 - 0 being the prior</span>
 <span class="n">trials</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_trials</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
@@ -732,22 +758,22 @@ Total value of Deck 4: 1750.0
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
     <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
     <span class="p">[</span><span class="n">decks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
-    <span class="p">[</span><span class="s2">&quot;Deck1&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck2&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck3&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck4&quot;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"Deck1"</span><span class="p">,</span> <span class="s2">"Deck2"</span><span class="p">,</span> <span class="s2">"Deck3"</span><span class="p">,</span> <span class="s2">"Deck4"</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"firebrick"</span><span class="p">,</span> <span class="s2">"firebrick"</span><span class="p">,</span> <span class="s2">"seagreen"</span><span class="p">,</span> <span class="s2">"seagreen"</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="n">trials</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span>
+        <span class="n">trials</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"outcomes"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"k"</span>
     <span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trials</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trials</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
 <span class="c1"># Save the plot</span>
-<span class="c1"># plt.savefig(&quot;plots/decks.png&quot;)</span>
+<span class="c1"># plt.savefig("plots/decks.png")</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/ad20ff64c5931564e00f07e15d50ce08f8bf7d28e76195bc43dd7f6535a6ff81.png" src="../_images/ad20ff64c5931564e00f07e15d50ce08f8bf7d28e76195bc43dd7f6535a6ff81.png" />
+<img alt="../_images/84240ffa58b8a3e475019f22a99fccf5401b575912698980c1b1382c4d61863d.png" src="../_images/84240ffa58b8a3e475019f22a99fccf5401b575912698980c1b1382c4d61863d.png" />
 </div>
 </div>
 </section>
@@ -765,14 +791,14 @@ Total value of Deck 4: 1750.0
 <span class="c1"># Continuous-state nodes that receive inputs</span>
 <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
-    <span class="p">)</span>  <span class="c1"># replaces &quot;continuous-input&quot;</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+    <span class="p">)</span>  <span class="c1"># replaces "continuous-input"</span>
 <span class="p">)</span>
 
 <span class="c1"># Value parents for each of the 4 lower nodes</span>
 <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
     <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
         <span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
@@ -783,12 +809,12 @@ Total value of Deck 4: 1750.0
 <span class="c1"># Value parents for the value parents (stacked hierarchy)</span>
 <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
     <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="p">)</span>
 
-<span class="c1"># Visualize network structure</span>
+<span class="c1"># Visualise network structure</span>
 <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -802,7 +828,7 @@ Total value of Deck 4: 1750.0
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make our input vector - time x branches</span>
 <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">decks</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
-<span class="c1"># Let&#39;s feed our hgf the data</span>
+<span class="c1"># Let's feed our hgf the data</span>
 <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -811,37 +837,37 @@ Total value of Deck 4: 1750.0
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">autoconnection_strength</span> <span class="o">==</span> <span class="mf">0.1</span><span class="p">:</span>
-    <span class="n">autoconnection_strength_str</span> <span class="o">=</span> <span class="s2">&quot;low&quot;</span>
+    <span class="n">autoconnection_strength_str</span> <span class="o">=</span> <span class="s2">"low"</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="n">autoconnection_strength_str</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span>
+    <span class="n">autoconnection_strength_str</span> <span class="o">=</span> <span class="s2">"high"</span>
 
 <span class="n">_</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">"orange"</span><span class="p">)</span>
 <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
+<span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">plot_nodes</span><span class="p">(</span><span class="n">node_idxs</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">axs</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">"orange"</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
     <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
     <span class="p">[</span><span class="n">decks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
-    <span class="p">[</span><span class="s2">&quot;Deck 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 3&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 4&quot;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"Deck 1"</span><span class="p">,</span> <span class="s2">"Deck 2"</span><span class="p">,</span> <span class="s2">"Deck 3"</span><span class="p">,</span> <span class="s2">"Deck 4"</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"firebrick"</span><span class="p">,</span> <span class="s2">"firebrick"</span><span class="p">,</span> <span class="s2">"seagreen"</span><span class="p">,</span> <span class="s2">"seagreen"</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="n">trials</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span>
+        <span class="n">trials</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"outcomes"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"grey"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"k"</span>
     <span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;lower right&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"lower right"</span><span class="p">)</span>
 <span class="c1"># Save the plot</span>
 <span class="c1"># Add a title to the plot</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HGF for each deck with Lambda at </span><span class="si">{</span><span class="n">autoconnection_strength</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="c1"># plt.savefig(f&quot;plots/hgf_nodes_{autoconnection_strength_str}_lambda.png&quot;)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">"HGF for each deck with Lambda at </span><span class="si">{</span><span class="n">autoconnection_strength</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># plt.savefig(f"plots/hgf_nodes_{autoconnection_strength_str}_lambda.png")</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/f599efa670f82740db732faa146161dffa67223db2a119d44add1b0c25b6aeb8.png" src="../_images/f599efa670f82740db732faa146161dffa67223db2a119d44add1b0c25b6aeb8.png" />
+<img alt="../_images/d539d16df1536492280b97f083e22541a411dd1baefe27c9e60138039a48d5b3.png" src="../_images/d539d16df1536492280b97f083e22541a411dd1baefe27c9e60138039a48d5b3.png" />
 </div>
 </div>
 </section>
@@ -857,7 +883,7 @@ Total value of Deck 4: 1750.0
 <li><p><strong>Extracting Beliefs</strong>:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">means</span></code>: Expected values for each deck.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">precisions</span></code>: Confidence in these beliefs, derived from the model’s precision.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">precisions</span></code>: The precision of these beliefs, i.e. their inverse variance.</p></li>
 </ul>
 </li>
 <li><p><strong>Decision Probabilities</strong>:</p>
@@ -882,10 +908,10 @@ Total value of Deck 4: 1750.0
 <span class="n">beta_1</span><span class="p">,</span> <span class="n">beta_2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
 
 <span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-    <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="p">])</span>
 <span class="n">precisions</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-    <span class="mi">1</span> <span class="o">/</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="mi">1</span> <span class="o">/</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="p">])</span>
 
@@ -922,17 +948,17 @@ Total value of Deck 4: 1750.0
 </ul>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-initialize the model</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-initialise the model</span>
 <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
-    <span class="p">)</span>  <span class="c1"># replaces &quot;continuous-input&quot;</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+    <span class="p">)</span>  <span class="c1"># replaces "continuous-input"</span>
 <span class="p">)</span>
 
 <span class="c1"># Add value parents with relevant autoconnection strength</span>
 <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
     <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
         <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
@@ -943,7 +969,7 @@ Total value of Deck 4: 1750.0
 <span class="c1"># Add value parents to the value parents</span>
 <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
     <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="p">)</span>
@@ -983,23 +1009,23 @@ Total value of Deck 4: 1750.0
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
     <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
     <span class="p">[</span><span class="n">decks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">decks</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
-    <span class="p">[</span><span class="s2">&quot;Deck 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 3&quot;</span><span class="p">,</span> <span class="s2">&quot;Deck 4&quot;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">,</span> <span class="s2">&quot;seagreen&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"Deck 1"</span><span class="p">,</span> <span class="s2">"Deck 2"</span><span class="p">,</span> <span class="s2">"Deck 3"</span><span class="p">,</span> <span class="s2">"Deck 4"</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"firebrick"</span><span class="p">,</span> <span class="s2">"firebrick"</span><span class="p">,</span> <span class="s2">"seagreen"</span><span class="p">,</span> <span class="s2">"seagreen"</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="n">trials</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;outcomes&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;k&quot;</span>
+        <span class="n">trials</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"outcomes"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"k"</span>
     <span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;lower right&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"lower right"</span><span class="p">)</span>
 <span class="c1"># Save the plot</span>
 <span class="c1"># Add a title to the plot</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;HGF for each deck with unobserved values masked&quot;</span><span class="p">)</span>
-<span class="c1"># plt.savefig(f&quot;plots/hgf_nodes_masked.png&quot;)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">"HGF for each deck with unobserved values masked"</span><span class="p">)</span>
+<span class="c1"># plt.savefig(f"plots/hgf_nodes_masked.png")</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/350530c9403c79001f166364e9de3bb3742ad949b6860d8de99f720905fe2b1e.png" src="../_images/350530c9403c79001f166364e9de3bb3742ad949b6860d8de99f720905fe2b1e.png" />
+<img alt="../_images/50b89c7dcd6066b79bbc99c5460c29664db97ac4a8620d52815cabd64ec10dc2.png" src="../_images/50b89c7dcd6066b79bbc99c5460c29664db97ac4a8620d52815cabd64ec10dc2.png" />
 </div>
 </div>
 </section>
@@ -1028,15 +1054,15 @@ Total value of Deck 4: 1750.0
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-initialize the model</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Re-initialise the model</span>
 <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
 <span class="p">)</span>
 
 <span class="c1"># Value parents for each of the 4 lower nodes</span>
 <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
     <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
         <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
@@ -1047,7 +1073,7 @@ Total value of Deck 4: 1750.0
 <span class="c1"># Parents of those parents (indices 4..7)</span>
 <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
     <span class="n">two_levels_continuous_hgf</span> <span class="o">=</span> <span class="n">two_levels_continuous_hgf</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
         <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span>
         <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="p">)</span>
@@ -1088,15 +1114,15 @@ Total value of Deck 4: 1750.0
     <span class="n">time_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># the expectations about the outcomes</span>
-    <span class="n">mean_1</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-    <span class="n">mean_2</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-    <span class="n">mean_3</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
-    <span class="n">mean_4</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span>
+    <span class="n">mean_1</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span>
+    <span class="n">mean_2</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span>
+    <span class="n">mean_3</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span>
+    <span class="n">mean_4</span> <span class="o">=</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span>
 
-    <span class="n">var_1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
-    <span class="n">var_2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
-    <span class="n">var_3</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
-    <span class="n">var_4</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span>
+    <span class="n">var_1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
+    <span class="n">var_2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
+    <span class="n">var_3</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">6</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
+    <span class="n">var_4</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span>
 
     <span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">mean_1</span><span class="p">,</span> <span class="n">mean_2</span><span class="p">,</span> <span class="n">mean_3</span><span class="p">,</span> <span class="n">mean_4</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">variances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">var_1</span><span class="p">,</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">var_3</span><span class="p">,</span> <span class="n">var_4</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -1131,54 +1157,54 @@ Total value of Deck 4: 1750.0
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">means_list</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;deck1&quot;</span><span class="p">,</span> <span class="s2">&quot;deck2&quot;</span><span class="p">,</span> <span class="s2">&quot;deck3&quot;</span><span class="p">,</span> <span class="s2">&quot;deck4&quot;</span><span class="p">])</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">means_list</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"deck1"</span><span class="p">,</span> <span class="s2">"deck2"</span><span class="p">,</span> <span class="s2">"deck3"</span><span class="p">,</span> <span class="s2">"deck4"</span><span class="p">])</span>
 
 <span class="c1"># Use a seaborn color palette with softer colors</span>
-<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">&quot;pastel&quot;</span><span class="p">)</span>
+<span class="n">palette</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="s2">"pastel"</span><span class="p">)</span>
 
 <span class="c1"># Create a plot</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
 <span class="c1"># Plot each deck as a separate line without markers and using the pastel palette</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck1&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 1&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck2&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 2&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck3&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 3&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;deck4&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Deck 4&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"deck1"</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Deck 1"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"deck2"</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Deck 2"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"deck3"</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Deck 3"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"deck4"</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Deck 4"</span><span class="p">)</span>
 
 <span class="c1"># Add titles and labels</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Expected Values Across Trials for Each Deck&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Trial&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Expected Value&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Expected Values Across Trials for Each Deck"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"Trial"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Expected Value"</span><span class="p">)</span>
 
 <span class="c1"># Show legend</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Deck&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Deck"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
 
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/7c140b4c1ccf49b8d56f54035e3a5d41f3bb01063e07d135a3c2f0411509ab02.png" src="../_images/7c140b4c1ccf49b8d56f54035e3a5d41f3bb01063e07d135a3c2f0411509ab02.png" />
+<img alt="../_images/861f4d5c1c630d803f41637e30208099124609d32075e3c9bcb121727c16590e.png" src="../_images/861f4d5c1c630d803f41637e30208099124609d32075e3c9bcb121727c16590e.png" />
 </div>
 </div>
 <section id="bayesian-inference">
 <h3>Bayesian inference<a class="headerlink" href="#bayesian-inference" title="Link to this heading">#</a></h3>
-<p>Using the responses simulated above, we can try to recover the value of the autoconnection strength. First, we start by creating the response function we want to optimize.</p>
+<p>Using the responses simulated above, we can try to recover the value of the autoconnection strength. First, we start by creating the response function we want to optimise.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">response_function</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">,</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">decisions</span><span class="p">,</span> <span class="n">observed</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log-probability of the decisions given the autoconnection strength.</span>
+<span class="w">    </span><span class="sd">"""Log-probability of the decisions given the autoconnection strength.</span>
 
 <span class="sd">    A fresh network is built on every call so the function stays pure (it does</span>
 <span class="sd">    not mutate any shared state). This is what allows it to be wrapped with</span>
 <span class="sd">    ``wrap_jax`` and differentiated during sampling.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># build the network, setting the autoconnection strength on the first level</span>
-    <span class="n">network</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">network</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
         <span class="n">network</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
             <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
             <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
             <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
@@ -1187,22 +1213,22 @@ Total value of Deck 4: 1750.0
         <span class="p">)</span>
     <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
         <span class="n">network</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span>
         <span class="p">)</span>
 
     <span class="c1"># run the model forward</span>
     <span class="n">network</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">)</span>
 
     <span class="n">expected_means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
     <span class="p">)</span>
     <span class="n">expected_variances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-        <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span>
+        <span class="p">[</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)],</span>
         <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">x</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">expected_means</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">expected_variances</span>  <span class="c1"># (T, 4)</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># normalize per row (per trial)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># normalise per row (per trial)</span>
     <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (T, 4)</span>
 
     <span class="n">surprises</span> <span class="o">=</span> <span class="n">binary_surprise</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">decisions</span><span class="p">,</span> <span class="n">expected_mean</span><span class="o">=</span><span class="n">decision_probabilities</span><span class="p">)</span>
@@ -1220,11 +1246,11 @@ Total value of Deck 4: 1750.0
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@wrap_jax</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">hgf_logp</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;PyTensor-compatible log-probability wrapping the JAX response function.</span>
+<span class="w">    </span><span class="sd">"""PyTensor-compatible log-probability wrapping the JAX response function.</span>
 
 <span class="sd">    ``wrap_jax`` turns the JAX function into a PyTensor ``Op`` that provides both</span>
 <span class="sd">    the forward evaluation and its gradient, so no custom ``Op`` is needed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">response_function</span><span class="p">(</span>
         <span class="n">autoconnection_strength</span><span class="p">,</span>
         <span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">,</span>
@@ -1239,12 +1265,12 @@ Total value of Deck 4: 1750.0
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
-    <span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span><span class="s2">"autoconnection_strength"</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span>
-        <span class="s2">&quot;hgf&quot;</span><span class="p">,</span>
+        <span class="s2">"hgf"</span><span class="p">,</span>
         <span class="n">hgf_logp</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="n">idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
+    <span class="n">idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"jax"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1258,8 +1284,8 @@ Total value of Deck 4: 1750.0
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>NUTS: [autoconnection_strength]
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "33d2a49ca33f4393951aaa96f6895664"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 3 seconds.
+<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "73220c8830e14deab0f4d2771e66b951"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 5 seconds.
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>We recommend running at least 4 chains for robust computation of convergence diagnostics
@@ -1274,7 +1300,7 @@ Total value of Deck 4: 1750.0
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/ee43c05489af49d9c8687795133c1e61cf1181991c4e4994c29f6b9837290be8.png" src="../_images/ee43c05489af49d9c8687795133c1e61cf1181991c4e4994c29f6b9837290be8.png" />
+<img alt="../_images/a51a066ed8ea1d88cf57f24f01a83a3b6a1dee6fcc8451763cd645afa582ee11.png" src="../_images/a51a066ed8ea1d88cf57f24f01a83a3b6a1dee6fcc8451763cd645afa582ee11.png" />
 </div>
 </div>
 </section>
@@ -1282,7 +1308,7 @@ Total value of Deck 4: 1750.0
 <h3>Parameter recovery<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulate one dataset per &quot;participant&quot;, each generated with a different *true*</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulate one dataset per "participant", each generated with a different *true*</span>
 <span class="c1"># autoconnection strength, and store every set of decisions in a single array.</span>
 <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
 <span class="n">autoconnection_strengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
@@ -1292,11 +1318,11 @@ Total value of Deck 4: 1750.0
 <span class="k">for</span> <span class="n">true_autoconnection_strength</span> <span class="ow">in</span> <span class="n">autoconnection_strengths</span><span class="p">:</span>
     <span class="c1"># build a network with the true autoconnection strength to simulate data</span>
     <span class="n">simulation_network</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">n_nodes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span>
     <span class="p">)</span>
     <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
         <span class="n">simulation_network</span> <span class="o">=</span> <span class="n">simulation_network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span>
             <span class="n">value_children</span><span class="o">=</span><span class="n">child</span><span class="p">,</span>
             <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span>
             <span class="n">precision</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
@@ -1305,7 +1331,7 @@ Total value of Deck 4: 1750.0
         <span class="p">)</span>
     <span class="k">for</span> <span class="n">parent_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
         <span class="n">simulation_network</span> <span class="o">=</span> <span class="n">simulation_network</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span>
-            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;continuous-state&quot;</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"continuous-state"</span><span class="p">,</span> <span class="n">value_children</span><span class="o">=</span><span class="n">parent_idx</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1.0</span>
         <span class="p">)</span>
 
     <span class="n">simulation_network</span> <span class="o">=</span> <span class="n">simulation_network</span><span class="o">.</span><span class="n">create_belief_propagation_fn</span><span class="p">()</span>
@@ -1314,10 +1340,10 @@ Total value of Deck 4: 1750.0
     <span class="n">participant_responses</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="n">means</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="n">attributes</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
         <span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
         <span class="n">variances</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span>
-            <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s2">&quot;expected_precision&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="mi">1</span> <span class="o">/</span> <span class="n">attributes</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s2">"expected_precision"</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
         <span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
 
         <span class="n">decision_probabilities</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">beta_1</span> <span class="o">*</span> <span class="n">means</span> <span class="o">+</span> <span class="n">beta_2</span> <span class="o">*</span> <span class="n">variances</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -1348,7 +1374,7 @@ Total value of Deck 4: 1750.0
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">participant_logp</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">observed</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log-probability of a single participant&#39;s decisions.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Log-probability of a single participant's decisions."""</span>
     <span class="k">return</span> <span class="n">response_function</span><span class="p">(</span>
         <span class="n">autoconnection_strength</span><span class="p">,</span>
         <span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">,</span>
@@ -1359,20 +1385,20 @@ Total value of Deck 4: 1750.0
 
 <span class="nd">@wrap_jax</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">recovery_logp</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Total log-probability across all participants, evaluated in parallel.</span>
+<span class="w">    </span><span class="sd">"""Total log-probability across all participants, evaluated in parallel.</span>
 
 <span class="sd">    ``vmap`` applies :func:`participant_logp` to every participant at once, mapping</span>
 <span class="sd">    over the per-participant autoconnection strengths and decisions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">vmap</span><span class="p">(</span><span class="n">participant_logp</span><span class="p">)(</span><span class="n">autoconnection_strength</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">observed</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
 
 <span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">recovery_model</span><span class="p">:</span>
     <span class="n">autoconnection_strength</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="p">(</span>
-        <span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">n_participants</span>
+        <span class="s2">"autoconnection_strength"</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">n_participants</span>
     <span class="p">)</span>
-    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s2">&quot;hgf&quot;</span><span class="p">,</span> <span class="n">recovery_logp</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">))</span>
-    <span class="n">recovery_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
+    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s2">"hgf"</span><span class="p">,</span> <span class="n">recovery_logp</span><span class="p">(</span><span class="n">autoconnection_strength</span><span class="p">))</span>
+    <span class="n">recovery_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"jax"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1386,8 +1412,8 @@ Total value of Deck 4: 1750.0
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>NUTS: [autoconnection_strength]
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "4f82cf8f16784a019ab68a6bb65b410e"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 39 seconds.
+<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "82cdba119eca43eaa0309a1110c9cfff"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 32 seconds.
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>We recommend running at least 4 chains for robust computation of convergence diagnostics
@@ -1401,12 +1427,12 @@ Total value of Deck 4: 1750.0
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 
 <span class="c1"># ideal-recovery diagonal</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">"grey"</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="n">inferred_parameters</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">recovery_idata</span>
-    <span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;autoconnection_strength&quot;</span><span class="p">]</span>
-    <span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">"autoconnection_strength"</span><span class="p">]</span>
+    <span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="s2">"chain"</span><span class="p">,</span> <span class="s2">"draw"</span><span class="p">))</span>
     <span class="o">.</span><span class="n">values</span>
 <span class="p">)</span>
 
@@ -1415,7 +1441,7 @@ Total value of Deck 4: 1750.0
     <span class="n">y</span><span class="o">=</span><span class="n">inferred_parameters</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s2">"Reds"</span><span class="p">,</span>
     <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
@@ -1423,20 +1449,20 @@ Total value of Deck 4: 1750.0
     <span class="n">inferred_parameters</span><span class="p">,</span>
     <span class="n">s</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
     <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
-    <span class="n">edgecolors</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>
-    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#c44e52&quot;</span><span class="p">,</span>
+    <span class="n">edgecolors</span><span class="o">=</span><span class="s2">"k"</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="s2">"#c44e52"</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Simulated parameter&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Infered parameter&quot;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Autoconnection strength&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Simulated parameter"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Infered parameter"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Autoconnection strength"</span><span class="p">)</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/23fa0e57baf4aaab8cca5d007ada0afe7dcf16219fc90f45019a8717ae5e32b2.png" src="../_images/23fa0e57baf4aaab8cca5d007ada0afe7dcf16219fc90f45019a8717ae5e32b2.png" />
+<img alt="../_images/e9932f456cfde0734e38720250f826573777a1f591dfc523706d8de25b958631.png" src="../_images/e9932f456cfde0734e38720250f826573777a1f591dfc523706d8de25b958631.png" />
 </div>
 </div>
 </section>
@@ -1452,25 +1478,25 @@ Total value of Deck 4: 1750.0
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 16 Jun 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
 
 Python implementation: CPython
-Python version       : 3.12.13
-IPython version      : 9.14.1
+Python version       : 3.12.14
+IPython version      : 9.16.1
 
-pyhgf : 0.3.0
-jax   : 0.4.31
-jaxlib: 0.4.31
+pyhgf : 0.3.1
+jax   : 0.6.2
+jaxlib: 0.6.2
 
-arviz     : 1.2.0
-jax       : 0.4.31
-matplotlib: 3.11.0
+arviz     : 1.3.0
+jax       : 0.6.2
+matplotlib: 3.11.1
 numpy     : 2.4.6
-pandas    : 3.0.3
-pyhgf     : 0.3.0
-pymc      : 6.0.1
-pytensor  : 3.0.7
-scipy     : 1.17.1
+pandas    : 3.0.5
+pyhgf     : 0.3.1
+pymc      : 6.3.1
+pytensor  : 3.3.0
+scipy     : 1.18.1
 seaborn   : 0.13.2
 
 Watermark: 2.6.0
@@ -1575,8 +1601,8 @@ Watermark: 2.6.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1610,7 +1636,7 @@ Watermark: 2.6.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

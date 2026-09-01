@@ -1,0 +1,291 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "52e9cbee",
+   "metadata": {},
+   "source": [
+    "(deep_networks_implementation)=\n",
+    "# Building custom deep network architectures\n",
+    "\n",
+    "This page is the implementation companion to the\n",
+    "[theory page](0.5-Deep_networks_theory.ipynb), which derives the weight\n",
+    "updates, and the [prospective configuration tutorial](0.6-Prospective_configuration.ipynb), which walks\n",
+    "through a worked classification example. It explains how PyHGF can assemble hybrid models\n",
+    "that mix predictive coding networks with custom connectors to replicate wide range of network architectures.\n",
+    "\n",
+    "We go through the core `DeepNetwork` class, the mixed-pipeline machinery\n",
+    "that builds larger models, and the general recipe for porting any architecture.\n",
+    "\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f3d46120",
+   "metadata": {},
+   "source": [
+    "## The main idea\n",
+    "\n",
+    "PyHGF networks are made of nodes that hold *beliefs* and require a specific belief propagation dynamic to learn (which is the core of PyHGF's machinery). The `DeepNetwork` class supports the creation of fully connected multi-layer perceptrons (MLPs). But for users interested in alternative network architectures, this would require adapting this (and adjusting the propagation machinery), which is possible but rapidly limits the expressivity and modularity of the toolbox.\n",
+    "\n",
+    "Instead, here, we show how we can keep the main MLP structures in predictive coding form while plugging other components to connect them through fixed transformations. Many neural architectures are indeed merely adding complex transformations around fully connected layers where weight learning is taking place, and because we have these structures available in other frameworks like Equinox or PyTorch, it is rather straightforward to borrow these connectors and plug them into mixed predictive coding architectures.\n",
+    "\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "82aee8f3-b5b5-4c83-aacc-a3f0e7f3037d",
+   "metadata": {},
+   "source": [
+    "## A `DeepNetwork`: layers of beliefs\n",
+    "\n",
+    "### How to build one??\n",
+    "\n",
+    "```python\n",
+    "import jax\n",
+    "import optax\n",
+    "from pyhgf.model import DeepNetwork\n",
+    "\n",
+    "net = (\n",
+    "    DeepNetwork()\n",
+    "    .add_layer(size=8)                              # output layer (bottom)\n",
+    "    .add_layer(size=16, coupling_fn=jax.nn.gelu)    # hidden layer\n",
+    "    .add_layer(size=8)                              # input layer (top)\n",
+    ")\n",
+    "```\n",
+    "\n",
+    "Three conventions to know:\n",
+    "\n",
+    "- **Input on top, output at the bottom.** Layer 0 is the *output* layer\n",
+    "  (where observations are clamped); the last layer added is the *input*\n",
+    "  layer (where predictors are clamped). Predictions flow downward.\n",
+    "- **The nonlinearity belongs to the predicting layer.** A layer's\n",
+    "  `coupling_fn` is applied when that layer predicts the one *below* it. The\n",
+    "  network above therefore computes `W1 @ gelu(W2 @ x + b2) + b1` — exactly a\n",
+    "  standard `Linear → GELU → Linear` block, with the hidden nodes holding the\n",
+    "  pre-activation values.\n",
+    "- **Biases are constant nodes.** Each layer can carry an always-on constant\n",
+    "  node (`add_constant_input=True`, the default); the bias lives as an extra\n",
+    "  column of the weight matrix, added linearly."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "65d670fe-215b-472b-853c-6c08446b9cc5",
+   "metadata": {},
+   "source": [
+    "### The three learning steps\n",
+    "\n",
+    "One learning step is three passes over the layers:\n",
+    "\n",
+    "1. **Prediction** — clamp the input `x` on the top layer; every layer\n",
+    "   predicts the one below it, top to bottom.\n",
+    "2. **Update** — clamp the observation `y` on the bottom layer; compute\n",
+    "   prediction errors and correct every belief, bottom to top, each\n",
+    "   correction weighted by confidence.\n",
+    "3. **Learning** — nudge every weight from its local prediction error\n",
+    "   and the activity on its other side."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "aae716cf",
+   "metadata": {},
+   "source": [
+    "### Two ways to feed data\n",
+    "\n",
+    "**As a time series** (`net.fit(x, y, ...)`): samples are scanned one at a\n",
+    "time, and the confidences *carry over* — each prediction reads the previous\n",
+    "posterior precision, so the network's confidence adapts as the series\n",
+    "unfolds. This is PyHGF's native filtering mode.\n",
+    "\n",
+    "**As a batch** (`net.batch_update(x, y, ...)`): samples are exchangeable\n",
+    "(e.g. token positions), so every sample is processed from the *same* state —\n",
+    "same weights, same confidences — in parallel, and the per-sample updates are\n",
+    "averaged and applied once. The batch counts as a single observation, which\n",
+    "makes the step invariant to repeating the batch.\n",
+    "\n",
+    "```python\n",
+    "net.batch_update(\n",
+    "    x_batch, y_batch,                # (batch, n_features) each\n",
+    "    optimiser=optax.adam(3e-3),      # any optax optimiser, applied locally\n",
+    "    update_precisions=False,         # True: confidences also adapt per batch\n",
+    ")\n",
+    "net.input_errors                     # (batch, n_input) — error at the input,\n",
+    "                                     # for whatever sits behind this network\n",
+    "```\n",
+    "\n",
+    "Two flags control what learns: `optimiser=None` freezes the weights;\n",
+    "`update_precisions=False` freezes the confidences (used whenever an exact\n",
+    "comparison against backpropagation is wanted). `net.input_errors` is the\n",
+    "confidence-weighted prediction error routed back to the input layer.\n",
+    "\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e92d33a5-0f93-4401-81ca-9288de9211b9",
+   "metadata": {},
+   "source": [
+    "## Mixed pipelines: assembling bigger models\n",
+    "\n",
+    "![A mixed pipeline: PyHGF networks wrapped as learning parts, interleaved with frozen parts, with the forward pass above and the descent error returning below.](https://computationalpsychiatry.github.io/pyhgf/_images/deep_networks_implementation.svg)\n",
+    "\n",
+    "*Learning parts (`DeepNetworkAdapter` around a `DeepNetwork`) alternate with frozen parts, which hold no weights. Forward, each part computes its output from its input; backward, it receives the descent error at its output, learns from it if it has weights, and hands the error at its input to the part behind it — for a `DeepNetworkAdapter`, the negated `net.input_errors`.*\n",
+    "\n",
+    "Large models are built from **parts** (`pyhgf.model.hybrid`). The part\n",
+    "objects *declare* the model — which slots learn, which are frozen, how they\n",
+    "nest — and every part contributes the same two things to the compiled\n",
+    "training step:\n",
+    "\n",
+    "- forward: compute my output from my input;\n",
+    "- backward: receive the error at my output, learn from it if I have\n",
+    "  weights, and hand the error at my *input* to the part behind me.\n",
+    "\n",
+    "The arrays passed between parts are *descent errors* — the gradient of the\n",
+    "loss with respect to that signal, the same object a backprop library would\n",
+    "hand around.\n",
+    "\n",
+    "Two kinds of parts exist:\n",
+    "\n",
+    "- **Learning parts** — `DeepNetworkAdapter(net, optimiser=...)` wraps a\n",
+    "  `DeepNetwork`. It is the single place where the pipeline's error\n",
+    "  convention meets PyHGF's (observed-minus-predicted) convention: the error\n",
+    "  enters by clamping `output − error` as the observation the network should\n",
+    "  have produced, and leaves as the negated `input_errors`.\n",
+    "- **Frozen parts** — fixed calculations with nothing to learn, which only\n",
+    "  *translate* errors using a hand-derived formula (no autodiff)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "11581e4c",
+   "metadata": {},
+   "source": [
+    "### Running a pipeline: one compiled program per step\n",
+    "\n",
+    "The part objects only declare the model; `FusedPipeline`\n",
+    "(`pyhgf.model.fused`) runs it. Each training step — the forward walk, the\n",
+    "error at the output, every part's local learning step — is staged into a\n",
+    "**single compiled program**, so nothing crosses a compilation boundary\n",
+    "inside a step and the per-sample forward states are already in hand when\n",
+    "each part's update needs them. Usage:\n",
+    "\n",
+    "```python\n",
+    "from pyhgf.model import FusedPipeline\n",
+    "\n",
+    "pipeline = FusedPipeline(model, lambda probs, ids: probs - jax.nn.one_hot(ids, vocab))\n",
+    "for x, y in batches:\n",
+    "    output, input_error = pipeline.step(x, y)   # one compiled call\n",
+    "probs = pipeline.predict(x_eval)                # forward pass only\n",
+    "pipeline.merge()   # write the trained state back onto the part objects\n",
+    "```\n",
+    "\n",
+    "The `error_fn` given at construction forms the descent error at the output\n",
+    "*inside* the program; when omitted,\n",
+    "it defaults to `output - target`, the squared-error gradient. `predict`\n",
+    "runs the forward pass alone, for evaluation and generation. The part\n",
+    "objects do not advance while the executor runs; `merge()` writes the held\n",
+    "state back onto them for inspection or checkpointing.\n",
+    "\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c9254dc2-30c7-4a29-8f07-1c502070fd35",
+   "metadata": {},
+   "source": [
+    "## The general recipe to port any architecture\n",
+    "\n",
+    "Any feed-forward deep learning model can map onto a mixed pipeline with two\n",
+    "rules.\n",
+    "\n",
+    "1. **Every weight matrix becomes a small PyHGF network.** The\n",
+    "`pyhgf.model.transplant` converters build them directly from trained (or\n",
+    "freshly initialised) Equinox layers, weights carried across so both sides\n",
+    "compute the identical function.\n",
+    "\n",
+    "2. **Weightless calculations become frozen parts.** Activations,\n",
+    "normalisations, reshapes: each needs only a hand-derived backward formula,\n",
+    "verified in tests against autodiff of the same forward."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "680bb62c-dc44-4f61-ae4c-7c4ddd28c6cc",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "source": [
+    "# System configuration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "520faa19-f8a6-4aef-af8c-77cf4e8fbb7f",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Last updated: Tue, 01 Sep 2026\n",
+      "\n",
+      "Python implementation: CPython\n",
+      "Python version       : 3.12.13\n",
+      "IPython version      : 9.16.1\n",
+      "\n",
+      "pyhgf : 0.3.0\n",
+      "jax   : 0.6.2\n",
+      "jaxlib: 0.6.2\n",
+      "\n",
+      "platform: 1.0.8\n",
+      "\n",
+      "Watermark: 2.6.0\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "%load_ext watermark\n",
+    "%watermark -n -u -v -iv -w -p pyhgf,jax,jaxlib"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.13"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

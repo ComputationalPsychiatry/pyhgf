@@ -1,6 +1,0 @@
-﻿pyhgf.model.add\_binary\_state
-==============================
-
-.. currentmodule:: pyhgf.model
-
-.. autofunction:: add_binary_state

@@ -15,6 +15,7 @@
    
       ~LayerParams.__init__
       ~LayerParams.create
+      ~LayerParams.create_continuous
    
    
 
@@ -24,9 +25,9 @@
 
    .. autosummary::
    
+      ~LayerParams.autoconnection_strength
+      ~LayerParams.tonic_drift
       ~LayerParams.tonic_volatility
       ~LayerParams.tonic_volatility_vol
-      ~LayerParams.volatility_coupling
-      ~LayerParams.autoconnection_strength_vol
    
    

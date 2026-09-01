@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>The binary Hierarchical Gaussian Filter &#8212; pyhgf 0.3.0 documentation</title>
+    <title>The binary Hierarchical Gaussian Filter &#8212; pyhgf 0.3.1 documentation</title>
   
   
   
@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -37,15 +37,15 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=35b888ae" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../_static/documentation_options.js?v=4621528c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -56,7 +56,7 @@
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
-    <script type="application/vnd.jupyter.widget-state+json">{"state": {"e5be440990f64f58ae1089773a75d508": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "7fc87b1f82834e76bed5beb89f95f3f6": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_e5be440990f64f58ae1089773a75d508", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.791       3           1377.75 draws/s      0:00:01    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.834       3           1355.21 draws/s      0:00:01    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.791       3           1377.75 draws/s      0:00:01    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.834       3           1355.21 draws/s      0:00:01    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}, "fd89529fd28a4147ab44e43a2a75fb8c": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "de9177d1a1c34e73b83f217b9adbdf6d": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_fd89529fd28a4147ab44e43a2a75fb8c", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        47          0.576       7           253.83 draws/s       0:00:07    0:00:00   \n  \u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        75          0.542       1           281.57 draws/s       0:00:07    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        47          0.576       7           253.83 draws/s       0:00:07    0:00:00   \n  <span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        75          0.542       1           281.57 draws/s       0:00:07    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"6079ec0d8aad46a9b9c4c5e54a91640f": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "53addf125c3c478eb3d0ee84337d9cad": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_6079ec0d8aad46a9b9c4c5e54a91640f", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           2.249       3           771.73 draws/s       0:00:02    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           1.252       1           806.19 draws/s       0:00:02    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           2.249       3           771.73 draws/s       0:00:02    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           1.252       1           806.19 draws/s       0:00:02    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}, "1eea19545a5c40089e979a946e65d706": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "83fc5e9356ae466aa3b8548ea6502fe9": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_1eea19545a5c40089e979a946e65d706", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        53          0.680       7           203.51 draws/s       0:00:09    0:00:00   \n  \u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        47          0.366       3           209.31 draws/s       0:00:09    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        53          0.680       7           203.51 draws/s       0:00:09    0:00:00   \n  <span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        47          0.366       3           209.31 draws/s       0:00:09    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/1.1-Binary_HGF';</script>
@@ -65,7 +65,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="The categorical Hierarchical Gaussian Filter" href="1.2-Categorical_HGF.html" />
-    <link rel="prev" title="Deep Bayesian predictive coding" href="0.5-Deep_learning.html" />
+    <link rel="prev" title="Transformer predictive coding networks" href="0.9-Transformers.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -148,6 +148,9 @@
   
 </a></div>
     
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
   </div>
   
   <div class="col-lg-9 navbar-header-items">
@@ -158,6 +161,13 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="../learn.html">
     Learn
@@ -302,6 +312,13 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="../learn.html">
     Learn
@@ -396,7 +413,8 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
   <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
@@ -417,7 +435,15 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_learning.html">Deep Bayesian predictive coding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Learning in deep predictive coding networks: the theory</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.6-Prospective_configuration.html">Learning in deep networks with prospective configuration</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.7-Deep_networks_implementation.html">Building custom deep network architectures</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.8-Convolutional_networks.html">Convolutional predictive coding networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.9-Transformers.html">Transformer predictive coding networks</a></li>
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
@@ -533,7 +559,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
-<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+<span class="k">if</span> <span class="s2">"google.colab"</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
         <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
 </pre></div>
@@ -558,7 +584,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.response</span><span class="w"> </span><span class="kn">import</span> <span class="n">first_level_binary_surprise</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"figure.constrained_layout.use"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 </pre></div>
 </div>
 </div>
@@ -577,7 +603,7 @@
 <p>We import a time series of binary observations from the decision task described in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id7" title="Sandra Iglesias, Lars Kasper, Samuel J. Harrison, Robert Manka, Christoph Mathys, and Klaas E. Stephan. Cholinergic and dopaminergic effects on prediction error and uncertainty responses during sensory associative learning. NeuroImage, 226:117590, February 2021. URL: https://doi.org/10.1016/j.neuroimage.2020.117590, doi:10.1016/j.neuroimage.2020.117590.">Iglesias <em>et al.</em>, 2021</a>]</span>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="s2">"binary"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -589,19 +615,19 @@
 <h3>The two-level binary Hierarchical Gaussian Filter<a class="headerlink" href="#the-two-level-binary-hierarchical-gaussian-filter" title="Link to this heading">#</a></h3>
 <section id="create-the-model">
 <h4>Create the model<a class="headerlink" href="#create-the-model" title="Link to this heading">#</a></h4>
-<p>The node structure corresponding to the two-level and three-level Hierarchical Gaussian Filters are automatically generated from <code class="docutils literal notranslate"><span class="pre">model_type</span></code> and <code class="docutils literal notranslate"><span class="pre">n_levels</span></code> using the node parameters provided in the dictionaries. Here we are not performing any optimization so those parameters are fixed to reasonable values.</p>
+<p>The node structure corresponding to the two-level and three-level Hierarchical Gaussian Filters are automatically generated from <code class="docutils literal notranslate"><span class="pre">model_type</span></code> and <code class="docutils literal notranslate"><span class="pre">n_levels</span></code> using the node parameters provided in the dictionaries. Here we are not performing any optimisation so those parameters are fixed to reasonable values.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The response function used is the binary surprise at each time point (<a class="reference internal" href="../generated/pyhgf.response/pyhgf.response.first_level_binary_surprise.html#pyhgf.response.first_level_binary_surprise" title="pyhgf.response.first_level_binary_surprise"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.response.first_level_binary_surprise()</span></code></a>). In other words, at each time point the model tries to update its hierarchy to minimize the discrepancy between the expected and real next binary observation. See also <a class="reference internal" href="2-Using_custom_response_functions.html#custom-response-functions"><span class="std std-ref">this tutorial</span></a> to see how to create a custom response function.</p>
+<p>The response function used is the binary surprise at each time point (<a class="reference internal" href="../generated/pyhgf.response/pyhgf.response.first_level_binary_surprise.html#pyhgf.response.first_level_binary_surprise" title="pyhgf.response.first_level_binary_surprise"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.response.first_level_binary_surprise()</span></code></a>). In other words, at each time point the model tries to update its hierarchy to minimise the discrepancy between the expected and real next binary observation. See also <a class="reference internal" href="2-Using_custom_response_functions.html#custom-response-functions"><span class="std std-ref">this tutorial</span></a> to see how to create a custom response function.</p>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_hgf</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
-<p>This function creates an instance of an HGF model automatically parametrized for a two-level binary structure, so we do not have to worry about creating the node structure ourselves. This class also embed function to add new observations and plot results that we are going to use below. We can have a look at the node structure itself using the <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.plots.plot_network()</span></code> function. This function will automatically dray the provided node structure using <a class="reference external" href="https://github.com/xflr6/graphviz">Graphviz</a>.</p>
+<p>This function creates an instance of an HGF model automatically parametrised for a two-level binary structure, so we do not have to worry about creating the node structure ourselves. This class also embed function to add new observations and plot results that we are going to use below. We can have a look at the node structure itself using the <code class="xref py py-func docutils literal notranslate"><span class="pre">pyhgf.plots.plot_network()</span></code> function. This function will automatically dray the provided node structure using <a class="reference external" href="https://github.com/xflr6/graphviz">Graphviz</a>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">two_levels_hgf</span><span class="o">.</span><span class="n">plot_network</span><span class="p">()</span>
@@ -634,7 +660,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/6bd9765000e77f2099be4f18d2fe4e95719f5edd1accd4b7df225b7327313257.png" src="../_images/6bd9765000e77f2099be4f18d2fe4e95719f5edd1accd4b7df225b7327313257.png" />
+<img alt="../_images/010d74c2d9ff99b1c028dccc5ca7c35b0e83f0083d88fb4e25fd56606086fece.png" src="../_images/010d74c2d9ff99b1c028dccc5ca7c35b0e83f0083d88fb4e25fd56606086fece.png" />
 </div>
 </div>
 </section>
@@ -648,7 +674,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(207.24, dtype=float32)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(207.24002, dtype=float32)
 </pre></div>
 </div>
 </div>
@@ -670,7 +696,7 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">three_levels_hgf</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="p">)</span>
@@ -709,7 +735,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/76b416319c2b8f1fd72f8e9927798bb6b11154af4a439c1f4f2bc6e0f01c17c4.png" src="../_images/76b416319c2b8f1fd72f8e9927798bb6b11154af4a439c1f4f2bc6e0f01c17c4.png" />
+<img alt="../_images/c0e93b797080d503d9c6a22a77994650037bc053cc44cada6e1ed4758a26b576.png" src="../_images/c0e93b797080d503d9c6a22a77994650037bc053cc44cada6e1ed4758a26b576.png" />
 </div>
 </div>
 <div class="cell tag_hide-cell docutils container">
@@ -759,11 +785,11 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@wrap_jax</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">two_level_logp</span><span class="p">(</span><span class="n">tonic_volatility</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-probability of the two-level HGF.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute the log-probability of the two-level HGF."""</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="o">-</span><span class="p">(</span>
             <span class="n">Network</span><span class="p">()</span>
-            <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span>
             <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
@@ -782,24 +808,24 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">two_levels_binary_hgf</span><span class="p">:</span>
     <span class="c1"># Set a prior over the evolution rate at the second level.</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"tonic_volatility"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
 
-    <span class="c1"># Call the pre-parametrized HGF distribution here.</span>
+    <span class="c1"># Call the pre-parametrised HGF distribution here.</span>
     <span class="c1"># All parameters are set to their default value, except omega_2.</span>
-    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s2">&quot;hgf_loglike&quot;</span><span class="p">,</span> <span class="n">two_level_logp</span><span class="p">(</span><span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">))</span>
+    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s2">"hgf_loglike"</span><span class="p">,</span> <span class="n">two_level_logp</span><span class="p">(</span><span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/runner/work/pyhgf/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/jax/ops.py:403: UserWarning: Explicitly requested dtype float64 requested in ones is not available, and will be truncated to dtype float32. To enable more dtypes, set the jax_enable_x64 configuration option or the JAX_ENABLE_X64 shell environment variable. See https://github.com/google/jax#current-gotchas for more.
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/runner/work/pyhgf/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/jax/ops.py:403: UserWarning: Explicitly requested dtype float64 requested in ones is not available, and will be truncated to dtype float32. To enable more dtypes, set the jax_enable_x64 configuration option or the JAX_ENABLE_X64 shell environment variable. See https://github.com/jax-ml/jax#current-gotchas for more.
   jnp.ones(shape, dtype=variable.type.dtype)
 </pre></div>
 </div>
 </div>
 </div>
 </section>
-<section id="visualizing-the-model">
-<h4>Visualizing the model<a class="headerlink" href="#visualizing-the-model" title="Link to this heading">#</a></h4>
+<section id="visualising-the-model">
+<h4>Visualising the model<a class="headerlink" href="#visualising-the-model" title="Link to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span><span class="o">.</span><span class="n">model_to_graphviz</span><span class="p">(</span><span class="n">two_levels_binary_hgf</span><span class="p">)</span>
@@ -816,7 +842,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">two_levels_binary_hgf</span><span class="p">:</span>
-    <span class="n">two_level_hgf_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
+    <span class="n">two_level_hgf_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"jax"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -830,8 +856,8 @@
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>NUTS: [tonic_volatility]
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "7fc87b1f82834e76bed5beb89f95f3f6"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 3 seconds.
+<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "53addf125c3c478eb3d0ee84337d9cad"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 5 seconds.
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>We recommend running at least 4 chains for robust computation of convergence diagnostics
@@ -841,23 +867,23 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">az</span><span class="o">.</span><span class="n">plot_trace_dist</span><span class="p">(</span><span class="n">two_level_hgf_idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]);</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">az</span><span class="o">.</span><span class="n">plot_trace_dist</span><span class="p">(</span><span class="n">two_level_hgf_idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"tonic_volatility"</span><span class="p">]);</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/0298570fc05477db35ae8404cb130b80801298cf51473f6bb7f1d417a2cb63e7.png" src="../_images/0298570fc05477db35ae8404cb130b80801298cf51473f6bb7f1d417a2cb63e7.png" />
+<img alt="../_images/02f6eb1ee5f333a2ec3b7bd2bced26b0404f7b8876423e6cd548594894978473.png" src="../_images/02f6eb1ee5f333a2ec3b7bd2bced26b0404f7b8876423e6cd548594894978473.png" />
 </div>
 </div>
 </section>
 </section>
 <section id="using-the-learned-parameters">
 <h3>Using the learned parameters<a class="headerlink" href="#using-the-learned-parameters" title="Link to this heading">#</a></h3>
-<p>To visualize how the model would behave under the most probable values, we average the <span class="math notranslate nohighlight">\(\omega_{2}\)</span> samples and use this value in a new model.</p>
+<p>To visualise how the model would behave under the most probable values, we average the <span class="math notranslate nohighlight">\(\omega_{2}\)</span> samples and use this value in a new model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">two_level_hgf_idata</span><span class="p">)[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span>
-    <span class="s2">&quot;tonic_volatility&quot;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">two_level_hgf_idata</span><span class="p">)[</span><span class="s2">"mean"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span>
+    <span class="s2">"tonic_volatility"</span>
 <span class="p">]</span>
 </pre></div>
 </div>
@@ -867,7 +893,7 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgf_mcmc</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">)</span>
 <span class="p">)</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
 </pre></div>
@@ -881,7 +907,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/ebd9de20ca5948c04a7929808f4095bc85b1ab34646d45c957ad606656ea3abd.png" src="../_images/ebd9de20ca5948c04a7929808f4095bc85b1ab34646d45c957ad606656ea3abd.png" />
+<img alt="../_images/746ced9b5f5c27e570dfb2ad27511851a3afcac93ed2e84c126794b9df3bc3d8.png" src="../_images/746ced9b5f5c27e570dfb2ad27511851a3afcac93ed2e84c126794b9df3bc3d8.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -891,7 +917,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(203.0772428, dtype=float64)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(203.0759506, dtype=float64)
 </pre></div>
 </div>
 </div>
@@ -905,11 +931,11 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@wrap_jax</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">three_level_logp</span><span class="p">(</span><span class="n">tonic_volatility</span><span class="p">,</span> <span class="n">tonic_volatility_2</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-probability of the three-level HGF.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute the log-probability of the three-level HGF."""</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="o">-</span><span class="p">(</span>
             <span class="n">Network</span><span class="p">()</span>
-            <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span>
             <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">)</span>
             <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility_2</span><span class="p">)</span>
         <span class="p">)</span>
@@ -925,13 +951,13 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">three_levels_binary_hgf</span><span class="p">:</span>
     <span class="c1"># Set a prior over the evolution rate at the second and third levels.</span>
-    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
-    <span class="n">tonic_volatility_2</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;tonic_volatility_2&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"tonic_volatility"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="n">tonic_volatility_2</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"tonic_volatility_2"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
 
-    <span class="c1"># Call the pre-parametrized HGF distribution here.</span>
+    <span class="c1"># Call the pre-parametrised HGF distribution here.</span>
     <span class="c1"># All parameters are set to their default value except omega_2 and omega_3.</span>
     <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span>
-        <span class="s2">&quot;hgf_loglike&quot;</span><span class="p">,</span>
+        <span class="s2">"hgf_loglike"</span><span class="p">,</span>
         <span class="n">three_level_logp</span><span class="p">(</span>
             <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">,</span> <span class="n">tonic_volatility_2</span><span class="o">=</span><span class="n">tonic_volatility_2</span>
         <span class="p">),</span>
@@ -942,7 +968,7 @@
 </div>
 </section>
 <section id="id8">
-<h4>Visualizing the model<a class="headerlink" href="#id8" title="Link to this heading">#</a></h4>
+<h4>Visualising the model<a class="headerlink" href="#id8" title="Link to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span><span class="o">.</span><span class="n">model_to_graphviz</span><span class="p">(</span><span class="n">three_levels_binary_hgf</span><span class="p">)</span>
@@ -950,7 +976,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/70ef4ccd37b1cc029bf6b9522b0d5a755bbb111592b0e9572d2d34caf4ef694a.svg" src="../_images/70ef4ccd37b1cc029bf6b9522b0d5a755bbb111592b0e9572d2d34caf4ef694a.svg" />
+<img alt="../_images/92e9aa125fa01eb74e49d720cb7380b227cd887e2877a00f9636f8851ec09d2d.svg" src="../_images/92e9aa125fa01eb74e49d720cb7380b227cd887e2877a00f9636f8851ec09d2d.svg" />
 </div>
 </div>
 </section>
@@ -959,7 +985,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">three_levels_binary_hgf</span><span class="p">:</span>
-    <span class="n">three_level_hgf_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
+    <span class="n">three_level_hgf_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"jax"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -973,17 +999,14 @@
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>NUTS: [tonic_volatility, tonic_volatility_2]
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "de9177d1a1c34e73b83f217b9adbdf6d"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 15 seconds.
+<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "83fc5e9356ae466aa3b8548ea6502fe9"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 19 seconds.
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>There were 122 divergences after tuning. Increase `target_accept` or reparameterize.
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>There were 100 divergences after tuning. Increase `target_accept` or reparameterize.
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>We recommend running at least 4 chains for robust computation of convergence diagnostics
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The rhat statistic is larger than 1.01 for some parameters. This indicates problems during sampling. See https://arxiv.org/abs/1903.08008 for details
 </pre></div>
 </div>
 </div>
@@ -995,21 +1018,21 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/d82d31c747f888bf6e74aeb1957c728bc8984683ca2feff78dcd8f3e1b443af8.png" src="../_images/d82d31c747f888bf6e74aeb1957c728bc8984683ca2feff78dcd8f3e1b443af8.png" />
+<img alt="../_images/e1a91dd96118b4d9eb37b735a0a3244ecb74bbff35e9a258b7a51b5fb836018a.png" src="../_images/e1a91dd96118b4d9eb37b735a0a3244ecb74bbff35e9a258b7a51b5fb836018a.png" />
 </div>
 </div>
 </section>
 </section>
 <section id="id10">
 <h3>Using the learned parameters<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
-<p>To visualize how the model would behave under the most probable values, we average the <span class="math notranslate nohighlight">\(\omega_{2}\)</span> samples and use this value in a new model.</p>
+<p>To visualise how the model would behave under the most probable values, we average the <span class="math notranslate nohighlight">\(\omega_{2}\)</span> samples and use this value in a new model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">three_level_hgf_idata</span><span class="p">)[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span>
-    <span class="s2">&quot;tonic_volatility&quot;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tonic_volatility</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">three_level_hgf_idata</span><span class="p">)[</span><span class="s2">"mean"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span>
+    <span class="s2">"tonic_volatility"</span>
 <span class="p">]</span>
-<span class="n">tonic_volatility_2</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">three_level_hgf_idata</span><span class="p">)[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span>
-    <span class="s2">&quot;tonic_volatility_2&quot;</span>
+<span class="n">tonic_volatility_2</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">three_level_hgf_idata</span><span class="p">)[</span><span class="s2">"mean"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span>
+    <span class="s2">"tonic_volatility_2"</span>
 <span class="p">]</span>
 </pre></div>
 </div>
@@ -1019,7 +1042,7 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hgf_mcmc</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">Network</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">)</span>
     <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">volatility_children</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility_2</span><span class="p">)</span>
 <span class="p">)</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
@@ -1034,7 +1057,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/890c86f4b0b3898775452fb13bc117cf50743c98b2ea5b5d62804c8514614be6.png" src="../_images/890c86f4b0b3898775452fb13bc117cf50743c98b2ea5b5d62804c8514614be6.png" />
+<img alt="../_images/e04c19700174cf53ef64860898bd28222684bebe4a290d4fdf43992755fcce18.png" src="../_images/e04c19700174cf53ef64860898bd28222684bebe4a290d4fdf43992755fcce18.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -1044,7 +1067,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(203.10903148, dtype=float64)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(203.10892436, dtype=float64)
 </pre></div>
 </div>
 </div>
@@ -1062,23 +1085,23 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 16 Jun 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
 
 Python implementation: CPython
-Python version       : 3.12.13
-IPython version      : 9.14.1
+Python version       : 3.12.14
+IPython version      : 9.16.1
 
-pyhgf : 0.3.0
-jax   : 0.4.31
-jaxlib: 0.4.31
+pyhgf : 0.3.1
+jax   : 0.6.2
+jaxlib: 0.6.2
 
-IPython   : 9.14.1
-arviz     : 1.2.0
-jax       : 0.4.31
-matplotlib: 3.11.0
-pyhgf     : 0.3.0
-pymc      : 6.0.1
-pytensor  : 3.0.7
+IPython   : 9.16.1
+arviz     : 1.3.0
+jax       : 0.6.2
+matplotlib: 3.11.1
+pyhgf     : 0.3.1
+pymc      : 6.3.1
+pytensor  : 3.3.0
 
 Watermark: 2.6.0
 </pre></div>
@@ -1098,12 +1121,12 @@ Watermark: 2.6.0
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="0.5-Deep_learning.html"
+       href="0.9-Transformers.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Deep Bayesian predictive coding</p>
+        <p class="prev-next-title">Transformer predictive coding networks</p>
       </div>
     </a>
     <a class="right-next"
@@ -1156,14 +1179,14 @@ Watermark: 2.6.0
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#learning-parameters-with-mcmc-sampling">Learning parameters with MCMC sampling</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#two-level-model">Two-level model</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-the-model">Creating the model</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-the-model">Visualizing the model</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#visualising-the-model">Visualising the model</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#sampling">Sampling</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-the-learned-parameters">Using the learned parameters</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#three-level-model">Three-level model</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Creating the model</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Visualizing the model</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Visualising the model</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Sampling</a></li>
 </ul>
 </li>
@@ -1199,8 +1222,8 @@ Watermark: 2.6.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1234,7 +1257,7 @@ Watermark: 2.6.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

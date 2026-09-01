@@ -1,6 +1,0 @@
-﻿pyhgf.updates.vectorized.volatile.vectorized\_root\_prediction
-==============================================================
-
-.. currentmodule:: pyhgf.updates.vectorized.volatile
-
-.. autofunction:: vectorized_root_prediction

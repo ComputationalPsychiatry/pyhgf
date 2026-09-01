@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction.continuous.predict\_precision
-======================================================
-
-.. currentmodule:: pyhgf.updates.prediction.continuous
-
-.. autofunction:: predict_precision

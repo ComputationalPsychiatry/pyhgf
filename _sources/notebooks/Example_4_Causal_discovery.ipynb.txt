@@ -345,7 +345,7 @@
    },
    "outputs": [],
    "source": [
-    "# Initialize two independent HGFs for X1 and X2\n",
+    "# Initialise two independent HGFs for X1 and X2\n",
     "non_causal_hgf = (\n",
     "    Network()\n",
     "    .add_nodes(precision=100.0)\n",
@@ -695,7 +695,7 @@
     "tags": []
    },
    "source": [
-    "It is therefore possible to recover the implied parameter $\\hat{\\alpha}$ over the range $[0, 1]$ by returning $\\alpha \\in [0.0, \\hat{\\alpha}_1, \\hat{\\alpha}_2, 1.0]$ such that $0.0 <= \\alpha <= 1.0$ that minimize the precision-weigthed prediction error $f(\\alpha)$."
+    "It is therefore possible to recover the implied parameter $\\hat{\\alpha}$ over the range $[0, 1]$ by returning $\\alpha \\in [0.0, \\hat{\\alpha}_1, \\hat{\\alpha}_2, 1.0]$ such that $0.0 <= \\alpha <= 1.0$ that minimise the precision-weigthed prediction error $f(\\alpha)$."
    ]
   },
   {
@@ -739,7 +739,7 @@
    },
    "outputs": [],
    "source": [
-    "# Initialize a causal HGF\n",
+    "# Initialise a causal HGF\n",
     "causal_hgf = (\n",
     "    Network()\n",
     "    .add_nodes(precision=100.0)\n",
@@ -931,7 +931,7 @@
    "outputs": [],
    "source": [
     "def find_alpha(u, mu_1, mu_2, var_1, var_2):\n",
-    "    \"\"\"Find optimal coupling strength alpha minimizing prediction error.\"\"\"\n",
+    "    \"\"\"Find optimal coupling strength alpha minimising prediction error.\"\"\"\n",
     "    # find root 1\n",
     "    alpha_hat_1 = jnp.where(mu_1 == 0.0, 0.0, -(mu_2 - u) / mu_1)\n",
     "\n",

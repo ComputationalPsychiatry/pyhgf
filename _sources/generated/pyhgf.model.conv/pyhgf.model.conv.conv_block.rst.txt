@@ -1,0 +1,6 @@
+﻿pyhgf.model.conv.conv\_block
+============================
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autofunction:: conv_block

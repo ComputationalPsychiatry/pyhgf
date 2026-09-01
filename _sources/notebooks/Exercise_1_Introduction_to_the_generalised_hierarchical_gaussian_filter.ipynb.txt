@@ -174,7 +174,7 @@
     "tags": []
    },
    "source": [
-    "We have simulated above a simple GRW. At each time point, this process is fully described by the implied Normal distribution, which is parametrised by the mean and the variance. The gHGF hierarchically generalize this process by making the parameters of a stochastic process depend on another node at a different level, and thus another GRW {cite:p}`weber:2023`. But because a Gaussian distribution is defined by two parameters (mean and variance), we can distinguish two ways for a node to influence another node: **value coupling** (targetting the value $\\mu$ of the child node) or **volatility coupling** (targetting the volatility $\\sigma^2$ of the child node).\n",
+    "We have simulated above a simple GRW. At each time point, this process is fully described by the implied Normal distribution, which is parametrised by the mean and the variance. The gHGF hierarchically generalise this process by making the parameters of a stochastic process depend on another node at a different level, and thus another GRW {cite:p}`Weber2026`. But because a Gaussian distribution is defined by two parameters (mean and variance), we can distinguish two ways for a node to influence another node: **value coupling** (targetting the value $\\mu$ of the child node) or **volatility coupling** (targetting the volatility $\\sigma^2$ of the child node).\n",
     "\n",
     "#### Value coupling\n",
     "\n",
@@ -360,7 +360,7 @@
     "tags": []
    },
    "source": [
-    "## Model inversion: the generalized Hierarchical Gaussian Filter"
+    "## Model inversion: the generalised Hierarchical Gaussian Filter"
    ]
   },
   {
@@ -841,7 +841,7 @@
     "# add new observations\n",
     "hgf.input_data(input_data=timeserie)\n",
     "\n",
-    "# visualization of the belief trajectories\n",
+    "# visualisation of the belief trajectories\n",
     "hgf.plot_trajectories();"
    ]
   },
@@ -914,7 +914,7 @@
     "\n",
     "- Select a city and download a recording OR use the data frame loaded above.\n",
     "- Fit a network using one of the variables and estimate the total Gaussian surprise.\n",
-    "- Can you try to come up with a better model (one that would minimize the total Gaussian surprise)? You can try to change the initial mean and precision of the tonic volatility or add a layer to the network.\n",
+    "- Can you try to come up with a better model (one that would minimise the total Gaussian surprise)? You can try to change the initial mean and precision of the tonic volatility or add a layer to the network.\n",
     "```"
    ]
   },

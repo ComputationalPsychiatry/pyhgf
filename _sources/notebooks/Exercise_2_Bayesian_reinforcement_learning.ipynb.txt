@@ -333,7 +333,7 @@
    "id": "1745aca5-73fe-48a7-bc6a-b0a4bd87d73a",
    "metadata": {},
    "source": [
-    "Once we have these two piece of information, we are ready to compute the surprise, which will indicates how well our model could prediction the behavior of the participant."
+    "Once we have these two piece of information, we are ready to compute the surprise, which will indicates how well our model could prediction the behaviour of the participant."
    ]
   },
   {
@@ -357,7 +357,7 @@
     ":label: exercise2.2\n",
     "\n",
     "- Using the examples above, can you diagnose the performances of the agent?\n",
-    "- What could make it better? Can you try to change the parameters and get an agent with better performances (i.e. minimizing the surprise)?\n",
+    "- What could make it better? Can you try to change the parameters and get an agent with better performances (i.e. minimising the surprise)?\n",
     "\n",
     "```"
    ]
@@ -367,7 +367,7 @@
    "id": "a4747212-d49e-4041-bd30-ea9d79c80a93",
    "metadata": {},
    "source": [
-    "## Parameters optimization\n",
+    "## Parameters optimisation\n",
     "\n",
     "So far we have been running our models forward by fixing the values of the parameters beforehand. This is an important part of the modelling process as we can retrieve the belief trajectories, which indicates how the agent might use sensory information to adapt to the environment, as well as the surprise associated with these observations, which indicates *how well* the agent adapted to the environment. \n",
     "\n",
@@ -407,7 +407,7 @@
     "    # Set a prior over the evolution rate at the second level.\n",
     "    tonic_volatility = pm.Normal(\"tonic_volatility\", 0.0, 5.0)\n",
     "\n",
-    "    # Call the pre-parametrized HGF distribution here.\n",
+    "    # Call the pre-parametrised HGF distribution here.\n",
     "    # All parameters are set to their default value, except omega_2.\n",
     "    pm.Potential(\"hgf_loglike\", two_level_logp(tonic_volatility=tonic_volatility))"
    ]
@@ -480,7 +480,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "Sequential sampling (2 chains in 1 job)\n",
       "NUTS: [tonic_volatility]\n"
      ]
@@ -647,7 +647,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "Sequential sampling (2 chains in 1 job)\n",
       "NUTS: [bias]\n"
      ]
@@ -743,7 +743,7 @@
    "id": "8152a3d0-dec9-46a4-abe9-6b3e82bee45e",
    "metadata": {},
    "source": [
-    "Another popular model in reinforcement learning is the [Rescorla-Wagner model](https://en.wikipedia.org/wiki/Rescorla%E2%80%93Wagner_model), which assumes that the agent uses prediction errors from the previous observation to update its beliefs. Here we create a simple Rescorla-Wagner and try to optimize the learning rate to predict the agent decisions.\n",
+    "Another popular model in reinforcement learning is the [Rescorla-Wagner model](https://en.wikipedia.org/wiki/Rescorla%E2%80%93Wagner_model), which assumes that the agent uses prediction errors from the previous observation to update its beliefs. Here we create a simple Rescorla-Wagner and try to optimise the learning rate to predict the agent decisions.\n",
     "\n",
     "Here, we write our models using [PyTensor](https://pytensor.readthedocs.io/en/latest/), which is the tensor library on which [PyMC](https://www.pymc.io/welcome.html) is built, and sample the model the same way. We start by creating an update function at the trial level. This function is later used in [scan](https://pytensor.readthedocs.io/en/latest/library/scan.html), which is how PyTensor implements fast for loop with carry-over variables."
    ]
@@ -816,7 +816,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "Multiprocess sampling (2 chains in 2 jobs)\n",
       "NUTS: [initial_belief, learning_rate]\n",
       "/home/nicolas/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/multiprocessing/popen_fork.py:66: RuntimeWarning: os.fork() was called. os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.\n",
@@ -1042,7 +1042,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "/home/nicolas/git/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/numba/dispatch/basic.py:214: UserWarning: Numba will use object mode to run JAXOp{input_types=(TensorType(float64, shape=()), TensorType(float64, shape=())), output_types=(TensorType(float64, shape=(320,)),), jax_func=<function wrap_jax.<locals>.decorator.<locals>.wrapper.<locals>.flattened_function at 0x7e38fe71b240>}'s perform method. Set `pytensor.config.compiler_verbose = True` to see more details.\n",
       "  warnings.warn(\n",
       "/home/nicolas/git/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/numba/dispatch/basic.py:214: UserWarning: Numba will use object mode to run JAXOp{input_types=(TensorType(float64, shape=()), TensorType(float64, shape=())), output_types=(TensorType(float64, shape=(320,)),), jax_func=<function wrap_jax.<locals>.decorator.<locals>.wrapper.<locals>.flattened_function at 0x7e38fe71b240>}'s perform method. Set `pytensor.config.compiler_verbose = True` to see more details.\n",
@@ -1284,7 +1284,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Initializing NUTS using jitter+adapt_diag...\n",
+      "Initialising NUTS using jitter+adapt_diag...\n",
       "/home/nicolas/git/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/numba/dispatch/basic.py:214: UserWarning: Numba will use object mode to run JAXOp{input_types=(TensorType(float64, shape=()), TensorType(float64, shape=()), TensorType(float64, shape=())), output_types=(TensorType(float64, shape=(320,)),), jax_func=<function wrap_jax.<locals>.decorator.<locals>.wrapper.<locals>.flattened_function at 0x7e38fe5bb4c0>}'s perform method. Set `pytensor.config.compiler_verbose = True` to see more details.\n",
       "  warnings.warn(\n",
       "/home/nicolas/git/pyhgf/.venv/lib/python3.12/site-packages/pytensor/link/numba/dispatch/basic.py:214: UserWarning: Numba will use object mode to run JAXOp{input_types=(TensorType(float64, shape=()), TensorType(float64, shape=()), TensorType(float64, shape=())), output_types=(TensorType(float64, shape=(320,)),), jax_func=<function wrap_jax.<locals>.decorator.<locals>.wrapper.<locals>.flattened_function at 0x7e38fe5bb4c0>}'s perform method. Set `pytensor.config.compiler_verbose = True` to see more details.\n",
@@ -1605,7 +1605,7 @@
    "id": "8d9502ff-3931-410a-911d-8ad574db57f3",
    "metadata": {},
    "source": [
-    "One way to assess model fitting is to use the predictive sample from the posterior distribution to visualize the trajectories of inferred beliefs. We can easily retrieve the trajectories of expected probabilities from the biased random and the Rescorla-Wagner models. For the two and three-level HGF, we will reconstruct the trajectories using the sample values."
+    "One way to assess model fitting is to use the predictive sample from the posterior distribution to visualise the trajectories of inferred beliefs. We can easily retrieve the trajectories of expected probabilities from the biased random and the Rescorla-Wagner models. For the two and three-level HGF, we will reconstruct the trajectories using the sample values."
    ]
   },
   {
@@ -1748,7 +1748,7 @@
    "source": [
     "# Where to go next?\n",
     "\n",
-    "Thank you for completing this tutorial on the generalized Hierarchical Gaussian Filter. Let's briefly recap what we have covered so far:\n",
+    "Thank you for completing this tutorial on the generalised Hierarchical Gaussian Filter. Let's briefly recap what we have covered so far:\n",
     "\n",
     "- In the first notebook you learned how to simulate the generative model on which the gHGF is built and how to create probabilistic networks that can invert this model with PyHGF. We applied these principles to real data and tried different parametrisations that could improve model performances.\n",
     "- In the second notebook we covered the binary HGF, an extension of this model to binary inputs for reinforcement learning. We then used MCMC sampling to infer the probability distribution of key parameters and compared the performances of our model to other RL classics.\n",
@@ -1812,7 +1812,7 @@
     "\n",
     "- Looking at the trajectories, both at the first and the second level (remember that the binary state node and the continuous state node are encoding the sa values using different scales), we can see that the agent is rather slow at changing its mind when the observed associations between the stimuli and the outcomes are switching. \n",
     "\n",
-    "- How fast the agent changes its mind is controlled by the learning rate (in the context of a Rescorla-Wagner model for example). Here, this quantity is controlled by the tonic volatility at the second level. In the previous example, we can see that this quantity was set to `-5.0`. We can try to set it to something higher (e.g. `-2.0`), which will produce noisier time series, and also minimize the surprise. The agent uses a more quickly updated belief about the hidden associations, therefore the decisions track the actual state of the experiment and are more accurate on average.\n",
+    "- How fast the agent changes its mind is controlled by the learning rate (in the context of a Rescorla-Wagner model for example). Here, this quantity is controlled by the tonic volatility at the second level. In the previous example, we can see that this quantity was set to `-5.0`. We can try to set it to something higher (e.g. `-2.0`), which will produce noisier time series, and also minimise the surprise. The agent uses a more quickly updated belief about the hidden associations, therefore the decisions track the actual state of the experiment and are more accurate on average.\n",
     "````"
    ]
   },

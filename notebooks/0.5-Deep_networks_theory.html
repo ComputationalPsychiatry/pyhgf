@@ -1,0 +1,1015 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Learning in deep predictive coding networks: the theory &#8212; pyhgf 0.3.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=35b888ae" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/0.5-Deep_networks_theory';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Learning in deep networks with prospective configuration" href="0.6-Prospective_configuration.html" />
+    <link rel="prev" title="Planning and acting with predictive coding networks" href="0.4-Planning_and_acting.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Theory</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="0.1-Theory.html">Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.2-Creating_networks.html">Creating and manipulating networks of probabilistic nodes</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.3-Generalised_filtering.html">Generalised Bayesian Filtering of exponential family distributions</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
+
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Learning in deep predictive coding networks: the theory</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.6-Prospective_configuration.html">Learning in deep networks with prospective configuration</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.7-Deep_networks_implementation.html">Building custom deep network architectures</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.8-Convolutional_networks.html">Convolutional predictive coding networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.9-Transformers.html">Transformer predictive coding networks</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="1.1-Binary_HGF.html">The binary Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.2-Categorical_HGF.html">The categorical Hierarchical Gaussian Filter</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="1.3-Continuous_HGF.html">The continuous Hierarchical Gaussian Filter</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="2-Using_custom_response_functions.html">Using custom response models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3-Multilevel_HGF.html">Hierarchical Bayesian modelling with probabilistic neural networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="4-Parameter_recovery.html">Recovering computational parameters from observed behaviours</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="5-Non_linear_value_coupling.html">Non-linear value coupling between continuous state nodes</a></li>
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Use cases</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Example_1_Heart_rate_variability.html">Example 1: Bayesian filtering of cardiac volatility</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Example_2_Input_node_volatility_coupling.html">Example 2: Estimating the mean and precision of a time-varying Gaussian distributions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3_Multi_armed_bandit.html">Example 3: A multi-armed bandit task with independent rewards and punishments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4_Causal_discovery.html">Example 4: Causal discovery in a predictive coding network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5_Iowa_Gambling_Task.html">Modelling win-frequency bias in the Iowa Gambling Task</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Exercises</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Exercise_1_Introduction_to_the_generalised_hierarchical_gaussian_filter.html">Zurich CPC I: Introduction to the Generalised Hierarchical Gaussian Filter</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="Exercise_2_Bayesian_reinforcement_learning.html">Zurich CPC II: Application to reinforcement learning</a></li>
+
+
+
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../learn.html" class="nav-link">Learn</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Learning in deep predictive coding networks: the theory</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="learning-in-deep-predictive-coding-networks-the-theory">
+<span id="deep-networks-theory"></span><h1>Learning in deep predictive coding networks: the theory<a class="headerlink" href="#learning-in-deep-predictive-coding-networks-the-theory" title="Link to this heading">#</a></h1>
+<p>Backpropagation has underpinned the optimisation of deep networks for decades. It comes with uncontestable advantages, effectively fuelling the development of modern AI, but still has downsides, such as interference during training, catastrophic forgetting, or poor biological realism, which in turn has shaped the development of hardware.</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Predictive_coding">Predictive coding</a> (PC) is the go-to alternative and has proved efficient in tasks typically faced by biological organisms <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id20" title="Yuhang Song, Beren Millidge, Tommaso Salvatori, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Inferring neural activity before plasticity as a foundation for learning beyond backpropagation. Nature Neuroscience, 27(2):348–358, January 2024. URL: http://dx.doi.org/10.1038/s41593-023-01514-1, doi:10.1038/s41593-023-01514-1.">Song <em>et al.</em>, 2024</a>]</span>, in which the error back-propagation algorithm can be seen as a special case <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id26" title="James C.R. Whittington and Rafal Bogacz. Theories of error back-propagation in the brain. Trends in Cognitive Sciences, 23(3):235–250, March 2019. URL: http://dx.doi.org/10.1016/j.tics.2018.12.005, doi:10.1016/j.tics.2018.12.005.">Whittington and Bogacz, 2019</a>]</span>. But it has also been historically neglected by the deep learning community as usually slower to train and difficult to scale to deep architectures.</p>
+<p>In some sense, PyHGF belongs to the PC lineage, while being slightly non-traditional in its objectives (initially solving inference from sequential data) and in its implementation (closed-form variational updates to find relaxation points instead of iterative gradient descent). This has a main advantage: the training time wall effectively vanishes, and predictive  coding networks such as the ones handled by PyHGF can be advantageously applied to  discrimination tasks in deep and wide architectures <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../references.html#id29" title="Aleksandrs Baskakovs, Sylvain Estebe, Kenneth Enevoldsen, Kristoffer Nielbo, Chris Mathys, and Nicolas Legrand. Closed-form predictive coding via hierarchical gaussian filters. 2026. URL: https://arxiv.org/abs/2605.20293, doi:10.48550/ARXIV.2605.20293.">Baskakovs <em>et al.</em>, 2026</a>]</span>. What makes them unusual is <em>how</em> they learn: using a combination of belief updating,  precision-weighted prediction error  propagation, and Hebbian weight learning. But similarly, in these networks, error backpropagation is found to be a special case of the network parametrisation.</p>
+<p>In this section, we expose the theory and differentiate PyHGF from traditional backpropagation and other predictive coding architectures, assuming no prior familiarity with PyHGF, predictive coding, or the mathematics of learning. We cover 1. how deep networks normally learn, 2. how a predictive-coding network learns instead, 3. the theorem saying when the two coincide and its proof, 4. the regimes where predictive coding does something genuinely different, and 5. where PyHGF sits on that map.</p>
+<p>Several companion pages complete the picture of this chapter: the <a class="reference internal" href="0.7-Deep_networks_implementation.html"><span class="std std-doc">DeepNetwork implementation page</span></a> shows how these ideas become code, the <a class="reference internal" href="0.6-Prospective_configuration.html"><span class="std std-doc">prospective configuration tutorial</span></a> walks through a worked classification example, and concrete implementations of <a class="reference internal" href="0.8-Convolutional_networks.html"><span class="std std-doc">convolutional networks</span></a> and <a class="reference internal" href="0.9-Transformers.html"><span class="std std-doc">transformers</span></a> are demonstrated afterwards.</p>
+<hr class="docutils" />
+<section id="backpropagation-learning-in-deep-neural-networks">
+<h2>Backpropagation: learning in deep neural networks<a class="headerlink" href="#backpropagation-learning-in-deep-neural-networks" title="Link to this heading">#</a></h2>
+<p>A <strong>deep network</strong> is a stack of neural layers. Each layer holds a vector of <strong>activations</strong> (numbers describing what the layer currently represents) and is connected to the next by a matrix of <strong>weights</strong>, the adjustable parameters that the network learns. Data <span class="math notranslate nohighlight">\(x\)</span> enter at one end, are transformed layer by layer (each layer multiplies by its weights and applies a nonlinearity), and a prediction <span class="math notranslate nohighlight">\(\hat{y}\)</span> comes out the other end. A <strong>loss function</strong> measures how wrong that prediction is compared to an observed outcome <span class="math notranslate nohighlight">\(y\)</span>.</p>
+<p>Training the neural network means adjusting every weight to make the loss smaller.  The central tool is the <strong>gradient</strong>: for each weight, the derivative of the loss with respect to that weight (i.e., how much and in which direction the loss would change if the weight moved a little). <strong>Gradient descent</strong> repeatedly nudges every weight a small step against its gradient.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In the rest of this document, we use the PyHGF bottom-up approach of network creation, meaning that we index layers by <span class="math notranslate nohighlight">\(\ell\)</span>, with layer <span class="math notranslate nohighlight">\(0\)</span> being the output (<span class="math notranslate nohighlight">\(y\)</span>) and <span class="math notranslate nohighlight">\(\ell\)</span> growing toward the input (<span class="math notranslate nohighlight">\(x\)</span>). We write <span class="math notranslate nohighlight">\(\mu_\ell\)</span> and <span class="math notranslate nohighlight">\(\hat{\mu}_\ell\)</span> for the forward and backward activations of layer <span class="math notranslate nohighlight">\(\ell\)</span>, <span class="math notranslate nohighlight">\(W_\ell\)</span> for the matrix of weights connecting layer <span class="math notranslate nohighlight">\(\ell+1\)</span> to layer <span class="math notranslate nohighlight">\(\ell\)</span>, and <span class="math notranslate nohighlight">\(g\)</span> for the nonlinearity (a bias is folded into <span class="math notranslate nohighlight">\(W_\ell\)</span> as an always-on constant input).</p>
+</div>
+<p>The forward pass computes, layer by layer,</p>
+<div class="math notranslate nohighlight" id="equation-eq-forward">
+<span class="eqno">(1)<a class="headerlink" href="#equation-eq-forward" title="Link to this equation">#</a></span>\[
+\hat{\mu}_\ell = W_\ell \, g(\hat{\mu}_{\ell+1}),
+\]</div>
+<p>The hat on <span class="math notranslate nohighlight">\(\hat{\mu}_\ell\)</span> marking a <em>predicted / computed</em> quantity. For an input <span class="math notranslate nohighlight">\(x\)</span>, a target <span class="math notranslate nohighlight">\(y\)</span>, and the standard squared error, the loss is</p>
+<div class="math notranslate nohighlight">
+\[ L = \frac{1}{2} \cdot \lVert f(x) - y \rVert^2 \]</div>
+<p>with <span class="math notranslate nohighlight">\(f(x)\)</span> the network’s output.</p>
+<p>The gradients themselves come from <strong>backpropagation</strong>: an application of the calculus <strong>chain rule</strong> that sweeps backward through the network. An early weight affects the loss only through everything downstream of it, so its gradient is a long product of “how each layer affects the next”; backpropagation assembles those products efficiently by introducing, for each layer, an <strong>error</strong> vector</p>
+<div class="math notranslate nohighlight">
+\[ \delta_\ell := \frac{\partial L}{\partial \hat{\mu}_\ell} \]</div>
+<p>computed from the output backwards:</p>
+<div class="math notranslate nohighlight">
+\[
+\delta_0 = \frac{\partial L}{\partial \hat{\mu}_0} = f(x) - y,
+\qquad
+\delta_{\ell+1} = g'(\hat{\mu}_{\ell+1}) \odot \big(W_\ell^\top \delta_\ell\big),
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(g'\)</span> is the derivative of the nonlinearity, <span class="math notranslate nohighlight">\(\odot\)</span> multiplies entry by entry, and <span class="math notranslate nohighlight">\(W_\ell^\top\)</span> is the transpose of the weight matrix. Once the errors are known, each weight’s gradient is an <strong>outer product</strong>, the error at the layer below times the activity at the layer above:</p>
+<div class="math notranslate nohighlight">
+\[
+\frac{\partial L}{\partial W_\ell} = \delta_\ell \, g(\hat{\mu}_{\ell+1})^\top .
+\]</div>
+<p>Backpropagation has a single activation per layer, the forward-pass value <span class="math notranslate nohighlight">\(\hat{\mu}_{\ell+1}\)</span>, so both the slope <span class="math notranslate nohighlight">\(g'\)</span> and the activity <span class="math notranslate nohighlight">\(g\)</span> are read there. Predictive coding will have two values to choose between, and which one enters where is what §3 turns on.</p>
+</section>
+<section id="predictive-coding">
+<h2>Predictive coding<a class="headerlink" href="#predictive-coding" title="Link to this heading">#</a></h2>
+<p><strong>Predictive coding</strong> (PC) is a different way to organise the same computation, drawn from theoretical neuroscience. Instead of activations, each layer holds <strong>beliefs</strong>: a belief is a guess (a <strong>mean</strong>, written <span class="math notranslate nohighlight">\(\mu\)</span>) plus a confidence in that guess (a <strong>precision</strong>, written <span class="math notranslate nohighlight">\(\pi\)</span>, the inverse of a variance). Each layer <em>predicts</em> the layer below it through the very same forward map <a class="reference internal" href="#equation-eq-forward">(1)</a>, with <span class="math notranslate nohighlight">\(g\)</span> now read as the <strong>coupling function</strong>. The mismatch between what a layer predicted and what it observed is the <strong>prediction error</strong></p>
+<div class="math notranslate nohighlight">
+\[
+\varepsilon_\ell = \mu_\ell - \hat{\mu}_\ell .
+\]</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Backpropagation and predictive coding often use opposite definitions of error terms. <span class="math notranslate nohighlight">\(\varepsilon\)</span> (PC) follows the <strong>observed − predicted</strong> convention, while <span class="math notranslate nohighlight">\(\delta\)</span> (backpropagation) follows the <strong>predicted - observed</strong> convention. So, at a clamped output with unit precision <span class="math notranslate nohighlight">\(\varepsilon_0 = y - f(x) = -\delta_0\)</span>.</p>
+<p>This notation is more natural for PC networks, as the precision-weighted error is what is used to update beliefs at the higher layer (see the <a class="reference internal" href="0.1-Theory.html"><span class="std std-doc">theory notebook</span></a>). When building hybrid architectures (see <a class="reference internal" href="0.7-Deep_networks_implementation.html#deep-networks-implementation"><span class="std std-ref">the next tutorial</span></a>), the sign of the error is automatically reverted when crossing boundaries between PC networks and handwritten backpropagation components.</p>
+</div>
+<p>The whole network is scored by one quantity, the <strong>variational free energy</strong> <span class="math notranslate nohighlight">\(F\)</span> for Gaussian beliefs, simply the sum of every layer’s squared prediction error weighted by the precision of that prediction:</p>
+<div class="math notranslate nohighlight">
+\[
+F = \sum_\ell \frac{\hat{\pi}_\ell}{2} \lVert \mu_\ell - \hat{\mu}_\ell \rVert^2
+  \;+\; \text{const} .
+\]</div>
+<p>The constant absorbs a <span class="math notranslate nohighlight">\(-\tfrac{1}{2}\sum_\ell \log \hat{\pi}_\ell\)</span> term, which is genuinely constant only while the precisions are fixed parameters. The precision here is the <em>predicted</em> one, <span class="math notranslate nohighlight">\(\hat{\pi}_\ell\)</span>, because it is the precision of the prediction against which the residual is measured.</p>
+<p>A precise layer (high <span class="math notranslate nohighlight">\(\hat{\pi}_\ell\)</span>) is penalised more for the same error, so it “insists” on its predictions; an imprecise layer tolerates mismatch. Learning happens in two nested motions, both descending this same <span class="math notranslate nohighlight">\(F\)</span>:</p>
+<ol class="arabic simple">
+<li><p><strong>Beliefs settle.</strong> <em>Clamp</em> the observation on the output layer (fix
+<span class="math notranslate nohighlight">\(\mu_0 = y\)</span>; a clamped observation is just a belief that is not allowed to
+move), hold the weights fixed, and let every interior belief slide down the
+free energy, <span class="math notranslate nohighlight">\(\dot{\mu}_\ell = -\partial F / \partial \mu_\ell\)</span>. Each
+belief is pulled toward its own top-down prediction and pushed by the
+prediction error of the layer below, gated by the local slope of <span class="math notranslate nohighlight">\(g\)</span>. In
+the textbook variant this relaxation runs for many iterations, until the
+beliefs reach an equilibrium.</p></li>
+<li><p><strong>Weights nudge.</strong> Each connection then adjusts from purely <em>local</em>
+quantities, the precision-weighted error on one side
+$<span class="math notranslate nohighlight">\(
+e_\ell := \hat{\pi}_\ell\,(\mu_\ell - \hat{\mu}_\ell)
+        = \hat{\pi}_\ell\,\varepsilon_\ell
+\)</span><span class="math notranslate nohighlight">\(
+and the activity on the other:
+\)</span><span class="math notranslate nohighlight">\(
+\Delta W_\ell \;\propto\; e_\ell \; g(\mu_{\ell+1})^\top
+\)</span>$</p></li>
+</ol>
+<p>This weight rule is <strong>Hebbian</strong> (“cells that fire together wire together”): the update to a connection is a product of the two quantities available at its two ends. Nothing in it sweeps backward through the network; no part ever
+sees the whole model. That locality is the point of predictive coding.</p>
+</section>
+<section id="closed-form-predictive-coding-with-hierarchical-gaussian-filtering">
+<h2>Closed-form predictive coding with hierarchical Gaussian filtering<a class="headerlink" href="#closed-form-predictive-coding-with-hierarchical-gaussian-filtering" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li></li>
+</ul>
+<p>In <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../references.html#id29" title="Aleksandrs Baskakovs, Sylvain Estebe, Kenneth Enevoldsen, Kristoffer Nielbo, Chris Mathys, and Nicolas Legrand. Closed-form predictive coding via hierarchical gaussian filters. 2026. URL: https://arxiv.org/abs/2605.20293, doi:10.48550/ARXIV.2605.20293.">Baskakovs <em>et al.</em>, 2026</a>]</span> we introduced an alternative way to build and update similar PC coding networks built on top of hierarchical Gaussian filtering (HGF) machinery, which replaces the iterative relaxation step with <em>closed-form updates</em> (predict once, correct each belief once, nudge the weights once) using the exact update equations of the generalised HGF <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. eLife, 15:RP110174, 2026. URL: https://doi.org/10.7554/eLife.110174.1, doi:10.7554/eLife.110174.1.">Weber <em>et al.</em>, 2026</a>]</span>.</p>
+<p>In this language, the layer above is the <em>value parent</em> of the layer below: the parent’s belief generates the child’s prediction. When a child layer <span class="math notranslate nohighlight">\(\ell\)</span> produces a prediction error, its parent <span class="math notranslate nohighlight">\(\ell+1\)</span> updates its belief using only three things it already has: its own prediction, the connection <span class="math notranslate nohighlight">\(W_\ell\)</span>, and the child’s error.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The HGF is initially designed for time-resolved latent state inference, which requires prediction to be made from the previous state position. But here, applying this principle to iterations in a set of predictor-outcome pairs would be meaningless, as the previous label should not influence the current prediction. Therefore, the <code class="docutils literal notranslate"><span class="pre">DeepNetwork</span></code> class uses a modified update equation that only relies on the expectations (which only come from the parents), instead of the previous mean.</p>
+</div>
+<p>First, the child packages its prediction error together with its own confidence into the <strong>precision-weighted prediction error</strong> it sends upward:</p>
+<div class="math notranslate nohighlight">
+\[
+e_\ell := \hat{\pi}_\ell \, \varepsilon_\ell
+\]</div>
+<p>The parent then updates its <strong>precision</strong>, adding a “bottom-up” contribution routed through the connection. Writing <span class="math notranslate nohighlight">\(j\)</span> for a node of the parent layer <span class="math notranslate nohighlight">\(\ell+1\)</span> and <span class="math notranslate nohighlight">\(i\)</span> for a node of the fully-connected child layer <span class="math notranslate nohighlight">\(\ell\)</span>,</p>
+<div class="math notranslate nohighlight" id="equation-eq-precision-update">
+<span class="eqno">(2)<a class="headerlink" href="#equation-eq-precision-update" title="Link to this equation">#</a></span>\[
+\pi_j \;=\; \underbrace{\hat{\pi}_j}_{\text{parent's prior confidence}}
+\;+\; \underbrace{g'(\hat{\mu}_j)^2 \sum_i W_{ij}^2 \, \hat{\pi}_i
+\;-\; g''(\hat{\mu}_j) \sum_i W_{ij} \, e_i}_{\text{ (arriving from the children)}}
+\]</div>
+<p>Second, the parent updates its <strong>mean</strong> by taking a step, sized by one over its <em>posterior</em> precision, in the direction of the routed child error:</p>
+<div class="math notranslate nohighlight" id="equation-eq-mean-update">
+<span class="eqno">(3)<a class="headerlink" href="#equation-eq-mean-update" title="Link to this equation">#</a></span>\[
+\mu_{\ell+1} \;=\; \hat{\mu}_{\ell+1} \;+\; \frac{1}{\pi_{\ell+1}}\;
+g'(\hat{\mu}_{\ell+1}) \odot \big(W_\ell^\top e_\ell\big).
+\]</div>
+<p>Two features of this equation carry the whole of §3. The step is divided by the <strong>posterior</strong> precision <span class="math notranslate nohighlight">\(\pi_{\ell+1}\)</span> from <a class="reference internal" href="#equation-eq-precision-update">(2)</a>, not by the prior confidence <span class="math notranslate nohighlight">\(\hat{\pi}_{\ell+1}\)</span>. And the slope is read at the <strong>expected</strong> mean <span class="math notranslate nohighlight">\(\hat{\mu}_{\ell+1}\)</span>, the parent’s own prediction, exactly as in the precision update above: the posterior mean the equation solves for never enters the slope, which is also what makes the update explicit rather than implicit in <span class="math notranslate nohighlight">\(\mu_{\ell+1}\)</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Evaluating the coupling derivatives at the prediction is a property of the volatile layers a <code class="docutils literal notranslate"><span class="pre">DeepNetwork</span></code> is built from (<code class="docutils literal notranslate"><span class="pre">pyhgf.updates.vectorised.volatile.posterior</span></code>), where the prediction is the natural reference point because each iteration is an independent predictor-outcome pair. The continuous layers used for time series filtering read them at the posterior mean instead: the previous posterior mean under the standard update, the freshly written one under the eHGF update, which updates the mean first.</p>
+</div>
+</section>
+<section id="when-predictive-coding-equals-backpropagation">
+<h2>When predictive coding equals backpropagation<a class="headerlink" href="#when-predictive-coding-equals-backpropagation" title="Link to this heading">#</a></h2>
+<p>There is a specific, well-understood point in the landscape of predictive-coding  models where PC weight updates recover BP. The existence of this point has actually  been a central argument in favor of PC, but it is crucial to understand that PC can  have a range of behaviours around that point that makes it genuinely more interesting.</p>
+<p>In this section, we state the condition, prove the equivalence, and illustrate it numerically.</p>
+<section id="a-silent-interior">
+<span id="silent-interior"></span><h3>A silent interior<a class="headerlink" href="#a-silent-interior" title="Link to this heading">#</a></h3>
+<p>Predictive coding reproduces exactly backpropagation’s gradients when two things
+hold: the interior is <strong>silent</strong>, and every interior layer relays the routed error
+at full strength rather than attenuating it. We call silent interior the behaviour
+of hidden activities when they stay at their forward-pass values even after the
+observation arrives at the output: <span class="math notranslate nohighlight">\(\mu_\ell \approx \hat{\mu}_\ell\)</span>, up to a
+shift that vanishes as the interior precision grows.</p>
+<p>When the interior is silent (i.e., when the activation of the forward pass matches
+the activation of the backward pass), the only effective prediction error
+in the network is at the output. Every interior layer merely relays the forward pass,
+and each connection’s local update (error on one side) ×
+(activity on the other) is precisely the chain-rule gradient. If instead the hidden
+layers moved to satisfy the target, their errors would no longer be backpropagation’s
+errors, and the two would diverge.</p>
+<p>In the classical settling formulation, where precisions are fixed parameters, the
+silent interior is the whole condition <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../references.html#id21" title="James C. R. Whittington and Rafal Bogacz. An approximation of the error backpropagation algorithm in a predictive coding network with local hebbian synaptic plasticity. Neural Computation, 29(5):1229–1262, May 2017. URL: http://dx.doi.org/10.1162/NECO_a_00949, doi:10.1162/neco_a_00949.">Whittington and Bogacz, 2017</a>, <a class="reference internal" href="../references.html#id23" title="Beren Millidge, Alexander Tschantz, and Christopher L. Buckley. Predictive coding approximates backprop along arbitrary computation graphs. 2020. URL: https://arxiv.org/abs/2006.04182, arXiv:2006.04182.">Millidge <em>et al.</em>, 2020</a>]</span>.
+In the HGF, precisions themselves can be updated and reflect
+activation uncertainty. Therefore, error is more likely to propagate following a BP
+gradient in a network made of confident activations, but as errors appear, and as we
+are logging this uncertainty, the gradient of learning will diverge from BP.</p>
+<p>It is therefore straightforward to recover the BP gradient by pinning neurons’ precision
+to some high number, and disregarding any precision update. This is a way to learn efficiently
+using local updates and PyHGF PyHGF-only backend, but it is also a more limited way.</p>
+<div class="proof definition admonition" id="def-silent-interior">
+<p class="admonition-title"><span class="caption-number">Definition 1 </span> (Silent interior)</p>
+<section class="definition-content" id="proof-content">
+<p>The interior of a network is <strong>silent</strong> when every hidden belief stays at its
+forward-pass value once the observation arrives at the output,
+<span class="math notranslate nohighlight">\(\mu_\ell \approx \hat{\mu}_\ell\)</span>, up to a displacement that vanishes as the
+interior precision grows. <em>Silent</em> does not mean <em>frozen</em>: the interior still shifts by an
+infinitesimal amount, just enough to carry the gradient onward. The movement is
+just too small to change <em>what the activations represent</em>, but is never
+literally zero.</p>
+</section>
+</div><div class="proof definition admonition" id="def-pinning">
+<p class="admonition-title"><span class="caption-number">Definition 2 </span> (Pinning)</p>
+<section class="definition-content" id="proof-content">
+<p>An interior layer is <strong>pinned</strong> when its posterior precision is held at its
+prior (predicted) value, <span class="math notranslate nohighlight">\(\pi_\ell = \hat{\pi}_\ell\)</span>, so the bottom-up
+contribution of <a class="reference internal" href="#equation-eq-precision-update">(2)</a> is never written. Pinning to a <em>large</em>
+value additionally keeps the layer silent (<a class="reference internal" href="#def-silent-interior">Definition 1</a>).</p>
+<p><strong>In code:</strong> build the hidden and input layers with
+<code class="docutils literal notranslate"><span class="pre">add_layer(...,</span> <span class="pre">precision=1e4,</span> <span class="pre">expected_precision=1e4)</span></code>, unit precision on the
+observed output layer, and fit with <code class="docutils literal notranslate"><span class="pre">update_precisions=False</span></code>.</p>
+</section>
+</div><div class="proof theorem admonition" id="thm-pc-backprop">
+<p class="admonition-title"><span class="caption-number">Theorem 1 </span> (Pinned single-sweep predictive coding reproduces backpropagation)</p>
+<section class="theorem-content" id="proof-content">
+<p>Run the single belief propagation with every interior precision <strong>pinned</strong> to a
+large constant (<a class="reference internal" href="#def-pinning">Definition 2</a>). Clamping the target seeds the output
+with the <em>negative</em> loss gradient, <span class="math notranslate nohighlight">\(e_0 = y - f(x) = -\delta_0\)</span> for a
+squared-error output, <span class="math notranslate nohighlight">\(\text{one-hot} - \text{softmax}\)</span> for a categorical head;
+the same sign, since <span class="math notranslate nohighlight">\(\partial L / \partial(\text{logits}) =
+\text{softmax} - \text{one-hot}\)</span>. Then the upward messages obey</p>
+<div class="math notranslate nohighlight">
+\[
+e_{\ell+1} \;=\; g'(\hat{\mu}_{\ell+1}) \odot \big(W_\ell^\top\, e_\ell\big),
+\tag{★}
+\]</div>
+<p>which is exactly backpropagation’s error recursion (BP). The recursion preserves
+sign, so by induction down the stack <span class="math notranslate nohighlight">\(e_\ell = -\delta_\ell\)</span> at every layer.
+Pinning to a <em>large</em> constant additionally keeps the interior silent
+(<a class="reference internal" href="#def-silent-interior">Definition 1</a>), so the activity entering the Hebbian outer
+product converges to its forward-pass value and the local weight step is the
+backpropagation <em>descent step</em>, node for node:</p>
+<div class="math notranslate nohighlight">
+\[
+\Delta W_\ell \propto e_\ell\, g(\mu_{\ell+1})^\top
+= -\,\delta_\ell\, g(\mu_{\ell+1})^\top
+\;\longrightarrow\; -\,\delta_\ell\, g(\hat{\mu}_{\ell+1})^\top
+= -\,\frac{\partial L}{\partial W_\ell}
+\]</div>
+</section>
+</div></section>
+<section id="the-proof-the-precision-ratio-r">
+<span id="precision-ratio"></span><h3>The proof: the precision ratio <span class="math notranslate nohighlight">\(r\)</span><a class="headerlink" href="#the-proof-the-precision-ratio-r" title="Link to this heading">#</a></h3>
+<p><strong>Goal.</strong> Rewrite the HGF mean update as a recursion in the upward
+messages <span class="math notranslate nohighlight">\(e_\ell\)</span>, compare it line for line with backpropagation, and close the
+gaps between the two. The whole argument turns on one quantity:</p>
+<div class="proof definition admonition" id="def-precision-ratio">
+<p class="admonition-title"><span class="caption-number">Definition 3 </span> (Precision ratio)</p>
+<section class="definition-content" id="proof-content">
+<p>The ratio of a layer’s prior (predicted) to posterior precision,</p>
+<div class="math notranslate nohighlight">
+\[
+r_\ell = \frac{\hat{\pi}_\ell}{\pi_\ell} \in (0,1].
+\]</div>
+<p><span class="math notranslate nohighlight">\(r_\ell\)</span> is a <strong>per-unit</strong> quantity, one ratio per node, not a single number per
+layer. It is at most <span class="math notranslate nohighlight">\(1\)</span>, and pinning precisions sets <span class="math notranslate nohighlight">\(r_\ell = 1\)</span> exactly.</p>
+</section>
+</div><div class="proof admonition" id="proof">
+<p>Proof. <strong>Step 1: read off the parent’s own residual.</strong> The parent’s residual is just
+its displacement from its prediction. Subtract <span class="math notranslate nohighlight">\(\hat{\mu}_{\ell+1}\)</span> from both
+sides of <a class="reference internal" href="#equation-eq-mean-update">(3)</a>:</p>
+<div class="math notranslate nohighlight" id="equation-eq-displacement">
+<span class="eqno">(4)<a class="headerlink" href="#equation-eq-displacement" title="Link to this equation">#</a></span>\[
+\varepsilon_{\ell+1} = \mu_{\ell+1} - \hat{\mu}_{\ell+1}
+= \frac{1}{\pi_{\ell+1}}\; g'(\hat{\mu}_{\ell+1}) \odot \big(W_\ell^\top e_\ell\big).
+\]</div>
+<p><strong>Step 2: form the parent’s own upward message.</strong> By the definition of the
+upward message, the parent’s message to <em>its</em> parent is
+<span class="math notranslate nohighlight">\(e_{\ell+1} = \hat{\pi}_{\ell+1}\,\varepsilon_{\ell+1}\)</span>. Multiply
+<a class="reference internal" href="#equation-eq-displacement">(4)</a> by <span class="math notranslate nohighlight">\(\hat{\pi}_{\ell+1}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[
+\boxed{\;e_{\ell+1} \;=\; \underbrace{\frac{\hat{\pi}_{\ell+1}}{\pi_{\ell+1}}}_{\displaystyle r_{\ell+1}}\;
+g'(\hat{\mu}_{\ell+1}) \odot \big(W_\ell^\top e_\ell\big)\;}
+\tag{HGF}
+\]</div>
+<p>The gain in front is exactly the precision ratio of
+<a class="reference internal" href="#def-precision-ratio">Definition 3</a>.</p>
+<p><strong>Step 3: compare with backpropagation.</strong> Put (HGF) next to (BP):</p>
+<div class="math notranslate nohighlight">
+\[
+\text{HGF:}\quad e_{\ell+1} = r_{\ell+1}\, g'(\hat{\mu}_{\ell+1}) \odot (W_\ell^\top e_\ell),
+\qquad
+\text{BP:}\quad \delta_{\ell+1} = g'(\hat{\mu}_{\ell+1}) \odot (W_\ell^\top \delta_\ell).
+\]</div>
+<p>The two routes are now identical; they thread the error through the same matrix and read the slope at the same
+point, the forward-pass value <span class="math notranslate nohighlight">\(\hat{\mu}_{\ell+1}\)</span>. Only two discrepancies separate the recursions:</p>
+<ol class="arabic simple">
+<li><p>The per-unit gain  <span class="math notranslate nohighlight">\(r_{\ell+1}\le 1\)</span> that hierarchical Gaussian filtering applies at each step and backpropagation does not. This is a byproduct of the Bayesian filtering mechanism that reflects how much nodes are allowed to move under prediction error. Backpropagation does not support this.</p></li>
+<li><p>The Hebbian outer product that supports the weight updates multiplies the message by the <em>posterior</em> activity <span class="math notranslate nohighlight">\(g(\mu_{\ell+1})\)</span>, whereas backpropagation’s gradient <span class="math notranslate nohighlight">\(\partial L / \partial W_\ell = \delta_\ell\, g(\hat{\mu}_{\ell+1})^\top\)</span> reads the activity at the forward-pass value. This is the main mechanism behind <a class="reference internal" href="0.6-Prospective_configuration.html#prospective-configuration"><span class="std std-ref">prospective configuration</span></a>.</p></li>
+</ol>
+<p>The exact error backpropagation can therefore be recovered by mitigating these discrepancies. <strong>(1)</strong> is removed by setting <span class="math notranslate nohighlight">\(r_{\ell+1}=1\)</span>, which we can obtain by fixing precision and expected precision to identical values and by removing the precision update so they don’t diverge over time. <strong>(2)</strong> is mitigated by having a difference between the mean (backward pass) and the expected mean (forward pass) as small as possible (<span class="math notranslate nohighlight">\(\mu_{\ell+1} \simeq \hat{\mu}_{\ell+1}\)</span>). The parent moves by an amount divided by its (large) posterior precision. Make the interior precisions huge, then</p>
+<div class="math notranslate nohighlight">
+\[
+\varepsilon_{\ell+1} = \frac{1}{\pi_{\ell+1}}\,g'\odot(W_\ell^\top e_\ell)
+= O(1/\Pi) \longrightarrow 0 ,
+\]</div>
+<p>A very confident layer barely moves off its prediction, with an error converging to <span class="math notranslate nohighlight">\(0\)</span>. The precision-weighted learning update then restores the full gradient by multiplying this error again by the posterior precision. When the precision and expected precision are constants, this effectively recovers the precision ratio <span class="math notranslate nohighlight">\(r_{\ell+1}=\hat{\pi}_{\ell+1}/\pi_{\ell+1}\)</span>.</p>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Is it just backpropagation?</p>
+<p>This proof shows that under some restricted conditions, Bayesian filtering in a deep neural
+network and weight updates derived from prospective configuration coincide exactly with error
+backpropagation. PyHGF’s mean update’s division by the pinned precision and the <code class="docutils literal notranslate"><span class="pre">precision_weighted</span></code>
+weight gradient’s multiplication by it (<code class="docutils literal notranslate"><span class="pre">pyhgf.updates.vectorised.learning</span></code>) produces
+the same reverse-mode vector–Jacobian product <code class="docutils literal notranslate"><span class="pre">jax.grad</span></code> would build.</p>
+<p>The notable difference is that PyHGF never differentiates a graph; it reaches those numbers by
+local message passing on a generative model. The equivalence is a coincidence of two derivations
+(variational inference on one side, the chain rule on the other), and it holds <em>only</em> when precisions
+equal expected precision and when they are set to high values.</p>
+<p>The equivalence itself is established in prior work: that silent-interior
+predictive coding reproduces backpropagation is the theorem of
+<span class="bibtex-citation" id="id7">Whittington and Bogacz [<a class="reference internal" href="../references.html#id21" title="James C. R. Whittington and Rafal Bogacz. An approximation of the error backpropagation algorithm in a predictive coding network with local hebbian synaptic plasticity. Neural Computation, 29(5):1229–1262, May 2017. URL: http://dx.doi.org/10.1162/NECO_a_00949, doi:10.1162/neco_a_00949.">2017</a>]</span>, made exact on multilayer perceptrons by
+<span class="bibtex-citation" id="id8">Song <em>et al.</em> [<a class="reference internal" href="../references.html#id22" title="Yuhang Song, Thomas Lukasiewicz, Zhenghua Xu, and Rafal Bogacz. Can the brain do backpropagation? — exact implementation of backpropagation in predictive coding networks. In Advances in Neural Information Processing Systems, volume 33, 22566–22579. 2020. URL: https://proceedings.neurips.cc/paper/2020/hash/fec87a37cdeec1c6ecf8181c0aa2d3bf-Abstract.html.">2020</a>]</span>, shown to approximate backpropagation along arbitrary
+computation graphs by <span class="bibtex-citation" id="id9">Millidge <em>et al.</em> [<a class="reference internal" href="../references.html#id23" title="Beren Millidge, Alexander Tschantz, and Christopher L. Buckley. Predictive coding approximates backprop along arbitrary computation graphs. 2020. URL: https://arxiv.org/abs/2006.04182, arXiv:2006.04182.">2020</a>]</span>, and made exact on any
+computation graph by <span class="bibtex-citation" id="id10">Salvatori <em>et al.</em> [<a class="reference internal" href="../references.html#id28" title="Tommaso Salvatori, Yuhang Song, Thomas Lukasiewicz, Rafal Bogacz, and Zhenghua Xu. Reverse differentiation via predictive coding. 2021. URL: https://arxiv.org/abs/2103.04689, doi:10.48550/ARXIV.2103.04689.">2021</a>]</span>.</p>
+<p>What is specific here is the <em>route</em>
+to it: the equivalence is expressed through the hierarchical Gaussian
+filter’s own confidence (precision) machinery, and it is reached in a <em>single sweep</em>
+rather than the settle-to-equilibrium loop. Relaxing this condition will produce largely different
+behaviours, prospective configuration, which is argued to reduce interference
+between updates and to help online and continual learning. The two are not in conflict;
+they are the two ends of one axis, and the
+precision ratio <span class="math notranslate nohighlight">\(r = \hat{\pi}/\pi\)</span> is that axis’s coordinate. The open
+challenge for this family
+of deep predictive coding networks is therefore to find how to settle in the right
+configuration depending on the learning context.</p>
+</div>
+</section>
+</section>
+<section id="where-pyhgf-sits">
+<h2>Where PyHGF sits<a class="headerlink" href="#where-pyhgf-sits" title="Link to this heading">#</a></h2>
+<p><img alt="One learning step in a deep PyHGF network: predictions sweep down, prediction errors travel back up and revise each layer's posterior, then the weights are nudged." src="https://computationalpsychiatry.github.io/pyhgf/_images/deep_networks_theory.svg" /></p>
+<p><em>The three passes of a single step. Predictions flow from the clamped predictors <span class="math notranslate nohighlight">\(x\)</span> down to the output <span class="math notranslate nohighlight">\(y\)</span>; prediction errors then travel back up, each layer’s posterior being revised as its error arrives; finally every weight is nudged by its own amount. The input layer is clamped, so it carries no posterior update of its own.</em></p>
+<p>PyHGF is <em>single-sweep</em> predictive coding — predict once, correct beliefs
+once, nudge weights once per batch — with the confidence machinery kept
+explicit throughout. There is one regime where PC provably learns in <em>fewer</em> steps than
+backpropagation: <strong>faster saddle-to-saddle escape in deeper-than-wide
+networks.</strong> Deep networks trained from a small initialisation descend the
+loss in a staircase — long flat plateaus (<strong>saddle points</strong>, where the
+gradient nearly vanishes and training crawls) punctuated by sudden drops.
+Because PC learns on the rescaled loss <span class="math notranslate nohighlight">\(L / s(\theta)\)</span>, its gradient carries
+an extra term that is nonzero <em>even where the plain loss is flat</em>, so it
+slides off those plateaus sooner: the degenerate, slow-to-escape saddles of
+the loss become benign in the rescaled energy <span class="bibtex-citation" id="id11">[<a class="reference internal" href="../references.html#id24" title="Francesco Innocenti, El Mehdi Achour, Ryan Singh, and Christopher L. Buckley. Only strict saddles in the energy landscape of predictive coding networks? In Advances in Neural Information Processing Systems, volume 37. 2024. URL: https://arxiv.org/abs/2408.11979, arXiv:2408.11979.">Innocenti <em>et al.</em>, 2024</a>]</span>.</p>
+<p>Exploring these behaviours means leaving the silent regime on
+purpose.** Prospective configuration, faster adaptation, and interference
+resistance all live at the <em>moving-interior</em> end. Reaching it needs three
+things the current scheme lacks: released precisions (letting <span class="math notranslate nohighlight">\(r\)</span> drop
+below <span class="math notranslate nohighlight">\(1\)</span>, so the interior can move), a settling loop (so it relaxes to an
+equilibrium instead of taking one sweep), and non-stationary or continual
+tasks (where the benefit would show).</p>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="system-configuration">
+<h1>System configuration<a class="headerlink" href="#system-configuration" title="Link to this heading">#</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> watermark
+<span class="o">%</span><span class="k">watermark</span> -n -u -v -iv -w -p pyhgf,jax,jaxlib
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
+
+Python implementation: CPython
+Python version       : 3.12.14
+IPython version      : 9.16.1
+
+pyhgf : 0.3.1
+jax   : 0.6.2
+jaxlib: 0.6.2
+
+Watermark: 2.6.0
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="0.4-Planning_and_acting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Planning and acting with predictive coding networks</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="0.6-Prospective_configuration.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Learning in deep networks with prospective configuration</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Learning in deep predictive coding networks: the theory</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backpropagation-learning-in-deep-neural-networks">Backpropagation: learning in deep neural networks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#predictive-coding">Predictive coding</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#closed-form-predictive-coding-with-hierarchical-gaussian-filtering">Closed-form predictive coding with hierarchical Gaussian filtering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-predictive-coding-equals-backpropagation">When predictive coding equals backpropagation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#a-silent-interior">A silent interior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-proof-the-precision-ratio-r">The proof: the precision ratio <span class="math notranslate nohighlight">\(r\)</span></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-pyhgf-sits">Where PyHGF sits</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#system-configuration">System configuration</a></li>
+</ul>
+
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/notebooks/0.5-Deep_networks_theory.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2026, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

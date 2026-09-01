@@ -15,6 +15,7 @@
    
       ~LayerState.__init__
       ~LayerState.create
+      ~LayerState.create_continuous
    
    
 

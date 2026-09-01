@@ -1,6 +1,0 @@
-﻿pyhgf.utils.to\_pandas
-======================
-
-.. currentmodule:: pyhgf.utils
-
-.. autofunction:: to_pandas

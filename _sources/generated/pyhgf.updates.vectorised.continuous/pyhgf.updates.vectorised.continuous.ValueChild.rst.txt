@@ -1,0 +1,33 @@
+﻿pyhgf.updates.vectorised.continuous.ValueChild
+==============================================
+
+.. currentmodule:: pyhgf.updates.vectorised.continuous
+
+.. autoclass:: ValueChild
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ValueChild.__init__
+      ~ValueChild.count
+      ~ValueChild.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ValueChild.coupling_fn
+      ~ValueChild.precision_is_clamped
+      ~ValueChild.state
+      ~ValueChild.weights
+   
+   

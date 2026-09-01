@@ -1,0 +1,1435 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyhgf.updates.vectorised.learning &#8212; pyhgf 0.3.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/exercise.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=35b888ae" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../../../../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pyhgf/updates/vectorised/learning';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../../_static/logo_small.svg"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../../../../_static/searchtools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <script src="../../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/logo_small.svg" class="logo__image only-light" alt=""/>
+    <img src="../../../../_static/logo_small.svg" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pyhgf</p>
+  
+</a></div>
+    
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../learn.html">
+    Learn
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../cite.html">
+    Cite
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../../references.html">
+    References
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/ComputationalPsychiatry/pyhgf" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://mastodon.social/@nicolegrand" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-mastodon fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://pypi.org/project/pyhgf/" title="Pypi" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-box fa-lg" aria-hidden="true"></i><span class="visually-hidden">Pypi</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../../../pyhgf.html" class="nav-link">pyhgf</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pyhgf.updates.vectorised.learning</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pyhgf.updates.vectorised.learning</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
+<span class="c1"># Author: Aleksandrs Baskakovs &lt;aleks@cas.au.dk&gt;</span>
+
+<span class="sd">"""Vectorised weight learning for deep predictive coding networks."""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">grad</span> <span class="k">as</span> <span class="n">jgrad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax</span><span class="w"> </span><span class="kn">import</span> <span class="n">vmap</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.typing.vectorised</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerState</span>
+
+<span class="c1"># The accepted weight-update kinds. All three share the same base term and</span>
+<span class="c1"># factorise into a child-side and a parent-side vector (a rank-one product),</span>
+<span class="c1"># which is why the gradient below is assembled as a single outer product.</span>
+<span class="n">SEPARABLE_KINDS</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"standard"</span><span class="p">,</span> <span class="s2">"precision_weighted"</span><span class="p">,</span> <span class="s2">"synaptic_uncertainty"</span><span class="p">)</span>
+
+<span class="c1">#: Floor applied to precisions before any division.</span>
+<span class="n">_EPS</span> <span class="o">=</span> <span class="mf">1e-30</span>
+
+
+<div class="viewcode-block" id="learning_weights_vectorised">
+<a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorised.learning/pyhgf.updates.vectorised.learning.learning_weights_vectorised.html#pyhgf.updates.vectorised.learning.learning_weights_vectorised">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">learning_weights_vectorised</span><span class="p">(</span>
+    <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"precision_weighted"</span><span class="p">,</span>
+    <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">child_kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"continuous"</span><span class="p">,</span>
+    <span class="n">child_evidence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Per-layer weight-learning factors for the vectorised deep network.</span>
+
+<span class="sd">    The single entry point of this module. One weight update has two halves and</span>
+<span class="sd">    this returns the pieces of both: the descent gradient that moves the</span>
+<span class="sd">    weight's mean, and the importance increment that raises its precision. They</span>
+<span class="sd">    are the first and second derivative of one layer-local energy, computed in</span>
+<span class="sd">    one pass rather than selected between.</span>
+
+<span class="sd">    Both are rank-one and **share their parent-side factor**. The gradient is</span>
+<span class="sd">    :math:`u \otimes h` and the increment is :math:`p \otimes h^2`, with the</span>
+<span class="sd">    same coupled parent activation :math:`h_i = g(\mu_i)`, so three vectors</span>
+<span class="sd">    carry both quantities. Returning factors rather than assembled matrices</span>
+<span class="sd">    lets a batched caller average over samples and contract once</span>
+<span class="sd">    (``einsum('bi,bj-&gt;ij') / batch``): the same arithmetic, without</span>
+<span class="sd">    materialising one weight-matrix-sized array per sample.</span>
+
+<span class="sd">    Both are strictly *local*: what one weight gets reads only the prediction</span>
+<span class="sd">    error and precision at its child and the activation at its parent, never a</span>
+<span class="sd">    reduction over the other parents or children in the layer.</span>
+
+<span class="sd">    **The child-side gradient factor** starts from the value prediction error</span>
+<span class="sd">    :math:`\delta = \mu_\text{child} - \hat{\mu}_\text{child}`, and *kind*</span>
+<span class="sd">    decides what scales it:</span>
+
+<span class="sd">    - ``"standard"`` takes :math:`\delta` alone, the raw gradient of an</span>
+<span class="sd">      *unweighted* squared error. This coincides with the free-energy gradient</span>
+<span class="sd">      only where the child precision is one (the unit-precision output or</span>
+<span class="sd">      categorical convention).</span>
+<span class="sd">    - ``"precision_weighted"`` scales by the child's *posterior* precision,</span>
+<span class="sd">      :math:`\delta\,\pi_a`. This is the **backprop-parity** mode: a moved</span>
+<span class="sd">      interior belief shifts by (routed error) / posterior precision, so</span>
+<span class="sd">      weighting by that same posterior precision cancels the division and</span>
+<span class="sd">      reproduces the backpropagated gradient node for node at *any* precision</span>
+<span class="sd">      setting.</span>
+<span class="sd">    - ``"synaptic_uncertainty"`` charges the process noise between the weight and</span>
+<span class="sd">      its child on top, :math:`\delta\,\pi_a / (1 + \Omega_a \xi_a)`, so the</span>
+<span class="sd">      gradient and the increment become the two derivatives of one energy.</span>
+<span class="sd">      This is the kind the weight-belief rule descends, and the only one it</span>
+<span class="sd">      can: dividing it by the weight's own precision is the Gaussian</span>
+<span class="sd">      posterior step, so both halves of that update read the same evidence.</span>
+<span class="sd">      It is *not* backprop parity.</span>
+
+<span class="sd">    A binary child drops the precision factor either way: its ``precision``</span>
+<span class="sd">    field holds the Bernoulli variance :math:`p(1-p)`, which cancels through</span>
+<span class="sd">    the sigmoid in the gradient, so keeping it would count the same term</span>
+<span class="sd">    twice. That cancellation belongs to the *first* derivative only, and the</span>
+<span class="sd">    curvature below keeps it.</span>
+
+<span class="sd">    **The child-side importance factor** is the exact Hessian diagonal of the</span>
+<span class="sd">    layer-local variational energy: that energy is exactly quadratic in the</span>
+<span class="sd">    weights for any coupling function, because the coupling acts on the</span>
+<span class="sd">    activation while the map :math:`w_{ai} \mapsto w_{ai} h_i` stays linear, so</span>
+<span class="sd">    one observation adds :math:`\tilde{\xi}_a h_i^2` with no approximation and</span>
+<span class="sd">    no sampling. Where the evidence comes from depends on the child:</span>
+
+<span class="sd">    - A **binary** or **categorical** child is where the data are clamped, so</span>
+<span class="sd">      the evidence is the curvature of its own likelihood, per unit</span>
+<span class="sd">      :math:`p_a(1 - p_a)` with :math:`p_a` the child's expected mean. For the</span>
+<span class="sd">      categorical case the Hessian of the log-likelihood with respect to the</span>
+<span class="sd">      logits is :math:`\operatorname{diag}(\mathbf{p}) -</span>
+<span class="sd">      \mathbf{p}\mathbf{p}^{\top}`, whose diagonal is that expression. No</span>
+<span class="sd">      label enters it, since averaging the outer product of the residual over</span>
+<span class="sd">      labels drawn from the model returns the same matrix, so this is the</span>
+<span class="sd">      model's own expected curvature rather than an estimate built from</span>
+<span class="sd">      observed errors.</span>
+<span class="sd">    - A **continuous** child passes on the evidence it received from below,</span>
+<span class="sd">      softened by the process noise it had to cross,</span>
+<span class="sd">      :math:`\tilde\xi_a = (1/\xi_a + \Omega_a)^{-1}`, with</span>
+<span class="sd">      :math:`\Omega_a = \gamma_a / \tilde\pi_a` recovered from the effective</span>
+<span class="sd">      precision the prediction sweep writes as</span>
+<span class="sd">      :math:`\gamma_a = \Omega_a \tilde\pi_a`. The evidence :math:`\xi_a`</span>
+<span class="sd">      itself is supplied by the caller through *child_evidence*, carried up from</span>
+<span class="sd">      the clamped layer by :func:`evidence_pullback`, and the weight-belief rule</span>
+<span class="sd">      always supplies it.</span>
+
+<span class="sd">      Without it, :math:`\xi_a` falls back to :math:`\pi_a - \tilde\pi_a` from</span>
+<span class="sd">      the cache, which is the same quantity in exact arithmetic *only* where the</span>
+<span class="sd">      filter's own precision chain was seeded with the clamped layer's likelihood</span>
+<span class="sd">      curvature. It is not: a clamped categorical layer enters that chain at unit</span>
+<span class="sd">      precision, because that convention is what makes the message it routes exact</span>
+<span class="sd">      cross-entropy backpropagation. Reading the difference also subtracts two</span>
+<span class="sd">      large nearly-equal precisions, which loses every significant digit once a</span>
+<span class="sd">      layer's precision has accumulated. The fallback is kept for direct callers</span>
+<span class="sd">      reading the layer-local quantity; it is not what the rule descends.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parent_state :</span>
+<span class="sd">        Current state of the parent layer.</span>
+<span class="sd">    child_state :</span>
+<span class="sd">        Current state of the child layer (with observations), after the update</span>
+<span class="sd">        sweep has written its posterior.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        Coupling function applied to parent means.</span>
+<span class="sd">    kind :</span>
+<span class="sd">        The metric the gradient is expressed in, one of</span>
+<span class="sd">        :data:`SEPARABLE_KINDS`. It also sets the importance convention:</span>
+<span class="sd">        ``"standard"`` uses unit observation precision on both halves.</span>
+<span class="sd">    parent_has_constant :</span>
+<span class="sd">        If True, the parent layer has a constant input node (mean = 1.0,</span>
+<span class="sd">        precision = 1.0) appended to its activations after coupling.</span>
+<span class="sd">    child_kind :</span>
+<span class="sd">        The child layer's node kind, ``"binary"``, ``"categorical"`` or</span>
+<span class="sd">        anything else for a continuous one.</span>
+<span class="sd">    child_evidence :</span>
+<span class="sd">        The child's evidence precision :math:`\xi_a`, supplied by a caller that</span>
+<span class="sd">        carries it up the stack itself (:func:`evidence_pullback`) rather than</span>
+<span class="sd">        letting it be recovered here as :math:`\pi_a - \tilde\pi_a`. When given,</span>
+<span class="sd">        it replaces that difference in the importance factor and the fallback</span>
+<span class="sd">        below never applies, since a carried evidence is non-negative by</span>
+<span class="sd">        construction. The gradient factor is unaffected: it reads the child's</span>
+<span class="sd">        posterior precision either way. ``None`` (default) recovers the evidence</span>
+<span class="sd">        from the cache.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    factors :</span>
+<span class="sd">        The triple ``(u, h, p)``. The child-side gradient factor :math:`u` and</span>
+<span class="sd">        the child-side importance factor</span>
+<span class="sd">        :math:`p` have shape ``(n_children,)``; the shared parent-side factor</span>
+<span class="sd">        :math:`h` has shape ``(n_parents[+1],)``. The gradient is</span>
+<span class="sd">        ``u[:, None] * h[None, :]`` and the increment</span>
+<span class="sd">        ``p[:, None] * (h ** 2)[None, :]``. Non-finite entries are zeroed, so</span>
+<span class="sd">        optax never propagates a NaN or an inf through its moment</span>
+<span class="sd">        accumulators.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If *kind* is unrecognised.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SEPARABLE_KINDS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown kind '</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">'. Expected one of </span><span class="si">{</span><span class="n">SEPARABLE_KINDS</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+    <span class="c1"># The shared parent-side factor, h_i = g(mu_i). A constant input node</span>
+    <span class="c1"># contributes a fixed activation of 1.0, so its weight counts as usage 1.</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">coupling_fn</span><span class="p">(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">h</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)])</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">h</span><span class="p">),</span> <span class="n">h</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># The evidence the child received from below, and the factor by which the</span>
+    <span class="c1"># process noise between the weight and the child attenuates it. Both halves</span>
+    <span class="c1"># of the update read these, so they are formed once. The evidence is</span>
+    <span class="c1"># floored at zero: clipping can drive a posterior precision below its</span>
+    <span class="c1"># prediction, which must not turn the increment into a subtraction.</span>
+    <span class="k">if</span> <span class="n">child_evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">child_evidence</span>
+    <span class="n">floored</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">evidence</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">tonic</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">effective_precision</span> <span class="o">/</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+        <span class="n">child_state</span><span class="o">.</span><span class="n">expected_precision</span><span class="p">,</span> <span class="n">_EPS</span>
+    <span class="p">)</span>
+    <span class="n">softening</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">tonic</span> <span class="o">*</span> <span class="n">floored</span><span class="p">)</span>
+
+    <span class="c1"># Child-side gradient factor, in descent form: sign-flipped from the</span>
+    <span class="c1"># natural "ascent" formulation so it composes with standard optax</span>
+    <span class="c1"># (apply_updates performs weights + updates, and sgd(lr).update returns</span>
+    <span class="c1"># -lr * grad).</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">mean</span> <span class="o">-</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">!=</span> <span class="s2">"standard"</span> <span class="ow">and</span> <span class="n">child_kind</span> <span class="o">!=</span> <span class="s2">"binary"</span><span class="p">:</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u</span> <span class="o">*</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>  <span class="c1"># posterior precision</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"synaptic_uncertainty"</span><span class="p">:</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">u</span> <span class="o">*</span> <span class="n">softening</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="o">-</span><span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">u</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Child-side importance factor. A caller advancing only the means ignores</span>
+    <span class="c1"># it; the two array operations below are removed with it by dead-code</span>
+    <span class="c1"># elimination, so gating them on a flag would buy nothing.</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"standard"</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">child_state</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">child_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># A carried evidence is already the right quantity for any child: the</span>
+        <span class="c1"># walk seeds a clamped discrete layer with its own p(1-p) and pulls that</span>
+        <span class="c1"># up, so no per-kind branch and no fallback are needed here.</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">floored</span> <span class="o">*</span> <span class="n">softening</span>
+    <span class="k">elif</span> <span class="n">child_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"binary"</span><span class="p">,</span> <span class="s2">"categorical"</span><span class="p">):</span>
+        <span class="c1"># Clamped discrete child: the curvature of its own likelihood.</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">prob</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># A clamped continuous layer receives no message from below, so no</span>
+        <span class="c1"># evidence arrives and its own precision stands in. That fallback is</span>
+        <span class="c1"># the uniform clamp-precision convention and carries no per-unit</span>
+        <span class="c1"># curvature; seeding such a layer with the true curvature of its</span>
+        <span class="c1"># likelihood is separate work.</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">evidence</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">floored</span> <span class="o">*</span> <span class="n">softening</span><span class="p">,</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">p</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">p</span></div>
+
+
+
+<span class="c1"># ------------------------------------------------------ synaptic uncertainty</span>
+
+<span class="c1">#: Settings of the weight-belief rule and their defaults, as</span>
+<span class="c1">#: ``learning_kwargs`` accepts them (see :func:`resolve_synaptic_uncertainty_settings`).</span>
+<span class="n">SYNAPTIC_UNCERTAINTY_DEFAULTS</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"window"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">"prior_variance"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">"learning_rate"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">"increment_scale"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SynapticUncertaintySettings</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Validated settings of the weight-belief rule.</span>
+
+<span class="sd">    Built from a ``learning_kwargs`` dictionary by</span>
+<span class="sd">    :func:`resolve_synaptic_uncertainty_settings`; every field is documented there.</span>
+<span class="sd">    """</span>
+
+    <span class="n">window</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">prior_variance</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">prior_mean</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">increment_scale</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">prior_precision</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<div class="viewcode-block" id="resolve_synaptic_uncertainty_settings">
+<a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorised.learning/pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings.html#pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_synaptic_uncertainty_settings</span><span class="p">(</span>
+    <span class="n">learning_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SynapticUncertaintySettings</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Validate the weight-belief rule's settings and fill in the defaults.</span>
+
+<span class="sd">    Each weight carries a Gaussian belief: the weight itself is the belief's</span>
+<span class="sd">    mean and the layer's ``weights_precision_delta`` its precision above the</span>
+<span class="sd">    prior. One update step does two things.</span>
+
+<span class="sd">    **Mean.** The update is :math:`\Delta w = -\alpha g/\pi + \text{reversion}`,</span>
+<span class="sd">    the incoming descent gradient :math:`g` divided by the weight's precision</span>
+<span class="sd">    and scaled by ``learning_rate`` :math:`\alpha`, plus a pull of the mean</span>
+<span class="sd">    toward ``prior_mean``. At the start :math:`\pi = \pi_p` everywhere, so the</span>
+<span class="sd">    rule begins as plain gradient descent at rate</span>
+<span class="sd">    :math:`\alpha \times \texttt{prior\_variance}` and departs from it only as</span>
+<span class="sd">    precision accumulates.</span>
+
+<span class="sd">    **Precision.** The increment is the curvature the data impose on that</span>
+<span class="sd">    weight, delivered as the importance factors of</span>
+<span class="sd">    :func:`learning_weights_vectorised` or as a full increment matrix. It then</span>
+<span class="sd">    relaxes toward the prior in precision form,</span>
+<span class="sd">    :math:`\pi \leftarrow \pi + H - (\pi - \pi_p)/N` with</span>
+<span class="sd">    :math:`N = \texttt{window}`. The fixed point is</span>
+<span class="sd">    :math:`\pi^\ast = N \bar{H} + \pi_p`, linear in the evidence at every</span>
+<span class="sd">    scale, and the mean reversion is precision-scaled,</span>
+<span class="sd">    :math:`(\pi_p / (N\pi))(\mu_p - w)`, so a weight the data have pinned is</span>
+<span class="sd">    also pulled back more gently.</span>
+
+<span class="sd">    Both halves are mean-field: each weight's gradient is divided by its own</span>
+<span class="sd">    precision, and the joint structure across the weights feeding one child is</span>
+<span class="sd">    not retained.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    learning_kwargs :</span>
+<span class="sd">        The settings, as ``DeepNetwork.fit(learning_kwargs=...)`` takes them.</span>
+<span class="sd">        Recognised keys, with the defaults of :data:`SYNAPTIC_UNCERTAINTY_DEFAULTS`:</span>
+
+<span class="sd">        ``window``</span>
+<span class="sd">            The memory window :math:`N`, in update steps. Importance decays</span>
+<span class="sd">            toward the prior at rate :math:`1/N`, so curvature older than</span>
+<span class="sd">            roughly :math:`N` steps no longer protects a weight. Required,</span>
+<span class="sd">            and at least 1.</span>
+<span class="sd">        ``prior_variance``</span>
+<span class="sd">            Variance of the per-weight prior belief, :math:`1/\pi_p`. Also the</span>
+<span class="sd">            effective learning rate before any importance has accumulated, so a</span>
+<span class="sd">            value that trains the model well under plain gradient descent is</span>
+<span class="sd">            the natural setting.</span>
+<span class="sd">        ``prior_mean``</span>
+<span class="sd">            Mean the weights revert toward.</span>
+<span class="sd">        ``learning_rate``</span>
+<span class="sd">            Multiplier :math:`\alpha` on the gradient part of the mean update.</span>
+<span class="sd">            It exists because the rule otherwise has no step size of its own:</span>
+<span class="sd">            the effective rate is :math:`\alpha/\pi`, and once the accumulated</span>
+<span class="sd">            curvature dominates the prior the rate is pinned at</span>
+<span class="sd">            :math:`\alpha/(N\bar{H})`. It sets the overall scale of every step</span>
+<span class="sd">            but not the *ratio* between the rate before and after importance</span>
+<span class="sd">            accumulates, which is :math:`1 + N\bar{H}/\pi_p` and is the depth</span>
+<span class="sd">            of protection the rule applies. It does not scale the reversion,</span>
+<span class="sd">            which stays at its :math:`1/N` rate, so ``window`` keeps meaning</span>
+<span class="sd">            one thing only: how long importance is remembered.</span>
+<span class="sd">        ``increment_scale``</span>
+<span class="sd">            Multiplier on the importance increment. It deepens protection</span>
+<span class="sd">            without touching anything else: the precision reaches</span>
+<span class="sd">            :math:`\pi_p + c\,N\bar{H}`, so the most protected weights slow by</span>
+<span class="sd">            :math:`c` times more, while the step size before any importance</span>
+<span class="sd">            accumulates, the reversion rate and the window are unchanged. A</span>
+<span class="sd">            uniform scale leaves rank orderings unchanged.</span>
+
+<span class="sd">        The gradient the rule descends is not among them: it is fixed to</span>
+<span class="sd">        ``"synaptic_uncertainty"``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    SynapticUncertaintySettings</span>
+<span class="sd">        The validated settings, with the prior precision precomputed.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If a key is unrecognised, ``window`` is missing or below 1, or a</span>
+<span class="sd">        positive quantity is not positive.</span>
+<span class="sd">    """</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">SYNAPTIC_UNCERTAINTY_DEFAULTS</span><span class="p">)</span>
+    <span class="n">given</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">learning_kwargs</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="n">unknown</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">given</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">SYNAPTIC_UNCERTAINTY_DEFAULTS</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Unknown learning_kwargs for learning_kind="</span>
+            <span class="sa">f</span><span class="s2">"'synaptic_uncertainty': </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="sa">f</span><span class="s2">"Expected a subset of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">SYNAPTIC_UNCERTAINTY_DEFAULTS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">given</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="p">[</span><span class="s2">"window"</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"learning_kind='synaptic_uncertainty' requires "</span>
+            <span class="s2">"learning_kwargs={'window': N, ...}: "</span>
+            <span class="s2">"the memory window has no default, since it sets how long "</span>
+            <span class="s2">"importance is remembered."</span>
+        <span class="p">)</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">"window"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">window</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"window must be at least 1, got </span><span class="si">{</span><span class="n">window</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">prior_variance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">"prior_variance"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">prior_variance</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"prior_variance must be positive, got </span><span class="si">{</span><span class="n">prior_variance</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">"learning_rate"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">learning_rate</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"learning_rate must be positive, got </span><span class="si">{</span><span class="n">learning_rate</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">increment_scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">"increment_scale"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">increment_scale</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"increment_scale must be positive, got </span><span class="si">{</span><span class="n">increment_scale</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SynapticUncertaintySettings</span><span class="p">(</span>
+        <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+        <span class="n">prior_variance</span><span class="o">=</span><span class="n">prior_variance</span><span class="p">,</span>
+        <span class="n">prior_mean</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s2">"prior_mean"</span><span class="p">]),</span>
+        <span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span>
+        <span class="n">increment_scale</span><span class="o">=</span><span class="n">increment_scale</span><span class="p">,</span>
+        <span class="n">prior_precision</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">prior_variance</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">clamped_layer_evidence</span><span class="p">(</span><span class="n">child_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span> <span class="n">child_kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Seed the evidence walk at the layer the data are clamped to.</span>
+
+<span class="sd">    A **binary or categorical** layer contributes the exact, label-free curvature</span>
+<span class="sd">    of its own likelihood, :math:`\xi_a = \hat{p}_a(1 - \hat{p}_a)`: the diagonal</span>
+<span class="sd">    of :math:`\operatorname{diag}(\mathbf{p}) - \mathbf{p}\mathbf{p}^\top`, which</span>
+<span class="sd">    is the Hessian of the categorical log-likelihood with respect to the logits.</span>
+<span class="sd">    No observed label enters it, so it is the model's own expected curvature</span>
+<span class="sd">    rather than one built from the errors that happened to occur.</span>
+
+<span class="sd">    A **continuous** layer contributes its own precision, which for a Gaussian</span>
+<span class="sd">    likelihood is that same curvature: the second derivative of</span>
+<span class="sd">    :math:`-\log \mathcal{N}(y; \mu, 1/\pi)` with respect to :math:`\mu` is</span>
+<span class="sd">    :math:`\pi`, whatever the residual. Nothing is approximated. What differs is</span>
+<span class="sd">    that the value is a *constant*, and two things follow from that. It varies</span>
+<span class="sd">    neither across units nor across samples, so unlike the discrete seed it says</span>
+<span class="sd">    nothing about which outputs the data constrain hardest, and every per-weight</span>
+<span class="sd">    difference the walk produces above such a layer comes from the activations</span>
+<span class="sd">    and the weight pullback alone. And wherever the precision expresses "this</span>
+<span class="sd">    layer is observed" rather than a modelled observation noise, its value is</span>
+<span class="sd">    arbitrary; since the seed multiplies through the whole chain, it then fixes</span>
+<span class="sd">    the scale of every accumulated weight precision above it, which trades</span>
+<span class="sd">    against the prior precision.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    child_state :</span>
+<span class="sd">        State of the clamped layer, after the update sweep.</span>
+<span class="sd">    child_kind :</span>
+<span class="sd">        ``"binary"``, ``"categorical"``, or anything else for a continuous layer.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    jnp.ndarray</span>
+<span class="sd">        The evidence precision at each node of the clamped layer.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">child_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"binary"</span><span class="p">,</span> <span class="s2">"categorical"</span><span class="p">):</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">expected_mean</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">prob</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">prob</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">child_state</span><span class="o">.</span><span class="n">precision</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">evidence</span><span class="p">),</span> <span class="n">evidence</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">evidence_pullback</span><span class="p">(</span>
+    <span class="n">parent_state</span><span class="p">:</span> <span class="n">LayerState</span><span class="p">,</span>
+    <span class="n">child_evidence</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">parent_has_constant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Carry the evidence precision up one layer, by the squared-coupling recursion.</span>
+
+<span class="sd">    A Gaussian likelihood pulled back through a linear map of coefficient</span>
+<span class="sd">    :math:`c` has its precision multiplied by :math:`c^2`; children are</span>
+<span class="sd">    conditionally independent given the parent, so their pulled-back precisions</span>
+<span class="sd">    add:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \xi_i = g'(\hat\mu_i)^2 \sum_a W_{ai}^2\, \tilde\xi_a</span>
+
+<span class="sd">    This is the upward mirror of the downward variance bleed-through, and</span>
+<span class="sd">    computationally it is curvature backpropagation: per sample,</span>
+<span class="sd">    :math:`\tilde\xi_a h_i^2` is the Gauss-Newton diagonal of the global loss</span>
+<span class="sd">    with respect to :math:`W_{ai}`, under the same diagonal treatment (cross</span>
+<span class="sd">    terms between different parents of one child are dropped).</span>
+
+<span class="sd">    Computed from the evidence carried in the walk rather than recovered as</span>
+<span class="sd">    :math:`\pi_a - \tilde\pi_a` from the filter's cache. The two agree in exact</span>
+<span class="sd">    arithmetic, but the difference of two large nearly-equal precisions loses</span>
+<span class="sd">    every significant digit once a layer's precision has accumulated, whereas a</span>
+<span class="sd">    carried quantity does not.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parent_state :</span>
+<span class="sd">        State of the layer the evidence is being carried up to.</span>
+<span class="sd">    child_evidence :</span>
+<span class="sd">        Evidence precision at each node of the layer below, shape</span>
+<span class="sd">        ``(n_children,)``.</span>
+<span class="sd">    weights :</span>
+<span class="sd">        The matrix connecting them, shape ``(n_children, n_parents[+1])``. A bias</span>
+<span class="sd">        column is dropped: a constant input node is not a parent whose belief the</span>
+<span class="sd">        evidence can be about.</span>
+<span class="sd">    coupling_fn :</span>
+<span class="sd">        Coupling applied to parent means, differentiated at the parent's expected</span>
+<span class="sd">        mean.</span>
+<span class="sd">    parent_has_constant :</span>
+<span class="sd">        Whether *weights* carries that trailing bias column.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    jnp.ndarray</span>
+<span class="sd">        The evidence precision at each node of the parent layer, shape</span>
+<span class="sd">        ``(n_parents,)``.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">parent_has_constant</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">coupling_prime</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">jgrad</span><span class="p">(</span><span class="n">coupling_fn</span><span class="p">))(</span><span class="n">parent_state</span><span class="o">.</span><span class="n">expected_mean</span><span class="p">)</span>
+    <span class="n">pulled</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">child_evidence</span><span class="p">)</span> <span class="o">*</span> <span class="n">coupling_prime</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">pulled</span><span class="p">),</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">pulled</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="vectorised_synaptic_uncertainty_update">
+<a class="viewcode-back" href="../../../../generated/pyhgf.updates.vectorised.learning/pyhgf.updates.vectorised.learning.vectorised_synaptic_uncertainty_update.html#pyhgf.updates.vectorised.learning.vectorised_synaptic_uncertainty_update">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vectorised_synaptic_uncertainty_update</span><span class="p">(</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">precision_delta</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">gradient</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">importance</span><span class="p">,</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">SynapticUncertaintySettings</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""One weight matrix's belief update: new mean, new accumulated precision.</span>
+
+<span class="sd">    The rule is stated in :func:`resolve_synaptic_uncertainty_settings`. A</span>
+<span class="sd">    ``LayerStack`` carries a leading slice axis on every operand, which the ellipsis</span>
+<span class="sd">    broadcasting here handles unchanged.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    weights :</span>
+<span class="sd">        The belief means, i.e. the element's ``weights_mean``.</span>
+<span class="sd">    precision_delta :</span>
+<span class="sd">        The accumulated precision above the prior, same shape.</span>
+<span class="sd">    gradient :</span>
+<span class="sd">        The descent gradient, same shape.</span>
+<span class="sd">    importance :</span>
+<span class="sd">        Either the factor pair ``(p, q)`` of</span>
+<span class="sd">        :func:`learning_weights_vectorised`, batch-averaged, whose outer product</span>
+<span class="sd">        is the increment; or a full increment matrix of the weights' shape,</span>
+<span class="sd">        which is the exact batch contraction the evidence pass delivers.</span>
+<span class="sd">    settings :</span>
+<span class="sd">        The resolved settings.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple of jnp.ndarray</span>
+<span class="sd">        The updated weights and the updated accumulated precision.</span>
+<span class="sd">    """</span>
+    <span class="n">prior_precision</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">prior_precision</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">precision_delta</span> <span class="o">+</span> <span class="n">prior_precision</span><span class="p">,</span> <span class="n">_EPS</span><span class="p">)</span>
+
+    <span class="c1"># The mean update divides by the pre-update precision and the reversion is</span>
+    <span class="c1"># precision-scaled, both as in the published rule.</span>
+    <span class="n">reversion</span> <span class="o">=</span> <span class="p">(</span><span class="n">prior_precision</span> <span class="o">/</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">window</span> <span class="o">*</span> <span class="n">pi</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">prior_mean</span> <span class="o">-</span> <span class="n">weights</span>
+    <span class="p">)</span>
+    <span class="n">update</span> <span class="o">=</span> <span class="o">-</span><span class="n">settings</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">*</span> <span class="n">gradient</span> <span class="o">/</span> <span class="n">pi</span> <span class="o">+</span> <span class="n">reversion</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">importance</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="c1"># Rank-one importance increment H[a, i] = p[a] * q[i].</span>
+        <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="n">importance</span>
+        <span class="n">increment</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">increment</span> <span class="o">=</span> <span class="n">importance</span>
+    <span class="n">increment</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">increment_scale</span> <span class="o">*</span> <span class="n">increment</span>
+    <span class="n">new_delta</span> <span class="o">=</span> <span class="n">precision_delta</span> <span class="o">+</span> <span class="n">increment</span> <span class="o">-</span> <span class="n">precision_delta</span> <span class="o">/</span> <span class="n">settings</span><span class="o">.</span><span class="n">window</span>
+
+    <span class="k">return</span> <span class="n">weights</span> <span class="o">+</span> <span class="n">update</span><span class="p">,</span> <span class="n">new_delta</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022-2026, Nicolas Legrand.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

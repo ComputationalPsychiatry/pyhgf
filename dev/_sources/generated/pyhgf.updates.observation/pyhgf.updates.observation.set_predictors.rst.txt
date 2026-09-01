@@ -1,6 +1,0 @@
-﻿pyhgf.updates.observation.set\_predictors
-=========================================
-
-.. currentmodule:: pyhgf.updates.observation
-
-.. autofunction:: set_predictors

@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pyhgf.typing.vectorised &#8212; pyhgf 0.3.0 documentation</title>
+    <title>pyhgf.typing.vectorised &#8212; pyhgf 0.3.1 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -36,15 +36,15 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=112603e0" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=35b888ae" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../_static/documentation_options.js?v=4621528c"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -53,182 +53,17 @@
     <script src="../../../_static/togglebutton.js?v=b8b12719"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
-
-
 
 
 
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
-    defaultStyle.textContent = `pre.mermaid {
-    /* Same as .mermaid-container > pre */
-    display: block;
-    width: 100%;
-}
-
-pre.mermaid > svg {
-    /* Same as .mermaid-container > pre > svg */
-    height: 500px;
-    width: 100%;
-    max-width: 100% !important;
-}`;
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
     document.head.appendChild(defaultStyle);
 
     const fullscreenStyle = document.createElement('style');
-    fullscreenStyle.textContent = `.mermaid-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-}
-
-.mermaid-container > pre {
-    display: block;
-    width: 100%;
-}
-
-.mermaid-container > pre > svg {
-    height: 500px;
-    width: 100%;
-    max-width: 100% !important;
-}
-
-.mermaid-fullscreen-btn {
-    width: 28px;
-    height: 28px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    font-size: 14px;
-    line-height: 1;
-    padding: 0;
-    color: #333;
-}
-
-.mermaid-fullscreen-btn:hover {
-    opacity: 100% !important;
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
-}
-
-.mermaid-fullscreen-btn.dark-theme {
-    background: rgba(50, 50, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #e0e0e0;
-}
-
-.mermaid-fullscreen-btn.dark-theme:hover {
-    background: rgba(60, 60, 60, 1);
-    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
-}
-
-.mermaid-fullscreen-modal {
-    display: none;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 95vw;
-    height: 100vh;
-    background: rgba(255, 255, 255, 0.98);
-    z-index: 9999;
-    padding: 20px;
-    overflow: auto;
-}
-
-.mermaid-fullscreen-modal.dark-theme {
-    background: rgba(0, 0, 0, 0.98);
-}
-
-.mermaid-fullscreen-modal.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen {
-    position: relative;
-    width: 95vw;
-    height: 90vh;
-    max-width: 95vw;
-    max-height: 90vh;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    overflow: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen.dark-theme {
-    background: #1a1a1a;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-}
-
-.mermaid-container-fullscreen pre.mermaid {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen .mermaid svg {
-    height: 100% !important;
-    width: 100% !important;
-    cursor: grab;
-}
-
-.mermaid-fullscreen-close {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s;
-    font-size: 24px;
-    line-height: 1;
-    color: #333;
-}
-
-.mermaid-fullscreen-close:hover {
-    background: white;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-    transform: scale(1.1);
-}
-
-.mermaid-fullscreen-close.dark-theme {
-    background: rgba(50, 50, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #e0e0e0;
-}
-
-.mermaid-fullscreen-close.dark-theme:hover {
-    background: rgba(60, 60, 60, 1);
-    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
-}
-
-.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
-    display: none !important;
-}`;
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
     document.head.appendChild(fullscreenStyle);
 }
 
@@ -273,6 +108,32 @@ let darkTheme = isDarkTheme();
 let modal = null;
 let modalContent = null;
 let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
 
 const runMermaid = async (rerun) => {
     console.log("Running mermaid diagrams, rerun =", rerun);
@@ -280,7 +141,15 @@ const runMermaid = async (rerun) => {
     let all_mermaids = document.querySelectorAll(".mermaid");
 
     if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
         all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
             if(!el.hasAttribute("data-original-code")) {
                 // store original code
                 // console.log(`Storing original code for first run: `, el.innerHTML);
@@ -297,42 +166,100 @@ const runMermaid = async (rerun) => {
                 el.setAttribute('data-original-code', el.innerHTML);
             }
         });
-        await mermaid.run();
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
     }
 
     all_mermaids = document.querySelectorAll(".mermaid");
-    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
 
-    if ("False" === "True") {
-        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
         if(mermaids_to_add_zoom > 0) {
-            var svgs = d3.selectAll("");
-            if(all_mermaids.length !== mermaids_processed.length) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
                 setTimeout(() => runMermaid(false), 200);
                 return;
-            } else if(svgs.size() !== mermaids_to_add_zoom) {
-                setTimeout(() => runMermaid(false), 200);
-                return;
-            } else {
-                svgs.each(function() {
-                    var svg = d3.select(this);
-                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
-                    var inner = svg.select("g");
-                    var zoom = d3.zoom().on("zoom", function(event) {
-                        inner.attr("transform", event.transform);
-                    });
-                    svg.call(zoom);
-                });
             }
+            addZoomToSvgs(svgs);
         }
-    } else if(all_mermaids.length !== mermaids_processed.length) {
+    } else if(mermaids_active.length !== mermaids_processed.length) {
         // Wait for mermaid to process all diagrams
         setTimeout(() => runMermaid(false), 200);
         return;
     }
 
     // Stop here if not adding fullscreen capability
-    if ("True" !== "True") return;
+    if (!true) return;
 
     if (modal !== null ) {
         // Destroy existing modal
@@ -355,7 +282,7 @@ const runMermaid = async (rerun) => {
     modalContent = modal.querySelector('.mermaid-container-fullscreen');
     const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
 
-    const closeModal = () => {
+    closeModal = () => {
         modal.classList.remove('active');
         modalContent.innerHTML = '';
         document.body.style.overflow = ''
@@ -366,12 +293,6 @@ const runMermaid = async (rerun) => {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeModal();
-        }
-    });
-
     document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
         if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
             mermaidDiv.closest('.mermaid-fullscreen-modal')) {
@@ -391,8 +312,8 @@ const runMermaid = async (rerun) => {
         const fullscreenBtn = document.createElement('button');
         fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
         fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
-        fullscreenBtn.textContent = '⛶';
-        fullscreenBtn.style.opacity = '50%';
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
 
         // Calculate dynamic position based on diagram's margin and padding
         const diagramStyle = window.getComputedStyle(mermaidDiv);
@@ -404,7 +325,7 @@ const runMermaid = async (rerun) => {
         fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
 
         fullscreenBtn.addEventListener('click', () => {
-            previousScrollOffset = [window.scroll, window.scrollY];
+            previousScrollOffset = [window.scrollX, window.scrollY];
             const clone = mermaidDiv.cloneNode(true);
             modalContent.innerHTML = '';
             modalContent.appendChild(clone);
@@ -416,9 +337,9 @@ const runMermaid = async (rerun) => {
                 svg.style.width = '100%';
                 svg.style.height = 'auto';
                 svg.style.maxWidth = '100%';
-                svg.style.sdisplay = 'block';
+                svg.style.display = 'block';
 
-                if ("False" === "True") {
+                if (false) {
                     setTimeout(() => {
                         const g = svg.querySelector('g');
                         if (g) {
@@ -441,8 +362,11 @@ const runMermaid = async (rerun) => {
     });
 };
 
+
+
 const load = async () => {
     initStyles();
+
 
     await runMermaid(true);
 
@@ -452,10 +376,8 @@ const load = async () => {
             darkTheme = newDarkTheme;
             console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
             await mermaid.initialize(
-                {...JSON.parse(
-                    `{"startOnLoad": false}`
-                ),
-                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
                 }
             );
             await runMermaid(true);
@@ -480,10 +402,8 @@ const load = async () => {
 
 console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
 mermaid.initialize(
-    {...JSON.parse(
-        `{"startOnLoad": false}`
-    ),
-    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
     }
 );
 
@@ -576,6 +496,9 @@ window.runMermaid = runMermaid;</script>
   
 </a></div>
     
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
   </div>
   
   <div class="col-lg-9 navbar-header-items">
@@ -586,6 +509,13 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../learn.html">
     Learn
@@ -728,6 +658,13 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../learn.html">
     Learn
@@ -882,7 +819,7 @@ window.runMermaid = runMermaid;</script>
   <h1>Source code for pyhgf.typing.vectorised</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Author: Nicolas Legrand &lt;nicolas.legrand@cas.au.dk&gt;</span>
 
-<span class="sd">&quot;&quot;&quot;Equinox PyTree types for the vectorised deep network.&quot;&quot;&quot;</span>
+<span class="sd">"""Equinox PyTree types for the vectorised deep network."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -898,7 +835,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="LayerState">
 <a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerState.html#pyhgf.typing.vectorised.LayerState">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LayerState</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorised per-layer state, as an ``eqx.Module``.</span>
+<span class="w">    </span><span class="sd">"""Vectorised per-layer state, as an ``eqx.Module``.</span>
 
 <span class="sd">    Each field is an array with one entry per node in the layer.</span>
 
@@ -931,7 +868,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The effective precision of the volatility-level prediction.</span>
 <span class="sd">    volatility_prediction_error :</span>
 <span class="sd">        The volatility prediction error of the volatility level.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Value level (external)</span>
     <span class="n">mean</span><span class="p">:</span> <span class="n">Array</span>
@@ -941,17 +878,34 @@ window.runMermaid = runMermaid;</script>
     <span class="n">conditional_expected_precision</span><span class="p">:</span> <span class="n">Array</span>
     <span class="n">effective_precision</span><span class="p">:</span> <span class="n">Array</span>
     <span class="n">value_prediction_error</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="c1"># Volatility level (internal)</span>
-    <span class="n">mean_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">precision_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">expected_mean_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">expected_precision_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">effective_precision_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">volatility_prediction_error</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="c1"># Volatility level (internal). ``None`` when the layer has no volatility</span>
+    <span class="c1"># parent (see :meth:`create`).</span>
+    <span class="n">mean_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">precision_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">expected_mean_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">expected_precision_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">effective_precision_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">volatility_prediction_error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerState&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise a layer state with defaults.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"LayerState"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Initialise a layer state with defaults.</span>
+
+<span class="sd">        With ``has_volatility_parent=False`` the six volatility-level fields are</span>
+<span class="sd">        set to ``None`` instead of being allocated. A frozen volatility level is</span>
+<span class="sd">        never predicted or updated — every access to these fields sits behind a</span>
+<span class="sd">        ``has_volatility_parent`` guard (see</span>
+<span class="sd">        :func:`pyhgf.updates.vectorised.volatile.prediction` and</span>
+<span class="sd">        :mod:`~pyhgf.updates.vectorised.volatile.prediction_error`) — so storing</span>
+<span class="sd">        them would only carry dead arrays through the state. As ``None`` pytree</span>
+<span class="sd">        nodes they hold no data and are skipped by every ``tree_map`` over the</span>
+<span class="sd">        state (stacking, scanning, recording).</span>
+<span class="sd">        """</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">has_volatility_parent</span>
+            <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
@@ -960,55 +914,120 @@ window.runMermaid = runMermaid;</script>
             <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">effective_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
             <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">mean_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">precision_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">effective_precision_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
-            <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">mean_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">expected_mean_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">expected_precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">effective_precision_vol</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">vol</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_continuous</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"LayerState"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Initialise the state of a layer of regular continuous nodes."""</span>
+        <span class="n">vope</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)</span> <span class="k">if</span> <span class="n">has_volatility_parent</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">expected_mean</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">expected_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">conditional_expected_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">effective_precision</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">value_prediction_error</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">),</span>
+            <span class="n">mean_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">precision_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">expected_mean_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">expected_precision_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">effective_precision_vol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">volatility_prediction_error</span><span class="o">=</span><span class="n">vope</span><span class="p">,</span>
         <span class="p">)</span></div>
 
+
+
+<span class="c1"># The six volatility-level fields of :class:`LayerState`, set to ``None`` on a</span>
+<span class="c1"># layer without a volatility parent (see :meth:`LayerState.create`).</span>
+<span class="n">VOLATILITY_STATE_FIELDS</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"mean_vol"</span><span class="p">,</span>
+    <span class="s2">"precision_vol"</span><span class="p">,</span>
+    <span class="s2">"expected_mean_vol"</span><span class="p">,</span>
+    <span class="s2">"expected_precision_vol"</span><span class="p">,</span>
+    <span class="s2">"effective_precision_vol"</span><span class="p">,</span>
+    <span class="s2">"volatility_prediction_error"</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="LayerParams">
 <a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LayerParams</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-layer static parameters.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Per-layer static parameters.</span>
 
-<span class="sd">    Each field is an array with one entry per node in the layer.</span>
+<span class="sd">    Each field is an array with one entry per node in the layer, or ``None`` when</span>
+<span class="sd">    the field does not apply to the layer's kind: volatile layers carry</span>
+<span class="sd">    ``tonic_volatility_vol`` (plus ``tonic_volatility`` when the value level's</span>
+<span class="sd">    own tonic volatility is enabled — see ``DeepNetwork(tonic_volatility=True)``),</span>
+<span class="sd">    continuous layers carry the other three.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    tonic_volatility :</span>
-<span class="sd">        The tonic (baseline) volatility of the value level.</span>
 <span class="sd">    tonic_volatility_vol :</span>
-<span class="sd">        The tonic (baseline) volatility of the volatility level.</span>
-<span class="sd">    volatility_coupling :</span>
-<span class="sd">        The volatility-coupling strength between the value and volatility levels.</span>
-<span class="sd">    autoconnection_strength_vol :</span>
-<span class="sd">        The autoconnection (self-coupling) strength of the volatility level.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        The tonic (baseline) volatility of the implied internal volatility level</span>
+<span class="sd">        (volatile layers only).</span>
+<span class="sd">    tonic_volatility :</span>
+<span class="sd">        The tonic (baseline) log-volatility :math:`\omega` of the node's own</span>
+<span class="sd">        Gaussian random walk. Continuous layers always carry it; volatile layers</span>
+<span class="sd">        carry it only when enabled, and ``None`` means the value level has no</span>
+<span class="sd">        intrinsic volatility at all.</span>
+<span class="sd">    tonic_drift :</span>
+<span class="sd">        The constant drift :math:`\rho` added to the predicted mean at every</span>
+<span class="sd">        time step (continuous layers only).</span>
+<span class="sd">    autoconnection_strength :</span>
+<span class="sd">        The AR(1) coefficient :math:`\lambda \in [0, 1]` on the node's own mean</span>
+<span class="sd">        in the prediction; ``1.0`` is a pure random walk (continuous layers</span>
+<span class="sd">        only).</span>
+<span class="sd">    """</span>
 
-    <span class="n">tonic_volatility</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">volatility_coupling</span><span class="p">:</span> <span class="n">Array</span>
-    <span class="n">autoconnection_strength_vol</span><span class="p">:</span> <span class="n">Array</span>
+    <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tonic_volatility</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tonic_drift</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">autoconnection_strength</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
         <span class="n">tonic_volatility_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
-        <span class="n">volatility_coupling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">autoconnection_strength_vol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LayerParams&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise layer params with defaults.&quot;&quot;&quot;</span>
+        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"LayerParams"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Initialise volatile-layer params with defaults.</span>
+
+<span class="sd">        ``tonic_volatility=None`` (the default) leaves the field structurally</span>
+<span class="sd">        absent: the value level has no intrinsic volatility and diffuses only</span>
+<span class="sd">        through its volatility parent.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">tonic_volatility_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="p">),</span>
+            <span class="n">tonic_volatility</span><span class="o">=</span><span class="p">(</span>
+                <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">tonic_volatility</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="p">)</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_continuous</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">tonic_volatility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">,</span>
+        <span class="n">tonic_drift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">autoconnection_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"LayerParams"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Initialise continuous-layer params with the nodalised defaults."""</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="p">),</span>
-            <span class="n">tonic_volatility_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_volatility_vol</span><span class="p">),</span>
-            <span class="n">volatility_coupling</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">volatility_coupling</span><span class="p">),</span>
-            <span class="n">autoconnection_strength_vol</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">autoconnection_strength_vol</span><span class="p">),</span>
+            <span class="n">tonic_drift</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">tonic_drift</span><span class="p">),</span>
+            <span class="n">autoconnection_strength</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">autoconnection_strength</span><span class="p">),</span>
         <span class="p">)</span></div>
 
 
@@ -1016,12 +1035,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Layer">
 <a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Layer.html#pyhgf.typing.vectorised.Layer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Layer</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;One layer of the vectorised deep network.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""One layer of the vectorised deep network.</span>
 
-<span class="sd">    ``weights_in`` is the matrix connecting the layer *below* (child) into this layer</span>
-<span class="sd">    (parent). The bottom layer (index 0) has ``weights_in=None`` because no layer sits</span>
-<span class="sd">    below it. Shape: ``(n_child, n_self[+1])``; the optional ``+1`` column carries the</span>
-<span class="sd">    bias when ``add_constant_input=True``.</span>
+<span class="sd">    ``weights_mean`` holds the *incoming* weights: the matrix connecting the layer</span>
+<span class="sd">    *below* (child) into this layer (parent). The bottom layer (index 0) has</span>
+<span class="sd">    ``weights_mean=None`` because no layer sits below it. Shape: ``(n_child, n_self[+1])``;</span>
+<span class="sd">    the optional ``+1`` column carries the bias when ``add_constant_input=True``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1029,9 +1048,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The per-layer state (see :py:class:`LayerState`).</span>
 <span class="sd">    params :</span>
 <span class="sd">        The per-layer static parameters (see :py:class:`LayerParams`).</span>
-<span class="sd">    weights_in :</span>
-<span class="sd">        The matrix connecting the layer below (child) into this layer, or `None`</span>
-<span class="sd">        for the bottom layer.</span>
+<span class="sd">    weights_mean :</span>
+<span class="sd">        The incoming weights, i.e. the matrix connecting the layer below (child)</span>
+<span class="sd">        into this layer, or `None` for the bottom layer. Also the mean of each</span>
+<span class="sd">        weight's belief where one is installed.</span>
 <span class="sd">    coupling_fn :</span>
 <span class="sd">        The coupling function applied to the incoming weights.</span>
 <span class="sd">    add_constant_input :</span>
@@ -1043,38 +1063,66 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    fully_connected :</span>
 <span class="sd">        Whether the incoming weights are fully connected.</span>
 <span class="sd">    kind :</span>
-<span class="sd">        The kind of layer, either ``&quot;volatile&quot;`` or ``&quot;binary&quot;``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        The kind of layer, one of ``"volatile"``, ``"binary"``, ``"categorical"``,</span>
+<span class="sd">        or ``"continuous"``.</span>
+<span class="sd">    weights_precision_delta :</span>
+<span class="sd">        Weight-belief precision, the second parameter of the belief each weight</span>
+<span class="sd">        carries: ``weights_mean`` is the belief's mean and this its accumulated</span>
+<span class="sd">        precision **above the prior**, same shape. The delta over the prior is</span>
+<span class="sd">        stored rather than the precision itself because it starts at zero, so a</span>
+<span class="sd">        per-step increment far below the prior precision accumulates exactly.</span>
+<span class="sd">    value_child_idx :</span>
+<span class="sd">        Continuous layers only — index (into ``VectorisedNetwork.layers``) of the layer this</span>
+<span class="sd">        layer is the *value parent* of, or ``None``. ``weights_mean`` then connects</span>
+<span class="sd">        that child into this layer, shape ``(n_child, n_self)``, and enters the</span>
+<span class="sd">        drift of the child's predicted mean. The chain convention of volatile</span>
+<span class="sd">        networks (``weights_mean`` always connects the layer directly below) is a</span>
+<span class="sd">        special case with ``value_child_idx = self_index - 1``.</span>
+<span class="sd">    volatility_child_idx :</span>
+<span class="sd">        Continuous layers only — index of the layer this layer is the *volatility</span>
+<span class="sd">        parent* of, or ``None``. ``volatility_weights`` connects that child.</span>
+<span class="sd">    volatility_weights :</span>
+<span class="sd">        Volatility-coupling matrix :math:`\kappa`, shape ``(n_child, n_self)``,</span>
+<span class="sd">        connecting the volatility child named by ``volatility_child_idx`` into</span>
+<span class="sd">        this layer. Fixed at construction — never part of the learned weights</span>
+<span class="sd">        (excluded from :meth:`VectorisedNetwork.weights_tuple`).</span>
+<span class="sd">    """</span>
 
     <span class="n">state</span><span class="p">:</span> <span class="n">LayerState</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span>
-    <span class="n">weights_in</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
+    <span class="n">weights_mean</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">is_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># &quot;volatile&quot; | &quot;binary&quot;</span></div>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">static</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>  <span class="c1"># "volatile" | "binary" | "categorical" | "continuous"</span>
+    <span class="n">weights_precision_delta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">value_child_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">volatility_child_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">volatility_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="LayerStack">
 <a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerStack.html#pyhgf.typing.vectorised.LayerStack">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LayerStack</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;N identical layers stacked into one PyTree with a leading ``(N,)`` axis.</span>
+<span class="w">    </span><span class="sd">"""N identical layers stacked into one PyTree with a leading ``(N,)`` axis.</span>
 
 <span class="sd">    ``state``/``params`` have leading axis ``N`` (each field shape goes from</span>
-<span class="sd">    ``(n_nodes,)`` to ``(N, n_nodes)``). ``weights_in`` goes from</span>
+<span class="sd">    ``(n_nodes,)`` to ``(N, n_nodes)``). ``weights_mean`` goes from</span>
 <span class="sd">    ``(n_child, n_self[+1])`` to ``(N, n_child, n_self[+1])``. Slice index 0 is the</span>
 <span class="sd">    *bottommost* slice in the stack (closest to layer 0 of the network); slice ``N-1``</span>
 <span class="sd">    is the topmost.</span>
 
 <span class="sd">    Validation constraints, enforced at build time:</span>
 
-<span class="sd">    * The layer immediately below the stack must have the same node count as the stack</span>
-<span class="sd">    width (so ``weights_in[0]`` shape matches).</span>
-<span class="sd">    * ``weights_in[k]`` for k &gt; 0 is a square ``(W, W+bias)`` block connecting slice k</span>
-<span class="sd">    (parent) to slice k-1 (child) within the stack.</span>
+<span class="sd">    * The layer immediately below the stack must have the same node count as the</span>
+<span class="sd">      stack width (so ``weights_mean[0]`` shape matches).</span>
+<span class="sd">    * ``weights_mean[k]`` for k &gt; 0 is a square ``(W, W+bias)`` block connecting</span>
+<span class="sd">      slice k (parent) to slice k-1 (child) within the stack.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1083,7 +1131,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    params :</span>
 <span class="sd">        The stacked per-layer static parameters, each field with a leading</span>
 <span class="sd">        ``(N,)`` axis.</span>
-<span class="sd">    weights_in :</span>
+<span class="sd">    weights_mean :</span>
 <span class="sd">        The stacked incoming weight matrices, shape ``(N, n_child, n_self[+1])``.</span>
 <span class="sd">    coupling_fn :</span>
 <span class="sd">        The coupling function shared by all stacked layers.</span>
@@ -1094,32 +1142,40 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    fully_connected :</span>
 <span class="sd">        Whether the incoming weights are fully connected.</span>
 <span class="sd">    kind :</span>
-<span class="sd">        The kind of layer, either ``&quot;volatile&quot;`` or ``&quot;binary&quot;``.</span>
+<span class="sd">        The kind of layer, one of ``"volatile"``, ``"binary"``, or ``"categorical"``.</span>
 <span class="sd">    n_layers :</span>
 <span class="sd">        The number of stacked layers ``N``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">state</span><span class="p">:</span> <span class="n">LayerState</span>  <span class="c1"># each field shape: (N, n_nodes)</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">LayerParams</span>  <span class="c1"># each field shape: (N, n_nodes)</span>
-    <span class="n">weights_in</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># shape: (N, n_child, n_self[+1])</span>
+    <span class="n">weights_mean</span><span class="p">:</span> <span class="n">Array</span>  <span class="c1"># shape: (N, n_child, n_self[+1])</span>
     <span class="n">coupling_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">add_constant_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">has_volatility_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fully_connected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">n_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+    <span class="n">n_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1">#: The stacked weight-belief precisions, shape ``(N, n_child, n_self[+1])``,</span>
+    <span class="c1">#: or ``None`` when the stack carries no weight belief. Holds the precision_delta</span>
+    <span class="c1">#: over the prior, exactly as :attr:`Layer.weights_precision_delta`.</span>
+    <span class="n">weights_precision_delta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="stack_layers">
 <a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.stack_layers.html#pyhgf.typing.vectorised.stack_layers">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">stack_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LayerStack</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine N identical ``Layer`` instances into a single ``LayerStack``.</span>
+<span class="w">    </span><span class="sd">"""Combine N identical ``Layer`` instances into a single ``LayerStack``.</span>
 
 <span class="sd">    All ``Layer``s must share static-field values (kind, coupling_fn,</span>
-<span class="sd">    add_constant_input, has_volatility_parent, fully_connected) and have ``weights_in``</span>
+<span class="sd">    add_constant_input, has_volatility_parent, fully_connected) and have ``weights_mean``</span>
 <span class="sd">    of identical shape. Static fields are taken from the first layer; arrays are stacked</span>
 <span class="sd">    along a new axis 0.</span>
+
+<span class="sd">    A ``LayerStack`` carries no DAG topology, so the continuous-layer fields</span>
+<span class="sd">    (``value_child_idx``, ``volatility_child_idx``, ``volatility_weights``) have no</span>
+<span class="sd">    counterpart here and continuous layers cannot be stacked.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1130,39 +1186,39 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    -------</span>
 <span class="sd">    layer_stack :</span>
 <span class="sd">        The combined :py:class:`LayerStack`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">layers</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot stack an empty list of Layers.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot stack an empty list of Layers."</span><span class="p">)</span>
     <span class="n">first</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">lay</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">layers</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lay</span><span class="p">,</span> <span class="n">Layer</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] is not a Layer: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">lay</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] is not a Layer: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">lay</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="s2">&quot;add_constant_input&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;has_volatility_parent&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;fully_connected&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;kind&quot;</span><span class="p">,</span>
+            <span class="s2">"add_constant_input"</span><span class="p">,</span>
+            <span class="s2">"has_volatility_parent"</span><span class="p">,</span>
+            <span class="s2">"fully_connected"</span><span class="p">,</span>
+            <span class="s2">"kind"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lay</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Cannot stack layers with differing static field </span><span class="si">{</span><span class="n">attr</span><span class="si">!r}</span><span class="s2">: &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;layers[0].</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s2">, &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">].</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">lay</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Cannot stack layers with differing static field </span><span class="si">{</span><span class="n">attr</span><span class="si">!r}</span><span class="s2">: "</span>
+                    <span class="sa">f</span><span class="s2">"layers[0].</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s2">, "</span>
+                    <span class="sa">f</span><span class="s2">"layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">].</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">lay</span><span class="p">,</span><span class="w"> </span><span class="n">attr</span><span class="p">)</span><span class="si">!r}</span><span class="s2">."</span>
                 <span class="p">)</span>
         <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">coupling_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">first</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Cannot stack layers with differing coupling_fn identities. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Hoist the function to module scope so all layers share it.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Cannot stack layers with differing coupling_fn identities. "</span>
+                <span class="sa">f</span><span class="s2">"Hoist the function to module scope so all layers share it."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] has weights_in=None (bottom layer of the network &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;can&#39;t be inside a LayerStack).&quot;</span>
+                <span class="sa">f</span><span class="s2">"layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] has weights_mean=None (bottom layer of the network "</span>
+                <span class="sa">f</span><span class="s2">"can't be inside a LayerStack)."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">].weights_in.shape=</span><span class="si">{</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> differs &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;from layers[0].weights_in.shape=</span><span class="si">{</span><span class="n">first</span><span class="o">.</span><span class="n">weights_in</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"layers[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">].weights_mean.shape=</span><span class="si">{</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> differs "</span>
+                <span class="sa">f</span><span class="s2">"from layers[0].weights_mean.shape=</span><span class="si">{</span><span class="n">first</span><span class="o">.</span><span class="n">weights_mean</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
     <span class="n">stacked_state</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
@@ -1171,33 +1227,48 @@ window.runMermaid = runMermaid;</script>
     <span class="n">stacked_params</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">tree_map</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="o">*</span><span class="n">xs</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">xs</span><span class="p">),</span> <span class="o">*</span><span class="p">(</span><span class="n">lay</span><span class="o">.</span><span class="n">params</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">stacked_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">])</span>
+    <span class="n">stacked_weights</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_mean</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">])</span>
+    <span class="c1"># A belief is stacked only when every slice carries one, since the stacked</span>
+    <span class="c1"># field is one array across the whole stack.</span>
+    <span class="n">carries_belief</span> <span class="o">=</span> <span class="p">[</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_precision_delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Cannot stack layers where only some carry a weight belief: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span><span class="si">}</span><span class="s2"> have "</span>
+            <span class="s2">"weights_precision_delta. Install it on every layer or none."</span>
+        <span class="p">)</span>
+    <span class="n">stacked_precision</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">lay</span><span class="o">.</span><span class="n">weights_precision_delta</span> <span class="k">for</span> <span class="n">lay</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">carries_belief</span><span class="p">)</span>
+        <span class="k">else</span> <span class="kc">None</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">LayerStack</span><span class="p">(</span>
         <span class="n">state</span><span class="o">=</span><span class="n">stacked_state</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="n">stacked_params</span><span class="p">,</span>
-        <span class="n">weights_in</span><span class="o">=</span><span class="n">stacked_weights</span><span class="p">,</span>
+        <span class="n">weights_mean</span><span class="o">=</span><span class="n">stacked_weights</span><span class="p">,</span>
         <span class="n">coupling_fn</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">coupling_fn</span><span class="p">,</span>
         <span class="n">add_constant_input</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">add_constant_input</span><span class="p">,</span>
         <span class="n">has_volatility_parent</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">has_volatility_parent</span><span class="p">,</span>
         <span class="n">fully_connected</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">fully_connected</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
         <span class="n">n_layers</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">),</span>
+        <span class="n">weights_precision_delta</span><span class="o">=</span><span class="n">stacked_precision</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
 
-<div class="viewcode-block" id="Network">
-<a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Network.html#pyhgf.typing.vectorised.Network">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Network</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete vectorised network state.</span>
+<div class="viewcode-block" id="VectorisedNetwork">
+<a class="viewcode-back" href="../../../generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.VectorisedNetwork.html#pyhgf.typing.vectorised.VectorisedNetwork">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VectorisedNetwork</span><span class="p">(</span><span class="n">eqx</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Complete vectorised network state.</span>
 
 <span class="sd">    ``time_step`` is *not* stored on the network — it is passed as a per-step input to</span>
-<span class="sd">    ``propagation_step``, matching the nodalised backend&#39;s</span>
+<span class="sd">    ``propagation_step``, matching the nodalised backend's</span>
 <span class="sd">    ``input_data(time_steps=...)`` API.</span>
 
 <span class="sd">    Optimiser state lives in a separate ``optax`` opt-state carried alongside</span>
-<span class="sd">    ``Network`` in the scan carry; it is not part of the network PyTree.</span>
+<span class="sd">    ``VectorisedNetwork`` in the scan carry; it is not part of the network PyTree.</span>
 
 <span class="sd">    ``layers`` is a mixed tuple of ``Layer`` and ``LayerStack`` elements.</span>
 
@@ -1207,34 +1278,51 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        A mixed tuple of ``Layer`` and ``LayerStack`` elements, ordered from the</span>
 <span class="sd">        bottom (input) layer to the top.</span>
 <span class="sd">    volatility_updates :</span>
-<span class="sd">        The volatility update scheme, e.g. ``&quot;unbounded&quot;``.</span>
+<span class="sd">        The volatility update scheme, e.g. ``"unbounded"``.</span>
 <span class="sd">    max_posterior_precision :</span>
 <span class="sd">        The maximum posterior precision used to clip the precision updates.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    update_input_layer :</span>
+<span class="sd">        Whether the sweeps reach the top (input) layer — see</span>
+<span class="sd">        :class:`pyhgf.model.DeepNetwork`.</span>
+<span class="sd">    predict_precision :</span>
+<span class="sd">        Whether the prediction sweep advances the precisions — see</span>
+<span class="sd">        :func:`pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`.</span>
+<span class="sd">    feedforward_uncertainty :</span>
+<span class="sd">        Whether value parents propagate their uncertainty to their children's</span>
+<span class="sd">        predicted precision — see :class:`pyhgf.model.DeepNetwork`.</span>
+<span class="sd">    mean_field_updates :</span>
+<span class="sd">        If ``False`` (default), use the relaxed prediction and posterior updates.</span>
+<span class="sd">        If ``True``, use the original mean-field updates — see</span>
+<span class="sd">        :class:`pyhgf.model.DeepNetwork`.</span>
+<span class="sd">    """</span>
 
     <span class="n">layers</span><span class="p">:</span> <span class="nb">tuple</span>
     <span class="n">volatility_updates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">max_posterior_precision</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">precision_clipping_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+    <span class="n">update_input_layer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">predict_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">feedforward_uncertainty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">mean_field_updates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of *elements* (``Layer`` or ``LayerStack``) in the network.</span>
+<span class="w">        </span><span class="sd">"""Number of *elements* (``Layer`` or ``LayerStack``) in the network.</span>
 
 <span class="sd">        A ``LayerStack`` counts as one element; use ``n_total_slices`` for the number of</span>
 <span class="sd">        unrolled layers.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_total_slices</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total unrolled layer count, expanding every ``LayerStack``.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Total unrolled layer count, expanding every ``LayerStack``."""</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span>
             <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">n_layers</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_layer_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-element node count (one entry per ``Layer`` / ``LayerStack``).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Per-element node count (one entry per ``Layer`` / ``LayerStack``)."""</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
@@ -1244,36 +1332,36 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">out</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">weights_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-element ``weights_in`` tuple, matched 1:1 to ``self.layers``.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Per-element ``weights_mean`` tuple, matched 1:1 to ``self.layers``."""</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
 
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># Legacy-shape views used by existing tests and the Rust-parity</span>
     <span class="c1"># cross-check. These are not used in the hot path — the kernels read</span>
-    <span class="c1"># ``layer.state`` / ``layer.weights_in`` directly. For ``LayerStack``</span>
+    <span class="c1"># ``layer.state`` / ``layer.weights_mean`` directly. For ``LayerStack``</span>
     <span class="c1"># elements these views flatten the stack into its constituent slices</span>
     <span class="c1"># so consumers see the unrolled shape.</span>
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tuple of weight matrices (legacy view).</span>
+<span class="w">        </span><span class="sd">"""Tuple of weight matrices (legacy view).</span>
 
 <span class="sd">        Stacks are flattened.         Each entry is a ``(n_child, n_self[+1])`` array.</span>
 <span class="sd">        The ``None`` slot on layer 0 is         dropped, and any ``LayerStack`` is</span>
 <span class="sd">        expanded slice-by-slice.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">n_layers</span><span class="p">):</span>
-                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-            <span class="k">elif</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_in</span><span class="p">)</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">weights_mean</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-layer ``LayerParams`` tuple.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Per-layer ``LayerParams`` tuple."""</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">LayerStack</span><span class="p">):</span>
@@ -1286,7 +1374,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="c1"># Convenience constant: every ``LayerState`` field, ordered as declared. Pass</span>
-<span class="c1"># to ``DeepNetwork.fit(record=RECORD_ALL)`` for the legacy &quot;record everything&quot;</span>
+<span class="c1"># to ``DeepNetwork.fit(record=RECORD_ALL)`` for the legacy "record everything"</span>
 <span class="c1"># behaviour without enumerating the field list at the call site.</span>
 <span class="n">RECORD_ALL</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">LayerState</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 </pre></div>
@@ -1318,8 +1406,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1353,7 +1441,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

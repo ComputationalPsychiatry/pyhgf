@@ -1,6 +1,0 @@
-﻿pyhgf.utils.weight\_initialisation.sparse\_init
-===============================================
-
-.. currentmodule:: pyhgf.utils.weight_initialisation
-
-.. autofunction:: sparse_init

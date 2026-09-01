@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorised.binary.vectorised\_binary\_prediction\_error
+=====================================================================
+
+.. currentmodule:: pyhgf.updates.vectorised.binary
+
+.. autofunction:: vectorised_binary_prediction_error

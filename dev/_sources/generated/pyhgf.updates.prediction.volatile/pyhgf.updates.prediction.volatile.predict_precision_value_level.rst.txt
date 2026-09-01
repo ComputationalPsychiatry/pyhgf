@@ -1,6 +1,0 @@
-﻿pyhgf.updates.prediction.volatile.predict\_precision\_value\_level
-==================================================================
-
-.. currentmodule:: pyhgf.updates.prediction.volatile
-
-.. autofunction:: predict_precision_value_level

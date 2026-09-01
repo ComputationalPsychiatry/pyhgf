@@ -1,6 +1,0 @@
-﻿pyhgf.model.add\_categorical\_state
-===================================
-
-.. currentmodule:: pyhgf.model
-
-.. autofunction:: add_categorical_state

@@ -95,51 +95,6 @@ Continuous nodes
     continuous_node_posterior_update
     continuous_node_posterior_update_mean_field
 
-Volatile nodes
---------------
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_value_level
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_value_level
-
-    posterior_update_precision_value_level
-    posterior_update_mean_value_level
-    posterior_update_precision_value_level_mean_field
-    posterior_update_mean_value_level_mean_field
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.posterior_update_volatility_level
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level
-
-    posterior_update_precision_volatility_level
-    posterior_update_mean_volatility_level
-    posterior_update_precision_volatility_level_ehgf
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update
-
-    volatile_node_posterior_update
-    volatile_node_posterior_update_mean_field
-    volatile_node_volatility_posterior_update_standard
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf
-
-    volatile_node_posterior_update_ehgf
-
-.. currentmodule:: pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded
-
-    volatile_node_posterior_update_unbounded
-
 Exponential family
 ------------------
 
@@ -178,21 +133,6 @@ Continuous nodes
     predict_precision_mean_field
     continuous_node_prediction
     continuous_node_prediction_mean_field
-
-Volatile nodes
---------------
-
-.. currentmodule:: pyhgf.updates.prediction.volatile
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction.volatile
-
-    predict_precision_volatility_level
-    predict_mean_value_level
-    predict_precision_value_level
-    predict_precision_value_level_mean_field
-    volatile_node_prediction
-    volatile_node_prediction_mean_field
 
 Dirichlet processes
 -------------------
@@ -242,18 +182,6 @@ Continuous state nodes
     continuous_node_volatility_prediction_error
     continuous_node_prediction_error
 
-Volatile state nodes
---------------------
-
-.. currentmodule:: pyhgf.updates.prediction_error.volatile
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.prediction_error.volatile
-
-    volatile_node_value_prediction_error
-    volatile_node_volatility_prediction_error
-    volatile_node_prediction_error
-
 Dirichlet state nodes
 ---------------------
 
@@ -280,22 +208,10 @@ Exponential family
     prediction_error_update_exponential_family_fixed
     prediction_error_update_exponential_family_dynamic
 
-Learning
-========
-
-Weight learning rules applied after the prediction error step.
-
-.. currentmodule:: pyhgf.updates.learning
-
-.. autosummary::
-   :toctree: generated/pyhgf.updates.learning
-
-    learning_weights
-
 Observations
 ============
 
-Functions for setting observations and predictor values on input nodes.
+Functions for setting observations on input nodes.
 
 .. currentmodule:: pyhgf.updates.observation
 
@@ -303,54 +219,86 @@ Functions for setting observations and predictor values on input nodes.
    :toctree: generated/pyhgf.updates.observation
 
     set_observation
-    set_predictors
 
-Vectorized updates
+Vectorised updates
 ==================
 
-Layer-wise vectorized implementations of the HGF update equations for deep predictive
+Layer-wise vectorised implementations of the HGF update equations for deep predictive
 coding networks. These functions operate on entire layers instead of individual nodes
 and are used internally by :class:`pyhgf.model.DeepNetwork`.
 
 Volatile layers
 ---------------
 
-.. currentmodule:: pyhgf.updates.vectorized.volatile
+.. currentmodule:: pyhgf.updates.vectorised.volatile
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.volatile
+   :toctree: generated/pyhgf.updates.vectorised.volatile
 
-    vectorized_layer_prediction
-    vectorized_layer_posterior_update
-    vectorized_posterior_update_precision_value_level
-    vectorized_posterior_update_mean_value_level
-    vectorized_layer_value_prediction_error
-    vectorized_layer_volatility_prediction_error
-    vectorized_layer_volatility_posterior_standard
-    vectorized_layer_volatility_posterior_ehgf
-    vectorized_layer_volatility_posterior_unbounded
-    vectorized_layer_prediction_error
+    vectorised_layer_prediction
+    vectorised_root_prediction
+    vectorised_layer_posterior_update
+    vectorised_posterior_update_precision_value_level
+    vectorised_posterior_update_mean_value_level
+    vectorised_layer_value_prediction_error
+    vectorised_layer_volatility_prediction_error
+    vectorised_layer_volatility_posterior_standard
+    vectorised_layer_volatility_posterior_ehgf
+    vectorised_layer_volatility_posterior_unbounded
+    vectorised_layer_prediction_error
 
 Binary layers
 -------------
 
-.. currentmodule:: pyhgf.updates.vectorized.binary
+.. currentmodule:: pyhgf.updates.vectorised.binary
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.binary
+   :toctree: generated/pyhgf.updates.vectorised.binary
 
-    vectorized_binary_prediction
-    vectorized_binary_prediction_error
+    vectorised_binary_prediction
+    vectorised_binary_prediction_error
 
-Vectorized learning
+Categorical layers
+------------------
+
+.. currentmodule:: pyhgf.updates.vectorised.categorical
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorised.categorical
+
+    vectorised_categorical_prediction
+    vectorised_categorical_prediction_error
+
+Continuous layers
+-----------------
+
+.. currentmodule:: pyhgf.updates.vectorised.continuous
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorised.continuous
+
+    ValueChild
+    VolatilityChild
+    vectorised_continuous_prediction
+    vectorised_continuous_prediction_error
+    vectorised_continuous_value_prediction_error
+    vectorised_continuous_volatility_prediction_error
+    vectorised_continuous_posterior_update
+    vectorised_continuous_posterior_update_standard
+    vectorised_continuous_posterior_update_ehgf
+    vectorised_continuous_posterior_update_unbounded
+
+Vectorised learning
 -------------------
 
-.. currentmodule:: pyhgf.updates.vectorized.learning
+.. currentmodule:: pyhgf.updates.vectorised.learning
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorized.learning
+   :toctree: generated/pyhgf.updates.vectorised.learning
 
-    vectorized_weight_gradient
+    learning_weights_vectorised
+    resolve_synaptic_uncertainty_settings
+    vectorised_synaptic_uncertainty_update
 
 Model
 *****
@@ -365,7 +313,7 @@ The main classes used to create probabilistic networks for binary or continuous 
 
    Network
    DeepNetwork
-   add_volatile_state
+   DeadGradientWarning
    add_continuous_state
    add_constant_state
    add_binary_state
@@ -376,12 +324,119 @@ The main classes used to create probabilistic networks for binary or continuous 
    update_parameters
    insert_nodes
 
+Weight transplant
+=================
+
+Converters that build a :class:`~pyhgf.model.DeepNetwork` reproducing the forward pass
+of a trained Equinox module, translating its weights into PyHGF's layer layout.
+
+.. currentmodule:: pyhgf.model.transplant
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.transplant
+
+   from_linear
+   from_feedforward
+   from_embedding
+   from_conv
+
+Declarative construction
+========================
+
+Build a :class:`~pyhgf.model.DeepNetwork` from serialisable layer configurations, for
+configuration-driven experiments and reproducible hyperparameter sweeps.
+
+.. currentmodule:: pyhgf.model.builder
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.builder
+   :nosignatures:
+
+   LayerConfig
+   resolve_coupling_fn
+
+Mixed pipelines
+===============
+
+Declare models as a tree of **parts** mixing learning PyHGF networks with frozen
+calculations. Each part translates prediction errors backward through the tree, so
+locally-learning networks and fixed operations compose into one model.
+
+.. currentmodule:: pyhgf.model.hybrid
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.hybrid
+   :nosignatures:
+
+   PCModule
+   DeepNetworkAdapter
+   EquinoxAdapter
+   PCSequential
+   Residual
+   linear_adapter
+   layer_norm_adapter
+   gelu_adapter
+
+Convolution
+===========
+
+A convolution as a weight-shared linear map over image patches: patch extraction and
+pooling are frozen parts, and the single learning part is one small
+:class:`~pyhgf.model.DeepNetwork` applied identically to every patch.
+
+.. currentmodule:: pyhgf.model.conv
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.conv
+   :nosignatures:
+
+   conv_output_shape
+   im2col_adapter
+   avg_pool_adapter
+   max_pool_adapter
+   spatial_reshape_adapter
+   flatten_adapter
+   conv_patch_network
+   conv_block
+
+Transformer
+===========
+
+A GPT-style Transformer assembled from mixed-pipeline parts, where any slot can hold a
+frozen calculation or a learning PyHGF network.
+
+.. currentmodule:: pyhgf.model.transformer
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.transformer
+   :nosignatures:
+
+   MultiHeadAttention
+   HybridGPT
+   hybrid_from_gpt
+
+Fused pipeline execution
+========================
+
+Run a part tree as a single compiled program per training step: the forward walk, the
+output error, and every local learning step are staged into one graph with all part
+state passed explicitly.
+
+.. currentmodule:: pyhgf.model.fused
+
+.. autosummary::
+   :toctree: generated/pyhgf.model.fused
+   :nosignatures:
+
+   FusedPipeline
+   step_report
+
 Plots
 *****
 
-Plotting functionalities to visualize parameters trajectories and correlations after
+Plotting functionalities to visualise parameters trajectories and correlations after
 observing new data. We are currently fully supporting Graphviz for network structure and
-Matplotlib for time series visualization. NetworkX is also available for some functions. 
+Matplotlib for time series visualisation. NetworkX is also available for some functions. 
 
 Matplotlib
 ==========
@@ -451,13 +506,10 @@ Utilities for manipulating neural networks.
    fill_categorical_state_node
    get_input_idxs
    get_update_sequence
-   learning
    list_branches
-   predict_step
    remove_node
    sample_node_distribution
    sample
-   set_coupling
    to_pandas
 
 Weight initialisation
@@ -487,19 +539,29 @@ Low-level helpers used when sampling from a network's generative distribution.
 
    single_sample
 
-Vectorized belief propagation
+Vectorised belief propagation
 =============================
 
 Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork`.
 
-.. currentmodule:: pyhgf.utils.vectorized_belief_propagation
+.. currentmodule:: pyhgf.utils.vectorised_belief_propagation
 
 .. autosummary::
-   :toctree: generated/pyhgf.utils.vectorized_belief_propagation
+   :toctree: generated/pyhgf.utils.vectorised_belief_propagation
 
    propagation_step
    prediction_pass
    run_scan
+   run_continuous_scan
+   prediction_sweep
+   update_sweep
+   learn_sweep
+   input_prediction_error
+   sample_step
+   batch_step
+   apply_precision_increments
+   batched_prediction_pass
+   batched_prediction_states
 
 Math
 ****
@@ -540,9 +602,8 @@ Network structure
 
    AdjacencyLists
    UpdateSequence
-   LearningSequence
 
-Vectorized networks
+Vectorised networks
 ===================
 
 .. currentmodule:: pyhgf.typing.vectorised
@@ -554,5 +615,5 @@ Vectorized networks
    LayerState
    Layer
    LayerStack
-   Network
+   VectorisedNetwork
    stack_layers

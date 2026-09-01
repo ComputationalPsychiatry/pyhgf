@@ -1,0 +1,6 @@
+﻿pyhgf.utils.vectorised\_belief\_propagation.sample\_step
+========================================================
+
+.. currentmodule:: pyhgf.utils.vectorised_belief_propagation
+
+.. autofunction:: sample_step

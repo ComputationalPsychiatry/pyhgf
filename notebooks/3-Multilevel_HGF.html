@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Hierarchical Bayesian modelling with probabilistic neural networks &#8212; pyhgf 0.3.0 documentation</title>
+    <title>Hierarchical Bayesian modelling with probabilistic neural networks &#8212; pyhgf 0.3.1 documentation</title>
   
   
   
@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
@@ -37,15 +37,15 @@
     <link rel="stylesheet" type="text/css" href="../_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="../_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=112603e0" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=35b888ae" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../_static/documentation_options.js?v=4621528c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -56,7 +56,7 @@
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
-    <script type="application/vnd.jupyter.widget-state+json">{"state": {"6b0cf12fa6fb4cf89d881429250d27b6": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "85dc0dbcaaa6474d95026fff20bb0ecc": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_6b0cf12fa6fb4cf89d881429250d27b6", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.457       7           81.27 draws/s        0:00:24    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   2000        0           0.426       7           80.37 draws/s        0:00:24    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.457       7           81.27 draws/s        0:00:24    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   2000        0           0.426       7           80.37 draws/s        0:00:24    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"9822b1be887149d483b140af79744718": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "b1bb294421454490a7c05cc889fb08ad": {"model_name": "OutputModel", "model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_9822b1be887149d483b140af79744718", "msg_id": "", "outputs": [{"output_type": "display_data", "metadata": {}, "data": {"text/plain": "                                                                                                                   \n \u001b[1m                      \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m           \u001b[0m \u001b[1m \u001b[0m\u001b[1mGrad     \u001b[0m\u001b[1m \u001b[0m \u001b[1m                    \u001b[0m \u001b[1m          \u001b[0m \u001b[1m          \u001b[0m \n \u001b[1m \u001b[0m\u001b[1mProgress            \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDraw     \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mDivergen\u2026\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mStep size\u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mevals    \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mSpeed             \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mElapsed \u001b[0m\u001b[1m \u001b[0m \u001b[1m \u001b[0m\u001b[1mRemaini\u2026\u001b[0m\u001b[1m \u001b[0m \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  \u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;214;39;40m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        1           0.490       15          83.45 draws/s        0:00:23    0:00:00   \n  \u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m\u2009\u001b[38;2;31;119;180m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m   1000        0           0.422       15          81.19 draws/s        0:00:24    0:00:00   \n                                                                                                                   \n", "text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">                                                                                                                   \n <span style=\"font-weight: bold\">                      </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\">           </span> <span style=\"font-weight: bold\"> Grad      </span> <span style=\"font-weight: bold\">                    </span> <span style=\"font-weight: bold\">          </span> <span style=\"font-weight: bold\">          </span> \n <span style=\"font-weight: bold\"> Progress             </span> <span style=\"font-weight: bold\"> Draw      </span> <span style=\"font-weight: bold\"> Divergen\u2026 </span> <span style=\"font-weight: bold\"> Step size </span> <span style=\"font-weight: bold\"> evals     </span> <span style=\"font-weight: bold\"> Speed              </span> <span style=\"font-weight: bold\"> Elapsed  </span> <span style=\"font-weight: bold\"> Remaini\u2026 </span> \n \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \n  <span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #d62728; text-decoration-color: #d62728\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        1           0.490       15          83.45 draws/s        0:00:23    0:00:00   \n  <span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>\u2009<span style=\"color: #1f77b4; text-decoration-color: #1f77b4\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span>   1000        0           0.422       15          81.19 draws/s        0:00:24    0:00:00   \n                                                                                                                   \n</pre>\n"}}], "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}</script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/3-Multilevel_HGF';</script>
@@ -148,6 +148,9 @@
   
 </a></div>
     
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
   </div>
   
   <div class="col-lg-9 navbar-header-items">
@@ -158,6 +161,13 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="../learn.html">
     Learn
@@ -302,6 +312,13 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="../learn.html">
     Learn
@@ -396,7 +413,8 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
   <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
@@ -417,7 +435,15 @@
 
 <li class="toctree-l1"><a class="reference internal" href="0.4-Planning_and_acting.html">Planning and acting with predictive coding networks</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_learning.html">Deep Bayesian predictive coding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="0.5-Deep_networks_theory.html">Learning in deep predictive coding networks: the theory</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.6-Prospective_configuration.html">Learning in deep networks with prospective configuration</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.7-Deep_networks_implementation.html">Building custom deep network architectures</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.8-Convolutional_networks.html">Convolutional predictive coding networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="0.9-Transformers.html">Transformer predictive coding networks</a></li>
 
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The Hierarchical Gaussian Filter</span></p>
@@ -533,7 +559,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
 
-<span class="k">if</span> <span class="s2">&quot;google.colab&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+<span class="k">if</span> <span class="s2">"google.colab"</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
         <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
         <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
@@ -551,9 +577,9 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
 
-<span class="c1"># Enable 64-bit precision so JAX matches PyTensor&#39;s float64 graphs and avoids</span>
+<span class="c1"># Enable 64-bit precision so JAX matches PyTensor's float64 graphs and avoids</span>
 <span class="c1"># dtype-truncation warnings when the network is wrapped for PyMC.</span>
-<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;jax_enable_x64&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">"jax_enable_x64"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
@@ -568,7 +594,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Network</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyhgf.response</span><span class="w"> </span><span class="kn">import</span> <span class="n">binary_softmax_inverse_temperature</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.use&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"figure.constrained_layout.use"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 </pre></div>
 </div>
 </div>
@@ -594,7 +620,7 @@
 <p>We start by simulating a dataset containing the decisions from a group of participants undergoing a standard one-armed bandit task. We use the same binary time series as a reference as the previous tutorials. This would represent the association between the stimuli and the outcome, the experimenter controls this and here we assume all participants are presented with the same sequence of association.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="s2">"binary"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -618,7 +644,7 @@ temperature = e^z
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the sigmoid response function with inverse temperature parameter.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute the sigmoid response function with inverse temperature parameter."""</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">temperature</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="n">temperature</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -632,10 +658,10 @@ temperature = e^z
 </summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">set_palette</span><span class="p">(</span><span class="s2">&quot;rocket&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_palette</span><span class="p">(</span><span class="s2">"rocket"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">64.0</span><span class="p">]:</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">temp</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;$ \lambda = </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;The unit square sigmoid function&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">temp</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">"$ \lambda = </span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s2">$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"The unit square sigmoid function"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">();</span>
 </pre></div>
@@ -643,7 +669,7 @@ temperature = e^z
 </div>
 </details>
 <div class="cell_output docutils container">
-<img alt="../_images/15190cadad4eaf1c479ee1ded2cf1f1dfca40db6e69120dfb21dad50e81fd367.png" src="../_images/15190cadad4eaf1c479ee1ded2cf1f1dfca40db6e69120dfb21dad50e81fd367.png" />
+<img alt="../_images/375211c6089cfd91accf1f94b6700d979bc6efef12b192a8bc818100ce76671b.png" src="../_images/375211c6089cfd91accf1f94b6700d979bc6efef12b192a8bc818100ce76671b.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -651,7 +677,7 @@ temperature = e^z
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># number of agents/participants in the study</span>
 
 <span class="c1"># create just one default network - we will simply change the values of interest before fitting to save time</span>
-<span class="n">agent</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">Network</span><span class="p">()</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -663,12 +689,12 @@ temperature = e^z
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
     <span class="c1"># sample one new value of the tonic volatility at the second level and fit to observations</span>
     <span class="n">volatility</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="o">-</span><span class="mf">4.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">agent</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;tonic_volatility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">volatility</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">"tonic_volatility"</span><span class="p">]</span> <span class="o">=</span> <span class="n">volatility</span>
     <span class="n">agent</span><span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
 
     <span class="c1"># sample one value for the inverse temperature (here in log space) and simulate responses</span>
     <span class="n">temperature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;expected_mean&quot;</span><span class="p">],</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">node_trajectories</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"expected_mean"</span><span class="p">],</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">)</span>
 
     <span class="c1"># store observations and decisions separately</span>
     <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -680,7 +706,7 @@ temperature = e^z
 </section>
 <section id="group-level-inference">
 <h2>Group-level inference<a class="headerlink" href="#group-level-inference" title="Link to this heading">#</a></h2>
-<p>In this section, we start embedding the HGF in a multilevel model using PyMC. To fit many participants at once, we write the log-probability of a <em>single</em> participant as a JAX function (building the network with the <a class="reference internal" href="../generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><span class="xref myst py py-class">Network</span></a> class) and apply it to every participant in parallel using <a class="reference external" href="https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html"><code class="docutils literal notranslate"><span class="pre">jax.vmap</span></code></a>. The vectorized function is then exposed to PyMC with <a class="reference external" href="https://pytensor.readthedocs.io/en/latest/library/tensor/index.html"><code class="docutils literal notranslate"><span class="pre">pytensor.wrap_jax</span></code></a>, so it can be used inside a <a class="reference external" href="https://www.pymc.io/projects/docs/en/stable/api/distributions/generated/pymc.CustomDist.html"><code class="docutils literal notranslate"><span class="pre">pm.CustomDist</span></code></a>.</p>
+<p>In this section, we start embedding the HGF in a multilevel model using PyMC. To fit many participants at once, we write the log-probability of a <em>single</em> participant as a JAX function (building the network with the <a class="reference internal" href="../generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network" title="pyhgf.model.Network"><span class="xref myst py py-class">Network</span></a> class) and apply it to every participant in parallel using <a class="reference external" href="https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html"><code class="docutils literal notranslate"><span class="pre">jax.vmap</span></code></a>. The vectorised function is then exposed to PyMC with <a class="reference external" href="https://pytensor.readthedocs.io/en/latest/library/tensor/index.html"><code class="docutils literal notranslate"><span class="pre">pytensor.wrap_jax</span></code></a>, so it can be used inside a <a class="reference external" href="https://www.pymc.io/projects/docs/en/stable/api/distributions/generated/pymc.CustomDist.html"><code class="docutils literal notranslate"><span class="pre">pm.CustomDist</span></code></a>.</p>
 <p>The per-participant parameters (here the tonic volatility and the inverse temperature) are passed as vectors whose first dimension is the number of participants, and the responses are stored as a 2D array of shape <code class="docutils literal notranslate"><span class="pre">(n_participants,</span> <span class="pre">n_observations)</span></code>. The shared input sequence <code class="docutils literal notranslate"><span class="pre">u</span></code> is fixed, so it is captured once inside the log-probability function rather than being passed as a parameter.</p>
 <p>```{note} Vectorizing over participants with <code class="docutils literal notranslate"><span class="pre">vmap</span></code>
 To estimate group-level parameters, we fit many models at the same time - either on different input data, on the same data with different parameters, or on different datasets with different parameters. We achieve this by writing the log-probability for a single participant and mapping it over the participant axis with <a class="reference external" href="https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html"><code class="docutils literal notranslate"><span class="pre">jax.vmap</span></code></a>. Each mapped argument (tonic volatility, inverse temperature, responses) has the number of participants as its first dimension, so the <code class="docutils literal notranslate"><span class="pre">n</span></code>-th model uses the <code class="docutils literal notranslate"><span class="pre">n</span></code>-th value of every parameter and the <code class="docutils literal notranslate"><span class="pre">n</span></code>-th row of responses. Summing the resulting pointwise log-probabilities yields the total log-probability used by the custom distribution.</p>
@@ -695,21 +721,21 @@ As we explained in the first part of the tutorials, probabilistic networks <em>o
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">participant_logp</span><span class="p">(</span><span class="n">tonic_volatility</span><span class="p">,</span> <span class="n">inverse_temperature</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pointwise log-probability of a single participant&#39;s responses.</span>
+<span class="w">    </span><span class="sd">"""Pointwise log-probability of a single participant's responses.</span>
 
 <span class="sd">    Build a two-level binary HGF, feed it the (shared) input sequence `u` and</span>
-<span class="sd">    return the log-probability of the participant&#39;s decisions under the binary</span>
+<span class="sd">    return the log-probability of the participant's decisions under the binary</span>
 <span class="sd">    softmax response model, one value per observation.</span>
 
-<span class="sd">    The first time point reflects the network&#39;s initial (prior) state, before any</span>
+<span class="sd">    The first time point reflects the network's initial (prior) state, before any</span>
 <span class="sd">    observation has been processed, so its surprise does not depend on the</span>
 <span class="sd">    parameters. We drop it here: it would otherwise add a constant offset to the</span>
 <span class="sd">    total log-probability and, being constant across draws, break the</span>
 <span class="sd">    leave-one-out cross-validation used for model comparison below.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">surprise</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">Network</span><span class="p">()</span>
-        <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;binary-state&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"binary-state"</span><span class="p">)</span>
         <span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">value_children</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="o">=</span><span class="n">tonic_volatility</span><span class="p">)</span>
         <span class="o">.</span><span class="n">input_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
         <span class="o">.</span><span class="n">surprise</span><span class="p">(</span>
@@ -727,7 +753,7 @@ As we explained in the first part of the tutorials, probabilistic networks <em>o
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@wrap_jax</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">two_level_logp</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">tonic_volatility</span><span class="p">,</span> <span class="n">inverse_temperature</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Total log-probability across all participants (a scalar).</span>
+<span class="w">    </span><span class="sd">"""Total log-probability across all participants (a scalar).</span>
 
 <span class="sd">    This is the log-probability function used by the PyMC custom distribution,</span>
 <span class="sd">    so its first argument ``value`` is the observed responses (one row per</span>
@@ -735,7 +761,7 @@ As we explained in the first part of the tutorials, probabilistic networks <em>o
 <span class="sd">    participants in parallel - mapping over the per-participant tonic</span>
 <span class="sd">    volatilities, inverse temperatures and responses - and the resulting</span>
 <span class="sd">    pointwise log-probabilities are summed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">vmap</span><span class="p">(</span><span class="n">participant_logp</span><span class="p">)(</span>
         <span class="n">tonic_volatility</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">inverse_temperature</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">value</span>
     <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -753,24 +779,24 @@ The log-probability function used by the custom distribution returns the <em>sum
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">two_levels_binary_hgf</span><span class="p">:</span>
     <span class="c1"># tonic volatility</span>
     <span class="c1"># ----------------</span>
-    <span class="n">mu_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;mu_volatility&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-    <span class="n">sigma_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="s2">&quot;sigma_volatility&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="n">mu_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"mu_volatility"</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="n">sigma_volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="s2">"sigma_volatility"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
     <span class="n">volatility</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span>
-        <span class="s2">&quot;volatility&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu_volatility</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_volatility</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">N</span>
+        <span class="s2">"volatility"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu_volatility</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_volatility</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">N</span>
     <span class="p">)</span>
 
     <span class="c1"># inverse temperature</span>
     <span class="c1"># -------------------</span>
-    <span class="n">mu_temperature</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;mu_temperature&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">sigma_temperature</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="s2">&quot;sigma_temperature&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">mu_temperature</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"mu_temperature"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">sigma_temperature</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="s2">"sigma_temperature"</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">inverse_temperature</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">LogNormal</span><span class="p">(</span>
-        <span class="s2">&quot;inverse_temperature&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu_temperature</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_temperature</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">N</span>
+        <span class="s2">"inverse_temperature"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu_temperature</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_temperature</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">N</span>
     <span class="p">)</span>
 
     <span class="c1"># The multi-HGF distribution</span>
     <span class="c1"># --------------------------</span>
     <span class="n">log_likelihood</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">CustomDist</span><span class="p">(</span>
-        <span class="s2">&quot;log_likelihood&quot;</span><span class="p">,</span>
+        <span class="s2">"log_likelihood"</span><span class="p">,</span>
         <span class="n">volatility</span><span class="p">,</span>
         <span class="n">inverse_temperature</span><span class="p">,</span>
         <span class="n">logp</span><span class="o">=</span><span class="n">two_level_logp</span><span class="p">,</span>
@@ -790,7 +816,7 @@ The log-probability function used by the custom distribution returns the <em>sum
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">two_levels_binary_hgf</span><span class="p">:</span>
-    <span class="n">two_level_hgf_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;jax&quot;</span><span class="p">)</span>
+    <span class="n">two_level_hgf_idata</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"jax"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -804,8 +830,11 @@ The log-probability function used by the custom distribution returns the <em>sum
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>NUTS: [mu_volatility, sigma_volatility, volatility, mu_temperature, sigma_temperature, inverse_temperature]
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "85dc0dbcaaa6474d95026fff20bb0ecc"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 50 seconds.
+<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "b1bb294421454490a7c05cc889fb08ad"}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sampling 2 chains for 1_000 tune and 1_000 draw iterations (2_000 + 2_000 draws total) took 49 seconds.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>There was 1 divergence after tuning. Increase `target_accept` or reparameterize.
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>We recommend running at least 4 chains for robust computation of convergence diagnostics
@@ -821,12 +850,12 @@ The log-probability function used by the custom distribution returns the <em>sum
 <span class="c1"># point is dropped inside `participant_logp`, so there are `len(u) - 1` observations.</span>
 <span class="n">posterior</span> <span class="o">=</span> <span class="n">two_level_hgf_idata</span><span class="o">.</span><span class="n">posterior</span>
 <span class="n">volatility_samples</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;volatility&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+    <span class="n">posterior</span><span class="p">[</span><span class="s2">"volatility"</span><span class="p">]</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">(</span><span class="s2">"chain"</span><span class="p">,</span> <span class="s2">"draw"</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 <span class="p">)</span>
 <span class="n">temperature_samples</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;inverse_temperature&quot;</span><span class="p">]</span>
-    <span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">))</span>
-    <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+    <span class="n">posterior</span><span class="p">[</span><span class="s2">"inverse_temperature"</span><span class="p">]</span>
+    <span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="p">(</span><span class="s2">"chain"</span><span class="p">,</span> <span class="s2">"draw"</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">"sample"</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">pointwise_fn</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span>
@@ -839,13 +868,13 @@ The log-probability function used by the custom distribution returns the <em>sum
 
 <span class="c1"># reshape back to (chain, draw, participant, observation) and store as a</span>
 <span class="c1"># `log_likelihood` group so it can be used for model comparison</span>
-<span class="n">n_chains</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;chain&quot;</span><span class="p">]</span>
-<span class="n">n_draws</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;draw&quot;</span><span class="p">]</span>
+<span class="n">n_chains</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"chain"</span><span class="p">]</span>
+<span class="n">n_draws</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"draw"</span><span class="p">]</span>
 <span class="n">n_observations</span> <span class="o">=</span> <span class="n">pointwise</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">pointwise</span> <span class="o">=</span> <span class="n">pointwise</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_chains</span><span class="p">,</span> <span class="n">n_draws</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">n_observations</span><span class="p">)</span>
-<span class="n">two_level_hgf_idata</span><span class="p">[</span><span class="s2">&quot;log_likelihood&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">({</span>
-    <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="p">(</span>
-        <span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">,</span> <span class="s2">&quot;participant&quot;</span><span class="p">,</span> <span class="s2">&quot;observation&quot;</span><span class="p">),</span>
+<span class="n">two_level_hgf_idata</span><span class="p">[</span><span class="s2">"log_likelihood"</span><span class="p">]</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">({</span>
+    <span class="s2">"log_likelihood"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">"chain"</span><span class="p">,</span> <span class="s2">"draw"</span><span class="p">,</span> <span class="s2">"participant"</span><span class="p">,</span> <span class="s2">"observation"</span><span class="p">),</span>
         <span class="n">pointwise</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">})</span>
@@ -854,23 +883,23 @@ The log-probability function used by the custom distribution returns the <em>sum
 </div>
 </div>
 </section>
-<section id="visualization-of-the-posterior-distributions">
-<h3>Visualization of the posterior distributions<a class="headerlink" href="#visualization-of-the-posterior-distributions" title="Link to this heading">#</a></h3>
+<section id="visualisation-of-the-posterior-distributions">
+<h3>Visualisation of the posterior distributions<a class="headerlink" href="#visualisation-of-the-posterior-distributions" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Marginal posteriors of the group-level means, with the simulation values as</span>
 <span class="c1"># reference lines.</span>
 <span class="n">pc</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">plot_dist</span><span class="p">(</span>
     <span class="n">two_level_hgf_idata</span><span class="p">,</span>
-    <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mu_temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;mu_volatility&quot;</span><span class="p">],</span>
+    <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"mu_temperature"</span><span class="p">,</span> <span class="s2">"mu_volatility"</span><span class="p">],</span>
 <span class="p">)</span>
-<span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;mu_temperature&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;mu_volatility&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="n">pc</span><span class="o">.</span><span class="n">get_target</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C1&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"mu_temperature"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"mu_volatility"</span><span class="p">:</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">pc</span><span class="o">.</span><span class="n">get_target</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"C1"</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/a5564d454fb0c7f18b90e9adbe401868a6def1381a4eaa047d4c14fb4e0d3ded.png" src="../_images/a5564d454fb0c7f18b90e9adbe401868a6def1381a4eaa047d4c14fb4e0d3ded.png" />
+<img alt="../_images/e15eb336a602a5ce40b3ca4fd1e66d3039fc6f072cc75bb92e4fc7f7c586f18a.png" src="../_images/e15eb336a602a5ce40b3ca4fd1e66d3039fc6f072cc75bb92e4fc7f7c586f18a.png" />
 </div>
 </div>
 <p>The reference values on both posterior distributions indicate the mean of the distribution used for simulation.</p>
@@ -878,7 +907,7 @@ The log-probability function used by the custom distribution returns the <em>sum
 </section>
 <section id="model-comparison">
 <h2>Model comparison<a class="headerlink" href="#model-comparison" title="Link to this heading">#</a></h2>
-<p>The posterior samples we get from <a class="reference external" href="https://www.pymc.io/welcome.html">PyMC</a> are crucial to inform inference over parameter values, but they can also be helpful to compare different models that were fitted on the same observations. Here, we use leave-one-out cross-validation <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id17" title="Aki Vehtari, Andrew Gelman, and Jonah Gabry. Practical bayesian model evaluation using leave-one-out cross-validation and waic. Statistics and Computing, 27(5):1413–1432, August 2016. URL: http://dx.doi.org/10.1007/s11222-016-9696-4, doi:10.1007/s11222-016-9696-4.">Vehtari <em>et al.</em>, 2016</a>]</span>, which is the default method recommended by <a class="reference external" href="https://python.arviz.org/en/stable/">Arviz</a>. This function requires that the posterior samples also include pointwise estimates, it is therefore crucial to save this information during sampling, or alternativeæly to compute this manually from the samples a posteriori. We compute the expected log pointwise predictive density (ELPD) for one model, which indicates the quality of model fit (the higher the better). This quantity can be used to compare models side by side, provided that they are fitted to the same observed data.</p>
+<p>The posterior samples we get from <a class="reference external" href="https://www.pymc.io/welcome.html">PyMC</a> are crucial to inform inference over parameter values, but they can also be helpful to compare different models that were fitted on the same observations. Here, we use leave-one-out cross-validation <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../references.html#id19" title="Aki Vehtari, Andrew Gelman, and Jonah Gabry. Practical bayesian model evaluation using leave-one-out cross-validation and waic. Statistics and Computing, 27(5):1413–1432, August 2016. URL: http://dx.doi.org/10.1007/s11222-016-9696-4, doi:10.1007/s11222-016-9696-4.">Vehtari <em>et al.</em>, 2016</a>]</span>, which is the default method recommended by <a class="reference external" href="https://python.arviz.org/en/stable/">Arviz</a>. This function requires that the posterior samples also include pointwise estimates, it is therefore crucial to save this information during sampling, or alternativeæly to compute this manually from the samples a posteriori. We compute the expected log pointwise predictive density (ELPD) for one model, which indicates the quality of model fit (the higher the better). This quantity can be used to compare models side by side, provided that they are fitted to the same observed data.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%capture</span> --no-display
@@ -897,8 +926,8 @@ The log-probability function used by the custom distribution returns the <em>sum
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Computed from 2000 posterior samples and 3190 observations log-likelihood matrix.
 
          Estimate       SE
-elpd_loo -1677.26    25.65
-p_loo       17.97        -
+elpd_loo -1677.47    25.61
+p_loo       18.16        -
 
 There has been a warning during the calculation. Please check the results.
 ------
@@ -924,26 +953,26 @@ Pareto k diagnostic values:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 16 Jun 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
 
 Python implementation: CPython
-Python version       : 3.12.13
-IPython version      : 9.14.1
+Python version       : 3.12.14
+IPython version      : 9.16.1
 
-pyhgf : 0.3.0
-jax   : 0.4.31
-jaxlib: 0.4.31
+pyhgf : 0.3.1
+jax   : 0.6.2
+jaxlib: 0.6.2
 
-IPython   : 9.14.1
-arviz     : 1.2.0
-jax       : 0.4.31
-matplotlib: 3.11.0
+IPython   : 9.16.1
+arviz     : 1.3.0
+jax       : 0.6.2
+matplotlib: 3.11.1
 numpy     : 2.4.6
-pyhgf     : 0.3.0
-pymc      : 6.0.1
-pytensor  : 3.0.7
+pyhgf     : 0.3.1
+pymc      : 6.3.1
+pytensor  : 3.3.0
 seaborn   : 0.13.2
-xarray    : 2026.4.0
+xarray    : 2026.7.0
 
 Watermark: 2.6.0
 </pre></div>
@@ -1003,7 +1032,7 @@ Watermark: 2.6.0
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulate-a-dataset">Simulate a dataset</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#group-level-inference">Group-level inference</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sampling">Sampling</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization-of-the-posterior-distributions">Visualization of the posterior distributions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualisation-of-the-posterior-distributions">Visualisation of the posterior distributions</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-comparison">Model comparison</a></li>
@@ -1036,8 +1065,8 @@ Watermark: 2.6.0
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1071,7 +1100,7 @@ Watermark: 2.6.0
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

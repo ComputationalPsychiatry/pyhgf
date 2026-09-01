@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; pyhgf 0.3.0 documentation</title>
+    <title>Index &#8212; pyhgf 0.3.1 documentation</title>
   
   
   
@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
@@ -36,15 +36,15 @@
     <link rel="stylesheet" type="text/css" href="_static/exercise.css" />
     <link rel="stylesheet" type="text/css" href="_static/proof.css" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=112603e0" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=35b888ae" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="_static/documentation_options.js?v=e259d695"></script>
+    <script src="_static/documentation_options.js?v=4621528c"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -53,182 +53,17 @@
     <script src="_static/togglebutton.js?v=b8b12719"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
-
-
 
 
 
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
-    defaultStyle.textContent = `pre.mermaid {
-    /* Same as .mermaid-container > pre */
-    display: block;
-    width: 100%;
-}
-
-pre.mermaid > svg {
-    /* Same as .mermaid-container > pre > svg */
-    height: 500px;
-    width: 100%;
-    max-width: 100% !important;
-}`;
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
     document.head.appendChild(defaultStyle);
 
     const fullscreenStyle = document.createElement('style');
-    fullscreenStyle.textContent = `.mermaid-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-}
-
-.mermaid-container > pre {
-    display: block;
-    width: 100%;
-}
-
-.mermaid-container > pre > svg {
-    height: 500px;
-    width: 100%;
-    max-width: 100% !important;
-}
-
-.mermaid-fullscreen-btn {
-    width: 28px;
-    height: 28px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    font-size: 14px;
-    line-height: 1;
-    padding: 0;
-    color: #333;
-}
-
-.mermaid-fullscreen-btn:hover {
-    opacity: 100% !important;
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
-}
-
-.mermaid-fullscreen-btn.dark-theme {
-    background: rgba(50, 50, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #e0e0e0;
-}
-
-.mermaid-fullscreen-btn.dark-theme:hover {
-    background: rgba(60, 60, 60, 1);
-    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
-}
-
-.mermaid-fullscreen-modal {
-    display: none;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 95vw;
-    height: 100vh;
-    background: rgba(255, 255, 255, 0.98);
-    z-index: 9999;
-    padding: 20px;
-    overflow: auto;
-}
-
-.mermaid-fullscreen-modal.dark-theme {
-    background: rgba(0, 0, 0, 0.98);
-}
-
-.mermaid-fullscreen-modal.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen {
-    position: relative;
-    width: 95vw;
-    height: 90vh;
-    max-width: 95vw;
-    max-height: 90vh;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    overflow: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen.dark-theme {
-    background: #1a1a1a;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-}
-
-.mermaid-container-fullscreen pre.mermaid {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mermaid-container-fullscreen .mermaid svg {
-    height: 100% !important;
-    width: 100% !important;
-    cursor: grab;
-}
-
-.mermaid-fullscreen-close {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s;
-    font-size: 24px;
-    line-height: 1;
-    color: #333;
-}
-
-.mermaid-fullscreen-close:hover {
-    background: white;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-    transform: scale(1.1);
-}
-
-.mermaid-fullscreen-close.dark-theme {
-    background: rgba(50, 50, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #e0e0e0;
-}
-
-.mermaid-fullscreen-close.dark-theme:hover {
-    background: rgba(60, 60, 60, 1);
-    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
-}
-
-.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
-    display: none !important;
-}`;
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
     document.head.appendChild(fullscreenStyle);
 }
 
@@ -273,6 +108,32 @@ let darkTheme = isDarkTheme();
 let modal = null;
 let modalContent = null;
 let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
 
 const runMermaid = async (rerun) => {
     console.log("Running mermaid diagrams, rerun =", rerun);
@@ -280,7 +141,15 @@ const runMermaid = async (rerun) => {
     let all_mermaids = document.querySelectorAll(".mermaid");
 
     if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
         all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
             if(!el.hasAttribute("data-original-code")) {
                 // store original code
                 // console.log(`Storing original code for first run: `, el.innerHTML);
@@ -297,42 +166,100 @@ const runMermaid = async (rerun) => {
                 el.setAttribute('data-original-code', el.innerHTML);
             }
         });
-        await mermaid.run();
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
     }
 
     all_mermaids = document.querySelectorAll(".mermaid");
-    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
 
-    if ("False" === "True") {
-        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
         if(mermaids_to_add_zoom > 0) {
-            var svgs = d3.selectAll("");
-            if(all_mermaids.length !== mermaids_processed.length) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
                 setTimeout(() => runMermaid(false), 200);
                 return;
-            } else if(svgs.size() !== mermaids_to_add_zoom) {
-                setTimeout(() => runMermaid(false), 200);
-                return;
-            } else {
-                svgs.each(function() {
-                    var svg = d3.select(this);
-                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
-                    var inner = svg.select("g");
-                    var zoom = d3.zoom().on("zoom", function(event) {
-                        inner.attr("transform", event.transform);
-                    });
-                    svg.call(zoom);
-                });
             }
+            addZoomToSvgs(svgs);
         }
-    } else if(all_mermaids.length !== mermaids_processed.length) {
+    } else if(mermaids_active.length !== mermaids_processed.length) {
         // Wait for mermaid to process all diagrams
         setTimeout(() => runMermaid(false), 200);
         return;
     }
 
     // Stop here if not adding fullscreen capability
-    if ("True" !== "True") return;
+    if (!true) return;
 
     if (modal !== null ) {
         // Destroy existing modal
@@ -355,7 +282,7 @@ const runMermaid = async (rerun) => {
     modalContent = modal.querySelector('.mermaid-container-fullscreen');
     const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
 
-    const closeModal = () => {
+    closeModal = () => {
         modal.classList.remove('active');
         modalContent.innerHTML = '';
         document.body.style.overflow = ''
@@ -366,12 +293,6 @@ const runMermaid = async (rerun) => {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeModal();
-        }
-    });
-
     document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
         if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
             mermaidDiv.closest('.mermaid-fullscreen-modal')) {
@@ -391,8 +312,8 @@ const runMermaid = async (rerun) => {
         const fullscreenBtn = document.createElement('button');
         fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
         fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
-        fullscreenBtn.textContent = '⛶';
-        fullscreenBtn.style.opacity = '50%';
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
 
         // Calculate dynamic position based on diagram's margin and padding
         const diagramStyle = window.getComputedStyle(mermaidDiv);
@@ -404,7 +325,7 @@ const runMermaid = async (rerun) => {
         fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
 
         fullscreenBtn.addEventListener('click', () => {
-            previousScrollOffset = [window.scroll, window.scrollY];
+            previousScrollOffset = [window.scrollX, window.scrollY];
             const clone = mermaidDiv.cloneNode(true);
             modalContent.innerHTML = '';
             modalContent.appendChild(clone);
@@ -416,9 +337,9 @@ const runMermaid = async (rerun) => {
                 svg.style.width = '100%';
                 svg.style.height = 'auto';
                 svg.style.maxWidth = '100%';
-                svg.style.sdisplay = 'block';
+                svg.style.display = 'block';
 
-                if ("False" === "True") {
+                if (false) {
                     setTimeout(() => {
                         const g = svg.querySelector('g');
                         if (g) {
@@ -441,8 +362,11 @@ const runMermaid = async (rerun) => {
     });
 };
 
+
+
 const load = async () => {
     initStyles();
+
 
     await runMermaid(true);
 
@@ -452,10 +376,8 @@ const load = async () => {
             darkTheme = newDarkTheme;
             console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
             await mermaid.initialize(
-                {...JSON.parse(
-                    `{"startOnLoad": false}`
-                ),
-                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
                 }
             );
             await runMermaid(true);
@@ -480,10 +402,8 @@ const load = async () => {
 
 console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
 mermaid.initialize(
-    {...JSON.parse(
-        `{"startOnLoad": false}`
-    ),
-    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
     }
 );
 
@@ -576,6 +496,9 @@ window.runMermaid = runMermaid;</script>
   
 </a></div>
     
+      <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
+<span class="navbar-version">v0.3.1</span></div>
+    
   </div>
   
   <div class="col-lg-9 navbar-header-items">
@@ -586,6 +509,13 @@ window.runMermaid = runMermaid;</script>
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="install.html">
+    Install
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="learn.html">
     Learn
@@ -729,6 +659,13 @@ window.runMermaid = runMermaid;</script>
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="install.html">
+    Install
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="learn.html">
     Learn
   </a>
@@ -863,6 +800,7 @@ window.runMermaid = runMermaid;</script>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -884,13 +822,29 @@ window.runMermaid = runMermaid;</script>
       <ul>
         <li><a href="generated/pyhgf.math/pyhgf.math.Normal.html#pyhgf.math.Normal.__init__">(pyhgf.math.Normal method)</a>
 </li>
+        <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.__init__">(pyhgf.model.builder.LayerConfig method)</a>
+</li>
         <li><a href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork.__init__">(pyhgf.model.DeepNetwork method)</a>
+</li>
+        <li><a href="generated/pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html#pyhgf.model.fused.FusedPipeline.__init__">(pyhgf.model.fused.FusedPipeline method)</a>
+</li>
+        <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.DeepNetworkAdapter.html#pyhgf.model.hybrid.DeepNetworkAdapter.__init__">(pyhgf.model.hybrid.DeepNetworkAdapter method)</a>
+</li>
+        <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.EquinoxAdapter.html#pyhgf.model.hybrid.EquinoxAdapter.__init__">(pyhgf.model.hybrid.EquinoxAdapter method)</a>
+</li>
+        <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule.__init__">(pyhgf.model.hybrid.PCModule method)</a>
+</li>
+        <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.PCSequential.html#pyhgf.model.hybrid.PCSequential.__init__">(pyhgf.model.hybrid.PCSequential method)</a>
+</li>
+        <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.Residual.html#pyhgf.model.hybrid.Residual.__init__">(pyhgf.model.hybrid.Residual method)</a>
 </li>
         <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.__init__">(pyhgf.model.Network method)</a>
 </li>
-        <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.AdjacencyLists.html#pyhgf.typing.typing.AdjacencyLists.__init__">(pyhgf.typing.typing.AdjacencyLists method)</a>
+        <li><a href="generated/pyhgf.model.transformer/pyhgf.model.transformer.HybridGPT.html#pyhgf.model.transformer.HybridGPT.__init__">(pyhgf.model.transformer.HybridGPT method)</a>
 </li>
-        <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.LearningSequence.html#pyhgf.typing.typing.LearningSequence.__init__">(pyhgf.typing.typing.LearningSequence method)</a>
+        <li><a href="generated/pyhgf.model.transformer/pyhgf.model.transformer.MultiHeadAttention.html#pyhgf.model.transformer.MultiHeadAttention.__init__">(pyhgf.model.transformer.MultiHeadAttention method)</a>
+</li>
+        <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.AdjacencyLists.html#pyhgf.typing.typing.AdjacencyLists.__init__">(pyhgf.typing.typing.AdjacencyLists method)</a>
 </li>
         <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.UpdateSequence.html#pyhgf.typing.typing.UpdateSequence.__init__">(pyhgf.typing.typing.UpdateSequence method)</a>
 </li>
@@ -902,7 +856,11 @@ window.runMermaid = runMermaid;</script>
 </li>
         <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerState.html#pyhgf.typing.vectorised.LayerState.__init__">(pyhgf.typing.vectorised.LayerState method)</a>
 </li>
-        <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Network.html#pyhgf.typing.vectorised.Network.__init__">(pyhgf.typing.vectorised.Network method)</a>
+        <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.VectorisedNetwork.html#pyhgf.typing.vectorised.VectorisedNetwork.__init__">(pyhgf.typing.vectorised.VectorisedNetwork method)</a>
+</li>
+        <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.ValueChild.html#pyhgf.updates.vectorised.continuous.ValueChild.__init__">(pyhgf.updates.vectorised.continuous.ValueChild method)</a>
+</li>
+        <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.VolatilityChild.html#pyhgf.updates.vectorised.continuous.VolatilityChild.__init__">(pyhgf.updates.vectorised.continuous.VolatilityChild method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -914,6 +872,8 @@ window.runMermaid = runMermaid;</script>
       <li><a href="generated/pyhgf.model/pyhgf.model.add_binary_state.html#pyhgf.model.add_binary_state">add_binary_state() (in module pyhgf.model)</a>
 </li>
       <li><a href="generated/pyhgf.model/pyhgf.model.add_categorical_state.html#pyhgf.model.add_categorical_state">add_categorical_state() (in module pyhgf.model)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.add_constant_input">add_constant_input (pyhgf.model.builder.LayerConfig attribute)</a>
 </li>
       <li><a href="generated/pyhgf.model/pyhgf.model.add_constant_state.html#pyhgf.model.add_constant_state">add_constant_state() (in module pyhgf.model)</a>
 </li>
@@ -929,11 +889,13 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.add_parent.html#pyhgf.utils.add_parent">add_parent() (in module pyhgf.utils)</a>
 </li>
-      <li><a href="generated/pyhgf.model/pyhgf.model.add_volatile_state.html#pyhgf.model.add_volatile_state">add_volatile_state() (in module pyhgf.model)</a>
-</li>
       <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.AdjacencyLists.html#pyhgf.typing.typing.AdjacencyLists">AdjacencyLists (class in pyhgf.typing.typing)</a>
 </li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.apply_precision_increments.html#pyhgf.utils.vectorised_belief_propagation.apply_precision_increments">apply_precision_increments() (in module pyhgf.utils.vectorised_belief_propagation)</a>
+</li>
       <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.attributes">attributes (pyhgf.model.Network attribute)</a>
+</li>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.avg_pool_adapter.html#pyhgf.model.conv.avg_pool_adapter">avg_pool_adapter() (in module pyhgf.model.conv)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -941,16 +903,22 @@ window.runMermaid = runMermaid;</script>
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.batch_step.html#pyhgf.utils.vectorised_belief_propagation.batch_step">batch_step() (in module pyhgf.utils.vectorised_belief_propagation)</a>
+</li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.batched_prediction_pass.html#pyhgf.utils.vectorised_belief_propagation.batched_prediction_pass">batched_prediction_pass() (in module pyhgf.utils.vectorised_belief_propagation)</a>
+</li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.batched_prediction_states.html#pyhgf.utils.vectorised_belief_propagation.batched_prediction_states">batched_prediction_states() (in module pyhgf.utils.vectorised_belief_propagation)</a>
+</li>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.beliefs_propagation.html#pyhgf.utils.beliefs_propagation">beliefs_propagation() (in module pyhgf.utils)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_finite_state_node_prediction_error.html#pyhgf.updates.prediction_error.binary.binary_finite_state_node_prediction_error">binary_finite_state_node_prediction_error() (in module pyhgf.updates.prediction_error.binary)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.response/pyhgf.response.binary_softmax.html#pyhgf.response.binary_softmax">binary_softmax() (in module pyhgf.response)</a>
 </li>
       <li><a href="generated/pyhgf.response/pyhgf.response.binary_softmax_inverse_temperature.html#pyhgf.response.binary_softmax_inverse_temperature">binary_softmax_inverse_temperature() (in module pyhgf.response)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.updates.prediction.binary/pyhgf.updates.prediction.binary.binary_state_node_prediction.html#pyhgf.updates.prediction.binary.binary_state_node_prediction">binary_state_node_prediction() (in module pyhgf.updates.prediction.binary)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.binary/pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error.html#pyhgf.updates.prediction_error.binary.binary_state_node_prediction_error">binary_state_node_prediction_error() (in module pyhgf.updates.prediction_error.binary)</a>
@@ -979,12 +947,12 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update/pyhgf.updates.posterior.continuous.continuous_node_posterior_update.continuous_node_posterior_update_mean_field.html#pyhgf.updates.posterior.continuous.continuous_node_posterior_update.continuous_node_posterior_update_mean_field">continuous_node_posterior_update_mean_field() (in module pyhgf.updates.posterior.continuous.continuous_node_posterior_update)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded.html#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.continuous_node_posterior_update_unbounded">continuous_node_posterior_update_unbounded() (in module pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction.html#pyhgf.updates.prediction.continuous.continuous_node_prediction">continuous_node_prediction() (in module pyhgf.updates.prediction.continuous)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error.html#pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error">continuous_node_prediction_error() (in module pyhgf.updates.prediction_error.continuous)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.continuous_node_prediction_mean_field.html#pyhgf.updates.prediction.continuous.continuous_node_prediction_mean_field">continuous_node_prediction_mean_field() (in module pyhgf.updates.prediction.continuous)</a>
@@ -992,6 +960,14 @@ window.runMermaid = runMermaid;</script>
       <li><a href="generated/pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error.html#pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error">continuous_node_value_prediction_error() (in module pyhgf.updates.prediction_error.continuous)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.continuous/pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error.html#pyhgf.updates.prediction_error.continuous.continuous_node_volatility_prediction_error">continuous_node_volatility_prediction_error() (in module pyhgf.updates.prediction_error.continuous)</a>
+</li>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.conv_block.html#pyhgf.model.conv.conv_block">conv_block() (in module pyhgf.model.conv)</a>
+</li>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.conv_output_shape.html#pyhgf.model.conv.conv_output_shape">conv_output_shape() (in module pyhgf.model.conv)</a>
+</li>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.conv_patch_network.html#pyhgf.model.conv.conv_patch_network">conv_patch_network() (in module pyhgf.model.conv)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.coupling_fn">coupling_fn (pyhgf.model.builder.LayerConfig attribute)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.create_cluster.html#pyhgf.updates.prediction_error.dirichlet.create_cluster">create_cluster() (in module pyhgf.updates.prediction_error.dirichlet)</a>
 </li>
@@ -1001,12 +977,16 @@ window.runMermaid = runMermaid;</script>
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model/pyhgf.model.DeadGradientWarning.html#pyhgf.model.DeadGradientWarning">DeadGradientWarning</a>
+</li>
       <li><a href="notebooks/2-Using_custom_response_functions.html#term-Decision-rule"><strong>Decision rule</strong></a>
 </li>
       <li><a href="generated/pyhgf.model/pyhgf.model.DeepNetwork.html#pyhgf.model.DeepNetwork">DeepNetwork (class in pyhgf.model)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.DeepNetworkAdapter.html#pyhgf.model.hybrid.DeepNetworkAdapter">DeepNetworkAdapter (class in pyhgf.model.hybrid)</a>
+</li>
       <li><a href="generated/pyhgf.math/pyhgf.math.dirichlet_kullback_leibler.html#pyhgf.math.dirichlet_kullback_leibler">dirichlet_kullback_leibler() (in module pyhgf.math)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction.dirichlet/pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction.html#pyhgf.updates.prediction.dirichlet.dirichlet_node_prediction">dirichlet_node_prediction() (in module pyhgf.updates.prediction.dirichlet)</a>
@@ -1022,6 +1002,10 @@ window.runMermaid = runMermaid;</script>
       <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.edges">edges (pyhgf.model.Network attribute)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.EquinoxAdapter.html#pyhgf.model.hybrid.EquinoxAdapter">EquinoxAdapter (class in pyhgf.model.hybrid)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="F">F</h2>
@@ -1029,11 +1013,25 @@ window.runMermaid = runMermaid;</script>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.fill_categorical_state_node.html#pyhgf.utils.fill_categorical_state_node">fill_categorical_state_node() (in module pyhgf.utils)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.response/pyhgf.response.first_level_binary_surprise.html#pyhgf.response.first_level_binary_surprise">first_level_binary_surprise() (in module pyhgf.response)</a>
 </li>
       <li><a href="generated/pyhgf.response/pyhgf.response.first_level_gaussian_surprise.html#pyhgf.response.first_level_gaussian_surprise">first_level_gaussian_surprise() (in module pyhgf.response)</a>
+</li>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.flatten_adapter.html#pyhgf.model.conv.flatten_adapter">flatten_adapter() (in module pyhgf.model.conv)</a>
+</li>
+      <li><a href="generated/pyhgf.model.transplant/pyhgf.model.transplant.from_conv.html#pyhgf.model.transplant.from_conv">from_conv() (in module pyhgf.model.transplant)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.transplant/pyhgf.model.transplant.from_embedding.html#pyhgf.model.transplant.from_embedding">from_embedding() (in module pyhgf.model.transplant)</a>
+</li>
+      <li><a href="generated/pyhgf.model.transplant/pyhgf.model.transplant.from_feedforward.html#pyhgf.model.transplant.from_feedforward">from_feedforward() (in module pyhgf.model.transplant)</a>
+</li>
+      <li><a href="generated/pyhgf.model.transplant/pyhgf.model.transplant.from_linear.html#pyhgf.model.transplant.from_linear">from_linear() (in module pyhgf.model.transplant)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.fully_connected">fully_connected (pyhgf.model.builder.LayerConfig attribute)</a>
+</li>
+      <li><a href="generated/pyhgf.model.fused/pyhgf.model.fused.FusedPipeline.html#pyhgf.model.fused.FusedPipeline">FusedPipeline (class in pyhgf.model.fused)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1051,6 +1049,8 @@ window.runMermaid = runMermaid;</script>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.gelu_adapter.html#pyhgf.model.hybrid.gelu_adapter">gelu_adapter() (in module pyhgf.model.hybrid)</a>
+</li>
       <li><a href="generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.get_candidate.html#pyhgf.updates.prediction_error.dirichlet.get_candidate">get_candidate() (in module pyhgf.updates.prediction_error.dirichlet)</a>
 </li>
       <li><a href="generated/pyhgf.model/pyhgf.model.get_couplings.html#pyhgf.model.get_couplings">get_couplings() (in module pyhgf.model)</a>
@@ -1068,16 +1068,34 @@ window.runMermaid = runMermaid;</script>
       <li><a href="generated/pyhgf.utils.weight_initialisation/pyhgf.utils.weight_initialisation.he_init.html#pyhgf.utils.weight_initialisation.he_init">he_init() (in module pyhgf.utils.weight_initialisation)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.transformer/pyhgf.model.transformer.hybrid_from_gpt.html#pyhgf.model.transformer.hybrid_from_gpt">hybrid_from_gpt() (in module pyhgf.model.transformer)</a>
+</li>
+      <li><a href="generated/pyhgf.model.transformer/pyhgf.model.transformer.HybridGPT.html#pyhgf.model.transformer.HybridGPT">HybridGPT (class in pyhgf.model.transformer)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.inputs">inputs (pyhgf.model.Network attribute)</a>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.im2col_adapter.html#pyhgf.model.conv.im2col_adapter">im2col_adapter() (in module pyhgf.model.conv)</a>
+</li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.input_prediction_error.html#pyhgf.utils.vectorised_belief_propagation.input_prediction_error">input_prediction_error() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.inputs">inputs (pyhgf.model.Network attribute)</a>
+</li>
       <li><a href="generated/pyhgf.model/pyhgf.model.insert_nodes.html#pyhgf.model.insert_nodes">insert_nodes() (in module pyhgf.model)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.kind">kind (pyhgf.model.builder.LayerConfig attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1089,21 +1107,25 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Layer.html#pyhgf.typing.vectorised.Layer">Layer (class in pyhgf.typing.vectorised)</a>
 </li>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.layer_norm_adapter.html#pyhgf.model.hybrid.layer_norm_adapter">layer_norm_adapter() (in module pyhgf.model.hybrid)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig">LayerConfig (class in pyhgf.model.builder)</a>
+</li>
       <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerParams.html#pyhgf.typing.vectorised.LayerParams">LayerParams (class in pyhgf.typing.vectorised)</a>
 </li>
       <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerStack.html#pyhgf.typing.vectorised.LayerStack">LayerStack (class in pyhgf.typing.vectorised)</a>
 </li>
-      <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerState.html#pyhgf.typing.vectorised.LayerState">LayerState (class in pyhgf.typing.vectorised)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/pyhgf.utils/pyhgf.utils.learning.html#pyhgf.utils.learning">learning() (in module pyhgf.utils)</a>
+      <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.LayerState.html#pyhgf.typing.vectorised.LayerState">LayerState (class in pyhgf.typing.vectorised)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.learning/pyhgf.updates.learning.learning_weights.html#pyhgf.updates.learning.learning_weights">learning_weights() (in module pyhgf.updates.learning)</a>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.learn_sweep.html#pyhgf.utils.vectorised_belief_propagation.learn_sweep">learn_sweep() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
-      <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.LearningSequence.html#pyhgf.typing.typing.LearningSequence">LearningSequence (class in pyhgf.typing.typing)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.learning/pyhgf.updates.vectorised.learning.learning_weights_vectorised.html#pyhgf.updates.vectorised.learning.learning_weights_vectorised">learning_weights_vectorised() (in module pyhgf.updates.vectorised.learning)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.likely_cluster_proposal.html#pyhgf.updates.prediction_error.dirichlet.likely_cluster_proposal">likely_cluster_proposal() (in module pyhgf.updates.prediction_error.dirichlet)</a>
+</li>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.linear_adapter.html#pyhgf.model.hybrid.linear_adapter">linear_adapter() (in module pyhgf.model.hybrid)</a>
 </li>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.list_branches.html#pyhgf.utils.list_branches">list_branches() (in module pyhgf.utils)</a>
 </li>
@@ -1115,6 +1137,12 @@ window.runMermaid = runMermaid;</script>
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.max_pool_adapter.html#pyhgf.model.conv.max_pool_adapter">max_pool_adapter() (in module pyhgf.model.conv)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.transformer/pyhgf.model.transformer.MultiHeadAttention.html#pyhgf.model.transformer.MultiHeadAttention">MultiHeadAttention (class in pyhgf.model.transformer)</a>
+</li>
       <li><a href="generated/pyhgf.math/pyhgf.math.MultivariateNormal.html#pyhgf.math.MultivariateNormal">MultivariateNormal (class in pyhgf.math)</a>
 </li>
   </ul></td>
@@ -1124,15 +1152,11 @@ window.runMermaid = runMermaid;</script>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network">Network (class in pyhgf.model)</a>
-
-      <ul>
-        <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.Network.html#pyhgf.typing.vectorised.Network">(class in pyhgf.typing.vectorised)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="notebooks/0.1-Theory.html#term-Node"><strong>Node</strong></a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.node_trajectories">node_trajectories (pyhgf.model.Network attribute)</a>
 </li>
       <li><a href="generated/pyhgf.math/pyhgf.math.Normal.html#pyhgf.math.Normal">Normal (class in pyhgf.math)</a>
@@ -1152,6 +1176,10 @@ window.runMermaid = runMermaid;</script>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.math/pyhgf.math.parametrised_sigmoid.html#pyhgf.math.parametrised_sigmoid">parametrised_sigmoid() (in module pyhgf.math)</a>
+</li>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.PCModule.html#pyhgf.model.hybrid.PCModule">PCModule (class in pyhgf.model.hybrid)</a>
+</li>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.PCSequential.html#pyhgf.model.hybrid.PCSequential">PCSequential (class in pyhgf.model.hybrid)</a>
 </li>
       <li><a href="notebooks/2-Using_custom_response_functions.html#term-Perceptual-model"><strong>Perceptual model</strong></a>
 </li>
@@ -1179,29 +1207,15 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node.posterior_update_mean_continuous_node_mean_field">posterior_update_mean_continuous_node_mean_field() (in module pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level">posterior_update_mean_value_level() (in module pyhgf.updates.posterior.volatile.posterior_update_value_level)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level_mean_field.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_mean_value_level_mean_field">posterior_update_mean_value_level_mean_field() (in module pyhgf.updates.posterior.volatile.posterior_update_value_level)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level/pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_mean_volatility_level.html#pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_mean_volatility_level">posterior_update_mean_volatility_level() (in module pyhgf.updates.posterior.volatile.posterior_update_volatility_level)</a>
-</li>
       <li><a href="generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node">posterior_update_precision_continuous_node() (in module pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node)</a>
 </li>
       <li><a href="generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf">posterior_update_precision_continuous_node_ehgf() (in module pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_ehgf_mean_field">posterior_update_precision_continuous_node_ehgf_mean_field() (in module pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node)</a>
 </li>
       <li><a href="generated/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node/pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_mean_field.html#pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.posterior_update_precision_continuous_node_mean_field">posterior_update_precision_continuous_node_mean_field() (in module pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level">posterior_update_precision_value_level() (in module pyhgf.updates.posterior.volatile.posterior_update_value_level)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_value_level/pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level_mean_field.html#pyhgf.updates.posterior.volatile.posterior_update_value_level.posterior_update_precision_value_level_mean_field">posterior_update_precision_value_level_mean_field() (in module pyhgf.updates.posterior.volatile.posterior_update_value_level)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level/pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_precision_volatility_level.html#pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_precision_volatility_level">posterior_update_precision_volatility_level() (in module pyhgf.updates.posterior.volatile.posterior_update_volatility_level)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.posterior_update_volatility_level/pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_precision_volatility_level_ehgf.html#pyhgf.updates.posterior.volatile.posterior_update_volatility_level.posterior_update_precision_volatility_level_ehgf">posterior_update_precision_volatility_level_ehgf() (in module pyhgf.updates.posterior.volatile.posterior_update_volatility_level)</a>
 </li>
       <li><a href="generated/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded/pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded.html#pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded">posterior_update_unbounded() (in module pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded)</a>
 </li>
@@ -1217,19 +1231,9 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_mean.html#pyhgf.updates.prediction.continuous.predict_mean">predict_mean() (in module pyhgf.updates.prediction.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.predict_mean_value_level.html#pyhgf.updates.prediction.volatile.predict_mean_value_level">predict_mean_value_level() (in module pyhgf.updates.prediction.volatile)</a>
-</li>
       <li><a href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_precision.html#pyhgf.updates.prediction.continuous.predict_precision">predict_precision() (in module pyhgf.updates.prediction.continuous)</a>
 </li>
       <li><a href="generated/pyhgf.updates.prediction.continuous/pyhgf.updates.prediction.continuous.predict_precision_mean_field.html#pyhgf.updates.prediction.continuous.predict_precision_mean_field">predict_precision_mean_field() (in module pyhgf.updates.prediction.continuous)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.predict_precision_value_level.html#pyhgf.updates.prediction.volatile.predict_precision_value_level">predict_precision_value_level() (in module pyhgf.updates.prediction.volatile)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.predict_precision_value_level_mean_field.html#pyhgf.updates.prediction.volatile.predict_precision_value_level_mean_field">predict_precision_value_level_mean_field() (in module pyhgf.updates.prediction.volatile)</a>
-</li>
-      <li><a href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.predict_precision_volatility_level.html#pyhgf.updates.prediction.volatile.predict_precision_volatility_level">predict_precision_volatility_level() (in module pyhgf.updates.prediction.volatile)</a>
-</li>
-      <li><a href="generated/pyhgf.utils/pyhgf.utils.predict_step.html#pyhgf.utils.predict_step">predict_step() (in module pyhgf.utils)</a>
 </li>
       <li><a href="notebooks/0.1-Theory.html#term-Prediction"><strong>Prediction</strong></a>
 </li>
@@ -1239,9 +1243,11 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.exponential/pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed.html#pyhgf.updates.prediction_error.exponential.prediction_error_update_exponential_family_fixed">prediction_error_update_exponential_family_fixed() (in module pyhgf.updates.prediction_error.exponential)</a>
 </li>
-      <li><a href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.prediction_pass.html#pyhgf.utils.vectorized_belief_propagation.prediction_pass">prediction_pass() (in module pyhgf.utils.vectorized_belief_propagation)</a>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.prediction_pass.html#pyhgf.utils.vectorised_belief_propagation.prediction_pass">prediction_pass() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
-      <li><a href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.propagation_step.html#pyhgf.utils.vectorized_belief_propagation.propagation_step">propagation_step() (in module pyhgf.utils.vectorized_belief_propagation)</a>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.prediction_sweep.html#pyhgf.utils.vectorised_belief_propagation.prediction_sweep">prediction_sweep() (in module pyhgf.utils.vectorised_belief_propagation)</a>
+</li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.propagation_step.html#pyhgf.utils.vectorised_belief_propagation.propagation_step">propagation_step() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1251,13 +1257,21 @@ window.runMermaid = runMermaid;</script>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.remove_node.html#pyhgf.utils.remove_node">remove_node() (in module pyhgf.utils)</a>
 </li>
-      <li><a href="notebooks/2-Using_custom_response_functions.html#term-Response-function"><strong>Response function</strong></a>
+      <li><a href="generated/pyhgf.model.hybrid/pyhgf.model.hybrid.Residual.html#pyhgf.model.hybrid.Residual">Residual (class in pyhgf.model.hybrid)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.resolve_coupling_fn.html#pyhgf.model.builder.resolve_coupling_fn">resolve_coupling_fn() (in module pyhgf.model.builder)</a>
+</li>
+      <li><a href="generated/pyhgf.updates.vectorised.learning/pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings.html#pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings">resolve_synaptic_uncertainty_settings() (in module pyhgf.updates.vectorised.learning)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="notebooks/2-Using_custom_response_functions.html#term-Response-function"><strong>Response function</strong></a>
+</li>
       <li><a href="notebooks/2-Using_custom_response_functions.html#term-Response-model"><strong>Response model</strong></a>
 </li>
-      <li><a href="generated/pyhgf.utils.vectorized_belief_propagation/pyhgf.utils.vectorized_belief_propagation.run_scan.html#pyhgf.utils.vectorized_belief_propagation.run_scan">run_scan() (in module pyhgf.utils.vectorized_belief_propagation)</a>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.run_continuous_scan.html#pyhgf.utils.vectorised_belief_propagation.run_continuous_scan">run_continuous_scan() (in module pyhgf.utils.vectorised_belief_propagation)</a>
+</li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.run_scan.html#pyhgf.utils.vectorised_belief_propagation.run_scan">run_scan() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1269,25 +1283,29 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.sample_node_distribution.html#pyhgf.utils.sample_node_distribution">sample_node_distribution() (in module pyhgf.utils)</a>
 </li>
-      <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.scan_fn">scan_fn (pyhgf.model.Network attribute)</a>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.sample_step.html#pyhgf.utils.vectorised_belief_propagation.sample_step">sample_step() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
-      <li><a href="generated/pyhgf.utils/pyhgf.utils.set_coupling.html#pyhgf.utils.set_coupling">set_coupling() (in module pyhgf.utils)</a>
+      <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.scan_fn">scan_fn (pyhgf.model.Network attribute)</a>
 </li>
       <li><a href="generated/pyhgf.updates.observation/pyhgf.updates.observation.set_observation.html#pyhgf.updates.observation.set_observation">set_observation() (in module pyhgf.updates.observation)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/pyhgf.updates.observation/pyhgf.updates.observation.set_predictors.html#pyhgf.updates.observation.set_predictors">set_predictors() (in module pyhgf.updates.observation)</a>
-</li>
       <li><a href="generated/pyhgf.math/pyhgf.math.sigmoid_inverse_temperature.html#pyhgf.math.sigmoid_inverse_temperature">sigmoid_inverse_temperature() (in module pyhgf.math)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.utils.sample/pyhgf.utils.sample.single_sample.html#pyhgf.utils.sample.single_sample">single_sample() (in module pyhgf.utils.sample)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.size">size (pyhgf.model.builder.LayerConfig attribute)</a>
 </li>
       <li><a href="generated/pyhgf.math/pyhgf.math.smoothed_rectangular.html#pyhgf.math.smoothed_rectangular">smoothed_rectangular() (in module pyhgf.math)</a>
 </li>
       <li><a href="generated/pyhgf.utils.weight_initialisation/pyhgf.utils.weight_initialisation.sparse_init.html#pyhgf.utils.weight_initialisation.sparse_init">sparse_init() (in module pyhgf.utils.weight_initialisation)</a>
 </li>
+      <li><a href="generated/pyhgf.model.conv/pyhgf.model.conv.spatial_reshape_adapter.html#pyhgf.model.conv.spatial_reshape_adapter">spatial_reshape_adapter() (in module pyhgf.model.conv)</a>
+</li>
       <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.stack_layers.html#pyhgf.typing.vectorised.stack_layers">stack_layers() (in module pyhgf.typing.vectorised)</a>
+</li>
+      <li><a href="generated/pyhgf.model.fused/pyhgf.model.fused.step_report.html#pyhgf.model.fused.step_report">step_report() (in module pyhgf.model.fused)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1297,8 +1315,12 @@ window.runMermaid = runMermaid;</script>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.utils/pyhgf.utils.to_pandas.html#pyhgf.utils.to_pandas">to_pandas() (in module pyhgf.utils)</a>
 </li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.tonic_volatility">tonic_volatility (pyhgf.model.builder.LayerConfig attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.tonic_volatility_vol">tonic_volatility_vol (pyhgf.model.builder.LayerConfig attribute)</a>
+</li>
       <li><a href="generated/pyhgf.response/pyhgf.response.total_gaussian_surprise.html#pyhgf.response.total_gaussian_surprise">total_gaussian_surprise() (in module pyhgf.response)</a>
 </li>
   </ul></td>
@@ -1311,11 +1333,13 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="generated/pyhgf.updates.prediction_error.dirichlet/pyhgf.updates.prediction_error.dirichlet.update_cluster.html#pyhgf.updates.prediction_error.dirichlet.update_cluster">update_cluster() (in module pyhgf.updates.prediction_error.dirichlet)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.model/pyhgf.model.update_parameters.html#pyhgf.model.update_parameters">update_parameters() (in module pyhgf.model)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="generated/pyhgf.model/pyhgf.model.Network.html#pyhgf.model.Network.update_sequence">update_sequence (pyhgf.model.Network attribute)</a>
+</li>
+      <li><a href="generated/pyhgf.utils.vectorised_belief_propagation/pyhgf.utils.vectorised_belief_propagation.update_sweep.html#pyhgf.utils.vectorised_belief_propagation.update_sweep">update_sweep() (in module pyhgf.utils.vectorised_belief_propagation)</a>
 </li>
       <li><a href="generated/pyhgf.typing.typing/pyhgf.typing.typing.UpdateSequence.html#pyhgf.typing.typing.UpdateSequence">UpdateSequence (class in pyhgf.typing.typing)</a>
 </li>
@@ -1325,55 +1349,65 @@ window.runMermaid = runMermaid;</script>
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.ValueChild.html#pyhgf.updates.vectorised.continuous.ValueChild">ValueChild (class in pyhgf.updates.vectorised.continuous)</a>
+</li>
       <li><a href="notebooks/0.1-Theory.html#term-VAPE"><strong>VAPE</strong></a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.binary/pyhgf.updates.vectorized.binary.vectorized_binary_prediction.html#pyhgf.updates.vectorized.binary.vectorized_binary_prediction">vectorized_binary_prediction() (in module pyhgf.updates.vectorized.binary)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.binary/pyhgf.updates.vectorised.binary.vectorised_binary_prediction.html#pyhgf.updates.vectorised.binary.vectorised_binary_prediction">vectorised_binary_prediction() (in module pyhgf.updates.vectorised.binary)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.binary/pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error.html#pyhgf.updates.vectorized.binary.vectorized_binary_prediction_error">vectorized_binary_prediction_error() (in module pyhgf.updates.vectorized.binary)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.binary/pyhgf.updates.vectorised.binary.vectorised_binary_prediction_error.html#pyhgf.updates.vectorised.binary.vectorised_binary_prediction_error">vectorised_binary_prediction_error() (in module pyhgf.updates.vectorised.binary)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update.html#pyhgf.updates.vectorized.volatile.vectorized_layer_posterior_update">vectorized_layer_posterior_update() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.categorical/pyhgf.updates.vectorised.categorical.vectorised_categorical_prediction.html#pyhgf.updates.vectorised.categorical.vectorised_categorical_prediction">vectorised_categorical_prediction() (in module pyhgf.updates.vectorised.categorical)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction.html#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction">vectorized_layer_prediction() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.categorical/pyhgf.updates.vectorised.categorical.vectorised_categorical_prediction_error.html#pyhgf.updates.vectorised.categorical.vectorised_categorical_prediction_error">vectorised_categorical_prediction_error() (in module pyhgf.updates.vectorised.categorical)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_prediction_error.html#pyhgf.updates.vectorized.volatile.vectorized_layer_prediction_error">vectorized_layer_prediction_error() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update">vectorised_continuous_posterior_update() (in module pyhgf.updates.vectorised.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error.html#pyhgf.updates.vectorized.volatile.vectorized_layer_value_prediction_error">vectorized_layer_value_prediction_error() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update_ehgf.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update_ehgf">vectorised_continuous_posterior_update_ehgf() (in module pyhgf.updates.vectorised.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_ehgf.html#pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_ehgf">vectorized_layer_volatility_posterior_ehgf() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update_standard.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update_standard">vectorised_continuous_posterior_update_standard() (in module pyhgf.updates.vectorised.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_standard.html#pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_standard">vectorized_layer_volatility_posterior_standard() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update_unbounded.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_posterior_update_unbounded">vectorised_continuous_posterior_update_unbounded() (in module pyhgf.updates.vectorised.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_unbounded.html#pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_posterior_unbounded">vectorized_layer_volatility_posterior_unbounded() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_prediction.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_prediction">vectorised_continuous_prediction() (in module pyhgf.updates.vectorised.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_prediction_error.html#pyhgf.updates.vectorized.volatile.vectorized_layer_volatility_prediction_error">vectorized_layer_volatility_prediction_error() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_prediction_error.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_prediction_error">vectorised_continuous_prediction_error() (in module pyhgf.updates.vectorised.continuous)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level.html#pyhgf.updates.vectorized.volatile.vectorized_posterior_update_mean_value_level">vectorized_posterior_update_mean_value_level() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_value_prediction_error.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_value_prediction_error">vectorised_continuous_value_prediction_error() (in module pyhgf.updates.vectorised.continuous)</a>
+</li>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.vectorised_continuous_volatility_prediction_error.html#pyhgf.updates.vectorised.continuous.vectorised_continuous_volatility_prediction_error">vectorised_continuous_volatility_prediction_error() (in module pyhgf.updates.vectorised.continuous)</a>
+</li>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_posterior_update.html#pyhgf.updates.vectorised.volatile.vectorised_layer_posterior_update">vectorised_layer_posterior_update() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="generated/pyhgf.updates.vectorized.volatile/pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level.html#pyhgf.updates.vectorized.volatile.vectorized_posterior_update_precision_value_level">vectorized_posterior_update_precision_value_level() (in module pyhgf.updates.vectorized.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_prediction.html#pyhgf.updates.vectorised.volatile.vectorised_layer_prediction">vectorised_layer_prediction() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.vectorized.learning/pyhgf.updates.vectorized.learning.vectorized_weight_gradient.html#pyhgf.updates.vectorized.learning.vectorized_weight_gradient">vectorized_weight_gradient() (in module pyhgf.updates.vectorized.learning)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_prediction_error.html#pyhgf.updates.vectorised.volatile.vectorised_layer_prediction_error">vectorised_layer_prediction_error() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update/pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_posterior_update.html#pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_posterior_update">volatile_node_posterior_update() (in module pyhgf.updates.posterior.volatile.volatile_node_posterior_update)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_value_prediction_error.html#pyhgf.updates.vectorised.volatile.vectorised_layer_value_prediction_error">vectorised_layer_value_prediction_error() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf.volatile_node_posterior_update_ehgf.html#pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf.volatile_node_posterior_update_ehgf">volatile_node_posterior_update_ehgf() (in module pyhgf.updates.posterior.volatile.volatile_node_posterior_update_ehgf)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_posterior_ehgf.html#pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_posterior_ehgf">vectorised_layer_volatility_posterior_ehgf() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update/pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_posterior_update_mean_field.html#pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_posterior_update_mean_field">volatile_node_posterior_update_mean_field() (in module pyhgf.updates.posterior.volatile.volatile_node_posterior_update)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_posterior_standard.html#pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_posterior_standard">vectorised_layer_volatility_posterior_standard() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded/pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded.html#pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded">volatile_node_posterior_update_unbounded() (in module pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_posterior_unbounded.html#pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_posterior_unbounded">vectorised_layer_volatility_posterior_unbounded() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.volatile_node_prediction.html#pyhgf.updates.prediction.volatile.volatile_node_prediction">volatile_node_prediction() (in module pyhgf.updates.prediction.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_prediction_error.html#pyhgf.updates.vectorised.volatile.vectorised_layer_volatility_prediction_error">vectorised_layer_volatility_prediction_error() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.prediction_error.volatile/pyhgf.updates.prediction_error.volatile.volatile_node_prediction_error.html#pyhgf.updates.prediction_error.volatile.volatile_node_prediction_error">volatile_node_prediction_error() (in module pyhgf.updates.prediction_error.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_posterior_update_mean_value_level.html#pyhgf.updates.vectorised.volatile.vectorised_posterior_update_mean_value_level">vectorised_posterior_update_mean_value_level() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.prediction.volatile/pyhgf.updates.prediction.volatile.volatile_node_prediction_mean_field.html#pyhgf.updates.prediction.volatile.volatile_node_prediction_mean_field">volatile_node_prediction_mean_field() (in module pyhgf.updates.prediction.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_posterior_update_precision_value_level.html#pyhgf.updates.vectorised.volatile.vectorised_posterior_update_precision_value_level">vectorised_posterior_update_precision_value_level() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.prediction_error.volatile/pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error.html#pyhgf.updates.prediction_error.volatile.volatile_node_value_prediction_error">volatile_node_value_prediction_error() (in module pyhgf.updates.prediction_error.volatile)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.volatile/pyhgf.updates.vectorised.volatile.vectorised_root_prediction.html#pyhgf.updates.vectorised.volatile.vectorised_root_prediction">vectorised_root_prediction() (in module pyhgf.updates.vectorised.volatile)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.posterior.volatile.volatile_node_posterior_update/pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_volatility_posterior_update_standard.html#pyhgf.updates.posterior.volatile.volatile_node_posterior_update.volatile_node_volatility_posterior_update_standard">volatile_node_volatility_posterior_update_standard() (in module pyhgf.updates.posterior.volatile.volatile_node_posterior_update)</a>
+      <li><a href="generated/pyhgf.updates.vectorised.learning/pyhgf.updates.vectorised.learning.vectorised_synaptic_uncertainty_update.html#pyhgf.updates.vectorised.learning.vectorised_synaptic_uncertainty_update">vectorised_synaptic_uncertainty_update() (in module pyhgf.updates.vectorised.learning)</a>
 </li>
-      <li><a href="generated/pyhgf.updates.prediction_error.volatile/pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error.html#pyhgf.updates.prediction_error.volatile.volatile_node_volatility_prediction_error">volatile_node_volatility_prediction_error() (in module pyhgf.updates.prediction_error.volatile)</a>
+      <li><a href="generated/pyhgf.typing.vectorised/pyhgf.typing.vectorised.VectorisedNetwork.html#pyhgf.typing.vectorised.VectorisedNetwork">VectorisedNetwork (class in pyhgf.typing.vectorised)</a>
+</li>
+      <li><a href="generated/pyhgf.model.builder/pyhgf.model.builder.LayerConfig.html#pyhgf.model.builder.LayerConfig.volatility_parent">volatility_parent (pyhgf.model.builder.LayerConfig attribute)</a>
+</li>
+      <li><a href="generated/pyhgf.updates.vectorised.continuous/pyhgf.updates.vectorised.continuous.VolatilityChild.html#pyhgf.updates.vectorised.continuous.VolatilityChild">VolatilityChild (class in pyhgf.updates.vectorised.continuous)</a>
 </li>
       <li><a href="notebooks/0.1-Theory.html#term-VOPE"><strong>VOPE</strong></a>
 </li>
@@ -1417,8 +1451,8 @@ window.runMermaid = runMermaid;</script>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1452,7 +1486,7 @@ window.runMermaid = runMermaid;</script>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.19.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
 </p></div>
       
     </div>

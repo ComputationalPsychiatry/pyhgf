@@ -1,0 +1,6 @@
+﻿pyhgf.updates.vectorised.continuous.vectorised\_continuous\_prediction
+======================================================================
+
+.. currentmodule:: pyhgf.updates.vectorised.continuous
+
+.. autofunction:: vectorised_continuous_prediction
