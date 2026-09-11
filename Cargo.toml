@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"    # The source file of the target.
 
 [dependencies]
-pyo3 = { version = "0.28.1", features = ["extension-module", "abi3-py37"] }
+pyo3 = { version = "0.28.1", features = ["extension-module", "abi3-py312"] }
 numpy = "0.28"
 rand = { version = "0.9", features = ["small_rng"] }
 rand_distr = "0.5"
