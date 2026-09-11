@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Building custom deep network architectures &#8212; pyhgf 0.3.1 documentation</title>
+    <title>Building custom deep network architectures &#8212; pyhgf 0.3.2 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=71d9d8e6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -144,7 +144,7 @@
 </a></div>
     
       <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
-<span class="navbar-version">v0.3.1</span></div>
+<span class="navbar-version">v0.3.2</span></div>
     
   </div>
   
@@ -550,6 +550,26 @@ that mix predictive coding networks with custom connectors to replicate wide ran
 <p>We go through the core <code class="docutils literal notranslate"><span class="pre">DeepNetwork</span></code> class, the mixed-pipeline machinery
 that builds larger models, and the general recipe for porting any architecture.</p>
 <hr class="docutils" />
+<p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.7-Deep_networks_implementation.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell tag_hide-cell docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
+
+<span class="k">if</span> <span class="s2">"google.colab"</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
+</pre></div>
+</div>
+</div>
+</details>
+</div>
 <section id="the-main-idea">
 <h2>The main idea<a class="headerlink" href="#the-main-idea" title="Link to this heading">#</a></h2>
 <p>PyHGF networks are made of nodes that hold <em>beliefs</em> and require a specific belief propagation dynamic to learn (which is the core of PyHGF’s machinery). The <code class="docutils literal notranslate"><span class="pre">DeepNetwork</span></code> class supports the creation of fully connected multi-layer perceptrons (MLPs). But for users interested in alternative network architectures, this would require adapting this (and adjusting the propagation machinery), which is possible but rapidly limits the expressivity and modularity of the toolbox.</p>
@@ -704,15 +724,17 @@ verified in tests against autodiff of the same forward.</p></li>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri, 11 Sep 2026
 
 Python implementation: CPython
 Python version       : 3.12.14
 IPython version      : 9.16.1
 
-pyhgf : 0.3.1
+pyhgf : 0.3.2
 jax   : 0.6.2
 jaxlib: 0.6.2
+
+IPython: 9.16.1
 
 Watermark: 2.6.0
 </pre></div>

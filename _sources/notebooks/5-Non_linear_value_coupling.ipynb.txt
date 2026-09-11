@@ -12,7 +12,32 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/1.4-Continuous_HGF_non_linear_value_coupling.ipynb)"
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/5-Non_linear_value_coupling.ipynb)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-05-11T12:55:54.170656Z",
+     "iopub.status.busy": "2026-05-11T12:55:54.170236Z",
+     "iopub.status.idle": "2026-05-11T12:55:54.191526Z",
+     "shell.execute_reply": "2026-05-11T12:55:54.189560Z"
+    },
+    "tags": [
+     "hide-cell"
+    ]
+   },
+   "outputs": [],
+   "source": [
+    "import sys\n",
+    "\n",
+    "from IPython.utils import io\n",
+    "\n",
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip install pyhgf watermark"
    ]
   },
   {
@@ -23,29 +48,6 @@
     "- Kora Tristan, Aarhus University, Denmark ([kora.montemagno@cas.au.dk](mailto:kora.montemagno@cas.au.dk))\n",
     "- Nicolas Legrand, Aarhus University, Denmark ([nicolas.legrand@cas.au.dk](mailto:nicolas.legrand@cas.au.dk))\n",
     "```"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 1,
-   "metadata": {
-    "execution": {
-     "iopub.execute_input": "2026-05-11T12:55:54.170656Z",
-     "iopub.status.busy": "2026-05-11T12:55:54.170236Z",
-     "iopub.status.idle": "2026-05-11T12:55:54.191526Z",
-     "shell.execute_reply": "2026-05-11T12:55:54.189560Z"
-    }
-   },
-   "outputs": [],
-   "source": [
-    "import sys\n",
-    "\n",
-    "from IPython.utils import io\n",
-    "\n",
-    "if \"google.colab\" in sys.modules:\n",
-    "    with io.capture_output() as captured:\n",
-    "        ! pip uninstall -y jax jaxlib\n",
-    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
    ]
   },
   {

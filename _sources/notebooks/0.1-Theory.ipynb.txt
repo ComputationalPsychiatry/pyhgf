@@ -14,11 +14,18 @@
     "(theory)=\n",
     "# Introduction to the Generalised Hierarchical Gaussian Filter\n",
     "\n",
-    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Theory.ipynb)\n",
     "\n",
     "The Hierarchical Gaussian Filter is a Bayesian model of belief updating under uncertainty in which the volatility of the environment is encoded by a hierarchy of probability distributions. A generalised version of this model {cite:p}`Weber2026` has further framed this into a neural network framework of probabilistic state nodes interacting with each other. At the heart of both frameworks lies a generative model that consist in a hierarchy of {term}`Gaussian Random Walk`. The inversion of this model (i.e. estimating parameters from observed values) leads to the derivation of prediction errors and posterior updates that can turn these networks into learning systems. To fully understand this model, it is therefore central to start with the simplest case, the implied generative model, which can be seen as the probabilistic structure that generates observations.\n",
     "\n",
     "In this notebook, we introduce the main concepts on which the Hierarchical Gaussian Filter (HGF) is based. We review equations of the generative model and illustrate them through examples only using [Numpy](https://numpy.org/). Later in the theory section, we will discuss how this generative model can be turned into a network of probabilistic nodes, and how this framework can generalise to the whole exponential distribution family."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "105d7fe9",
+   "metadata": {},
+   "source": [
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Theory.ipynb)"
    ]
   },
   {
@@ -36,7 +43,9 @@
     "slideshow": {
      "slide_type": ""
     },
-    "tags": []
+    "tags": [
+     "hide-cell"
+    ]
    },
    "outputs": [],
    "source": [
@@ -46,7 +55,7 @@
     "\n",
     "if \"google.colab\" in sys.modules:\n",
     "    with io.capture_output() as captured:\n",
-    "        ! pip install watermark"
+    "        ! pip install pyhgf watermark"
    ]
   },
   {

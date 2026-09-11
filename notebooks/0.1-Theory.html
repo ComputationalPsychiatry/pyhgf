@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.3.1 documentation</title>
+    <title>Introduction to the Generalised Hierarchical Gaussian Filter &#8212; pyhgf 0.3.2 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=71d9d8e6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -146,7 +146,7 @@
 </a></div>
     
       <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
-<span class="navbar-version">v0.3.1</span></div>
+<span class="navbar-version">v0.3.2</span></div>
     
   </div>
   
@@ -544,10 +544,15 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="introduction-to-the-generalised-hierarchical-gaussian-filter">
 <span id="theory"></span><h1>Introduction to the Generalised Hierarchical Gaussian Filter<a class="headerlink" href="#introduction-to-the-generalised-hierarchical-gaussian-filter" title="Link to this heading">#</a></h1>
-<p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Theory.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <p>The Hierarchical Gaussian Filter is a Bayesian model of belief updating under uncertainty in which the volatility of the environment is encoded by a hierarchy of probability distributions. A generalised version of this model <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../references.html#id13" title="Lilian Aline Weber, Peter Thestrup Waade, Nicolas Legrand, Anna Hedvig Møller, Klaas Enno Stephan, and Christoph Mathys. The generalized hierarchical gaussian filter. eLife, 15:RP110174, 2026. URL: https://doi.org/10.7554/eLife.110174.1, doi:10.7554/eLife.110174.1.">Weber <em>et al.</em>, 2026</a>]</span> has further framed this into a neural network framework of probabilistic state nodes interacting with each other. At the heart of both frameworks lies a generative model that consist in a hierarchy of <a class="reference internal" href="#term-Gaussian-Random-Walk"><span class="xref std std-term">Gaussian Random Walk</span></a>. The inversion of this model (i.e. estimating parameters from observed values) leads to the derivation of prediction errors and posterior updates that can turn these networks into learning systems. To fully understand this model, it is therefore central to start with the simplest case, the implied generative model, which can be seen as the probabilistic structure that generates observations.</p>
 <p>In this notebook, we introduce the main concepts on which the Hierarchical Gaussian Filter (HGF) is based. We review equations of the generative model and illustrate them through examples only using <a class="reference external" href="https://numpy.org/">Numpy</a>. Later in the theory section, we will discuss how this generative model can be turned into a network of probabilistic nodes, and how this framework can generalise to the whole exponential distribution family.</p>
-<div class="cell docutils container">
+<p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.1-Theory.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell tag_hide-cell docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
+</summary>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
@@ -555,10 +560,11 @@
 
 <span class="k">if</span> <span class="s2">"google.colab"</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>watermark
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
 </pre></div>
 </div>
 </div>
+</details>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -978,13 +984,13 @@ Given the expectation from the prediction step</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri, 11 Sep 2026
 
 Python implementation: CPython
 Python version       : 3.12.14
 IPython version      : 9.16.1
 
-pyhgf : 0.3.1
+pyhgf : 0.3.2
 jax   : 0.6.2
 jaxlib: 0.6.2
 

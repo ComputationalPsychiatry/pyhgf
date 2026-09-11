@@ -2,12 +2,46 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "66d8312f",
+   "id": "cecd82fc",
    "metadata": {},
    "source": [
     "(transformers)=\n",
-    "# Transformer predictive coding networks\n",
+    "# Transformer predictive coding networks\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "78927456",
+   "metadata": {},
+   "source": [
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.9-Transformers.ipynb)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3d06d313",
+   "metadata": {
+    "tags": [
+     "hide-cell"
+    ]
+   },
+   "outputs": [],
+   "source": [
+    "import sys\n",
     "\n",
+    "from IPython.utils import io\n",
+    "\n",
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip install pyhgf watermark"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "66d8312f",
+   "metadata": {},
+   "source": [
     "This notebook builds the **smallest possible GPT-style Transformer** in\n",
     "JAX/[Equinox](https://docs.kidger.site/equinox/) and trains it twice with ordinary backpropagation and with PyHGF using the hybrid approach described [here](deep_networks_implementation).\n",
     "\n",

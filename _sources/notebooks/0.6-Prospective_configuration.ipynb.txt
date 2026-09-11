@@ -26,12 +26,12 @@
     "tags": []
    },
    "source": [
-    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.7-Deep_learning.ipynb)"
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.6-Prospective_configuration.ipynb)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "31b80846",
    "metadata": {
     "editable": true,
@@ -50,8 +50,7 @@
     "\n",
     "if \"google.colab\" in sys.modules:\n",
     "    with io.capture_output() as captured:\n",
-    "        ! pip uninstall -y jax jaxlib\n",
-    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
+    "        ! pip install pyhgf watermark"
    ]
   },
   {

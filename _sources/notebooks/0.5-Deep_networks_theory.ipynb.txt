@@ -23,6 +23,34 @@
   },
   {
    "cell_type": "markdown",
+   "id": "5030a15b",
+   "metadata": {},
+   "source": [
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/0.5-Deep_networks_theory.ipynb)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e54ec337",
+   "metadata": {
+    "tags": [
+     "hide-cell"
+    ]
+   },
+   "outputs": [],
+   "source": [
+    "import sys\n",
+    "\n",
+    "from IPython.utils import io\n",
+    "\n",
+    "if \"google.colab\" in sys.modules:\n",
+    "    with io.capture_output() as captured:\n",
+    "        ! pip install pyhgf watermark"
+   ]
+  },
+  {
+   "cell_type": "markdown",
    "id": "0e23cb28-27d8-4dae-9f92-8d5983e2b352",
    "metadata": {},
    "source": [

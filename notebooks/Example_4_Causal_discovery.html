@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Example 4: Causal discovery in a predictive coding network &#8212; pyhgf 0.3.1 documentation</title>
+    <title>Example 4: Causal discovery in a predictive coding network &#8212; pyhgf 0.3.2 documentation</title>
   
   
   
@@ -45,7 +45,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=71d9d8e6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>let toggleHintShow = 'Click to show';</script>
@@ -149,7 +149,7 @@
 </a></div>
     
       <div class="navbar-item"><!-- Show the pyhgf version used to build the docs, next to the navbar logo. -->
-<span class="navbar-version">v0.3.1</span></div>
+<span class="navbar-version">v0.3.2</span></div>
     
   </div>
   
@@ -547,14 +547,7 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="example-4-causal-discovery-in-a-predictive-coding-network">
 <span id="example-4"></span><h1>Example 4: Causal discovery in a predictive coding network<a class="headerlink" href="#example-4-causal-discovery-in-a-predictive-coding-network" title="Link to this heading">#</a></h1>
-<p><a class="reference external" href="https://colab.research.google.com/github/ilabcode/pyhgf/blob/master/docs/source/notebooks/Example_3_Multi_armed_bandit.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
-<div class="tip admonition">
-<p class="admonition-title">Authors</p>
-<ul class="simple">
-<li><p>Lina Walkowiak, Aarhus University, Denmark (<a class="reference external" href="mailto:202205493&#37;&#52;&#48;post&#46;au&#46;dk">202205493<span>&#64;</span>post<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
-<li><p>Nicolas Legrand, Aarhus University, Denmark (<a class="reference external" href="mailto:nicolas&#46;legrand&#37;&#52;&#48;cas&#46;au&#46;dk">nicolas<span>&#46;</span>legrand<span>&#64;</span>cas<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
-</ul>
-</div>
+<p><a class="reference external" href="https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/Example_4_Causal_discovery.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell tag_hide-cell docutils container">
 <details class="admonition hide above-input">
 <summary aria-label="Toggle hidden content">
@@ -568,12 +561,18 @@
 
 <span class="k">if</span> <span class="s2">"google.colab"</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
     <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">capture_output</span><span class="p">()</span> <span class="k">as</span> <span class="n">captured</span><span class="p">:</span>
-        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y<span class="w"> </span>jax<span class="w"> </span>jaxlib
-        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark<span class="w"> </span>jax<span class="o">[</span>cuda12<span class="o">]==</span><span class="m">0</span>.4.31
+        <span class="o">!</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pyhgf<span class="w"> </span>watermark
 </pre></div>
 </div>
 </div>
 </details>
+</div>
+<div class="tip admonition">
+<p class="admonition-title">Authors</p>
+<ul class="simple">
+<li><p>Lina Walkowiak, Aarhus University, Denmark (<a class="reference external" href="mailto:202205493&#37;&#52;&#48;post&#46;au&#46;dk">202205493<span>&#64;</span>post<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
+<li><p>Nicolas Legrand, Aarhus University, Denmark (<a class="reference external" href="mailto:nicolas&#46;legrand&#37;&#52;&#48;cas&#46;au&#46;dk">nicolas<span>&#46;</span>legrand<span>&#64;</span>cas<span>&#46;</span>au<span>&#46;</span>dk</a>)</p></li>
+</ul>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1087,13 +1086,13 @@ f'(\alpha) = -\frac{2 (u - \mu_2 - \alpha \mu_1) \left[\mu_1 (\alpha^2 \sigma_1^
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Tue, 01 Sep 2026
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Last updated: Fri, 11 Sep 2026
 
 Python implementation: CPython
 Python version       : 3.12.14
 IPython version      : 9.16.1
 
-pyhgf : 0.3.1
+pyhgf : 0.3.2
 jax   : 0.6.2
 jaxlib: 0.6.2
 
@@ -1101,7 +1100,7 @@ IPython   : 9.16.1
 jax       : 0.6.2
 matplotlib: 3.11.1
 numpy     : 2.4.6
-pyhgf     : 0.3.1
+pyhgf     : 0.3.2
 seaborn   : 0.13.2
 
 Watermark: 2.6.0

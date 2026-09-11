@@ -11,25 +11,15 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5af600c9-eb11-48fb-ba83-0a2c2d6e824e",
-   "metadata": {
-    "editable": true,
-    "slideshow": {
-     "slide_type": ""
-    },
-    "tags": []
-   },
+   "id": "493a030a",
+   "metadata": {},
    "source": [
-    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/1.3-CAtegorical_HGF.ipynb)\n",
-    "\n",
-    "```{warning}\n",
-    "The categorical state node and the categorical state-transition nodes are still work in progress. The examples provided here are given for illustration. Things may change or not work until the official publication.\n",
-    "```"
+    "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ComputationalPsychiatry/pyhgf/blob/master/docs/source/notebooks/1.2-Categorical_HGF.ipynb)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "id": "e9143ab5-131e-4a1c-9130-326c3538f888",
    "metadata": {
     "editable": true,
@@ -48,8 +38,23 @@
     "\n",
     "if \"google.colab\" in sys.modules:\n",
     "    with io.capture_output() as captured:\n",
-    "        ! pip uninstall -y jax jaxlib\n",
-    "        ! pip install pyhgf watermark jax[cuda12]==0.4.31"
+    "        ! pip install pyhgf watermark"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5af600c9-eb11-48fb-ba83-0a2c2d6e824e",
+   "metadata": {
+    "editable": true,
+    "slideshow": {
+     "slide_type": ""
+    },
+    "tags": []
+   },
+   "source": [
+    "```{warning}\n",
+    "The categorical state node and the categorical state-transition nodes are still work in progress. The examples provided here are given for illustration. Things may change or not work until the official publication.\n",
+    "```"
    ]
   },
   {
