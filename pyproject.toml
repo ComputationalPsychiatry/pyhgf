@@ -16,6 +16,7 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
     "numpy>=2.0.0",
+    "pandas>=2.2.2",
     "matplotlib>=3.4.0",
     "seaborn>=0.13.2",
     "arviz>=1.0.0",
@@ -84,10 +85,9 @@ local_scheme = "node-and-date"
 [tool.maturin]
 # "extension-module" tells pyo3 we want to build an extension module (skips linking against libpython.so)
 features = ["pyo3/extension-module"]
-requires-python = ">=3.10,<3.13"
 module-name = "pyhgf.rshgf"  # Name of the Rust module when imported in Python
 bindings = "pyo3"  # If using PyO3
-include = ["README.md", "src/pyhgf/data/**"]  # Ensure README is included in the package
+include = ["README.md", "pyhgf/data/**"]  # Ensure README and datasets are included in the package
 python-packages = ["pyhgf"]
 
 [tool.ruff]
