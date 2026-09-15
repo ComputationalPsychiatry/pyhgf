@@ -683,3 +683,48 @@ def test_evidence_walk_through_a_layer_stack():
     # comparison passes whatever the stack did.
     assert np.all(want > 0.0)
     np.testing.assert_allclose(got / want, 1.0, rtol=1e-4)
+
+
+def test_evidence_pullback_charges_the_process_noise_it_crosses():
+    """The recursion softens the evidence once per level, not only at the increment.
+
+    A message leaving a node crosses that node's random walk, so the precision that
+    arrives above is ``xi / (1 + Omega * xi)`` and not ``xi``. The softening is part of
+    the pullback, which makes it compound over depth; charging it only where the
+    evidence feeds a weight increment would leave every level above the first uncharged.
+    """
+    from pyhgf.updates.vectorised.learning import evidence_pullback
+
+    n_children, n_parents = 4, 3
+    evidence = jnp.asarray([0.4, 0.9, 0.2, 0.7])
+    weights = jnp.asarray(
+        np.linspace(-1.0, 1.0, n_children * n_parents).reshape(n_children, n_parents)
+    )
+    parent = dataclasses.replace(
+        LayerState.create(n_parents, has_volatility_parent=False),
+        expected_mean=jnp.asarray([0.3, -0.5, 1.2]),
+    )
+
+    def pulled(process_noise):
+        return np.asarray(
+            evidence_pullback(
+                parent_state=parent,
+                child_evidence=evidence,
+                child_process_noise=jnp.full(n_children, process_noise),
+                weights=weights,
+                coupling_fn=lambda m: m,
+            )
+        )
+
+    # An identity coupling has unit derivative, so the pullback is the squared
+    # weights applied to the softened evidence and nothing else.
+    omega = 1.5
+    softened = np.asarray(evidence) / (1.0 + omega * np.asarray(evidence))
+    expected = np.asarray(weights).T ** 2 @ softened
+    np.testing.assert_allclose(pulled(omega), expected, rtol=1e-6)
+
+    # Without process noise the softening is exactly one, so a clamped layer, which
+    # undergoes no random walk, seeds the walk unchanged.
+    raw = np.asarray(weights).T ** 2 @ np.asarray(evidence)
+    np.testing.assert_allclose(pulled(0.0), raw, rtol=1e-6)
+    assert np.all(pulled(omega) < pulled(0.0))
