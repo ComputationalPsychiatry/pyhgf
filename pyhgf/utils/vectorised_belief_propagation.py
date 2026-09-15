@@ -51,6 +51,10 @@ from pyhgf.updates.vectorised.volatile import (
     vectorised_root_prediction,
 )
 
+#: Floor applied to precisions before any division.
+_EPS = 1e-30
+
+
 # ---------------------------------------------------------------------------
 # Element-shape helpers
 # ---------------------------------------------------------------------------
@@ -613,23 +617,40 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
     """
     child_state, child_kind, _ = _child_view(child_elem)
 
-    def carry(evidence_below, slice_data):
+    def carry(below, slice_data):
+        evidence_below, noise_below = below
         slice_state, slice_weights = slice_data
         above = evidence_pullback(
             parent_state=slice_state,
             child_evidence=evidence_below,
+            child_process_noise=noise_below,
             weights=slice_weights,
             coupling_fn=stack.coupling_fn,
             parent_has_constant=stack.add_constant_input,
         )
-        return above, evidence_below
+        noise_here = slice_state.effective_precision / jnp.maximum(
+            slice_state.expected_precision, _EPS
+        )
+        return (above, noise_here), evidence_below
 
     if evidence is None:
         evidence_out = None
         per_slice_evidence = jnp.zeros(stack.state.mean.shape)
     else:
-        evidence_out, per_slice_evidence = jax.lax.scan(
-            carry, evidence, (stack.state, stack.weights_mean)
+        # The carry holds the evidence arriving at a slice and the process noise of
+        # the layer it left, since the softening is charged at the level it crosses.
+        # The sweep caches the effective precision gamma = Omega * pi_tilde, so the
+        # process noise is gamma / pi_tilde. It is carried as an array rather than as
+        # the layer's state, whose pytree structure differs between the external
+        # child and a stack slice when one of them has no volatility parent.
+        (evidence_out, _), per_slice_evidence = jax.lax.scan(
+            carry,
+            (
+                evidence,
+                child_state.effective_precision
+                / jnp.maximum(child_state.expected_precision, _EPS),
+            ),
+            (stack.state, stack.weights_mean),
         )
 
     walking = evidence is not None
@@ -1166,9 +1187,15 @@ def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
             _layer_weight_op(parent, elements[i - 1], learning_kind, evidence)
         )
         if i + 1 < len(elements):
+            # The evidence is softened by the process noise of the layer it leaves,
+            # which the sweep caches as the effective precision gamma = Omega *
+            # pi_tilde, so the noise itself is gamma / pi_tilde.
+            below, _, _ = _child_view(elements[i - 1])
             evidence = evidence_pullback(
                 parent_state=parent.state,
                 child_evidence=evidence,
+                child_process_noise=below.effective_precision
+                / jnp.maximum(below.expected_precision, _EPS),
                 weights=parent.weights_mean,
                 coupling_fn=parent.coupling_fn,
                 parent_has_constant=parent.add_constant_input,
