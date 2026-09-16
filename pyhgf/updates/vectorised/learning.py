@@ -35,7 +35,7 @@ def learning_weights_vectorised(
     this returns the pieces of both: the descent gradient that moves the
     weight's mean, and the importance increment that raises its precision. They
     are the first and second derivative of one layer-local energy, computed in
-    one pass rather than selected between.
+    one pass.
 
     Both are rank-one and **share their parent-side factor**. The gradient is
     :math:`u \otimes h` and the increment is :math:`p \otimes h^2`, with the
@@ -174,16 +174,27 @@ def learning_weights_vectorised(
     # process noise between the weight and the child attenuates it. Both halves
     # of the update read these, so they are formed once. The evidence is
     # floored at zero: clipping can drive a posterior precision below its
-    # prediction, which must not turn the increment into a subtraction.
+    # prediction, which must not turn the increment into a subtraction, nor the
+    # softening below into an amplification.
     if child_evidence is None:
         evidence = child_state.precision - child_state.expected_precision
     else:
         evidence = child_evidence
     floored = jnp.maximum(evidence, 0.0)
-    tonic = child_state.effective_precision / jnp.maximum(
+
+    # The child's process noise. The prediction sweep caches the effective
+    # precision gamma = Omega * pi_tilde, so Omega = gamma / pi_tilde. It is
+    # zero at a clamped layer, which undergoes no random walk.
+    process_noise = child_state.effective_precision / jnp.maximum(
         child_state.expected_precision, _EPS
     )
-    softening = 1.0 / (1.0 + tonic * floored)
+
+    # A message crossing that noise has the two variances convolved, so an
+    # evidence precision xi arrives as xi_tilde = (1/xi + Omega)^-1
+    # = xi / (1 + Omega xi). The denominator is kept on its own because both
+    # halves need it: the increment is xi_tilde h^2, while the gradient factor
+    # divides the child's displacement by the same quantity.
+    softening = 1.0 / (1.0 + process_noise * floored)
 
     # Child-side gradient factor, in descent form: sign-flipped from the
     # natural "ascent" formulation so it composes with standard optax
@@ -420,20 +431,30 @@ def clamped_layer_evidence(child_state: LayerState, child_kind: str) -> jnp.ndar
 def evidence_pullback(
     parent_state: LayerState,
     child_evidence: jnp.ndarray,
+    child_process_noise: jnp.ndarray,
     weights: jnp.ndarray,
     coupling_fn: Callable,
     parent_has_constant: bool = False,
 ) -> jnp.ndarray:
     r"""Carry the evidence precision up one layer, by the squared-coupling recursion.
 
-    A Gaussian likelihood pulled back through a linear map of coefficient
-    :math:`c` has its precision multiplied by :math:`c^2`; children are
-    conditionally independent given the parent, so their pulled-back precisions
-    add:
+    The message leaving a child first crosses that child's own process noise, which
+    convolves the two variances and softens the evidence to :math:`\tilde\xi_a`.
+    What is left is then pulled back through the linear map the child depends on the
+    parent by: a Gaussian likelihood pulled back through a coefficient :math:`c` has
+    its precision multiplied by :math:`c^2`, and here
+    :math:`c = W_{ai}\,g'(\hat\mu_i)`. Children are conditionally independent given
+    the parent, so their pulled-back precisions add:
 
     .. math::
 
-        \xi_i = g'(\hat\mu_i)^2 \sum_a W_{ai}^2\, \tilde\xi_a
+        \xi_i = g'(\hat\mu_i)^2 \sum_a W_{ai}^2\, \tilde\xi_a,
+        \qquad
+        \tilde\xi_a = \left(\frac{1}{\xi_a} + \Omega_a\right)^{-1}
+
+    The softening applies once per level crossed, so it is part of the recursion and
+    not only of the increment the evidence eventually feeds. It is exactly one at a
+    clamped layer, which has no process noise, so it changes nothing at the seed.
 
     This is the upward mirror of the downward variance bleed-through, and
     computationally it is curvature backpropagation: per sample,
@@ -453,7 +474,11 @@ def evidence_pullback(
         State of the layer the evidence is being carried up to.
     child_evidence :
         Evidence precision at each node of the layer below, shape
-        ``(n_children,)``.
+        ``(n_children,)``, before the child's own process noise is charged.
+    child_process_noise :
+        That layer's process noise :math:`\Omega_a`, same shape, recovered by its
+        caller from the cached effective precision as
+        :math:`\Omega_a = \gamma_a / \tilde\pi_a`.
     weights :
         The matrix connecting them, shape ``(n_children, n_parents[+1])``. A bias
         column is dropped: a constant input node is not a parent whose belief the
@@ -472,8 +497,16 @@ def evidence_pullback(
     """
     if parent_has_constant:
         weights = weights[..., :-1]
+
+    # Charge the child's process noise, xi_tilde = xi / (1 + Omega xi). Once per
+    # level, so it compounds with depth, and exactly the identity at a clamped
+    # layer, whose process noise is zero. The floor keeps a negative evidence,
+    # which precision clipping elsewhere in the sweep can produce, from
+    # amplifying the message instead of attenuating it.
+    floored = jnp.maximum(child_evidence, 0.0)
+    softened = floored / (1.0 + child_process_noise * floored)
     coupling_prime = vmap(jgrad(coupling_fn))(parent_state.expected_mean)
-    pulled = jnp.matmul(weights.T**2, child_evidence) * coupling_prime**2
+    pulled = jnp.matmul(weights.T**2, softened) * coupling_prime**2
     return jnp.where(jnp.isfinite(pulled), jnp.maximum(pulled, 0.0), 0.0)
 
 
@@ -514,8 +547,8 @@ def vectorised_synaptic_uncertainty_update(
     prior_precision = settings.prior_precision
     pi = jnp.maximum(precision_delta + prior_precision, _EPS)
 
-    # The mean update divides by the pre-update precision and the reversion is
-    # precision-scaled, both as in the published rule.
+    # The mean update divides by the pre-update precision
+    # and the reversion is precision-scaled.
     reversion = (prior_precision / (settings.window * pi)) * (
         settings.prior_mean - weights
     )
