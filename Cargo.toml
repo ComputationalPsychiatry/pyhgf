@@ -9,6 +9,10 @@ name = "rshgf"
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"    # The source file of the target.
 
+[build-dependencies]
+# Used by build.rs to add the macOS extension-module link arguments.
+pyo3-build-config = "0.28.1"
+
 [dependencies]
 pyo3 = { version = "0.28.1", features = ["extension-module", "abi3-py312"] }
 numpy = "0.28"
