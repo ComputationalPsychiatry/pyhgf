@@ -215,18 +215,17 @@ def _child_previous_variance(
     time_step: float,
     mean_field_updates: bool = False,
 ) -> jnp.ndarray:
-    r"""Reconstruct the volatility child's previous-step posterior variance.
+    r"""Reconstruct the variance the volatility child carried into its prediction.
 
-    The prediction step set
-    :math:`1 / \hat{\pi}_a = 1 / \pi_a^{(k-1)} + \Omega_a` with the full
-    predicted volatility :math:`\Omega_a` (volatility-parent contribution and
-    MGF correction included — the latter absent under ``mean_field_updates``,
-    when the prediction dropped it too), so subtracting the same
-    :math:`\Omega_a` from the inverse *conditional* predicted precision cancels
-    back to :math:`1 / \pi_a^{(k-1)}` — the quantity the nodalised backend
-    stores as ``temp["current_variance"]``. The parent's prediction-time
-    ``expected_mean`` / ``expected_precision`` are still intact when the
-    posterior update runs, so the reconstruction is exact.
+    The prediction set :math:`1/\hat{\pi}_a = \lambda_a^2/\pi_a^{(k-1)} + \Omega_a`,
+    so subtracting the same :math:`\Omega_a` from :math:`1/\hat{\pi}_a` recovers
+    :math:`\lambda_a^2/\pi_a^{(k-1)}` — the carried variance the nodalised backend
+    stores as ``temp["current_variance"]``.
+
+    Reconstructing (not reading the child's ``precision``) keeps the backends in
+    step: the sweep is bottom-up, so the child's ``precision`` already holds its new
+    posterior. At :math:`\lambda_a = 0` the carried variance is 0 and the previous
+    posterior variance is not recoverable here.
     """
     assert child.params.tonic_volatility is not None
     total_volatility = child.params.tonic_volatility + jnp.matmul(

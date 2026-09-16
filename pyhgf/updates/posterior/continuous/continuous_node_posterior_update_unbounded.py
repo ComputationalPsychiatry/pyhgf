@@ -76,7 +76,7 @@ def posterior_update_unbounded(
 
     previous_variance = jnp.maximum(
         attributes[volatility_child_idx]["temp"]["current_variance"], 1e-128
-    )  # previous-step variance (= 1 / precision at the previous step)
+    )  # carried variance λ²/π the child used in its prediction.
     be_aux = (1.0 / attributes[volatility_child_idx]["precision"]) + (
         attributes[volatility_child_idx]["mean"]
         - attributes[volatility_child_idx]["expected_mean"]

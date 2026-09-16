@@ -270,7 +270,8 @@ pub fn posterior_update_continuous_state_node_unbounded(
     let child_precision = child_state.precision;
     let child_expected_mean = child_state.expected_mean;
     let tonic_volatility = child_state.tonic_volatility;
-    let previous_variance = child_state.current_variance.max(1e-128); // previous-step variance (= 1 / precision at the previous step)
+    // Carried variance λ²/π the child used in its prediction.
+    let previous_variance = child_state.current_variance.max(1e-128);
     let be_aux = (1.0 / child_precision) + (child_mean - child_expected_mean).powi(2);
 
     let expected_mean = network.attributes.states[node_idx].expected_mean;
@@ -418,7 +419,8 @@ fn ehgf_volatility_increment(
     mean: f64,
     time_step: f64,
 ) -> f64 {
-    // Child posterior variance at the previous step (σ = 1 / π).
+    // Carried variance σ = λ²/π the child used; the re-prediction below must add
+    // volatility to the same quantity the prediction step used.
     let previous_variance = child_state.current_variance;
     // Re-predict the child's volatility and precision from the parent posterior mean.
     let predicted_volatility =

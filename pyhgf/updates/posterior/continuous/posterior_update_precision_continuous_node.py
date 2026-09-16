@@ -9,6 +9,7 @@ from jax.lax import cond
 from jax.tree_util import Partial
 
 from pyhgf.typing import Edges
+from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 
 # ----------------------------------------------------------------------------------
 # Shared building blocks
@@ -368,13 +369,19 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
 @partial(jit, static_argnames=("edges", "node_idx"))
 def precision_update_missing_values(
     attributes: dict, edges: Edges, node_idx: int
-) -> float:
-    """Compute new precision in the case of missing observations.
+) -> Array:
+    r"""Compute new precision in the case of missing observations.
 
-    When no value or volatility child reports an observation at the current step,
-    the node simply ages its precision by one step of its random walk: there are no
-    prediction errors to integrate, so the new precision is the canonical predicted
-    precision under the volatility-parent random walk.
+    With no observation to integrate, the node ages its precision by one random-walk
+    step:
+
+    .. math::
+
+        \pi_a^{(k)} = \frac{1}{\frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}}.
+
+    The carried variance takes :math:`\lambda_a^2` because scaling the belief by
+    :math:`\lambda_a` scales its variance by :math:`\lambda_a^2`: the mean ages by
+    :math:`\lambda_a`, so the variance ages by :math:`\lambda_a^2`. At :math:`\lambda_a = 1` this is unchanged.
 
     Parameters
     ----------
@@ -414,9 +421,20 @@ def precision_update_missing_values(
     time_step = attributes[-1]["time_step"]
     predicted_volatility = time_step * jnp.exp(total_volatility)
 
-    # Estimate the new precision for the continuous state node
-    posterior_precision_missing_values = 1 / (
-        (1 / attributes[node_idx]["precision"]) + predicted_volatility
+    # New precision: carried variance + volatility. Input nodes carry 1/π
+    # (λ = 1 for precision); other nodes λ²/π (the unobserved mean ages by λ).
+    if (
+        edges[node_idx].value_children is None
+        and edges[node_idx].volatility_children is None
+    ):
+        carried_variance = 1.0 / attributes[node_idx]["precision"]
+    else:
+        carried_variance = (
+            attributes[node_idx]["autoconnection_strength"] ** 2
+        ) / attributes[node_idx]["precision"]
+    posterior_precision_missing_values = 1 / jnp.maximum(
+        carried_variance + predicted_volatility,
+        MIN_PREDICTED_VARIANCE,
     )
 
     return posterior_precision_missing_values
@@ -592,7 +610,8 @@ def _ehgf_volatility_precision_increment(
     # Parent posterior mean (the eHGF performs the mean update first).
     mean = attributes[node_idx]["mean"]
     tonic_volatility = attributes[volatility_child_idx]["tonic_volatility"]
-    # Child posterior variance at the previous time step (σ = 1 / π).
+    # Carried variance σ = λ²/π the child used in its prediction; the re-prediction
+    # below must add volatility to the same quantity the prediction step used.
     previous_variance = attributes[volatility_child_idx]["temp"]["current_variance"]
 
     # Re-predict the child's volatility and precision from the parent posterior mean.

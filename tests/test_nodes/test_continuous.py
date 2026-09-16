@@ -24,11 +24,19 @@ def _build_network(cls, volatility_updates, mean_field_updates, n_levels, timese
 
 
 def _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label):
-    """Assert the JAX and Rust trajectories agree for every node."""
+    """Assert the JAX and Rust trajectories agree for every node.
+
+    JAX defaults to float32, Rust to f64, so this is a float32 tolerance (under
+    ``jax_enable_x64`` they agree to ~1e-14). The unbounded kernel differs at the float
+    level between backends, so the tolerance is loosened with a volatility parent.
+    """
     # The unbounded posterior kernel differs at the float level between the two
     # backends (mathematically equivalent but distinct implementations), so the
     # cross-backend comparison is loosened when a volatility parent is present.
-    rtol = 1e-1 if (volatility_updates == "unbounded" and n_levels == 3) else 1e-4
+    if volatility_updates == "unbounded" and n_levels == 3:
+        rtol = 1e-1
+    else:
+        rtol = 1e-4
     for node_idx in range(n_levels):
         for key in ["mean", "expected_mean", "precision", "expected_precision"]:
             assert np.allclose(

@@ -1899,7 +1899,7 @@ def _continuous_prediction_sweep(
             volatility_weights=(
                 None if vlp is None else elements[vlp].volatility_weights
             ),
-            is_static_leaf=elem.is_input_layer and vlp is None,
+            is_input_layer=elem.is_input_layer,
             mean_field_updates=network.mean_field_updates,
         )
         elements[i] = dataclasses.replace(elem, state=new_state)
