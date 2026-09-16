@@ -7,6 +7,11 @@ from jax import Array, grad, jit
 
 from pyhgf.typing import Edges
 
+#: Floor on the total predicted variance (carried + volatility + value-coupling).
+#: At λ = 0 the carried term vanishes, so without it the precision can diverge as
+#: Ω → 0; at the default λ = 1 the sum already exceeds it, so it never binds.
+MIN_PREDICTED_VARIANCE = 1e-128
+
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def predict_mean(
@@ -126,7 +131,8 @@ def predict_precision(
 
     .. math::
 
-        \frac{1}{\hat{\pi}_a^{(k)} = \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)},
+        \frac{1}{\hat{\pi}_a^{(k)}} = \frac{\lambda_a^2}{\pi_a^{(k-1)}}
+            + \Omega_a^{(k)},
 
     .. math::
 
@@ -145,6 +151,15 @@ def predict_precision(
                 + \frac{\kappa_{a,\check{a}_j}^2}{2 \hat{\pi}_{\check{a}_j}}
             \right)
         \right).
+
+    The factor :math:`\lambda_a^2` scales the carried variance (scaling a Gaussian
+    by :math:`\lambda_a` scales its variance by :math:`\lambda_a^2`); the drift is
+    added after the autoregression, so the value-coupling term stays unscaled.
+
+    .. note::
+
+        Eq. 35 of [1]_ omits :math:`\lambda_a^2`; the two forms agree at
+        :math:`\lambda_a = 1`, the value used in every simulation in the paper.
 
     :math:`\hat{\pi}_a^{(k)}` is the *conditional* predicted precision
     (``conditional_expected_precision``) — own variance plus volatility, without the
@@ -255,21 +270,29 @@ def predict_precision(
                 value_parent_idx
             ]["expected_precision"]
 
-    # Conditional predicted precision π̂_a — precision of x_a given its value
-    # parents (own variance + volatility only), WITHOUT the parent-uncertainty
-    # value-coupling term. This is what the parent's posterior-step Schur complement
-    # acts on; substituting the marginal would double-count parent uncertainty.
-    conditional_expected_precision = 1 / (
-        (1 / attributes[node_idx]["precision"]) + predicted_volatility
+    # Carried variance: input nodes carry 1/π (λ = 1 for precision, λ = 0 for
+    # the mean — no tonic volatility); other nodes scale by λ².
+    is_input_node = (
+        edges[node_idx].value_children is None
+        and edges[node_idx].volatility_children is None
+    )
+    if is_input_node:
+        carried_variance = 1.0 / attributes[node_idx]["precision"]
+    else:
+        carried_variance = (
+            attributes[node_idx]["autoconnection_strength"] ** 2
+        ) / attributes[node_idx]["precision"]
+
+    # Conditional π̂_a: carried variance + volatility, no parent bleed-through
+    # (the parent's Schur complement acts on this; the marginal would double-count).
+    conditional_expected_precision = 1 / jnp.maximum(
+        carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
     )
 
-    # Estimate the new expected precision for the node by inverting the
-    # marginal predictive variance (own variance + improved volatility term +
-    # Laplace value-coupling term).
-    expected_precision = 1 / (
-        (1 / attributes[node_idx]["precision"])
-        + predicted_volatility
-        + value_coupling_variance
+    # Marginal π̃_a: carried variance + volatility + Laplace value-coupling variance.
+    expected_precision = 1 / jnp.maximum(
+        carried_variance + predicted_volatility + value_coupling_variance,
+        MIN_PREDICTED_VARIANCE,
     )
 
     # compute the effective precision (γ); only the volatility-driven part
@@ -324,11 +347,20 @@ def continuous_node_prediction(
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
-    # if this node has volatility parent(s), store the current variance
-    # to be used by the posterior update if using unbounded approximation
-    attributes[node_idx]["temp"]["current_variance"] = (
-        1 / attributes[node_idx]["precision"]
-    )
+    # Store carried variance for the volatility-coupling posteriors (unbounded,
+    # eHGF), which re-predict from it — same quantity predict_precision uses.
+    # Input nodes carry 1/π (λ = 1 for precision); other nodes λ²/π.
+    if (
+        edges[node_idx].value_children is None
+        and edges[node_idx].volatility_children is None
+    ):
+        attributes[node_idx]["temp"]["current_variance"] = (
+            1.0 / attributes[node_idx]["precision"]
+        )
+    else:
+        attributes[node_idx]["temp"]["current_variance"] = (
+            attributes[node_idx]["autoconnection_strength"] ** 2
+        ) / attributes[node_idx]["precision"]
 
     # Get the new expected mean
     expected_mean = predict_mean(attributes, edges, node_idx)
@@ -377,9 +409,11 @@ def predict_precision_mean_field(
 
     .. math::
 
-        \hat{\pi}_a^{(k)} = \frac{1}{\frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}}
+        \hat{\pi}_a^{(k)} = \frac{1}
+            {\frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}}
 
-    where :math:`\Omega_a^{(k)}` is the *total predicted volatility*. This term is the
+    where :math:`\lambda_a` is the autoconnection strength and
+    :math:`\Omega_a^{(k)}` is the *total predicted volatility*. This term is the
     sum of the tonic (endogenous) and phasic (exogenous) volatility, such as:
 
     .. math::
@@ -389,7 +423,8 @@ def predict_precision_mean_field(
 
 
     with :math:`\kappa_j` the volatility coupling strength with the volatility parent
-    :math:`j`.
+    :math:`j`. The carried variance takes :math:`\lambda_a^2` because scaling the
+    belief by :math:`\lambda_a` scales its variance by :math:`\lambda_a^2`.
 
     The *effective precision* :math:`\gamma_a^{(k)}` is given by:
 
@@ -447,8 +482,21 @@ def predict_precision_mean_field(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    expected_precision = 1 / (
-        (1 / attributes[node_idx]["precision"]) + predicted_volatility
+    # Input nodes carry their precision over (λ = 1 for precision); other nodes
+    # scale by λ². See :func:`predict_precision` for the full rationale.
+    is_input_node = (
+        edges[node_idx].value_children is None
+        and edges[node_idx].volatility_children is None
+    )
+    if is_input_node:
+        carried_variance = 1.0 / attributes[node_idx]["precision"]
+    else:
+        carried_variance = (
+            attributes[node_idx]["autoconnection_strength"] ** 2
+        ) / attributes[node_idx]["precision"]
+    expected_precision = 1 / jnp.maximum(
+        carried_variance + predicted_volatility,
+        MIN_PREDICTED_VARIANCE,
     )
     effective_precision = predicted_volatility * expected_precision
 
@@ -481,9 +529,19 @@ def continuous_node_prediction_mean_field(
     attributes :
         The updated attributes of the probabilistic nodes.
     """
-    attributes[node_idx]["temp"]["current_variance"] = (
-        1 / attributes[node_idx]["precision"]
-    )
+    # Store carried variance (input nodes: 1/π; others: λ²/π) for the
+    # volatility-coupling posteriors, which re-predict from it.
+    if (
+        edges[node_idx].value_children is None
+        and edges[node_idx].volatility_children is None
+    ):
+        attributes[node_idx]["temp"]["current_variance"] = (
+            1.0 / attributes[node_idx]["precision"]
+        )
+    else:
+        attributes[node_idx]["temp"]["current_variance"] = (
+            attributes[node_idx]["autoconnection_strength"] ** 2
+        ) / attributes[node_idx]["precision"]
 
     expected_mean = predict_mean(attributes, edges, node_idx)
 

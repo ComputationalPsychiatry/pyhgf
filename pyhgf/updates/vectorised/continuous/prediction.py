@@ -9,6 +9,7 @@ import jax.numpy as jnp
 from jax import grad, vmap
 
 from pyhgf.typing.vectorised import LayerParams, LayerState
+from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 
 
 def vectorised_continuous_prediction(
@@ -20,7 +21,7 @@ def vectorised_continuous_prediction(
     coupling_fn: Optional[Callable] = None,
     volatility_parent_state: Optional[LayerState] = None,
     volatility_weights: Optional[jnp.ndarray] = None,
-    is_static_leaf: bool = False,
+    is_input_layer: bool = False,
     mean_field_updates: bool = False,
 ) -> LayerState:
     r"""Predict expected mean and precisions for a layer of continuous nodes.
@@ -51,7 +52,7 @@ def vectorised_continuous_prediction(
         \Omega_a^{(k)} = t^{(k)} \exp\!\left( \omega_a
             + \sum_j \left( \kappa_{a,j} \hat{\mu}_j
             + \frac{\kappa_{a,j}^2}{2 \tilde{\pi}_j} \right) \right), \qquad
-        \hat{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+        \hat{\pi}_a^{(k)} = \left( \frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
             \right)^{-1},
 
     .. math::
@@ -64,6 +65,12 @@ def vectorised_continuous_prediction(
     Unlike the volatile-layer kernel, the Laplace value-coupling term carries the
     time step (the drift contribution to the mean is scaled by :math:`t^{(k)}`),
     matching the nodalised backend exactly.
+
+    The carried variance takes :math:`\lambda_a^2` (scaling the belief by
+    :math:`\lambda_a` scales its variance by :math:`\lambda_a^2`):
+    shrinking the mean by :math:`\lambda_a` shrinks the variance by
+    :math:`\lambda_a^2`. A clamped observation layer with a volatility parent has
+    :math:`\lambda_a = 0`, so its predicted variance is :math:`\Omega_a^{(k)}` alone.
 
     Parameters
     ----------
@@ -90,15 +97,12 @@ def vectorised_continuous_prediction(
     volatility_weights :
         Volatility-coupling matrix :math:`\kappa`, shape ``(n_self, n_parent)``.
         Required with *volatility_parent_state*.
-    is_static_leaf :
-        If True, the layer is the clamped observation leaf *without* a volatility
-        parent: it does not undergo a Gaussian random walk between observations,
-        so both predicted precisions are held at the prior precision (the
-        nodalised backend's input-node convention). A leaf *with* a volatility
-        parent does walk, so it takes the regular path and must be passed with
-        ``is_static_leaf=False``. Distinct from
-        :attr:`~pyhgf.updates.vectorised.continuous.posterior.ValueChild.precision_is_clamped`,
-        which holds for *every* clamped leaf.
+    is_input_layer :
+        If True, the layer is the clamped observation leaf. It carries its precision
+        over (λ = 1 for precision, λ = 0 for the mean): it has no tonic volatility,
+        so without a volatility parent both predicted precisions stay at the prior
+        π; with one, the parent contributes Ω on top of the carried 1/π. Distinct
+        from :attr:`~...posterior.ValueChild.precision_is_clamped`.
     mean_field_updates :
         If ``True``, use the original mean-field prediction: the volatility
         parent's MGF correction :math:`\kappa^2 / (2 \tilde{\pi})` and the value
@@ -156,20 +160,26 @@ def vectorised_continuous_prediction(
             weights**2, g_prime**2 / value_parent_state.expected_precision
         )
 
-    # 4. Conditional (π̂) and marginal (π̃) predicted precisions, effective
-    # precision γ.
-    conditional_expected_precision = 1.0 / (
-        1.0 / child_state.precision + predicted_volatility
+    # 4. Conditional (π̂) and marginal (π̃) predicted precisions, effective γ.
+    # Input layers carry 1/π (λ = 1 for precision, λ = 0 for the mean); other
+    # layers scale by λ². The drift is added after the autoregression, so the
+    # value-coupling term is unscaled.
+    if is_input_layer:
+        carried_variance = 1.0 / child_state.precision
+    else:
+        carried_variance = (params.autoconnection_strength**2) / child_state.precision
+    conditional_expected_precision = 1.0 / jnp.maximum(
+        carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
     )
-    expected_precision = 1.0 / (
-        1.0 / child_state.precision + predicted_volatility + value_coupling_variance
+    expected_precision = 1.0 / jnp.maximum(
+        carried_variance + predicted_volatility + value_coupling_variance,
+        MIN_PREDICTED_VARIANCE,
     )
     effective_precision = predicted_volatility * expected_precision
 
-    # 5. Static-leaf override: a clamped leaf with no volatility parent takes no
-    # random walk between observations — both predicted precisions stay at the
-    # prior (the nodalised input-node convention).
-    if is_static_leaf:
+    # 5. Input leaf without a volatility parent: no random walk between
+    # observations, so both predicted precisions stay at the prior π.
+    if is_input_layer and volatility_parent_state is None:
         expected_precision = child_state.precision
         conditional_expected_precision = child_state.precision
 

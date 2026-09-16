@@ -10,6 +10,7 @@ import jax.numpy as jnp
 from jax import Array, grad, vmap
 
 from pyhgf.typing.vectorised import LayerParams, LayerState
+from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 
 
 def _predict_volatility_level(
@@ -238,10 +239,8 @@ def vectorised_layer_prediction(
     if parent_has_constant:
         coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
 
-    # Expected mean for value level
-    # Note: autoconnection_strength = 0 for i.i.d. classification
-    # (the previous observation should not bias the next prediction)
-    # Here we remove the influence of time_step on the expected mean.
+    # Expected mean: λ = 0 for i.i.d. classification — the previous value does
+    # not bias the next prediction. time_step does not enter the mean here.
     expected_mean = jnp.matmul(weights, coupled_parents)
 
     if predict_precision:
@@ -274,19 +273,19 @@ def vectorised_layer_prediction(
             per_parent_variance = g_prime**2 / parent_precision
             value_coupling_variance = jnp.matmul(weights**2, per_parent_variance)
 
-        # Conditional predicted precision π̂_a — the precision of x_a given a specific
-        # value of x_b (own AR-plus-volatility variance only, no parent-uncertainty
-        # bleed-through). This is the precision that enters the joint (x_a, x_b)
-        # Gaussian's Schur complement at the parent's posterior-step (smoothing)
-        # correction; substituting π̃_a there would double-count parent uncertainty.
-        conditional_expected_precision = 1.0 / (
-            1.0 / child_state.precision + predicted_volatility
+        # Precision: λ = 1 — the posterior variance is learned and carried across
+        # trials, so carried_variance = λ²/π = 1/π. Split from the mean's λ = 0.
+        carried_variance = 1.0 / child_state.precision
+        # Conditional π̂_a: carried variance + volatility, no parent bleed-through
+        # (the parent's Schur complement acts on this; π̃_a would double-count).
+        conditional_expected_precision = 1.0 / jnp.maximum(
+            carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
         )
 
-        # Marginal predicted precision π̃_a — inverse marginal predictive variance,
-        # adding the law-of-total-variance bleed-through to the conditional variance.
-        expected_precision = 1.0 / (
-            1.0 / conditional_expected_precision + value_coupling_variance
+        # Marginal π̃_a: add the law-of-total-variance parent bleed-through.
+        expected_precision = 1.0 / jnp.maximum(
+            1.0 / conditional_expected_precision + value_coupling_variance,
+            MIN_PREDICTED_VARIANCE,
         )
 
         # Effective precision γ — only the volatility-driven part enters γ, since γ

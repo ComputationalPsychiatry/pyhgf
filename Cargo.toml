@@ -43,14 +43,8 @@ blas-src = { version = "0.10", optional = true, features = ["openblas"] }
 # The nodalised (per-node) backend computes in f64 under every configuration.
 
 # Route ndarray's `.dot()` through a linked BLAS (SGEMM/DGEMM) instead of the
-# pure-Rust `matrixmultiply` kernel: the system Accelerate framework on Apple
-# targets (no build step), OpenBLAS elsewhere (requires an OpenBLAS
-# toolchain). Pays off at wide layers and batched gemm — on the deep-network
-# benchmark it roughly halves the batched learning step at batch 4096; for
-# small per-sample ops `matrixmultiply` is often as fast.
+# pure-Rust `matrixmultiply` kernel. Pays off at wide layers and batched gemm.
 blas = ["ndarray/blas", "dep:blas-src"]
 
-# Compute the vectorised backend in f64 instead of the default f32 — for
-# bit-level parity with the JAX backend under `jax_enable_x64`, at twice the
-# memory traffic.
+# Compute the vectorised backend in f64 instead of the default f32.
 f64 = []

@@ -91,6 +91,8 @@ pub struct NodeState {
     pub tonic_volatility: f64,
     pub tonic_drift: f64,
     pub autoconnection_strength: f64,
+    /// Carried variance λ²/π (the previous posterior variance at the default λ = 1).
+    /// Written by the prediction step, read back by the volatility-coupling posteriors.
     pub current_variance: f64,
     pub effective_precision: f64,
     pub value_prediction_error: f64,

@@ -1,12 +1,29 @@
 use crate::model::network::Network;
 
+/// Floor on the total predicted variance (carried + volatility + value-coupling):
+/// at λ = 0 the carried term vanishes (precision can diverge as Ω → 0); at λ = 1
+/// the sum already exceeds it. Mirrors `pyhgf.updates.prediction.continuous`.
+pub const MIN_PREDICTED_VARIANCE: f64 = 1e-128;
+
+/// Apply [`MIN_PREDICTED_VARIANCE`], propagating NaN: `f64::max` swallows NaN but
+/// `jnp.maximum` propagates it, and the floor must keep the volatility guard's NaN
+/// visible so the two backends agree.
+#[inline]
+fn floor_predicted_variance(variance: f64) -> f64 {
+    if variance.is_nan() {
+        f64::NAN
+    } else {
+        variance.max(MIN_PREDICTED_VARIANCE)
+    }
+}
+
 /// Prediction step for a continuous state node.
 ///
 /// Computes the predicted mean μ̂, the conditional predicted precision π̂
 /// (`conditional_expected_precision`), the marginal predicted precision π̃
 /// (`expected_precision`), and the effective precision γ.
 ///
-/// * π̂ = 1 / (1/π + Ω) — own variance plus volatility, no parent-uncertainty
+/// * π̂ = 1 / (λ²/π + Ω) — carried variance plus volatility, no parent-uncertainty
 ///   bleed-through. Used by the parent's Schur-complement posterior-step
 ///   correction.
 /// * π̃ = 1 / (1/π̂ + Σ_b (Δt · α · g'(μ̂_b))² / π̃_b) — inverse marginal
@@ -14,6 +31,13 @@ use crate::model::network::Network;
 ///   value parent (using the parent's marginal predicted precision π̃_b).
 /// * Ω includes the moment-generating-function correction κ²/(2 π̂_vol) inside
 ///   the log-volatility exponent for each volatility parent.
+///
+/// The carried variance takes λ²: scaling the belief by λ scales its variance by
+/// λ². Only the node's own variance takes the factor; the drift is added after the
+/// autoregression, so the value-coupling term is unscaled. At λ = 1 this is canonical.
+///
+/// Eq. 35 of Weber et al. (2026) omits λ²; the two forms agree at λ = 1, the value
+/// used in every simulation the paper reports.
 pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, time_step: f64) {
     // Copy own scalar state (f64 is Copy — no borrow held)
     let mean = network.attributes.states[node_idx].mean;
@@ -58,7 +82,7 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
     // -------------------------------------------------------
     // 2. Predict the two precisions:
-    //        π̂ = 1 / (1/π + Ω)
+    //        π̂ = 1 / (λ²/π + Ω)
     //        π̃ = 1 / (1/π̂ + value-coupling variance)
     //    Ω = Δt · exp(ω + Σ_j κ_j μ_j + Σ_j κ_j²/(2 π̂_vol_j)); the MGF correction
     //    κ²/(2 π̂_vol) marginalises over each volatility parent's Gaussian rather
@@ -81,12 +105,24 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
-    // Conditional predicted precision π̂_a — own variance + volatility only,
+    // Carried variance: input nodes carry 1/π (λ = 1 for precision, λ = 0 for
+    // the mean — no tonic volatility); other nodes scale by λ².
+    let is_input = network.edges[node_idx].value_children.is_none()
+        && network.edges[node_idx].volatility_children.is_none();
+    let carried_variance = if is_input {
+        1.0 / precision
+    } else {
+        (autoconnection_strength * autoconnection_strength) / precision
+    };
+    // Conditional predicted precision π̂_a — carried variance + volatility only,
     // WITHOUT the parent-uncertainty value-coupling term. The parent's posterior-step
     // Schur complement acts on this; the marginal would double-count parent uncertainty.
-    let conditional_expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
-    let expected_precision =
-        1.0 / ((1.0 / precision) + predicted_volatility + value_coupling_variance);
+    let conditional_expected_precision =
+        1.0 / floor_predicted_variance(carried_variance + predicted_volatility);
+    let expected_precision = 1.0
+        / floor_predicted_variance(
+            carried_variance + predicted_volatility + value_coupling_variance,
+        );
     // Effective precision γ — only the volatility-driven part enters γ, since
     // γ is consumed by the volatility-coupling posterior update.
     let effective_precision = predicted_volatility * expected_precision;
@@ -94,12 +130,12 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     // -------------------------------------------------------
     // 3. Store results
     // -------------------------------------------------------
-    let is_input = network.edges[node_idx].value_children.is_none()
-        && network.edges[node_idx].volatility_children.is_none();
     let has_volatility_parents = network.edges[node_idx].volatility_parents.is_some();
 
     let state = &mut network.attributes.states[node_idx];
-    state.current_variance = 1.0 / precision;
+    // Store carried variance for the volatility-coupling posteriors (unbounded,
+    // eHGF), which re-predict from it — same quantity the prediction step uses.
+    state.current_variance = carried_variance;
     state.expected_mean = expected_mean;
     state.effective_precision = effective_precision;
 
@@ -153,15 +189,22 @@ pub fn prediction_continuous_state_node_mean_field(
 
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
-    let expected_precision = 1.0 / ((1.0 / precision) + predicted_volatility);
-    let effective_precision = predicted_volatility * expected_precision;
-
+    // Input nodes carry 1/π (λ = 1 for precision); other nodes λ²/π.
     let is_input = network.edges[node_idx].value_children.is_none()
         && network.edges[node_idx].volatility_children.is_none();
+    let carried_variance = if is_input {
+        1.0 / precision
+    } else {
+        (autoconnection_strength * autoconnection_strength) / precision
+    };
+    let expected_precision =
+        1.0 / floor_predicted_variance(carried_variance + predicted_volatility);
+    let effective_precision = predicted_volatility * expected_precision;
+
     let has_volatility_parents = network.edges[node_idx].volatility_parents.is_some();
 
     let state = &mut network.attributes.states[node_idx];
-    state.current_variance = 1.0 / precision;
+    state.current_variance = carried_variance;
     state.expected_mean = expected_mean;
     state.effective_precision = effective_precision;
 
@@ -170,5 +213,31 @@ pub fn prediction_continuous_state_node_mean_field(
         state.conditional_expected_precision = expected_precision;
     } else {
         state.conditional_expected_precision = precision;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn predicted_precision_matches_hand_computation() {
+        // λ = 0.2, π = 1, Ω = 0.1: carried variance 0.04, predicted variance 0.14,
+        // predicted precision 7.142857. Dropping λ² would give 1/1.1 = 0.909091.
+        let carried = (0.2_f64 * 0.2) / 1.0;
+        let variance = floor_predicted_variance(carried + 0.1);
+        assert!((variance - 0.14).abs() < 1e-15);
+        assert!((1.0 / variance - 7.142_857_142_857_143).abs() < 1e-12);
+    }
+
+    #[test]
+    fn the_variance_floor_propagates_nan() {
+        // `f64::max` returns the other operand when one is NaN, which would swallow
+        // the NaN the volatility underflow guard produces. `jnp.maximum` on the JAX
+        // side propagates it, so the floor has to as well.
+        assert!(floor_predicted_variance(f64::NAN).is_nan());
+        assert_eq!(floor_predicted_variance(0.0), MIN_PREDICTED_VARIANCE);
+        // Above the floor the value passes through unchanged.
+        assert_eq!(floor_predicted_variance(0.14), 0.14);
     }
 }

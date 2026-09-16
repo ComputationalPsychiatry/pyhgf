@@ -29,7 +29,14 @@ def test_one_node_hgf():
 
 
 def test_two_nodes_hgf():
-    """Test the two nodes HGF with one observation step."""
+    r"""Test the two nodes HGF with one observation step.
+
+    The input node has λ = 0 for the mean but carries its precision over (λ = 1
+    for the precision): with no tonic volatility its precision and expected
+    precision stay constant unless a volatility parent contributes Ω. Here
+    :math:`\Omega_0 = 2.68219`, so :math:`\hat{\pi}_0 = 1/(1 + \Omega_0) = 0.2715764`.
+    The volatility parent (λ = 1) carries its full variance: :math:`1/(1+e^{-4})`.
+    """
     # one level HGF with a volatility parent and one observation step
     two_nodes__hgf = (
         Network()
