@@ -1217,8 +1217,11 @@ class DeepNetwork:
             ``"sparse"``. If *None*, weights are left unchanged (all ``1.0``).
         key :
             ``jax.random.PRNGKey`` controlling the randomness. Defaults to
-            ``jax.random.key(0)``. Replaces the legacy ``seed: int`` argument
-            (breaking change).
+            ``jax.random.key(0)``. Each weight matrix draws from its own stream,
+            ``jax.random.fold_in(key, l)`` with :math:`l` the index of its layer
+            in the unrolled network, so no two matrices share their draws and
+            the slices of a ``LayerStack`` match the same layers added one by
+            one.
         **kwargs
             Extra keyword arguments forwarded to the initialisation function (e.g.
             ``gain`` for orthogonal, ``sparsity`` / ``std`` for sparse).
@@ -1257,36 +1260,42 @@ class DeepNetwork:
         }
         init_fn = _init_fns[strategy]
 
-        # Convert the JAX PRNG key to a single integer seed for the
-        # numpy-backed init helpers.
         if key is None:
             key = jax.random.key(0)
-        seed = int(jax.random.randint(key, (), 0, 2**31 - 1, dtype=jnp.int32))
+
+        def layer_seed(layer_index: int) -> int:
+            # Every weight matrix draws from its own stream. A single seed shared
+            # by all layers would make equal-shape matrices identical and every
+            # smaller matrix a prefix of a larger one. Folding in the index of the
+            # layer in the unrolled network keeps a ``LayerStack`` slice equal to
+            # the layer it stands for, and leaves the draws of the lower layers
+            # unchanged when layers are added above them.
+            layer_key = jax.random.fold_in(key, layer_index)
+            return int(jax.random.randint(layer_key, (), 0, 2**31 - 1, dtype=jnp.int32))
 
         from pyhgf.typing.vectorised import LayerStack
 
         new_elements = list(self.state.layers)
+        layer_index = 0
         for i, elem in enumerate(new_elements):
+            first_layer = layer_index
+            layer_index += elem.n_layers if isinstance(elem, LayerStack) else 1
             if elem.weights_mean is None:
                 continue
             if isinstance(elem, LayerStack):
-                # Stack has weights_mean shape (N, n_child, n_parent[+1]). Use
-                # the same seed for every slice — matches the unrolled init's
-                # "same seed across all layers" semantics (necessary for
-                # byte-parity with the unrolled path; the underlying "all
-                # layers identical at init" pattern is a separate concern).
+                # weights_mean has shape (n_slices, n_children, n_parents[+1]).
                 n_slices, n_children, n_parents = elem.weights_mean.shape
-                per_slice = _init_matrix(
-                    init_fn,
-                    n_children,
-                    n_parents,
-                    elem.add_constant_input,
-                    seed,
-                    kwargs,
-                )
-                new_weights = jnp.broadcast_to(
-                    per_slice, (n_slices, n_children, n_parents)
-                )
+                new_weights = jnp.stack([
+                    _init_matrix(
+                        init_fn,
+                        n_children,
+                        n_parents,
+                        elem.add_constant_input,
+                        layer_seed(first_layer + k),
+                        kwargs,
+                    )
+                    for k in range(n_slices)
+                ])
             else:
                 n_children, n_parents = elem.weights_mean.shape
                 new_weights = _init_matrix(
@@ -1294,7 +1303,7 @@ class DeepNetwork:
                     n_children,
                     n_parents,
                     elem.add_constant_input,
-                    seed,
+                    layer_seed(first_layer),
                     kwargs,
                 )
             new_elements[i] = dataclasses.replace(elem, weights_mean=new_weights)

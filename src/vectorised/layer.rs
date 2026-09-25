@@ -25,6 +25,8 @@ use crate::math::{CouplingFn, LINEAR};
 use crate::utils::weight_initialisation::weight_init_by_name;
 use crate::vectorised::mat::{eye, Float, Matrix, Vector};
 use ndarray::Array1;
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 
 /// Which volatility-level posterior update the network applies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -468,12 +470,21 @@ impl DeepNet {
     /// generators as the per-node backend
     /// ([`crate::utils::weight_initialisation`]).
     ///
+    /// Each weight matrix draws from its own stream. With a `seed`, the
+    /// per-layer seeds are drawn in layer order from a generator seeded by
+    /// it, so the result is reproducible and adding layers above leaves the
+    /// draws of the lower layers unchanged.
     pub fn weight_initialisation(
         &mut self,
         strategy: &str,
         seed: Option<u64>,
     ) -> Result<(), String> {
+        let mut layer_seeds = seed.map(SmallRng::seed_from_u64);
         for layer in self.layers.iter_mut() {
+            // Drawn before the layer is inspected, so layer `l` always takes
+            // the `l`-th seed. A single seed shared by all layers would make
+            // equal-shape matrices identical.
+            let layer_seed = layer_seeds.as_mut().map(|rng| rng.random::<u64>());
             let add_constant_input = layer.add_constant_input;
             let Some(w) = layer.weights_in.as_mut() else {
                 continue;
@@ -483,10 +494,11 @@ impl DeepNet {
             // Flat, row-major over (n_children, n_parents), the layout the
             // shared initialisers document. They draw in f64 (they serve the
             // nodalised backend too); narrow to the engine's Float here.
-            let flat: Vec<Float> = weight_init_by_name(strategy, n_parents, n_children, seed)?
-                .into_iter()
-                .map(|v| v as Float)
-                .collect();
+            let flat: Vec<Float> =
+                weight_init_by_name(strategy, n_parents, n_children, layer_seed)?
+                    .into_iter()
+                    .map(|v| v as Float)
+                    .collect();
             let mut drawn = Matrix::zeros((n_children, cols));
             for r in 0..n_children {
                 for c in 0..n_parents {
@@ -696,6 +708,30 @@ mod tests {
         );
         // Unknown strategy errors.
         assert!(a.weight_initialisation("nope", None).is_err());
+    }
+
+    #[test]
+    fn test_weight_initialisation_draws_each_layer_independently() {
+        // Equal-shape layers must not share a matrix, and adding a layer on
+        // top must leave the draws of the layers below unchanged.
+        let configs = vec![LayerConfig::new(3); 4];
+        let mut net = DeepNet::from_configs(&configs).unwrap();
+        net.weight_initialisation("he", Some(0)).unwrap();
+        let w1 = net.layers[1].weights_in.as_ref().unwrap();
+        let w2 = net.layers[2].weights_in.as_ref().unwrap();
+        let w3 = net.layers[3].weights_in.as_ref().unwrap();
+        assert_eq!(w1.dim(), w2.dim());
+        assert_ne!(w1, w2);
+        assert_ne!(w2, w3);
+
+        let mut taller = DeepNet::from_configs(&vec![LayerConfig::new(3); 5]).unwrap();
+        taller.weight_initialisation("he", Some(0)).unwrap();
+        for l in 1..4 {
+            assert_eq!(
+                net.layers[l].weights_in.as_ref().unwrap(),
+                taller.layers[l].weights_in.as_ref().unwrap()
+            );
+        }
     }
 
     #[test]
