@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from jax import Array, random, vmap
 from jax.lax import scan, switch
-from jax.tree_util import Partial
+from jax.tree_util import Partial, tree_map
 from jax.typing import ArrayLike
 
 from pyhgf.model import (
@@ -235,6 +235,7 @@ class Network:
         input_idxs: Optional[tuple[int]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
         record_trajectories: bool = True,
+        append: bool = True,
     ):
         """Add new observations.
 
@@ -269,6 +270,11 @@ class Network:
             step (accessible via ``self.node_trajectories``).  If False, only
             the final state is kept, which significantly reduces memory usage
             and speeds up training.
+        append :
+            If True (default), resume from ``self.last_attributes`` when available
+            and append new trajectories along the time axis. On the first call,
+            start from ``self.attributes``. If False, start from ``self.attributes``
+            and replace the previous trajectories.
         """
         if rng_keys is not None:
             # get one key for each time step
@@ -308,13 +314,25 @@ class Network:
         # wrap the inputs
         inputs = values, observed, time_steps, rng_keys
 
+        initial_attributes = (
+            self.last_attributes
+            if append and self.last_attributes is not None
+            else self.attributes
+        )
+
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
         # using precision-weighted prediction errors
         if record_trajectories:
             last_attributes, node_trajectories = scan(
-                self.scan_fn, self.attributes, inputs
+                self.scan_fn, initial_attributes, inputs
             )
+            if append and self.node_trajectories:
+                node_trajectories = tree_map(
+                    lambda previous, new: jnp.concatenate((previous, new), axis=0),
+                    self.node_trajectories,
+                    node_trajectories,
+                )
             self.node_trajectories = node_trajectories
         else:
 
@@ -322,7 +340,7 @@ class Network:
                 new_attributes, _ = self.scan_fn(attributes, inputs)
                 return new_attributes, None
 
-            last_attributes, _ = scan(_no_traj_step, self.attributes, inputs)
+            last_attributes, _ = scan(_no_traj_step, initial_attributes, inputs)
             self.node_trajectories = None  # type: ignore[assignment]
 
         self.last_attributes = last_attributes

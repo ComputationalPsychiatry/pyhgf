@@ -4,6 +4,7 @@ import importlib
 
 import jax.numpy as jnp
 import numpy as np
+from pandas.testing import assert_frame_equal
 from pytest import raises, warns
 
 import pyhgf.model
@@ -348,6 +349,30 @@ def test_network_input_data_no_trajectories():
 
     assert hgf.node_trajectories is None
     assert hgf.last_attributes is not None
+
+
+def test_network_input_data_batches():
+    """Compare 20 observations processed at once or in four batches."""
+    observations = np.linspace(0.0, 1.0, 20)
+
+    full_network = Network().add_nodes().add_nodes(value_children=0)
+    batch_network = Network().add_nodes().add_nodes(value_children=0)
+
+    # First network: all 20 observations at once.
+    full_network.input_data(observations)
+
+    # Second network: the same observations in four batches of five.
+    for batch in np.split(observations, 4):
+        batch_network.input_data(batch)
+
+    # Compare the full recorded history of both networks.
+    assert_frame_equal(
+        full_network.to_pandas(),
+        batch_network.to_pandas(),
+        check_exact=False,
+        rtol=1e-6,
+        atol=1e-7,
+    )
 
 
 def test_hgf_class_is_deprecated():
