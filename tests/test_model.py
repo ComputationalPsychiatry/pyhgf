@@ -363,7 +363,7 @@ def test_network_input_data_batches():
 
     # Second network: the same observations in four batches of five.
     for batch in np.split(observations, 4):
-        batch_network.input_data(batch)
+        batch_network.input_data(batch, append=True)
 
     # Compare the full recorded history of both networks.
     assert_frame_equal(
