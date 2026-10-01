@@ -235,7 +235,7 @@ class Network:
         input_idxs: Optional[tuple[int]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
         record_trajectories: bool = True,
-        append: bool = True,
+        append: bool = False,
     ):
         """Add new observations.
 
@@ -271,10 +271,9 @@ class Network:
             the final state is kept, which significantly reduces memory usage
             and speeds up training.
         append :
-            If True (default), resume from ``self.last_attributes`` when available
+            If True, resume from ``self.last_attributes`` when available
             and append new trajectories along the time axis. On the first call,
-            start from ``self.attributes``. If False, start from ``self.attributes``
-            and replace the previous trajectories.
+            start from ``self.attributes``. Defaults to False.
         """
         if rng_keys is not None:
             # get one key for each time step
