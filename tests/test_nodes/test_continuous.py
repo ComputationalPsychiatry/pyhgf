@@ -9,6 +9,9 @@ from pyhgf.model import Network as PyNetwork
 
 VOLATILITY_UPDATES = ["standard", "eHGF", "unbounded"]
 MEAN_FIELD_UPDATES = [False, True]
+# JAX float32 against Rust f64 on the networks of
+# test_continuous_unbounded_multiple_children: largest absolute gap 1.1e-5.
+MULTIPLE_CHILDREN_RTOL, MULTIPLE_CHILDREN_ATOL = 1e-4, 1e-4
 
 
 def _build_network(cls, volatility_updates, mean_field_updates, n_levels, timeseries):
@@ -112,3 +115,79 @@ def test_continuous_nonlinear_coupling(mean_field_updates):
     )
 
     _assert_backends_match(py_net, rs_net, 2, "standard", label)
+
+
+MULTIPLE_CHILDREN_TOPOLOGIES = [
+    "shared_volatility_parent",
+    "value_and_volatility_parent",
+    "value_and_two_volatility_children",
+]
+
+
+def _multiple_children_network(cls, topology, mean_field_updates):
+    """Build a network where one node has several children under ``"unbounded"``."""
+    net = cls(volatility_updates="unbounded", mean_field_updates=mean_field_updates)
+    if topology == "shared_volatility_parent":
+        # node 4 is the volatility parent of nodes 2 and 3
+        return (
+            net
+            .add_nodes(n_nodes=2)
+            .add_nodes(value_children=0)
+            .add_nodes(value_children=1)
+            .add_nodes(volatility_children=[2, 3])
+        )
+    if topology == "value_and_volatility_parent":
+        # node 4 is the value parent of node 2 and the volatility parent of node 3
+        return (
+            net
+            .add_nodes(n_nodes=2)
+            .add_nodes(value_children=0)
+            .add_nodes(value_children=1)
+            .add_nodes(value_children=2, volatility_children=3)
+        )
+    # node 5 is the value parent of node 3 and the volatility parent of node 4 and
+    # of the input node 2
+    return (
+        net
+        .add_nodes(n_nodes=3)
+        .add_nodes(value_children=0)
+        .add_nodes(value_children=1)
+        .add_nodes(value_children=3, volatility_children=[4, 2])
+    )
+
+
+def _multiple_children_timeseries(topology):
+    """Random walks, one per input node."""
+    n_inputs = 3 if topology == "value_and_two_volatility_children" else 2
+    rng = np.random.default_rng(123)
+    return np.cumsum(rng.normal(0.0, 0.3, size=(300, n_inputs)), axis=0)
+
+
+@pytest.mark.parametrize("topology", MULTIPLE_CHILDREN_TOPOLOGIES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_unbounded_multiple_children(topology, mean_field_updates):
+    """Test the unbounded update of a node with several children in both backends.
+
+    A shared volatility parent, and a node that is both value and volatility parent, use
+    the (n+1)-expansion update in the JAX and Rust backends. Under ``jax_enable_x64``
+    the two backends agree to ~1e-12 on these networks; the tolerance covers the float32
+    rounding of the JAX backend.
+    """
+    timeseries = _multiple_children_timeseries(topology)
+    label = f"{topology} mean_field={mean_field_updates}"
+
+    py_net = _multiple_children_network(
+        PyNetwork, topology, mean_field_updates
+    ).input_data(input_data=timeseries)
+    rs_net = _multiple_children_network(
+        RsNetwork, topology, mean_field_updates
+    ).input_data(input_data=timeseries)
+
+    for node_idx in range(len(rs_net.edges)):
+        for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+            assert np.allclose(
+                py_net.node_trajectories[node_idx][key],
+                rs_net.node_trajectories[node_idx][key],
+                rtol=MULTIPLE_CHILDREN_RTOL,
+                atol=MULTIPLE_CHILDREN_ATOL,
+            ), f"{label}: node {node_idx}, key '{key}' mismatch"

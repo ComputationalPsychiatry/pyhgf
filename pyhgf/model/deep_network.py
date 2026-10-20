@@ -812,8 +812,8 @@ class DeepNetwork:
                     f"this layer {size})."
                 )
             if self.volatility_updates == "unbounded":
-                # The unbounded update is derived for a single volatility
-                # child per node and ignores value children.
+                # The vectorised unbounded update implements the single-child
+                # case only (one volatility child per node, no value child).
                 if volatility_fully_connected and not (size == 1 and child_size == 1):
                     raise ValueError(
                         "The 'unbounded' volatility update requires a "

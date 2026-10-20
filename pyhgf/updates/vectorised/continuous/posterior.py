@@ -447,12 +447,12 @@ def vectorised_continuous_posterior_update_unbounded(
     Vectorised port of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded`
     (Lambert :math:`W_0` dual-quadratic expansion with a variational
-    energy-based blend). The approximation is derived for a single volatility
-    child per node, so the coupling must be one-to-one: ``kappa`` square and
-    diagonal, each parent node coupled to exactly one child node. The layer must
-    have no value child (the nodalised update ignores value children; the
-    vectorised builder rejects such a topology instead of silently dropping the
-    edge).
+    energy-based blend). This port implements the single-child case only, so the
+    coupling must be one-to-one: ``kappa`` square and diagonal, each parent node
+    coupled to exactly one child node. The layer must have no value child (the
+    vectorised builder rejects such a topology; the nodalised update implements
+    the multi-child extension in
+    :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded_multiple_children`).
 
     Parameters
     ----------
