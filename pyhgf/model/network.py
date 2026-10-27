@@ -736,7 +736,7 @@ class Network:
         children_idxs: Union[int, list[int]],
         kind: str = "value",
         coupling_strengths: Union[float, list[float], tuple[float]] = 1.0,
-        coupling_fn: tuple[Optional[Callable], ...] = (None,),
+        coupling_fn: Optional[tuple[Optional[Callable], ...]] = None,
     ) -> "Network":
         """Add a value or volatility coupling link between a set of nodes.
 
@@ -749,15 +749,18 @@ class Network:
         kind :
             The kind of coupling, can be `"value"` or `"volatility"`.
         coupling_strengths :
-            The coupling strength betwen the parents and children.
+            The coupling strength(s) of the new edges. A single value applies to every
+            edge. With a single parent, a sequence gives one strength per child, in the
+            order of `children_idxs`. With a single child, a sequence gives one
+            strength per parent, in the order of `parent_idxs`.
         coupling_fn :
-            Coupling function(s) between the current node and its value children.
-            It has to be provided as a tuple. If multiple value children are specified,
-            the coupling functions must be stated in the same order of the children.
-            Note: if a node has multiple parents nodes with different coupling
-            functions, a coupling function should be indicated for all the parent nodes.
-            If no coupling function is stated, the relationship between nodes is assumed
-            linear.
+            Coupling function(s) between the parent(s) and the new value children, as
+            a tuple. A single function applies to every new child, otherwise one
+            function per child must be given, in the order of `children_idxs`. `None`
+            stands for a linear coupling. If `coupling_fn` is not provided, the
+            function already declared on the parent at that position (e.g. through
+            ``add_nodes(coupling_fn=...)``) is kept, and the coupling is linear
+            otherwise. This argument is ignored for volatility coupling.
         """
         attributes, edges = add_edges(
             attributes=self.attributes,

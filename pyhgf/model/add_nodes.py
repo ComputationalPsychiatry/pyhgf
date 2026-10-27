@@ -690,13 +690,14 @@ def insert_nodes(
                     coupling_strengths=cpl,  # type: ignore
                 )
         if value_children[0] is not None:
-            for idx, cpl in zip(value_children[0], value_children[1]):
+            # one edge at a time, each with its own coupling function
+            for idx, cpl, fn in zip(value_children[0], value_children[1], coupling_fn):
                 network.add_edges(
                     kind="value",
                     parent_idxs=node_idx,
                     children_idxs=idx,
                     coupling_strengths=cpl,  # type: ignore
-                    coupling_fn=coupling_fn,
+                    coupling_fn=(fn,),
                 )
         if volatility_children[0] is not None:
             for idx, cpl in zip(volatility_children[0], volatility_children[1]):
