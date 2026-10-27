@@ -758,20 +758,33 @@ pub fn batched_mean_weight_gradients(
         let child = &states[i - 1];
         let n_samples = child.n_samples();
 
-        // Child-side factor u = -(δ [∘ π]) and parent-side factor
+        // Child-side factor u = -((mean − μ̂) [∘ π]) and parent-side factor
         // v = g(parent posterior mean) with a bias row of ones, each built
         // sanitized (non-finite entries zeroed) in a single pass.
+        //
+        // The residual is formed from `mean − expected_mean`, exactly as
+        // `weight_gradient_factors` does, and not read from
+        // `value_prediction_error`: for a binary layer that field holds
+        // (mean − μ̂) / π̂ with π̂ = μ̂(1 − μ̂), the scaling the parent's
+        // posterior update expects (its gain multiplies π̂ back in). The
+        // weight gradient of a binary child is the raw residual, since the
+        // Bernoulli variance cancels through the sigmoid; reading the scaled
+        // field would multiply each sample's gradient by 1 / (μ̂(1 − μ̂)) ≥ 4.
+        // For volatile and categorical layers the field equals mean − μ̂, so
+        // their gradients are unchanged.
         let sanitize = |x: Float| if x.is_finite() { x } else { 0.0 };
-        let mut u = Matrix::zeros(child.value_prediction_error.raw_dim());
+        let mut u = Matrix::zeros(child.mean.raw_dim());
         if kind == WeightKind::PrecisionWeighted && child_layer.kind != LayerKind::Binary {
             Zip::from(&mut u)
-                .and(&child.value_prediction_error)
+                .and(&child.mean)
+                .and(&child.expected_mean)
                 .and(&child.precision)
-                .for_each(|u, &d, &p| *u = sanitize(-d * p));
+                .for_each(|u, &m, &em, &p| *u = sanitize(-(m - em) * p));
         } else {
             Zip::from(&mut u)
-                .and(&child.value_prediction_error)
-                .for_each(|u, &d| *u = sanitize(-d));
+                .and(&child.mean)
+                .and(&child.expected_mean)
+                .for_each(|u, &m, &em| *u = sanitize(-(m - em)));
         }
         let n_parent = parent.mean.nrows();
         let rows = n_parent + usize::from(parent_layer.add_constant_input);

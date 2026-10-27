@@ -577,6 +577,100 @@ def test_batch_update_parity_categorical_output():
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
+def _matched_binary_pair(rng):
+    """Rust and JAX networks with a binary output under a tanh hidden layer.
+
+    Weights are drawn at scale 1, so the predicted probabilities spread away from
+    1/2 and the Bernoulli variance p(1 - p) differs from sample to sample.
+    """
+    rs = RsDeepNetwork(volatility_updates="eHGF", coupling_fn="tanh")
+    rs.add_layer(2, kind="binary").add_layer(4).add_layer(3)
+    jx = JaxDeepNetwork(volatility_updates="eHGF", coupling_fn=jnp.tanh)
+    jx.add_layer(size=2, kind="binary").add_layer(size=4).add_layer(size=3)
+    weights = _random_weights(rs, rng, scale=1.0)
+    rs.set_weights(weights)
+    _inject_jax_weights(jx, weights)
+    return rs, jx
+
+
+@pytest.mark.parametrize("learning_kind", ["precision_weighted", "standard"])
+@pytest.mark.parametrize(
+    ("optimiser", "lr", "make_optax"),
+    [("sgd", 0.1, lambda: optax.sgd(0.1)), ("adam", 1e-2, lambda: optax.adam(1e-2))],
+)
+def test_batch_update_parity_binary_output(optimiser, lr, make_optax, learning_kind):
+    """The batch step agrees with JAX under a binary output layer.
+
+    The weight gradient of a binary child is the raw residual y - p, as in ``fit``
+    and in the JAX backend; the binary layer's stored prediction error is that
+    residual divided by p(1 - p), which only the posterior update of its parent
+    should read. Every weight matrix is compared, the one feeding the binary layer
+    included.
+    """
+    rng = np.random.default_rng(34)
+    rs, jx = _matched_binary_pair(rng)
+    optax_opt = make_optax()
+    for _ in range(3):
+        x = rng.normal(size=(16, 3))
+        y = rng.integers(0, 2, size=(16, 2)).astype(float)
+        errors_rs = rs.batch_update(
+            x, y, optimiser=optimiser, learning_rate=lr, learning_kind=learning_kind
+        )
+        jx.batch_update(x, y, optimiser=optax_opt, learning_kind=learning_kind)
+        np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
+
+
+def test_two_phase_parity_binary_output():
+    """batch_forward + batch_update_from_error agrees with JAX under a binary output."""
+    rng = np.random.default_rng(35)
+    rs, jx = _matched_binary_pair(rng)
+    optax_opt = optax.sgd(0.1)
+    for _ in range(3):
+        x = rng.normal(size=(16, 3))
+        y = rng.integers(0, 2, size=(16, 2)).astype(float)
+        out = rs.batch_forward(x)
+        errors_rs = rs.batch_update_from_error(
+            out - y, optimiser="sgd", learning_rate=0.1
+        )
+        jx.batch_update(x, y, optimiser=optax_opt)
+        np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
+
+
+def test_batch_update_single_sample_matches_fit_binary_output():
+    """A one-sample batch step equals one fit step under a binary output.
+
+    Both paths start from the same weights and beliefs, so with SGD the weights after
+    the step must agree; this checks the Rust batched kernel against the Rust per-sample
+    kernel without involving the JAX backend.
+    """
+    rng = np.random.default_rng(36)
+
+    def build():
+        net = RsDeepNetwork(volatility_updates="eHGF", coupling_fn="tanh")
+        return net.add_layer(2, kind="binary").add_layer(4).add_layer(3)
+
+    for i in range(4):
+        rs_fit, rs_bat = build(), build()
+        weights = _random_weights(rs_fit, rng, scale=1.0)
+        rs_fit.set_weights(weights)
+        rs_bat.set_weights(weights)
+        start = [np.array(w) for w in rs_fit.get_weights()]
+        x = rng.normal(size=(1, 3))
+        y = np.array([[float(i % 2), float((i // 2) % 2)]])
+        rs_fit.fit(x, y, optimiser="sgd", learning_rate=0.1)
+        rs_bat.batch_update(x, y, optimiser="sgd", learning_rate=0.1)
+        for w_fit, w_bat, w0 in zip(rs_fit.get_weights(), rs_bat.get_weights(), start):
+            # Compare the steps rather than the weights, so the bound is
+            # relative to the size of the update.
+            np.testing.assert_allclose(w_bat - w0, w_fit - w0, rtol=1e-4, atol=1e-6)
+
+
 def test_predict_parity_binary_output():
     """Match the JAX forward pass with a binary output layer."""
     rng = np.random.default_rng(17)
