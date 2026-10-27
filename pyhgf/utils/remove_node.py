@@ -2,6 +2,8 @@
 
 from typing import Union
 
+import jax.numpy as jnp
+
 from pyhgf.typing import AdjacencyLists, Edges
 
 
@@ -60,27 +62,33 @@ def _remove_edges(
             ]
             new_children = tuple(children[i] for i in keep_indices)
 
-            # Update coupling strengths if they exist
-            if (
-                coupling_key in attributes[parent_idx]
-                and attributes[parent_idx][coupling_key]
-            ):
-                new_strengths = tuple(
-                    attributes[parent_idx][coupling_key][i] for i in keep_indices
-                )
+            # Update coupling strengths if they exist. They are stored as an array,
+            # so test for None: the truth value of an array is ambiguous with two or
+            # more entries, and False for a single zero strength.
+            strengths = attributes[parent_idx].get(coupling_key)
+            if strengths is not None:
                 attributes[parent_idx][coupling_key] = (
-                    new_strengths if new_strengths else None
+                    jnp.array([strengths[i] for i in keep_indices])
+                    if keep_indices
+                    else None
                 )
 
             # Update node edges
             if kind == "value":
+                # coupling_fn[i] describes the edge to value_children[i]: drop the
+                # entries of the removed children, otherwise the function of a removed
+                # child would apply to the next one. Missing entries are linear, and a
+                # parent left without value children gets the default (None,).
+                fns = list(node.coupling_fn)
+                fns += [None] * max(0, len(children) - len(fns))
+                new_coupling_fn = tuple(fns[i] for i in keep_indices) or (None,)
                 edges_as_list[parent_idx] = AdjacencyLists(
                     node.node_type,
                     node.value_parents,
                     node.volatility_parents,
                     new_children if new_children else None,
                     node.volatility_children,
-                    node.coupling_fn,
+                    new_coupling_fn,
                 )
             else:
                 edges_as_list[parent_idx] = AdjacencyLists(
@@ -108,16 +116,13 @@ def _remove_edges(
             ]
             new_parents = tuple(parents[i] for i in keep_indices)
 
-            # Update coupling strengths if they exist
-            if (
-                coupling_key in attributes[child_idx]
-                and attributes[child_idx][coupling_key]
-            ):
-                new_strengths = tuple(
-                    attributes[child_idx][coupling_key][i] for i in keep_indices
-                )
+            # Update coupling strengths if they exist (tested for None, see above)
+            strengths = attributes[child_idx].get(coupling_key)
+            if strengths is not None:
                 attributes[child_idx][coupling_key] = (
-                    new_strengths if new_strengths else None
+                    jnp.array([strengths[i] for i in keep_indices])
+                    if keep_indices
+                    else None
                 )
 
             # Update node edges

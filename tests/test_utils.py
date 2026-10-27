@@ -150,6 +150,79 @@ def test_remove_node():
     assert len(new_edges) == 4
 
 
+def test_remove_node_with_several_couplings():
+    """Test remove_node when the other end of an edge keeps other edges.
+
+    The coupling strengths of the remaining edges, and the coupling functions of the
+    remaining value children, must stay aligned with them, so that the network behaves
+    as if it had been built without the removed node.
+    """
+    u = np.random.default_rng(0).normal(size=(100,))
+    cases = [
+        # parent with two value children, one of them removed
+        (
+            Network()
+            .add_nodes(n_nodes=2)
+            .add_nodes(
+                value_children=([0, 1], [0.5, 2.0]), coupling_fn=(jnp.tanh, None)
+            ),
+            0,
+            Network().add_nodes().add_nodes(value_children=([0], [2.0])),
+        ),
+        # parent with two volatility children, one of them removed
+        (
+            Network()
+            .add_nodes(n_nodes=2)
+            .add_nodes(volatility_children=([0, 1], [0.5, 2.0])),
+            0,
+            Network().add_nodes().add_nodes(volatility_children=([0], [2.0])),
+        ),
+        # child with two value parents, one of them removed
+        (
+            Network()
+            .add_nodes()
+            .add_nodes(value_children=([0], [0.5]))
+            .add_nodes(value_children=([0], [2.0])),
+            1,
+            Network().add_nodes().add_nodes(value_children=([0], [2.0])),
+        ),
+    ]
+    for network, index, reference in cases:
+        attributes, edges, _ = network.get_network()
+        new_attributes, new_edges = remove_node(attributes, edges, index)
+        assert new_edges == reference.edges
+        for idx in range(2):
+            for key in [
+                "value_coupling_children",
+                "value_coupling_parents",
+                "volatility_coupling_children",
+                "volatility_coupling_parents",
+            ]:
+                expected = reference.attributes[idx][key]
+                if expected is None:
+                    assert new_attributes[idx][key] is None
+                else:
+                    assert jnp.array_equal(new_attributes[idx][key], expected)
+
+        network = Network()
+        network.attributes, network.edges = new_attributes, new_edges
+        network.input_data(input_data=u)
+        reference.input_data(input_data=u)
+        for idx in range(2):
+            for key in ["mean", "precision"]:
+                assert jnp.allclose(
+                    network.node_trajectories[idx][key],
+                    reference.node_trajectories[idx][key],
+                )
+
+    # a single strength equal to zero is removed with its edge
+    attributes, edges, _ = (
+        Network().add_nodes().add_nodes(value_children=([0], [0.0])).get_network()
+    )
+    new_attributes, _ = remove_node(attributes, edges, 0)
+    assert new_attributes[0]["value_coupling_children"] is None
+
+
 def test_belief_propagation():
     """Test the belief propagation function for three observation types."""
     network = (
