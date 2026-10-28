@@ -21,6 +21,9 @@ from pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbound
     continuous_node_posterior_update_unbounded,
     posterior_update_unbounded,
 )
+from pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node import (  # noqa: E501
+    precision_update_missing_values,
+)
 
 SEED = 123
 N_TRIALS = 300
@@ -115,6 +118,51 @@ def test_value_child_of_a_mixed_parent_is_used(mean_field_updates):
     np.testing.assert_array_equal(mu[:100], mu_shifted[:100])
     # the parent follows the step transiently, before the value child absorbs it
     assert mu_shifted[100:110].mean() - mu[100:110].mean() > 0.1
+
+
+@pytest.mark.parametrize("mean_field_updates", [False, True])
+def test_missing_volatility_child_is_left_out(mean_field_updates):
+    """The placeholder values of a missing input do not reach its volatility parent."""
+    rng = np.random.default_rng(SEED)
+    x = np.cumsum(rng.normal(0.0, 0.3, size=(N_TRIALS, 2)), axis=0)
+    observed = np.ones_like(x, dtype=int)
+    observed[100:200, 1] = 0
+    x_other_placeholders = x.copy()
+    x_other_placeholders[100:200, 1] += 50.0
+
+    # node 3 is the volatility parent of node 2 and of the input node 1
+    mu, mu_other_placeholders = (
+        np.asarray(
+            Network(
+                volatility_updates="unbounded", mean_field_updates=mean_field_updates
+            )
+            .add_nodes(n_nodes=2)
+            .add_nodes(value_children=0)
+            .add_nodes(volatility_children=[2, 1])
+            .input_data(input_data=data, observed=observed)
+            .node_trajectories[3]["mean"]
+        )
+        for data in (x, x_other_placeholders)
+    )
+    assert np.all(np.isfinite(mu))
+    np.testing.assert_array_equal(mu, mu_other_placeholders)
+
+
+def test_no_observed_child_ages_the_precision():
+    """Without any observed child, the precision ages as in the standard update."""
+    network = Network().add_nodes().add_nodes(volatility_children=0)
+    attributes, edges, _ = network.get_network()
+    attributes[-1]["time_step"] = 1.0
+    attributes[0]["observed"] = 0
+    attributes[0]["mean"] = 30.0  # placeholder of the missing observation
+    attributes[0]["temp"]["current_variance"] = 0.005
+    aged_precision = precision_update_missing_values(attributes, edges, 1)
+
+    new = continuous_node_posterior_update_unbounded(
+        attributes=attributes, node_idx=1, edges=edges
+    )
+    assert jnp.isclose(new[1]["precision"], aged_precision)
+    assert jnp.isclose(new[1]["mean"], attributes[1]["expected_mean"])
 
 
 @pytest.mark.parametrize("mean_field_updates", [False, True])

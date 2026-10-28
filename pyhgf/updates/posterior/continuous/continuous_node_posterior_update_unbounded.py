@@ -14,8 +14,10 @@ from .posterior_update_mean_continuous_node import (
     posterior_update_mean_continuous_node_mean_field,
 )
 from .posterior_update_precision_continuous_node import (
+    _has_observations,
     precision_update,
     precision_update_mean_field,
+    precision_update_missing_values,
 )
 
 
@@ -41,7 +43,9 @@ def continuous_node_posterior_update_unbounded(
     The posterior is the :math:`(n+1)`-expansion update of section 3.6 in [1]_
     (:py:func:`posterior_update_unbounded`), so that every volatility and value child
     contributes to the posterior. For a single volatility child and no value child,
-    this is the two-expansion update of section 3.4 in [1]_.
+    this is the two-expansion update of section 3.4 in [1]_. Unobserved children are
+    left out and, if no child is observed, the precision ages as in
+    :py:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_missing_values`.
 
     Parameters
     ----------
@@ -75,6 +79,12 @@ def continuous_node_posterior_update_unbounded(
         node_idx=node_idx,
         edges=edges,
         mean_field_updates=mean_field_updates,
+    )
+    # without any observed child, the precision ages as in the standard update
+    posterior_precision = jnp.where(
+        _has_observations(attributes, edges, node_idx),
+        posterior_precision,
+        precision_update_missing_values(attributes, edges, node_idx),
     )
 
     attributes[node_idx]["precision"] = jnp.minimum(
@@ -114,7 +124,8 @@ def posterior_update_unbounded(
     :math:`(\tilde{\pi}, \tilde{\mu})` is the prediction :math:`(\hat{\pi}, \hat{\mu})`
     of the node or, when the node also has value children, the effective prior that
     absorbs the value-coupling terms. The other volatility parents of a child are not
-    included in :math:`\Omega_i`.
+    included in :math:`\Omega_i`, and the children whose ``observed`` flag is 0 are
+    left out of the sum.
 
     1. A first expansion at the prediction :math:`\hat{\mu}` keeps only the concave part
        of :math:`I` for the precision (eqs. 52-53 in [1]_), which is therefore positive:
@@ -135,7 +146,7 @@ def posterior_update_unbounded(
        with the curvature and gradient of the full variational energy, which includes
        all the children (eqs. 55-56 in [1]_). A non-positive curvature falls back to
        the concave curvature. An expansion that is not finite, or whose child has a
-       zero coupling, gets a zero weight.
+       zero coupling or is unobserved, gets a zero weight.
 
     3. The :math:`n + 1` expansions are weighted by a softmax of the variational energy
        at their means (eq. 57 in [1]_). The posterior is the moment-matched Gaussian of
@@ -179,10 +190,12 @@ def posterior_update_unbounded(
         attributes, edges, node_idx, mean_field_updates
     )
 
-    # Per-child quantities.
+    # Per-child quantities. An unobserved child (``observed`` is 0) is left out: its
+    # terms are multiplied by ``observed`` and its expansion gets a zero weight.
     couplings, tonic_volatilities, log_previous_variances = [], [], []
-    be_auxs, volatility_prediction_errors = [], []
+    be_auxs, volatility_prediction_errors, observed = [], [], []
     for position, volatility_child_idx in enumerate(volatility_children_idxs):  # type: ignore
+        observed.append(attributes[volatility_child_idx]["observed"])
         couplings.append(attributes[node_idx]["volatility_coupling_children"][position])
         tonic_volatilities.append(attributes[volatility_child_idx]["tonic_volatility"])
         # carried variance λ²/π the child used in its prediction
@@ -217,7 +230,9 @@ def posterior_update_unbounded(
         energy = -0.5 * prior_precision * (x - prior_mean) ** 2
         for i in range(n_children):
             log_denom = jnp.logaddexp(log_previous_variances[i], log_volatility(x, i))
-            energy = energy - 0.5 * log_denom - 0.5 * be_auxs[i] * jnp.exp(-log_denom)
+            energy = energy - observed[i] * (
+                0.5 * log_denom + 0.5 * be_auxs[i] * jnp.exp(-log_denom)
+            )
         return energy
 
     # ----------------------------------------------------------------------------------
@@ -227,9 +242,11 @@ def posterior_update_unbounded(
     mean_shift_1 = prior_precision * (prior_mean - expected_mean)
     for i in range(n_children):
         w_i = sigmoid(log_volatility(expected_mean, i) - log_previous_variances[i])
-        precision_1 = precision_1 + 0.5 * couplings[i] ** 2 * w_i * (1.0 - w_i)
-        mean_shift_1 = (
-            mean_shift_1 + 0.5 * couplings[i] * w_i * volatility_prediction_errors[i]
+        precision_1 = precision_1 + observed[i] * (
+            0.5 * couplings[i] ** 2 * w_i * (1.0 - w_i)
+        )
+        mean_shift_1 = mean_shift_1 + observed[i] * (
+            0.5 * couplings[i] * w_i * volatility_prediction_errors[i]
         )
     mean_1 = expected_mean + mean_shift_1 / precision_1
 
@@ -266,25 +283,30 @@ def posterior_update_unbounded(
                 be_auxs[j] * jnp.exp(-jnp.logaddexp(log_previous_variances[j], log_s))
                 - 1.0
             )
-            full_curvature = full_curvature + 0.5 * couplings[j] ** 2 * w_j * (
-                w_j + (2.0 * w_j - 1.0) * da_j
+            full_curvature = full_curvature + observed[j] * (
+                0.5 * couplings[j] ** 2 * w_j * (w_j + (2.0 * w_j - 1.0) * da_j)
             )
-            concave_curvature = concave_curvature + 0.5 * couplings[j] ** 2 * w_j * (
-                1.0 - w_j
+            concave_curvature = concave_curvature + observed[j] * (
+                0.5 * couplings[j] ** 2 * w_j * (1.0 - w_j)
             )
-            gradient = gradient + 0.5 * couplings[j] * w_j * da_j
+            gradient = gradient + observed[j] * 0.5 * couplings[j] * w_j * da_j
 
         precision_2 = jnp.where(
             full_curvature <= 0.0, concave_curvature, full_curvature
         )
         mean_2 = x_star + gradient / precision_2
 
-        # Drop this expansion if the child has no coupling or the expansion is not
-        # finite: it is replaced by expansion 1 and gets a zero weight below. For a
-        # single child, this is the MATLAB reference's
+        # Drop this expansion if the child is unobserved, has no coupling, or the
+        # expansion is not finite: it is replaced by expansion 1 and gets a zero weight
+        # below. For a single child, this is the MATLAB reference's
         # "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1". This only
         # protects the forward pass: a non-finite expansion still has a NaN gradient.
-        is_valid.append(has_coupling & jnp.isfinite(precision_2) & jnp.isfinite(mean_2))
+        is_valid.append(
+            (observed[i] != 0)
+            & has_coupling
+            & jnp.isfinite(precision_2)
+            & jnp.isfinite(mean_2)
+        )
         precisions.append(jnp.where(is_valid[-1], precision_2, precision_1))
         means.append(jnp.where(is_valid[-1], mean_2, mean_1))
 

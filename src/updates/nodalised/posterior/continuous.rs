@@ -325,12 +325,14 @@ impl UnboundedVolatilityChild {
 ///
 /// where (π̃, μ̃) is the prediction of the node or, when the node also has value
 /// children, the effective prior returned by [`unbounded_effective_prior`]. The other
-/// volatility parents of a child are not included in Ω_i. The posterior is the
-/// moment-matched Gaussian of n + 1 quadratic expansions of I: one at the prediction μ̂
-/// (concave part only, eqs. 52-53), and one at the Lambert W0 mode of each child, with
-/// the curvature and gradient of the full energy (eqs. 54-56). The expansions are
-/// weighted by a softmax of I at their means (eqs. 57-60). For a single volatility
-/// child and no value child, this is the two-expansion update of section 3.4.
+/// volatility parents of a child are not included in Ω_i, and unobserved children are
+/// left out of the sum. The posterior is the moment-matched Gaussian of n + 1 quadratic
+/// expansions of I: one at the prediction μ̂ (concave part only, eqs. 52-53), and one
+/// at the Lambert W0 mode of each child, with the curvature and gradient of the full
+/// energy (eqs. 54-56). The expansions are weighted by a softmax of I at their means
+/// (eqs. 57-60). For a single volatility child and no value child, this is the
+/// two-expansion update of section 3.4. If no child is observed, the precision ages as
+/// in [`precision_missing_values`].
 pub fn posterior_update_continuous_state_node_unbounded(
     network: &mut Network,
     node_idx: usize,
@@ -351,6 +353,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
     let children: Vec<UnboundedVolatilityChild> = volatility_children_idxs
         .iter()
         .enumerate()
+        .filter(|&(_, &child_idx)| network.attributes.states[child_idx].observed != 0.0)
         .map(|(i, &child_idx)| {
             let child_state = &network.attributes.states[child_idx];
             let be_aux = (1.0 / child_state.precision)
@@ -452,9 +455,14 @@ pub fn posterior_update_continuous_state_node_unbounded(
         .map(|(w, (p, m))| w * (1.0 / p + (m - posterior_mean).powi(2)))
         .sum();
 
-    let max_posterior_precision = network.max_posterior_precision;
+    let posterior_precision = if has_observations(network, node_idx) {
+        1.0 / posterior_variance
+    } else {
+        precision_missing_values(network, node_idx, time_step)
+    }
+    .min(network.max_posterior_precision);
     let state = &mut network.attributes.states[node_idx];
-    state.precision = (1.0 / posterior_variance).min(max_posterior_precision);
+    state.precision = posterior_precision;
     state.mean = posterior_mean;
 }
 

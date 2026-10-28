@@ -90,7 +90,7 @@ def test_continuous_3_levels(volatility_updates, mean_field_updates):
 
 
 @pytest.mark.parametrize("n_levels", [2, 3])
-@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF"])
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
 def test_continuous_missing_observations(
     n_levels, volatility_updates, mean_field_updates
@@ -194,23 +194,30 @@ def _multiple_children_timeseries(topology):
 
 @pytest.mark.parametrize("topology", MULTIPLE_CHILDREN_TOPOLOGIES)
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
-def test_continuous_unbounded_multiple_children(topology, mean_field_updates):
+@pytest.mark.parametrize("missing_input", [False, True])
+def test_continuous_unbounded_multiple_children(
+    topology, mean_field_updates, missing_input
+):
     """Test the unbounded update of a node with several children in both backends.
 
     A shared volatility parent, and a node that is both value and volatility parent, use
     the (n+1)-expansion update in the JAX and Rust backends. Under ``jax_enable_x64``
     the two backends agree to ~1e-12 on these networks; the tolerance covers the float32
-    rounding of the JAX backend.
+    rounding of the JAX backend. With ``missing_input``, the last input is missing for
+    100 trials (a direct volatility child of node 5 in the third topology).
     """
     timeseries = _multiple_children_timeseries(topology)
-    label = f"{topology} mean_field={mean_field_updates}"
+    observed = np.ones_like(timeseries, dtype=int)
+    if missing_input:
+        observed[100:200, -1] = 0
+    label = f"{topology} mean_field={mean_field_updates} missing={missing_input}"
 
-    py_net = _multiple_children_network(
-        PyNetwork, topology, mean_field_updates
-    ).input_data(input_data=timeseries)
-    rs_net = _multiple_children_network(
-        RsNetwork, topology, mean_field_updates
-    ).input_data(input_data=timeseries)
+    py_net, rs_net = (
+        _multiple_children_network(cls, topology, mean_field_updates).input_data(
+            input_data=timeseries, observed=observed
+        )
+        for cls in (PyNetwork, RsNetwork)
+    )
 
     for node_idx in range(len(rs_net.edges)):
         for key in ["mean", "expected_mean", "precision", "expected_precision"]:
