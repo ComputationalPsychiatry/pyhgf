@@ -6,11 +6,11 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 // Shared building blocks for precision and mean updates
 // =============================================================================
 
-/// Compute the precision update contribution from value and volatility children.
+/// Precision increment from the value children.
 ///
-/// The value-coupling branch implements the posterior-step (smoothing) correction
-/// of the relaxed HGF: the canonical child-precision factor is replaced by the
-/// harmonic combination
+/// The relaxed update implements the posterior-step (smoothing) correction of the
+/// relaxed HGF: the canonical child-precision factor is replaced by the harmonic
+/// combination
 ///
 /// ```text
 /// π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
@@ -26,13 +26,10 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 /// Non-Gaussian children and Gaussian leaves fall back to the canonical
 /// predicted-precision factor π̃_a — pyhgf keeps `precision = expected_precision`
 /// for clamped observations, so the harmonic form would otherwise zero out their
-/// contribution.
-///
-/// Volatility coupling is unchanged.
-fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
+/// contribution. With `mean_field`, every child uses π̃_a.
+fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: bool) -> f64 {
     let mut precision_wpe = 0.0;
 
-    // --- Value coupling ---
     if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
         let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
         let parent_mean = network.attributes.states[node_idx].mean;
@@ -66,7 +63,7 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
             let child_is_gaussian_interior = child_node_type == "continuous-state"
                 && (network.edges[child_idx].value_children.is_some()
                     || network.edges[child_idx].volatility_children.is_some());
-            let effective_child_precision = if child_is_gaussian_interior {
+            let effective_child_precision = if child_is_gaussian_interior && !mean_field {
                 // π_y = π_a − π̃_a; the Schur complement carries the *conditional*
                 // predicted precision π̂_a (stored on the child). Using the
                 // marginal would double-count parent uncertainty.
@@ -84,31 +81,12 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
         }
     }
 
-    // --- Volatility coupling ---
-    if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
-        let vol_coupling_strengths =
-            &network.attributes.vectors[node_idx].volatility_coupling_children;
-
-        for (i, &child_idx) in volc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let effective_precision = child_state.effective_precision;
-            let volatility_pe = child_state.volatility_prediction_error;
-            let observed = child_state.observed;
-            let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            precision_wpe += (0.5 * (kappa * effective_precision).powi(2)
-                + (kappa * effective_precision).powi(2) * volatility_pe
-                - 0.5 * kappa.powi(2) * effective_precision * volatility_pe)
-                * observed;
-        }
-    }
-
     precision_wpe
 }
 
-/// Compute the mean update contribution from value and volatility children.
+/// Mean increment from the value children.
 ///
-/// The value-coupling branch uses the joint-Gaussian (RTS-smoother) gain
+/// The relaxed update uses the joint-Gaussian (RTS-smoother) gain
 ///
 /// ```text
 /// g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
@@ -118,11 +96,15 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
 /// what makes the multi-child mean exact rather than a sum of independent
 /// single-child RTS gains. For leaves and non-Gaussian children π_y = 0 and g_a
 /// collapses to π̃_a (= `child.expected_precision`), recovering the canonical gain.
-fn mean_update_from_children(network: &Network, node_idx: usize, node_precision: f64) -> f64 {
+/// With `mean_field`, every child uses π̃_a.
+fn value_coupling_mean_wpe(
+    network: &Network,
+    node_idx: usize,
+    node_precision: f64,
+    mean_field: bool,
+) -> f64 {
     let mut value_pwpe = 0.0;
-    let mut volatility_pwpe = 0.0;
 
-    // --- Value coupling mean update ---
     if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
         let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
         let parent_mean = network.attributes.states[node_idx].mean;
@@ -147,7 +129,7 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
             let child_is_gaussian_interior = child_node_type == "continuous-state"
                 && (network.edges[child_idx].value_children.is_some()
                     || network.edges[child_idx].volatility_children.is_some());
-            let gain_precision = if child_is_gaussian_interior {
+            let gain_precision = if child_is_gaussian_interior && !mean_field {
                 let child_precision = child_state.precision;
                 let pi_y = child_precision - child_expected_precision;
                 let child_cond = child_state.conditional_expected_precision;
@@ -161,7 +143,40 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
         }
     }
 
-    // --- Volatility coupling mean update ---
+    value_pwpe
+}
+
+/// Compute the precision update contribution from value (relaxed) and volatility
+/// children.
+fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
+    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, false);
+
+    if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
+        let vol_coupling_strengths =
+            &network.attributes.vectors[node_idx].volatility_coupling_children;
+
+        for (i, &child_idx) in volc_idxs.iter().enumerate() {
+            let child_state = &network.attributes.states[child_idx];
+            let effective_precision = child_state.effective_precision;
+            let volatility_pe = child_state.volatility_prediction_error;
+            let observed = child_state.observed;
+            let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
+
+            precision_wpe += (0.5 * (kappa * effective_precision).powi(2)
+                + (kappa * effective_precision).powi(2) * volatility_pe
+                - 0.5 * kappa.powi(2) * effective_precision * volatility_pe)
+                * observed;
+        }
+    }
+
+    precision_wpe
+}
+
+/// Compute the mean update contribution from value (relaxed) and volatility children.
+fn mean_update_from_children(network: &Network, node_idx: usize, node_precision: f64) -> f64 {
+    let value_pwpe = value_coupling_mean_wpe(network, node_idx, node_precision, false);
+    let mut volatility_pwpe = 0.0;
+
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
             &network.attributes.vectors[node_idx].volatility_coupling_children;
@@ -491,102 +506,6 @@ fn unbounded_effective_prior(network: &Network, node_idx: usize) -> (f64, f64) {
     (precision, mean)
 }
 
-/// Precision increment from the value children only: the value-coupling branch of
-/// `precision_update_from_children` (relaxed) or of
-/// `precision_update_from_children_mean_field`.
-fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: bool) -> f64 {
-    let mut precision_wpe = 0.0;
-
-    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
-        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
-
-        for (i, &child_idx) in vc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
-            let observed = child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
-                Some(cf) => {
-                    let g_prime = (cf.df)(parent_mean);
-                    let g_second = (cf.d2f)(parent_mean);
-                    let child_vape = child_state.value_prediction_error;
-                    (g_prime.powi(2), kappa * g_second * child_vape)
-                }
-                None => (1.0, 0.0),
-            };
-
-            let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior = child_node_type == "continuous-state"
-                && (network.edges[child_idx].value_children.is_some()
-                    || network.edges[child_idx].volatility_children.is_some());
-            let effective_child_precision = if child_is_gaussian_interior && !mean_field {
-                let child_precision = child_state.precision;
-                let pi_y = child_precision - child_expected_precision;
-                let child_cond = child_state.conditional_expected_precision;
-                child_cond * pi_y / (child_cond + pi_y)
-            } else {
-                child_expected_precision
-            };
-
-            precision_wpe += (effective_child_precision
-                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
-                * observed;
-        }
-    }
-
-    precision_wpe
-}
-
-/// Mean increment from the value children only: the value-coupling branch of
-/// `mean_update_from_children` (relaxed) or of `mean_update_from_children_mean_field`.
-fn value_coupling_mean_wpe(
-    network: &Network,
-    node_idx: usize,
-    node_precision: f64,
-    mean_field: bool,
-) -> f64 {
-    let mut value_pwpe = 0.0;
-
-    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
-        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
-
-        for (i, &child_idx) in vc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
-            let child_vape = child_state.value_prediction_error * child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let coupling_fn_prime = match coupling_fn {
-                Some(cf) => (cf.df)(parent_mean),
-                None => 1.0,
-            };
-
-            let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior = child_node_type == "continuous-state"
-                && (network.edges[child_idx].value_children.is_some()
-                    || network.edges[child_idx].volatility_children.is_some());
-            let gain_precision = if child_is_gaussian_interior && !mean_field {
-                let child_precision = child_state.precision;
-                let pi_y = child_precision - child_expected_precision;
-                let child_cond = child_state.conditional_expected_precision;
-                child_cond * child_precision / (child_cond + pi_y)
-            } else {
-                child_expected_precision
-            };
-
-            value_pwpe +=
-                (kappa * coupling_fn_prime * gain_precision / node_precision) * child_vape;
-        }
-    }
-
-    value_pwpe
-}
-
 // =============================================================================
 // Mean-field (v0.2.11) building blocks
 // =============================================================================
@@ -595,34 +514,7 @@ fn value_coupling_mean_wpe(
 ///
 /// Uses `expected_precision` directly as the child-precision factor.
 fn precision_update_from_children_mean_field(network: &Network, node_idx: usize) -> f64 {
-    let mut precision_wpe = 0.0;
-
-    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
-        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
-
-        for (i, &child_idx) in vc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
-            let observed = child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
-                Some(cf) => {
-                    let g_prime = (cf.df)(parent_mean);
-                    let g_second = (cf.d2f)(parent_mean);
-                    let child_vape = child_state.value_prediction_error;
-                    (g_prime.powi(2), kappa * g_second * child_vape)
-                }
-                None => (1.0, 0.0),
-            };
-
-            precision_wpe += (child_expected_precision
-                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
-                * observed;
-        }
-    }
+    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, true);
 
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
@@ -679,48 +571,7 @@ fn ehgf_volatility_increment(
 
 /// Enhanced-HGF precision update from children (relaxed value coupling).
 fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_step: f64) -> f64 {
-    let mut precision_wpe = 0.0;
-
-    // --- Value coupling (identical to the relaxed standard update) ---
-    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
-        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
-
-        for (i, &child_idx) in vc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
-            let observed = child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
-                Some(cf) => {
-                    let g_prime = (cf.df)(parent_mean);
-                    let g_second = (cf.d2f)(parent_mean);
-                    let child_vape = child_state.value_prediction_error;
-                    (g_prime.powi(2), kappa * g_second * child_vape)
-                }
-                None => (1.0, 0.0),
-            };
-
-            let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior = child_node_type == "continuous-state"
-                && (network.edges[child_idx].value_children.is_some()
-                    || network.edges[child_idx].volatility_children.is_some());
-            let effective_child_precision = if child_is_gaussian_interior {
-                let child_precision = child_state.precision;
-                let pi_y = child_precision - child_expected_precision;
-                let child_cond = child_state.conditional_expected_precision;
-                child_cond * pi_y / (child_cond + pi_y)
-            } else {
-                child_expected_precision
-            };
-
-            precision_wpe += (effective_child_precision
-                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
-                * observed;
-        }
-    }
+    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, false);
 
     // --- Volatility coupling (eHGF safe update) ---
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
@@ -744,35 +595,7 @@ fn precision_update_from_children_ehgf_mean_field(
     node_idx: usize,
     time_step: f64,
 ) -> f64 {
-    let mut precision_wpe = 0.0;
-
-    // --- Value coupling (identical to the mean-field standard update) ---
-    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
-        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
-
-        for (i, &child_idx) in vc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
-            let observed = child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
-                Some(cf) => {
-                    let g_prime = (cf.df)(parent_mean);
-                    let g_second = (cf.d2f)(parent_mean);
-                    let child_vape = child_state.value_prediction_error;
-                    (g_prime.powi(2), kappa * g_second * child_vape)
-                }
-                None => (1.0, 0.0),
-            };
-
-            precision_wpe += (child_expected_precision
-                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
-                * observed;
-        }
-    }
+    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, true);
 
     // --- Volatility coupling (eHGF safe update) ---
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
@@ -798,29 +621,8 @@ fn mean_update_from_children_mean_field(
     node_idx: usize,
     node_precision: f64,
 ) -> f64 {
-    let mut value_pwpe = 0.0;
+    let value_pwpe = value_coupling_mean_wpe(network, node_idx, node_precision, true);
     let mut volatility_pwpe = 0.0;
-
-    if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
-        let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-        let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
-
-        for (i, &child_idx) in vc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
-            let child_vape = child_state.value_prediction_error * child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
-
-            let coupling_fn_prime = match coupling_fn {
-                Some(cf) => (cf.df)(parent_mean),
-                None => 1.0,
-            };
-
-            value_pwpe += (kappa * coupling_fn_prime * child_expected_precision / node_precision)
-                * child_vape;
-        }
-    }
 
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
