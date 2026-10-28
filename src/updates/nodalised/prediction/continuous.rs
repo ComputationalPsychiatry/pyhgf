@@ -9,7 +9,7 @@ pub const MIN_PREDICTED_VARIANCE: f64 = 1e-128;
 /// `jnp.maximum` propagates it, and the floor must keep the volatility guard's NaN
 /// visible so the two backends agree.
 #[inline]
-fn floor_predicted_variance(variance: f64) -> f64 {
+pub(crate) fn floor_predicted_variance(variance: f64) -> f64 {
     if variance.is_nan() {
         f64::NAN
     } else {

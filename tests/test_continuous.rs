@@ -35,7 +35,7 @@ fn test_one_node_hgf() {
     );
 
     network.set_update_sequence();
-    network.input_data(vec![vec![0.2]], None, true);
+    network.input_data(vec![vec![0.2]], None, None, true);
 
     // Check node 0 trajectories
     let node0 = &network.node_trajectories.nodes[0];
@@ -96,7 +96,7 @@ fn test_two_nodes_hgf() {
     );
 
     network.set_update_sequence();
-    network.input_data(vec![vec![0.2]], None, true);
+    network.input_data(vec![vec![0.2]], None, None, true);
 
     // Check node 0 trajectories
     let node0 = &network.node_trajectories.nodes[0];
@@ -199,6 +199,7 @@ fn unbounded_network(
     network.set_update_sequence();
     network.input_data(
         vec![vec![0.5, -0.2], vec![2.5, 0.1], vec![-1.0, 3.0]],
+        None,
         None,
         true,
     );

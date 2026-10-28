@@ -14,7 +14,9 @@ MEAN_FIELD_UPDATES = [False, True]
 MULTIPLE_CHILDREN_RTOL, MULTIPLE_CHILDREN_ATOL = 1e-4, 1e-4
 
 
-def _build_network(cls, volatility_updates, mean_field_updates, n_levels, timeseries):
+def _build_network(
+    cls, volatility_updates, mean_field_updates, n_levels, timeseries, observed=None
+):
     """Build an ``n_levels`` continuous HGF with the given update scheme."""
     net = cls(
         volatility_updates=volatility_updates,
@@ -23,7 +25,7 @@ def _build_network(cls, volatility_updates, mean_field_updates, n_levels, timese
     net = net.add_nodes().add_nodes(value_children=0)
     if n_levels == 3:
         net = net.add_nodes(volatility_children=0)
-    return net.input_data(input_data=timeseries)
+    return net.input_data(input_data=timeseries, observed=observed)
 
 
 def _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label):
@@ -85,6 +87,33 @@ def test_continuous_3_levels(volatility_updates, mean_field_updates):
     )
 
     _assert_backends_match(py_net, rs_net, 3, volatility_updates, label)
+
+
+@pytest.mark.parametrize("n_levels", [2, 3])
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF"])
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_missing_observations(
+    n_levels, volatility_updates, mean_field_updates
+):
+    """Both backends handle missing inputs in the same way.
+
+    While the input is missing, its value parent ignores the placeholder values and ages
+    its precision.
+    """
+    timeseries = load_data("continuous")
+    observed = np.ones(len(timeseries), dtype=int)
+    observed[200:300] = 0
+    label = f"n_levels={n_levels} vol={volatility_updates} mf={mean_field_updates}"
+
+    py_net, rs_net = (
+        _build_network(
+            cls, volatility_updates, mean_field_updates, n_levels, timeseries, observed
+        )
+        for cls in (PyNetwork, RsNetwork)
+    )
+
+    _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label)
+    assert np.all(np.diff(rs_net.node_trajectories[1]["precision"][200:300]) < 0.0)
 
 
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)

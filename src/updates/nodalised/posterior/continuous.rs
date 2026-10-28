@@ -1,5 +1,6 @@
 use crate::math::logaddexp;
 use crate::model::network::Network;
+use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 
 /// Principal branch of the Lambert W function for z >= 0.
 /// Solves w * exp(w) = z via 6 Halley iterations.
@@ -194,6 +195,52 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
     value_pwpe + volatility_pwpe
 }
 
+/// Whether any value or volatility child of the node reported an observation (mirrors
+/// `_has_observations` in the JAX backend).
+fn has_observations(network: &Network, node_idx: usize) -> bool {
+    let edges = &network.edges[node_idx];
+    edges
+        .value_children
+        .iter()
+        .chain(edges.volatility_children.iter())
+        .flatten()
+        .any(|&child_idx| network.attributes.states[child_idx].observed != 0.0)
+}
+
+/// Precision of a node none of whose children was observed: one random-walk step of
+/// ageing, 1 / (λ²/π + t exp(ω + Σ κ_p μ_p)), with the volatility parents' posterior
+/// means μ_p (mirrors `precision_update_missing_values` in the JAX backend).
+fn precision_missing_values(network: &Network, node_idx: usize, time_step: f64) -> f64 {
+    let state = &network.attributes.states[node_idx];
+    let mut total_volatility = state.tonic_volatility;
+    if let Some(ref parent_idxs) = network.edges[node_idx].volatility_parents {
+        let couplings = &network.attributes.vectors[node_idx].volatility_coupling_parents;
+        for (i, &parent_idx) in parent_idxs.iter().enumerate() {
+            total_volatility += couplings.get(i).copied().unwrap_or(1.0)
+                * network.attributes.states[parent_idx].mean;
+        }
+    }
+    // The node has children, so the unobserved mean ages by λ and the variance by λ².
+    let carried_variance = state.autoconnection_strength.powi(2) / state.precision;
+    1.0 / floor_predicted_variance(carried_variance + time_step * total_volatility.exp())
+}
+
+/// Posterior precision: the predicted precision plus the children's increment, or the
+/// aged precision of [`precision_missing_values`] when no child was observed.
+fn observed_or_aged_precision(
+    network: &Network,
+    node_idx: usize,
+    time_step: f64,
+    precision_wpe: impl FnOnce() -> f64,
+) -> f64 {
+    if has_observations(network, node_idx) {
+        (network.attributes.states[node_idx].expected_precision + precision_wpe()).max(1e-128)
+    } else {
+        precision_missing_values(network, node_idx, time_step)
+    }
+    .min(network.max_posterior_precision)
+}
+
 // =============================================================================
 // Standard posterior update
 // =============================================================================
@@ -201,16 +248,13 @@ fn mean_update_from_children(network: &Network, node_idx: usize, node_precision:
 pub fn posterior_update_continuous_state_node(
     network: &mut Network,
     node_idx: usize,
-    _time_step: f64,
+    time_step: f64,
 ) {
-    let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
-    let max_posterior_precision = network.max_posterior_precision;
 
-    let precision_wpe = precision_update_from_children(network, node_idx);
-    let posterior_precision = (expected_precision + precision_wpe)
-        .max(1e-128)
-        .min(max_posterior_precision);
+    let posterior_precision = observed_or_aged_precision(network, node_idx, time_step, || {
+        precision_update_from_children(network, node_idx)
+    });
 
     let mean_wpe = mean_update_from_children(network, node_idx, posterior_precision);
     let posterior_mean = expected_mean + mean_wpe;
@@ -231,7 +275,6 @@ pub fn posterior_update_continuous_state_node_ehgf(
 ) {
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
-    let max_posterior_precision = network.max_posterior_precision;
 
     let mean_wpe = mean_update_from_children(network, node_idx, expected_precision);
     let posterior_mean = expected_mean + mean_wpe;
@@ -239,10 +282,9 @@ pub fn posterior_update_continuous_state_node_ehgf(
 
     // eHGF safe precision update: recompute the effective precision from the
     // posterior mean and floor the volatility increment at zero.
-    let precision_wpe = precision_update_from_children_ehgf(network, node_idx, time_step);
-    let posterior_precision = (expected_precision + precision_wpe)
-        .max(1e-128)
-        .min(max_posterior_precision);
+    let posterior_precision = observed_or_aged_precision(network, node_idx, time_step, || {
+        precision_update_from_children_ehgf(network, node_idx, time_step)
+    });
     network.attributes.states[node_idx].precision = posterior_precision;
 }
 
@@ -798,16 +840,13 @@ fn mean_update_from_children_mean_field(
 pub fn posterior_update_continuous_state_node_mean_field(
     network: &mut Network,
     node_idx: usize,
-    _time_step: f64,
+    time_step: f64,
 ) {
-    let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
-    let max_posterior_precision = network.max_posterior_precision;
 
-    let precision_wpe = precision_update_from_children_mean_field(network, node_idx);
-    let posterior_precision = (expected_precision + precision_wpe)
-        .max(1e-128)
-        .min(max_posterior_precision);
+    let posterior_precision = observed_or_aged_precision(network, node_idx, time_step, || {
+        precision_update_from_children_mean_field(network, node_idx)
+    });
 
     let mean_wpe = mean_update_from_children_mean_field(network, node_idx, posterior_precision);
     let posterior_mean = expected_mean + mean_wpe;
@@ -824,17 +863,14 @@ pub fn posterior_update_continuous_state_node_ehgf_mean_field(
 ) {
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
-    let max_posterior_precision = network.max_posterior_precision;
 
     let mean_wpe = mean_update_from_children_mean_field(network, node_idx, expected_precision);
     let posterior_mean = expected_mean + mean_wpe;
     network.attributes.states[node_idx].mean = posterior_mean;
 
     // eHGF safe precision update (mean-field value coupling).
-    let precision_wpe =
-        precision_update_from_children_ehgf_mean_field(network, node_idx, time_step);
-    let posterior_precision = (expected_precision + precision_wpe)
-        .max(1e-128)
-        .min(max_posterior_precision);
+    let posterior_precision = observed_or_aged_precision(network, node_idx, time_step, || {
+        precision_update_from_children_ehgf_mean_field(network, node_idx, time_step)
+    });
     network.attributes.states[node_idx].precision = posterior_precision;
 }
