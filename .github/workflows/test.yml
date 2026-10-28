@@ -37,8 +37,17 @@ jobs:
           uv venv .venv   # create a uv-managed virtualenv
 
       # Step 4: Install System Dependencies
+      # `plot_network` calls `unflatten`, which Ubuntu 24.04 ships in graphviz and
+      # Debian-based releases from Ubuntu 26.04 ship in graphviz-tools.
       - name: Install Graphviz
-        run: sudo apt-get install -y graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+          if apt-cache show graphviz-tools > /dev/null 2>&1; then
+            sudo apt-get install -y graphviz-tools
+          fi
+          command -v dot
+          command -v unflatten
       
       # Step 5: Install Rust
       - name: Install Rust
