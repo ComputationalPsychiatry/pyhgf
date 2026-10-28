@@ -42,7 +42,15 @@ jobs:
       # 4. Install dependencies and build the documentation
       - name: Install dependencies and build docs
         run: |
-          sudo apt-get install graphviz
+          # `plot_network` calls `unflatten`, which Ubuntu 24.04 ships in graphviz and
+          # Debian-based releases from Ubuntu 26.04 ship in graphviz-tools.
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+          if apt-cache show graphviz-tools > /dev/null 2>&1; then
+            sudo apt-get install -y graphviz-tools
+          fi
+          command -v dot
+          command -v unflatten
           uv sync --dev
           uv run python -m ipykernel install --user --name=pyhgf --display-name "Python (pyhgf)"
           uv run maturin develop --release
