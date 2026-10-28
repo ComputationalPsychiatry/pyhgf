@@ -345,17 +345,11 @@ def _value_children_effective_prior(
     r"""Absorb the value-coupling terms of a node in an effective Gaussian prior.
 
     Each value child adds a concave quadratic term to the variational energy of the
-    node. Section 3.6 of [1]_ absorbs these terms in an effective prior
+    node. Section 3.6 of Mathys et al. (2026) absorbs these terms in an effective prior
     :math:`(\tilde{\pi}, \tilde{\mu})`. Here, this prior is the posterior that the
-    regular value-coupling update returns when the volatility children are left out,
-    so that value children are weighted as in the standard and eHGF updates (relaxed or
+    regular value-coupling update returns when the volatility children are left out, so
+    that value children are weighted as in the standard and eHGF updates (relaxed or
     mean-field). Without value children, this is the prediction of the node.
-
-    References
-    ----------
-    .. [1] Mathys, C., Legrand, N., Waade, P. T., Mikuš, N., & Weber, L. A. (2026).
-       Robust volatility updates for Hierarchical Gaussian Filtering.
-       arXiv:2605.00966. https://doi.org/10.48550/arXiv.2605.00966
     """
     if edges[node_idx].value_children is None:
         return (
@@ -370,14 +364,11 @@ def _value_children_effective_prior(
         + (edges[node_idx]._replace(volatility_children=None),)
         + edges[node_idx + 1 :]
     )
-    if mean_field_updates:
-        precision = precision_update_mean_field(attributes, value_only_edges, node_idx)
-        mean = posterior_update_mean_continuous_node_mean_field(
-            attributes, value_only_edges, node_idx, node_precision=precision
-        )
-    else:
-        precision = precision_update(attributes, value_only_edges, node_idx)
-        mean = posterior_update_mean_continuous_node(
-            attributes, value_only_edges, node_idx, node_precision=precision
-        )
+    precision_fn, mean_fn = (
+        (precision_update_mean_field, posterior_update_mean_continuous_node_mean_field)
+        if mean_field_updates
+        else (precision_update, posterior_update_mean_continuous_node)
+    )
+    precision = precision_fn(attributes, value_only_edges, node_idx)
+    mean = mean_fn(attributes, value_only_edges, node_idx, node_precision=precision)
     return precision, mean
