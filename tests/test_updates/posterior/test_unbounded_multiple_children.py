@@ -6,6 +6,7 @@ Legrand, N., Waade, P. T., Mikuš, N., & Weber, L. A. (2026). Robust volatility 
 for Hierarchical Gaussian Filtering. arXiv:2605.00966.
 """
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -259,6 +260,44 @@ def test_two_children_track_the_variational_posterior(
     )
     assert kl < 0.15
     assert kl < kl_first_child / 4.0
+
+
+def test_zero_coupling_child_is_left_out():
+    """A volatility child with a zero coupling is left out, with a finite gradient.
+
+    The terms of this child do not depend on the node, and its Lambert expansion would
+    divide by the coupling. The posterior is the one of the node without this child.
+    """
+    network = (
+        Network()
+        .add_nodes(n_nodes=2)
+        .add_nodes(value_children=0)
+        .add_nodes(value_children=1)
+        .add_nodes(volatility_children=[2, 3])
+    )
+    attributes, edges, _ = network.get_network()
+    _set_two_volatility_children(
+        attributes, 1.0, 2.0, ((0.3, 10.0, 0.1, -3.0), (2.5, 10.0, 0.1, -1.0))
+    )
+    first_child_edges = (
+        edges[:4] + (edges[4]._replace(volatility_children=(2,)),) + edges[5:]
+    )
+    expected_precision, expected_mean = posterior_update_unbounded(
+        attributes=attributes, node_idx=4, edges=first_child_edges
+    )
+
+    def posterior(couplings):
+        node = {**attributes[4], "volatility_coupling_children": couplings}
+        return posterior_update_unbounded(
+            attributes={**attributes, 4: node}, node_idx=4, edges=edges
+        )
+
+    couplings = jnp.array([1.0, 0.0])
+    precision, mean = posterior(couplings)
+    assert jnp.isclose(precision, expected_precision, rtol=1e-5)
+    assert jnp.isclose(mean, expected_mean, rtol=1e-5)
+    for gradient in jax.jacobian(posterior)(couplings):
+        assert jnp.all(jnp.isfinite(gradient))
 
 
 def test_positive_precision_over_a_grid_of_prediction_errors():

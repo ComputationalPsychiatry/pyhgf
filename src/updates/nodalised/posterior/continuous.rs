@@ -356,6 +356,10 @@ pub fn posterior_update_continuous_state_node_unbounded(
     precisions.push(precision_1);
     means.push(mean_1);
     for child in &children {
+        // A zero coupling makes the child independent of the node: no expansion.
+        if child.coupling == 0.0 {
+            continue;
+        }
         let pihat_y = prior_precision / child.coupling.powi(2);
         let gamma_c = log_time_step + child.coupling * prior_mean + child.tonic_volatility;
         let log_w_arg = child.be_aux.ln() - (2.0 * pihat_y).ln() + 0.5 / pihat_y - gamma_c;
@@ -385,13 +389,10 @@ pub fn posterior_update_continuous_state_node_unbounded(
         };
         let mean_2 = x_star + gradient / precision_2;
 
-        // Fall back to expansion 1 if this expansion is not finite.
+        // Drop this expansion if it is not finite (zero weight in the JAX backend).
         if precision_2.is_finite() && mean_2.is_finite() {
             precisions.push(precision_2);
             means.push(mean_2);
-        } else {
-            precisions.push(precision_1);
-            means.push(mean_1);
         }
     }
 

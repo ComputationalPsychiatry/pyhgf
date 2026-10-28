@@ -134,7 +134,8 @@ def posterior_update_unbounded(
        :math:`W_0` approximation of the mode created by this child (eq. 54 in [1]_),
        with the curvature and gradient of the full variational energy, which includes
        all the children (eqs. 55-56 in [1]_). A non-positive curvature falls back to
-       the concave curvature, and a non-finite expansion falls back to the first one.
+       the concave curvature. An expansion that is not finite, or whose child has a
+       zero coupling, gets a zero weight.
 
     3. The :math:`n + 1` expansions are weighted by a softmax of the variational energy
        at their means (eq. 57 in [1]_). The posterior is the moment-matched Gaussian of
@@ -235,10 +236,15 @@ def posterior_update_unbounded(
     # ----------------------------------------------------------------------------------
     # Expansions 2, ..., n+1: quadratic at each child's Lambert W0 mode (eqs. 54-56)
     # ----------------------------------------------------------------------------------
-    precisions, means = [precision_1], [mean_1]
+    precisions, means, is_valid = [precision_1], [mean_1], []
     for i in range(n_children):
-        pihat_y = prior_precision / couplings[i] ** 2
-        gamma_c = log_time_step + couplings[i] * prior_mean + tonic_volatilities[i]
+        # A zero coupling makes the child independent of the node, so its expansion is
+        # dropped below. κ = 1 stands in for it here so that no 0/0 is formed, which
+        # would make the gradient NaN even through a dropped expansion.
+        has_coupling = couplings[i] != 0.0
+        coupling = jnp.where(has_coupling, couplings[i], 1.0)
+        pihat_y = prior_precision / coupling**2
+        gamma_c = log_time_step + coupling * prior_mean + tonic_volatilities[i]
         # W_arg in log-space, capped at log(float max) as in the MATLAB reference:
         # "W_arg = exp(min(log_W_arg, log(realmax)))"
         log_W_arg = (
@@ -247,7 +253,7 @@ def posterior_update_unbounded(
         log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
         W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
         y_star = gamma_c + lambert_w0(W_arg) - 0.5 / pihat_y
-        x_star = (y_star - log_time_step - tonic_volatilities[i]) / couplings[i]
+        x_star = (y_star - log_time_step - tonic_volatilities[i]) / coupling
 
         # curvature and gradient of the full variational energy at x_star
         full_curvature = prior_precision
@@ -273,21 +279,25 @@ def posterior_update_unbounded(
         )
         mean_2 = x_star + gradient / precision_2
 
-        # Fall back to expansion 1 if this expansion is not finite, as in the MATLAB
-        # reference: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1"
-        # (double-where masking).
-        is_finite = jnp.isfinite(precision_2) & jnp.isfinite(mean_2)
-        precision_2 = jnp.where(is_finite, precision_2, 1.0)
-        mean_2 = jnp.where(is_finite, mean_2, 0.0)
-        precisions.append(jnp.where(is_finite, precision_2, precision_1))
-        means.append(jnp.where(is_finite, mean_2, mean_1))
+        # Drop this expansion if the child has no coupling or the expansion is not
+        # finite: it is replaced by expansion 1 and gets a zero weight below. For a
+        # single child, this is the MATLAB reference's
+        # "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1". This only
+        # protects the forward pass: a non-finite expansion still has a NaN gradient.
+        is_valid.append(has_coupling & jnp.isfinite(precision_2) & jnp.isfinite(mean_2))
+        precisions.append(jnp.where(is_valid[-1], precision_2, precision_1))
+        means.append(jnp.where(is_valid[-1], mean_2, mean_1))
 
     # ----------------------------------------------------------------------------------
     # Softmax weights (eq. 57) and Gaussian mixture moment matching (eqs. 58-60)
     # ----------------------------------------------------------------------------------
     means_array = jnp.stack(means)
     precisions_array = jnp.stack(precisions)
-    weights = softmax(jnp.stack([variational_energy(m) for m in means]), axis=0)
+    energies = [variational_energy(means[0])] + [
+        jnp.where(valid, variational_energy(mean), -jnp.inf)
+        for mean, valid in zip(means[1:], is_valid)
+    ]
+    weights = softmax(jnp.stack(energies), axis=0)
 
     posterior_mean = jnp.sum(weights * means_array, axis=0)
     posterior_variance = jnp.sum(
