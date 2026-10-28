@@ -310,6 +310,53 @@ def test_two_children_track_the_variational_posterior(
     assert kl < kl_first_child / 4.0
 
 
+def test_other_volatility_parents_shift_the_tonic_volatility():
+    """The other volatility parents of a child enter as an effective tonic volatility.
+
+    Node 1 has two volatility parents, nodes 2 and 3. For node 2, this is the update
+    without node 3, where the tonic volatility of node 1 is shifted by κ_3 μ̂_3.
+    """
+    network = (
+        Network()
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=1)
+        .add_nodes(volatility_children=([1], [0.5]))
+    )
+    attributes, edges, _ = network.get_network()
+    attributes[-1]["time_step"] = 1.0
+    attributes[1]["temp"]["current_variance"] = 0.05
+    attributes[1]["mean"] = 1.0
+    attributes[1]["precision"] = 1e3
+    attributes[1]["expected_precision"] = 2.0
+    attributes[3]["expected_mean"] = -3.0
+
+    precision, mean = posterior_update_unbounded(
+        attributes=attributes, node_idx=2, edges=edges
+    )
+
+    without_node_3 = (
+        edges[:1] + (edges[1]._replace(volatility_parents=(2,)),) + edges[2:]
+    )
+    shifted = {
+        **attributes,
+        1: {
+            **attributes[1],
+            "tonic_volatility": attributes[1]["tonic_volatility"] - 1.5,
+        },
+    }
+    expected_precision, expected_mean = posterior_update_unbounded(
+        attributes=shifted, node_idx=2, edges=without_node_3
+    )
+    _, unshifted_mean = posterior_update_unbounded(
+        attributes=attributes, node_idx=2, edges=without_node_3
+    )
+
+    assert jnp.isclose(precision, expected_precision, rtol=1e-5)
+    assert jnp.isclose(mean, expected_mean, rtol=1e-5)
+    assert not jnp.isclose(mean, unshifted_mean, rtol=1e-2)
+
+
 def test_zero_coupling_child_is_left_out():
     """A volatility child with a zero coupling is left out, with a finite gradient.
 

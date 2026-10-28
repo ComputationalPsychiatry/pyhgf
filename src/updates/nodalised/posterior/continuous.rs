@@ -295,6 +295,7 @@ pub fn posterior_update_continuous_state_node_ehgf(
 /// Quantities of one volatility child entering the unbounded update.
 struct UnboundedVolatilityChild {
     coupling: f64,
+    /// Effective tonic volatility ω̃, which absorbs the other volatility parents.
     tonic_volatility: f64,
     /// Log of the carried variance λ²/π the child used in its prediction.
     log_previous_variance: f64,
@@ -305,7 +306,7 @@ struct UnboundedVolatilityChild {
 }
 
 impl UnboundedVolatilityChild {
-    /// Log of the predicted volatility Ω(x) = t exp(κ x + ω) of the child.
+    /// Log of the predicted volatility Ω(x) = t exp(κ x + ω̃) of the child.
     fn log_volatility(&self, log_time_step: f64, x: f64) -> f64 {
         log_time_step + self.coupling * x + self.tonic_volatility
     }
@@ -320,13 +321,13 @@ impl UnboundedVolatilityChild {
 ///
 /// ```text
 /// I(x) = Σ_i [ −½ log(α_i + Ω_i(x)) − ½ β_i / (α_i + Ω_i(x)) ] − ½ π̃ (x − μ̃)²,
-/// Ω_i(x) = t exp(κ_i x + ω_i),
+/// Ω_i(x) = t exp(κ_i x + ω̃_i),    ω̃_i = ω_i + Σ_p κ_p μ̂_p,
 /// ```
 ///
 /// where (π̃, μ̃) is the prediction of the node or, when the node also has value
-/// children, the effective prior returned by [`unbounded_effective_prior`]. The other
-/// volatility parents of a child are not included in Ω_i, and unobserved children are
-/// left out of the sum. The posterior is the moment-matched Gaussian of n + 1 quadratic
+/// children, the effective prior returned by [`unbounded_effective_prior`], and the
+/// effective tonic volatility ω̃_i absorbs the other volatility parents p of the child.
+/// Unobserved children are left out of the sum. The posterior is the moment-matched Gaussian of n + 1 quadratic
 /// expansions of I: one at the prediction μ̂ (concave part only, eqs. 52-53), and one
 /// at the Lambert W0 mode of each child, with the curvature and gradient of the full
 /// energy (eqs. 54-56). The expansions are weighted by a softmax of I at their means
@@ -358,9 +359,22 @@ pub fn posterior_update_continuous_state_node_unbounded(
             let child_state = &network.attributes.states[child_idx];
             let be_aux = (1.0 / child_state.precision)
                 + (child_state.mean - child_state.expected_mean).powi(2);
+            // The other volatility parents of the child enter through their predicted
+            // means, as in the prediction of the child.
+            let mut tonic_volatility = child_state.tonic_volatility;
+            if let Some(ref parent_idxs) = network.edges[child_idx].volatility_parents {
+                let parent_couplings =
+                    &network.attributes.vectors[child_idx].volatility_coupling_parents;
+                for (j, &parent_idx) in parent_idxs.iter().enumerate() {
+                    if parent_idx != node_idx {
+                        tonic_volatility += parent_couplings.get(j).copied().unwrap_or(1.0)
+                            * network.attributes.states[parent_idx].expected_mean;
+                    }
+                }
+            }
             UnboundedVolatilityChild {
                 coupling: volatility_couplings.get(i).copied().unwrap_or(1.0),
-                tonic_volatility: child_state.tonic_volatility,
+                tonic_volatility,
                 log_previous_variance: child_state.current_variance.max(1e-128).ln(),
                 be_aux,
                 volatility_prediction_error: child_state.expected_precision * be_aux - 1.0,

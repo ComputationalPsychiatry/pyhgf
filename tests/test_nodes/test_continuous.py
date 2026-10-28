@@ -150,6 +150,7 @@ MULTIPLE_CHILDREN_TOPOLOGIES = [
     "shared_volatility_parent",
     "value_and_volatility_parent",
     "value_and_two_volatility_children",
+    "two_volatility_parents",
 ]
 
 
@@ -173,6 +174,17 @@ def _multiple_children_network(cls, topology, mean_field_updates):
             .add_nodes(value_children=0)
             .add_nodes(value_children=1)
             .add_nodes(value_children=2, volatility_children=3)
+        )
+    if topology == "two_volatility_parents":
+        # node 4 is the volatility parent of nodes 2 and 3, and node 2 has a second
+        # volatility parent, node 5
+        return (
+            net
+            .add_nodes(n_nodes=2)
+            .add_nodes(value_children=0)
+            .add_nodes(value_children=1)
+            .add_nodes(volatility_children=[2, 3])
+            .add_nodes(volatility_children=2)
         )
     # node 5 is the value parent of node 3 and the volatility parent of node 4 and
     # of the input node 2

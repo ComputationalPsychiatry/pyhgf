@@ -109,9 +109,10 @@ def posterior_update_unbounded(
     several volatility children and, optionally, value children. With :math:`n`
     volatility children :math:`a_i`, coupling strengths :math:`\kappa_i`, carried
     variances :math:`\alpha_i`, total posterior uncertainties
-    :math:`\beta_i = 1/\pi_{a_i} + (\mu_{a_i} - \hat{\mu}_{a_i})^2` and tonic
-    volatilities :math:`\omega_{a_i}`, the variational energy of the node is, up to an
-    additive constant:
+    :math:`\beta_i = 1/\pi_{a_i} + (\mu_{a_i} - \hat{\mu}_{a_i})^2` and effective tonic
+    volatilities :math:`\tilde{\omega}_{a_i} = \omega_{a_i} + \sum_p \kappa_{p, a_i}
+    \hat{\mu}_p`, which absorb the other volatility parents :math:`p` of the child, the
+    variational energy of the node is, up to an additive constant:
 
     .. math::
 
@@ -119,13 +120,12 @@ def posterior_update_unbounded(
             -\frac{1}{2}\log\left(\alpha_i + \Omega_i(x)\right)
             -\frac{1}{2}\frac{\beta_i}{\alpha_i + \Omega_i(x)}
         \right] - \frac{\tilde{\pi}}{2}\left(x - \tilde{\mu}\right)^2,
-        \qquad \Omega_i(x) = t \exp(\kappa_i x + \omega_{a_i}).
+        \qquad \Omega_i(x) = t \exp(\kappa_i x + \tilde{\omega}_{a_i}).
 
     :math:`(\tilde{\pi}, \tilde{\mu})` is the prediction :math:`(\hat{\pi}, \hat{\mu})`
     of the node or, when the node also has value children, the effective prior that
-    absorbs the value-coupling terms. The other volatility parents of a child are not
-    included in :math:`\Omega_i`, and the children whose ``observed`` flag is 0 are
-    left out of the sum.
+    absorbs the value-coupling terms. The children whose ``observed`` flag is 0 are left
+    out of the sum.
 
     1. A first expansion at the prediction :math:`\hat{\mu}` keeps only the concave part
        of :math:`I` for the precision (eqs. 52-53 in [1]_), which is therefore positive:
@@ -197,7 +197,16 @@ def posterior_update_unbounded(
     for position, volatility_child_idx in enumerate(volatility_children_idxs):  # type: ignore
         observed.append(attributes[volatility_child_idx]["observed"])
         couplings.append(attributes[node_idx]["volatility_coupling_children"][position])
-        tonic_volatilities.append(attributes[volatility_child_idx]["tonic_volatility"])
+        # effective tonic volatility ω̃: the other volatility parents of the child enter
+        # through their predicted means, as in the prediction of the child
+        tonic_volatility = attributes[volatility_child_idx]["tonic_volatility"]
+        for parent_idx, coupling in zip(
+            edges[volatility_child_idx].volatility_parents,  # type: ignore
+            attributes[volatility_child_idx]["volatility_coupling_parents"],
+        ):
+            if parent_idx != node_idx:
+                tonic_volatility += coupling * attributes[parent_idx]["expected_mean"]
+        tonic_volatilities.append(tonic_volatility)
         # carried variance λ²/π the child used in its prediction
         log_previous_variances.append(
             jnp.log(
