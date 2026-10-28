@@ -63,7 +63,6 @@ Continuous nodes
 
     continuous_node_posterior_update_unbounded
     posterior_update_unbounded
-    posterior_update_unbounded_multiple_children
 
 .. currentmodule:: pyhgf.updates.posterior.continuous.posterior_update_mean_continuous_node
 

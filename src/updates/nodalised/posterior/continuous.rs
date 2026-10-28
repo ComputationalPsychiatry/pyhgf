@@ -250,126 +250,7 @@ pub fn posterior_update_continuous_state_node_ehgf(
 // Unbounded posterior update
 // =============================================================================
 
-pub fn posterior_update_continuous_state_node_unbounded(
-    network: &mut Network,
-    node_idx: usize,
-    time_step: f64,
-) {
-    // A node with several volatility children, or with value children as well, uses the
-    // (n+1)-expansion generalisation of section 3.6 in Mathys et al. (2026), so that
-    // every child contributes to the posterior. The two-expansion update below is the
-    // single-child case.
-    let n_volatility_children = network.edges[node_idx]
-        .volatility_children
-        .as_ref()
-        .map_or(0, |children| children.len());
-    if n_volatility_children != 1 || network.edges[node_idx].value_children.is_some() {
-        let (posterior_precision, posterior_mean) =
-            posterior_update_unbounded_multiple_children(network, node_idx, time_step);
-        let max_posterior_precision = network.max_posterior_precision;
-        let state = &mut network.attributes.states[node_idx];
-        state.precision = posterior_precision.min(max_posterior_precision);
-        state.mean = posterior_mean;
-        return;
-    }
-
-    let volatility_child_idx = network.edges[node_idx]
-        .volatility_children
-        .as_ref()
-        .expect("No volatility children found")[0];
-
-    let volatility_coupling = network.attributes.vectors[node_idx]
-        .volatility_coupling_children
-        .get(0)
-        .copied()
-        .unwrap_or(1.0);
-
-    let child_state = network.attributes.states[volatility_child_idx];
-    let child_mean = child_state.mean;
-    let child_precision = child_state.precision;
-    let child_expected_mean = child_state.expected_mean;
-    let tonic_volatility = child_state.tonic_volatility;
-    // Carried variance λ²/π the child used in its prediction.
-    let previous_variance = child_state.current_variance.max(1e-128);
-    let be_aux = (1.0 / child_precision) + (child_mean - child_expected_mean).powi(2);
-
-    let expected_mean = network.attributes.states[node_idx].expected_mean;
-    let expected_precision = network.attributes.states[node_idx].expected_precision;
-
-    // Canonical exponent at prediction: y = log(time_step) + volatility_coupling*expected_mean + tonic_volatility
-    let gamma_c = time_step.ln() + volatility_coupling * expected_mean + tonic_volatility;
-
-    // Expansion 1: quadratic at the prediction (prior mean).
-    // w is written as 1/(1 + previous_variance/v) so it stays finite when v_jm1 overflows
-    // to +inf (→ 1), matching Julia's rearrangement.
-    let v_jm1 = gamma_c.exp();
-    let w_jm1 = 1.0 / (1.0 + previous_variance / v_jm1);
-    // Volatility prediction error: da_jm1 = pihat_child * be_aux - 1, with
-    // pihat_child the volatility child's *marginal* predicted precision. Matches the
-    // standard/eHGF volatility PE and the Python backend; the earlier be_aux/(previous_variance+v_jm1) - 1 form used a
-    // no-MGF/no-coupling conditional precision.
-    let da_jm1 = child_state.expected_precision * be_aux - 1.0;
-
-    let pi1 = expected_precision + 0.5 * volatility_coupling.powi(2) * w_jm1 * (1.0 - w_jm1);
-    let mu1 = expected_mean + (volatility_coupling * w_jm1 / (2.0 * pi1)) * da_jm1;
-
-    // Expansion 2: quadratic at the Lambert W0 approximate mode.
-    // W_arg is computed in log-space and capped at log(f64::MAX) to match the
-    // MATLAB reference: W_arg = exp(min(log_W_arg, log(realmax))).
-    let pihat_y = expected_precision / volatility_coupling.powi(2);
-    let log_w_arg = be_aux.ln() - (2.0 * pihat_y).ln() + 0.5 / pihat_y - gamma_c;
-    let w_arg = log_w_arg.min(f64::MAX.ln()).exp();
-    let v_w = lambert_w0(w_arg);
-    let y_star = gamma_c + v_w - 0.5 / pihat_y;
-    let x_star = (y_star - time_step.ln() - tonic_volatility) / volatility_coupling;
-
-    // Rearranged w/da formulas stay finite when s2 overflows (→ w=1, da=-1).
-    let s2 = time_step * (volatility_coupling * x_star + tonic_volatility).exp();
-    let w2 = 1.0 / (1.0 + previous_variance / s2);
-    let da2 = be_aux / (previous_variance + s2) - 1.0;
-
-    let pi2_full =
-        expected_precision + 0.5 * volatility_coupling.powi(2) * w2 * (w2 + (2.0 * w2 - 1.0) * da2);
-    let pi2_safe = if pi2_full <= 0.0 {
-        expected_precision + 0.5 * volatility_coupling.powi(2) * w2 * (1.0 - w2)
-    } else {
-        pi2_full
-    };
-    let mu2_safe = x_star
-        + (0.5 * volatility_coupling * w2 * da2 - expected_precision * (x_star - expected_mean))
-            / pi2_safe;
-
-    // Fall back to Expansion 1 if Expansion 2 yields non-finite results —
-    // matches MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1".
-    let exp2_finite = pi2_safe.is_finite() && mu2_safe.is_finite();
-    let pi2 = if exp2_finite { pi2_safe } else { pi1 };
-    let mu2 = if exp2_finite { mu2_safe } else { mu1 };
-
-    // Variational energy-based softmax blend (direct form, matches MATLAB)
-    let ey1 = time_step * (volatility_coupling * mu1 + tonic_volatility).exp();
-    let i1 = -0.5 * (previous_variance + ey1).ln()
-        - 0.5 * be_aux / (previous_variance + ey1)
-        - 0.5 * expected_precision * (mu1 - expected_mean).powi(2);
-
-    let ey2 = time_step * (volatility_coupling * mu2 + tonic_volatility).exp();
-    let i2 = -0.5 * (previous_variance + ey2).ln()
-        - 0.5 * be_aux / (previous_variance + ey2)
-        - 0.5 * expected_precision * (mu2 - expected_mean).powi(2);
-
-    let b = 1.0 / (1.0 + (i1 - i2).exp()); // sigmoid(i2 - i1)
-
-    // Gaussian mixture moment matching
-    let posterior_mean = (1.0 - b) * mu1 + b * mu2;
-    let sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2).powi(2);
-    let posterior_precision = (1.0 / sig2).min(network.max_posterior_precision);
-
-    let state = &mut network.attributes.states[node_idx];
-    state.precision = posterior_precision;
-    state.mean = posterior_mean;
-}
-
-/// Quantities of one volatility child entering the unbounded update, computed as in
-/// the single-child update above.
+/// Quantities of one volatility child entering the unbounded update.
 struct UnboundedVolatilityChild {
     coupling: f64,
     tonic_volatility: f64,
@@ -388,9 +269,9 @@ impl UnboundedVolatilityChild {
     }
 }
 
-/// Unbounded posterior of a node with several volatility children, or with value and
-/// volatility children (section 3.6 in Mathys et al., 2026, arXiv:2605.00966). Port of
-/// `posterior_update_unbounded_multiple_children` in the JAX backend.
+/// Unbounded posterior update of a continuous state node with one or several volatility
+/// children and, optionally, value children (section 3.6 in Mathys et al., 2026,
+/// arXiv:2605.00966). Port of `posterior_update_unbounded` in the JAX backend.
 ///
 /// With `n` volatility children, the variational energy of the node is, up to an
 /// additive constant,
@@ -401,20 +282,18 @@ impl UnboundedVolatilityChild {
 /// ```
 ///
 /// where (π̃, μ̃) is the prediction of the node or, when the node also has value
-/// children, the effective prior returned by [`unbounded_effective_prior`]. As in the
-/// single-child update, the other volatility parents of a child are not included in
-/// Ω_i. The posterior is the moment-matched Gaussian of n + 1 quadratic expansions of
-/// I: one at the prediction μ̂ (concave part only, eqs. 52-53), and one at the Lambert
-/// W0 mode of each child, with the curvature and gradient of the full energy (eqs.
-/// 54-56). The expansions are weighted by a softmax of I at their means (eqs. 57-60).
-///
-/// Returns the posterior precision (before the `max_posterior_precision` bound) and the
-/// posterior mean.
-fn posterior_update_unbounded_multiple_children(
-    network: &Network,
+/// children, the effective prior returned by [`unbounded_effective_prior`]. The other
+/// volatility parents of a child are not included in Ω_i. The posterior is the
+/// moment-matched Gaussian of n + 1 quadratic expansions of I: one at the prediction μ̂
+/// (concave part only, eqs. 52-53), and one at the Lambert W0 mode of each child, with
+/// the curvature and gradient of the full energy (eqs. 54-56). The expansions are
+/// weighted by a softmax of I at their means (eqs. 57-60). For a single volatility
+/// child and no value child, this is the two-expansion update of section 3.4.
+pub fn posterior_update_continuous_state_node_unbounded(
+    network: &mut Network,
     node_idx: usize,
     time_step: f64,
-) -> (f64, f64) {
+) {
     let volatility_children_idxs = network.edges[node_idx]
         .volatility_children
         .as_ref()
@@ -530,7 +409,10 @@ fn posterior_update_unbounded_multiple_children(
         .map(|(w, (p, m))| w * (1.0 / p + (m - posterior_mean).powi(2)))
         .sum();
 
-    (1.0 / posterior_variance, posterior_mean)
+    let max_posterior_precision = network.max_posterior_precision;
+    let state = &mut network.attributes.states[node_idx];
+    state.precision = (1.0 / posterior_variance).min(max_posterior_precision);
+    state.mean = posterior_mean;
 }
 
 /// Effective prior (π̃, μ̃) of the unbounded update, in which section 3.6 of Mathys et

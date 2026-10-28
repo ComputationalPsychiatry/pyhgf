@@ -19,7 +19,6 @@ from pyhgf.updates.posterior.continuous.continuous_node_posterior_update import 
 from pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded import (  # noqa: E501
     continuous_node_posterior_update_unbounded,
     posterior_update_unbounded,
-    posterior_update_unbounded_multiple_children,
 )
 
 SEED = 123
@@ -115,38 +114,6 @@ def test_value_child_of_a_mixed_parent_is_used(mean_field_updates):
     np.testing.assert_array_equal(mu[:100], mu_shifted[:100])
     # the parent follows the step transiently, before the value child absorbs it
     assert mu_shifted[100:110].mean() - mu[100:110].mean() > 0.1
-
-
-@pytest.mark.parametrize("current_variance", [1.0, 0.005])
-@pytest.mark.parametrize("prediction_error", [0.0, 0.5, 3.0, 30.0])
-def test_single_child_reduces_to_the_two_expansion_update(
-    prediction_error, current_variance
-):
-    """With one volatility child, the (n+1)-expansion update is the 2-expansion one."""
-    network = (
-        Network()
-        .add_nodes()
-        .add_nodes(value_children=0)
-        .add_nodes(volatility_children=1)
-    )
-    attributes, edges, _ = network.get_network()
-    attributes[-1]["time_step"] = 1.0
-    attributes[1]["temp"]["current_variance"] = current_variance
-    attributes[1]["mean"] = prediction_error
-    attributes[1]["precision"] = 2.0
-    attributes[1]["expected_precision"] = 1.0 / (
-        current_variance + jnp.exp(attributes[1]["tonic_volatility"])
-    )
-
-    precision_2, mean_2 = posterior_update_unbounded(
-        attributes=attributes, node_idx=2, edges=edges
-    )
-    precision_n, mean_n = posterior_update_unbounded_multiple_children(
-        attributes=attributes, node_idx=2, edges=edges
-    )
-    # identical equations, evaluated in a different order (float32)
-    assert jnp.isclose(precision_2, precision_n, rtol=1e-5)
-    assert jnp.isclose(mean_2, mean_n, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize("mean_field_updates", [False, True])
@@ -270,11 +237,15 @@ def test_two_children_track_the_variational_posterior(
         attributes, expected_mean, expected_precision, children
     )
 
-    precision, mean = posterior_update_unbounded_multiple_children(
+    precision, mean = posterior_update_unbounded(
         attributes=attributes, node_idx=4, edges=edges
     )
+    # the update the node received before both children were used
+    first_child_edges = (
+        edges[:4] + (edges[4]._replace(volatility_children=(2,)),) + edges[5:]
+    )
     first_child_precision, first_child_mean = posterior_update_unbounded(
-        attributes=attributes, node_idx=4, edges=edges
+        attributes=attributes, node_idx=4, edges=first_child_edges
     )
     kl = _kl_to_variational_posterior(
         expected_mean, expected_precision, children, float(mean), float(precision)
@@ -323,7 +294,7 @@ def test_positive_precision_over_a_grid_of_prediction_errors():
             alpha + jnp.exp(gamma + omega)
         )
 
-    precision, mean = posterior_update_unbounded_multiple_children(
+    precision, mean = posterior_update_unbounded(
         attributes=attributes, node_idx=4, edges=edges
     )
     assert precision.shape == gamma.shape

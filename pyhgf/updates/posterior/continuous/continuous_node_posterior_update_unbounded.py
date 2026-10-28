@@ -38,12 +38,10 @@ def continuous_node_posterior_update_unbounded(
 ) -> dict:
     """Update the posterior of a continuous node with unbounded quadratic approximation.
 
-    A node with a single volatility child and no value child uses the two-expansion
-    update of section 3.4 in [1]_ (:py:func:`posterior_update_unbounded`). A node with
-    several volatility children, or with value children as well, uses the
-    :math:`(n+1)`-expansion generalisation of section 3.6 in [1]_
-    (:py:func:`posterior_update_unbounded_multiple_children`), so that every child
-    contributes to the posterior.
+    The posterior is the :math:`(n+1)`-expansion update of section 3.6 in [1]_
+    (:py:func:`posterior_update_unbounded`), so that every volatility and value child
+    contributes to the posterior. For a single volatility child and no value child,
+    this is the two-expansion update of section 3.4 in [1]_.
 
     Parameters
     ----------
@@ -72,22 +70,12 @@ def continuous_node_posterior_update_unbounded(
        Robust volatility updates for Hierarchical Gaussian Filtering.
        arXiv:2605.00966. https://doi.org/10.48550/arXiv.2605.00966
     """
-    if (
-        len(edges[node_idx].volatility_children) == 1  # type: ignore
-        and edges[node_idx].value_children is None
-    ):
-        posterior_precision, posterior_mean = posterior_update_unbounded(
-            attributes=attributes, node_idx=node_idx, edges=edges
-        )
-    else:
-        posterior_precision, posterior_mean = (
-            posterior_update_unbounded_multiple_children(
-                attributes=attributes,
-                node_idx=node_idx,
-                edges=edges,
-                mean_field_updates=mean_field_updates,
-            )
-        )
+    posterior_precision, posterior_mean = posterior_update_unbounded(
+        attributes=attributes,
+        node_idx=node_idx,
+        edges=edges,
+        mean_field_updates=mean_field_updates,
+    )
 
     attributes[node_idx]["precision"] = jnp.minimum(
         posterior_precision, max_posterior_precision
@@ -97,199 +85,18 @@ def continuous_node_posterior_update_unbounded(
     return attributes
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
-def posterior_update_unbounded(
-    attributes: dict, node_idx: int, edges: Edges, **args
-) -> tuple[float, float]:
-    """Compute unbounded posterior for a continuous volatility-parent node.
-
-    Two-expansion update of section 3.4 in [1]_, for a node with a single volatility
-    child and no value child.
-
-    Parameters
-    ----------
-    attributes :
-        The attributes of the probabilistic nodes.
-    node_idx :
-        Pointer to the node that needs to be updated.
-    edges :
-        The edges of the probabilistic nodes.
-
-    Returns
-    -------
-    posterior_precision, posterior_mean :
-        Updated precision and mean of the node.
-
-    References
-    ----------
-    .. [1] Mathys, C., Legrand, N., Waade, P. T., Mikuš, N., & Weber, L. A. (2026).
-       Robust volatility updates for Hierarchical Gaussian Filtering.
-       arXiv:2605.00966. https://doi.org/10.48550/arXiv.2605.00966
-    """
-    volatility_child_idx = edges[node_idx].volatility_children[0]  # type: ignore
-    time_step = attributes[-1]["time_step"]
-
-    volatility_coupling = attributes[node_idx]["volatility_coupling_children"][0]
-    tonic_volatility = attributes[volatility_child_idx]["tonic_volatility"]
-
-    previous_variance = jnp.maximum(
-        attributes[volatility_child_idx]["temp"]["current_variance"], 1e-128
-    )  # carried variance λ²/π the child used in its prediction.
-    be_aux = (1.0 / attributes[volatility_child_idx]["precision"]) + (
-        attributes[volatility_child_idx]["mean"]
-        - attributes[volatility_child_idx]["expected_mean"]
-    ) ** 2
-
-    expected_mean = attributes[node_idx]["expected_mean"]
-    expected_precision = attributes[node_idx]["expected_precision"]
-
-    # All quantities are kept in log-space whenever they would otherwise pass
-    # through ``exp`` of a potentially large number. Forming ``v = exp(γ)``
-    # explicitly is correct in the forward pass (downstream uses are
-    # saturation-stable, e.g. ``1/(1 + α/v) → 1`` as ``v → ∞``) but corrupts
-    # the backward pass: the local partial of the saturating expression is
-    # ``0`` while ``d v / d γ = exp(γ) = ∞``, and ``0 · ∞ = NaN``. We rewrite
-    # every such occurrence using ``sigmoid``/``logaddexp`` so neither the
-    # forward nor the backward ever materialises ``inf``.
-    log_time_step = jnp.log(time_step)
-    log_previous_variance = jnp.log(previous_variance)
-
-    # Canonical exponent at prediction: γ = log(time_step) + volatility_coupling*expected_mean + tonic_volatility
-    gamma_c = log_time_step + volatility_coupling * expected_mean + tonic_volatility
-
-    # w_jm1 = 1/(1 + previous_variance/exp(γ)) = sigmoid(γ − log α). Matches the original
-    # ``1/(1 + previous_variance/v_jm1)`` exactly for every finite γ, and stays
-    # gradient-safe when γ → ±∞.
-    w_jm1 = sigmoid(gamma_c - log_previous_variance)
-
-    # Volatility prediction error: da_jm1 = pihat_jm1 * be_aux - 1, with
-    # pihat_jm1 = child's expected_precision (set in the prediction step at
-    # mu_prev_j).
-    da_jm1 = attributes[volatility_child_idx]["expected_precision"] * be_aux - 1.0
-
-    # ----------------------------------------------------------------------------------
-    # Expansion 1: quadratic at the prediction (prior mean)
-    # ----------------------------------------------------------------------------------
-    pi1 = expected_precision + 0.5 * volatility_coupling**2 * w_jm1 * (1.0 - w_jm1)
-    mu1 = expected_mean + (volatility_coupling * w_jm1 / (2.0 * pi1)) * da_jm1
-
-    # ----------------------------------------------------------------------------------
-    # Expansion 2: quadratic at the Lambert W0 approximate mode
-    # ----------------------------------------------------------------------------------
-    pihat_y = expected_precision / volatility_coupling**2
-
-    # Compute W_arg in log-space and cap at log(float_max) — matches MATLAB's
-    # "W_arg = exp(min(log_W_arg, log(realmax)))".
-    log_W_arg = jnp.log(be_aux) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
-    log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
-    W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
-    v_W = lambert_w0(W_arg)
-    y_star = gamma_c + v_W - 0.5 / pihat_y
-    x_star = (y_star - log_time_step - tonic_volatility) / volatility_coupling
-
-    # Log-space form of s2, w2, da2 — equivalent to the original
-    #   s2 = time_step * exp(volatility_coupling*x_star + tonic_volatility)
-    #   w2 = 1 / (1 + previous_variance / s2)
-    #   da2 = be_aux / (previous_variance + s2) - 1
-    # but without ever materialising ``s2 = inf`` in the forward pass, which
-    # would inject NaN gradients via 0·∞.
-    log_s2 = log_time_step + volatility_coupling * x_star + tonic_volatility
-    log_denom_s = jnp.logaddexp(
-        log_previous_variance, log_s2
-    )  # = log(previous_variance + s2)
-    w2 = sigmoid(log_s2 - log_previous_variance)
-    da2 = be_aux * jnp.exp(-log_denom_s) - 1.0
-
-    pi2_full = expected_precision + 0.5 * volatility_coupling**2 * w2 * (
-        w2 + (2.0 * w2 - 1.0) * da2
-    )
-    pi2_safe = jnp.where(
-        pi2_full <= 0.0,
-        expected_precision + 0.5 * volatility_coupling**2 * w2 * (1.0 - w2),
-        pi2_full,
-    )
-    mu2_safe = (
-        x_star
-        + (
-            0.5 * volatility_coupling * w2 * da2
-            - expected_precision * (x_star - expected_mean)
-        )
-        / pi2_safe
-    )
-
-    # Fall back to Expansion 1 if Expansion 2 yields non-finite results —
-    # matches MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1".
-    #
-    # Double-where masking: replace any non-finite ``pi2_safe`` / ``mu2_safe``
-    # with safe constants *before* they enter the outer ``where``. The bare
-    # form ``jnp.where(c, pi2_safe, pi1)`` is correct in the forward pass but
-    # poisons the backward pass: ``where``'s VJP routes a zero cotangent into
-    # the masked-out branch, and ``0 * NaN = NaN`` in IEEE-754 — so a single
-    # non-finite intermediate at any scan step turns the whole gradient into
-    # NaN, which forces NUTS to reject the trajectory and adapt the step size
-    # downward, blowing up the number of leapfrog evaluations per sample.
-    exp2_finite = jnp.isfinite(pi2_safe) & jnp.isfinite(mu2_safe)
-    pi2_safe_for_grad = jnp.where(exp2_finite, pi2_safe, 1.0)
-    mu2_safe_for_grad = jnp.where(exp2_finite, mu2_safe, 0.0)
-    pi2 = jnp.where(exp2_finite, pi2_safe_for_grad, pi1)
-    mu2 = jnp.where(exp2_finite, mu2_safe_for_grad, mu1)
-
-    # ----------------------------------------------------------------------------------
-    # Variational energy-based softmax blend (direct form, matches MATLAB).
-    #
-    # The original form is
-    #     ey  = time_step * exp(volatility_coupling*mu + tonic_volatility)
-    #     I   = -0.5 * log(previous_variance + ey) - 0.5 * be_aux / (previous_variance + ey) - ...
-    # which materialises ``ey = inf`` for large ``volatility_coupling*mu + tonic_volatility`` and then
-    # injects 0·∞ NaNs in the backward pass even though the forward saturates
-    # cleanly. The log-space rewrite below is mathematically identical for
-    # every finite input and stays gradient-safe at the saturation limits:
-    # ``logaddexp`` and ``exp(-positive)`` are both bounded forward and
-    # backward.
-    # ----------------------------------------------------------------------------------
-    log_ey1 = log_time_step + volatility_coupling * mu1 + tonic_volatility
-    log_denom_1 = jnp.logaddexp(
-        log_previous_variance, log_ey1
-    )  # = log(previous_variance + ey1)
-    I1 = (
-        -0.5 * log_denom_1
-        - 0.5 * be_aux * jnp.exp(-log_denom_1)
-        - 0.5 * expected_precision * (mu1 - expected_mean) ** 2
-    )
-
-    log_ey2 = log_time_step + volatility_coupling * mu2 + tonic_volatility
-    log_denom_2 = jnp.logaddexp(log_previous_variance, log_ey2)
-    I2 = (
-        -0.5 * log_denom_2
-        - 0.5 * be_aux * jnp.exp(-log_denom_2)
-        - 0.5 * expected_precision * (mu2 - expected_mean) ** 2
-    )
-
-    # Stable sigmoid matches b = 1/(1 + exp(I1 - I2)) without NaN at ±∞.
-    b = sigmoid(I2 - I1)
-
-    # ----------------------------------------------------------------------------------
-    # Gaussian mixture moment matching
-    # ----------------------------------------------------------------------------------
-    posterior_mean = (1.0 - b) * mu1 + b * mu2
-    sig2 = (1.0 - b) / pi1 + b / pi2 + b * (1.0 - b) * (mu1 - mu2) ** 2
-    posterior_precision = 1.0 / sig2
-
-    return posterior_precision, posterior_mean
-
-
 @partial(jit, static_argnames=("edges", "node_idx", "mean_field_updates"))
-def posterior_update_unbounded_multiple_children(
+def posterior_update_unbounded(
     attributes: dict,
     node_idx: int,
     edges: Edges,
     mean_field_updates: bool = False,
     **args,
 ) -> tuple[Array, Array]:
-    r"""Compute the unbounded posterior of a node with several children.
+    r"""Compute unbounded posterior for a continuous volatility-parent node.
 
-    Generalisation of the unbounded update to several volatility children and to
-    simultaneous value and volatility children (section 3.6 in [1]_). With :math:`n`
+    :math:`(n+1)`-expansion update of section 3.6 in [1]_, for a node with one or
+    several volatility children and, optionally, value children. With :math:`n`
     volatility children :math:`a_i`, coupling strengths :math:`\kappa_i`, carried
     variances :math:`\alpha_i`, total posterior uncertainties
     :math:`\beta_i = 1/\pi_{a_i} + (\mu_{a_i} - \hat{\mu}_{a_i})^2` and tonic
@@ -306,8 +113,8 @@ def posterior_update_unbounded_multiple_children(
 
     :math:`(\tilde{\pi}, \tilde{\mu})` is the prediction :math:`(\hat{\pi}, \hat{\mu})`
     of the node or, when the node also has value children, the effective prior that
-    absorbs the value-coupling terms. As in :py:func:`posterior_update_unbounded`, the
-    other volatility parents of a child are not included in :math:`\Omega_i`.
+    absorbs the value-coupling terms. The other volatility parents of a child are not
+    included in :math:`\Omega_i`.
 
     1. A first expansion at the prediction :math:`\hat{\mu}` keeps only the concave part
        of :math:`I` for the precision (eqs. 52-53 in [1]_), which is therefore positive:
@@ -334,7 +141,7 @@ def posterior_update_unbounded_multiple_children(
        this mixture (eqs. 58-60 in [1]_).
 
     For a single volatility child and no value child, this reduces to the two-expansion
-    update of :py:func:`posterior_update_unbounded`.
+    update of section 3.4 in [1]_.
 
     Parameters
     ----------
@@ -371,7 +178,7 @@ def posterior_update_unbounded_multiple_children(
         attributes, edges, node_idx, mean_field_updates
     )
 
-    # Per-child quantities, computed as in ``posterior_update_unbounded``.
+    # Per-child quantities.
     couplings, tonic_volatilities, log_previous_variances = [], [], []
     be_auxs, volatility_prediction_errors = [], []
     for position, volatility_child_idx in enumerate(volatility_children_idxs):  # type: ignore
@@ -396,6 +203,10 @@ def posterior_update_unbounded_multiple_children(
             attributes[volatility_child_idx]["expected_precision"] * be_aux - 1.0
         )
 
+    # Ω_i(x) is only ever used in log-space (``sigmoid``/``logaddexp``). Forming
+    # Ω_i(x) = exp(...) explicitly is correct in the forward pass, but once it
+    # overflows the backward pass multiplies a zero local partial by an infinite
+    # dΩ/dx and returns NaN.
     def log_volatility(x, i):
         """Log of the predicted volatility Ω_i(x) of the child ``i``."""
         return log_time_step + couplings[i] * x + tonic_volatilities[i]
@@ -428,6 +239,8 @@ def posterior_update_unbounded_multiple_children(
     for i in range(n_children):
         pihat_y = prior_precision / couplings[i] ** 2
         gamma_c = log_time_step + couplings[i] * prior_mean + tonic_volatilities[i]
+        # W_arg in log-space, capped at log(float max) as in the MATLAB reference:
+        # "W_arg = exp(min(log_W_arg, log(realmax)))"
         log_W_arg = (
             jnp.log(be_auxs[i]) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
         )
@@ -460,8 +273,9 @@ def posterior_update_unbounded_multiple_children(
         )
         mean_2 = x_star + gradient / precision_2
 
-        # Fall back to expansion 1 if this expansion is not finite (same double-where
-        # masking as in ``posterior_update_unbounded``, to keep gradients finite).
+        # Fall back to expansion 1 if this expansion is not finite, as in the MATLAB
+        # reference: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1"
+        # (double-where masking).
         is_finite = jnp.isfinite(precision_2) & jnp.isfinite(mean_2)
         precision_2 = jnp.where(is_finite, precision_2, 1.0)
         mean_2 = jnp.where(is_finite, mean_2, 0.0)

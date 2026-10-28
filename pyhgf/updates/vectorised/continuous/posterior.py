@@ -452,7 +452,7 @@ def vectorised_continuous_posterior_update_unbounded(
     coupled to exactly one child node. The layer must have no value child (the
     vectorised builder rejects such a topology; the nodalised update implements
     the multi-child extension in
-    :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded_multiple_children`).
+    :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded`).
 
     Parameters
     ----------
