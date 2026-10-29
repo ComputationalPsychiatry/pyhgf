@@ -54,6 +54,218 @@ def test_add_edges():
     )
 
 
+@pytest.mark.parametrize("child_kind", ["binary-state", "continuous-state"])
+@pytest.mark.parametrize(
+    "build, parent_idx",
+    [
+        pytest.param(
+            lambda kind: (
+                Network()
+                .add_nodes(kind=kind, n_nodes=2)
+                .add_nodes(value_children=0)
+                .add_edges(parent_idxs=2, children_idxs=1)
+            ),
+            2,
+            id="add_edges",
+        ),
+        pytest.param(
+            lambda kind: (
+                Network()
+                .add_nodes(kind=kind, n_nodes=2)
+                .add_nodes()
+                .add_edges(parent_idxs=2, children_idxs=[0, 1])
+            ),
+            2,
+            id="add_edges-list",
+        ),
+        pytest.param(
+            lambda kind: (
+                Network()
+                .add_nodes(kind=kind)
+                .add_nodes(value_children=0)
+                .add_nodes(kind=kind, value_parents=1)
+            ),
+            1,
+            id="value_parents-one-at-a-time",
+        ),
+        pytest.param(
+            lambda kind: (
+                Network().add_nodes().add_nodes(kind=kind, n_nodes=2, value_parents=0)
+            ),
+            0,
+            id="value_parents-at-once",
+        ),
+    ],
+)
+def test_add_edges_value_children_reach_parent_updates(build, parent_idx, child_kind):
+    """Test that value children added after the first one update their parent.
+
+    The posterior updates of a parent iterate over ``zip(value_children,
+    value_coupling_children, coupling_fn)``: if ``coupling_fn`` or
+    ``value_coupling_children`` is shorter than ``value_children``, the last children
+    are silently dropped from the update, and ``predict_mean`` raises an IndexError for
+    a continuous child whose position is beyond the end of ``coupling_fn``. Every
+    construction path must give the same parent as ``value_children=[0, 1]``.
+    """
+    rng = np.random.default_rng(0)
+    if child_kind == "binary-state":
+        u = rng.binomial(1, [0.2, 0.8], size=(100, 2)).astype(float)
+    else:
+        u = rng.normal(size=(100, 2))
+
+    reference = (
+        Network().add_nodes(kind=child_kind, n_nodes=2).add_nodes(value_children=[0, 1])
+    )
+    reference.input_data(input_data=u)
+
+    network = build(child_kind)
+    assert len(network.edges[parent_idx].coupling_fn) == 2
+    assert network.attributes[parent_idx]["value_coupling_children"].shape == (2,)
+    network.input_data(input_data=u)
+    assert jnp.allclose(
+        network.node_trajectories[parent_idx]["mean"],
+        reference.node_trajectories[2]["mean"],
+    )
+
+
+def test_add_edges_coupling_fn():
+    """Test that the coupling functions passed to add_edges are used."""
+    rng = np.random.default_rng(0)
+    u_continuous = rng.normal(size=(100,))
+
+    # first child of a parent created without children
+    network = (
+        Network()
+        .add_nodes()
+        .add_nodes()
+        .add_edges(parent_idxs=1, children_idxs=0, coupling_fn=(jnp.tanh,))
+    )
+    reference = (
+        Network().add_nodes().add_nodes(value_children=0, coupling_fn=(jnp.tanh,))
+    )
+    assert network.edges[1].coupling_fn == (jnp.tanh,)
+    network.input_data(input_data=u_continuous)
+    reference.input_data(input_data=u_continuous)
+    assert jnp.allclose(
+        network.node_trajectories[1]["mean"], reference.node_trajectories[1]["mean"]
+    )
+
+    # second child, then one function per child for a list of children
+    network = Network().add_nodes(n_nodes=2).add_nodes(value_children=0)
+    network.add_edges(parent_idxs=2, children_idxs=1, coupling_fn=(jnp.tanh,))
+    assert network.edges[2].coupling_fn == (None, jnp.tanh)
+    network = (
+        Network()
+        .add_nodes(n_nodes=3)
+        .add_edges(parent_idxs=2, children_idxs=[0, 1], coupling_fn=(None, jnp.tanh))
+    )
+    assert network.edges[2].coupling_fn == (None, jnp.tanh)
+
+    # a function declared with add_nodes is kept when add_edges does not get one
+    network = Network().add_nodes(coupling_fn=(jnp.tanh,)).add_nodes(value_parents=0)
+    assert network.edges[0].coupling_fn == (jnp.tanh,)
+    network.add_nodes(value_parents=0)
+    assert network.edges[0].coupling_fn == (jnp.tanh, None)
+
+    # constant-state parents are always linearly coupled
+    network = Network().add_nodes().add_nodes(kind="constant-state")
+    network.add_edges(parent_idxs=1, children_idxs=0, coupling_fn=(jnp.tanh,))
+    assert network.edges[1].coupling_fn == (None,)
+
+    # the number of functions must match the number of children
+    with raises(ValueError):
+        Network().add_nodes(n_nodes=3).add_edges(
+            parent_idxs=2, children_idxs=[0, 1], coupling_fn=(None, None, None)
+        )
+
+
+@pytest.mark.parametrize("kind", ["value", "volatility"])
+def test_add_edges_coupling_strengths(kind):
+    """Test that each edge stores one and the same strength at both ends.
+
+    The prediction of a child reads the strength of an edge in the child's
+    ``*_coupling_parents`` and the update of the parent in the parent's
+    ``*_coupling_children``: both must hold the strength of that edge.
+    """
+    # two parents, one child
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind=kind, parent_idxs=[1, 2], children_idxs=0, coupling_strengths=[0.5, 2.0]
+    )
+    assert jnp.array_equal(
+        network.attributes[0][f"{kind}_coupling_parents"], jnp.array([0.5, 2.0])
+    )
+    assert jnp.array_equal(
+        network.attributes[1][f"{kind}_coupling_children"], jnp.array([0.5])
+    )
+    assert jnp.array_equal(
+        network.attributes[2][f"{kind}_coupling_children"], jnp.array([2.0])
+    )
+
+    # one parent, two children
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind=kind, parent_idxs=2, children_idxs=[0, 1], coupling_strengths=[0.5, 2.0]
+    )
+    assert jnp.array_equal(
+        network.attributes[2][f"{kind}_coupling_children"], jnp.array([0.5, 2.0])
+    )
+    assert jnp.array_equal(
+        network.attributes[0][f"{kind}_coupling_parents"], jnp.array([0.5])
+    )
+    assert jnp.array_equal(
+        network.attributes[1][f"{kind}_coupling_parents"], jnp.array([2.0])
+    )
+
+    # a single strength is shared by all the new edges
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(kind=kind, parent_idxs=[1, 2], children_idxs=0)
+    assert jnp.array_equal(
+        network.attributes[0][f"{kind}_coupling_parents"], jnp.array([1.0, 1.0])
+    )
+
+    # integer, NumPy and JAX strengths are stored as floating-point arrays
+    for strengths in [[1, 2], np.float32(0.5), jnp.array(0.5), jnp.array([1.0, 2.0])]:
+        network = Network().add_nodes(n_nodes=3)
+        network.add_edges(
+            kind=kind, parent_idxs=2, children_idxs=[0, 1], coupling_strengths=strengths
+        )
+        stored = network.attributes[2][f"{kind}_coupling_children"]
+        assert stored.shape == (2,)
+        assert jnp.issubdtype(stored.dtype, jnp.floating)
+
+    # same beliefs as when each edge is declared with add_nodes
+    u = np.random.default_rng(0).normal(size=(100,))
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind=kind, parent_idxs=[1, 2], children_idxs=0, coupling_strengths=[0.5, 2.0]
+    )
+    reference = (
+        Network()
+        .add_nodes()
+        .add_nodes(**{f"{kind}_children": ([0], [0.5])})
+        .add_nodes(**{f"{kind}_children": ([0], [2.0])})
+    )
+    network.input_data(input_data=u)
+    reference.input_data(input_data=u)
+    for idx in range(3):
+        for key in ["mean", "precision"]:
+            assert jnp.allclose(
+                network.node_trajectories[idx][key],
+                reference.node_trajectories[idx][key],
+            ), (idx, key)
+
+    # one strength per child or per parent only, otherwise the edges are ambiguous
+    for parent_idxs, children_idxs in [(2, 0), ([2, 3], [0, 1])]:
+        with raises(ValueError):
+            Network().add_nodes(n_nodes=4).add_edges(
+                kind=kind,
+                parent_idxs=parent_idxs,
+                children_idxs=children_idxs,
+                coupling_strengths=[0.5, 2.0],
+            )
+
+
 def test_find_branch():
     """Test the find_branch function."""
     edges = (
