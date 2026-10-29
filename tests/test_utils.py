@@ -54,7 +54,50 @@ def test_add_edges():
     )
 
 
-def test_add_edges_value_children_reach_parent_updates():
+@pytest.mark.parametrize("child_kind", ["binary-state", "continuous-state"])
+@pytest.mark.parametrize(
+    "build, parent_idx",
+    [
+        pytest.param(
+            lambda kind: (
+                Network()
+                .add_nodes(kind=kind, n_nodes=2)
+                .add_nodes(value_children=0)
+                .add_edges(parent_idxs=2, children_idxs=1)
+            ),
+            2,
+            id="add_edges",
+        ),
+        pytest.param(
+            lambda kind: (
+                Network()
+                .add_nodes(kind=kind, n_nodes=2)
+                .add_nodes()
+                .add_edges(parent_idxs=2, children_idxs=[0, 1])
+            ),
+            2,
+            id="add_edges-list",
+        ),
+        pytest.param(
+            lambda kind: (
+                Network()
+                .add_nodes(kind=kind)
+                .add_nodes(value_children=0)
+                .add_nodes(kind=kind, value_parents=1)
+            ),
+            1,
+            id="value_parents-one-at-a-time",
+        ),
+        pytest.param(
+            lambda kind: (
+                Network().add_nodes().add_nodes(kind=kind, n_nodes=2, value_parents=0)
+            ),
+            0,
+            id="value_parents-at-once",
+        ),
+    ],
+)
+def test_add_edges_value_children_reach_parent_updates(build, parent_idx, child_kind):
     """Test that value children added after the first one update their parent.
 
     The posterior updates of a parent iterate over ``zip(value_children,
@@ -65,69 +108,23 @@ def test_add_edges_value_children_reach_parent_updates():
     construction path must give the same parent as ``value_children=[0, 1]``.
     """
     rng = np.random.default_rng(0)
-    u_binary = rng.binomial(1, [0.2, 0.8], size=(100, 2)).astype(float)
-    u_continuous = rng.normal(size=(100, 2))
+    if child_kind == "binary-state":
+        u = rng.binomial(1, [0.2, 0.8], size=(100, 2)).astype(float)
+    else:
+        u = rng.normal(size=(100, 2))
 
-    # two binary children
     reference = (
-        Network()
-        .add_nodes(kind="binary-state", n_nodes=2)
-        .add_nodes(value_children=[0, 1])
+        Network().add_nodes(kind=child_kind, n_nodes=2).add_nodes(value_children=[0, 1])
     )
-    reference.input_data(input_data=u_binary)
+    reference.input_data(input_data=u)
 
-    networks = {
-        "Network.add_edges": (
-            Network()
-            .add_nodes(kind="binary-state", n_nodes=2)
-            .add_nodes(value_children=0)
-            .add_edges(parent_idxs=2, children_idxs=1),
-            2,
-        ),
-        "add_nodes(value_parents=...), one child at a time": (
-            Network()
-            .add_nodes(kind="binary-state")
-            .add_nodes(value_children=0)
-            .add_nodes(kind="binary-state", value_parents=1),
-            1,
-        ),
-        "add_nodes(value_parents=...), two children at once": (
-            Network()
-            .add_nodes()
-            .add_nodes(kind="binary-state", n_nodes=2, value_parents=0),
-            0,
-        ),
-        "Network.add_edges with a list of children": (
-            Network()
-            .add_nodes(kind="binary-state", n_nodes=2)
-            .add_nodes()
-            .add_edges(parent_idxs=2, children_idxs=[0, 1]),
-            2,
-        ),
-    }
-    for name, (network, parent_idx) in networks.items():
-        assert len(network.edges[parent_idx].coupling_fn) == 2, name
-        assert network.attributes[parent_idx]["value_coupling_children"].shape == (
-            2,
-        ), name
-        network.input_data(input_data=u_binary)
-        assert jnp.allclose(
-            network.node_trajectories[parent_idx]["mean"],
-            reference.node_trajectories[2]["mean"],
-        ), name
-
-    # two continuous children
-    reference = Network().add_nodes(n_nodes=2).add_nodes(value_children=[0, 1])
-    reference.input_data(input_data=u_continuous)
-    network = (
-        Network()
-        .add_nodes(n_nodes=2)
-        .add_nodes(value_children=0)
-        .add_edges(parent_idxs=2, children_idxs=1)
-    )
-    network.input_data(input_data=u_continuous)
+    network = build(child_kind)
+    assert len(network.edges[parent_idx].coupling_fn) == 2
+    assert network.attributes[parent_idx]["value_coupling_children"].shape == (2,)
+    network.input_data(input_data=u)
     assert jnp.allclose(
-        network.node_trajectories[2]["mean"], reference.node_trajectories[2]["mean"]
+        network.node_trajectories[parent_idx]["mean"],
+        reference.node_trajectories[2]["mean"],
     )
 
 
@@ -170,6 +167,11 @@ def test_add_edges_coupling_fn():
     network.add_nodes(value_parents=0)
     assert network.edges[0].coupling_fn == (jnp.tanh, None)
 
+    # constant-state parents are always linearly coupled
+    network = Network().add_nodes().add_nodes(kind="constant-state")
+    network.add_edges(parent_idxs=1, children_idxs=0, coupling_fn=(jnp.tanh,))
+    assert network.edges[1].coupling_fn == (None,)
+
     # the number of functions must match the number of children
     with raises(ValueError):
         Network().add_nodes(n_nodes=3).add_edges(
@@ -177,85 +179,87 @@ def test_add_edges_coupling_fn():
         )
 
 
-def test_add_edges_coupling_strengths():
+@pytest.mark.parametrize("kind", ["value", "volatility"])
+def test_add_edges_coupling_strengths(kind):
     """Test that each edge stores one and the same strength at both ends.
 
     The prediction of a child reads the strength of an edge in the child's
     ``*_coupling_parents`` and the update of the parent in the parent's
     ``*_coupling_children``: both must hold the strength of that edge.
     """
-    for kind in ["value", "volatility"]:
-        # two parents, one child
+    # two parents, one child
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind=kind, parent_idxs=[1, 2], children_idxs=0, coupling_strengths=[0.5, 2.0]
+    )
+    assert jnp.array_equal(
+        network.attributes[0][f"{kind}_coupling_parents"], jnp.array([0.5, 2.0])
+    )
+    assert jnp.array_equal(
+        network.attributes[1][f"{kind}_coupling_children"], jnp.array([0.5])
+    )
+    assert jnp.array_equal(
+        network.attributes[2][f"{kind}_coupling_children"], jnp.array([2.0])
+    )
+
+    # one parent, two children
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind=kind, parent_idxs=2, children_idxs=[0, 1], coupling_strengths=[0.5, 2.0]
+    )
+    assert jnp.array_equal(
+        network.attributes[2][f"{kind}_coupling_children"], jnp.array([0.5, 2.0])
+    )
+    assert jnp.array_equal(
+        network.attributes[0][f"{kind}_coupling_parents"], jnp.array([0.5])
+    )
+    assert jnp.array_equal(
+        network.attributes[1][f"{kind}_coupling_parents"], jnp.array([2.0])
+    )
+
+    # a single strength is shared by all the new edges
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(kind=kind, parent_idxs=[1, 2], children_idxs=0)
+    assert jnp.array_equal(
+        network.attributes[0][f"{kind}_coupling_parents"], jnp.array([1.0, 1.0])
+    )
+
+    # integer, NumPy and JAX strengths are stored as floating-point arrays
+    for strengths in [[1, 2], np.float32(0.5), jnp.array(0.5), jnp.array([1.0, 2.0])]:
         network = Network().add_nodes(n_nodes=3)
         network.add_edges(
-            kind=kind,
-            parent_idxs=[1, 2],
-            children_idxs=0,
-            coupling_strengths=[0.5, 2.0],
+            kind=kind, parent_idxs=2, children_idxs=[0, 1], coupling_strengths=strengths
         )
-        assert jnp.array_equal(
-            network.attributes[0][f"{kind}_coupling_parents"], jnp.array([0.5, 2.0])
-        )
-        assert jnp.array_equal(
-            network.attributes[1][f"{kind}_coupling_children"], jnp.array([0.5])
-        )
-        assert jnp.array_equal(
-            network.attributes[2][f"{kind}_coupling_children"], jnp.array([2.0])
-        )
+        stored = network.attributes[2][f"{kind}_coupling_children"]
+        assert stored.shape == (2,)
+        assert jnp.issubdtype(stored.dtype, jnp.floating)
 
-        # one parent, two children
-        network = Network().add_nodes(n_nodes=3)
-        network.add_edges(
-            kind=kind,
-            parent_idxs=2,
-            children_idxs=[0, 1],
-            coupling_strengths=[0.5, 2.0],
-        )
-        assert jnp.array_equal(
-            network.attributes[2][f"{kind}_coupling_children"], jnp.array([0.5, 2.0])
-        )
-        assert jnp.array_equal(
-            network.attributes[0][f"{kind}_coupling_parents"], jnp.array([0.5])
-        )
-        assert jnp.array_equal(
-            network.attributes[1][f"{kind}_coupling_parents"], jnp.array([2.0])
-        )
-
-        # a single strength is shared by all the new edges
-        network = Network().add_nodes(n_nodes=3)
-        network.add_edges(kind=kind, parent_idxs=[1, 2], children_idxs=0)
-        assert jnp.array_equal(
-            network.attributes[0][f"{kind}_coupling_parents"], jnp.array([1.0, 1.0])
-        )
-
-        # same beliefs as when each edge is declared with add_nodes
-        u = np.random.default_rng(0).normal(size=(100,))
-        network = Network().add_nodes(n_nodes=3)
-        network.add_edges(
-            kind=kind,
-            parent_idxs=[1, 2],
-            children_idxs=0,
-            coupling_strengths=[0.5, 2.0],
-        )
-        reference = (
-            Network()
-            .add_nodes()
-            .add_nodes(**{f"{kind}_children": ([0], [0.5])})
-            .add_nodes(**{f"{kind}_children": ([0], [2.0])})
-        )
-        network.input_data(input_data=u)
-        reference.input_data(input_data=u)
-        for idx in range(3):
-            for key in ["mean", "precision"]:
-                assert jnp.allclose(
-                    network.node_trajectories[idx][key],
-                    reference.node_trajectories[idx][key],
-                ), (kind, idx, key)
+    # same beliefs as when each edge is declared with add_nodes
+    u = np.random.default_rng(0).normal(size=(100,))
+    network = Network().add_nodes(n_nodes=3)
+    network.add_edges(
+        kind=kind, parent_idxs=[1, 2], children_idxs=0, coupling_strengths=[0.5, 2.0]
+    )
+    reference = (
+        Network()
+        .add_nodes()
+        .add_nodes(**{f"{kind}_children": ([0], [0.5])})
+        .add_nodes(**{f"{kind}_children": ([0], [2.0])})
+    )
+    network.input_data(input_data=u)
+    reference.input_data(input_data=u)
+    for idx in range(3):
+        for key in ["mean", "precision"]:
+            assert jnp.allclose(
+                network.node_trajectories[idx][key],
+                reference.node_trajectories[idx][key],
+            ), (idx, key)
 
     # one strength per child or per parent only, otherwise the edges are ambiguous
     for parent_idxs, children_idxs in [(2, 0), ([2, 3], [0, 1])]:
         with raises(ValueError):
             Network().add_nodes(n_nodes=4).add_edges(
+                kind=kind,
                 parent_idxs=parent_idxs,
                 children_idxs=children_idxs,
                 coupling_strengths=[0.5, 2.0],

@@ -681,39 +681,19 @@ def insert_nodes(
 
         # Update the edges of the parents and children accordingly
         # --------------------------------------------------------
-        if value_parents[0] is not None:
-            for idx, cpl in zip(value_parents[0], value_parents[1]):
+        # the coupling functions of the value children are already on the new node
+        for kind, (idxs, strengths), is_parent in [
+            ("value", value_parents, True),
+            ("value", value_children, False),
+            ("volatility", volatility_children, False),
+            ("volatility", volatility_parents, True),
+        ]:
+            if idxs is not None:
                 network.add_edges(
-                    kind="value",
-                    parent_idxs=idx,
-                    children_idxs=node_idx,
-                    coupling_strengths=cpl,  # type: ignore
-                )
-        if value_children[0] is not None:
-            # one edge at a time, each with its own coupling function
-            for idx, cpl, fn in zip(value_children[0], value_children[1], coupling_fn):
-                network.add_edges(
-                    kind="value",
-                    parent_idxs=node_idx,
-                    children_idxs=idx,
-                    coupling_strengths=cpl,  # type: ignore
-                    coupling_fn=(fn,),
-                )
-        if volatility_children[0] is not None:
-            for idx, cpl in zip(volatility_children[0], volatility_children[1]):
-                network.add_edges(
-                    kind="volatility",
-                    parent_idxs=node_idx,
-                    children_idxs=idx,
-                    coupling_strengths=cpl,  # type: ignore
-                )
-        if volatility_parents[0] is not None:
-            for idx, cpl in zip(volatility_parents[0], volatility_parents[1]):
-                network.add_edges(
-                    kind="volatility",
-                    parent_idxs=idx,
-                    children_idxs=node_idx,
-                    coupling_strengths=cpl,  # type: ignore
+                    kind=kind,
+                    parent_idxs=idxs if is_parent else node_idx,
+                    children_idxs=node_idx if is_parent else idxs,
+                    coupling_strengths=strengths,
                 )
 
         network.n_nodes += 1
