@@ -1,5 +1,8 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+from copy import deepcopy
+
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -9,8 +12,14 @@ from pytest import raises
 from pyhgf import load_data
 from pyhgf.model import Network
 from pyhgf.typing import AdjacencyLists, UpdateSequence
-from pyhgf.utils import add_parent, list_branches, remove_node, sample
+from pyhgf.utils import add_edges, add_parent, list_branches, remove_node, sample
 from pyhgf.utils.beliefs_propagation import beliefs_propagation
+
+
+def assert_attributes_equal(attributes: dict, original: dict):
+    """Assert that two sets of network attributes hold the same nodes and values."""
+    assert jax.tree.structure(attributes) == jax.tree.structure(original)
+    assert jax.tree.all(jax.tree.map(jnp.array_equal, attributes, original))
 
 
 def test_imports():
@@ -41,6 +50,11 @@ def test_add_edges():
     # expected error for invalid type
     with raises(Exception):
         network.add_edges(kind="error")
+
+    # the attributes of the network still match its edges
+    original = deepcopy(network.attributes)
+    add_edges(network.attributes, network.edges, parent_idxs=1, children_idxs=0)
+    assert_attributes_equal(network.attributes, original)
 
     # ensure the coupling function match with the number of children
     network = (
@@ -334,10 +348,14 @@ def test_add_parent():
         .add_nodes(value_children=3)
     )
     attributes, edges, _ = network.get_network()
+    original = deepcopy(attributes)
     new_attributes, new_edges = add_parent(attributes, edges, 1, "volatility", 1.0)
 
     assert len(new_attributes) == 8
     assert len(new_edges) == 7
+
+    # the attributes of the network still match its edges
+    assert_attributes_equal(network.attributes, original)
 
     new_attributes, new_edges = add_parent(attributes, edges, 1, "value", 1.0)
 
@@ -356,10 +374,14 @@ def test_remove_node():
     )
 
     attributes, edges, _ = network.get_network()
+    original = deepcopy(attributes)
     new_attributes, new_edges = remove_node(attributes, edges, 2)
 
     assert len(new_attributes) == 5
     assert len(new_edges) == 4
+
+    # the attributes of the network still match its edges
+    assert_attributes_equal(network.attributes, original)
 
 
 def test_remove_node_with_several_couplings():

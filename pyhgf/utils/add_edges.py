@@ -23,7 +23,7 @@ def add_edges(
     ``*_coupling_children`` attribute of the parent and the ``*_coupling_parents``
     attribute of the child). The parent's ``coupling_fn`` holds at least one entry per
     value child, so that ``coupling_fn[i]`` describes the edge to
-    ``value_children[i]``.
+    ``value_children[i]``. The attributes passed in are not changed.
 
     Parameters
     ----------
@@ -98,6 +98,8 @@ def add_edges(
                 "The number of coupling fn and value children do not match"
             )
 
+    # the attributes passed in (e.g. those of a Network) are left unchanged
+    attributes = dict(attributes)
     edges_as_list = list(edges)
 
     # update the parent nodes
@@ -106,11 +108,14 @@ def add_edges(
         node = edges_as_list[parent_idx]
         children = getattr(node, f"{kind}_children") or ()
         key = f"{kind}_coupling_children"
-        attributes[parent_idx][key] = (
-            jnp.concatenate([attributes[parent_idx][key], strengths[i]])
-            if children
-            else strengths[i]
-        )
+        attributes[parent_idx] = {
+            **attributes[parent_idx],
+            key: (
+                jnp.concatenate([attributes[parent_idx][key], strengths[i]])
+                if children
+                else strengths[i]
+            ),
+        }
         new_edges = {f"{kind}_children": children + children_idxs}
 
         if kind == "value":
@@ -134,11 +139,14 @@ def add_edges(
         node = edges_as_list[children_idx]
         parents = getattr(node, f"{kind}_parents") or ()
         key = f"{kind}_coupling_parents"
-        attributes[children_idx][key] = (
-            jnp.concatenate([attributes[children_idx][key], strengths[:, j]])
-            if parents
-            else strengths[:, j]
-        )
+        attributes[children_idx] = {
+            **attributes[children_idx],
+            key: (
+                jnp.concatenate([attributes[children_idx][key], strengths[:, j]])
+                if parents
+                else strengths[:, j]
+            ),
+        }
         edges_as_list[children_idx] = node._replace(**{
             f"{kind}_parents": parents + parent_idxs
         })
