@@ -9,6 +9,8 @@ def add_parent(
 ) -> tuple[dict, Edges]:
     r"""Add a new continuous-state parent node to the attributes and edges of a network.
 
+    The attributes passed in are not changed.
+
     Parameters
     ----------
     attributes :
@@ -33,7 +35,9 @@ def add_parent(
     # Get index for node to be added
     new_node_idx = len(edges)
 
-    # Add new node to attributes
+    # Add new node to a copy of the attributes, so that the attributes passed in (e.g.
+    # those of a Network) are left unchanged
+    attributes = dict(attributes)
     attributes[new_node_idx] = {
         "mean": mean,
         "expected_mean": mean,

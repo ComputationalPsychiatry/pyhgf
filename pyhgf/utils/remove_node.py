@@ -7,16 +7,21 @@ import jax.numpy as jnp
 from pyhgf.typing import AdjacencyLists, Edges
 
 
-def _keep_strengths(node_attributes: dict, key: str, keep: list[int]) -> None:
+def _keep_strengths(node_attributes: dict, key: str, keep: list[int]) -> dict:
     """Keep the coupling strengths of the edges at the positions in ``keep``.
 
     The strengths are stored as an array (or ``None``), so they are tested against
     ``None``: the truth value of an array is ambiguous for two entries or more, and
-    ``False`` for a single zero strength.
+    ``False`` for a single zero strength. The attributes of the node are copied, not
+    changed in place.
     """
     strengths = node_attributes.get(key)
-    if strengths is not None:
-        node_attributes[key] = jnp.array([strengths[i] for i in keep]) if keep else None
+    if strengths is None:
+        return node_attributes
+    return {
+        **node_attributes,
+        key: jnp.array([strengths[i] for i in keep]) if keep else None,
+    }
 
 
 def _remove_edges(
@@ -56,6 +61,8 @@ def _remove_edges(
     if isinstance(parent_idxs, int):
         parent_idxs = [parent_idxs]
 
+    # the attributes passed in (e.g. those of a Network) are left unchanged
+    attributes = dict(attributes)
     edges_as_list = list(edges)
 
     # Update parent nodes
@@ -67,7 +74,9 @@ def _remove_edges(
         if not children:
             continue
         keep = [i for i, child in enumerate(children) if child not in children_idxs]
-        _keep_strengths(attributes[parent_idx], f"{kind}_coupling_children", keep)
+        attributes[parent_idx] = _keep_strengths(
+            attributes[parent_idx], f"{kind}_coupling_children", keep
+        )
         new_edges = {f"{kind}_children": tuple(children[i] for i in keep) or None}
         if kind == "value":
             # coupling_fn[i] is the coupling function of the edge to value_children[i]
@@ -87,7 +96,9 @@ def _remove_edges(
         if not parents:
             continue
         keep = [i for i, parent in enumerate(parents) if parent not in parent_idxs]
-        _keep_strengths(attributes[child_idx], f"{kind}_coupling_parents", keep)
+        attributes[child_idx] = _keep_strengths(
+            attributes[child_idx], f"{kind}_coupling_parents", keep
+        )
         edges_as_list[child_idx] = node._replace(**{
             f"{kind}_parents": tuple(parents[i] for i in keep) or None
         })
@@ -100,6 +111,7 @@ def remove_node(attributes: dict, edges: Edges, index: int) -> tuple[dict, Edges
 
     This function removes a node from the network by deleting its parameters in the
     attributes and edges variables, and adjusts the indices of the remaining nodes.
+    The attributes passed in are not changed.
 
     Parameters
     ----------
@@ -163,9 +175,8 @@ def remove_node(attributes: dict, edges: Edges, index: int) -> tuple[dict, Edges
         )
         edges_as_list = list(edges)
 
-    # Now remove the node
+    # Now remove the node (its attributes are dropped when the indices are adjusted)
     edges_as_list.pop(index)
-    attributes.pop(index)
 
     # Create new edges list with adjusted indices
     new_edges = []
