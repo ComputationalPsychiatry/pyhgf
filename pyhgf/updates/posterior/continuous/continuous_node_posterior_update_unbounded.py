@@ -245,7 +245,7 @@ def posterior_update_unbounded(
         return energy
 
     # ----------------------------------------------------------------------------------
-    # Expansion 1: quadratic at the prediction, concave part only (eqs. 52-53)
+    # Expansion 1: quadratic at the prediction, concave part only
     # ----------------------------------------------------------------------------------
     precision_1 = prior_precision
     mean_shift_1 = prior_precision * (prior_mean - expected_mean)
@@ -260,7 +260,7 @@ def posterior_update_unbounded(
     mean_1 = expected_mean + mean_shift_1 / precision_1
 
     # ----------------------------------------------------------------------------------
-    # Expansions 2, ..., n+1: quadratic at each child's Lambert W0 mode (eqs. 54-56)
+    # Expansions 2, ..., n+1: quadratic at each child's Lambert W0 mode
     # ----------------------------------------------------------------------------------
     precisions, means, is_valid = [precision_1], [mean_1], []
     for i in range(n_children):
@@ -320,7 +320,7 @@ def posterior_update_unbounded(
         means.append(jnp.where(is_valid[-1], mean_2, mean_1))
 
     # ----------------------------------------------------------------------------------
-    # Softmax weights (eq. 57) and Gaussian mixture moment matching (eqs. 58-60)
+    # Softmax weights and Gaussian mixture moment matching
     # ----------------------------------------------------------------------------------
     means_array = jnp.stack(means)
     precisions_array = jnp.stack(precisions)

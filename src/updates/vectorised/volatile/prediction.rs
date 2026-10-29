@@ -62,8 +62,8 @@ pub fn layer_prediction(
         };
 
     // 2. Value level.
-    // Coupled parent activations (bias node = 1) and the per-parent Laplace
-    // variance factor g'(μ̂)² / π̃_parent, built together in one pass. The bias
+    // Coupled parent activations (bias node = 1) and the per-parent Taylor
+    // variance factor g'(μ̂)² / π̂_parent, built together in one pass. The bias
     // parent has zero derivative and infinite precision.
     //
     // No time step, unlike the nodalised backend: this term propagates the parent's
@@ -118,7 +118,7 @@ pub fn layer_prediction(
         Array1::<Float>::zeros(n)
     };
 
-    // Laplace value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).
+    // Taylor value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).
     // Without `feedforward_uncertainty` the value parents do not propagate their
     // uncertainty, so the term is zero and the marginal predicted precision collapses
     // onto the conditional one: every layer then behaves as the top layer already does.
@@ -134,7 +134,7 @@ pub fn layer_prediction(
         }
     }
 
-    // Conditional (π̂) and marginal (π̃) predicted precisions, written in place.
+    // Conditional (π̄) and marginal (π̂) predicted precisions, written in place.
     if is_input_layer || !predict_precision {
         // Input/leaf override, and the same treatment when precision prediction
         // is switched off network-wide: no random walk between observations, no
@@ -145,17 +145,17 @@ pub fn layer_prediction(
         child.expected_precision.assign(&prior);
         child.effective_precision.fill(0.0);
     } else {
-        // π̂ = 1/(1/π + Ω)
+        // π̄ = 1/(1/π + Ω)
         ndarray::Zip::from(&mut child.conditional_expected_precision)
             .and(&child.precision)
             .and(&predicted_vol)
             .for_each(|c, &p, &pv| *c = 1.0 / (1.0 / p + pv));
-        // π̃ = 1/(1/π̂ + value_coupling_variance)
+        // π̂ = 1/(1/π̄ + value_coupling_variance)
         ndarray::Zip::from(&mut child.expected_precision)
             .and(&child.conditional_expected_precision)
             .and(&value_coupling_variance)
             .for_each(|e, &c, &v| *e = 1.0 / (1.0 / c + v));
-        // γ = Ω · π̃
+        // γ = Ω · π̂
         ndarray::Zip::from(&mut child.effective_precision)
             .and(&predicted_vol)
             .and(&child.expected_precision)

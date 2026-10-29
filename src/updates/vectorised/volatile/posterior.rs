@@ -36,11 +36,10 @@ pub fn layer_posterior_update(
         )
     });
 
-    // The three weight contractions — `(W²)ᵀ @ eff`, `Wᵀ @ (eff∘δ)`, and
-    // `Wᵀ @ (gain∘δ)` — computed in a single row-major pass over `w`, with the
-    // per-child effective precision (smoothing/Schur correction) and gain
-    // formed as scalars on the fly: no `W²` matrix and no per-child vector
-    // temporaries.
+    // The three weight contractions, `(W²)ᵀ @ eff`, `Wᵀ @ (eff∘δ)` and
+    // `Wᵀ @ (gain∘δ)`, are computed in a single row-major pass over `w`, with the
+    // per-child effective precision (posterior-step relaxation) and gain formed as
+    // scalars on the fly: no `W²` matrix and no per-child vector temporaries.
     let n_child = w.nrows();
     let n_parent = w.ncols();
     let mut pc1_base = ndarray::Array1::<Float>::zeros(n_parent);
@@ -69,7 +68,7 @@ pub fn layer_posterior_update(
         }
     }
 
-    // Precision: clip(π̃_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))), written in place.
+    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))), written in place.
     ndarray::Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)

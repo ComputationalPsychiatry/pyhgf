@@ -461,8 +461,8 @@ def _posterior_pe_stack(
     element below the stack, which may be the clamped observation leaf (volatile,
     binary, or categorical), so it receives the real *child_is_input_layer* flag.
     A leaf never moves its posterior precision, so its evidence
-    :math:`\pi_y = \pi_a - \tilde{\pi}_a` is identically zero and the interior
-    (harmonic) form of the smoothing correction would silently zero out the whole
+    :math:`\pi_y = \pi_a - \hat{\pi}_a` is identically zero and the interior
+    (harmonic) form of the posterior-step relaxation would silently zero out the whole
     message; the flag switches to the canonical factor instead. This mirrors
     :func:`_predict_stack_from_parent`, which peels the *topmost* slice to meet
     the external parent. Every scanned slice has a stack slice as its child,
@@ -639,8 +639,8 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
     else:
         # The carry holds the evidence arriving at a slice and the process noise of
         # the layer it left, since the softening is charged at the level it crosses.
-        # The sweep caches the effective precision gamma = Omega * pi_tilde, so the
-        # process noise is gamma / pi_tilde. It is carried as an array rather than as
+        # The sweep caches the effective precision gamma = Omega * pi_hat, so the
+        # process noise is gamma / pi_hat. It is carried as an array rather than as
         # the layer's state, whose pytree structure differs between the external
         # child and a stack slice when one of them has no volatility parent.
         (evidence_out, _), per_slice_evidence = jax.lax.scan(
@@ -1057,7 +1057,7 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
         \varepsilon_x = g'(\hat{\mu}_x) \odot W^\top (g_a \, \delta_a),
 
     where :math:`\delta_a` is the child layer's value prediction error,
-    :math:`g_a` its smoothing gain (the same gain used by
+    :math:`g_a` its relaxed gain (the same gain used by
     :func:`pyhgf.updates.vectorised.volatile.posterior.vectorised_posterior_update_mean_value_level`),
     :math:`W` the weight matrix connecting the child into the top layer
     (bias column excluded), and :math:`g'` the derivative of the top layer's
@@ -1103,7 +1103,7 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
         # The bias column connects the constant node, not a real input.
         weights = weights[:, :-1]
 
-    # Smoothing gain of the child layer — identical to the gain used by the
+    # Relaxed gain of the child layer, identical to the gain used by the
     # interior posterior mean update, so the top layer sees exactly the
     # message any interior layer would see. Under mean-field the interior mean
     # update weights by the canonical predicted precision, so the same factor
@@ -1154,7 +1154,7 @@ def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
     matrix product per element and no extra sweep.
 
     The evidence is *carried* rather than recovered from the filter's cache as
-    :math:`\pi_a - \tilde\pi_a`. The two agree in exact arithmetic only where the
+    :math:`\pi_a - \hat\pi_a`. The two agree in exact arithmetic only where the
     filter's own chain is seeded with the clamped layer's likelihood curvature, which
     it is not: a clamped categorical layer enters that chain at unit precision, because
     that convention is what makes the message it routes exact cross-entropy
@@ -1189,7 +1189,7 @@ def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
         if i + 1 < len(elements):
             # The evidence is softened by the process noise of the layer it leaves,
             # which the sweep caches as the effective precision gamma = Omega *
-            # pi_tilde, so the noise itself is gamma / pi_tilde.
+            # pi_hat, so the noise itself is gamma / pi_hat.
             below, _, _ = _child_view(elements[i - 1])
             evidence = evidence_pullback(
                 parent_state=parent.state,

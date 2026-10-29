@@ -40,10 +40,10 @@ class ValueChild(NamedTuple):
     coupling_fn :
         The coupling function on the edge.
     precision_is_clamped :
-        Whether the child's posterior precision is never updated — true for the
-        clamped observation leaf. The smoothing (structured-Gaussian) factors
-        then collapse to the canonical predicted precision; see
-        :func:`_smoothing_factors`.
+        Whether the child's posterior precision is never updated, which is the
+        case for the clamped observation leaf. The relaxed (structured-Gaussian)
+        factors are then replaced by the canonical predicted precision; see
+        :func:`_relaxed_factors`.
     """
 
     state: LayerState
@@ -77,29 +77,28 @@ class VolatilityChild(NamedTuple):
 # ---------------------------------------------------------------------------
 
 
-def _smoothing_factors(
+def _relaxed_factors(
     child: ValueChild, mean_field_updates: bool = False
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""Child-precision factors weighting the value messages sent to the parent.
 
-    Returns ``(effective_precision, gain)`` — the factors multiplying the child's
+    Returns ``(effective_precision, gain)``, the factors multiplying the child's
     prediction error in :func:`_value_precision_pwpe` and :func:`_value_mean_pwpe`
-    respectively. Both are structured-Gaussian (RTS-smoother) forms sharing a
-    denominator:
+    respectively. Both come from the posterior-step relaxation (a structured
+    Gaussian on the value-coupling edge) and share a denominator:
 
     .. math::
 
-        \pi^{\mathrm{eff}}_a = \frac{\hat{\pi}_a \, \pi^y_a}{\hat{\pi}_a + \pi^y_a},
+        \pi^{\mathrm{eff}}_a = \frac{\bar{\pi}_a \, \pi^y_a}{\bar{\pi}_a + \pi^y_a},
         \qquad
-        g_a = \frac{\hat{\pi}_a \, \pi_a}{\hat{\pi}_a + \pi^y_a},
+        g_a = \frac{\bar{\pi}_a \, \pi_a}{\bar{\pi}_a + \pi^y_a},
         \qquad
-        \pi^y_a = \pi_a - \tilde{\pi}_a.
+        \pi^y_a = \pi_a - \hat{\pi}_a.
 
-    When the child's posterior precision is clamped there is no smoothing
-    correction to make, and both collapse to the canonical predicted precision
-    :math:`\tilde{\pi}_a`. Under ``mean_field_updates`` the correction is skipped
-    for every child — the original mean-field update weights all messages by
-    :math:`\tilde{\pi}_a`
+    When the child's posterior precision is clamped, both are replaced by the
+    canonical predicted precision :math:`\hat{\pi}_a`. Under ``mean_field_updates``
+    the relaxation is skipped for every child: the mean-field update weights all
+    messages by :math:`\hat{\pi}_a`
     (:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._mean_field_child_precision`).
     """
     if child.precision_is_clamped or mean_field_updates:
@@ -118,22 +117,21 @@ def _value_precision_pwpe(
     child: ValueChild,
     mean_field_updates: bool = False,
 ) -> jnp.ndarray:
-    r"""Value-coupling precision-weighted prediction error (eq.
+    r"""Value-coupling precision-weighted prediction error.
 
-    50 form).
-        Per parent node :math:`m`:
+    Per parent node :math:`m`:
 
-        .. math::
+    .. math::
 
-            \sum_a \pi_a^{\mathrm{eff}} \left( W_{a,m}^2 \, g'(\mu_m)^2
-                - W_{a,m} \, g''(\mu_m) \, \delta_a \right),
+        \sum_a \pi_a^{\mathrm{eff}} \left( W_{a,m}^2 \, g'(\mu_m)^2
+            - W_{a,m} \, g''(\mu_m) \, \delta_a \right),
 
-        with :math:`\pi^{\mathrm{eff}}_a` from :func:`_smoothing_factors`. Derivatives
-        are evaluated at *eval_mean* — the parent's previous posterior mean in the
-        standard scheme, its freshly updated posterior mean in the eHGF scheme
-        (which updates the mean first), mirroring the nodalised call order.
+    with :math:`\pi^{\mathrm{eff}}_a` from :func:`_relaxed_factors`. Derivatives
+    are evaluated at *eval_mean*: the parent's previous posterior mean in the
+    standard scheme, its freshly updated posterior mean in the eHGF scheme
+    (which updates the mean first), mirroring the nodalised call order.
     """
-    effective_child_precision, _ = _smoothing_factors(child, mean_field_updates)
+    effective_child_precision, _ = _relaxed_factors(child, mean_field_updates)
 
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     coupling_second = vmap(grad(grad(child.coupling_fn)))(eval_mean)
@@ -161,9 +159,9 @@ def _value_mean_pwpe(
         \Delta \mu_m = \frac{g'(\mu_m)}{\pi_m}
             \sum_a W_{a,m} \, g_a \, \delta_a,
 
-    with the joint-Gaussian gain :math:`g_a` from :func:`_smoothing_factors`.
+    with the joint-Gaussian gain :math:`g_a` from :func:`_relaxed_factors`.
     """
-    _, gain = _smoothing_factors(child, mean_field_updates)
+    _, gain = _relaxed_factors(child, mean_field_updates)
 
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     return (
@@ -217,8 +215,8 @@ def _child_previous_variance(
 ) -> jnp.ndarray:
     r"""Reconstruct the variance the volatility child carried into its prediction.
 
-    The prediction set :math:`1/\hat{\pi}_a = \lambda_a^2/\pi_a^{(k-1)} + \Omega_a`,
-    so subtracting the same :math:`\Omega_a` from :math:`1/\hat{\pi}_a` recovers
+    The prediction set :math:`1/\bar{\pi}_a = \lambda_a^2/\pi_a^{(k-1)} + \Omega_a`,
+    so subtracting the same :math:`\Omega_a` from :math:`1/\bar{\pi}_a` recovers
     :math:`\lambda_a^2/\pi_a^{(k-1)}` — the carried variance the nodalised backend
     stores as ``temp["current_variance"]``.
 
@@ -331,8 +329,8 @@ def vectorised_continuous_posterior_update_standard(
         Upper bound applied to the posterior precision write.
     mean_field_updates :
         If ``True``, weight the value-coupling messages by the canonical
-        predicted precision instead of the smoothing factors — the original
-        mean-field update
+        predicted precision instead of the relaxed factors, as in the mean-field
+        update
         (:func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_mean_field`).
         The volatility-coupling increment is the same in both schemes.
 

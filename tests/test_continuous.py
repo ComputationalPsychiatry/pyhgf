@@ -117,7 +117,7 @@ def test_continuous_scan_loop():
         .input_data(input_data=timeserie)
     )
 
-    # Expected values reflect the piHGF prediction step (see note in
+    # Expected values reflect the rHGF prediction step (see note in
     # test_two_nodes_hgf above).
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],

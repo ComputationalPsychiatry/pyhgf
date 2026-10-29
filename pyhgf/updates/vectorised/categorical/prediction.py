@@ -31,7 +31,7 @@ def vectorised_categorical_prediction(
     All precision fields are set to one. This convention makes the layer compose with
     the existing kernels without special cases: with a one-hot observation clamped, the
     value prediction error is the raw residual ``one_hot - softmax(logits)`` (the
-    cross-entropy gradient in logit space) the smoothing gain is exactly one (posterior
+    cross-entropy gradient in logit space) the relaxed gain is exactly one (posterior
     precision equals the expected precision), so the message routed to the parent and
     the weight gradients coincide with the cross-entropy backpropagation quantities.
 

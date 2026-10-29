@@ -82,7 +82,7 @@ pub struct NodeState {
     pub expected_mean: f64,
     pub precision: f64,
     pub expected_precision: f64,
-    /// Conditional predicted precision π̂_a (own variance + volatility,
+    /// Conditional predicted precision π̄_a (own variance + volatility,
     /// without the parent-uncertainty value-coupling term). Transient: recomputed
     /// each prediction step and consumed by the parent's posterior-step Schur
     /// correction; not recorded in `NodeTrajectory`.
@@ -514,9 +514,9 @@ impl Network {
                     // their children linearly (no coupling function), regardless
                     // of the layer's coupling_fn.
                     //
-                    // ``expected_precision`` is set to infinity so that the piHGF
-                    // Laplace value-coupling term `(t · α · g'(µ̂))² / π̂_parent`
-                    // contributes zero for the bias parent — matching the JAX
+                    // ``expected_precision`` is set to infinity so that the Taylor
+                    // value-coupling term `(t · α · g'(µ̂))² / π̂_parent`
+                    // contributes zero for the bias parent, as in the JAX
                     // vectorised backend, which concatenates an `inf` into the
                     // parent-precision vector for the constant column.
                     let state = NodeState {

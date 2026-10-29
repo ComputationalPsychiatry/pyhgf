@@ -19,25 +19,22 @@ pub(crate) fn floor_predicted_variance(variance: f64) -> f64 {
 
 /// Prediction step for a continuous state node.
 ///
-/// Computes the predicted mean μ̂, the conditional predicted precision π̂
-/// (`conditional_expected_precision`), the marginal predicted precision π̃
+/// Computes the predicted mean μ̂, the conditional predicted precision π̄
+/// (`conditional_expected_precision`), the marginal predicted precision π̂
 /// (`expected_precision`), and the effective precision γ.
 ///
-/// * π̂ = 1 / (λ²/π + Ω) — carried variance plus volatility, no parent-uncertainty
+/// * π̄ = 1 / (λ²/π + Ω): carried variance plus volatility, no parent-uncertainty
 ///   bleed-through. Used by the parent's Schur-complement posterior-step
-///   correction.
-/// * π̃ = 1 / (1/π̂ + Σ_b (Δt · α · g'(μ̂_b))² / π̃_b) — inverse marginal
-///   predictive variance, adding the first-order Laplace contribution from each
-///   value parent (using the parent's marginal predicted precision π̃_b).
-/// * Ω includes the moment-generating-function correction κ²/(2 π̂_vol) inside
+///   relaxation.
+/// * π̂ = 1 / (1/π̄ + Σ_b (Δt · α · g'(μ̂_b))² / π̂_b): inverse marginal
+///   predictive variance, adding the first-order Taylor contribution from each
+///   value parent (using the parent's marginal predicted precision π̂_b).
+/// * Ω includes the moment-generating-function term κ²/(2 π̂_vol) inside
 ///   the log-volatility exponent for each volatility parent.
 ///
 /// The carried variance takes λ²: scaling the belief by λ scales its variance by
 /// λ². Only the node's own variance takes the factor; the drift is added after the
 /// autoregression, so the value-coupling term is unscaled. At λ = 1 this is canonical.
-///
-/// Eq. 35 of Weber et al. (2026) omits λ²; the two forms agree at λ = 1, the value
-/// used in every simulation the paper reports.
 pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, time_step: f64) {
     // Copy own scalar state (f64 is Copy — no borrow held)
     let mean = network.attributes.states[node_idx].mean;
@@ -48,9 +45,9 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
     // -------------------------------------------------------
     // 1. Predict the mean: μ̂ = λ · μ + Δt · driftrate.
-    //    Also accumulate the piHGF Laplace value-coupling variance
-    //        Σ_b (Δt · α · g'(μ̂_b))² / π̃_b
-    //    using each parent's marginal predicted precision π̃_b
+    //    Also accumulate the Taylor value-coupling variance
+    //        Σ_b (Δt · α · g'(μ̂_b))² / π̂_b
+    //    using each parent's marginal predicted precision π̂_b
     //    (= `parent.expected_precision`). The constant-bias parent has infinite
     //    precision and contributes zero.
     // -------------------------------------------------------
@@ -64,16 +61,16 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
             let parent_expected_mean = network.attributes.states[parent_idx].expected_mean;
             let parent_expected_precision =
                 network.attributes.states[parent_idx].expected_precision;
-            let psi = couplings.get(i).copied().unwrap_or(1.0);
+            let alpha = couplings.get(i).copied().unwrap_or(1.0);
             let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
                 Some(cf) => ((cf.f)(parent_expected_mean), (cf.df)(parent_expected_mean)),
                 None => (parent_expected_mean, 1.0),
             };
-            driftrate += psi * parent_value;
+            driftrate += alpha * parent_value;
             // First-order Taylor expansion of g around μ̂_b yields a
-            // (Δt · α · g'(μ̂_b))² / π̃_b contribution to the marginal
-            // predictive variance of x_a. Vanishes as π̃_b → ∞.
-            let coeff = time_step * psi * g_prime;
+            // (Δt · α · g'(μ̂_b))² / π̂_b contribution to the marginal
+            // predictive variance of x_a. Vanishes as π̂_b → ∞.
+            let coeff = time_step * alpha * g_prime;
             value_coupling_variance += coeff * coeff / parent_expected_precision;
         }
     }
@@ -82,9 +79,9 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
     // -------------------------------------------------------
     // 2. Predict the two precisions:
-    //        π̂ = 1 / (λ²/π + Ω)
-    //        π̃ = 1 / (1/π̂ + value-coupling variance)
-    //    Ω = Δt · exp(ω + Σ_j κ_j μ_j + Σ_j κ_j²/(2 π̂_vol_j)); the MGF correction
+    //        π̄ = 1 / (λ²/π + Ω)
+    //        π̂ = 1 / (1/π̄ + value-coupling variance)
+    //    Ω = Δt · exp(ω + Σ_j κ_j μ_j + Σ_j κ_j²/(2 π̂_vol_j)); the MGF term
     //    κ²/(2 π̂_vol) marginalises over each volatility parent's Gaussian rather
     //    than collapsing it to a point estimate.
     // -------------------------------------------------------
@@ -114,7 +111,7 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     } else {
         (autoconnection_strength * autoconnection_strength) / precision
     };
-    // Conditional predicted precision π̂_a — carried variance + volatility only,
+    // Conditional predicted precision π̄_a: carried variance + volatility only,
     // WITHOUT the parent-uncertainty value-coupling term. The parent's posterior-step
     // Schur complement acts on this; the marginal would double-count parent uncertainty.
     let conditional_expected_precision =
@@ -166,12 +163,12 @@ pub fn prediction_continuous_state_node_mean_field(
         let couplings = &network.attributes.vectors[node_idx].value_coupling_parents;
         for (i, &parent_idx) in vp_idxs.iter().enumerate() {
             let parent_expected_mean = network.attributes.states[parent_idx].expected_mean;
-            let psi = couplings.get(i).copied().unwrap_or(1.0);
+            let alpha = couplings.get(i).copied().unwrap_or(1.0);
             let parent_value = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
                 Some(cf) => (cf.f)(parent_expected_mean),
                 None => parent_expected_mean,
             };
-            driftrate += psi * parent_value;
+            driftrate += alpha * parent_value;
         }
     }
 

@@ -147,9 +147,9 @@ def add_constant_state(
 
     node_type = 0
 
-    # ``expected_precision`` is set to infinity so that the piHGF Laplace
+    # ``expected_precision`` is set to infinity so that the Taylor
     # value-coupling term ``(t · α · g'(µ̂))² / π̂_parent`` contributes zero
-    # for the bias parent — matching the JAX vectorised backend, which
+    # for the bias parent, as in the JAX vectorised backend, which
     # concatenates an ``inf`` into the parent-precision vector for the
     # constant column. (The posterior-level ``precision`` is kept at 1.0
     # because some downstream code reads it directly without dividing.)

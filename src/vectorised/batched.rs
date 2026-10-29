@@ -222,8 +222,8 @@ fn batched_volatile_prediction(
         child.expected_precision_vol = Some(epv);
     }
 
-    // 2. Value level: coupled activations and the per-parent Laplace variance
-    // factor g'(μ̂)² / π̃_parent (the bias row stays 0 there). No time step: it
+    // 2. Value level: coupled activations and the per-parent Taylor variance
+    // factor g'(μ̂)² / π̂_parent (the bias row stays 0 there). No time step: it
     // propagates parent uncertainty through the `W @ g(μ)` mean computed just below,
     // which carries no drift scaling. See the single-sample path for the full note.
     let coupled = coupled_activations(
@@ -245,7 +245,7 @@ fn batched_volatile_prediction(
     // Mean prediction: one gemm over the whole batch.
     child.expected_mean = weights.dot(&coupled);
 
-    // Laplace value-coupling variance: W² @ ppv, one gemm. Without
+    // Taylor value-coupling variance: W² @ ppv, one gemm. Without
     // `feedforward_uncertainty` the value parents propagate nothing, so the term is
     // zero and the marginal predicted precision collapses onto the conditional one.
     let value_coupling_variance = if feedforward_uncertainty {
@@ -257,9 +257,9 @@ fn batched_volatile_prediction(
         Matrix::zeros((n, n_samples))
     };
 
-    // Conditional (π̂), marginal (π̃), and effective (γ) predicted precisions,
-    // fused into a single pass over the state: π̂ = 1/(1/π + Ω),
-    // π̃ = 1/(1/π̂ + value_coupling_variance), γ = Ω·π̃, with
+    // Conditional (π̄), marginal (π̂), and effective (γ) predicted precisions,
+    // fused into a single pass over the state: π̄ = 1/(1/π + Ω),
+    // π̂ = 1/(1/π̄ + value_coupling_variance), γ = Ω·π̂, with
     // Ω = t·exp(ω + κ·μ_vol + κ²/(2·π̂_vol)) the predicted volatility.
     let precision_triple =
         |c: &mut Float, e: &mut Float, ef: &mut Float, pr: Float, pv: Float, v: Float| {
@@ -501,7 +501,7 @@ fn batched_prediction_error(
     layer_state.mean_vol = Some(new_mean_vol);
 }
 
-/// The per-sample smoothing gain and effective (Schur-corrected) precision of
+/// The per-sample relaxed gain and effective (Schur-corrected) precision of
 /// a child layer, `(gain, eff)`, each `(n_child, n_samples)`: the same
 /// scalars the per-sample posterior forms on the fly.
 fn gain_and_effective(child: &BatchedLayerState, child_is_input_layer: bool) -> (Matrix, Matrix) {
@@ -585,7 +585,7 @@ fn batched_posterior_update(
     let ed = &eff * &child.value_prediction_error;
     let sum_pi_vpe = w.t().dot(&ed);
 
-    // Precision: clip(π̃_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))).
+    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))).
     Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)
@@ -714,7 +714,7 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
     let cols = w.ncols() - usize::from(top_layer.add_constant_input);
     let w = w.slice(s![.., ..cols]);
 
-    // Smoothing gain of the child layer, identical to the gain of the
+    // Relaxed gain of the child layer, identical to the gain of the
     // interior posterior mean update, fused directly into the message:
     // gain∘δ in one pass, no gain matrix materialised.
     let mut message = Matrix::zeros(child.mean.raw_dim());

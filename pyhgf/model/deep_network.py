@@ -223,12 +223,12 @@ class DeepNetwork:
         mean_field_updates :
             If ``False`` (default), use the relaxed prediction and posterior
             updates, which lift the mean-field assumption on value-coupling edges
-            via Schur-complement and Laplace/MGF corrections. If ``True``, use the
-            original mean-field updates, matching
-            ``Network(mean_field_updates=True)``: the log-volatility exponent
-            carries no MGF correction, and every value message is weighted by the
-            child's canonical predicted precision instead of the smoothing
-            factors. The mean-field scheme carries no value-coupling variance, so
+            via the Schur-complement, Taylor and moment-generating-function terms
+            of the relaxed HGF (rHGF). If ``True``, use the mean-field updates, as
+            in ``Network(mean_field_updates=True)``: the log-volatility exponent
+            carries no moment-generating-function term, and every value message
+            is weighted by the child's canonical predicted precision instead of
+            the relaxed factors. The mean-field scheme carries no value-coupling variance, so
             combining it with ``feedforward_uncertainty=True`` raises a
             ``ValueError``; ``learning_kind='synaptic_uncertainty'`` is likewise
             unavailable, since its curvature and evidence terms are derived from
@@ -567,7 +567,7 @@ class DeepNetwork:
             :math:`\kappa_0 / n_{\mathrm{parents}}` — the fan-in normalisation
             makes the phasic volatility a child receives :math:`\kappa_0` times
             the *average* of the parent layer's means, invariant to the parent
-            layer's width (and its MGF correction the variance of that average).
+            layer's width (and its MGF term the variance of that average).
             One-to-one κ has fan-in 1 and keeps :math:`\kappa_0` on the diagonal.
             Mirrors the drift-averaging the volatile backend applies on value
             edges.
@@ -1350,7 +1350,7 @@ class DeepNetwork:
             raise ValueError(
                 "learning_kind='synaptic_uncertainty' is derived from the "
                 "relaxed updates (its curvature and evidence terms read the "
-                "smoothing-corrected precisions) and is not available with "
+                "relaxed precisions) and is not available with "
                 "mean_field_updates=True."
             )
 

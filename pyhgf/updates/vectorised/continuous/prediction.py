@@ -43,26 +43,26 @@ def vectorised_continuous_prediction(
     :func:`pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`,
     where the parent's prediction fully determines the child's expected mean).
 
-    The two predicted precisions follow the improved (piHGF) scheme of the
+    The two predicted precisions follow the relaxed HGF (rHGF) scheme of the
     nodalised backend, with the volatility parent's moment-generating-function
-    correction and the value parent's first-order Laplace term:
+    term and the value parent's first-order Taylor term:
 
     .. math::
 
         \Omega_a^{(k)} = t^{(k)} \exp\!\left( \omega_a
             + \sum_j \left( \kappa_{a,j} \hat{\mu}_j
-            + \frac{\kappa_{a,j}^2}{2 \tilde{\pi}_j} \right) \right), \qquad
-        \hat{\pi}_a^{(k)} = \left( \frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+            + \frac{\kappa_{a,j}^2}{2 \hat{\pi}_j} \right) \right), \qquad
+        \bar{\pi}_a^{(k)} = \left( \frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
             \right)^{-1},
 
     .. math::
 
-        \frac{1}{\tilde{\pi}_a^{(k)}} = \frac{1}{\hat{\pi}_a^{(k)}}
-            + \sum_b \frac{(t^{(k)} W_{a,b} \, g'(\hat{\mu}_b))^2}{\tilde{\pi}_b},
+        \frac{1}{\hat{\pi}_a^{(k)}} = \frac{1}{\bar{\pi}_a^{(k)}}
+            + \sum_b \frac{(t^{(k)} W_{a,b} \, g'(\hat{\mu}_b))^2}{\hat{\pi}_b},
         \qquad
-        \gamma_a^{(k)} = \Omega_a^{(k)} \, \tilde{\pi}_a^{(k)}.
+        \gamma_a^{(k)} = \Omega_a^{(k)} \, \hat{\pi}_a^{(k)}.
 
-    Unlike the volatile-layer kernel, the Laplace value-coupling term carries the
+    Unlike the volatile-layer kernel, the Taylor value-coupling term carries the
     time step (the drift contribution to the mean is scaled by :math:`t^{(k)}`),
     matching the nodalised backend exactly.
 
@@ -104,10 +104,10 @@ def vectorised_continuous_prediction(
         π; with one, the parent contributes Ω on top of the carried 1/π. Distinct
         from :attr:`~...posterior.ValueChild.precision_is_clamped`.
     mean_field_updates :
-        If ``True``, use the original mean-field prediction: the volatility
-        parent's MGF correction :math:`\kappa^2 / (2 \tilde{\pi})` and the value
-        parent's Laplace variance term are both dropped, so the conditional and
-        the marginal predicted precision coincide — matching
+        If ``True``, use the mean-field prediction: the volatility parent's MGF
+        term :math:`\kappa^2 / (2 \hat{\pi})` and the value parent's Taylor variance
+        term are both dropped, so the conditional and the marginal predicted
+        precision coincide, as in
         :func:`pyhgf.updates.prediction.continuous.predict_precision_mean_field`.
 
     Returns
@@ -131,9 +131,9 @@ def vectorised_continuous_prediction(
         params.autoconnection_strength * child_state.mean + time_step * driftrate
     )
 
-    # 2. Total volatility, with the MGF correction κ²/(2 π̃) that treats the
+    # 2. Total volatility, with the MGF term κ²/(2 π̂) that treats the
     # volatility parent as a full Gaussian rather than a point estimate; the
-    # mean-field scheme keeps the point estimate and drops the correction.
+    # mean-field scheme keeps the point estimate and drops the term.
     total_volatility = params.tonic_volatility
     if volatility_parent_state is not None:
         assert volatility_weights is not None
@@ -150,7 +150,7 @@ def vectorised_continuous_prediction(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # 3. Laplace value-coupling variance: Σ_b (t · W_ab · g'(μ̂_b))² / π̃_b.
+    # 3. Taylor value-coupling variance: Σ_b (t · W_ab · g'(μ̂_b))² / π̂_b.
     # Absent under mean-field, where value parents enter at their means alone.
     value_coupling_variance = jnp.zeros_like(child_state.precision)
     if value_parent_state is not None and not mean_field_updates:
@@ -160,7 +160,7 @@ def vectorised_continuous_prediction(
             weights**2, g_prime**2 / value_parent_state.expected_precision
         )
 
-    # 4. Conditional (π̂) and marginal (π̃) predicted precisions, effective γ.
+    # 4. Conditional (π̄) and marginal (π̂) predicted precisions, effective γ.
     # Input layers carry 1/π (λ = 1 for precision, λ = 0 for the mean); other
     # layers scale by λ². The drift is added after the autoregression, so the
     # value-coupling term is unscaled.

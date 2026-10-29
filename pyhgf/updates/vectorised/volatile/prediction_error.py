@@ -172,7 +172,7 @@ def vectorised_layer_volatility_posterior_ehgf(
     mean_field_updates :
         Whether the prediction step ran the mean-field scheme. The reconstruction
         of the pre-prediction variance must subtract exactly the predicted
-        volatility the prediction step added, so the MGF correction is dropped
+        volatility the prediction step added, so the MGF term is dropped
         here when it was dropped there.
 
     Returns
@@ -284,7 +284,7 @@ def vectorised_layer_volatility_posterior_unbounded(
     # precision. The prediction step sets
     #     1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
     # where predicted_volatility carries the full log-volatility exponent, including
-    # the MGF correction 1 / (2 * pihat_vol) unless the prediction ran mean-field.
+    # the MGF term 1 / (2 * pihat_vol) unless the prediction ran mean-field.
     # Subtracting the same predicted_volatility cancels back to 1/precision_prev.
     # Using the marginal expected_precision here would leave the value-coupling
     # variance behind, and a mismatched MGF term would leave that behind — both were

@@ -29,11 +29,11 @@ def _predict_volatility_level(
     Returns ``(expected_mean_vol, expected_precision_vol, effective_precision_vol,
     predicted_volatility)``. The last is :math:`\Omega_a^{(k)}`, the variance the
     value level accumulates over this time step; it carries the closed-form
-    moment-generating-function correction :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})`
+    moment-generating-function term :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})`
     that comes from marginalising over the volatility level's Gaussian rather than
-    collapsing it to a point estimate — dropped under ``mean_field_updates``, where
-    the volatility level enters at its expected mean alone (the original mean-field
-    scheme). Volatility coupling is fixed at 1. The
+    collapsing it to a point estimate. The term is dropped under
+    ``mean_field_updates``, where the volatility level enters at its expected mean
+    alone (the mean-field scheme). Volatility coupling is fixed at 1. The
     value level carries a tonic volatility :math:`\omega` of its own only when
     ``params.tonic_volatility`` is allocated (see
     ``DeepNetwork(tonic_volatility=True)``); when it is ``None`` the diffusion is
@@ -117,22 +117,21 @@ def vectorised_layer_prediction(
 
     .. math::
 
-        \hat{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+        \bar{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
             \right)^{-1}, \qquad
-        \frac{1}{\tilde{\pi}_a^{(k)}} = \frac{1}{\hat{\pi}_a^{(k)}}
+        \frac{1}{\hat{\pi}_a^{(k)}} = \frac{1}{\bar{\pi}_a^{(k)}}
             + \sum_b \frac{ (t^{(k)} \, \alpha_b \, g'(\hat{\mu}_b))^2 }
-                          { \tilde{\pi}_b },
+                          { \hat{\pi}_b },
 
-    where :math:`\hat{\pi}_a` (``conditional_expected_precision``) is the
+    where :math:`\bar{\pi}_a` (``conditional_expected_precision``) is the
     AR-plus-volatility chain precision without parent-uncertainty bleed-through and
-    :math:`\tilde{\pi}_a` (``expected_precision``) adds the first-order Laplace
+    :math:`\hat{\pi}_a` (``expected_precision``) adds the first-order Taylor
     value-coupling contribution from each value parent. The bleed-through term uses
-    the parent's *marginal* predicted precision :math:`\tilde{\pi}_b`
-    (``parent_state.expected_precision``), which generalises the artefact's
-    two-node :math:`\hat{\pi}_b` to deep networks by propagating each parent's full
-    marginal predictive variance. The volatility-coupling correction
-    :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})` enters :math:`\Omega_a^{(k)}`
-    inside the log-volatility exponent.
+    the parent's *marginal* predicted precision :math:`\hat{\pi}_b`
+    (``parent_state.expected_precision``), so that every parent passes its full
+    marginal predictive variance on to its children. The volatility-coupling
+    moment-generating-function term :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})`
+    enters :math:`\Omega_a^{(k)}` inside the log-volatility exponent.
 
     Parameters
     ----------
@@ -175,9 +174,9 @@ def vectorised_layer_prediction(
         the parent's uncertainty bleeds through as the law of total variance requires.
     mean_field_updates :
         If ``True``, the volatility level enters the log-volatility exponent at its
-        expected mean alone — the MGF correction
-        :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})` is dropped, matching the original
-        mean-field prediction.
+        expected mean alone: the MGF term
+        :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})` is dropped, as in the mean-field
+        prediction.
         Incompatible with ``feedforward_uncertainty`` (the mean-field scheme carries
         no value-coupling variance either); the network-level constructor enforces
         this.
@@ -244,10 +243,10 @@ def vectorised_layer_prediction(
     expected_mean = jnp.matmul(weights, coupled_parents)
 
     if predict_precision:
-        # Laplace value-coupling correction. Linearising g at μ̂_b and marginalising
+        # Taylor value-coupling term. Linearising g at μ̂_b and marginalising
         # over each parent's Gaussian yields, per child node i, the additional variance
-        #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̃_j,
-        # using the parent's marginal predicted precision π̃_j (= `expected_precision`).
+        #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̂_j,
+        # using the parent's marginal predicted precision π̂_j (= `expected_precision`).
         # The constant-bias parent (if any) has infinite precision and contributes zero.
         if not feedforward_uncertainty:
             # No uncertainty is propagated by the value parents: the child's predicted
@@ -276,13 +275,13 @@ def vectorised_layer_prediction(
         # Precision: λ = 1 — the posterior variance is learned and carried across
         # trials, so carried_variance = λ²/π = 1/π. Split from the mean's λ = 0.
         carried_variance = 1.0 / child_state.precision
-        # Conditional π̂_a: carried variance + volatility, no parent bleed-through
-        # (the parent's Schur complement acts on this; π̃_a would double-count).
+        # Conditional π̄_a: carried variance + volatility, no parent bleed-through
+        # (the parent's Schur complement acts on this; π̂_a would double-count).
         conditional_expected_precision = 1.0 / jnp.maximum(
             carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
         )
 
-        # Marginal π̃_a: add the law-of-total-variance parent bleed-through.
+        # Marginal π̂_a: add the law-of-total-variance parent bleed-through.
         expected_precision = 1.0 / jnp.maximum(
             1.0 / conditional_expected_precision + value_coupling_variance,
             MIN_PREDICTED_VARIANCE,
@@ -342,7 +341,7 @@ def vectorised_root_prediction(
 
     .. math::
 
-        \hat{\pi}_a^{(k)} = \tilde{\pi}_a^{(k)}
+        \bar{\pi}_a^{(k)} = \hat{\pi}_a^{(k)}
             = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)} \right)^{-1}.
 
     This is what lets the input layer's precision *move*. Without it,
@@ -371,8 +370,8 @@ def vectorised_root_prediction(
         one it does not drift between observations and the predicted precision is
         just the prior precision.
     mean_field_updates :
-        If ``True``, drop the MGF correction from the log-volatility exponent —
-        see :func:`vectorised_layer_prediction`.
+        If ``True``, drop the MGF term from the log-volatility exponent (see
+        :func:`vectorised_layer_prediction`).
 
     Returns
     -------
