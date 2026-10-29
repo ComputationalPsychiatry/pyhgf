@@ -141,3 +141,68 @@ def test_continuous_nonlinear_coupling(mean_field_updates):
     )
 
     _assert_backends_match(py_net, rs_net, 2, "standard", label)
+
+
+def test_relaxed_precision_curved_value_coupling():
+    r"""Test the relaxed posterior precision of a value parent with a tanh coupling.
+
+    In the chain input ← node 1 ← node 2 (tanh coupling), node 1 is a Gaussian
+    interior child, so the posterior precision of node 2 follows the posterior-step
+    relaxation
+
+    .. math::
+
+        \pi_b = \hat{\pi}_b + \frac{\bar{\pi}_a}{\bar{\pi}_a + \pi_y}
+            \left( g'^2 \, \pi_y - g'' \, \pi_a \, \delta_a \right), \qquad
+        \pi_y = \pi_a - \hat{\pi}_a,
+
+    with :math:`g = \tanh` differentiated at the previous posterior mean of node 2.
+    Both backends must match this closed form, computed from the JAX trajectories.
+    """
+    import jax
+    import jax.numpy as jnp
+
+    timeseries = load_data("continuous")[:50]
+    py_net = (
+        PyNetwork(volatility_updates="standard")
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(value_children=1, coupling_fn=(jnp.tanh,))
+        .input_data(input_data=timeseries)
+    )
+    rs_net = (
+        RsNetwork(volatility_updates="standard")
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(value_children=1, coupling_fn="tanh")
+        .input_data(input_data=timeseries)
+    )
+    # The mean of node 2 passes close to zero, so the float32 comparison needs an
+    # absolute floor on top of the relative tolerance.
+    for node_idx in range(3):
+        for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+            assert np.allclose(
+                py_net.node_trajectories[node_idx][key],
+                rs_net.node_trajectories[node_idx][key],
+                rtol=1e-4,
+                atol=1e-6,
+            ), f"node {node_idx}, key '{key}' mismatch"
+
+    child, parent = py_net.node_trajectories[1], py_net.node_trajectories[2]
+    pi_a = np.asarray(child["precision"])
+    pi_y = pi_a - np.asarray(child["expected_precision"])
+    pi_bar_a = np.asarray(child["temp"]["conditional_expected_precision"])
+    delta_a = np.asarray(child["temp"]["value_prediction_error"])
+
+    # Previous posterior mean of node 2, starting from its prior mean of 0.
+    linearisation_point = jnp.concatenate([jnp.zeros(1), parent["mean"][:-1]])
+    g_prime = np.asarray(jax.vmap(jax.grad(jnp.tanh))(linearisation_point))
+    g_second = np.asarray(jax.vmap(jax.grad(jax.grad(jnp.tanh)))(linearisation_point))
+
+    expected_precision = np.asarray(parent["expected_precision"]) + pi_bar_a / (
+        pi_bar_a + pi_y
+    ) * (g_prime**2 * pi_y - g_second * pi_a * delta_a)
+    for net in (py_net, rs_net):
+        assert np.allclose(
+            net.node_trajectories[2]["precision"], expected_precision, rtol=1e-5
+        )

@@ -9,6 +9,10 @@ import optax
 import pytest
 
 from pyhgf.model import DeepNetwork, LayerConfig
+from pyhgf.typing.vectorised import LayerState
+from pyhgf.updates.vectorised.volatile.posterior import (
+    vectorised_posterior_update_precision_value_level,
+)
 
 
 def test_fit():
@@ -1758,3 +1762,68 @@ def test_tonic_volatility_through_configs_and_dict():
             LayerConfig(size=2),
             LayerConfig(size=2, tonic_volatility=-2.0),
         ])
+
+
+# ---------------------------------------------------------------------------
+# Posterior-step relaxation with a curved coupling
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("relaxed_prediction", [True, False])
+def test_relaxed_precision_curved_value_coupling(relaxed_prediction):
+    r"""The relaxed precision update weights the g'' term by the relaxed gain.
+
+    With a tanh coupling, each interior value child :math:`a` contributes
+
+    .. math::
+
+        \frac{\bar{\pi}_a}{\bar{\pi}_a + \pi_y} \left( \alpha^2 g'^2 \, \pi_y
+            - \alpha \, g'' \, \pi_a \, \delta_a \right), \qquad
+        \pi_y = \pi_a - \hat{\pi}_a,
+
+    to the parent's posterior precision, with the derivatives taken at the parent's
+    expected mean. Without the prediction-step relaxation
+    (:math:`\bar{\pi}_a = \hat{\pi}_a`, the ``feedforward_uncertainty=False``
+    default) the g'' term is the canonical :math:`\hat{\pi}_a \, \alpha \, g'' \,
+    \delta_a`.
+    """
+    alpha = np.array([0.8, -0.5])
+    pi_a = np.array([3.0, 2.4])
+    pi_hat_a = np.array([2.0, 1.5])
+    pi_bar_a = np.array([2.5, 1.8]) if relaxed_prediction else pi_hat_a
+    delta_a = np.array([0.4, -0.7])
+
+    layer = dataclasses.replace(
+        LayerState.create(1, has_volatility_parent=False),
+        expected_mean=jnp.array([0.3]),
+        expected_precision=jnp.array([1.2]),
+    )
+    child = dataclasses.replace(
+        LayerState.create(2, has_volatility_parent=False),
+        precision=jnp.asarray(pi_a),
+        expected_precision=jnp.asarray(pi_hat_a),
+        conditional_expected_precision=jnp.asarray(pi_bar_a),
+        value_prediction_error=jnp.asarray(delta_a),
+    )
+    precision = vectorised_posterior_update_precision_value_level(
+        layer, child, jnp.asarray(alpha[:, None]), jnp.tanh
+    )
+
+    g_prime = float(jax.grad(jnp.tanh)(0.3))
+    g_second = float(jax.grad(jax.grad(jnp.tanh))(0.3))
+    pi_y = pi_a - pi_hat_a
+    increment = (
+        pi_bar_a
+        / (pi_bar_a + pi_y)
+        * (alpha**2 * g_prime**2 * pi_y - alpha * g_second * pi_a * delta_a)
+    )
+    np.testing.assert_allclose(precision, [1.2 + increment.sum()], rtol=1e-5)
+
+    if not relaxed_prediction:
+        first_order = pi_hat_a * pi_y / pi_a * alpha**2 * g_prime**2
+        canonical_second_order = pi_hat_a * alpha * g_second * delta_a
+        np.testing.assert_allclose(
+            precision,
+            [1.2 + (first_order - canonical_second_order).sum()],
+            rtol=1e-5,
+        )

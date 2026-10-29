@@ -28,16 +28,17 @@ def vectorised_posterior_update_precision_value_level(
     marginal predicted precision). Lifting the mean-field
     delta-collapse approximation :math:`q(x_a, x_b) = q(x_a)\,q(x_b)` to a structured
     Gaussian on the value-coupling edge and applying the Schur complement to the joint
-    precision matrix replaces the canonical child-precision factor by the harmonic
-    combination
+    precision matrix gives the value-coupling contribution of each child :math:`a`
+    to :math:`\pi_b^{(k)}`:
 
     .. math::
 
-        \hat{\pi}_a^{(k)} \,\longmapsto\,
-        \frac{\bar{\pi}_a^{(k)} \, \pi_y}{\bar{\pi}_a^{(k)} + \pi_y}, \qquad
+        \frac{\bar{\pi}_a^{(k)}}{\bar{\pi}_a^{(k)} + \pi_y} \left(
+            \alpha^2 \, g'^2 \, \pi_y - \alpha \, g'' \, \pi_a^{(k)} \, \delta_a
+            \right), \qquad
         \pi_y = \pi_a^{(k)} - \hat{\pi}_a^{(k)},
 
-    in the value-coupling contribution to :math:`\pi_b^{(k)}`. Here
+    with :math:`\alpha` the weight of the value-coupling edge. Here
     :math:`\bar{\pi}_a` is the child's *conditional* predicted precision (own variance
     plus volatility, without the parent-uncertainty bleed-through term
     :math:`\alpha^2 g'^2 / \hat{\pi}_b`), stored as
@@ -48,12 +49,17 @@ def vectorised_posterior_update_precision_value_level(
     acts on the conditional. Substituting the marginal here would double-count
     parent uncertainty.
 
-    The same harmonic combination scales both the :math:`(\alpha g')^2` and the
-    :math:`\alpha g'' \, \delta_a` contributions, with :math:`\alpha` the weight of
-    the value-coupling edge. Reduces to the canonical formula
-    when the child is fully observed (:math:`\pi_y \to \infty`); returns no
-    contribution when the child gained no bottom-up information
-    (:math:`\pi_y = 0`).
+    The :math:`(\alpha g')^2` term is weighted by the relaxed child precision
+    :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)` and the
+    :math:`\alpha g'' \, \delta_a` term by the relaxed gain
+    :math:`g_a = \bar{\pi}_a \pi_a / (\bar{\pi}_a + \pi_y)` of
+    :func:`vectorised_posterior_update_mean_value_level`: the second-order term is
+    the derivative of the mean shift's :math:`g'` with respect to the parent mean.
+    Reduces to the canonical formula when the child is fully observed
+    (:math:`\pi_y \to \infty`). When :math:`\hat{\pi}_a = \bar{\pi}_a`, the relaxed
+    gain equals :math:`\hat{\pi}_a` and the :math:`g''` term is the canonical one.
+    The :math:`(\alpha g')^2` term vanishes when the child gained no bottom-up
+    information (:math:`\pi_y = 0`), and so does :math:`\delta_a`.
 
     .. note::
 
@@ -120,18 +126,27 @@ def vectorised_posterior_update_precision_value_level(
     # leaves carry no value-coupling bleed-through) so π_y = 0 and the harmonic
     # form would zero out. Short-circuit to the conditional predicted precision
     # π̄_a, the fully observed limit (π_y → ∞) of the harmonic form.
+    #
+    # The g''δ_a term is weighted by the relaxed gain g_a = π̄_a · π_a / (π̄_a + π_y)
+    # of the mean update instead, computed as in
+    # `vectorised_posterior_update_mean_value_level`. For a leaf, π_a = π̂_a = π̄_a,
+    # so g_a equals the short-circuited factor above.
     if mean_field_updates:
         # Mean-field: canonical predicted precision for every child, leaf or
         # interior (a leaf's marginal equals its conditional anyway).
         effective_child_precision = child.expected_precision
-    elif child_is_input_layer:
-        effective_child_precision = child.conditional_expected_precision
+        gain_precision = child.expected_precision
     else:
         pi_y = child.precision - child.expected_precision
-        effective_child_precision = (
-            child.conditional_expected_precision
-            * pi_y
-            / (child.conditional_expected_precision + pi_y)
+        denominator = child.conditional_expected_precision + pi_y
+        if child_is_input_layer:
+            effective_child_precision = child.conditional_expected_precision
+        else:
+            effective_child_precision = (
+                child.conditional_expected_precision * pi_y / denominator
+            )
+        gain_precision = (
+            child.conditional_expected_precision * child.precision / denominator
         )
 
     # First-order term: Σ_i(w_ij² · effective_child_prec_i) · g'(m_j)²
@@ -139,12 +154,8 @@ def vectorised_posterior_update_precision_value_level(
         coupling_prime**2
     )
 
-    # Second-order Taylor term: -g''(m_j) · Σ_i(w_ij · effective_child_prec_i · δ_a_i).
-    # The same effective child precision (harmonic combination above) scales the
-    # g''δ_a term.
-    sum_pi_vpe = jnp.matmul(
-        weights.T, effective_child_precision * child.value_prediction_error
-    )
+    # Second-order Taylor term: -g''(m_j) · Σ_i(w_ij · g_a_i · δ_a_i).
+    sum_pi_vpe = jnp.matmul(weights.T, gain_precision * child.value_prediction_error)
     precision_contrib_2 = -coupling_second * sum_pi_vpe
 
     posterior_precision = (
@@ -225,9 +236,10 @@ def vectorised_posterior_update_mean_value_level(
     # w = y − μ̂_a substitutes out). The identity π_a = π̄_a + π_y, which collapses
     # g_a to π̄_a, holds only in the canonical scheme (π̂_a = π̄_a); with the
     # prediction-step relaxation active π_a = π̂_a + π_y and g_a above is the
-    # joint-Gaussian-exact gain. The factor π_a/π_y relative to the precision
-    # update's `effective_child_precision` reflects the different element of
-    # P^{-1}h selected by the mean update versus the precision update.
+    # joint-Gaussian-exact gain. The factor π_a/π_y relative to the
+    # `effective_child_precision` of the precision update's first-order term
+    # reflects the different element of P^{-1}h selected by the mean update versus
+    # the precision update; the precision update's g'' term uses g_a itself.
     # For leaves PyHGF keeps π_a = π̂_a, so π_y = 0 and g_a → π_a = π̂_a, matching
     # the canonical leaf treatment used by the precision update.
     if mean_field_updates:

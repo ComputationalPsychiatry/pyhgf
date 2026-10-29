@@ -82,10 +82,11 @@ def _relaxed_factors(
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""Child-precision factors weighting the value messages sent to the parent.
 
-    Returns ``(effective_precision, gain)``, the factors multiplying the child's
-    prediction error in :func:`_value_precision_pwpe` and :func:`_value_mean_pwpe`
-    respectively. Both come from the posterior-step relaxation (a structured
-    Gaussian on the value-coupling edge) and share a denominator:
+    Returns ``(effective_precision, gain)``. The effective precision weights the
+    first-order term of :func:`_value_precision_pwpe`; the gain weights its
+    second-order term and the mean shift of :func:`_value_mean_pwpe`. Both come from
+    the posterior-step relaxation (a structured Gaussian on the value-coupling edge)
+    and share a denominator:
 
     .. math::
 
@@ -95,11 +96,15 @@ def _relaxed_factors(
         \qquad
         \pi^y_a = \pi_a - \hat{\pi}_a.
 
+    The second-order term is the derivative of the mean shift's
+    :math:`g'(\mu_m)` with respect to the parent mean, so it carries the same gain
+    :math:`g_a`.
+
     When the child's posterior precision is clamped, both are replaced by the
     canonical predicted precision :math:`\hat{\pi}_a`. Under ``mean_field_updates``
     the relaxation is skipped for every child: the mean-field update weights all
     messages by :math:`\hat{\pi}_a`
-    (:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._mean_field_child_precision`).
+    (:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._mean_field_child_factors`).
     """
     if child.precision_is_clamped or mean_field_updates:
         return child.state.expected_precision, child.state.expected_precision
@@ -123,15 +128,16 @@ def _value_precision_pwpe(
 
     .. math::
 
-        \sum_a \pi_a^{\mathrm{eff}} \left( W_{a,m}^2 \, g'(\mu_m)^2
-            - W_{a,m} \, g''(\mu_m) \, \delta_a \right),
+        \sum_a \left( \pi_a^{\mathrm{eff}} \, W_{a,m}^2 \, g'(\mu_m)^2
+            - g_a \, W_{a,m} \, g''(\mu_m) \, \delta_a \right),
 
-    with :math:`\pi^{\mathrm{eff}}_a` from :func:`_relaxed_factors`. Derivatives
+    with :math:`\pi^{\mathrm{eff}}_a` and :math:`g_a` from :func:`_relaxed_factors`.
+    Derivatives
     are evaluated at *eval_mean*: the parent's previous posterior mean in the
     standard scheme, its freshly updated posterior mean in the eHGF scheme
     (which updates the mean first), mirroring the nodalised call order.
     """
-    effective_child_precision, _ = _relaxed_factors(child, mean_field_updates)
+    effective_child_precision, gain = _relaxed_factors(child, mean_field_updates)
 
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     coupling_second = vmap(grad(grad(child.coupling_fn)))(eval_mean)
@@ -140,8 +146,7 @@ def _value_precision_pwpe(
         coupling_prime**2
     )
     second_order = -coupling_second * jnp.matmul(
-        child.weights.T,
-        effective_child_precision * child.state.value_prediction_error,
+        child.weights.T, gain * child.state.value_prediction_error
     )
     return first_order + second_order
 

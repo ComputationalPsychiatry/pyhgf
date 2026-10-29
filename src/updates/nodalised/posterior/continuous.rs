@@ -6,27 +6,65 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 // Shared building blocks for precision and mean updates
 // =============================================================================
 
-/// Precision increment from the value children.
+/// Child-precision factors of the posterior-step relaxation for one value child.
 ///
-/// The relaxed update implements the posterior-step relaxation of the relaxed HGF
-/// (rHGF): the canonical child-precision factor is replaced by the harmonic
-/// combination
+/// Returns `(π_eff, g_a)`:
 ///
 /// ```text
-/// π̄_a · π_y / (π̄_a + π_y),    π_y = π_a − π̂_a,
+/// π_eff = π̄_a · π_y / (π̄_a + π_y),    g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
 /// ```
 ///
 /// where π̄_a is the child's conditional predicted precision
 /// (`conditional_expected_precision`) and π̂_a its marginal predicted precision
-/// (`expected_precision`). The same factor scales both the `(α g')²` and the
-/// `α g'' · δ_a` terms, with α the value-coupling strength. Reduces to the canonical formula when the child is fully
-/// observed (π_y → ∞); returns no contribution when the child gained no bottom-up
-/// information (π_y = 0).
+/// (`expected_precision`). `π_eff` (the relaxed child precision) weights the
+/// `(α g')²` term of the precision increment; `g_a` (the relaxed gain) weights its
+/// `α g'' · δ_a` term and the mean increment.
 ///
-/// Non-Gaussian children and Gaussian leaves fall back to the canonical
-/// predicted-precision factor π̂_a: pyhgf keeps `precision = expected_precision`
-/// for clamped observations, so the harmonic form would otherwise zero out their
-/// contribution. With `mean_field`, every child uses π̂_a.
+/// The relaxation only applies when the child carries a Gaussian belief
+/// (continuous-state) and is interior (has children of its own); the Schur
+/// derivation assumes a Gaussian-Gaussian value-coupling edge. Binary, categorical,
+/// input/constant, exponential-family and Dirichlet children, plus any Gaussian
+/// leaf, use π̂_a for both factors: pyhgf keeps `precision = expected_precision` for
+/// clamped observations, so the harmonic form would otherwise zero out their
+/// contribution. With `mean_field`, every child uses π̂_a for both factors.
+fn relaxed_factors(network: &Network, child_idx: usize, mean_field: bool) -> (f64, f64) {
+    let child_state = &network.attributes.states[child_idx];
+    let child_expected_precision = child_state.expected_precision;
+    let child_node_type = network.edges[child_idx].node_type.as_str();
+    let child_is_gaussian_interior = child_node_type == "continuous-state"
+        && (network.edges[child_idx].value_children.is_some()
+            || network.edges[child_idx].volatility_children.is_some());
+    if child_is_gaussian_interior && !mean_field {
+        // The Schur complement carries the *conditional* predicted precision π̄_a
+        // (stored on the child). Using the marginal would double-count parent
+        // uncertainty.
+        let child_precision = child_state.precision;
+        let pi_y = child_precision - child_expected_precision;
+        let child_cond = child_state.conditional_expected_precision;
+        let denominator = child_cond + pi_y;
+        (
+            child_cond * pi_y / denominator,
+            child_cond * child_precision / denominator,
+        )
+    } else {
+        (child_expected_precision, child_expected_precision)
+    }
+}
+
+/// Precision increment from the value children.
+///
+/// The relaxed update implements the posterior-step relaxation of the relaxed HGF
+/// (rHGF). Each child contributes
+///
+/// ```text
+/// π̄_a / (π̄_a + π_y) · (α² g'² · π_y − α g'' · π_a · δ_a),    π_y = π_a − π̂_a,
+/// ```
+///
+/// with α the value-coupling strength: the relaxed child precision weights the
+/// `(α g')²` term and the relaxed gain of the mean increment weights the
+/// `α g'' · δ_a` term (see `relaxed_factors`). Reduces to the canonical formula
+/// when the child is fully observed (π_y → ∞). When π̂_a = π̄_a, the relaxed gain
+/// equals π̂_a and the g'' term is the canonical one.
 fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: bool) -> f64 {
     let mut precision_wpe = 0.0;
 
@@ -37,7 +75,6 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
             let observed = child_state.observed;
             let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0);
 
@@ -51,31 +88,11 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
                 None => (1.0, 0.0),
             };
 
-            // Effective child precision under the posterior-step relaxation. The
-            // Schur derivation assumes a Gaussian-Gaussian value-coupling edge,
-            // so the relaxation only applies when the child carries a Gaussian
-            // belief (continuous-state) AND is interior (has
-            // children of its own). Binary, categorical, input/constant,
-            // exponential-family, and Dirichlet children, plus any Gaussian
-            // leaf, fall back to the canonical predicted-precision factor π̂_a.
-            let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior = child_node_type == "continuous-state"
-                && (network.edges[child_idx].value_children.is_some()
-                    || network.edges[child_idx].volatility_children.is_some());
-            let effective_child_precision = if child_is_gaussian_interior && !mean_field {
-                // π_y = π_a − π̂_a; the Schur complement carries the *conditional*
-                // predicted precision π̄_a (stored on the child). Using the
-                // marginal would double-count parent uncertainty.
-                let child_precision = child_state.precision;
-                let pi_y = child_precision - child_expected_precision;
-                let child_cond = child_state.conditional_expected_precision;
-                child_cond * pi_y / (child_cond + pi_y)
-            } else {
-                child_expected_precision
-            };
+            let (effective_child_precision, gain_precision) =
+                relaxed_factors(network, child_idx, mean_field);
 
-            precision_wpe += (effective_child_precision
-                * (alpha.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
+            precision_wpe += (effective_child_precision * alpha.powi(2) * coupling_fn_prime_sq
+                - gain_precision * coupling_fn_second_term)
                 * observed;
         }
     }
@@ -112,7 +129,6 @@ fn value_coupling_mean_wpe(
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
-            let child_expected_precision = child_state.expected_precision;
             let child_vape = child_state.value_prediction_error * child_state.observed;
             let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0);
 
@@ -121,22 +137,11 @@ fn value_coupling_mean_wpe(
                 None => 1.0,
             };
 
-            // Relaxed gain g_a = π̄_a · π_a / (π̄_a + π_y), π_y = π_a − π̂_a; summed
-            // over children then divided once by node_precision (exact multi-child
-            // marginal mean). Leaves and non-Gaussian children use the marginal π̂_a,
-            // the value of g_a at π_y = 0 and the canonical gain.
-            let child_node_type = network.edges[child_idx].node_type.as_str();
-            let child_is_gaussian_interior = child_node_type == "continuous-state"
-                && (network.edges[child_idx].value_children.is_some()
-                    || network.edges[child_idx].volatility_children.is_some());
-            let gain_precision = if child_is_gaussian_interior && !mean_field {
-                let child_precision = child_state.precision;
-                let pi_y = child_precision - child_expected_precision;
-                let child_cond = child_state.conditional_expected_precision;
-                child_cond * child_precision / (child_cond + pi_y)
-            } else {
-                child_expected_precision
-            };
+            // Relaxed gain g_a, summed over children then divided once by
+            // node_precision (exact multi-child marginal mean). Leaves and
+            // non-Gaussian children use the marginal π̂_a, the value of g_a at
+            // π_y = 0 and the canonical gain.
+            let (_, gain_precision) = relaxed_factors(network, child_idx, mean_field);
 
             value_pwpe +=
                 (alpha * coupling_fn_prime * gain_precision / node_precision) * child_vape;
