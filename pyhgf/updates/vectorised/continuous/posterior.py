@@ -42,8 +42,8 @@ class ValueChild(NamedTuple):
     precision_is_clamped :
         Whether the child's posterior precision is never updated, which is the
         case for the clamped observation leaf. The relaxed (structured-Gaussian)
-        factors are then replaced by the canonical predicted precision; see
-        :func:`_relaxed_factors`.
+        factors then take their fully observed limit, the conditional predicted
+        precision; see :func:`_relaxed_factors`.
     """
 
     state: LayerState
@@ -100,16 +100,22 @@ def _relaxed_factors(
     :math:`g'(\mu_m)` with respect to the parent mean, so it carries the same gain
     :math:`g_a`.
 
-    When the child's posterior precision is clamped, both are replaced by the
-    canonical predicted precision :math:`\hat{\pi}_a`. Under ``mean_field_updates``
+    When the child's posterior precision is clamped (the observed leaf), its stored
+    precision is the observation precision rather than a posterior, and both factors
+    take the fully observed limit :math:`\pi^y_a \to \infty`:
+    :math:`\pi^{\mathrm{eff}}_a = g_a = \bar{\pi}_a`. Under ``mean_field_updates``
     the relaxation is skipped for every child: the mean-field update weights all
     messages by :math:`\hat{\pi}_a`
     (:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._mean_field_child_factors`).
     """
-    if child.precision_is_clamped or mean_field_updates:
+    if mean_field_updates:
         return child.state.expected_precision, child.state.expected_precision
 
     conditional = child.state.conditional_expected_precision
+    if child.precision_is_clamped:
+        # Observed leaf: the fully observed limit π_y → ∞ of both factors.
+        return conditional, conditional
+
     pi_y = child.state.precision - child.state.expected_precision
     denominator = conditional + pi_y
     return conditional * pi_y / denominator, conditional * child.state.precision / (

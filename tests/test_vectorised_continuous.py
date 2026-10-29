@@ -736,6 +736,40 @@ def test_relaxed_precision_curved_value_coupling(conditional_expected_precision)
         )
 
 
+def test_relaxed_update_clamped_leaf():
+    r"""A clamped leaf weights its messages by its conditional predicted precision.
+
+    The observed leaf takes the fully observed limit :math:`\pi_y \to \infty` of the
+    posterior-step relaxation, in which both child-precision factors are
+    :math:`\bar{\pi}_a`:
+
+    .. math::
+
+        \pi_b = \hat{\pi}_b + \bar{\pi}_a \left( \alpha^2 g'^2
+            - \alpha \, g'' \, \delta_a \right), \qquad
+        \mu_b = \hat{\mu}_b + \frac{\alpha \, g' \, \bar{\pi}_a}{\pi_b} \, \delta_a.
+
+    Neither the leaf's stored precision (its observation precision) nor its marginal
+    predicted precision :math:`\hat{\pi}_a` enters.
+    """
+    parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
+    child = _value_child()._replace(coupling_fn=jnp.tanh, precision_is_clamped=True)
+    posterior = vectorised_continuous_posterior_update_standard(
+        parent, value_child=child
+    )
+
+    # The standard scheme differentiates at the previous posterior mean.
+    g_prime = jax.grad(jnp.tanh)(0.3)
+    g_second = jax.grad(jax.grad(jnp.tanh))(0.3)
+    alpha, pi_bar_a, delta_a = 0.8, 2.5, 0.4
+
+    precision = 1.2 + pi_bar_a * (alpha**2 * g_prime**2 - alpha * g_second * delta_a)
+    assert jnp.allclose(posterior.precision, precision)
+    assert jnp.allclose(
+        posterior.mean, 0.25 + alpha * g_prime * pi_bar_a * delta_a / precision
+    )
+
+
 def test_unbounded_zero_coupling():
     """A zero coupling leaves the parent at its prediction, with a finite gradient."""
     parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)

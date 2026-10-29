@@ -64,32 +64,38 @@ def _relaxed_child_factors(
     gives the first-order term, weighted by
     :math:`g_a \, \pi_y / \pi_a = \pi^{\mathrm{eff}}_a`.
 
-    The relaxation applies only to Gaussian *interior* children (node types 2/6 that
-    themselves have children). The Schur complement carries the *conditional*
-    predicted precision :math:`\bar{\pi}_a` (stored in ``temp``); using the marginal
-    would double-count parent uncertainty. All other cases (binary (type 1),
-    categorical (5), input/constant (0), exponential family (3), Dirichlet (4), and
-    any Gaussian leaf, i.e. types 2/6 with no children) use the canonical predicted
-    precision :math:`\hat{\pi}_a` for both factors.
+    The relaxation applies to Gaussian children (node types 2/6). The Schur
+    complement carries the *conditional* predicted precision :math:`\bar{\pi}_a`
+    (stored in ``temp``); using the marginal would double-count parent uncertainty.
+    A Gaussian *interior* child (one that has children of its own) uses the two
+    factors above. A Gaussian *leaf* is observed exactly: its stored ``precision`` is
+    the observation precision, not a posterior, so the update takes the fully
+    observed limit :math:`\pi_y \to \infty` of both factors,
+    :math:`\pi^{\mathrm{eff}}_a = g_a = \bar{\pi}_a`. For a leaf without a volatility
+    parent the prediction step sets :math:`\bar{\pi}_a = \hat{\pi}_a`, which gives the
+    canonical update. Non-Gaussian children (binary (type 1), categorical (5),
+    input/constant (0), exponential family (3), Dirichlet (4)) use the canonical
+    predicted precision :math:`\hat{\pi}_a` for both factors.
     """
     child_node_type = edges[value_child_idx].node_type
-    child_is_gaussian_interior = child_node_type in (2, 6) and (
-        edges[value_child_idx].value_children is not None
-        or edges[value_child_idx].volatility_children is not None
-    )
     child_expected_precision = attributes[value_child_idx]["expected_precision"]
-    if child_is_gaussian_interior:
-        # π_y = π_a − π̂_a (bottom-up evidence precision, against the marginal).
-        child_precision = attributes[value_child_idx]["precision"]
-        pi_y = child_precision - child_expected_precision
-        child_cond = attributes[value_child_idx]["temp"][
-            "conditional_expected_precision"
-        ]
-        denominator = child_cond + pi_y
-        return child_cond * pi_y / denominator, child_cond * child_precision / (
-            denominator
-        )
-    return child_expected_precision, child_expected_precision
+    if child_node_type not in (2, 6):
+        return child_expected_precision, child_expected_precision
+
+    child_cond = attributes[value_child_idx]["temp"]["conditional_expected_precision"]
+    child_is_leaf = (
+        edges[value_child_idx].value_children is None
+        and edges[value_child_idx].volatility_children is None
+    )
+    if child_is_leaf:
+        # Observed leaf: the fully observed limit π_y → ∞ of both factors.
+        return child_cond, child_cond
+
+    # π_y = π_a − π̂_a (bottom-up evidence precision, against the marginal).
+    child_precision = attributes[value_child_idx]["precision"]
+    pi_y = child_precision - child_expected_precision
+    denominator = child_cond + pi_y
+    return child_cond * pi_y / denominator, child_cond * child_precision / denominator
 
 
 def _mean_field_child_factors(
@@ -367,8 +373,9 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     :math:`\hat{\pi}_a = \bar{\pi}_a` the relaxed gain equals :math:`\hat{\pi}_a` and
     the second-order term is the canonical one. The Schur complement uses the
     conditional; substituting the marginal would double-count parent uncertainty.
-    Non-Gaussian children and Gaussian leaves fall back to the canonical
-    predicted-precision factor :math:`\hat{\pi}_a` in both terms.
+    A Gaussian leaf takes the fully observed limit :math:`\pi_y \to \infty`, in which
+    both factors are :math:`\bar{\pi}_a`. Non-Gaussian children fall back to the
+    canonical predicted-precision factor :math:`\hat{\pi}_a` in both terms.
 
     Parameters
     ----------

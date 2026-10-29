@@ -20,35 +20,41 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 /// `(α g')²` term of the precision increment; `g_a` (the relaxed gain) weights its
 /// `α g'' · δ_a` term and the mean increment.
 ///
-/// The relaxation only applies when the child carries a Gaussian belief
-/// (continuous-state) and is interior (has children of its own); the Schur
-/// derivation assumes a Gaussian-Gaussian value-coupling edge. Binary, categorical,
-/// input/constant, exponential-family and Dirichlet children, plus any Gaussian
-/// leaf, use π̂_a for both factors: pyhgf keeps `precision = expected_precision` for
-/// clamped observations, so the harmonic form would otherwise zero out their
-/// contribution. With `mean_field`, every child uses π̂_a for both factors.
+/// The relaxation applies when the child carries a Gaussian belief
+/// (continuous-state); the Schur derivation assumes a Gaussian-Gaussian
+/// value-coupling edge. An interior child (one with children of its own) uses the
+/// two factors above. A leaf is observed exactly: its stored `precision` is the
+/// observation precision, not a posterior, so both factors take the fully observed
+/// limit π_y → ∞, π_eff = g_a = π̄_a. For a leaf without a volatility parent the
+/// prediction step sets π̄_a = π̂_a, which gives the canonical update. Binary,
+/// categorical, input/constant, exponential-family and Dirichlet children use π̂_a
+/// for both factors. With `mean_field`, every child uses π̂_a for both factors.
 fn relaxed_factors(network: &Network, child_idx: usize, mean_field: bool) -> (f64, f64) {
     let child_state = &network.attributes.states[child_idx];
     let child_expected_precision = child_state.expected_precision;
-    let child_node_type = network.edges[child_idx].node_type.as_str();
-    let child_is_gaussian_interior = child_node_type == "continuous-state"
-        && (network.edges[child_idx].value_children.is_some()
-            || network.edges[child_idx].volatility_children.is_some());
-    if child_is_gaussian_interior && !mean_field {
-        // The Schur complement carries the *conditional* predicted precision π̄_a
-        // (stored on the child). Using the marginal would double-count parent
-        // uncertainty.
-        let child_precision = child_state.precision;
-        let pi_y = child_precision - child_expected_precision;
-        let child_cond = child_state.conditional_expected_precision;
-        let denominator = child_cond + pi_y;
-        (
-            child_cond * pi_y / denominator,
-            child_cond * child_precision / denominator,
-        )
-    } else {
-        (child_expected_precision, child_expected_precision)
+    let child_is_gaussian = network.edges[child_idx].node_type.as_str() == "continuous-state";
+    if mean_field || !child_is_gaussian {
+        return (child_expected_precision, child_expected_precision);
     }
+
+    // The Schur complement carries the *conditional* predicted precision π̄_a
+    // (stored on the child). Using the marginal would double-count parent
+    // uncertainty.
+    let child_cond = child_state.conditional_expected_precision;
+    let child_is_leaf = network.edges[child_idx].value_children.is_none()
+        && network.edges[child_idx].volatility_children.is_none();
+    if child_is_leaf {
+        // Observed leaf: the fully observed limit π_y → ∞ of both factors.
+        return (child_cond, child_cond);
+    }
+
+    let child_precision = child_state.precision;
+    let pi_y = child_precision - child_expected_precision;
+    let denominator = child_cond + pi_y;
+    (
+        child_cond * pi_y / denominator,
+        child_cond * child_precision / denominator,
+    )
 }
 
 /// Precision increment from the value children.
@@ -111,8 +117,8 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
 ///
 /// accumulated across children and divided once by `node_precision` (π_b), which
 /// makes the multi-child mean exact rather than a sum of independent single-child
-/// RTS gains. Leaves and non-Gaussian children use π̂_a (= `child.expected_precision`),
-/// the value of g_a at π_y = 0 and the canonical gain.
+/// RTS gains. A Gaussian leaf takes the fully observed limit π_y → ∞, g_a = π̄_a;
+/// non-Gaussian children use the canonical gain π̂_a (= `child.expected_precision`).
 /// With `mean_field`, every child uses π̂_a.
 fn value_coupling_mean_wpe(
     network: &Network,
@@ -138,9 +144,8 @@ fn value_coupling_mean_wpe(
             };
 
             // Relaxed gain g_a, summed over children then divided once by
-            // node_precision (exact multi-child marginal mean). Leaves and
-            // non-Gaussian children use the marginal π̂_a, the value of g_a at
-            // π_y = 0 and the canonical gain.
+            // node_precision (exact multi-child marginal mean); see
+            // `relaxed_factors` for leaves and non-Gaussian children.
             let (_, gain_precision) = relaxed_factors(network, child_idx, mean_field);
 
             value_pwpe +=

@@ -32,10 +32,15 @@ def test_two_nodes_hgf():
     r"""Test the two nodes HGF with one observation step.
 
     The input node has λ = 0 for the mean but carries its precision over (λ = 1
-    for the precision): with no tonic volatility its precision and expected
-    precision stay constant unless a volatility parent contributes Ω. Here
-    :math:`\Omega_0 = 2.68219`, so :math:`\hat{\pi}_0 = 1/(1 + \Omega_0) = 0.2715764`.
-    The volatility parent (λ = 1) carries its full variance: :math:`1/(1+e^{-4})`.
+    for the precision), and has no tonic volatility. Its conditional predicted
+    precision is :math:`\bar{\pi}_0 = 1/(1 + \Omega_0) = 0.3753910`, with
+    :math:`\Omega_0 = e^{1/(2 \hat{\pi}_2)} = 1.66389` from the MGF term of the
+    volatility parent. Its marginal predicted precision adds the value parent's
+    variance: :math:`\hat{\pi}_0 = 1/(1 + \Omega_0 + 1/\hat{\pi}_1) = 0.2715764`. The
+    value parent conditions on the observation through :math:`\bar{\pi}_0`:
+    :math:`\pi_1 = \hat{\pi}_1 + \bar{\pi}_0` and :math:`\mu_1 = \bar{\pi}_0 \, u /
+    \pi_1`. The volatility parent (λ = 1) carries its full variance:
+    :math:`1/(1+e^{-4})`.
     """
     # one level HGF with a volatility parent and one observation step
     two_nodes__hgf = (
@@ -53,7 +58,7 @@ def test_two_nodes_hgf():
         assert jnp.isclose(two_nodes__hgf.node_trajectories[0][key], val)
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.2535901, 0.98201376, 0.0433278, 0.0],
+        [1.3574047, 0.98201376, 0.0553101, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[1][key], val)
     for key, val in zip(
@@ -117,23 +122,23 @@ def test_continuous_scan_loop():
         .input_data(input_data=timeserie)
     )
 
-    # Expected values reflect the rHGF prediction step (see note in
-    # test_two_nodes_hgf above).
+    # Expected values reflect the rHGF prediction step and the conditional
+    # precision of the observed leaf (see the note in test_two_nodes_hgf above).
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.7623690, 0.8241, 0.7945459],
+        [1.0, 0.7675951, 0.8241, 0.7947441],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[0][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [6.8440757, 6.0817065, 0.7978380, 0.7945459],
+        [7.3445687, 6.4737158, 0.7982249, 0.7947441],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[1][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.4760352, 1.4371926, -2.2633543, -2.2633660],
+        [1.4798084, 1.4407694, -2.2555473, -2.2555592],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[2][idx][-1], val)
 
