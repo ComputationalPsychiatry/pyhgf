@@ -164,10 +164,12 @@ def test_remove_node_with_several_couplings():
             Network()
             .add_nodes(n_nodes=2)
             .add_nodes(
-                value_children=([0, 1], [0.5, 2.0]), coupling_fn=(jnp.tanh, None)
+                value_children=([0, 1], [0.5, 2.0]), coupling_fn=(None, jnp.tanh)
             ),
             0,
-            Network().add_nodes().add_nodes(value_children=([0], [2.0])),
+            Network()
+            .add_nodes()
+            .add_nodes(value_children=([0], [2.0]), coupling_fn=(jnp.tanh,)),
         ),
         # parent with two volatility children, one of them removed
         (
