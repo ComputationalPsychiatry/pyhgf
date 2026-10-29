@@ -7,6 +7,18 @@ import jax.numpy as jnp
 from pyhgf.typing import AdjacencyLists, Edges
 
 
+def _keep_strengths(node_attributes: dict, key: str, keep: list[int]) -> None:
+    """Keep the coupling strengths of the edges at the positions in ``keep``.
+
+    The strengths are stored as an array (or ``None``), so they are tested against
+    ``None``: the truth value of an array is ambiguous for two entries or more, and
+    ``False`` for a single zero strength.
+    """
+    strengths = node_attributes.get(key)
+    if strengths is not None:
+        node_attributes[key] = jnp.array([strengths[i] for i in keep]) if keep else None
+
+
 def _remove_edges(
     attributes: dict,
     edges: Edges,
@@ -50,100 +62,35 @@ def _remove_edges(
     for parent_idx in parent_idxs:
         if parent_idx >= len(edges_as_list):
             continue
-
         node = edges_as_list[parent_idx]
-        children = node.value_children if kind == "value" else node.volatility_children
-        coupling_key = f"{kind}_coupling_children"
-
-        if children is not None and children:
-            # Get indices of children to keep
-            keep_indices = [
-                i for i, child in enumerate(children) if child not in children_idxs
-            ]
-            new_children = tuple(children[i] for i in keep_indices)
-
-            # Update coupling strengths if they exist. They are stored as an array,
-            # so test for None: the truth value of an array is ambiguous with two or
-            # more entries, and False for a single zero strength.
-            strengths = attributes[parent_idx].get(coupling_key)
-            if strengths is not None:
-                attributes[parent_idx][coupling_key] = (
-                    jnp.array([strengths[i] for i in keep_indices])
-                    if keep_indices
-                    else None
-                )
-
-            # Update node edges
-            if kind == "value":
-                # coupling_fn[i] describes the edge to value_children[i]: drop the
-                # entries of the removed children, otherwise the function of a removed
-                # child would apply to the next one. Missing entries are linear, and a
-                # parent left without value children gets the default (None,).
-                fns = list(node.coupling_fn)
-                fns += [None] * max(0, len(children) - len(fns))
-                new_coupling_fn = tuple(fns[i] for i in keep_indices) or (None,)
-                edges_as_list[parent_idx] = AdjacencyLists(
-                    node.node_type,
-                    node.value_parents,
-                    node.volatility_parents,
-                    new_children if new_children else None,
-                    node.volatility_children,
-                    new_coupling_fn,
-                )
-            else:
-                edges_as_list[parent_idx] = AdjacencyLists(
-                    node.node_type,
-                    node.value_parents,
-                    node.volatility_parents,
-                    node.value_children,
-                    new_children if new_children else None,
-                    node.coupling_fn,
-                )
+        children = getattr(node, f"{kind}_children")
+        if not children:
+            continue
+        keep = [i for i, child in enumerate(children) if child not in children_idxs]
+        _keep_strengths(attributes[parent_idx], f"{kind}_coupling_children", keep)
+        new_edges = {f"{kind}_children": tuple(children[i] for i in keep) or None}
+        if kind == "value":
+            # coupling_fn[i] is the coupling function of the edge to value_children[i]
+            # (linear when missing), so it is pruned with the children
+            fns = node.coupling_fn
+            new_edges["coupling_fn"] = tuple(
+                fns[i] if i < len(fns) else None for i in keep
+            ) or (None,)
+        edges_as_list[parent_idx] = node._replace(**new_edges)
 
     # Update children nodes
     for child_idx in children_idxs:
         if child_idx >= len(edges_as_list):
             continue
-
         node = edges_as_list[child_idx]
-        parents = node.value_parents if kind == "value" else node.volatility_parents
-        coupling_key = f"{kind}_coupling_parents"
-
-        if parents is not None and parents:
-            # Get indices of parents to keep
-            keep_indices = [
-                i for i, parent in enumerate(parents) if parent not in parent_idxs
-            ]
-            new_parents = tuple(parents[i] for i in keep_indices)
-
-            # Update coupling strengths if they exist (tested for None, see above)
-            strengths = attributes[child_idx].get(coupling_key)
-            if strengths is not None:
-                attributes[child_idx][coupling_key] = (
-                    jnp.array([strengths[i] for i in keep_indices])
-                    if keep_indices
-                    else None
-                )
-
-            # Update node edges
-            if kind == "value":
-                edges_as_list[child_idx] = AdjacencyLists(
-                    node.node_type,
-                    new_parents if new_parents else None,
-                    node.volatility_parents,
-                    node.value_children,
-                    node.volatility_children,
-                    node.coupling_fn,
-                )
-            else:
-                edges_as_list[child_idx] = AdjacencyLists(
-                    node.node_type,
-                    node.value_parents,
-                    new_parents if new_parents else None,
-                    node.value_children,
-                    node.volatility_children,
-                    node.coupling_fn,
-                )
+        parents = getattr(node, f"{kind}_parents")
+        if not parents:
+            continue
+        keep = [i for i, parent in enumerate(parents) if parent not in parent_idxs]
+        _keep_strengths(attributes[child_idx], f"{kind}_coupling_parents", keep)
+        edges_as_list[child_idx] = node._replace(**{
+            f"{kind}_parents": tuple(parents[i] for i in keep) or None
+        })
 
     return attributes, tuple(edges_as_list)
 
