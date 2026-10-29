@@ -19,6 +19,7 @@ from pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_no
     precision_update_missing_values,
 )
 from pyhgf.updates.prediction.continuous import (
+    continuous_node_prediction,
     predict_precision,
     predict_precision_mean_field,
 )
@@ -197,9 +198,11 @@ def test_missing_value_precision_ages_by_the_carried_variance(autoconnection_str
     """
     attributes, edges = _one_parent_attributes(autoconnection_strength)
     attributes[1]["precision"] = 4.0
+    attributes = continuous_node_prediction(attributes, 1, edges)
     # No child reported an observation at this step.
     attributes[0]["observed"] = 0
 
     aged = precision_update_missing_values(attributes, edges, 1)
 
+    assert jnp.isclose(aged, attributes[1]["expected_precision"])
     assert jnp.isclose(aged, 1.0 / (autoconnection_strength**2 / 4.0 + OMEGA))

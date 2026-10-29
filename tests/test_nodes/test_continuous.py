@@ -25,12 +25,15 @@ def _build_network(
     return net.input_data(input_data=timeseries, observed=observed)
 
 
-def _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label):
+def _assert_backends_match(
+    py_net, rs_net, n_levels, volatility_updates, label, atol=0.0
+):
     """Assert the JAX and Rust trajectories agree for every node.
 
     JAX defaults to float32, Rust to f64, so this is a float32 tolerance (under
     ``jax_enable_x64`` they agree to ~1e-14). The unbounded kernel differs at the float
     level between backends, so the tolerance is loosened with a volatility parent.
+    ``atol`` adds an absolute floor for trajectories that pass close to zero.
     """
     # The unbounded posterior kernel differs at the float level between the two
     # backends (mathematically equivalent but distinct implementations), so the
@@ -45,6 +48,7 @@ def _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label):
                 py_net.node_trajectories[node_idx][key],
                 rs_net.node_trajectories[node_idx][key],
                 rtol=rtol,
+                atol=atol,
             ), f"{label}: node {node_idx}, key '{key}' mismatch"
 
 
@@ -86,6 +90,42 @@ def test_continuous_3_levels(volatility_updates, mean_field_updates):
     _assert_backends_match(py_net, rs_net, 3, volatility_updates, label)
 
 
+@pytest.mark.parametrize(
+    "volatility_parent_kwargs",
+    [{"tonic_drift": 0.5}, {"autoconnection_strength": 0.5, "mean": -2.0}],
+    ids=["drift", "autoconnection"],
+)
+@pytest.mark.parametrize("volatility_child", [0, 1], ids=["input", "state"])
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_moving_volatility_parent(
+    volatility_parent_kwargs, volatility_child, mean_field_updates
+):
+    r"""Both backends predict the volatility from the parent's predicted mean.
+
+    With a tonic drift or an autoconnection strength other than 1, the predicted mean
+    :math:`\hat{\mu}_{\check{a}}^{(k)}` of the volatility parent differs from its
+    previous posterior mean :math:`\mu_{\check{a}}^{(k-1)}`. The child's predicted
+    volatility uses :math:`\hat{\mu}_{\check{a}}^{(k)}`, so the JAX and Rust
+    trajectories must agree.
+    """
+    timeseries = load_data("continuous")[:200]
+    label = f"{volatility_parent_kwargs} child={volatility_child}"
+
+    py_net, rs_net = (
+        cls(volatility_updates="standard", mean_field_updates=mean_field_updates)
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=volatility_child, **volatility_parent_kwargs)
+        .input_data(input_data=timeseries)
+        for cls in (PyNetwork, RsNetwork)
+    )
+
+    volatility_parent = py_net.node_trajectories[2]
+    previous_mean = np.concatenate([[0.0], volatility_parent["mean"][:-1]])
+    assert np.max(np.abs(volatility_parent["expected_mean"] - previous_mean)) > 0.1
+    _assert_backends_match(py_net, rs_net, 3, "standard", label)
+
+
 @pytest.mark.parametrize("n_levels", [2, 3])
 @pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
@@ -111,6 +151,51 @@ def test_continuous_missing_observations(
 
     _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label)
     assert np.all(np.diff(rs_net.node_trajectories[1]["precision"][200:300]) < 0.0)
+
+
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_missing_observations_keep_predictions(
+    volatility_updates, mean_field_updates
+):
+    r"""Without observations, every node above the input keeps its prediction.
+
+    Node 1 is the value parent of the input, with a value parent (node 2) and a
+    volatility parent (node 3) of its own. While the input is missing, no node
+    receives evidence, so each posterior equals the prediction:
+    :math:`\pi^{(k)} = \hat{\pi}^{(k)}` and :math:`\mu^{(k)} = \hat{\mu}^{(k)}`. Node 1
+    counts as unobserved, so nodes 2 and 3 receive no prediction error from it.
+    """
+    timeseries = load_data("continuous")[:300]
+    observed = np.ones(len(timeseries), dtype=int)
+    observed[200:250] = 0
+    label = f"vol={volatility_updates} mf={mean_field_updates}"
+
+    py_net, rs_net = (
+        cls(
+            volatility_updates=volatility_updates, mean_field_updates=mean_field_updates
+        )
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(value_children=1)
+        .add_nodes(volatility_children=1)
+        .input_data(input_data=timeseries, observed=observed)
+        for cls in (PyNetwork, RsNetwork)
+    )
+
+    # The mean of node 2 passes close to zero, so the float32 comparison needs an
+    # absolute floor on top of the relative tolerance.
+    _assert_backends_match(py_net, rs_net, 4, volatility_updates, label, atol=1e-6)
+    for net in (py_net, rs_net):
+        for node_idx in (1, 2, 3):
+            node = net.node_trajectories[node_idx]
+            for key in ("precision", "mean"):
+                assert np.allclose(
+                    np.asarray(node[key])[200:250],
+                    np.asarray(node[f"expected_{key}"])[200:250],
+                    rtol=1e-6,
+                    atol=1e-9,
+                ), f"{label}: node {node_idx}, '{key}' moved without observations"
 
 
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)

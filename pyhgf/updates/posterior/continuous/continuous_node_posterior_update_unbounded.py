@@ -44,7 +44,8 @@ def continuous_node_posterior_update_unbounded(
     (:py:func:`posterior_update_unbounded`), so that every volatility and value child
     contributes to the posterior. For a single volatility child and no value child,
     this is the two-expansion update of section 3.4 in [1]_. Unobserved children are
-    left out and, if no child is observed, the precision ages as in
+    left out and, if no child is observed, the posterior precision is the predicted
+    precision, as in
     :py:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update_missing_values`.
 
     Parameters
@@ -80,7 +81,7 @@ def continuous_node_posterior_update_unbounded(
         edges=edges,
         mean_field_updates=mean_field_updates,
     )
-    # without any observed child, the precision ages as in the standard update
+    # without any observed child, the posterior precision is the predicted precision
     posterior_precision = jnp.where(
         _has_observations(attributes, edges, node_idx),
         posterior_precision,

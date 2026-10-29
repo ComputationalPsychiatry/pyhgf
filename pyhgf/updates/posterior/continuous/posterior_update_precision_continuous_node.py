@@ -9,7 +9,6 @@ from jax.lax import cond
 from jax.tree_util import Partial
 
 from pyhgf.typing import Edges
-from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 
 # ----------------------------------------------------------------------------------
 # Shared building blocks
@@ -25,9 +24,12 @@ from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 def _has_observations(attributes: dict, edges: Edges, node_idx: int) -> Array:
     """Return whether any value or volatility child reported an observation.
 
-    If all children are unobserved the node simply ages its precision via
-    :func:`precision_update_missing_values`; otherwise the regular prediction-error
-    integration applies.
+    If all children are unobserved, the node keeps its predicted precision (see
+    :func:`precision_update_missing_values`); otherwise the regular prediction-error
+    integration applies. A continuous state node with children counts as observed
+    when at least one of its own children was (see
+    :func:`pyhgf.updates.prediction_error.continuous.continuous_node_prediction_error`),
+    so a step without observations leaves every node above it at its prediction.
     """
     observations = []
     if edges[node_idx].value_children is not None:
@@ -337,9 +339,9 @@ def posterior_update_precision_continuous_node(
     """
     # ----------------------------------------------------------------------------------
     # Decide which update to use depending on the presence of observed value in the
-    # children nodes. If no values were observed, the precision should increase
-    # as a function of time using the function precision_missing_values(). Otherwise,
-    # we use regular HGF updates for value and volatility couplings.
+    # children nodes. If no values were observed, the posterior precision is the
+    # predicted precision (precision_update_missing_values()). Otherwise, we use
+    # regular HGF updates for value and volatility couplings.
     # ----------------------------------------------------------------------------------
     return cond(
         _has_observations(attributes, edges, node_idx),
@@ -412,16 +414,21 @@ def precision_update_missing_values(
 ) -> Array:
     r"""Compute new precision in the case of missing observations.
 
-    With no observation to integrate, the node ages its precision by one random-walk
-    step:
+    With no observed child, the node receives no evidence and its posterior is its
+    prediction:
 
     .. math::
 
-        \pi_a^{(k)} = \frac{1}{\frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}}.
+        \pi_b^{(k)} = \hat{\pi}_b^{(k)}.
 
-    The carried variance takes :math:`\lambda_a^2` because scaling the belief by
-    :math:`\lambda_a` scales its variance by :math:`\lambda_a^2`: the mean ages by
-    :math:`\lambda_a`, so the variance ages by :math:`\lambda_a^2`. At :math:`\lambda_a = 1` this is unchanged.
+    The predicted precision :math:`\hat{\pi}_b^{(k)}` is the one computed by the
+    prediction step in use (relaxed or mean-field, see
+    :func:`pyhgf.updates.prediction.continuous.predict_precision`). It ages the
+    previous precision by one random-walk step,
+    :math:`\lambda_b^2 / \pi_b^{(k-1)} + \Omega_b^{(k)}`, and includes the coupling
+    terms of the prediction step. The mean update returns
+    :math:`\hat{\mu}_b^{(k)}` in the same case, since the prediction errors of
+    unobserved children are cancelled.
 
     Parameters
     ----------
@@ -437,47 +444,9 @@ def precision_update_missing_values(
     -------
     posterior_precision_missing_values :
         The new posterior precision in the case of missing values in all child
-        nodes. The new precision decreases proportionally to the time elapsed,
-        accounting for the influence of volatility parents.
+        nodes: the predicted precision of the node.
     """
-    # List the node's volatility parents
-    volatility_parents_idxs = edges[node_idx].volatility_parents
-
-    # Get the tonic volatility from the node
-    total_volatility = attributes[node_idx]["tonic_volatility"]
-
-    # Look at the (optional) volatility parents and add their value to the tonic
-    # volatility to get the total volatility
-    if volatility_parents_idxs is not None:
-        for volatility_parents_idx, volatility_coupling in zip(
-            volatility_parents_idxs,
-            attributes[node_idx]["volatility_coupling_parents"],
-        ):
-            total_volatility += (
-                volatility_coupling * attributes[volatility_parents_idx]["mean"]
-            )
-
-    # compute the new predicted_volatility from the total volatility
-    time_step = attributes[-1]["time_step"]
-    predicted_volatility = time_step * jnp.exp(total_volatility)
-
-    # New precision: carried variance + volatility. Input nodes carry 1/π
-    # (λ = 1 for precision); other nodes λ²/π (the unobserved mean ages by λ).
-    if (
-        edges[node_idx].value_children is None
-        and edges[node_idx].volatility_children is None
-    ):
-        carried_variance = 1.0 / attributes[node_idx]["precision"]
-    else:
-        carried_variance = (
-            attributes[node_idx]["autoconnection_strength"] ** 2
-        ) / attributes[node_idx]["precision"]
-    posterior_precision_missing_values = 1 / jnp.maximum(
-        carried_variance + predicted_volatility,
-        MIN_PREDICTED_VARIANCE,
-    )
-
-    return posterior_precision_missing_values
+    return attributes[node_idx]["expected_precision"]
 
 
 @partial(jit, static_argnames=("edges", "node_idx"))

@@ -1,6 +1,14 @@
 use crate::model::network::Network;
+use crate::updates::nodalised::posterior::continuous::has_observations;
 
-/// Prediction error from a continuous state node
+/// Prediction error from a continuous state node.
+///
+/// A node with value or volatility children also records whether at least one of
+/// them was observed at this step, in its `observed` flag. Its parents then treat it
+/// as unobserved after a step without observations: they receive no prediction error
+/// from it and keep their predicted precision. The flag of a node without children is
+/// the one set by the observation step (mirrors `continuous_node_prediction_error` in
+/// the JAX backend).
 pub fn prediction_error_continuous_state_node(
     network: &mut Network,
     node_idx: usize,
@@ -27,7 +35,20 @@ pub fn prediction_error_continuous_state_node(
         volatility_prediction_error /= n as f64;
     }
 
+    // A node with children is observed when at least one of its children was.
+    let edges = &network.edges[node_idx];
+    let observed = if edges.value_children.is_some() || edges.volatility_children.is_some() {
+        if has_observations(network, node_idx) {
+            1.0
+        } else {
+            0.0
+        }
+    } else {
+        network.attributes.states[node_idx].observed
+    };
+
     let state = &mut network.attributes.states[node_idx];
     state.value_prediction_error = value_prediction_error;
     state.volatility_prediction_error = volatility_prediction_error;
+    state.observed = observed;
 }
