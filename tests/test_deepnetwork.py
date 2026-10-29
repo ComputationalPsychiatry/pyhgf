@@ -928,8 +928,9 @@ def test_batch_update_from_predicted_states_matches():
 
     ``predict_states`` + ``batch_update(predicted=...)`` must produce the same new
     weights and per-sample input errors as the plain call, which re-runs the forward
-    sweep internally — the reuse reorganises when the same computation happens, it does
-    not change the computation.
+    sweep internally. The reuse changes when the computation happens, not what it
+    computes, but XLA can order the operations differently in the two paths: the input
+    errors are compared at the float32 tolerance of the other batch update tests.
     """
     rng = np.random.default_rng(17)
     w1 = jnp.asarray(rng.normal(size=(_FF_D, _FF_H)) * (2.0 / _FF_H) ** 0.5)
@@ -959,7 +960,7 @@ def test_batch_update_from_predicted_states_matches():
             atol=1e-7,
         )
     np.testing.assert_allclose(
-        reused.input_errors, plain.input_errors, rtol=1e-6, atol=1e-7
+        reused.input_errors, plain.input_errors, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_allclose(
         reused.state.layers[1].state.precision,
