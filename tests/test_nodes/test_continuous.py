@@ -206,3 +206,78 @@ def test_relaxed_precision_curved_value_coupling():
         assert np.allclose(
             net.node_trajectories[2]["precision"], expected_precision, rtol=1e-5
         )
+
+
+@pytest.mark.parametrize("coupling", ["linear", "tanh"])
+def test_relaxed_update_observed_leaf(coupling):
+    r"""Test the relaxed update of a value parent from an observed leaf.
+
+    The leaf (node 0) has a value parent (node 1) and a volatility parent (node 2).
+    It is observed exactly, so node 1 takes the fully observed limit
+    :math:`\pi_y \to \infty` of the posterior-step relaxation, in which both
+    child-precision factors are the leaf's conditional predicted precision
+    :math:`\bar{\pi}_0`:
+
+    .. math::
+
+        \pi_1 = \hat{\pi}_1 + \bar{\pi}_0 \left( g'^2 - g'' \, \delta_0 \right),
+            \qquad
+        \mu_1 = \hat{\mu}_1 + \frac{g' \, \bar{\pi}_0}{\pi_1} \, \delta_0,
+
+    with :math:`g` differentiated at the previous posterior mean of node 1. The
+    leaf's marginal predicted precision :math:`\hat{\pi}_0` also contains node 1's
+    own variance :math:`g'^2 / \hat{\pi}_1`, which does not enter this update. Both
+    backends must match this closed form, computed from the JAX trajectories.
+    """
+    import jax
+    import jax.numpy as jnp
+
+    if coupling == "tanh":
+        py_kwargs, rs_kwargs, coupling_fn = (
+            {"coupling_fn": (jnp.tanh,)},
+            {"coupling_fn": "tanh"},
+            jnp.tanh,
+        )
+    else:
+        py_kwargs, rs_kwargs, coupling_fn = {}, {}, lambda x: x
+
+    timeseries = load_data("continuous")[:50]
+    py_net, rs_net = (
+        cls(volatility_updates="standard")
+        .add_nodes()
+        .add_nodes(value_children=0, **kwargs)
+        .add_nodes(volatility_children=0)
+        .input_data(input_data=timeseries)
+        for cls, kwargs in ((PyNetwork, py_kwargs), (RsNetwork, rs_kwargs))
+    )
+    _assert_backends_match(py_net, rs_net, 3, "standard", f"leaf {coupling}")
+
+    leaf, parent = py_net.node_trajectories[0], py_net.node_trajectories[1]
+    pi_bar_0 = np.asarray(leaf["temp"]["conditional_expected_precision"])
+    delta_0 = np.asarray(leaf["temp"]["value_prediction_error"])
+
+    # The parent's variance makes the marginal differ from the conditional, so the
+    # closed form below separates the two.
+    assert np.max(pi_bar_0 / np.asarray(leaf["expected_precision"])) > 1.05
+
+    # Previous posterior mean of node 1, starting from its prior mean of 0.
+    linearisation_point = jnp.concatenate([jnp.zeros(1), parent["mean"][:-1]])
+    g_prime = np.asarray(jax.vmap(jax.grad(coupling_fn))(linearisation_point))
+    g_second = np.asarray(
+        jax.vmap(jax.grad(jax.grad(coupling_fn)))(linearisation_point)
+    )
+
+    expected_precision = np.asarray(parent["expected_precision"]) + pi_bar_0 * (
+        g_prime**2 - g_second * delta_0
+    )
+    expected_mean = (
+        np.asarray(parent["expected_mean"])
+        + g_prime * pi_bar_0 * delta_0 / expected_precision
+    )
+    for net in (py_net, rs_net):
+        assert np.allclose(
+            net.node_trajectories[1]["precision"], expected_precision, rtol=1e-5
+        )
+        assert np.allclose(
+            net.node_trajectories[1]["mean"], expected_mean, rtol=1e-5, atol=1e-6
+        )

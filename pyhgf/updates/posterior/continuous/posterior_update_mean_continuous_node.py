@@ -6,6 +6,8 @@ from jax import grad, jit
 
 from pyhgf.typing import Edges
 
+from .posterior_update_precision_continuous_node import _relaxed_child_factors
+
 
 @partial(jit, static_argnames=("edges", "node_idx"))
 def posterior_update_mean_continuous_node(
@@ -38,11 +40,12 @@ def posterior_update_mean_continuous_node(
     :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
     The relaxed gain :math:`g_{a,j}` is the joint-Gaussian (Rauch-Tung-Striebel
     smoother) gain of the posterior-step relaxation, derived from the
-    structured-Gaussian variational posterior on the value-coupling edge. Leaves and
-    non-Gaussian children use the marginal :math:`\hat{\pi}_j`, the value of
-    :math:`g_{a,j}` at :math:`\pi_{y,j} = 0`
-    (:math:`\bar{\pi}_j \, \pi_j / \bar{\pi}_j = \pi_j = \hat{\pi}_j`), which is the
-    canonical gain.
+    structured-Gaussian variational posterior on the value-coupling edge, and is
+    computed by
+    :func:`~pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._relaxed_child_factors`.
+    A Gaussian leaf is observed exactly and takes the fully observed limit
+    :math:`\pi_{y,j} \to \infty`, :math:`g_{a,j} = \bar{\pi}_j`. Non-Gaussian
+    children use the canonical gain :math:`\hat{\pi}_j`.
 
     .. rubric:: 2. Mean update from volatility coupling
 
@@ -124,24 +127,11 @@ def posterior_update_mean_continuous_node(
             #     g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
             # accumulated across children and divided once by `node_precision` (π_b)
             # after the loop, which makes the multi-child mean exact rather than a
-            # sum of independent RTS gains. Leaves and non-Gaussian children use π̂_a
-            # (what `child.expected_precision` stores), the value of g_a at π_y = 0
-            # and the canonical gain.
-            child_node_type = edges[value_child_idx].node_type
-            child_is_gaussian_interior = child_node_type in (2, 6) and (
-                edges[value_child_idx].value_children is not None
-                or edges[value_child_idx].volatility_children is not None
+            # sum of independent RTS gains. It is the same gain that weights the
+            # second-order term of the precision update.
+            _, gain_precision = _relaxed_child_factors(
+                attributes, edges, value_child_idx
             )
-            child_expected_precision = attributes[value_child_idx]["expected_precision"]
-            if child_is_gaussian_interior:
-                child_precision = attributes[value_child_idx]["precision"]
-                pi_y = child_precision - child_expected_precision
-                child_cond = attributes[value_child_idx]["temp"][
-                    "conditional_expected_precision"
-                ]
-                gain_precision = child_cond * child_precision / (child_cond + pi_y)
-            else:
-                gain_precision = child_expected_precision
 
             # sum the precision weigthed prediction errors over all children
             value_precision_weigthed_prediction_error += (

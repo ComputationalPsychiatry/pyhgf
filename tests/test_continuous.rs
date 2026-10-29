@@ -63,11 +63,12 @@ fn test_two_nodes_hgf() {
     // Node 1: value parent of node 0
     // Node 2: volatility parent of node 0
     //
-    // Expected values reflect the relaxed prediction step: node 0's predicted
-    // precision picks up the moment-generating-function term
-    // `κ² / (2 π̂_2)` inside its log-volatility exponent, shifting it from the
-    // canonical 0.5 to 0.27158 and propagating through node 0's posterior to
-    // node 1's and node 2's value-coupling updates.
+    // Expected values reflect the relaxed HGF. Node 0's conditional predicted
+    // precision picks up the moment-generating-function term `κ² / (2 π̂_2)`
+    // inside its log-volatility exponent: π̄_0 = 1 / (1 + e^{1 / (2 π̂_2)}) =
+    // 0.37539, against the canonical 0.5. Its marginal predicted precision adds
+    // node 1's variance 1 / π̂_1, giving π̂_0 = 0.27158. Node 1 conditions on the
+    // observation through π̄_0: π_1 = π̂_1 + π̄_0 and μ_1 = π̄_0 · u / π_1.
     let mut network = Network::new("eHGF");
 
     // Node 0: input node
@@ -111,13 +112,13 @@ fn test_two_nodes_hgf() {
 
     // Check node 1 trajectories
     let node1 = &network.node_trajectories.nodes[1];
-    assert_close(node1.precision[0], 1.25359020, "node1 precision");
+    assert_close(node1.precision[0], 1.35740476, "node1 precision");
     assert_close(
         node1.expected_precision[0],
         0.98201376,
         "node1 expected_precision",
     );
-    assert_close(node1.mean[0], 0.04332778, "node1 mean");
+    assert_close(node1.mean[0], 0.05531010, "node1 mean");
     assert_close(node1.expected_mean[0], 0.0, "node1 expected_mean");
 
     // Check node 2 trajectories
