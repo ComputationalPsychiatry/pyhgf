@@ -3,11 +3,13 @@ use crate::{
     utils::function_pointer::UpdateStep,
 };
 
-/// Single time slice belief propagation.
+/// Single time slice belief propagation. `observed_set` flags each observation (`0.0`
+/// for a missing one).
 #[inline(always)]
 pub fn belief_propagation(
     network: &mut Network,
     observations_set: &[f64],
+    observed_set: &[f64],
     predictions: &[(usize, UpdateStep)],
     updates: &[(usize, UpdateStep)],
     time_step: f64,
@@ -18,9 +20,9 @@ pub fn belief_propagation(
     }
 
     // 2. observation steps
-    for (i, &observation) in observations_set.iter().enumerate() {
+    for (i, (&observation, &observed)) in observations_set.iter().zip(observed_set).enumerate() {
         let idx = network.inputs[i];
-        observation_update(network, idx, observation);
+        observation_update(network, idx, observation, observed);
     }
 
     // 3. update steps

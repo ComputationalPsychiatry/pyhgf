@@ -99,7 +99,9 @@ class Network:
 
             .. note:
               The different update steps only apply to nodes having at least one
-              volatility parents. In other cases, the regular HGF updates are applied.
+              volatility child. In other cases, the regular HGF updates are applied.
+              The unbounded update uses all the volatility and value children of a
+              node (section 3.6 of Mathys et al., 2026).
         max_posterior_precision :
             Upper bound applied to every posterior precision write. Defaults to
             ``1e10`` and is shared with the vectorised JAX and Rust

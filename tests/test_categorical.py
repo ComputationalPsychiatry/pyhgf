@@ -77,10 +77,11 @@ def test_categorical_state_node():
 
     # Expected values reflect the relaxed prediction step (continuous parents of
     # the binary inputs have volatility couplings whose predicted precisions
-    # now include the κ²/(2 π̂_parent) MGF correction).
+    # now include the κ²/(2 π̂_parent) MGF correction), and the unbounded update of
+    # the shared volatility parent, which uses its three volatility children.
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2642910
+        categorical_hgf.node_trajectories[0]["kl_divergence"].sum(), 1.2601053
     )
     assert jnp.isclose(
-        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.418026
+        categorical_hgf.node_trajectories[0]["surprise"].sum(), 12.397428
     )

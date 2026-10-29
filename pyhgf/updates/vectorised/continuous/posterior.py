@@ -447,12 +447,12 @@ def vectorised_continuous_posterior_update_unbounded(
     Vectorised port of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded`
     (Lambert :math:`W_0` dual-quadratic expansion with a variational
-    energy-based blend). The approximation is derived for a single volatility
-    child per node, so the coupling must be one-to-one: ``kappa`` square and
-    diagonal, each parent node coupled to exactly one child node. The layer must
-    have no value child (the nodalised update ignores value children; the
-    vectorised builder rejects such a topology instead of silently dropping the
-    edge).
+    energy-based blend). This port implements the single-child case only, so the
+    coupling must be one-to-one: ``kappa`` square and diagonal, each parent node
+    coupled to exactly one child node. The layer must have no value child (the
+    vectorised builder rejects such a topology; the nodalised update implements
+    the multi-child extension in
+    :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded`).
 
     Parameters
     ----------
@@ -513,14 +513,19 @@ def vectorised_continuous_posterior_update_unbounded(
     # ------------------------------------------------------------------
     # Expansion 2: quadratic at the Lambert W₀ approximate mode
     # ------------------------------------------------------------------
-    pihat_y = expected_precision / kappa**2
+    # A zero coupling makes the child independent of the parent, so expansion 2 is
+    # dropped below. κ = 1 stands in for it here so that no 0/0 is formed, which
+    # would make the gradient NaN even through a dropped expansion.
+    has_coupling = kappa != 0.0
+    safe_kappa = jnp.where(has_coupling, kappa, 1.0)
+    pihat_y = expected_precision / safe_kappa**2
 
     log_W_arg = jnp.log(be_aux) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
     log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
     W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
     v_W = lambert_w0(W_arg)
     y_star = gamma_c + v_W - 0.5 / pihat_y
-    x_star = (y_star - log_time_step - tonic_volatility) / kappa
+    x_star = (y_star - log_time_step - tonic_volatility) / safe_kappa
 
     log_s2 = log_time_step + kappa * x_star + tonic_volatility
     log_denom_s = jnp.logaddexp(log_previous_variance, log_s2)
@@ -539,13 +544,13 @@ def vectorised_continuous_posterior_update_unbounded(
         / pi2_safe
     )
 
-    # Double-where masking: sanitise non-finite Expansion-2 results before the
-    # outer ``where`` so its VJP never does ``0 * NaN``.
-    exp2_finite = jnp.isfinite(pi2_safe) & jnp.isfinite(mu2_safe)
-    pi2_safe_for_grad = jnp.where(exp2_finite, pi2_safe, 1.0)
-    mu2_safe_for_grad = jnp.where(exp2_finite, mu2_safe, 0.0)
-    pi2 = jnp.where(exp2_finite, pi2_safe_for_grad, pi1)
-    mu2 = jnp.where(exp2_finite, mu2_safe_for_grad, mu1)
+    # Fall back to Expansion 1 if the child has no coupling or Expansion 2 is not
+    # finite (MATLAB: "if ~isfinite(pi2) || ~isfinite(mu2), pi2 = pi1; mu2 = mu1").
+    # This only protects the forward pass: a non-finite expansion still has a NaN
+    # gradient.
+    exp2_valid = has_coupling & jnp.isfinite(pi2_safe) & jnp.isfinite(mu2_safe)
+    pi2 = jnp.where(exp2_valid, pi2_safe, pi1)
+    mu2 = jnp.where(exp2_valid, mu2_safe, mu1)
 
     # ------------------------------------------------------------------
     # Variational energy-based softmax blend (log-space, gradient-safe)

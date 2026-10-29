@@ -13,6 +13,7 @@ directly, for the paths the builder cannot reach on its own.
 
 import dataclasses
 
+import jax
 import jax.numpy as jnp
 import pytest
 
@@ -25,6 +26,7 @@ from pyhgf.updates.vectorised.continuous import (
     vectorised_continuous_posterior_update,
     vectorised_continuous_posterior_update_ehgf,
     vectorised_continuous_posterior_update_standard,
+    vectorised_continuous_posterior_update_unbounded,
 )
 from pyhgf.utils.vectorised_belief_propagation import run_continuous_scan
 
@@ -683,6 +685,24 @@ def test_ehgf_with_a_value_child_only():
         (ehgf.mean - parent.expected_mean) * parent.expected_precision,
         (standard.mean - parent.expected_mean) * standard.precision,
     )
+
+
+def test_unbounded_zero_coupling():
+    """A zero coupling leaves the parent at its prediction, with a finite gradient."""
+    parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
+
+    def posterior(kappa):
+        new = vectorised_continuous_posterior_update_unbounded(
+            parent, volatility_child=_volatility_child()._replace(kappa=kappa)
+        )
+        return new.precision, new.mean
+
+    kappa = jnp.array([[0.0]])
+    precision, mean = posterior(kappa)
+    assert jnp.allclose(precision, parent.expected_precision)
+    assert jnp.allclose(mean, parent.expected_mean)
+    for gradient in jax.jacobian(posterior)(kappa):
+        assert jnp.all(jnp.isfinite(gradient))
 
 
 def test_posterior_dispatch_errors():

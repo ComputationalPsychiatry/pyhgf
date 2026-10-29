@@ -649,10 +649,13 @@ impl Network {
         self.update_sequence = set_update_sequence(self);
     }
 
+    /// Filter `input_data` (time × inputs). `observed` has the same shape, with `0.0` for
+    /// a missing observation, and defaults to all observed.
     pub fn input_data(
         &mut self,
         input_data: Vec<Vec<f64>>,
         time_steps: Option<Vec<f64>>,
+        observed: Option<Vec<Vec<f64>>>,
         record_trajectories: bool,
     ) {
         if self.update_sequence.predictions.is_empty() && self.update_sequence.updates.is_empty() {
@@ -661,6 +664,8 @@ impl Network {
 
         let n_time = input_data.len();
         let time_steps = time_steps.unwrap_or_else(|| vec![1.0; n_time]);
+        let observed =
+            observed.unwrap_or_else(|| input_data.iter().map(|row| vec![1.0; row.len()]).collect());
         let predictions = self.update_sequence.predictions.clone();
         let updates = self.update_sequence.updates.clone();
 
@@ -675,7 +680,14 @@ impl Network {
         }
 
         for (t, observations) in input_data.iter().enumerate() {
-            belief_propagation(self, observations, &predictions, &updates, time_steps[t]);
+            belief_propagation(
+                self,
+                observations,
+                &observed[t],
+                &predictions,
+                &updates,
+                time_steps[t],
+            );
 
             if record_trajectories {
                 for (i, state) in self.attributes.states.iter().enumerate() {
@@ -789,24 +801,37 @@ impl Network {
         Ok(slf)
     }
 
-    #[pyo3(name = "input_data", signature = (input_data, time_steps=None, record_trajectories=true))]
+    #[pyo3(
+        name = "input_data",
+        signature = (input_data, time_steps=None, observed=None, record_trajectories=true)
+    )]
     fn py_input_data<'py>(
         mut slf: PyRefMut<'py, Self>,
         input_data: Bound<'py, PyAny>,
         time_steps: Option<Bound<'py, PyAny>>,
+        observed: Option<Bound<'py, PyAny>>,
         record_trajectories: bool,
     ) -> PyResult<PyRefMut<'py, Self>> {
-        // Accept both 1D (Vec<f64>) and 2D (Vec<Vec<f64>>) input
-        let data: Vec<Vec<f64>> = if let Ok(flat) = input_data.extract::<Vec<f64>>() {
-            flat.into_iter().map(|v| vec![v]).collect()
-        } else {
-            input_data.extract::<Vec<Vec<f64>>>()?
-        };
+        let data = extract_time_series(&input_data)?;
         let ts: Option<Vec<f64>> = match time_steps {
             Some(ref obj) => Some(obj.extract()?),
             None => None,
         };
-        slf.input_data(data, ts, record_trajectories);
+        let mask = match observed {
+            Some(ref obj) => {
+                let mask = extract_time_series(obj)?;
+                let same_shape = mask.len() == data.len()
+                    && mask.iter().zip(&data).all(|(m, d)| m.len() == d.len());
+                if !same_shape {
+                    return Err(pyo3::exceptions::PyValueError::new_err(
+                        "`observed` must have the same shape as `input_data`.",
+                    ));
+                }
+                Some(mask)
+            }
+            None => None,
+        };
+        slf.input_data(data, ts, mask, record_trajectories);
         Ok(slf)
     }
 
@@ -901,6 +926,15 @@ impl Network {
 
 // The Python module registration lives in `lib.rs`.
 
+/// Extract a time series given as a 1D (one input) or a 2D (time × inputs) sequence.
+fn extract_time_series(obj: &Bound<'_, PyAny>) -> PyResult<Vec<Vec<f64>>> {
+    if let Ok(flat) = obj.extract::<Vec<f64>>() {
+        Ok(flat.into_iter().map(|v| vec![v]).collect())
+    } else {
+        obj.extract::<Vec<Vec<f64>>>()
+    }
+}
+
 // Unit tests
 #[cfg(test)]
 mod tests {
@@ -913,6 +947,6 @@ mod tests {
 
         let input_data: Vec<Vec<f64>> = vec![vec![1.0], vec![1.3], vec![1.5], vec![1.7]];
         network.set_update_sequence();
-        network.input_data(input_data, None, true);
+        network.input_data(input_data, None, None, true);
     }
 }

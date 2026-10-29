@@ -192,10 +192,14 @@ def get_update_sequence(
                         )
                     else:
                         raise ValueError("Invalid update type.")
-                    update_fn = Partial(
-                        update_fn,
-                        max_posterior_precision=network.max_posterior_precision,
-                    )
+                    update_kwargs = {
+                        "max_posterior_precision": network.max_posterior_precision
+                    }
+                    if update_fn is continuous_node_posterior_update_unbounded:
+                        # the unbounded update also weights value children, if any,
+                        # with the relaxed or the mean-field value-coupling updates
+                        update_kwargs["mean_field_updates"] = mean_field_updates
+                    update_fn = Partial(update_fn, **update_kwargs)
 
                 elif network.edges[idx].node_type == 4:
                     update_fn = None
