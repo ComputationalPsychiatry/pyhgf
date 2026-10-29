@@ -758,21 +758,18 @@ pub fn batched_mean_weight_gradients(
         let child = &states[i - 1];
         let n_samples = child.n_samples();
 
-        // Child-side factor u = -(δ [∘ π]) and parent-side factor
+        // Child-side factor u = -((mean − μ̂) [∘ π]) and parent-side factor
         // v = g(parent posterior mean) with a bias row of ones, each built
-        // sanitized (non-finite entries zeroed) in a single pass.
+        // sanitized (non-finite entries zeroed) in a single pass. The residual
+        // is recomputed, as in `weight_gradient_factors`: a binary layer's
+        // `value_prediction_error` is scaled by 1/π̂ for its parent's posterior.
         let sanitize = |x: Float| if x.is_finite() { x } else { 0.0 };
-        let mut u = Matrix::zeros(child.value_prediction_error.raw_dim());
-        if kind == WeightKind::PrecisionWeighted && child_layer.kind != LayerKind::Binary {
-            Zip::from(&mut u)
-                .and(&child.value_prediction_error)
-                .and(&child.precision)
-                .for_each(|u, &d, &p| *u = sanitize(-d * p));
-        } else {
-            Zip::from(&mut u)
-                .and(&child.value_prediction_error)
-                .for_each(|u, &d| *u = sanitize(-d));
-        }
+        let weighted =
+            kind == WeightKind::PrecisionWeighted && child_layer.kind != LayerKind::Binary;
+        let u = Zip::from(&child.mean)
+            .and(&child.expected_mean)
+            .and(&child.precision)
+            .map_collect(|&m, &em, &p| sanitize((em - m) * if weighted { p } else { 1.0 }));
         let n_parent = parent.mean.nrows();
         let rows = n_parent + usize::from(parent_layer.add_constant_input);
         let mut v = Matrix::zeros((rows, n_samples));

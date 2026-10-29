@@ -1201,6 +1201,104 @@ mod tests {
         }
     }
 
+    /// With a binary leaf, the batched step reproduces the per-sample
+    /// reference. The weight gradient of a binary child is the raw residual
+    /// `mean − μ̂`, whereas the layer's `value_prediction_error` holds that
+    /// residual divided by the Bernoulli variance μ̂(1 − μ̂). Covers both
+    /// gradient modes, with a tanh layer above the binary leaf.
+    #[test]
+    fn test_batch_update_binary_leaf_matches_per_sample_reference() {
+        use crate::math::resolve_coupling_fn;
+
+        let make_net = || {
+            let configs = vec![
+                LayerConfig {
+                    kind: LayerKind::Binary,
+                    volatility_parent: false,
+                    ..LayerConfig::new(2)
+                },
+                LayerConfig {
+                    coupling_fn: resolve_coupling_fn("tanh"),
+                    ..LayerConfig::new(4)
+                },
+                LayerConfig::new(3),
+            ];
+            let mut net = DeepNet::from_configs(&configs).unwrap();
+            // Deterministic, non-uniform weights, large enough for the
+            // predicted probabilities to move away from 1/2.
+            for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
+                let w = layer.weights_in.as_mut().unwrap();
+                for ((i, j), v) in w.indexed_iter_mut() {
+                    *v = 0.8 * ((i + 2 * j + l) as Float * 0.7).sin();
+                }
+            }
+            net
+        };
+        let n_samples = 7;
+        let x = Matrix::from_shape_fn((n_samples, 3), |(i, j)| ((i * 3 + j) as Float * 0.9).cos());
+        // Binary targets, both classes present in each output column.
+        let y = Matrix::from_shape_fn((n_samples, 2), |(i, j)| ((i + j) % 2) as Float);
+        let opt = Optimiser::sgd(0.1);
+        let close = |a: Float, b: Float| (a - b).abs() < REF_TOL * (1.0 + a.abs().max(b.abs()));
+
+        for kind in [WeightKind::PrecisionWeighted, WeightKind::Standard] {
+            // Reference: per-sample sweeps from the same template, rank-one
+            // factors averaged over the batch, one dense optimiser step.
+            let mut reference = make_net();
+            let mut ref_state = OptState::init(&reference);
+            let template: Vec<_> = reference.layers.iter().map(|l| l.state.clone()).collect();
+            let mut grad_sums: Vec<Option<Matrix>> = reference
+                .layers
+                .iter()
+                .map(|l| l.weights_in.as_ref().map(|w| Matrix::zeros(w.raw_dim())))
+                .collect();
+            for i in 0..n_samples {
+                for (layer, state) in reference.layers.iter_mut().zip(template.iter()) {
+                    layer.state = state.clone();
+                }
+                reference.prediction_sweep(x.row(i), 1.0);
+                reference.update_sweep(y.row(i), 1.0);
+                let factors = reference.weight_gradient_factors(kind);
+                for (sum, factor) in grad_sums.iter_mut().zip(factors.iter()) {
+                    if let (Some(g), Some((u, v))) = (sum.as_mut(), factor.as_ref()) {
+                        for (r, &ui) in u.iter().enumerate() {
+                            for (c, &vj) in v.iter().enumerate() {
+                                g[[r, c]] += ui * vj;
+                            }
+                        }
+                    }
+                }
+            }
+            for (layer, state) in reference.layers.iter_mut().zip(template) {
+                layer.state = state;
+            }
+            let inv_n = 1.0 / n_samples as Float;
+            for g in grad_sums.iter_mut().flatten() {
+                g.mapv_inplace(|v| v * inv_n);
+            }
+            opt.apply_dense(&mut ref_state, &mut reference.layers, &grad_sums);
+
+            let mut batched = make_net();
+            let mut bat_state = OptState::init(&batched);
+            batched.batch_update(
+                x.view(),
+                y.view(),
+                Some(&opt),
+                Some(&mut bat_state),
+                1.0,
+                kind,
+                false,
+            );
+            for (bl, rl) in batched.layers.iter().zip(reference.layers.iter()) {
+                if let (Some(bw), Some(rw)) = (bl.weights_in.as_ref(), rl.weights_in.as_ref()) {
+                    for (a, b) in bw.iter().zip(rw.iter()) {
+                        assert!(close(*a, *b), "{kind:?}: weights differ: {a} vs {b}");
+                    }
+                }
+            }
+        }
+    }
+
     /// A binary leaf produces sigmoid outputs in (0, 1).
     #[test]
     fn test_binary_leaf_predict_in_unit_interval() {

@@ -285,7 +285,7 @@ def test_two_phase_matches_batch_update():
     """batch_forward + batch_update_from_error reproduces batch_update.
 
     Covered on a plain volatile chain, a GELU coupling, and a categorical head, the part
-    shapes the hybrid transformer uses.
+    shapes the hybrid transformer uses, and on a binary head.
     """
     rng = np.random.default_rng(11)
 
@@ -293,6 +293,10 @@ def test_two_phase_matches_batch_update():
         net = RsDeepNetwork()
         if variant == "categorical":
             net.add_layer(5, kind="categorical", volatility_parent=False)
+            net.add_layer(4, volatility_parent=False)
+        elif variant == "binary":
+            net.add_layer(3, kind="binary", volatility_parent=False)
+            net.add_layer(6, volatility_parent=False, coupling_fn="tanh")
             net.add_layer(4, volatility_parent=False)
         elif variant == "gelu":
             net.add_layer(3, volatility_parent=False)
@@ -305,12 +309,14 @@ def test_two_phase_matches_batch_update():
         net.weight_initialisation("he", seed=3)
         return net
 
-    for variant in ("pinned", "gelu", "categorical"):
+    for variant in ("pinned", "gelu", "categorical", "binary"):
         one, two = build(variant), build(variant)
         x = rng.normal(size=(17, 4)).astype("float32")
         out_size = one.layer_sizes[0]
         if variant == "categorical":
             y = np.eye(out_size, dtype="float32")[rng.integers(0, out_size, 17)]
+        elif variant == "binary":
+            y = rng.integers(0, 2, size=(17, out_size)).astype("float32")
         else:
             y = rng.normal(size=(17, out_size)).astype("float32")
 
@@ -572,6 +578,37 @@ def test_batch_update_parity_categorical_output():
         errors_rs = rs.batch_update(x, y, optimiser="adam", learning_rate=1e-2)
         jx.batch_update(x, y, optimiser=optax_opt)
     np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
+
+
+@pytest.mark.parametrize("learning_kind", ["precision_weighted", "standard"])
+@pytest.mark.parametrize(("optimiser", "lr"), [("sgd", 0.1), ("adam", 1e-2)])
+def test_batch_update_parity_binary_output(optimiser, lr, learning_kind):
+    """The batch step agrees with JAX under a binary output layer.
+
+    The weight gradient of a binary child is the raw residual y - p, whereas the
+    binary layer's stored prediction error is that residual divided by p(1 - p).
+    Weights are drawn at scale 1, so p(1 - p) differs from sample to sample.
+    """
+    rng = np.random.default_rng(34)
+    rs = RsDeepNetwork(volatility_updates="eHGF", coupling_fn="tanh")
+    rs.add_layer(2, kind="binary").add_layer(4).add_layer(3)
+    jx = JaxDeepNetwork(volatility_updates="eHGF", coupling_fn=jnp.tanh)
+    jx.add_layer(size=2, kind="binary").add_layer(size=4).add_layer(size=3)
+    weights = _random_weights(rs, rng, scale=1.0)
+    rs.set_weights(weights)
+    _inject_jax_weights(jx, weights)
+    optax_opt = getattr(optax, optimiser)(lr)
+    for _ in range(3):
+        x = rng.normal(size=(16, 3))
+        y = rng.integers(0, 2, size=(16, 2)).astype(float)
+        errors_rs = rs.batch_update(
+            x, y, optimiser=optimiser, learning_rate=lr, learning_kind=learning_kind
+        )
+        jx.batch_update(x, y, optimiser=optax_opt, learning_kind=learning_kind)
+        np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
