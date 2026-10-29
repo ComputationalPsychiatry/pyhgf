@@ -14,8 +14,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      # Let every Python version finish so a failure shows which versions are affected.
+      fail-fast: false
       matrix:
-        python-version: ['3.12']
+        python-version: ['3.12', '3.13', '3.14']
 
     steps:
       # Step 1: Checkout the repository
@@ -48,7 +50,7 @@ jobs:
           fi
           command -v dot
           command -v unflatten
-      
+
       # Step 5: Install Rust
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -56,16 +58,24 @@ jobs:
           toolchain: stable
           override: true
 
-      # Step 6: Install Python Dependencies using Poetry
+      # Step 6: Cache the compiled Rust dependencies
+      # The key includes the Python version because pyo3 rebuilds when the interpreter
+      # changes, so a cache shared across the matrix would be invalidated on every job.
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: py${{ matrix.python-version }}
+
+      # Step 7: Install Python Dependencies using Poetry
       - name: Install dependencies
         run: |
           uv sync --dev
-      
-      # Step 7: Install the Rust package
+
+      # Step 8: Install the Rust package
       - name: Build and Install the Package
         run: uv run maturin develop --release
 
-      # Step 8: Run Tests and Generate Coverage Report
+      # Step 9: Run Tests and Generate Coverage Report
       # NOTE: `pyhgf/` is listed alongside `./tests/` so that `--doctest-modules`
       # collects the `Examples` sections of the docstrings. The flag applies to the
       # whole invocation, so it only reaches the package when the package is a target.
@@ -73,19 +83,25 @@ jobs:
         run: |
           uv run pytest ./tests/ pyhgf/ --doctest-modules --cov=./pyhgf/ --cov-report=xml --cov-branch
 
-      # Step 9: Upload Coverage Report to Codecov
+      # Steps 10 to 12 run on a single Python version: the benchmark artifact name
+      # must be unique within a run, and one coverage report is enough.
+
+      # Step 10: Upload Coverage Report to Codecov
       - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      # Step 10: Run pytest-benchmark
+      # Step 11: Run pytest-benchmark
       - name: Run pytest-benchmark
+        if: matrix.python-version == '3.12'
         run: |
           uv run pytest --benchmark-only --benchmark-json=.benchmarks/new_benchmark.json
 
-      # Step 11: Upload benchmark artifact
+      # Step 12: Upload benchmark artifact
       - name: Upload baseline benchmark
+        if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
           name: baseline-benchmark
