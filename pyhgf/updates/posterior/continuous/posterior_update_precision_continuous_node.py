@@ -45,14 +45,14 @@ def _smoothing_child_precision(
     r"""Effective child precision under the relaxed posterior-step (smoothing) update.
 
     The child-precision factor :math:`\hat{\pi}_a` is replaced by the harmonic
-    combination :math:`\hat{\pi}_a \pi_y / (\hat{\pi}_a + \pi_y)`, with
-    :math:`\pi_y = \pi_a - \tilde{\pi}_a`, but only for Gaussian *interior* children
+    combination :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)`, with
+    :math:`\pi_y = \pi_a - \hat{\pi}_a`, but only for Gaussian *interior* children
     (node types 2/6 that themselves have children). The Schur complement carries the
-    *conditional* predicted precision :math:`\hat{\pi}_a` (stored in ``temp``); using
+    *conditional* predicted precision :math:`\bar{\pi}_a` (stored in ``temp``); using
     the marginal would double-count parent uncertainty. All other cases — binary
     (type 1), categorical (5), input/constant (0), exponential family (3), Dirichlet
     (4), and any Gaussian leaf (types 2/6 with no children) — fall back to the
-    canonical predicted-precision factor :math:`\tilde{\pi}_a` (:math:`\pi_a \to \infty`).
+    canonical predicted-precision factor :math:`\hat{\pi}_a` (:math:`\pi_a \to \infty`).
     """
     child_node_type = edges[value_child_idx].node_type
     child_is_gaussian_interior = child_node_type in (2, 6) and (
@@ -61,7 +61,7 @@ def _smoothing_child_precision(
     )
     child_expected_precision = attributes[value_child_idx]["expected_precision"]
     if child_is_gaussian_interior:
-        # π_y = π_a − π̃_a (bottom-up evidence precision, against the marginal).
+        # π_y = π_a − π̂_a (bottom-up evidence precision, against the marginal).
         child_precision = attributes[value_child_idx]["precision"]
         pi_y = child_precision - child_expected_precision
         child_cond = attributes[value_child_idx]["temp"][
@@ -76,7 +76,7 @@ def _mean_field_child_precision(
 ) -> Array:
     r"""Effective child precision under the mean-field update (no smoothing correction).
 
-    Always the canonical predicted precision :math:`\tilde{\pi}_a`.
+    Always the canonical predicted precision :math:`\hat{\pi}_a`.
     """
     return attributes[value_child_idx]["expected_precision"]
 
@@ -326,16 +326,16 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     .. math::
 
         \hat{\pi}_a \longmapsto
-        \frac{\hat{\pi}_a \, \pi_y}{\hat{\pi}_a + \pi_y}, \qquad
-        \pi_y = \pi_a - \tilde{\pi}_a,
+        \frac{\bar{\pi}_a \, \pi_y}{\bar{\pi}_a + \pi_y}, \qquad
+        \pi_y = \pi_a - \hat{\pi}_a,
 
-    where :math:`\hat{\pi}_a` is the child's *conditional* predicted precision
+    where :math:`\bar{\pi}_a` is the child's *conditional* predicted precision
     (stored as ``child.temp["conditional_expected_precision"]``) and
-    :math:`\tilde{\pi}_a` its *marginal* predicted precision
+    :math:`\hat{\pi}_a` its *marginal* predicted precision
     (``child.expected_precision``). The Schur complement uses the conditional;
     substituting the marginal would double-count parent uncertainty. Non-Gaussian
     children and Gaussian leaves fall back to the canonical predicted-precision
-    factor :math:`\tilde{\pi}_a` (:math:`\pi_a \to \infty`).
+    factor :math:`\hat{\pi}_a` (:math:`\pi_a \to \infty`).
 
     Parameters
     ----------

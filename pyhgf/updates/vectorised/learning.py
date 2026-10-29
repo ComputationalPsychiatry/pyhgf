@@ -97,14 +97,14 @@ def learning_weights_vectorised(
     - A **continuous** child passes on the evidence it received from below,
       softened by the process noise it had to cross,
       :math:`\tilde\xi_a = (1/\xi_a + \Omega_a)^{-1}`, with
-      :math:`\Omega_a = \gamma_a / \tilde\pi_a` recovered from the effective
+      :math:`\Omega_a = \gamma_a / \hat\pi_a` recovered from the effective
       precision the prediction sweep writes as
-      :math:`\gamma_a = \Omega_a \tilde\pi_a`. The evidence :math:`\xi_a`
+      :math:`\gamma_a = \Omega_a \hat\pi_a`. The evidence :math:`\xi_a`
       itself is supplied by the caller through *child_evidence*, carried up from
       the clamped layer by :func:`evidence_pullback`, and the weight-belief rule
       always supplies it.
 
-      Without it, :math:`\xi_a` falls back to :math:`\pi_a - \tilde\pi_a` from
+      Without it, :math:`\xi_a` falls back to :math:`\pi_a - \hat\pi_a` from
       the cache, which is the same quantity in exact arithmetic *only* where the
       filter's own precision chain was seeded with the clamped layer's likelihood
       curvature. It is not: a clamped categorical layer enters that chain at unit
@@ -136,7 +136,7 @@ def learning_weights_vectorised(
     child_evidence :
         The child's evidence precision :math:`\xi_a`, supplied by a caller that
         carries it up the stack itself (:func:`evidence_pullback`) rather than
-        letting it be recovered here as :math:`\pi_a - \tilde\pi_a`. When given,
+        letting it be recovered here as :math:`\pi_a - \hat\pi_a`. When given,
         it replaces that difference in the importance factor and the fallback
         below never applies, since a carried evidence is non-negative by
         construction. The gradient factor is unaffected: it reads the child's
@@ -183,7 +183,7 @@ def learning_weights_vectorised(
     floored = jnp.maximum(evidence, 0.0)
 
     # The child's process noise. The prediction sweep caches the effective
-    # precision gamma = Omega * pi_tilde, so Omega = gamma / pi_tilde. It is
+    # precision gamma = Omega * pi_hat, so Omega = gamma / pi_hat. It is
     # zero at a clamped layer, which undergoes no random walk.
     process_noise = child_state.effective_precision / jnp.maximum(
         child_state.expected_precision, _EPS
@@ -463,7 +463,7 @@ def evidence_pullback(
     terms between different parents of one child are dropped).
 
     Computed from the evidence carried in the walk rather than recovered as
-    :math:`\pi_a - \tilde\pi_a` from the filter's cache. The two agree in exact
+    :math:`\pi_a - \hat\pi_a` from the filter's cache. The two agree in exact
     arithmetic, but the difference of two large nearly-equal precisions loses
     every significant digit once a layer's precision has accumulated, whereas a
     carried quantity does not.
@@ -478,7 +478,7 @@ def evidence_pullback(
     child_process_noise :
         That layer's process noise :math:`\Omega_a`, same shape, recovered by its
         caller from the cached effective precision as
-        :math:`\Omega_a = \gamma_a / \tilde\pi_a`.
+        :math:`\Omega_a = \gamma_a / \hat\pi_a`.
     weights :
         The matrix connecting them, shape ``(n_children, n_parents[+1])``. A bias
         column is dropped: a constant input node is not a parent whose belief the

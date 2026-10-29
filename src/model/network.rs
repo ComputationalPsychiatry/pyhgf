@@ -82,7 +82,7 @@ pub struct NodeState {
     pub expected_mean: f64,
     pub precision: f64,
     pub expected_precision: f64,
-    /// Conditional predicted precision π̂_a (own variance + volatility,
+    /// Conditional predicted precision π̄_a (own variance + volatility,
     /// without the parent-uncertainty value-coupling term). Transient: recomputed
     /// each prediction step and consumed by the parent's posterior-step Schur
     /// correction; not recorded in `NodeTrajectory`.

@@ -117,20 +117,20 @@ def vectorised_layer_prediction(
 
     .. math::
 
-        \hat{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+        \bar{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
             \right)^{-1}, \qquad
-        \frac{1}{\tilde{\pi}_a^{(k)}} = \frac{1}{\hat{\pi}_a^{(k)}}
+        \frac{1}{\hat{\pi}_a^{(k)}} = \frac{1}{\bar{\pi}_a^{(k)}}
             + \sum_b \frac{ (t^{(k)} \, \alpha_b \, g'(\hat{\mu}_b))^2 }
-                          { \tilde{\pi}_b },
+                          { \hat{\pi}_b },
 
-    where :math:`\hat{\pi}_a` (``conditional_expected_precision``) is the
+    where :math:`\bar{\pi}_a` (``conditional_expected_precision``) is the
     AR-plus-volatility chain precision without parent-uncertainty bleed-through and
-    :math:`\tilde{\pi}_a` (``expected_precision``) adds the first-order Laplace
+    :math:`\hat{\pi}_a` (``expected_precision``) adds the first-order Laplace
     value-coupling contribution from each value parent. The bleed-through term uses
-    the parent's *marginal* predicted precision :math:`\tilde{\pi}_b`
-    (``parent_state.expected_precision``), which generalises the artefact's
-    two-node :math:`\hat{\pi}_b` to deep networks by propagating each parent's full
-    marginal predictive variance. The volatility-coupling correction
+    the parent's *marginal* predicted precision :math:`\hat{\pi}_b`
+    (``parent_state.expected_precision``), so that every parent passes its full
+    marginal predictive variance on to its children. The volatility-coupling
+    correction
     :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})` enters :math:`\Omega_a^{(k)}`
     inside the log-volatility exponent.
 
@@ -246,8 +246,8 @@ def vectorised_layer_prediction(
     if predict_precision:
         # Laplace value-coupling correction. Linearising g at μ̂_b and marginalising
         # over each parent's Gaussian yields, per child node i, the additional variance
-        #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̃_j,
-        # using the parent's marginal predicted precision π̃_j (= `expected_precision`).
+        #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̂_j,
+        # using the parent's marginal predicted precision π̂_j (= `expected_precision`).
         # The constant-bias parent (if any) has infinite precision and contributes zero.
         if not feedforward_uncertainty:
             # No uncertainty is propagated by the value parents: the child's predicted
@@ -276,13 +276,13 @@ def vectorised_layer_prediction(
         # Precision: λ = 1 — the posterior variance is learned and carried across
         # trials, so carried_variance = λ²/π = 1/π. Split from the mean's λ = 0.
         carried_variance = 1.0 / child_state.precision
-        # Conditional π̂_a: carried variance + volatility, no parent bleed-through
-        # (the parent's Schur complement acts on this; π̃_a would double-count).
+        # Conditional π̄_a: carried variance + volatility, no parent bleed-through
+        # (the parent's Schur complement acts on this; π̂_a would double-count).
         conditional_expected_precision = 1.0 / jnp.maximum(
             carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
         )
 
-        # Marginal π̃_a: add the law-of-total-variance parent bleed-through.
+        # Marginal π̂_a: add the law-of-total-variance parent bleed-through.
         expected_precision = 1.0 / jnp.maximum(
             1.0 / conditional_expected_precision + value_coupling_variance,
             MIN_PREDICTED_VARIANCE,
@@ -342,7 +342,7 @@ def vectorised_root_prediction(
 
     .. math::
 
-        \hat{\pi}_a^{(k)} = \tilde{\pi}_a^{(k)}
+        \bar{\pi}_a^{(k)} = \hat{\pi}_a^{(k)}
             = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)} \right)^{-1}.
 
     This is what lets the input layer's precision *move*. Without it,

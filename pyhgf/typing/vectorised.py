@@ -14,7 +14,7 @@ from jax import Array
 
 
 class LayerState(eqx.Module):
-    """Vectorised per-layer state, as an ``eqx.Module``.
+    r"""Vectorised per-layer state, as an ``eqx.Module``.
 
     Each field is an array with one entry per node in the layer.
 
@@ -27,10 +27,14 @@ class LayerState(eqx.Module):
     expected_mean :
         The predicted (expected) mean of the value level.
     expected_precision :
-        The marginal predicted precision of the value level.
+        The marginal predicted precision :math:`\hat{\pi}_a` of the value level:
+        the inverse of the predictive variance after marginalising over the
+        value parents' beliefs.
     conditional_expected_precision :
-        The conditional predicted precision of the value level used by the
-        structured-Gaussian (smoothing) update.
+        The conditional predicted precision :math:`\bar{\pi}_a` of the value
+        level: the predicted precision given the value parents' states, used by
+        the structured-Gaussian (smoothing) update. It coincides with
+        :math:`\hat{\pi}_a` when no value-parent uncertainty is propagated.
     effective_precision :
         The effective precision of the value-level prediction.
     value_prediction_error :

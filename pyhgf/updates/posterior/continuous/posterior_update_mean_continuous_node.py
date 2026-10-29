@@ -25,22 +25,22 @@ def posterior_update_mean_continuous_node(
         \Delta \mu_b \;\mathrel{+}=\;
             \frac{\kappa_j \, g'_{j,b}(\mu_b^{(k-1)}) \, g_{a,j}}{\pi_b} \, \delta_j^{(k)},
             \qquad
-        g_{a,j} \,=\, \frac{\hat{\pi}_j^{(k)} \, \pi_j^{(k)}}{\hat{\pi}_j^{(k)} + \pi_{y,j}},
+        g_{a,j} \,=\, \frac{\bar{\pi}_j^{(k)} \, \pi_j^{(k)}}{\bar{\pi}_j^{(k)} + \pi_{y,j}},
             \qquad
-        \pi_{y,j} \,=\, \pi_j^{(k)} - \tilde{\pi}_j^{(k)},
+        \pi_{y,j} \,=\, \pi_j^{(k)} - \hat{\pi}_j^{(k)},
 
     where :math:`\kappa_j` is the value-coupling strength, :math:`g'_{j,b}` is the
     derivative of the coupling function (1 for linear coupling),
-    :math:`\hat{\pi}_j` is the child's *conditional* predicted precision (stored as
-    ``child.temp["conditional_expected_precision"]``), :math:`\tilde{\pi}_j` its
+    :math:`\bar{\pi}_j` is the child's *conditional* predicted precision (stored as
+    ``child.temp["conditional_expected_precision"]``), :math:`\hat{\pi}_j` its
     *marginal* predicted precision (``child.expected_precision``), and
     :math:`\delta_j^{(k)}` is the value prediction error computed by
     :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
     The smoothing form :math:`g_{a,j}` is the joint-Gaussian (RTS-smoother) gain
     derived from the structured-Gaussian variational posterior on the value-coupling
     edge; for leaves and non-Gaussian children :math:`\pi_{y,j} = 0` and
-    :math:`g_{a,j}` collapses to the marginal :math:`\tilde{\pi}_j`, recovering the
-    canonical gain :math:`\hat{\pi}_j \, \pi_j / \pi_j = \tilde{\pi}_j`.
+    :math:`g_{a,j}` collapses to the marginal :math:`\hat{\pi}_j`, recovering the
+    canonical gain :math:`\bar{\pi}_j \, \pi_j / \bar{\pi}_j = \pi_j = \hat{\pi}_j`.
 
     .. rubric:: 2. Mean update from volatility coupling
 
@@ -51,15 +51,15 @@ def posterior_update_mean_continuous_node(
 
     where :math:`\kappa_j` is the volatility-coupling strength between the
     volatility parent and the volatility child :math:`j`,
-    :math:`\gamma_j^{(k)} = \Omega_j^{(k)} \, \tilde{\pi}_j^{(k)}` is the effective
+    :math:`\gamma_j^{(k)} = \Omega_j^{(k)} \, \hat{\pi}_j^{(k)}` is the effective
     precision of the prediction (computed in the prediction step,
     :py:func:`pyhgf.updates.prediction.predict_precision`), and the volatility
     prediction error is
 
     .. math::
 
-        \Delta_j^{(k)} = \frac{\tilde{\pi}_j^{(k)}}{\pi_j^{(k)}} +
-            \tilde{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1.
+        \Delta_j^{(k)} = \frac{\hat{\pi}_j^{(k)}}{\pi_j^{(k)}} +
+            \hat{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1.
 
     Parameters
     ----------
@@ -119,12 +119,12 @@ def posterior_update_mean_continuous_node(
 
             # Coupling gain precision g_a. From the joint (x_a, x_b) Gaussian the
             # exact marginal-mean gain is
-            #     g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
+            #     g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
             # accumulated across children and divided once by `node_precision` (π_b)
             # after the loop — this is what makes the multi-child mean exact rather
             # than a sum of independent RTS gains. For leaves and non-Gaussian
-            # children π_y = 0 and g_a collapses to π̃_a, recovering the canonical
-            # gain (π̃_a is what `child.expected_precision` stores).
+            # children π_y = 0 and g_a collapses to π̂_a, recovering the canonical
+            # gain (π̂_a is what `child.expected_precision` stores).
             child_node_type = edges[value_child_idx].node_type
             child_is_gaussian_interior = child_node_type in (2, 6) and (
                 edges[value_child_idx].value_children is not None

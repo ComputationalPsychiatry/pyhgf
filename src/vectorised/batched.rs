@@ -223,7 +223,7 @@ fn batched_volatile_prediction(
     }
 
     // 2. Value level: coupled activations and the per-parent Laplace variance
-    // factor g'(μ̂)² / π̃_parent (the bias row stays 0 there). No time step: it
+    // factor g'(μ̂)² / π̂_parent (the bias row stays 0 there). No time step: it
     // propagates parent uncertainty through the `W @ g(μ)` mean computed just below,
     // which carries no drift scaling. See the single-sample path for the full note.
     let coupled = coupled_activations(
@@ -257,9 +257,9 @@ fn batched_volatile_prediction(
         Matrix::zeros((n, n_samples))
     };
 
-    // Conditional (π̂), marginal (π̃), and effective (γ) predicted precisions,
-    // fused into a single pass over the state: π̂ = 1/(1/π + Ω),
-    // π̃ = 1/(1/π̂ + value_coupling_variance), γ = Ω·π̃, with
+    // Conditional (π̄), marginal (π̂), and effective (γ) predicted precisions,
+    // fused into a single pass over the state: π̄ = 1/(1/π + Ω),
+    // π̂ = 1/(1/π̄ + value_coupling_variance), γ = Ω·π̂, with
     // Ω = t·exp(ω + κ·μ_vol + κ²/(2·π̂_vol)) the predicted volatility.
     let precision_triple =
         |c: &mut Float, e: &mut Float, ef: &mut Float, pr: Float, pv: Float, v: Float| {
@@ -585,7 +585,7 @@ fn batched_posterior_update(
     let ed = &eff * &child.value_prediction_error;
     let sum_pi_vpe = w.t().dot(&ed);
 
-    // Precision: clip(π̃_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))).
+    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))).
     Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)

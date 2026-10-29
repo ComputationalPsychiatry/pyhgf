@@ -99,9 +99,9 @@ pub struct LayerState {
     pub precision: Vector,
     /// Predicted (expected) mean of the value level.
     pub expected_mean: Vector,
-    /// Marginal predicted precision of the value level (π̃).
+    /// Marginal predicted precision of the value level (π̂).
     pub expected_precision: Vector,
-    /// Conditional predicted precision of the value level (π̂), used by the
+    /// Conditional predicted precision of the value level (π̄), used by the
     /// structured-Gaussian (smoothing) update.
     pub conditional_expected_precision: Vector,
     /// Effective precision of the value-level prediction (γ).

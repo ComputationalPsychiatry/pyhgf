@@ -131,15 +131,15 @@ def predict_precision(
 
     .. math::
 
-        \frac{1}{\hat{\pi}_a^{(k)}} = \frac{\lambda_a^2}{\pi_a^{(k-1)}}
+        \frac{1}{\bar{\pi}_a^{(k)}} = \frac{\lambda_a^2}{\pi_a^{(k-1)}}
             + \Omega_a^{(k)},
 
     .. math::
 
-        \frac{1}{\tilde{\pi}_a^{(k)}}
-            \;=\; \frac{1}{\hat{\pi}_a^{(k)}}
+        \frac{1}{\hat{\pi}_a^{(k)}}
+            \;=\; \frac{1}{\bar{\pi}_a^{(k)}}
               + \sum_{b} \frac{ (t^{(k)} \alpha_{b,a} g'(\hat{\mu}_b))^2 }
-                              { \tilde{\pi}_b },
+                              { \hat{\pi}_b },
 
     with the (improved) phasic-plus-tonic log-volatility
 
@@ -161,15 +161,15 @@ def predict_precision(
         Eq. 35 of [1]_ omits :math:`\lambda_a^2`; the two forms agree at
         :math:`\lambda_a = 1`, the value used in every simulation in the paper.
 
-    :math:`\hat{\pi}_a^{(k)}` is the *conditional* predicted precision
-    (``conditional_expected_precision``) — own variance plus volatility, without the
-    parent-uncertainty bleed-through; it is the precision that enters the parent's
-    Schur-complement posterior-step correction. :math:`\tilde{\pi}_a^{(k)}` is the
-    *marginal* predicted precision (``expected_precision``) — the inverse of the
+    :math:`\bar{\pi}_a^{(k)}` is the *conditional* predicted precision
+    (``conditional_expected_precision``): own variance plus volatility, without the
+    parent-uncertainty bleed-through. It is the precision that enters the parent's
+    Schur-complement posterior-step correction. :math:`\hat{\pi}_a^{(k)}` is the
+    *marginal* predicted precision (``expected_precision``): the inverse of the
     marginal predictive variance, including the first-order Laplace value-coupling
     term. The bleed-through uses each parent's marginal predicted precision
-    :math:`\tilde{\pi}_b`, which generalises the artefact's two-node derivation to
-    deep networks. The MGF correction
+    :math:`\hat{\pi}_b`, so that every parent passes its full marginal predictive
+    variance on to its children. The MGF correction
     :math:`\kappa^2 / (2\, \hat{\pi}_{\check{a}_j})` inside the exponent is the
     Jensen-inequality contribution of a Gaussian volatility parent through the
     convex :math:`\exp(\cdot)` non-linearity. Both corrections use *predicted*, not
@@ -180,7 +180,7 @@ def predict_precision(
 
     .. math::
 
-        \gamma_a^{(k)} = \Omega_a^{(k)} \, \tilde{\pi}_a^{(k)},
+        \gamma_a^{(k)} = \Omega_a^{(k)} \, \hat{\pi}_a^{(k)},
 
     and is consumed by the volatility-coupling posterior update at the volatility
     parent.
@@ -200,9 +200,9 @@ def predict_precision(
     Returns
     -------
     expected_precision :
-        The marginal predicted precision :math:`\tilde{\pi}_a^{(k)}`.
+        The marginal predicted precision :math:`\hat{\pi}_a^{(k)}`.
     conditional_expected_precision :
-        The conditional predicted precision :math:`\hat{\pi}_a^{(k)}`.
+        The conditional predicted precision :math:`\bar{\pi}_a^{(k)}`.
     effective_precision :
         The effective precision :math:`\gamma_a^{(k)}`; stored on the node for later
         use in the volatility-coupling posterior update.
@@ -248,8 +248,8 @@ def predict_precision(
     # piHGF Laplace value-coupling correction. The conditional mean of x_a is
     # linearised around μ̂_b via a first-order Taylor expansion of the coupling
     # function g; the resulting variance contribution from each value parent is
-    # (t · α · g'(μ̂_b))² / π̃_b, using the parent's marginal predicted precision
-    # π̃_b (= `expected_precision`). The factor t arises because the value-parent
+    # (t · α · g'(μ̂_b))² / π̂_b, using the parent's marginal predicted precision
+    # π̂_b (= `expected_precision`). The factor t arises because the value-parent
     # contribution to the mean is scaled by the time step in :func:`predict_mean`.
     value_parents_idxs = edges[node_idx].value_parents
     value_coupling_variance = jnp.zeros_like(predicted_volatility)
@@ -283,13 +283,13 @@ def predict_precision(
             attributes[node_idx]["autoconnection_strength"] ** 2
         ) / attributes[node_idx]["precision"]
 
-    # Conditional π̂_a: carried variance + volatility, no parent bleed-through
+    # Conditional π̄_a: carried variance + volatility, no parent bleed-through
     # (the parent's Schur complement acts on this; the marginal would double-count).
     conditional_expected_precision = 1 / jnp.maximum(
         carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
     )
 
-    # Marginal π̃_a: carried variance + volatility + Laplace value-coupling variance.
+    # Marginal π̂_a: carried variance + volatility + Laplace value-coupling variance.
     expected_precision = 1 / jnp.maximum(
         carried_variance + predicted_volatility + value_coupling_variance,
         MIN_PREDICTED_VARIANCE,
@@ -365,7 +365,7 @@ def continuous_node_prediction(
     # Get the new expected mean
     expected_mean = predict_mean(attributes, edges, node_idx)
 
-    # Get the new marginal (π̃) and conditional (π̂) predicted precisions and the
+    # Get the new marginal (π̂) and conditional (π̄) predicted precisions and the
     # effective precision γ.
     expected_precision, conditional_expected_precision, effective_precision = (
         predict_precision(attributes, edges, node_idx)

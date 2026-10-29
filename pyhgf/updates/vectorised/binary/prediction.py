@@ -32,7 +32,7 @@ def vectorised_binary_prediction(
 
     .. math::
 
-        \tilde{\pi}_b = \hat{\mu}_b \, (1 - \hat{\mu}_b).
+        \hat{\pi}_b = \hat{\mu}_b \, (1 - \hat{\mu}_b).
 
     .. note::
 
@@ -41,9 +41,9 @@ def vectorised_binary_prediction(
         need for a separate posterior update step for binary nodes: the continuous
         parent's posterior update can consume the binary prediction error directly.
         Binary leaves carry no AR-volatility random walk, so the conditional
-        predicted precision :math:`\hat{\pi}_b` (``conditional_expected_precision``)
-        is set equal to :math:`\tilde{\pi}_b` — matching the paper's Limit 3 leaf
-        convention used by the parent's posterior-step (smoothing) update.
+        predicted precision :math:`\bar{\pi}_b` (``conditional_expected_precision``)
+        is set equal to :math:`\hat{\pi}_b`, the leaf convention used by the
+        parent's posterior-step (smoothing) update.
 
     Parameters
     ----------
@@ -93,7 +93,7 @@ def vectorised_binary_prediction(
         expected_mean=expected_mean,
         expected_precision=expected_precision,
         # Binary leaves carry no AR-volatility random walk, so the conditional
-        # precision coincides with the marginal — matches the Limit 3 leaf
-        # convention used by the parent's posterior update.
+        # precision coincides with the marginal, the leaf convention used by the
+        # parent's posterior update.
         conditional_expected_precision=expected_precision,
     )

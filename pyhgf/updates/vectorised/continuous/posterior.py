@@ -89,17 +89,17 @@ def _smoothing_factors(
 
     .. math::
 
-        \pi^{\mathrm{eff}}_a = \frac{\hat{\pi}_a \, \pi^y_a}{\hat{\pi}_a + \pi^y_a},
+        \pi^{\mathrm{eff}}_a = \frac{\bar{\pi}_a \, \pi^y_a}{\bar{\pi}_a + \pi^y_a},
         \qquad
-        g_a = \frac{\hat{\pi}_a \, \pi_a}{\hat{\pi}_a + \pi^y_a},
+        g_a = \frac{\bar{\pi}_a \, \pi_a}{\bar{\pi}_a + \pi^y_a},
         \qquad
-        \pi^y_a = \pi_a - \tilde{\pi}_a.
+        \pi^y_a = \pi_a - \hat{\pi}_a.
 
     When the child's posterior precision is clamped there is no smoothing
     correction to make, and both collapse to the canonical predicted precision
-    :math:`\tilde{\pi}_a`. Under ``mean_field_updates`` the correction is skipped
+    :math:`\hat{\pi}_a`. Under ``mean_field_updates`` the correction is skipped
     for every child — the original mean-field update weights all messages by
-    :math:`\tilde{\pi}_a`
+    :math:`\hat{\pi}_a`
     (:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._mean_field_child_precision`).
     """
     if child.precision_is_clamped or mean_field_updates:
@@ -217,8 +217,8 @@ def _child_previous_variance(
 ) -> jnp.ndarray:
     r"""Reconstruct the variance the volatility child carried into its prediction.
 
-    The prediction set :math:`1/\hat{\pi}_a = \lambda_a^2/\pi_a^{(k-1)} + \Omega_a`,
-    so subtracting the same :math:`\Omega_a` from :math:`1/\hat{\pi}_a` recovers
+    The prediction set :math:`1/\bar{\pi}_a = \lambda_a^2/\pi_a^{(k-1)} + \Omega_a`,
+    so subtracting the same :math:`\Omega_a` from :math:`1/\bar{\pi}_a` recovers
     :math:`\lambda_a^2/\pi_a^{(k-1)}` — the carried variance the nodalised backend
     stores as ``temp["current_variance"]``.
 

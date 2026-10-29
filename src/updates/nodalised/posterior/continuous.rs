@@ -13,20 +13,20 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 /// combination
 ///
 /// ```text
-/// π̂_a · π_y / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// π̄_a · π_y / (π̄_a + π_y),    π_y = π_a − π̂_a,
 /// ```
 ///
-/// where π̂_a is the child's conditional predicted precision
-/// (`conditional_expected_precision`) and π̃_a its marginal predicted precision
+/// where π̄_a is the child's conditional predicted precision
+/// (`conditional_expected_precision`) and π̂_a its marginal predicted precision
 /// (`expected_precision`). The same factor scales both the `(κ g')²` and the
 /// `κ g'' · δ_a` terms. Reduces to the canonical formula when the child is fully
 /// observed (π_y → ∞); returns no contribution when the child gained no bottom-up
 /// information (π_y = 0).
 ///
 /// Non-Gaussian children and Gaussian leaves fall back to the canonical
-/// predicted-precision factor π̃_a — pyhgf keeps `precision = expected_precision`
+/// predicted-precision factor π̂_a: pyhgf keeps `precision = expected_precision`
 /// for clamped observations, so the harmonic form would otherwise zero out their
-/// contribution. With `mean_field`, every child uses π̃_a.
+/// contribution. With `mean_field`, every child uses π̂_a.
 fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: bool) -> f64 {
     let mut precision_wpe = 0.0;
 
@@ -57,15 +57,14 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
             // belief (continuous-state) AND is interior (has
             // children of its own). Binary, categorical, input/constant,
             // exponential-family, and Dirichlet children, plus any Gaussian
-            // leaf, fall back to the canonical predicted-precision factor π̃_a
-            // (paper's Limit 3, π_a → ∞).
+            // leaf, fall back to the canonical predicted-precision factor π̂_a.
             let child_node_type = network.edges[child_idx].node_type.as_str();
             let child_is_gaussian_interior = child_node_type == "continuous-state"
                 && (network.edges[child_idx].value_children.is_some()
                     || network.edges[child_idx].volatility_children.is_some());
             let effective_child_precision = if child_is_gaussian_interior && !mean_field {
-                // π_y = π_a − π̃_a; the Schur complement carries the *conditional*
-                // predicted precision π̂_a (stored on the child). Using the
+                // π_y = π_a − π̂_a; the Schur complement carries the *conditional*
+                // predicted precision π̄_a (stored on the child). Using the
                 // marginal would double-count parent uncertainty.
                 let child_precision = child_state.precision;
                 let pi_y = child_precision - child_expected_precision;
@@ -89,14 +88,14 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
 /// The relaxed update uses the joint-Gaussian (RTS-smoother) gain
 ///
 /// ```text
-/// g_a = π̂_a · π_a / (π̂_a + π_y),    π_y = π_a − π̃_a,
+/// g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
 /// ```
 ///
 /// accumulated across children and divided once by `node_precision` (π_b) — this is
 /// what makes the multi-child mean exact rather than a sum of independent
 /// single-child RTS gains. For leaves and non-Gaussian children π_y = 0 and g_a
-/// collapses to π̃_a (= `child.expected_precision`), recovering the canonical gain.
-/// With `mean_field`, every child uses π̃_a.
+/// collapses to π̂_a (= `child.expected_precision`), recovering the canonical gain.
+/// With `mean_field`, every child uses π̂_a.
 fn value_coupling_mean_wpe(
     network: &Network,
     node_idx: usize,
@@ -121,8 +120,8 @@ fn value_coupling_mean_wpe(
                 None => 1.0,
             };
 
-            // Joint-Gaussian (RTS-smoother) gain g_a = π̂_a · π_a / (π̂_a + π_y),
-            // π_y = π_a − π̃_a; summed over children then divided once by node_precision
+            // Joint-Gaussian (RTS-smoother) gain g_a = π̄_a · π_a / (π̄_a + π_y),
+            // π_y = π_a − π̂_a; summed over children then divided once by node_precision
             // (exact multi-child marginal mean). Leaves / non-Gaussian children have
             // π_y = 0 so g_a collapses to the marginal, recovering the canonical gain.
             let child_node_type = network.edges[child_idx].node_type.as_str();

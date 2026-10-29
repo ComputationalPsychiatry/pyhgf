@@ -69,7 +69,7 @@ pub fn layer_posterior_update(
         }
     }
 
-    // Precision: clip(π̃_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))), written in place.
+    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))), written in place.
     ndarray::Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)

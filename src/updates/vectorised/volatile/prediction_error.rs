@@ -32,7 +32,7 @@ pub fn layer_prediction_error(
         return;
     }
 
-    // Volatility prediction error: π̃/π + π̃·δ² − 1 (fused, one allocation).
+    // Volatility prediction error: π̂/π + π̂·δ² − 1 (fused, one allocation).
     let vol_pe = ndarray::Zip::from(&layer.expected_precision)
         .and(&layer.precision)
         .and(&layer.mean)
@@ -52,7 +52,7 @@ pub fn layer_prediction_error(
 }
 
 /// The value-level volatility prediction error of one node:
-/// `Δ = π̃/π + π̃·δ² − 1`.
+/// `Δ = π̂/π + π̂·δ² − 1`.
 #[inline]
 pub(crate) fn volatility_pe_node(ep: Float, p: Float, m: Float, em: Float) -> Float {
     let d = m - em;

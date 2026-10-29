@@ -40,8 +40,8 @@ def vectorised_continuous_volatility_prediction_error(layer: LayerState) -> Laye
 
     .. math::
 
-        \Delta_a^{(k)} = \frac{\tilde{\pi}_a^{(k)}}{\pi_a^{(k)}}
-            + \tilde{\pi}_a^{(k)} \left( \delta_a^{(k)} \right)^2 - 1.
+        \Delta_a^{(k)} = \frac{\hat{\pi}_a^{(k)}}{\pi_a^{(k)}}
+            + \hat{\pi}_a^{(k)} \left( \delta_a^{(k)} \right)^2 - 1.
 
     The nodalised backend divides by the number of volatility parents; the
     vectorised layer topology allows at most one volatility parent per layer, so
