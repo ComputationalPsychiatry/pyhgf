@@ -760,32 +760,16 @@ pub fn batched_mean_weight_gradients(
 
         // Child-side factor u = -((mean − μ̂) [∘ π]) and parent-side factor
         // v = g(parent posterior mean) with a bias row of ones, each built
-        // sanitized (non-finite entries zeroed) in a single pass.
-        //
-        // The residual is formed from `mean − expected_mean`, exactly as
-        // `weight_gradient_factors` does, and not read from
-        // `value_prediction_error`: for a binary layer that field holds
-        // (mean − μ̂) / π̂ with π̂ = μ̂(1 − μ̂), the scaling the parent's
-        // posterior update expects (its gain multiplies π̂ back in). The
-        // weight gradient of a binary child is the raw residual, since the
-        // Bernoulli variance cancels through the sigmoid; reading the scaled
-        // field would multiply each sample's gradient by 1 / (μ̂(1 − μ̂)) ≥ 4.
-        // For volatile and categorical layers the field equals mean − μ̂, so
-        // their gradients are unchanged.
+        // sanitized (non-finite entries zeroed) in a single pass. The residual
+        // is recomputed, as in `weight_gradient_factors`: a binary layer's
+        // `value_prediction_error` is scaled by 1/π̂ for its parent's posterior.
         let sanitize = |x: Float| if x.is_finite() { x } else { 0.0 };
-        let mut u = Matrix::zeros(child.mean.raw_dim());
-        if kind == WeightKind::PrecisionWeighted && child_layer.kind != LayerKind::Binary {
-            Zip::from(&mut u)
-                .and(&child.mean)
-                .and(&child.expected_mean)
-                .and(&child.precision)
-                .for_each(|u, &m, &em, &p| *u = sanitize(-(m - em) * p));
-        } else {
-            Zip::from(&mut u)
-                .and(&child.mean)
-                .and(&child.expected_mean)
-                .for_each(|u, &m, &em| *u = sanitize(-(m - em)));
-        }
+        let weighted =
+            kind == WeightKind::PrecisionWeighted && child_layer.kind != LayerKind::Binary;
+        let u = Zip::from(&child.mean)
+            .and(&child.expected_mean)
+            .and(&child.precision)
+            .map_collect(|&m, &em, &p| sanitize((em - m) * if weighted { p } else { 1.0 }));
         let n_parent = parent.mean.nrows();
         let rows = n_parent + usize::from(parent_layer.add_constant_input);
         let mut v = Matrix::zeros((rows, n_samples));

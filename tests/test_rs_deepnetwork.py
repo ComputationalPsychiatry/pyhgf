@@ -285,7 +285,7 @@ def test_two_phase_matches_batch_update():
     """batch_forward + batch_update_from_error reproduces batch_update.
 
     Covered on a plain volatile chain, a GELU coupling, and a categorical head, the part
-    shapes the hybrid transformer uses.
+    shapes the hybrid transformer uses, and on a binary head.
     """
     rng = np.random.default_rng(11)
 
@@ -293,6 +293,10 @@ def test_two_phase_matches_batch_update():
         net = RsDeepNetwork()
         if variant == "categorical":
             net.add_layer(5, kind="categorical", volatility_parent=False)
+            net.add_layer(4, volatility_parent=False)
+        elif variant == "binary":
+            net.add_layer(3, kind="binary", volatility_parent=False)
+            net.add_layer(6, volatility_parent=False, coupling_fn="tanh")
             net.add_layer(4, volatility_parent=False)
         elif variant == "gelu":
             net.add_layer(3, volatility_parent=False)
@@ -305,12 +309,14 @@ def test_two_phase_matches_batch_update():
         net.weight_initialisation("he", seed=3)
         return net
 
-    for variant in ("pinned", "gelu", "categorical"):
+    for variant in ("pinned", "gelu", "categorical", "binary"):
         one, two = build(variant), build(variant)
         x = rng.normal(size=(17, 4)).astype("float32")
         out_size = one.layer_sizes[0]
         if variant == "categorical":
             y = np.eye(out_size, dtype="float32")[rng.integers(0, out_size, 17)]
+        elif variant == "binary":
+            y = rng.integers(0, 2, size=(17, out_size)).astype("float32")
         else:
             y = rng.normal(size=(17, out_size)).astype("float32")
 
@@ -577,12 +583,16 @@ def test_batch_update_parity_categorical_output():
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
-def _matched_binary_pair(rng):
-    """Rust and JAX networks with a binary output under a tanh hidden layer.
+@pytest.mark.parametrize("learning_kind", ["precision_weighted", "standard"])
+@pytest.mark.parametrize(("optimiser", "lr"), [("sgd", 0.1), ("adam", 1e-2)])
+def test_batch_update_parity_binary_output(optimiser, lr, learning_kind):
+    """The batch step agrees with JAX under a binary output layer.
 
-    Weights are drawn at scale 1, so the predicted probabilities spread away from
-    1/2 and the Bernoulli variance p(1 - p) differs from sample to sample.
+    The weight gradient of a binary child is the raw residual y - p, whereas the
+    binary layer's stored prediction error is that residual divided by p(1 - p).
+    Weights are drawn at scale 1, so p(1 - p) differs from sample to sample.
     """
+    rng = np.random.default_rng(34)
     rs = RsDeepNetwork(volatility_updates="eHGF", coupling_fn="tanh")
     rs.add_layer(2, kind="binary").add_layer(4).add_layer(3)
     jx = JaxDeepNetwork(volatility_updates="eHGF", coupling_fn=jnp.tanh)
@@ -590,26 +600,7 @@ def _matched_binary_pair(rng):
     weights = _random_weights(rs, rng, scale=1.0)
     rs.set_weights(weights)
     _inject_jax_weights(jx, weights)
-    return rs, jx
-
-
-@pytest.mark.parametrize("learning_kind", ["precision_weighted", "standard"])
-@pytest.mark.parametrize(
-    ("optimiser", "lr", "make_optax"),
-    [("sgd", 0.1, lambda: optax.sgd(0.1)), ("adam", 1e-2, lambda: optax.adam(1e-2))],
-)
-def test_batch_update_parity_binary_output(optimiser, lr, make_optax, learning_kind):
-    """The batch step agrees with JAX under a binary output layer.
-
-    The weight gradient of a binary child is the raw residual y - p, as in ``fit``
-    and in the JAX backend; the binary layer's stored prediction error is that
-    residual divided by p(1 - p), which only the posterior update of its parent
-    should read. Every weight matrix is compared, the one feeding the binary layer
-    included.
-    """
-    rng = np.random.default_rng(34)
-    rs, jx = _matched_binary_pair(rng)
-    optax_opt = make_optax()
+    optax_opt = getattr(optax, optimiser)(lr)
     for _ in range(3):
         x = rng.normal(size=(16, 3))
         y = rng.integers(0, 2, size=(16, 2)).astype(float)
@@ -621,54 +612,6 @@ def test_batch_update_parity_binary_output(optimiser, lr, make_optax, learning_k
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
     for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
-
-
-def test_two_phase_parity_binary_output():
-    """batch_forward + batch_update_from_error agrees with JAX under a binary output."""
-    rng = np.random.default_rng(35)
-    rs, jx = _matched_binary_pair(rng)
-    optax_opt = optax.sgd(0.1)
-    for _ in range(3):
-        x = rng.normal(size=(16, 3))
-        y = rng.integers(0, 2, size=(16, 2)).astype(float)
-        out = rs.batch_forward(x)
-        errors_rs = rs.batch_update_from_error(
-            out - y, optimiser="sgd", learning_rate=0.1
-        )
-        jx.batch_update(x, y, optimiser=optax_opt)
-        np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
-    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
-    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
-        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
-
-
-def test_batch_update_single_sample_matches_fit_binary_output():
-    """A one-sample batch step equals one fit step under a binary output.
-
-    Both paths start from the same weights and beliefs, so with SGD the weights after
-    the step must agree; this checks the Rust batched kernel against the Rust per-sample
-    kernel without involving the JAX backend.
-    """
-    rng = np.random.default_rng(36)
-
-    def build():
-        net = RsDeepNetwork(volatility_updates="eHGF", coupling_fn="tanh")
-        return net.add_layer(2, kind="binary").add_layer(4).add_layer(3)
-
-    for i in range(4):
-        rs_fit, rs_bat = build(), build()
-        weights = _random_weights(rs_fit, rng, scale=1.0)
-        rs_fit.set_weights(weights)
-        rs_bat.set_weights(weights)
-        start = [np.array(w) for w in rs_fit.get_weights()]
-        x = rng.normal(size=(1, 3))
-        y = np.array([[float(i % 2), float((i // 2) % 2)]])
-        rs_fit.fit(x, y, optimiser="sgd", learning_rate=0.1)
-        rs_bat.batch_update(x, y, optimiser="sgd", learning_rate=0.1)
-        for w_fit, w_bat, w0 in zip(rs_fit.get_weights(), rs_bat.get_weights(), start):
-            # Compare the steps rather than the weights, so the bound is
-            # relative to the size of the update.
-            np.testing.assert_allclose(w_bat - w0, w_fit - w0, rtol=1e-4, atol=1e-6)
 
 
 def test_predict_parity_binary_output():

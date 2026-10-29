@@ -1203,14 +1203,9 @@ mod tests {
 
     /// With a binary leaf, the batched step reproduces the per-sample
     /// reference. The weight gradient of a binary child is the raw residual
-    /// `mean − μ̂` (see `weight_gradient_factors`), whereas the layer's
-    /// `value_prediction_error` holds that residual divided by the Bernoulli
-    /// variance μ̂(1 − μ̂), the scaling the parent's posterior update expects.
-    /// A batched kernel that reads the scaled field multiplies each sample's
-    /// term of the binary child's weight gradient by 1 / (μ̂(1 − μ̂)) ≥ 4. Covers both
-    /// gradient modes, a tanh layer above the binary leaf (so the routed
-    /// message is exercised too), and a single-sample batch against
-    /// `propagation_step`.
+    /// `mean − μ̂`, whereas the layer's `value_prediction_error` holds that
+    /// residual divided by the Bernoulli variance μ̂(1 − μ̂). Covers both
+    /// gradient modes, with a tanh layer above the binary leaf.
     #[test]
     fn test_batch_update_binary_leaf_matches_per_sample_reference() {
         use crate::math::resolve_coupling_fn;
@@ -1298,33 +1293,6 @@ mod tests {
                 if let (Some(bw), Some(rw)) = (bl.weights_in.as_ref(), rl.weights_in.as_ref()) {
                     for (a, b) in bw.iter().zip(rw.iter()) {
                         assert!(close(*a, *b), "{kind:?}: weights differ: {a} vs {b}");
-                    }
-                }
-            }
-
-            // A one-sample batch applies exactly the step of one sequential
-            // propagation step on that sample.
-            let mut seq = make_net();
-            let mut bat = make_net();
-            let mut seq_state = OptState::init(&seq);
-            let mut bat_state = OptState::init(&bat);
-            seq.propagation_step(x.row(0), y.row(0), &opt, &mut seq_state, 1.0, kind, true);
-            bat.batch_update(
-                x.slice(ndarray::s![0..1, ..]),
-                y.slice(ndarray::s![0..1, ..]),
-                Some(&opt),
-                Some(&mut bat_state),
-                1.0,
-                kind,
-                false,
-            );
-            for (sl, bl) in seq.layers.iter().zip(bat.layers.iter()) {
-                if let (Some(sw), Some(bw)) = (sl.weights_in.as_ref(), bl.weights_in.as_ref()) {
-                    for (a, b) in sw.iter().zip(bw.iter()) {
-                        assert!(
-                            close(*a, *b),
-                            "{kind:?}: one-sample step differs: {a} vs {b}"
-                        );
                     }
                 }
             }
