@@ -38,8 +38,9 @@ def binary_state_node_prediction_error(
     # cancel the prediction error if the value was not observed
     value_prediction_error *= attributes[node_idx]["observed"]
 
-    # scale the prediction error so it can be used in the posterior update
-    # (eq. 98, Weber et al., v1)
+    # divide by the Bernoulli variance stored in ``expected_precision``; the parent's
+    # posterior update multiplies by it again, so its mean update receives the raw
+    # residual
     value_prediction_error /= attributes[node_idx]["expected_precision"]
 
     # store the prediction errors in the binary node
@@ -95,7 +96,7 @@ def binary_finite_state_node_prediction_error(
     # Likelihood under eta0
     und0 = jnp.exp(-expected_precision / 2 * delata0**2)
 
-    # Eq. 39 in Mathys et al. (2014) (i.e., Bayes)
+    # Bayes' rule for the binary state given the two Gaussian likelihoods
     expected_mean = attributes[node_idx]["expected_mean"]
     mean = expected_mean * und1 / (expected_mean * und1 + (1 - expected_mean) * und0)
     precision = 1 / (expected_mean * (1 - expected_mean))

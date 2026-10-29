@@ -8,8 +8,8 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 
 /// Precision increment from the value children.
 ///
-/// The relaxed update implements the posterior-step (smoothing) correction of the
-/// relaxed HGF: the canonical child-precision factor is replaced by the harmonic
+/// The relaxed update implements the posterior-step relaxation of the relaxed HGF
+/// (rHGF): the canonical child-precision factor is replaced by the harmonic
 /// combination
 ///
 /// ```text
@@ -18,8 +18,8 @@ use crate::updates::nodalised::prediction::continuous::floor_predicted_variance;
 ///
 /// where π̄_a is the child's conditional predicted precision
 /// (`conditional_expected_precision`) and π̂_a its marginal predicted precision
-/// (`expected_precision`). The same factor scales both the `(κ g')²` and the
-/// `κ g'' · δ_a` terms. Reduces to the canonical formula when the child is fully
+/// (`expected_precision`). The same factor scales both the `(α g')²` and the
+/// `α g'' · δ_a` terms, with α the value-coupling strength. Reduces to the canonical formula when the child is fully
 /// observed (π_y → ∞); returns no contribution when the child gained no bottom-up
 /// information (π_y = 0).
 ///
@@ -39,21 +39,21 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
             let child_state = &network.attributes.states[child_idx];
             let child_expected_precision = child_state.expected_precision;
             let observed = child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
+            let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0);
 
             let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
                 Some(cf) => {
                     let g_prime = (cf.df)(parent_mean);
                     let g_second = (cf.d2f)(parent_mean);
                     let child_vape = child_state.value_prediction_error;
-                    (g_prime.powi(2), kappa * g_second * child_vape)
+                    (g_prime.powi(2), alpha * g_second * child_vape)
                 }
                 None => (1.0, 0.0),
             };
 
-            // Effective child precision under the smoothing correction. The
+            // Effective child precision under the posterior-step relaxation. The
             // Schur derivation assumes a Gaussian-Gaussian value-coupling edge,
-            // so the correction only applies when the child carries a Gaussian
+            // so the relaxation only applies when the child carries a Gaussian
             // belief (continuous-state) AND is interior (has
             // children of its own). Binary, categorical, input/constant,
             // exponential-family, and Dirichlet children, plus any Gaussian
@@ -75,7 +75,7 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
             };
 
             precision_wpe += (effective_child_precision
-                * (kappa.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
+                * (alpha.powi(2) * coupling_fn_prime_sq - coupling_fn_second_term))
                 * observed;
         }
     }
@@ -85,16 +85,17 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
 
 /// Mean increment from the value children.
 ///
-/// The relaxed update uses the joint-Gaussian (RTS-smoother) gain
+/// The relaxed update uses the relaxed gain of the posterior-step relaxation (the
+/// joint-Gaussian Rauch-Tung-Striebel smoother gain):
 ///
 /// ```text
 /// g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
 /// ```
 ///
-/// accumulated across children and divided once by `node_precision` (π_b) — this is
-/// what makes the multi-child mean exact rather than a sum of independent
-/// single-child RTS gains. For leaves and non-Gaussian children π_y = 0 and g_a
-/// collapses to π̂_a (= `child.expected_precision`), recovering the canonical gain.
+/// accumulated across children and divided once by `node_precision` (π_b), which
+/// makes the multi-child mean exact rather than a sum of independent single-child
+/// RTS gains. Leaves and non-Gaussian children use π̂_a (= `child.expected_precision`),
+/// the value of g_a at π_y = 0 and the canonical gain.
 /// With `mean_field`, every child uses π̂_a.
 fn value_coupling_mean_wpe(
     network: &Network,
@@ -113,17 +114,17 @@ fn value_coupling_mean_wpe(
             let child_state = &network.attributes.states[child_idx];
             let child_expected_precision = child_state.expected_precision;
             let child_vape = child_state.value_prediction_error * child_state.observed;
-            let kappa = coupling_strengths.get(i).copied().unwrap_or(1.0);
+            let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0);
 
             let coupling_fn_prime = match coupling_fn {
                 Some(cf) => (cf.df)(parent_mean),
                 None => 1.0,
             };
 
-            // Joint-Gaussian (RTS-smoother) gain g_a = π̄_a · π_a / (π̄_a + π_y),
-            // π_y = π_a − π̂_a; summed over children then divided once by node_precision
-            // (exact multi-child marginal mean). Leaves / non-Gaussian children have
-            // π_y = 0 so g_a collapses to the marginal, recovering the canonical gain.
+            // Relaxed gain g_a = π̄_a · π_a / (π̄_a + π_y), π_y = π_a − π̂_a; summed
+            // over children then divided once by node_precision (exact multi-child
+            // marginal mean). Leaves and non-Gaussian children use the marginal π̂_a,
+            // the value of g_a at π_y = 0 and the canonical gain.
             let child_node_type = network.edges[child_idx].node_type.as_str();
             let child_is_gaussian_interior = child_node_type == "continuous-state"
                 && (network.edges[child_idx].value_children.is_some()
@@ -138,7 +139,7 @@ fn value_coupling_mean_wpe(
             };
 
             value_pwpe +=
-                (kappa * coupling_fn_prime * gain_precision / node_precision) * child_vape;
+                (alpha * coupling_fn_prime * gain_precision / node_precision) * child_vape;
         }
     }
 
@@ -397,7 +398,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
         energy
     };
 
-    // Expansion 1: quadratic at the prediction, concave part only (eqs. 52-53).
+    // Expansion 1: quadratic at the prediction, concave part only.
     let mut precision_1 = prior_precision;
     let mut mean_shift_1 = prior_precision * (prior_mean - expected_mean);
     for child in &children {
@@ -409,7 +410,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
     }
     let mean_1 = expected_mean + mean_shift_1 / precision_1;
 
-    // Expansions 2, ..., n+1: quadratic at each child's Lambert W0 mode (eqs. 54-56).
+    // Expansions 2, ..., n+1: quadratic at each child's Lambert W0 mode.
     let mut precisions = Vec::with_capacity(children.len() + 1);
     let mut means = Vec::with_capacity(children.len() + 1);
     precisions.push(precision_1);
@@ -455,7 +456,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
         }
     }
 
-    // Softmax weights (eq. 57) and Gaussian mixture moment matching (eqs. 58-60).
+    // Softmax weights and Gaussian mixture moment matching.
     let energies: Vec<f64> = means.iter().map(|&m| variational_energy(m)).collect();
     let max_energy = energies.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let unnormalised: Vec<f64> = energies.iter().map(|&e| (e - max_energy).exp()).collect();
@@ -484,8 +485,8 @@ pub fn posterior_update_continuous_state_node_unbounded(
 /// al. (2026) absorbs the value-coupling terms of the variational energy.
 ///
 /// It is the posterior that the regular value-coupling update returns when the
-/// volatility children are left out: relaxed (smoothing factor for Gaussian interior
-/// children) or mean-field, following `Network::mean_field_updates`, so that value
+/// volatility children are left out: relaxed (posterior-step relaxation for Gaussian
+/// interior children) or mean-field, following `Network::mean_field_updates`, so that value
 /// children are weighted as in the standard and eHGF updates. Without value children,
 /// this is the prediction of the node. Port of `_value_children_effective_prior` in the
 /// JAX backend.

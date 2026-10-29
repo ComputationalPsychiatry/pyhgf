@@ -462,7 +462,7 @@ def _posterior_pe_stack(
     binary, or categorical), so it receives the real *child_is_input_layer* flag.
     A leaf never moves its posterior precision, so its evidence
     :math:`\pi_y = \pi_a - \hat{\pi}_a` is identically zero and the interior
-    (harmonic) form of the smoothing correction would silently zero out the whole
+    (harmonic) form of the posterior-step relaxation would silently zero out the whole
     message; the flag switches to the canonical factor instead. This mirrors
     :func:`_predict_stack_from_parent`, which peels the *topmost* slice to meet
     the external parent. Every scanned slice has a stack slice as its child,
@@ -1057,7 +1057,7 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
         \varepsilon_x = g'(\hat{\mu}_x) \odot W^\top (g_a \, \delta_a),
 
     where :math:`\delta_a` is the child layer's value prediction error,
-    :math:`g_a` its smoothing gain (the same gain used by
+    :math:`g_a` its relaxed gain (the same gain used by
     :func:`pyhgf.updates.vectorised.volatile.posterior.vectorised_posterior_update_mean_value_level`),
     :math:`W` the weight matrix connecting the child into the top layer
     (bias column excluded), and :math:`g'` the derivative of the top layer's
@@ -1103,7 +1103,7 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
         # The bias column connects the constant node, not a real input.
         weights = weights[:, :-1]
 
-    # Smoothing gain of the child layer — identical to the gain used by the
+    # Relaxed gain of the child layer, identical to the gain used by the
     # interior posterior mean update, so the top layer sees exactly the
     # message any interior layer would see. Under mean-field the interior mean
     # update weights by the canonical predicted precision, so the same factor

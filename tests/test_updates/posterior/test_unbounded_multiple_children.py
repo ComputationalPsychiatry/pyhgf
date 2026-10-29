@@ -309,7 +309,7 @@ def _kl_to_variational_posterior(
 @pytest.mark.parametrize(
     "expected_mean, expected_precision, children",
     [
-        # bimodal variational energy, canonical parameters of fig. 3 in the paper
+        # parameters for which the variational energy is bimodal
         (-7.0, 0.5, ((1.0, 1e6, 0.05, 0.0), (1.0, 1e6, 0.05, 0.0))),
         # two children with different tonic volatilities and prediction errors
         (1.0, 2.0, ((0.3, 10.0, 0.1, -3.0), (2.5, 10.0, 0.1, -1.0))),
@@ -419,8 +419,8 @@ def test_zero_coupling_child_is_left_out():
 def test_positive_precision_over_a_grid_of_prediction_errors():
     """Posterior precision is finite and positive, as the standard update is not."""
     attributes, edges, _ = _network(Network, "shared_volatility_parent").get_network()
-    # canonical units of section 3.5.1 in the paper: α = 0.005, β/α up to 200,
-    # γ in [-15, 15]; the second child adds a large prediction error elsewhere
+    # grid of carried variance α = 0.005, β/α up to 200 and γ in [-15, 15]; the
+    # second child adds a large prediction error elsewhere
     ratio, gamma = np.meshgrid(
         np.array([1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]),
         np.linspace(-15.0, 15.0, 61),

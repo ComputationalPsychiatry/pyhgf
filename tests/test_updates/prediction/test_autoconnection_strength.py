@@ -75,7 +75,7 @@ def test_predicted_precision_matches_hand_computation():
 @pytest.mark.parametrize(
     "predict",
     [predict_precision, predict_precision_mean_field],
-    ids=["piHGF", "mean_field"],
+    ids=["relaxed", "mean_field"],
 )
 def test_zero_autoconnection_keeps_no_variance(predict):
     """At λ = 0 the predicted variance is the predicted volatility alone.
@@ -94,7 +94,7 @@ def test_zero_autoconnection_keeps_no_variance(predict):
 @pytest.mark.parametrize(
     "predict",
     [predict_precision, predict_precision_mean_field],
-    ids=["piHGF", "mean_field"],
+    ids=["relaxed", "mean_field"],
 )
 def test_unit_autoconnection_is_the_canonical_expression(predict):
     """At λ = 1 the predicted precision is bit-identical to 1 / (1/π + Ω).

@@ -32,7 +32,7 @@ pub fn binary_prediction(
 
     child.expected_mean = expected_mean;
     // Binary leaves store the Bernoulli variance in `expected_precision`; the
-    // conditional coincides with the marginal (Limit 3 leaf convention).
+    // conditional coincides with the marginal (leaf convention of the parent's update).
     child.conditional_expected_precision = expected_precision.clone();
     child.expected_precision = expected_precision;
 }

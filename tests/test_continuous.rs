@@ -44,7 +44,7 @@ fn test_one_node_hgf() {
     assert_close(node0.mean[0], 0.2, "node0 mean");
     assert_close(node0.expected_mean[0], 0.0, "node0 expected_mean");
 
-    // Check node 1 trajectories (no volatility parent → piHGF correction inactive)
+    // Check node 1 trajectories (no volatility parent → rHGF MGF term inactive)
     let node1 = &network.node_trajectories.nodes[1];
     assert_close(node1.precision[0], 1.9820137, "node1 precision");
     assert_close(
@@ -64,7 +64,7 @@ fn test_two_nodes_hgf() {
     // Node 2: volatility parent of node 0
     //
     // Expected values reflect the relaxed prediction step: node 0's predicted
-    // precision picks up the moment-generating-function correction
+    // precision picks up the moment-generating-function term
     // `κ² / (2 π̂_2)` inside its log-volatility exponent, shifting it from the
     // canonical 0.5 to 0.27158 and propagating through node 0's posterior to
     // node 1's and node 2's value-coupling updates.

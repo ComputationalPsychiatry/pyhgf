@@ -33,8 +33,8 @@ class LayerState(eqx.Module):
     conditional_expected_precision :
         The conditional predicted precision :math:`\bar{\pi}_a` of the value
         level: the predicted precision given the value parents' states, used by
-        the structured-Gaussian (smoothing) update. It coincides with
-        :math:`\hat{\pi}_a` when no value-parent uncertainty is propagated.
+        the posterior-step relaxation (structured-Gaussian update). It coincides
+        with :math:`\hat{\pi}_a` when no value-parent uncertainty is propagated.
     effective_precision :
         The effective precision of the value-level prediction.
     value_prediction_error :

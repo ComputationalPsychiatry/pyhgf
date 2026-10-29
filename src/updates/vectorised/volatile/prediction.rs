@@ -62,7 +62,7 @@ pub fn layer_prediction(
         };
 
     // 2. Value level.
-    // Coupled parent activations (bias node = 1) and the per-parent Laplace
+    // Coupled parent activations (bias node = 1) and the per-parent Taylor
     // variance factor g'(μ̂)² / π̂_parent, built together in one pass. The bias
     // parent has zero derivative and infinite precision.
     //
@@ -118,7 +118,7 @@ pub fn layer_prediction(
         Array1::<Float>::zeros(n)
     };
 
-    // Laplace value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).
+    // Taylor value-coupling variance vcv[i] = Σ_j W[i,j]²·ppv[j] (no W² matrix).
     // Without `feedforward_uncertainty` the value parents do not propagate their
     // uncertainty, so the term is zero and the marginal predicted precision collapses
     // onto the conditional one: every layer then behaves as the top layer already does.

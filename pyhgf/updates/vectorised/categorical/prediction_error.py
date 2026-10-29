@@ -22,7 +22,7 @@ def vectorised_categorical_prediction_error(
     which is the cross-entropy gradient with respect to the logits. No scaling is needed
     (the binary layer, by contrast, divides by its Bernoulli variance). The posterior
     precision is set equal to the expected precision (both one), so the parent's
-    smoothing gain is exactly one and the routed message is the residual multiplied back
+    relaxed gain is exactly one and the routed message is the residual multiplied back
     through the weights. Categorical leaves carry no volatility level: the volatility
     fields are left untouched.
 

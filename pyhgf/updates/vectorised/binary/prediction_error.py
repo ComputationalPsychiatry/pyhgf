@@ -38,7 +38,7 @@ def vectorised_binary_prediction_error(
     # Raw prediction error
     value_pe = layer.mean - layer.expected_mean
 
-    # Scale by inverse expected precision (eq. 98 in Weber et al., v1)
+    # Divide by the Bernoulli variance stored in ``expected_precision``
     value_pe = value_pe / layer.expected_precision
 
     # Posterior precision = expected precision for binary nodes

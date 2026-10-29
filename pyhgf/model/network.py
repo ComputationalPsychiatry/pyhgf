@@ -109,9 +109,9 @@ class Network:
             against precision blow-up.
         mean_field_updates :
             If ``False`` (default), use the relaxed prediction and posterior updates,
-            which lift the mean-field assumption on value-coupling edges via
-            Schur-complement and Laplace/MGF corrections. If ``True``, use the original
-            mean-field updates from [1]_.
+            which lift the mean-field assumption on value-coupling edges via the
+            Schur-complement, Taylor and moment-generating-function terms of the
+            relaxed HGF (rHGF). If ``True``, use the mean-field updates from [1]_.
         precision_clipping_value :
             Binary state nodes clip their predicted mean to
             ``[precision_clipping_value, 1 - precision_clipping_value]`` so the implied

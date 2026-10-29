@@ -49,9 +49,9 @@ def test_update_binary_input_parents():
         edges=binary_hgf.edges,
         input_idxs=(0,),
     )
-    # Expected values reflect the piHGF prediction step: the volatility-parent
+    # Expected values reflect the rHGF prediction step: the volatility-parent
     # variance enters node 1's predicted log-volatility through the exact
-    # moment-generating-function correction κ²/(2 π̂_parent), which shifts
+    # moment-generating-function term κ²/(2 π̂_parent), which shifts
     # node 1's posterior mean and precision relative to the canonical formula.
     for idx, val in zip(
         ["mean", "expected_mean", "expected_precision"],

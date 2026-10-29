@@ -68,9 +68,9 @@ fn test_binary_2_levels_single_obs() {
 // ---------------------------------------------------------------------------
 // Three-level binary HGF  (binary → continuous value → continuous volatility)
 //
-// Expected values reflect the piHGF prediction step: relative to the canonical
+// Expected values reflect the rHGF prediction step: relative to the canonical
 // (g)HGF, the volatility parent's variance enters the child's predicted
-// log-volatility through the exact moment-generating-function correction
+// log-volatility through the exact moment-generating-function term
 // `κ² / (2 π̂_parent)`, which shifts node-1's predicted precision (and every
 // downstream quantity that depends on it).
 // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ fn test_binary_3_levels_single_obs() {
         "n0 expected_precision",
     );
 
-    // Node 1 — continuous value parent (has volatility parent node 2 → piHGF correction applies)
+    // Node 1 — continuous value parent (has volatility parent node 2 → rHGF MGF term applies)
     let n1 = &network.node_trajectories.nodes[1];
     assert_close(n1.mean[0], 2.237863416338325, "n1 mean");
     assert_close(n1.expected_mean[0], 1.0, "n1 expected_mean");

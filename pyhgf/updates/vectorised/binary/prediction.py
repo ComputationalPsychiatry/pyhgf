@@ -43,7 +43,7 @@ def vectorised_binary_prediction(
         Binary leaves carry no AR-volatility random walk, so the conditional
         predicted precision :math:`\bar{\pi}_b` (``conditional_expected_precision``)
         is set equal to :math:`\hat{\pi}_b`, the leaf convention used by the
-        parent's posterior-step (smoothing) update.
+        parent's posterior-step relaxation.
 
     Parameters
     ----------

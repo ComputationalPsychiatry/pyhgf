@@ -23,24 +23,26 @@ def posterior_update_mean_continuous_node(
     .. math::
 
         \Delta \mu_b \;\mathrel{+}=\;
-            \frac{\kappa_j \, g'_{j,b}(\mu_b^{(k-1)}) \, g_{a,j}}{\pi_b} \, \delta_j^{(k)},
+            \frac{\alpha_j \, g'_{j,b}(\mu_b^{(k-1)}) \, g_{a,j}}{\pi_b} \, \delta_j^{(k)},
             \qquad
         g_{a,j} \,=\, \frac{\bar{\pi}_j^{(k)} \, \pi_j^{(k)}}{\bar{\pi}_j^{(k)} + \pi_{y,j}},
             \qquad
         \pi_{y,j} \,=\, \pi_j^{(k)} - \hat{\pi}_j^{(k)},
 
-    where :math:`\kappa_j` is the value-coupling strength, :math:`g'_{j,b}` is the
+    where :math:`\alpha_j` is the value-coupling strength, :math:`g'_{j,b}` is the
     derivative of the coupling function (1 for linear coupling),
     :math:`\bar{\pi}_j` is the child's *conditional* predicted precision (stored as
     ``child.temp["conditional_expected_precision"]``), :math:`\hat{\pi}_j` its
     *marginal* predicted precision (``child.expected_precision``), and
     :math:`\delta_j^{(k)}` is the value prediction error computed by
     :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
-    The smoothing form :math:`g_{a,j}` is the joint-Gaussian (RTS-smoother) gain
-    derived from the structured-Gaussian variational posterior on the value-coupling
-    edge; for leaves and non-Gaussian children :math:`\pi_{y,j} = 0` and
-    :math:`g_{a,j}` collapses to the marginal :math:`\hat{\pi}_j`, recovering the
-    canonical gain :math:`\bar{\pi}_j \, \pi_j / \bar{\pi}_j = \pi_j = \hat{\pi}_j`.
+    The relaxed gain :math:`g_{a,j}` is the joint-Gaussian (Rauch-Tung-Striebel
+    smoother) gain of the posterior-step relaxation, derived from the
+    structured-Gaussian variational posterior on the value-coupling edge. Leaves and
+    non-Gaussian children use the marginal :math:`\hat{\pi}_j`, the value of
+    :math:`g_{a,j}` at :math:`\pi_{y,j} = 0`
+    (:math:`\bar{\pi}_j \, \pi_j / \bar{\pi}_j = \pi_j = \hat{\pi}_j`), which is the
+    canonical gain.
 
     .. rubric:: 2. Mean update from volatility coupling
 
@@ -121,10 +123,10 @@ def posterior_update_mean_continuous_node(
             # exact marginal-mean gain is
             #     g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
             # accumulated across children and divided once by `node_precision` (π_b)
-            # after the loop — this is what makes the multi-child mean exact rather
-            # than a sum of independent RTS gains. For leaves and non-Gaussian
-            # children π_y = 0 and g_a collapses to π̂_a, recovering the canonical
-            # gain (π̂_a is what `child.expected_precision` stores).
+            # after the loop, which makes the multi-child mean exact rather than a
+            # sum of independent RTS gains. Leaves and non-Gaussian children use π̂_a
+            # (what `child.expected_precision` stores), the value of g_a at π_y = 0
+            # and the canonical gain.
             child_node_type = edges[value_child_idx].node_type
             child_is_gaussian_interior = child_node_type in (2, 6) and (
                 edges[value_child_idx].value_children is not None
@@ -211,18 +213,18 @@ def posterior_update_mean_continuous_node_mean_field(
 
     .. math::
         \mu_b^{(k)} =  \hat{\mu}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \frac{\kappa_j \hat{\pi}_j^{(k)}}{\pi_b} \delta_j^{(k)}
+            \frac{\alpha_j \hat{\pi}_j^{(k)}}{\pi_b} \delta_j^{(k)}
 
-    Where :math:`\kappa_j` is the volatility coupling strength between the child node
-    and the state node and :math:`\delta_j^{(k)}` is the value prediction error that
-    was computed beforehand by
-    :py:func:`pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error`.
+    where :math:`\alpha_j` is the value-coupling strength between the state node and
+    its value child :math:`j` and :math:`\delta_j^{(k)}` is the value prediction error
+    that was computed beforehand by
+    :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
 
     For non-linear value coupling:
 
     .. math::
         \mu_b^{(k)} =  \hat{\mu}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \frac{\kappa_j g'_{j,b}({\mu}_b^{(k-1)}) \hat{\pi}_j^{(k)}}{\pi_b}
+            \frac{\alpha_j g'_{j,b}({\mu}_b^{(k-1)}) \hat{\pi}_j^{(k)}}{\pi_b}
             \delta_j^{(k)}
 
 

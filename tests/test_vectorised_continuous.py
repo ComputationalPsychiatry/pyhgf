@@ -126,8 +126,8 @@ def test_classic_three_level(volatility_updates):
 def test_mean_field_three_level(volatility_updates):
     """Mean-field parity on the classic 3-level continuous HGF.
 
-    Both backends run with ``mean_field_updates=True``: no MGF correction in the log-
-    volatility exponent, no Laplace value-coupling variance, and canonical child
+    Both backends run with ``mean_field_updates=True``: no MGF term in the log-
+    volatility exponent, no Taylor value-coupling variance, and canonical child
     precisions in the posterior messages.
     """
     nod = (

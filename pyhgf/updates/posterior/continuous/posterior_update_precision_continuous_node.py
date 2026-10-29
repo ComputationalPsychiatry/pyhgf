@@ -15,7 +15,7 @@ from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 # Shared building blocks
 #
 # The four "observed value" precision updates are the cross-product of two orthogonal
-# choices: the value-coupling factor (smoothing/relaxed vs. mean-field) and the
+# choices: the value-coupling factor (relaxed vs. mean-field) and the
 # volatility-coupling increment (standard γ-formula vs. enhanced-HGF safe update). The
 # helpers below isolate each piece so the leaf updates are one-line compositions and
 # the routing functions share the observation check.
@@ -39,20 +39,20 @@ def _has_observations(attributes: dict, edges: Edges, node_idx: int) -> Array:
     return jnp.any(jnp.array(observations))
 
 
-def _smoothing_child_precision(
+def _relaxed_child_precision(
     attributes: dict, edges: Edges, value_child_idx: int
 ) -> Array:
-    r"""Effective child precision under the relaxed posterior-step (smoothing) update.
+    r"""Effective child precision under the posterior-step relaxation.
 
     The child-precision factor :math:`\hat{\pi}_a` is replaced by the harmonic
     combination :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)`, with
     :math:`\pi_y = \pi_a - \hat{\pi}_a`, but only for Gaussian *interior* children
     (node types 2/6 that themselves have children). The Schur complement carries the
     *conditional* predicted precision :math:`\bar{\pi}_a` (stored in ``temp``); using
-    the marginal would double-count parent uncertainty. All other cases — binary
+    the marginal would double-count parent uncertainty. All other cases (binary
     (type 1), categorical (5), input/constant (0), exponential family (3), Dirichlet
-    (4), and any Gaussian leaf (types 2/6 with no children) — fall back to the
-    canonical predicted-precision factor :math:`\hat{\pi}_a` (:math:`\pi_a \to \infty`).
+    (4), and any Gaussian leaf, i.e. types 2/6 with no children) fall back to the
+    canonical predicted-precision factor :math:`\hat{\pi}_a`.
     """
     child_node_type = edges[value_child_idx].node_type
     child_is_gaussian_interior = child_node_type in (2, 6) and (
@@ -74,7 +74,7 @@ def _smoothing_child_precision(
 def _mean_field_child_precision(
     attributes: dict, edges: Edges, value_child_idx: int
 ) -> Array:
-    r"""Effective child precision under the mean-field update (no smoothing correction).
+    r"""Effective child precision under the mean-field update (no relaxation).
 
     Always the canonical predicted precision :math:`\hat{\pi}_a`.
     """
@@ -90,10 +90,11 @@ def _value_coupling_pwpe(
     r"""Precision-weighted prediction error from value-coupled children.
 
     Implements eq. 50 of [1]_: each child contributes
-    :math:`\pi_a (\kappa^2 g'^2 - \kappa g'' \delta_a)`, with the child-precision
-    factor :math:`\pi_a` supplied by ``effective_precision_fn`` (smoothing or
-    mean-field). The :math:`g'`/:math:`g''` derivatives reduce to the linear case
-    (:math:`\kappa^2`, ``0``) when no coupling function is set.
+    :math:`\pi_a (\alpha^2 g'^2 - \alpha g'' \delta_a)`, with :math:`\alpha` the
+    value-coupling strength and the child-precision factor :math:`\pi_a` supplied by
+    ``effective_precision_fn`` (relaxed or mean-field). The :math:`g'`/:math:`g''`
+    derivatives reduce to the linear case (:math:`\alpha^2`, ``0``) when no coupling
+    function is set.
 
     References
     ----------
@@ -224,20 +225,25 @@ def posterior_update_precision_continuous_node(
     .. math::
 
             \pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \kappa_j^2 \hat{\pi}_j^{(k)}
+            \alpha_j^2 \hat{\pi}_j^{(k)}
 
-    Where :math:`\kappa_j` is the volatility coupling strength between the child node
-    and the state node and :math:`\delta_j^{(k)}` is the value prediction error that
-    was computed beforehand by
-    :py:func:`pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error`.
+    where :math:`\alpha_j` is the value-coupling strength between the state node and
+    its value child :math:`j`.
 
-    For non-linear value coupling we use equation 50 from [1]_.:
+    For non-linear value coupling we use equation 50 from [1]_:
 
     .. math::
 
             \pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \hat{\pi}_j^{(k)} * (\kappa_j^2 * g'_{j,b}(\mu_b^(k-1))^2 -
-            g''_{j,b}(\mu_b^(k-1))*\delta_j)
+            \hat{\pi}_j^{(k)} \left( \alpha_j^2 \, g'_{j,b}(\mu_b^{(k-1)})^2 -
+            \alpha_j \, g''_{j,b}(\mu_b^{(k-1)}) \, \delta_j^{(k)} \right)
+
+    where :math:`\delta_j^{(k)}` is the value prediction error computed beforehand by
+    :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
+
+    For Gaussian interior children, the child-precision factor
+    :math:`\hat{\pi}_j^{(k)}` is replaced by the relaxed child precision of the
+    posterior-step relaxation (see :func:`precision_update`).
 
     #. Precision update from volatility coupling.
 
@@ -319,8 +325,8 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     r"""Compute new precision in the case of observed values.
 
     Applies the canonical value- and volatility-coupling posterior-precision updates
-    (eq. 50 of [1]_), augmented by the *relaxed* posterior-step (smoothing) correction
-    on each Gaussian-interior value child: the child-precision factor
+    (eq. 50 of [1]_), augmented by the posterior-step relaxation of the relaxed HGF
+    (rHGF) on each Gaussian-interior value child: the child-precision factor
     :math:`\hat{\pi}_a` is replaced by the harmonic combination.
 
     .. math::
@@ -335,7 +341,7 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     (``child.expected_precision``). The Schur complement uses the conditional;
     substituting the marginal would double-count parent uncertainty. Non-Gaussian
     children and Gaussian leaves fall back to the canonical predicted-precision
-    factor :math:`\hat{\pi}_a` (:math:`\pi_a \to \infty`).
+    factor :math:`\hat{\pi}_a`.
 
     Parameters
     ----------
@@ -359,7 +365,7 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
-    pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _smoothing_child_precision)
+    pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _relaxed_child_precision)
     pwpe += _volatility_coupling_pwpe(
         attributes, edges, node_idx, _standard_volatility_increment
     )
@@ -490,20 +496,21 @@ def posterior_update_precision_continuous_node_mean_field(
     .. math::
 
             \pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \kappa_j^2 \hat{\pi}_j^{(k)}
+            \alpha_j^2 \hat{\pi}_j^{(k)}
 
-    Where :math:`\kappa_j` is the volatility coupling strength between the child node
-    and the state node and :math:`\delta_j^{(k)}` is the value prediction error that
-    was computed beforehand by
-    :py:func:`pyhgf.updates.prediction_errors.continuous.continuous_node_value_prediction_error`.
+    where :math:`\alpha_j` is the value-coupling strength between the state node and
+    its value child :math:`j`.
 
-    For non-linear value coupling we use equation 50 from [1]_.:
+    For non-linear value coupling we use equation 50 from [1]_:
 
     .. math::
 
             \pi_b^{(k)} = \hat{\pi}_b^{(k)} + \sum_{j=1}^{N_{children}}
-            \hat{\pi}_j^{(k)} * (\kappa_j^2 * g'_{j,b}(\mu_b^(k-1))^2 -
-            g''_{j,b}(\mu_b^(k-1))*\delta_j)
+            \hat{\pi}_j^{(k)} \left( \alpha_j^2 \, g'_{j,b}(\mu_b^{(k-1)})^2 -
+            \alpha_j \, g''_{j,b}(\mu_b^{(k-1)}) \, \delta_j^{(k)} \right)
+
+    where :math:`\delta_j^{(k)}` is the value prediction error computed beforehand by
+    :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
 
     #. Precision update from volatility coupling.
 
@@ -648,7 +655,7 @@ def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Arra
     """Enhanced-HGF precision update for observed values (relaxed value coupling).
 
     The value-coupling contribution is identical to :func:`precision_update` (the
-    relaxed posterior-step correction); the volatility-coupling contribution uses the
+    posterior-step relaxation); the volatility-coupling contribution uses the
     enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.
 
     Parameters
@@ -667,7 +674,7 @@ def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Arra
     posterior_precision :
         The new posterior precision.
     """
-    pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _smoothing_child_precision)
+    pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _relaxed_child_precision)
     pwpe += _volatility_coupling_pwpe(
         attributes, edges, node_idx, _ehgf_volatility_precision_increment
     )
@@ -681,8 +688,8 @@ def precision_update_ehgf_mean_field(
     """Enhanced-HGF precision update for observed values (mean-field value coupling).
 
     The value-coupling contribution is identical to :func:`precision_update_mean_field`
-    (no smoothing correction); the volatility-coupling contribution uses the enhanced-
-    HGF safe update via :func:`_ehgf_volatility_precision_increment`.
+    (no posterior-step relaxation); the volatility-coupling contribution uses the
+    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.
 
     Parameters
     ----------

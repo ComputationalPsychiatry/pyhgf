@@ -248,7 +248,7 @@ impl DeepNet {
     /// The bottom-up sweep never touches the top layer (its values are clamped
     /// to the predictors), so this computes the error message the top layer
     /// would receive from the layer below it: the child layer's value
-    /// prediction error, weighted by its smoothing gain (the same gain used by
+    /// prediction error, weighted by its relaxed gain (the same gain used by
     /// the interior posterior mean update), routed back through the connecting
     /// weights (bias column excluded) and scaled by the derivative of the top
     /// layer's coupling function at the clamped predictors. Must run after
@@ -269,7 +269,7 @@ impl DeepNet {
         let cols = w.ncols() - usize::from(top.add_constant_input);
         let w = w.slice(s![.., ..cols]);
 
-        // Smoothing gain of the child layer, identical to the gain of the
+        // Relaxed gain of the child layer, identical to the gain of the
         // interior posterior mean update, fused directly into the message so
         // the top layer sees exactly the message any interior layer would see.
         let mut message = Vector::zeros(child.mean.len());

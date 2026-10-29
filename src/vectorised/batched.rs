@@ -222,7 +222,7 @@ fn batched_volatile_prediction(
         child.expected_precision_vol = Some(epv);
     }
 
-    // 2. Value level: coupled activations and the per-parent Laplace variance
+    // 2. Value level: coupled activations and the per-parent Taylor variance
     // factor g'(μ̂)² / π̂_parent (the bias row stays 0 there). No time step: it
     // propagates parent uncertainty through the `W @ g(μ)` mean computed just below,
     // which carries no drift scaling. See the single-sample path for the full note.
@@ -245,7 +245,7 @@ fn batched_volatile_prediction(
     // Mean prediction: one gemm over the whole batch.
     child.expected_mean = weights.dot(&coupled);
 
-    // Laplace value-coupling variance: W² @ ppv, one gemm. Without
+    // Taylor value-coupling variance: W² @ ppv, one gemm. Without
     // `feedforward_uncertainty` the value parents propagate nothing, so the term is
     // zero and the marginal predicted precision collapses onto the conditional one.
     let value_coupling_variance = if feedforward_uncertainty {
@@ -501,7 +501,7 @@ fn batched_prediction_error(
     layer_state.mean_vol = Some(new_mean_vol);
 }
 
-/// The per-sample smoothing gain and effective (Schur-corrected) precision of
+/// The per-sample relaxed gain and effective (Schur-corrected) precision of
 /// a child layer, `(gain, eff)`, each `(n_child, n_samples)`: the same
 /// scalars the per-sample posterior forms on the fly.
 fn gain_and_effective(child: &BatchedLayerState, child_is_input_layer: bool) -> (Matrix, Matrix) {
@@ -714,7 +714,7 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
     let cols = w.ncols() - usize::from(top_layer.add_constant_input);
     let w = w.slice(s![.., ..cols]);
 
-    // Smoothing gain of the child layer, identical to the gain of the
+    // Relaxed gain of the child layer, identical to the gain of the
     // interior posterior mean update, fused directly into the message:
     // gain∘δ in one pass, no gain matrix materialised.
     let mut message = Matrix::zeros(child.mean.raw_dim());
