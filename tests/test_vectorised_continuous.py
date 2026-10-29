@@ -687,6 +687,55 @@ def test_ehgf_with_a_value_child_only():
     )
 
 
+@pytest.mark.parametrize("conditional_expected_precision", [2.5, 2.0])
+def test_relaxed_precision_curved_value_coupling(conditional_expected_precision):
+    r"""The relaxed precision update weights the g'' term by the relaxed gain.
+
+    With a tanh coupling, an interior value child contributes
+
+    .. math::
+
+        \frac{\bar{\pi}_a}{\bar{\pi}_a + \pi_y} \left( \alpha^2 g'^2 \, \pi_y
+            - \alpha \, g'' \, \pi_a \, \delta_a \right), \qquad
+        \pi_y = \pi_a - \hat{\pi}_a,
+
+    to the parent's posterior precision. When :math:`\bar{\pi}_a = \hat{\pi}_a` the
+    g'' term is the canonical :math:`\hat{\pi}_a \, \alpha \, g'' \, \delta_a`.
+    """
+    parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
+    child = _value_child()
+    child = child._replace(
+        state=dataclasses.replace(
+            child.state,
+            conditional_expected_precision=jnp.array([conditional_expected_precision]),
+        ),
+        coupling_fn=jnp.tanh,
+    )
+    posterior = vectorised_continuous_posterior_update_standard(
+        parent, value_child=child
+    )
+
+    # The standard scheme differentiates at the previous posterior mean.
+    g_prime = jax.grad(jnp.tanh)(0.3)
+    g_second = jax.grad(jax.grad(jnp.tanh))(0.3)
+    alpha, pi_a, pi_hat_a, delta_a = 0.8, 3.0, 2.0, 0.4
+    pi_bar_a, pi_y = conditional_expected_precision, pi_a - pi_hat_a
+
+    increment = (
+        pi_bar_a
+        / (pi_bar_a + pi_y)
+        * (alpha**2 * g_prime**2 * pi_y - alpha * g_second * pi_a * delta_a)
+    )
+    assert jnp.allclose(posterior.precision, 1.2 + increment)
+
+    if pi_bar_a == pi_hat_a:
+        first_order = pi_hat_a * pi_y / pi_a * alpha**2 * g_prime**2
+        canonical_second_order = pi_hat_a * alpha * g_second * delta_a
+        assert jnp.allclose(
+            posterior.precision, 1.2 + first_order - canonical_second_order
+        )
+
+
 def test_unbounded_zero_coupling():
     """A zero coupling leaves the parent at its prediction, with a finite gradient."""
     parent = _state(mean=0.3, precision=1.5, expected_mean=0.25, expected_precision=1.2)
