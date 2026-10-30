@@ -126,6 +126,69 @@ def test_continuous_moving_volatility_parent(
     _assert_backends_match(py_net, rs_net, 3, "standard", label)
 
 
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_updates):
+    r"""The eHGF precision update re-predicts from every volatility parent of the child.
+
+    Node 1 has two volatility parents, nodes 2 and 3. The eHGF update of node 2
+    re-predicts the volatility of node 1 at the posterior mean :math:`\mu_2^{(k)}`,
+    with node 3 at its predicted mean :math:`\hat{\mu}_3^{(k)}`,
+
+    .. math::
+
+        \nu = t \exp(\omega_1 + \kappa_2 \mu_2^{(k)} + \kappa_3 \hat{\mu}_3^{(k)}),
+
+    and adds :math:`\max(0, \tfrac12 \kappa_2^2 \gamma (\gamma + w \Delta))` to the
+    predicted precision, with :math:`\gamma`, :math:`w` and :math:`\Delta` computed
+    from :math:`\nu` and the carried variance :math:`1/\pi_1^{(k-1)}`. The increment
+    is recomputed here from the recorded trajectories.
+    """
+    tonic_volatility = -6.0
+    net = (
+        cls(volatility_updates="eHGF", mean_field_updates=mean_field_updates)
+        .add_nodes(precision=1e4)
+        .add_nodes(value_children=0, tonic_volatility=tonic_volatility)
+        .add_nodes(volatility_children=1, tonic_volatility=-2.0)
+        .add_nodes(volatility_children=1, mean=2.0, tonic_volatility=-2.0)
+        .input_data(input_data=load_data("continuous")[:200])
+    )
+    child, parent, other_parent = (
+        {
+            key: np.asarray(net.node_trajectories[node_idx][key], dtype=np.float64)
+            for key in ("mean", "precision", "expected_mean", "expected_precision")
+        }
+        for node_idx in (1, 2, 3)
+    )
+
+    # Step 0 is left out: its carried variance comes from the initial precision.
+    carried_variance = 1.0 / child["precision"][:-1]
+    volatility = np.exp(
+        tonic_volatility + parent["mean"][1:] + other_parent["expected_mean"][1:]
+    )
+    expected_precision = 1.0 / (carried_variance + volatility)
+    effective_precision = volatility * expected_precision
+    volatility_error_weight = (volatility - carried_variance) * expected_precision
+    volatility_prediction_error = (
+        1.0 / child["precision"][1:]
+        + (child["mean"][1:] - child["expected_mean"][1:]) ** 2
+    ) * expected_precision - 1.0
+    increment = np.maximum(
+        0.0,
+        0.5
+        * effective_precision
+        * (effective_precision + volatility_error_weight * volatility_prediction_error),
+    )
+
+    assert np.max(np.abs(other_parent["expected_mean"])) > 1.0
+    assert np.allclose(
+        parent["precision"][1:] - parent["expected_precision"][1:],
+        increment,
+        rtol=1e-3,
+        atol=1e-5,
+    )
+
+
 @pytest.mark.parametrize("n_levels", [2, 3])
 @pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)

@@ -237,6 +237,26 @@ fn observed_or_predicted_precision(
     .min(network.max_posterior_precision)
 }
 
+/// Effective tonic volatility ω̃_a = ω_a + Σ_{p≠b} κ_p μ̂_p of the volatility child
+/// `child_idx`, seen from its volatility parent `node_idx` (b). The volatility updates
+/// of b treat the predicted volatility of the child as a function of x_b alone; the
+/// other volatility parents p of the child enter through their predicted means, as in
+/// the prediction of the child (mirrors `_effective_tonic_volatility` in the JAX
+/// backend).
+fn effective_tonic_volatility(network: &Network, node_idx: usize, child_idx: usize) -> f64 {
+    let mut tonic_volatility = network.attributes.states[child_idx].tonic_volatility;
+    if let Some(ref parent_idxs) = network.edges[child_idx].volatility_parents {
+        let parent_couplings = &network.attributes.vectors[child_idx].volatility_coupling_parents;
+        for (j, &parent_idx) in parent_idxs.iter().enumerate() {
+            if parent_idx != node_idx {
+                tonic_volatility += parent_couplings.get(j).copied().unwrap_or(1.0)
+                    * network.attributes.states[parent_idx].expected_mean;
+            }
+        }
+    }
+    tonic_volatility
+}
+
 // =============================================================================
 // Standard posterior update
 // =============================================================================
@@ -328,8 +348,8 @@ impl UnboundedVolatilityChild {
 /// at the Lambert W0 mode of each child, with the curvature and gradient of the full
 /// energy (eqs. 54-56). The expansions are weighted by a softmax of I at their means
 /// (eqs. 57-60). For a single volatility child and no value child, this is the
-/// two-expansion update of section 3.4. If no child is observed, the precision ages as
-/// in [`precision_missing_values`].
+/// two-expansion update of section 3.4. If no child is observed, the posterior
+/// precision is the predicted precision.
 pub fn posterior_update_continuous_state_node_unbounded(
     network: &mut Network,
     node_idx: usize,
@@ -355,22 +375,9 @@ pub fn posterior_update_continuous_state_node_unbounded(
             let child_state = &network.attributes.states[child_idx];
             let be_aux = (1.0 / child_state.precision)
                 + (child_state.mean - child_state.expected_mean).powi(2);
-            // The other volatility parents of the child enter through their predicted
-            // means, as in the prediction of the child.
-            let mut tonic_volatility = child_state.tonic_volatility;
-            if let Some(ref parent_idxs) = network.edges[child_idx].volatility_parents {
-                let parent_couplings =
-                    &network.attributes.vectors[child_idx].volatility_coupling_parents;
-                for (j, &parent_idx) in parent_idxs.iter().enumerate() {
-                    if parent_idx != node_idx {
-                        tonic_volatility += parent_couplings.get(j).copied().unwrap_or(1.0)
-                            * network.attributes.states[parent_idx].expected_mean;
-                    }
-                }
-            }
             UnboundedVolatilityChild {
                 coupling: volatility_couplings.get(i).copied().unwrap_or(1.0),
-                tonic_volatility,
+                tonic_volatility: effective_tonic_volatility(network, node_idx, child_idx),
                 log_previous_variance: child_state.current_variance.max(1e-128).ln(),
                 be_aux,
                 volatility_prediction_error: child_state.expected_precision * be_aux - 1.0,
@@ -537,19 +544,21 @@ fn precision_update_from_children_mean_field(network: &Network, node_idx: usize)
 /// Recomputes the effective precision from the parent's just-updated posterior mean
 /// (`mean`) and the elapsed time, then floors the increment at zero, matching the
 /// enhanced HGF volatility update (TAPAS `hgf_volatility_update` `'ehgf'` branch). This
-/// guarantees the posterior precision never drops below the predicted precision.
+/// guarantees the posterior precision never drops below the predicted precision. The
+/// re-predicted volatility is ν = t exp(κ μ + ω̃), with `tonic_volatility` the effective
+/// tonic volatility ω̃ from [`effective_tonic_volatility`].
 fn ehgf_volatility_increment(
     child_state: &crate::model::network::NodeState,
     volatility_coupling: f64,
     mean: f64,
+    tonic_volatility: f64,
     time_step: f64,
 ) -> f64 {
     // Carried variance σ = λ²/π the child used; the re-prediction below must add
     // volatility to the same quantity the prediction step used.
     let previous_variance = child_state.current_variance;
     // Re-predict the child's volatility and precision from the parent posterior mean.
-    let predicted_volatility =
-        time_step * (volatility_coupling * mean + child_state.tonic_volatility).exp();
+    let predicted_volatility = time_step * (volatility_coupling * mean + tonic_volatility).exp();
     let expected_precision = 1.0 / (previous_variance + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
     let volatility_error_weight = (predicted_volatility - previous_variance) * expected_precision;
@@ -577,7 +586,14 @@ fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_
         for (i, &child_idx) in volc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
-            precision_wpe += ehgf_volatility_increment(child_state, kappa, parent_mean, time_step);
+            let tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
+            precision_wpe += ehgf_volatility_increment(
+                child_state,
+                kappa,
+                parent_mean,
+                tonic_volatility,
+                time_step,
+            );
         }
     }
 
@@ -601,7 +617,14 @@ fn precision_update_from_children_ehgf_mean_field(
         for (i, &child_idx) in volc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
-            precision_wpe += ehgf_volatility_increment(child_state, kappa, parent_mean, time_step);
+            let tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
+            precision_wpe += ehgf_volatility_increment(
+                child_state,
+                kappa,
+                parent_mean,
+                tonic_volatility,
+                time_step,
+            );
         }
     }
 
