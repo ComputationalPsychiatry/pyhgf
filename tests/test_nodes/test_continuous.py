@@ -12,14 +12,20 @@ MEAN_FIELD_UPDATES = [False, True]
 
 
 def _build_network(
-    cls, volatility_updates, mean_field_updates, n_levels, timeseries, observed=None
+    cls,
+    volatility_updates,
+    mean_field_updates,
+    n_levels,
+    timeseries,
+    observed=None,
+    input_precision=1.0,
 ):
     """Build an ``n_levels`` continuous HGF with the given update scheme."""
     net = cls(
         volatility_updates=volatility_updates,
         mean_field_updates=mean_field_updates,
     )
-    net = net.add_nodes().add_nodes(value_children=0)
+    net = net.add_nodes(precision=input_precision).add_nodes(value_children=0)
     if n_levels == 3:
         net = net.add_nodes(volatility_children=0)
     return net.input_data(input_data=timeseries, observed=observed)
@@ -88,6 +94,38 @@ def test_continuous_3_levels(volatility_updates, mean_field_updates):
     )
 
     _assert_backends_match(py_net, rs_net, 3, volatility_updates, label)
+
+
+@pytest.mark.parametrize("n_levels", [2, 3])
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_input_precision(n_levels, volatility_updates, mean_field_updates):
+    r"""Both backends weight the observation by the precision of the input node.
+
+    An input node without a volatility parent predicts its own precision,
+    :math:`\hat{\pi}_0 = \pi_0`, which both the relaxed and the mean-field updates of
+    its value parent use as the observation precision. With three levels, the input
+    node has a volatility parent and predicts :math:`1 / (1/\pi_0 + \Omega_0)`.
+    """
+    timeseries = load_data("continuous")
+    label = f"n_levels={n_levels} vol={volatility_updates} mf={mean_field_updates}"
+
+    py_net, rs_net = (
+        _build_network(
+            cls,
+            volatility_updates,
+            mean_field_updates,
+            n_levels,
+            timeseries,
+            input_precision=1e4,
+        )
+        for cls in (PyNetwork, RsNetwork)
+    )
+
+    if n_levels == 2:
+        input_expected_precision = rs_net.node_trajectories[0]["expected_precision"]
+        assert np.all(np.asarray(input_expected_precision) == 1e4)
+    _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label)
 
 
 @pytest.mark.parametrize(
