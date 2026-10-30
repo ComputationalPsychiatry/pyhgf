@@ -262,21 +262,30 @@ def _volatility_precision_pwpe_ehgf(
 
     Mirrors
     :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._ehgf_volatility_precision_increment`:
-    the child's volatility is re-predicted from the parent's *just-updated*
-    posterior mean through each :math:`\kappa_{a,m}` edge alone (single-parent
-    linearisation, no MGF term), and each edge's increment
-    :math:`\tfrac12 \kappa^2 \gamma (\gamma + w \Delta)` is floored at zero
-    before summation, so the posterior precision can never fall below the
-    predicted precision.
+    for each :math:`\kappa_{a,m}` edge, the volatility of the child :math:`a` is
+    re-predicted with the parent :math:`m` at its *just-updated* posterior mean and
+    the other parents :math:`m'` of the child at their predicted means (no MGF term),
+
+    .. math::
+
+        \nu_{a,m} = t \exp\left(\omega_a + \kappa_{a,m} \mu_m
+            + \sum_{m' \neq m} \kappa_{a,m'} \hat{\mu}_{m'}\right),
+
+    and each edge's increment :math:`\tfrac12 \kappa^2 \gamma (\gamma + w \Delta)`
+    is floored at zero before summation, so the posterior precision can never fall
+    below the predicted precision.
     """
     assert child.params.tonic_volatility is not None
     previous_variance = _child_previous_variance(
         layer, child, time_step, mean_field_updates
     )
 
-    # Per-edge re-prediction, shape (n_child, n_parent).
+    # Per-edge re-prediction, shape (n_child, n_parent): the parents at their
+    # predicted means, with the edge's own parent moved to its posterior mean.
     predicted_volatility = time_step * jnp.exp(
-        child.kappa * posterior_mean[None, :] + child.params.tonic_volatility[:, None]
+        child.params.tonic_volatility[:, None]
+        + jnp.matmul(child.kappa, layer.expected_mean)[:, None]
+        + child.kappa * (posterior_mean - layer.expected_mean)[None, :]
     )
     expected_precision = 1.0 / (previous_variance[:, None] + predicted_volatility)
     effective_precision = predicted_volatility * expected_precision

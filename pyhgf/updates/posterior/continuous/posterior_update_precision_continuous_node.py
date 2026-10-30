@@ -171,8 +171,33 @@ def _value_coupling_pwpe(
     return pwpe
 
 
+def _effective_tonic_volatility(
+    attributes: dict, edges: Edges, node_idx: int, volatility_child_idx: int
+) -> Array:
+    r"""Effective tonic volatility of a volatility child, seen from one of its parents.
+
+    The volatility updates of the node :math:`b` treat the predicted volatility of its
+    child :math:`a` as a function of :math:`x_b` alone. The other volatility parents
+    :math:`p` of the child enter through their predicted means, as in the prediction of
+    the child:
+
+    .. math::
+
+        \tilde{\omega}_a = \omega_a + \sum_{p \neq b} \kappa_{a,p} \hat{\mu}_p.
+    """
+    tonic_volatility = attributes[volatility_child_idx]["tonic_volatility"]
+    for parent_idx, coupling in zip(
+        edges[volatility_child_idx].volatility_parents,  # type: ignore
+        attributes[volatility_child_idx]["volatility_coupling_parents"],
+    ):
+        if parent_idx != node_idx:
+            tonic_volatility += coupling * attributes[parent_idx]["expected_mean"]
+    return tonic_volatility
+
+
 def _standard_volatility_increment(
     attributes: dict,
+    edges: Edges,
     node_idx: int,
     volatility_child_idx: int,
     volatility_coupling: float,
@@ -209,7 +234,7 @@ def _volatility_coupling_pwpe(
     attributes: dict,
     edges: Edges,
     node_idx: int,
-    increment_fn: Callable[[dict, int, int, float], Array],
+    increment_fn: Callable[[dict, Edges, int, int, float], Array],
 ) -> Array:
     """Precision-weighted prediction error from volatility-coupled children.
 
@@ -224,7 +249,7 @@ def _volatility_coupling_pwpe(
         attributes[node_idx]["volatility_coupling_children"],
     ):
         pwpe += increment_fn(
-            attributes, node_idx, volatility_child_idx, volatility_coupling
+            attributes, edges, node_idx, volatility_child_idx, volatility_coupling
         )
 
     return pwpe
@@ -589,6 +614,7 @@ def posterior_update_precision_continuous_node_mean_field(
 
 def _ehgf_volatility_precision_increment(
     attributes: dict,
+    edges: Edges,
     node_idx: int,
     volatility_child_idx: int,
     volatility_coupling: float,
@@ -607,8 +633,11 @@ def _ehgf_volatility_precision_increment(
        never drops below the (positive) predicted precision and so cannot collapse to
        a negative value / ``NaN``.
 
-    With :math:`\nu` the re-predicted child volatility, :math:`\hat{\pi}` the
-    re-predicted child precision (``expected_precision``),
+    The re-predicted child volatility is
+    :math:`\nu = t \exp(\kappa \mu_b^{(k)} + \tilde{\omega}_a)`, where the effective
+    tonic volatility :math:`\tilde{\omega}_a` adds the other volatility parents of the
+    child at their predicted means (see :func:`_effective_tonic_volatility`). With
+    :math:`\hat{\pi}` the re-predicted child precision (``expected_precision``),
     :math:`\gamma = \nu \hat{\pi}` the ``effective_precision``,
     :math:`w = (\nu - \sigma^{(k-1)}) \hat{\pi}` the volatility-error weight and
     :math:`\Delta` the child's ``volatility_prediction_error``, the increment is
@@ -617,7 +646,9 @@ def _ehgf_volatility_precision_increment(
     time_step = attributes[-1]["time_step"]
     # Parent posterior mean (the eHGF performs the mean update first).
     mean = attributes[node_idx]["mean"]
-    tonic_volatility = attributes[volatility_child_idx]["tonic_volatility"]
+    tonic_volatility = _effective_tonic_volatility(
+        attributes, edges, node_idx, volatility_child_idx
+    )
     # Carried variance σ = λ²/π the child used in its prediction; the re-prediction
     # below must add volatility to the same quantity the prediction step used.
     previous_variance = attributes[volatility_child_idx]["temp"]["current_variance"]

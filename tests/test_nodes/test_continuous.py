@@ -12,14 +12,20 @@ MEAN_FIELD_UPDATES = [False, True]
 
 
 def _build_network(
-    cls, volatility_updates, mean_field_updates, n_levels, timeseries, observed=None
+    cls,
+    volatility_updates,
+    mean_field_updates,
+    n_levels,
+    timeseries,
+    observed=None,
+    input_precision=1.0,
 ):
     """Build an ``n_levels`` continuous HGF with the given update scheme."""
     net = cls(
         volatility_updates=volatility_updates,
         mean_field_updates=mean_field_updates,
     )
-    net = net.add_nodes().add_nodes(value_children=0)
+    net = net.add_nodes(precision=input_precision).add_nodes(value_children=0)
     if n_levels == 3:
         net = net.add_nodes(volatility_children=0)
     return net.input_data(input_data=timeseries, observed=observed)
@@ -90,6 +96,38 @@ def test_continuous_3_levels(volatility_updates, mean_field_updates):
     _assert_backends_match(py_net, rs_net, 3, volatility_updates, label)
 
 
+@pytest.mark.parametrize("n_levels", [2, 3])
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_continuous_input_precision(n_levels, volatility_updates, mean_field_updates):
+    r"""Both backends weight the observation by the precision of the input node.
+
+    An input node without a volatility parent predicts its own precision,
+    :math:`\hat{\pi}_0 = \pi_0`, which both the relaxed and the mean-field updates of
+    its value parent use as the observation precision. With three levels, the input
+    node has a volatility parent and predicts :math:`1 / (1/\pi_0 + \Omega_0)`.
+    """
+    timeseries = load_data("continuous")
+    label = f"n_levels={n_levels} vol={volatility_updates} mf={mean_field_updates}"
+
+    py_net, rs_net = (
+        _build_network(
+            cls,
+            volatility_updates,
+            mean_field_updates,
+            n_levels,
+            timeseries,
+            input_precision=1e4,
+        )
+        for cls in (PyNetwork, RsNetwork)
+    )
+
+    if n_levels == 2:
+        input_expected_precision = rs_net.node_trajectories[0]["expected_precision"]
+        assert np.all(np.asarray(input_expected_precision) == 1e4)
+    _assert_backends_match(py_net, rs_net, n_levels, volatility_updates, label)
+
+
 @pytest.mark.parametrize(
     "volatility_parent_kwargs",
     [{"tonic_drift": 0.5}, {"autoconnection_strength": 0.5, "mean": -2.0}],
@@ -124,6 +162,123 @@ def test_continuous_moving_volatility_parent(
     previous_mean = np.concatenate([[0.0], volatility_parent["mean"][:-1]])
     assert np.max(np.abs(volatility_parent["expected_mean"] - previous_mean)) > 0.1
     _assert_backends_match(py_net, rs_net, 3, "standard", label)
+
+
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_updates):
+    r"""The eHGF precision update re-predicts from every volatility parent of the child.
+
+    Node 1 has two volatility parents, nodes 2 and 3. The eHGF update of node 2
+    re-predicts the volatility of node 1 at the posterior mean :math:`\mu_2^{(k)}`,
+    with node 3 at its predicted mean :math:`\hat{\mu}_3^{(k)}`,
+
+    .. math::
+
+        \nu = t \exp(\omega_1 + \kappa_2 \mu_2^{(k)} + \kappa_3 \hat{\mu}_3^{(k)}),
+
+    and adds :math:`\max(0, \tfrac12 \kappa_2^2 \gamma (\gamma + w \Delta))` to the
+    predicted precision, with :math:`\gamma`, :math:`w` and :math:`\Delta` computed
+    from :math:`\nu` and the carried variance :math:`1/\pi_1^{(k-1)}`. The increment
+    is recomputed here from the recorded trajectories.
+    """
+    tonic_volatility = -6.0
+    net = (
+        cls(volatility_updates="eHGF", mean_field_updates=mean_field_updates)
+        .add_nodes(precision=1e4)
+        .add_nodes(value_children=0, tonic_volatility=tonic_volatility)
+        .add_nodes(volatility_children=1, tonic_volatility=-2.0)
+        .add_nodes(volatility_children=1, mean=2.0, tonic_volatility=-2.0)
+        .input_data(input_data=load_data("continuous")[:200])
+    )
+    child, parent, other_parent = (
+        {
+            key: np.asarray(net.node_trajectories[node_idx][key], dtype=np.float64)
+            for key in ("mean", "precision", "expected_mean", "expected_precision")
+        }
+        for node_idx in (1, 2, 3)
+    )
+
+    # Step 0 is left out: its carried variance comes from the initial precision.
+    carried_variance = 1.0 / child["precision"][:-1]
+    volatility = np.exp(
+        tonic_volatility + parent["mean"][1:] + other_parent["expected_mean"][1:]
+    )
+    expected_precision = 1.0 / (carried_variance + volatility)
+    effective_precision = volatility * expected_precision
+    volatility_error_weight = (volatility - carried_variance) * expected_precision
+    volatility_prediction_error = (
+        1.0 / child["precision"][1:]
+        + (child["mean"][1:] - child["expected_mean"][1:]) ** 2
+    ) * expected_precision - 1.0
+    increment = np.maximum(
+        0.0,
+        0.5
+        * effective_precision
+        * (effective_precision + volatility_error_weight * volatility_prediction_error),
+    )
+
+    assert np.max(np.abs(other_parent["expected_mean"])) > 1.0
+    assert np.allclose(
+        parent["precision"][1:] - parent["expected_precision"][1:],
+        increment,
+        rtol=1e-3,
+        atol=1e-5,
+    )
+
+
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_pinned_second_volatility_parent(cls, volatility_updates, mean_field_updates):
+    r"""A pinned second volatility parent shifts the child's tonic volatility.
+
+    Node 1 has two volatility parents: node 2, and node 3 with mean :math:`m`,
+    precision :math:`10^8` and tonic volatility :math:`-40`, which keeps its belief at
+    :math:`m`. Node 3 then enters the volatility of node 1 as the constant
+    :math:`\kappa m`, so the network is equivalent to the same network without node 3
+    and with the tonic volatility :math:`\omega_1 + \kappa m` at node 1. In every update
+    scheme, node 2 receives the full volatility prediction error of node 1.
+    """
+    timeseries = load_data("continuous")[:200]
+    tonic_volatility, pinned_mean = -6.0, 2.0
+    label = f"vol={volatility_updates} mf={mean_field_updates}"
+
+    def network(node_1_tonic_volatility):
+        return (
+            cls(
+                volatility_updates=volatility_updates,
+                mean_field_updates=mean_field_updates,
+            )
+            .add_nodes()
+            .add_nodes(value_children=0, tonic_volatility=node_1_tonic_volatility)
+            .add_nodes(volatility_children=1, tonic_volatility=-2.0)
+        )
+
+    two_parents = (
+        network(tonic_volatility)
+        .add_nodes(
+            volatility_children=1,
+            mean=pinned_mean,
+            precision=1e8,
+            tonic_volatility=-40.0,
+        )
+        .input_data(input_data=timeseries)
+    )
+    one_parent = network(tonic_volatility + pinned_mean).input_data(
+        input_data=timeseries
+    )
+
+    assert np.allclose(two_parents.node_trajectories[3]["mean"], pinned_mean)
+    assert np.ptp(np.asarray(one_parent.node_trajectories[2]["mean"])) > 0.1
+    for node_idx in range(3):
+        for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+            assert np.allclose(
+                two_parents.node_trajectories[node_idx][key],
+                one_parent.node_trajectories[node_idx][key],
+                rtol=1e-4,
+                atol=1e-6,
+            ), f"{label}: node {node_idx}, key '{key}' mismatch"
 
 
 @pytest.mark.parametrize("n_levels", [2, 3])

@@ -14,6 +14,7 @@ from .posterior_update_mean_continuous_node import (
     posterior_update_mean_continuous_node_mean_field,
 )
 from .posterior_update_precision_continuous_node import (
+    _effective_tonic_volatility,
     _has_observations,
     precision_update,
     precision_update_mean_field,
@@ -198,16 +199,11 @@ def posterior_update_unbounded(
     for position, volatility_child_idx in enumerate(volatility_children_idxs):  # type: ignore
         observed.append(attributes[volatility_child_idx]["observed"])
         couplings.append(attributes[node_idx]["volatility_coupling_children"][position])
-        # effective tonic volatility ω̃: the other volatility parents of the child enter
-        # through their predicted means, as in the prediction of the child
-        tonic_volatility = attributes[volatility_child_idx]["tonic_volatility"]
-        for parent_idx, coupling in zip(
-            edges[volatility_child_idx].volatility_parents,  # type: ignore
-            attributes[volatility_child_idx]["volatility_coupling_parents"],
-        ):
-            if parent_idx != node_idx:
-                tonic_volatility += coupling * attributes[parent_idx]["expected_mean"]
-        tonic_volatilities.append(tonic_volatility)
+        tonic_volatilities.append(
+            _effective_tonic_volatility(
+                attributes, edges, node_idx, volatility_child_idx
+            )
+        )
         # carried variance λ²/π the child used in its prediction
         log_previous_variances.append(
             jnp.log(

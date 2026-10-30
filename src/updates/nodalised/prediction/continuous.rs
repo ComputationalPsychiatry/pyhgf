@@ -143,6 +143,7 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
         state.conditional_expected_precision = conditional_expected_precision;
     } else {
         // Leaf without random walk: conditional == marginal == prior precision.
+        state.expected_precision = precision;
         state.conditional_expected_precision = precision;
     }
 }
@@ -211,6 +212,9 @@ pub fn prediction_continuous_state_node_mean_field(
         state.expected_precision = expected_precision;
         state.conditional_expected_precision = expected_precision;
     } else {
+        // Leaf without random walk: the mean-field update of its value parents weights
+        // the observation by this predicted precision.
+        state.expected_precision = precision;
         state.conditional_expected_precision = precision;
     }
 }

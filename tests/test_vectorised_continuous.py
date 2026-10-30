@@ -204,6 +204,38 @@ def test_fully_connected_layers(volatility_updates):
     )
 
 
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF"])
+@pytest.mark.parametrize("mean_field_updates", [False, True])
+def test_two_volatility_parents(volatility_updates, mean_field_updates):
+    """A width-2 dense volatility layer: each child node has two volatility parents.
+
+    The dense layer scales each coupling by the fan-in, so the nodalised equivalent has
+    two volatility parents coupled with strength 0.5.
+    """
+    nod = (
+        Network(
+            volatility_updates=volatility_updates,
+            mean_field_updates=mean_field_updates,
+        )
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=([1], [0.5]))
+        .add_nodes(volatility_children=([1], [0.5]))
+        .input_data(input_data=U)
+    )
+    vec = (
+        DeepNetwork(
+            volatility_updates=volatility_updates,
+            mean_field_updates=mean_field_updates,
+        )
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+        .add_layer(2, kind="continuous", volatility_children=1)
+        .input_data(U, record=FIELDS)
+    )
+    assert_parity(nod, vec, {0: (0, 0), 1: (1, 0), 2: (2, 0), 3: (2, 1)})
+
+
 def test_unbounded_one_to_one_multi_node():
     """Width-2 one-to-one volatility coupling under the unbounded update."""
     nod = (
@@ -684,6 +716,77 @@ def test_ehgf_with_a_value_child_only():
     assert jnp.allclose(
         (ehgf.mean - parent.expected_mean) * parent.expected_precision,
         (standard.mean - parent.expected_mean) * standard.precision,
+    )
+
+
+@pytest.mark.parametrize("mean_field_updates", [False, True])
+def test_ehgf_with_two_volatility_parents(mean_field_updates):
+    r"""The eHGF precision update re-predicts from every volatility parent of a child.
+
+    The child has two volatility parents :math:`m = 0, 1`. For the edge to the parent
+    :math:`m`, the child's volatility is re-predicted with this parent at its posterior
+    mean and the other parent at its predicted mean. The child's conditional predicted
+    precision sets the carried variance to :math:`\sigma = 0.5`.
+    """
+    kappa = jnp.array([[1.0, 0.5]])
+    tonic_volatility, carried_variance = -2.0, 0.5
+    parent = dataclasses.replace(
+        LayerState.create_continuous(2),
+        mean=jnp.array([0.4, 1.2]),
+        precision=jnp.array([1.5, 2.0]),
+        expected_mean=jnp.array([0.5, 1.5]),
+        expected_precision=jnp.array([1.2, 1.6]),
+    )
+    log_volatility = tonic_volatility + kappa[0] @ parent.expected_mean
+    if not mean_field_updates:
+        log_volatility += jnp.sum(kappa[0] ** 2 / (2.0 * parent.expected_precision))
+    child = VolatilityChild(
+        state=_state(
+            mean=0.2,
+            precision=2.0,
+            expected_mean=0.1,
+            expected_precision=1.6,
+            conditional_expected_precision=1.0
+            / (carried_variance + jnp.exp(log_volatility)),
+            effective_precision=0.3,
+            volatility_prediction_error=0.5,
+        ),
+        kappa=kappa,
+        params=LayerParams.create_continuous(1, tonic_volatility=tonic_volatility),
+    )
+
+    updated = vectorised_continuous_posterior_update_ehgf(
+        parent, volatility_child=child, mean_field_updates=mean_field_updates
+    )
+
+    increments = []
+    for parent_idx, other_idx in ((0, 1), (1, 0)):
+        volatility = jnp.exp(
+            tonic_volatility
+            + kappa[0, parent_idx] * updated.mean[parent_idx]
+            + kappa[0, other_idx] * parent.expected_mean[other_idx]
+        )
+        expected_precision = 1.0 / (carried_variance + volatility)
+        effective_precision = volatility * expected_precision
+        volatility_error_weight = (volatility - carried_variance) * expected_precision
+        volatility_prediction_error = (
+            1.0 / 2.0 + (0.2 - 0.1) ** 2
+        ) * expected_precision - 1.0
+        increments.append(
+            0.5
+            * kappa[0, parent_idx] ** 2
+            * effective_precision
+            * (
+                effective_precision
+                + volatility_error_weight * volatility_prediction_error
+            )
+        )
+
+    assert all(increment > 0.0 for increment in increments)
+    assert jnp.allclose(
+        updated.precision - parent.expected_precision,
+        jnp.array(increments),
+        rtol=1e-5,
     )
 
 
