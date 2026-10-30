@@ -204,6 +204,38 @@ def test_fully_connected_layers(volatility_updates):
     )
 
 
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF"])
+@pytest.mark.parametrize("mean_field_updates", [False, True])
+def test_two_volatility_parents(volatility_updates, mean_field_updates):
+    """A width-2 dense volatility layer: each child node has two volatility parents.
+
+    The dense layer scales each coupling by the fan-in, so the nodalised equivalent has
+    two volatility parents coupled with strength 0.5.
+    """
+    nod = (
+        Network(
+            volatility_updates=volatility_updates,
+            mean_field_updates=mean_field_updates,
+        )
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=([1], [0.5]))
+        .add_nodes(volatility_children=([1], [0.5]))
+        .input_data(input_data=U)
+    )
+    vec = (
+        DeepNetwork(
+            volatility_updates=volatility_updates,
+            mean_field_updates=mean_field_updates,
+        )
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+        .add_layer(2, kind="continuous", volatility_children=1)
+        .input_data(U, record=FIELDS)
+    )
+    assert_parity(nod, vec, {0: (0, 0), 1: (1, 0), 2: (2, 0), 3: (2, 1)})
+
+
 def test_unbounded_one_to_one_multi_node():
     """Width-2 one-to-one volatility coupling under the unbounded update."""
     nod = (

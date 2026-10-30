@@ -78,7 +78,8 @@ def continuous_node_volatility_prediction_error(
         \Delta_j^{(k)} = \frac{\hat{\pi}_j^{(k)}}{\pi_j^{(k)}} +
         \hat{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1
 
-    See [1]_ for more details.
+    Every volatility parent of the node receives the full :math:`\Delta_j^{(k)}`, as
+    in the unbounded update. See [1]_ for more details.
 
     Parameters
     ----------
@@ -110,12 +111,6 @@ def continuous_node_volatility_prediction_error(
         * (attributes[node_idx]["mean"] - attributes[node_idx]["expected_mean"]) ** 2
         - 1
     )
-
-    # divide by the number of volatility parents
-    if attributes[node_idx]["volatility_coupling_parents"] is not None:
-        volatility_prediction_error /= len(
-            attributes[node_idx]["volatility_coupling_parents"]
-        )
 
     attributes[node_idx]["temp"]["volatility_prediction_error"] = (
         volatility_prediction_error

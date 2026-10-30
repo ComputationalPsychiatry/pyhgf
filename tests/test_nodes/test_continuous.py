@@ -189,6 +189,60 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
     )
 
 
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_pinned_second_volatility_parent(cls, volatility_updates, mean_field_updates):
+    r"""A pinned second volatility parent shifts the child's tonic volatility.
+
+    Node 1 has two volatility parents: node 2, and node 3 with mean :math:`m`,
+    precision :math:`10^8` and tonic volatility :math:`-40`, which keeps its belief at
+    :math:`m`. Node 3 then enters the volatility of node 1 as the constant
+    :math:`\kappa m`, so the network is equivalent to the same network without node 3
+    and with the tonic volatility :math:`\omega_1 + \kappa m` at node 1. In every update
+    scheme, node 2 receives the full volatility prediction error of node 1.
+    """
+    timeseries = load_data("continuous")[:200]
+    tonic_volatility, pinned_mean = -6.0, 2.0
+    label = f"vol={volatility_updates} mf={mean_field_updates}"
+
+    def network(node_1_tonic_volatility):
+        return (
+            cls(
+                volatility_updates=volatility_updates,
+                mean_field_updates=mean_field_updates,
+            )
+            .add_nodes()
+            .add_nodes(value_children=0, tonic_volatility=node_1_tonic_volatility)
+            .add_nodes(volatility_children=1, tonic_volatility=-2.0)
+        )
+
+    two_parents = (
+        network(tonic_volatility)
+        .add_nodes(
+            volatility_children=1,
+            mean=pinned_mean,
+            precision=1e8,
+            tonic_volatility=-40.0,
+        )
+        .input_data(input_data=timeseries)
+    )
+    one_parent = network(tonic_volatility + pinned_mean).input_data(
+        input_data=timeseries
+    )
+
+    assert np.allclose(two_parents.node_trajectories[3]["mean"], pinned_mean)
+    assert np.ptp(np.asarray(one_parent.node_trajectories[2]["mean"])) > 0.1
+    for node_idx in range(3):
+        for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+            assert np.allclose(
+                two_parents.node_trajectories[node_idx][key],
+                one_parent.node_trajectories[node_idx][key],
+                rtol=1e-4,
+                atol=1e-6,
+            ), f"{label}: node {node_idx}, key '{key}' mismatch"
+
+
 @pytest.mark.parametrize("n_levels", [2, 3])
 @pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
 @pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
