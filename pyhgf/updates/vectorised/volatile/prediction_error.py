@@ -16,6 +16,7 @@ from jax.nn import sigmoid
 
 from pyhgf.math import lambert_w0
 from pyhgf.typing.vectorised import LayerParams, LayerState
+from pyhgf.updates.vectorised.continuous.posterior import _value_coupling_variance
 
 # ---------------------------------------------------------------------------
 # 1.  Prediction errors
@@ -145,6 +146,7 @@ def vectorised_layer_volatility_posterior_ehgf(
     time_step: float,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ) -> LayerState:
     """EHGF volatility-level posterior update (mean first, then safe precision).
 
@@ -174,6 +176,11 @@ def vectorised_layer_volatility_posterior_ehgf(
         of the pre-prediction variance must subtract exactly the predicted
         volatility the prediction step added, so the MGF term is dropped
         here when it was dropped there.
+    feedforward_uncertainty :
+        Whether the layer's predicted precision includes the variance its value
+        parents add. That variance does not depend on the volatility level, so the
+        precision step counts it as known variance, with the variance the layer
+        carried.
 
     Returns
     -------
@@ -196,9 +203,12 @@ def vectorised_layer_volatility_posterior_ehgf(
     # mean (``posterior_mean_vol``) and floor the increment at zero. Mirrors
     # ``_ehgf_volatility_precision_increment`` in the node-based backend.
     #
-    # Reconstruct the value level's previous variance (= 1/precision_prev) exactly:
+    # The known variance of the value level's prediction, the part that does not
+    # depend on the volatility level. The prediction step sets
     #   1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
-    # so subtracting predicted_volatility cancels back to 1/precision_prev.
+    # so subtracting predicted_volatility cancels back to 1/precision_prev. With
+    # feedforward uncertainty the value-coupling variance
+    # 1/expected_precision - 1/conditional_expected_precision is added on top.
     log_volatility = tonic_volatility + layer.expected_mean_vol
     if not mean_field_updates:
         log_volatility = log_volatility + 1.0 / (2.0 * layer.expected_precision_vol)
@@ -206,6 +216,8 @@ def vectorised_layer_volatility_posterior_ehgf(
     previous_variance = jnp.maximum(
         1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
     )
+    if feedforward_uncertainty:
+        previous_variance = previous_variance + _value_coupling_variance(layer)
 
     # Re-predict the value level's volatility and precision from the posterior mean.
     repredicted_volatility = time_step * jnp.exp(tonic_volatility + posterior_mean_vol)
@@ -243,6 +255,7 @@ def vectorised_layer_volatility_posterior_unbounded(
     time_step: float,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ) -> LayerState:
     """Unbounded volatility-level posterior update (Lambert W₀ dual-quadratic).
 
@@ -268,6 +281,10 @@ def vectorised_layer_volatility_posterior_unbounded(
     mean_field_updates :
         Whether the prediction step ran the mean-field scheme — the MGF term is
         then absent from the reconstruction below, as it was from the prediction.
+    feedforward_uncertainty :
+        Whether the layer's predicted precision includes the variance its value
+        parents add. That variance does not depend on the volatility level, so it
+        is counted as known variance, with the variance the layer carried.
 
     Returns
     -------
@@ -280,16 +297,16 @@ def vectorised_layer_volatility_posterior_unbounded(
         params.tonic_volatility if params.tonic_volatility is not None else 0.0
     )
 
-    # Reconstruct previous_variance = 1/pi_prev_jm1 exactly from the *conditional* predicted
-    # precision. The prediction step sets
+    # The known variance of the value level's prediction, the part that does not
+    # depend on the volatility level: the carried variance 1/precision_prev and the
+    # variance the value parents add. The prediction step sets
     #     1/conditional_expected_precision = 1/precision_prev + predicted_volatility,
     # where predicted_volatility carries the full log-volatility exponent, including
     # the MGF term 1 / (2 * pihat_vol) unless the prediction ran mean-field.
-    # Subtracting the same predicted_volatility cancels back to 1/precision_prev.
-    # Using the marginal expected_precision here would leave the value-coupling
-    # variance behind, and a mismatched MGF term would leave that behind — both were
-    # latent errors that only surfaced once value coupling shifted the operating
-    # point. Volatility coupling is fixed at 1.
+    # Subtracting the same predicted_volatility cancels back to 1/precision_prev, and
+    # with feedforward uncertainty the value-coupling variance
+    # 1/expected_precision - 1/conditional_expected_precision is added on top.
+    # Volatility coupling is fixed at 1.
     log_volatility = tonic_volatility + layer.expected_mean_vol
     if not mean_field_updates:
         log_volatility = log_volatility + 1.0 / (2.0 * layer.expected_precision_vol)
@@ -297,6 +314,8 @@ def vectorised_layer_volatility_posterior_unbounded(
     previous_variance = jnp.maximum(
         1.0 / layer.conditional_expected_precision - predicted_volatility, 1e-128
     )
+    if feedforward_uncertainty:
+        previous_variance = previous_variance + _value_coupling_variance(layer)
     be_aux = (1.0 / layer.precision) + (layer.mean - layer.expected_mean) ** 2
 
     expected_mean_vol = layer.expected_mean_vol
@@ -321,9 +340,8 @@ def vectorised_layer_volatility_posterior_unbounded(
     w_jm1 = sigmoid(gamma_c - log_previous_variance)
     # Volatility prediction error da_jm1 = pihat * be_aux - 1, with pihat the
     # *marginal* predicted precision. Written explicitly rather than as
-    # be_aux/(previous_variance+v_jm1) - 1: that identity only holds when previous_variance is the
-    # reconstruction 1/expected_precision - v_jm1, which is no longer the case now
-    # that previous_variance is the exact 1/precision_prev.
+    # be_aux/(previous_variance+v_jm1) - 1: the two differ by the MGF term, which
+    # 1/pihat carries and v_jm1 does not.
     da_jm1 = layer.expected_precision * be_aux - 1.0
 
     # ------------------------------------------------------------------
@@ -430,6 +448,7 @@ def vectorised_layer_prediction_error(
     has_volatility_parent: bool = True,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ) -> LayerState:
     """Compute prediction errors and apply the volatility-level posterior update.
 
@@ -464,6 +483,9 @@ def vectorised_layer_prediction_error(
         Whether the prediction step ran the mean-field scheme; threaded into the
         eHGF and unbounded variance reconstructions so they subtract exactly what
         the prediction added.
+    feedforward_uncertainty :
+        Whether the layer's predicted precision includes the variance its value
+        parents add, which the eHGF and unbounded updates count as known variance.
 
     Returns
     -------
@@ -486,6 +508,7 @@ def vectorised_layer_prediction_error(
             time_step,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            feedforward_uncertainty=feedforward_uncertainty,
         )
     elif volatility_updates == "standard":
         layer = vectorised_layer_volatility_posterior_standard(
@@ -498,6 +521,7 @@ def vectorised_layer_prediction_error(
             time_step,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            feedforward_uncertainty=feedforward_uncertainty,
         )
 
     return layer

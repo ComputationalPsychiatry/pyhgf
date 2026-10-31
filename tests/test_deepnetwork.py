@@ -9,7 +9,7 @@ import optax
 import pytest
 
 from pyhgf.model import DeepNetwork, LayerConfig
-from pyhgf.typing.vectorised import LayerState
+from pyhgf.typing.vectorised import LayerParams, LayerState
 from pyhgf.updates.vectorised.volatile.posterior import (
     vectorised_posterior_update_precision_value_level,
 )
@@ -1827,3 +1827,59 @@ def test_relaxed_precision_curved_value_coupling(relaxed_prediction):
             [1.2 + (first_order - canonical_second_order).sum()],
             rtol=1e-5,
         )
+
+
+@pytest.mark.parametrize("volatility_updates", ["eHGF", "unbounded"])
+def test_feedforward_uncertainty_counts_as_known_variance(volatility_updates):
+    r"""The value parents' variance enters the volatility update as known variance.
+
+    Moving that variance :math:`T = 1/\hat{\pi} - 1/\bar{\pi}` from the predicted
+    precisions into the conditional predicted precision leaves the update unchanged.
+    """
+    from pyhgf.updates.vectorised.volatile.prediction_error import (
+        vectorised_layer_prediction_error,
+    )
+
+    # Predicted precisions built from a carried variance, the predicted volatility
+    # of the layer (no tonic volatility, MGF term included) and the value parents'
+    # variance.
+    expected_mean_vol = jnp.array([0.3, -0.2])
+    expected_precision_vol = jnp.array([1.2, 0.9])
+    volatility = jnp.exp(expected_mean_vol + 1.0 / (2.0 * expected_precision_vol))
+    carried_variance = jnp.array([0.8, 0.5])
+    value_coupling_variance = jnp.array([1.5, 0.3])
+    conditional = 1.0 / (carried_variance + volatility)
+    marginal = 1.0 / (carried_variance + volatility + value_coupling_variance)
+    layer = dataclasses.replace(
+        LayerState.create(2, has_volatility_parent=True),
+        mean=jnp.array([0.6, -0.4]),
+        expected_mean=jnp.array([0.1, 0.2]),
+        precision=jnp.array([2.0, 1.6]),
+        expected_precision=marginal,
+        conditional_expected_precision=conditional,
+        expected_mean_vol=expected_mean_vol,
+        expected_precision_vol=expected_precision_vol,
+    )
+    params = LayerParams.create(2)
+
+    def update(layer, feedforward_uncertainty):
+        return vectorised_layer_prediction_error(
+            layer,
+            params,
+            volatility_updates,
+            time_step=1.0,
+            feedforward_uncertainty=feedforward_uncertainty,
+        )
+
+    with_parents = update(layer, feedforward_uncertainty=True)
+    moved = update(
+        dataclasses.replace(layer, conditional_expected_precision=marginal),
+        feedforward_uncertainty=False,
+    )
+    np.testing.assert_allclose(with_parents.mean_vol, moved.mean_vol, rtol=1e-5)
+    np.testing.assert_allclose(
+        with_parents.precision_vol, moved.precision_vol, rtol=1e-5
+    )
+    # Without that variance, the volatility level reads the layer as more volatile.
+    without = update(layer, feedforward_uncertainty=False)
+    assert not np.allclose(with_parents.precision_vol, without.precision_vol)

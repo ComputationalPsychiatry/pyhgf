@@ -66,11 +66,14 @@ fn predict_child(
 }
 
 /// Compute a layer's prediction error in place, dispatching on its kind.
+/// `feedforward_uncertainty` is the network's flag, which the layer's own volatility
+/// update reads.
 fn layer_pe(
     layer: &mut Layer,
     volatility_updates: crate::vectorised::layer::VolatilityUpdate,
     time_step: Float,
     max_pp: Float,
+    feedforward_uncertainty: bool,
 ) {
     match layer.kind {
         LayerKind::Volatile => volatile::prediction_error::layer_prediction_error(
@@ -80,6 +83,7 @@ fn layer_pe(
             time_step,
             layer.has_volatility_parent,
             max_pp,
+            feedforward_uncertainty,
         ),
         LayerKind::Binary => binary::prediction_error::binary_prediction_error(&mut layer.state),
         LayerKind::Categorical => {
@@ -166,10 +170,11 @@ impl DeepNet {
         let n = self.layers.len();
         let vol = self.volatility_updates;
         let max_pp = self.max_posterior_precision;
+        let ffu = self.feedforward_uncertainty;
 
         // Clamp observations and compute the leaf prediction error.
         self.set_bottom_observations(y);
-        layer_pe(&mut self.layers[0], vol, time_step, max_pp);
+        layer_pe(&mut self.layers[0], vol, time_step, max_pp, ffu);
 
         // Interior posterior + PE, bottom-up (exclude the clamped top layer).
         for i in 1..n.saturating_sub(1) {
@@ -189,7 +194,7 @@ impl DeepNet {
                 child.is_input_layer,
             );
             // Then the parent's own prediction error, in place.
-            layer_pe(parent, vol, time_step, max_pp);
+            layer_pe(parent, vol, time_step, max_pp, ffu);
         }
     }
 

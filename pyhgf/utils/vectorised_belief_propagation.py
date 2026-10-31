@@ -294,6 +294,7 @@ def _leaf_pe(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ):
     """Compute the prediction error of the bottom layer (never a stack)."""
     if layer.kind == "binary":
@@ -309,6 +310,7 @@ def _leaf_pe(
             has_volatility_parent=layer.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            feedforward_uncertainty=feedforward_uncertainty,
         )
     return dataclasses.replace(layer, state=new_state)
 
@@ -327,8 +329,13 @@ def _posterior_pe_layer(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ):
-    """Single-layer posterior update + prediction error."""
+    """Single-layer posterior update + prediction error.
+
+    ``feedforward_uncertainty`` is the network's flag, which the layer's own volatility
+    update reads.
+    """
     new_state = vectorised_layer_posterior_update(
         layer=parent.state,
         child=child_state,
@@ -350,6 +357,7 @@ def _posterior_pe_layer(
             has_volatility_parent=parent.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            feedforward_uncertainty=feedforward_uncertainty,
         )
     return dataclasses.replace(parent, state=new_state)
 
@@ -450,6 +458,7 @@ def _posterior_pe_stack(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ):
     r"""Bottom-up sweep over a ``LayerStack``.
 
@@ -467,6 +476,9 @@ def _posterior_pe_stack(
     :func:`_predict_stack_from_parent`, which peels the *topmost* slice to meet
     the external parent. Every scanned slice has a stack slice as its child,
     interior by construction, so the scan runs with ``child_is_input_layer=False``.
+
+    ``feedforward_uncertainty`` is the network's flag, which the volatility updates of
+    the stack's slices read.
     """
     # The scan carry becomes a stack slice each step, so seed it with the
     # child's state coerced to the stack's volatility structure.
@@ -495,6 +507,7 @@ def _posterior_pe_stack(
             has_volatility_parent=stack.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            feedforward_uncertainty=feedforward_uncertainty,
         )
 
     # Boundary: slice 0 from the external child.
@@ -542,6 +555,7 @@ def _bottomup_posterior_pe(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    feedforward_uncertainty: bool = False,
 ):
     """Posterior update + prediction error for ``parent_elem`` from ``child_elem``."""
     child_state, _, child_is_input_layer = _child_view(child_elem)
@@ -554,6 +568,7 @@ def _bottomup_posterior_pe(
             max_posterior_precision=max_posterior_precision,
             time_step=time_step,
             mean_field_updates=mean_field_updates,
+            feedforward_uncertainty=feedforward_uncertainty,
         )
     return _posterior_pe_layer(
         parent_elem,
@@ -563,6 +578,7 @@ def _bottomup_posterior_pe(
         max_posterior_precision=max_posterior_precision,
         time_step=time_step,
         mean_field_updates=mean_field_updates,
+        feedforward_uncertainty=feedforward_uncertainty,
     )
 
 
@@ -997,6 +1013,7 @@ def _update_sweep(
         max_posterior_precision=network.max_posterior_precision,
         time_step=time_step,
         mean_field_updates=network.mean_field_updates,
+        feedforward_uncertainty=network.feedforward_uncertainty,
     )
 
     # Interleaved bottom-up posterior update + prediction error on every
@@ -1009,6 +1026,7 @@ def _update_sweep(
             max_posterior_precision=network.max_posterior_precision,
             time_step=time_step,
             mean_field_updates=network.mean_field_updates,
+            feedforward_uncertainty=network.feedforward_uncertainty,
         )
 
     # The top element, when asked for: precision only, mean left on the predictors.

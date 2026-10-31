@@ -16,6 +16,7 @@ from .posterior_update_mean_continuous_node import (
 from .posterior_update_precision_continuous_node import (
     _effective_tonic_volatility,
     _has_observations,
+    _value_coupling_variance,
     precision_update,
     precision_update_mean_field,
     precision_update_missing_values,
@@ -109,7 +110,7 @@ def posterior_update_unbounded(
 
     :math:`(n+1)`-expansion update of section 3.6 in [1]_, for a node with one or
     several volatility children and, optionally, value children. With :math:`n`
-    volatility children :math:`a_i`, coupling strengths :math:`\kappa_i`, carried
+    volatility children :math:`a_i`, coupling strengths :math:`\kappa_i`, known
     variances :math:`\alpha_i`, total posterior uncertainties
     :math:`\beta_i = 1/\pi_{a_i} + (\mu_{a_i} - \hat{\mu}_{a_i})^2` and effective tonic
     volatilities :math:`\tilde{\omega}_{a_i} = \omega_{a_i} + \sum_p \kappa_{p, a_i}
@@ -123,6 +124,13 @@ def posterior_update_unbounded(
             -\frac{1}{2}\frac{\beta_i}{\alpha_i + \Omega_i(x)}
         \right] - \frac{\tilde{\pi}}{2}\left(x - \tilde{\mu}\right)^2,
         \qquad \Omega_i(x) = t \exp(\kappa_i x + \tilde{\omega}_{a_i}).
+
+    The known variance :math:`\alpha_i` is the part of the child's predicted variance
+    that does not depend on :math:`x`: the carried variance :math:`\lambda^2/\pi` of the
+    child and the variance its value parents add to its prediction
+    (:func:`_value_coupling_variance`), so that :math:`\alpha_i + \Omega_i` is the
+    child's marginal predicted variance. Without value parents, :math:`\alpha_i` is the
+    carried variance.
 
     :math:`(\tilde{\pi}, \tilde{\mu})` is the prediction :math:`(\hat{\pi}, \hat{\mu})`
     of the node or, when the node also has value children, the effective prior that
@@ -204,11 +212,13 @@ def posterior_update_unbounded(
                 attributes, edges, node_idx, volatility_child_idx
             )
         )
-        # carried variance λ²/π the child used in its prediction
+        # known variance of the child's prediction: the carried variance λ²/π and the
+        # variance its value parents add, neither of which depends on x
         log_previous_variances.append(
             jnp.log(
                 jnp.maximum(
-                    attributes[volatility_child_idx]["temp"]["current_variance"],
+                    attributes[volatility_child_idx]["temp"]["current_variance"]
+                    + _value_coupling_variance(attributes, volatility_child_idx),
                     1e-128,
                 )
             )

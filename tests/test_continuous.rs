@@ -123,7 +123,9 @@ fn test_two_nodes_hgf() {
 
     // Check node 2 trajectories
     let node2 = &network.node_trajectories.nodes[2];
-    assert_close(node2.precision[0], 1.09553182, "node2 precision");
+    // The eHGF precision step re-predicts node 0's precision from the known variance
+    // of its prediction, which includes the variance node 1 adds.
+    assert_close(node2.precision[0], 1.06424860, "node2 precision");
     assert_close(
         node2.expected_precision[0],
         0.98201376,

@@ -40,7 +40,9 @@ def test_two_nodes_hgf():
     value parent conditions on the observation through :math:`\bar{\pi}_0`:
     :math:`\pi_1 = \hat{\pi}_1 + \bar{\pi}_0` and :math:`\mu_1 = \bar{\pi}_0 \, u /
     \pi_1`. The volatility parent (λ = 1) carries its full variance:
-    :math:`1/(1+e^{-4})`.
+    :math:`1/(1+e^{-4})`. Its unbounded update treats the input's predicted variance
+    as known variance plus volatility, the known part being the carried variance
+    :math:`1` and the value parent's variance :math:`1/\hat{\pi}_1`.
     """
     # one level HGF with a volatility parent and one observation step
     two_nodes__hgf = (
@@ -63,7 +65,7 @@ def test_two_nodes_hgf():
         assert jnp.isclose(two_nodes__hgf.node_trajectories[1][key], val)
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.1065601, 0.98201376, -0.13515851, 0.0],
+        [1.0834352, 0.98201376, -0.10491979, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[2][key], val)
 
@@ -126,19 +128,19 @@ def test_continuous_scan_loop():
     # precision of the observed leaf (see the note in test_two_nodes_hgf above).
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.7675951, 0.8241, 0.7947441],
+        [1.0, 0.77604926, 0.8241, 0.79476064],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[0][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [7.3445687, 6.4737158, 0.7982249, 0.7947441],
+        [7.3903637, 6.5092683, 0.79825854, 0.79476064],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[1][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.4798084, 1.4407694, -2.2555473, -2.2555592],
+        [1.3881866, 1.3537763, -2.3721757, -2.3721817],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[2][idx][-1], val)
 
