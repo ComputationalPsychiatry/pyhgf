@@ -13,6 +13,11 @@ from pyhgf.typing.vectorised import LayerParams, LayerState
 from pyhgf.updates.vectorised.volatile.posterior import (
     vectorised_posterior_update_precision_value_level,
 )
+from pyhgf.utils.vectorised_belief_propagation import (
+    input_prediction_error,
+    prediction_sweep,
+    update_sweep,
+)
 
 
 def test_fit():
@@ -1883,3 +1888,145 @@ def test_feedforward_uncertainty_counts_as_known_variance(volatility_updates):
     # Without that variance, the volatility level reads the layer as more volatile.
     without = update(layer, feedforward_uncertainty=False)
     assert not np.allclose(with_parents.precision_vol, without.precision_vol)
+
+
+# ---------------------------------------------------------------------------
+# ``carry_precision``: what a volatile layer carries from one sample to the next
+# ---------------------------------------------------------------------------
+
+
+def _carry_net(carry_precision, feedforward_uncertainty=False):
+    """Build a 2 -> 3 -> 2 chain with a hidden layer of prior precision 3."""
+    return (
+        DeepNetwork(
+            coupling_fn=jax.nn.leaky_relu,
+            carry_precision=carry_precision,
+            feedforward_uncertainty=feedforward_uncertainty,
+        )
+        .add_layer(size=2, add_constant_input=False)
+        .add_layer(size=3, add_constant_input=False, precision=3.0)
+        .add_layer(size=2, add_constant_input=False)
+        .weight_initialisation("xavier", key=jax.random.key(0))
+    )
+
+
+def test_carry_precision_sets_the_volatility_parent_default():
+    """Without carried precision, volatile layers have no volatility parent."""
+    assert DeepNetwork().carry_precision is True
+    on = DeepNetwork().add_layer(size=2, kind="binary").add_layer(size=3)
+    off = (
+        DeepNetwork(carry_precision=False)
+        .add_layer(size=2, kind="binary")
+        .add_layer(size=3)
+    )
+    assert [layer.has_volatility_parent for layer in on.state.layers] == [True, True]
+    assert [layer.has_volatility_parent for layer in off.state.layers] == [True, False]
+    with pytest.raises(ValueError, match="carry_precision=True"):
+        DeepNetwork(carry_precision=False).add_layer(size=2).add_layer(
+            size=3, volatility_parent=True
+        )
+
+
+def test_without_carry_every_sample_starts_from_the_prior_precision():
+    """Each sample is predicted from the prior precision, not the last posterior."""
+    rng = np.random.default_rng(0)
+    x = jnp.tile(jnp.asarray(rng.normal(size=(1, 2))), (4, 1))
+    y = jnp.tile(jnp.asarray(rng.normal(size=(1, 2))), (4, 1))
+
+    net = _carry_net(carry_precision=False).fit(
+        x,
+        y,
+        optimiser=optax.sgd(0.0),
+        record=("precision", "expected_precision"),
+        check_gradient_health=False,
+    )
+    # The posterior moves within each sample, the next sample starts again from 3.
+    assert not np.allclose(net.trajectories["precision"][1], 3.0)
+    np.testing.assert_array_equal(net.state.layers[1].state.precision, jnp.full(3, 3.0))
+    # Identical samples and frozen weights: every sample sees the same prediction.
+    expected = np.asarray(net.trajectories["expected_precision"][1])
+    np.testing.assert_allclose(expected, np.broadcast_to(expected[0], expected.shape))
+
+
+@pytest.mark.parametrize("feedforward_uncertainty", [False, True])
+def test_carried_precision_is_the_conditional_posterior(feedforward_uncertainty):
+    r"""A volatile layer carries :math:`\pi + \bar{\pi} - \hat{\pi}` to the next sample.
+
+    Without feedforward uncertainty the two predicted precisions coincide and the
+    posterior precision is carried unchanged.
+    """
+    rng = np.random.default_rng(1)
+    x = jnp.asarray(rng.normal(size=(1, 2)))
+    y = jnp.asarray(rng.normal(size=(1, 2)))
+    fields = ("precision", "expected_precision", "conditional_expected_precision")
+    net = _carry_net(True, feedforward_uncertainty).fit(
+        x, y, optimiser=optax.sgd(0.0), record=fields, check_gradient_health=False
+    )
+    posterior, marginal, conditional = (
+        np.asarray(net.trajectories[field][1][0]) for field in fields
+    )
+    if feedforward_uncertainty:
+        assert np.all(conditional > marginal)
+    else:
+        np.testing.assert_array_equal(conditional, marginal)
+    np.testing.assert_allclose(
+        net.state.layers[1].state.precision,
+        posterior + conditional - marginal,
+        rtol=1e-6,
+    )
+
+
+@pytest.mark.parametrize("carry_precision", [False, True])
+def test_manual_api_carries_once_at_the_next_prediction(carry_precision):
+    """``update`` keeps the posterior; the next sweep starts from the carried precision.
+
+    ``input_error`` reads the posterior left by ``update``, and predicting twice in a
+    row carries the precision once.
+    """
+    rng = np.random.default_rng(2)
+    x = jnp.asarray(rng.normal(size=(2,)))
+    y = jnp.asarray(rng.normal(size=(2,)))
+    net = _carry_net(carry_precision, feedforward_uncertainty=True)
+
+    net.prediction(x).update(y)
+    state = net.state.layers[1].state
+    posterior = np.asarray(state.precision)
+    carried = (
+        posterior + state.conditional_expected_precision - state.expected_precision
+        if carry_precision
+        else np.full(3, 3.0)
+    )
+    assert not np.allclose(posterior, 3.0)
+    np.testing.assert_allclose(
+        net.input_error(), input_prediction_error(net.state), rtol=1e-6
+    )
+
+    net.prediction(x)
+    np.testing.assert_allclose(net.state.layers[1].state.precision, carried, rtol=1e-6)
+    second = np.asarray(net.state.layers[1].state.expected_precision)
+    net.prediction(x)
+    np.testing.assert_allclose(net.state.layers[1].state.precision, carried, rtol=1e-6)
+    np.testing.assert_array_equal(net.state.layers[1].state.expected_precision, second)
+
+
+@pytest.mark.parametrize("carry_precision", [False, True])
+def test_batch_update_averages_the_carried_precision(carry_precision):
+    """The batch template moves to the mean of the precisions the samples carry."""
+    rng = np.random.default_rng(3)
+    xb = jnp.asarray(rng.normal(size=(5, 2)))
+    yb = jnp.asarray(rng.normal(size=(5, 2)))
+    net = _carry_net(carry_precision, feedforward_uncertainty=True)
+    template = net.state
+
+    carried = []
+    for xi, yi in zip(xb, yb):
+        state = update_sweep(prediction_sweep(template, xi), yi).layers[1].state
+        carried.append(
+            state.precision
+            + state.conditional_expected_precision
+            - state.expected_precision
+        )
+
+    net.batch_update(xb, yb)
+    expected = np.mean(carried, axis=0) if carry_precision else np.full(3, 3.0)
+    np.testing.assert_allclose(net.state.layers[1].state.precision, expected, rtol=1e-5)

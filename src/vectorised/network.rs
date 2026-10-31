@@ -244,6 +244,7 @@ impl DeepNet {
             let grads = self.weight_gradient_factors(learning_kind);
             optimiser.apply(opt_state, &mut self.layers, &grads);
         }
+        self.carry_precisions();
         output_pred
     }
 
@@ -423,8 +424,8 @@ impl DeepNet {
                 let errors = batched_input_prediction_error(net, states);
                 let grads =
                     learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
-                let increments =
-                    update_precisions.then(|| batched_precision_increments(states, &templates));
+                let increments = update_precisions
+                    .then(|| batched_precision_increments(self, states, &templates));
                 ChunkOut {
                     range,
                     errors,
@@ -557,8 +558,8 @@ impl DeepNet {
                 let errors = batched_input_prediction_error(net, states);
                 let grads =
                     learning.then(|| batched_mean_weight_gradients(net, states, learning_kind));
-                let increments =
-                    update_precisions.then(|| batched_precision_increments(states, &templates));
+                let increments = update_precisions
+                    .then(|| batched_precision_increments(self, states, &templates));
                 ChunkOut {
                     range,
                     errors,

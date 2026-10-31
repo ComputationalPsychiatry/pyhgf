@@ -800,17 +800,39 @@ pub fn batched_mean_weight_gradients(
 pub type PrecisionIncrements = Vec<(Vector, Option<(Vector, Vector)>)>;
 
 /// Batch-mean increments of the carried precision fields relative to the
-/// template: `row_mean(field) − template`, per layer.
+/// template: `row_mean(field) − template`, per layer. A volatile layer's
+/// value-level field is the precision it carries into the next sample
+/// ([`DeepNet::carried_precision`]), not its posterior.
 pub fn batched_precision_increments(
+    net: &DeepNet,
     states: &[BatchedLayerState],
     templates: &[&LayerState],
 ) -> PrecisionIncrements {
     states
         .iter()
         .zip(templates.iter())
-        .map(|(state, template)| {
+        .zip(net.layers.iter())
+        .map(|((state, template), layer)| {
+            let carried = if layer.kind == LayerKind::Volatile {
+                let mut carried = state.precision.clone();
+                Zip::from(carried.rows_mut())
+                    .and(state.conditional_expected_precision.rows())
+                    .and(state.expected_precision.rows())
+                    .and(&layer.params.prior_precision)
+                    .for_each(|mut row, crow, erow, &prior| {
+                        Zip::from(&mut row)
+                            .and(&crow)
+                            .and(&erow)
+                            .for_each(|p, &c, &e| {
+                                *p = net.carried_precision(*p, c, e).unwrap_or(prior);
+                            });
+                    });
+                carried
+            } else {
+                state.precision.clone()
+            };
             let precision =
-                state.precision.mean_axis(Axis(1)).expect("non-empty batch") - &template.precision;
+                carried.mean_axis(Axis(1)).expect("non-empty batch") - &template.precision;
             let vol = template.mean_vol.as_ref().map(|template_mv| {
                 let mv = state.mean_vol.as_ref().expect("volatility level");
                 let pv = state.precision_vol.as_ref().expect("volatility level");

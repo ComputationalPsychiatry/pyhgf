@@ -941,6 +941,10 @@ def run_scan(
                 field: tuple(getattr(elem.state, field) for elem in new_network.layers)
                 for field in record
             }
+        if update_precisions:
+            # Recorded above as the posterior; carried into the next sample here.
+            new_network = carry_precisions(new_network)
+        if record:
             return (new_network, new_opt_state), (traj_step, pred)
         return (new_network, new_opt_state), pred
 
@@ -1420,6 +1424,48 @@ def apply_precision_increments(
     return dataclasses.replace(network, layers=tuple(new_elements))
 
 
+def carry_precisions(network: VectorisedNetwork) -> VectorisedNetwork:
+    r"""Replace each volatile layer's posterior precision with the one it carries.
+
+    Applied between samples, after the sweeps and the weight update have read the
+    posterior. With ``network.carry_precision``, a volatile layer carries its
+    posterior precision conditional on its value parents,
+
+    .. math::
+
+        \pi_a + \bar{\pi}_a - \hat{\pi}_a = \bar{\pi}_a + \pi_{y,a},
+
+    the evidence :math:`\pi_{y,a} = \pi_a - \hat{\pi}_a` it received on top of its
+    conditional predicted precision :math:`\bar{\pi}_a`. The variance the value
+    parents added to this sample's prediction is left out, since the next prediction
+    adds it afresh. Without ``feedforward_uncertainty`` the conditional and the
+    marginal predicted precision coincide and the posterior precision is carried
+    unchanged. Without ``carry_precision``, every volatile layer goes back to its
+    prior precision ``params.prior_precision``. Other layer kinds are left unchanged.
+    """
+    if network.carry_precision and not network.feedforward_uncertainty:
+        return network
+
+    new_elements = []
+    for elem in network.layers:
+        if elem.kind != "volatile":
+            new_elements.append(elem)
+            continue
+        state = elem.state
+        if network.carry_precision:
+            precision = state.precision + jnp.maximum(
+                state.conditional_expected_precision - state.expected_precision, 0.0
+            )
+        else:
+            precision = elem.params.prior_precision
+        new_elements.append(
+            dataclasses.replace(
+                elem, state=dataclasses.replace(state, precision=precision)
+            )
+        )
+    return dataclasses.replace(network, layers=tuple(new_elements))
+
+
 def _restore_precisions(
     network: VectorisedNetwork, template: VectorisedNetwork
 ) -> VectorisedNetwork:
@@ -1483,10 +1529,10 @@ def sample_step(
         Per-element weight gradients (descent form, ``None`` for the bottom
         element). Average these across a batch and apply once.
     increments :
-        Per-element change of the carried precision fields (value-level
-        posterior precision and the volatility level), relative to the
-        template. Average these across a batch and apply once with
-        :func:`apply_precision_increments`.
+        Per-element change of the carried precision fields (the value-level
+        precision each layer carries, see :func:`carry_precisions`, and the
+        volatility level), relative to the template. Average these across a batch
+        and apply once with :func:`apply_precision_increments`.
     """
     updated = _update_sweep(
         _prediction_sweep(network, x, time_step=time_step), y, time_step=time_step
@@ -1494,7 +1540,7 @@ def sample_step(
     return (
         _input_prediction_error(updated),
         tuple(_gradient_matrix(f) for f in _weight_quantities(updated, learning_kind)),
-        _precision_increments(network, updated),
+        _precision_increments(network, carry_precisions(updated)),
     )
 
 
@@ -1628,7 +1674,7 @@ def _batch_step(
             factors = _weight_quantities(updated, learning_kind)
         return (
             _input_prediction_error(updated),
-            _precision_increments(network, updated),
+            _precision_increments(network, carry_precisions(updated)),
             factors,
         )
 

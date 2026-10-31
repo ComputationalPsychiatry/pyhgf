@@ -166,12 +166,18 @@ class LayerParams(eqx.Module):
         The AR(1) coefficient :math:`\lambda \in [0, 1]` on the node's own mean
         in the prediction; ``1.0`` is a pure random walk (continuous layers
         only).
+    prior_precision :
+        The prior precision :math:`\pi_0` of the value level: the precision a
+        volatile layer starts every sample from when it does not carry its
+        posterior precision between samples (``DeepNetwork(carry_precision=False)``).
+        Set from the layer's initial ``precision`` when the network is built.
     """
 
     tonic_volatility_vol: Optional[Array] = None
     tonic_volatility: Optional[Array] = None
     tonic_drift: Optional[Array] = None
     autoconnection_strength: Optional[Array] = None
+    prior_precision: Optional[Array] = None
 
     @classmethod
     def create(
@@ -179,12 +185,14 @@ class LayerParams(eqx.Module):
         n_nodes: int,
         tonic_volatility_vol: float = -4.0,
         tonic_volatility: Optional[float] = None,
+        prior_precision: float = 1.0,
     ) -> "LayerParams":
         """Initialise volatile-layer params with defaults.
 
         ``tonic_volatility=None`` (the default) leaves the field structurally
         absent: the value level has no intrinsic volatility and diffuses only
-        through its volatility parent.
+        through its volatility parent. ``prior_precision`` defaults to the initial
+        ``precision`` of :meth:`LayerState.create`.
         """
         return cls(
             tonic_volatility_vol=jnp.full(n_nodes, tonic_volatility_vol),
@@ -193,6 +201,7 @@ class LayerParams(eqx.Module):
                 if tonic_volatility is None
                 else jnp.full(n_nodes, tonic_volatility)
             ),
+            prior_precision=jnp.full(n_nodes, prior_precision),
         )
 
     @classmethod
@@ -458,6 +467,9 @@ class VectorisedNetwork(eqx.Module):
     feedforward_uncertainty :
         Whether value parents propagate their uncertainty to their children's
         predicted precision — see :class:`pyhgf.model.DeepNetwork`.
+    carry_precision :
+        Whether volatile layers carry their posterior precision from one sample to
+        the next (see :class:`pyhgf.model.DeepNetwork`).
     mean_field_updates :
         If ``False`` (default), use the relaxed prediction and posterior updates.
         If ``True``, use the original mean-field updates — see
@@ -471,6 +483,7 @@ class VectorisedNetwork(eqx.Module):
     update_input_layer: bool = field(static=True, default=False)
     predict_precision: bool = field(static=True, default=True)
     feedforward_uncertainty: bool = field(static=True, default=False)
+    carry_precision: bool = field(static=True, default=True)
     mean_field_updates: bool = field(static=True, default=False)
 
     @property

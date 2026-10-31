@@ -28,7 +28,7 @@ class TestLayerConfig:
         assert cfg.add_constant_input is True
         assert cfg.fully_connected is True
         assert cfg.coupling_fn is None
-        assert cfg.volatility_parent is True
+        assert cfg.volatility_parent is None
 
     def test_layer_config_custom_values(self):
         """LayerConfig accepts all custom values."""

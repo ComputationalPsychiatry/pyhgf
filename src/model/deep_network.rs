@@ -48,6 +48,11 @@ pub struct DeepNetwork {
     precision_clipping_value: Float,
     predict_precision: bool,
     feedforward_uncertainty: bool,
+    /// Whether volatile layers carry their posterior precision from one sample to
+    /// the next. With `false` (the default) a volatile layer starts every sample
+    /// from its prior precision and has no volatility parent. Mirrors the JAX
+    /// `DeepNetwork(carry_precision=...)`.
+    carry_precision: bool,
     /// Whether volatile layers carry a value-level tonic volatility ω. With
     /// `false` (the default) the parameter is unallocated — a layer has no
     /// intrinsic volatility and only inherits it from its volatility parent.
@@ -85,6 +90,7 @@ impl DeepNetwork {
             self.precision_clipping_value,
             self.predict_precision,
             self.feedforward_uncertainty,
+            self.carry_precision,
         );
         self.net = Some(net);
         self.opt_state = None;
@@ -232,7 +238,9 @@ impl DeepNetwork {
         predict_precision = true,
         feedforward_uncertainty = false,
         tonic_volatility = false,
+        carry_precision = true,
     ))]
+    #[allow(clippy::too_many_arguments)]
     fn py_new(
         volatility_updates: &str,
         max_posterior_precision: Float,
@@ -241,6 +249,7 @@ impl DeepNetwork {
         predict_precision: bool,
         feedforward_uncertainty: bool,
         tonic_volatility: bool,
+        carry_precision: bool,
     ) -> PyResult<Self> {
         let volatility_updates =
             VolatilityUpdate::parse(volatility_updates).map_err(PyValueError::new_err)?;
@@ -265,6 +274,7 @@ impl DeepNetwork {
             precision_clipping_value,
             predict_precision,
             feedforward_uncertainty,
+            carry_precision,
             tonic_volatility,
             default_coupling: coupling_fn.to_string(),
         })
@@ -282,7 +292,7 @@ impl DeepNetwork {
         add_constant_input = true,
         fully_connected = true,
         coupling_fn = None,
-        volatility_parent = true,
+        volatility_parent = None,
         **kwargs,
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -293,10 +303,25 @@ impl DeepNetwork {
         add_constant_input: bool,
         fully_connected: bool,
         coupling_fn: Option<String>,
-        volatility_parent: bool,
+        volatility_parent: Option<bool>,
         kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<PyRefMut<'py, Self>> {
         let layer_kind = LayerKind::parse(kind).map_err(PyValueError::new_err)?;
+        // A volatile layer that does not carry its precision between samples has
+        // no random walk across samples for a volatility parent to modulate.
+        let is_volatile = layer_kind == LayerKind::Volatile;
+        let volatility_parent = match volatility_parent {
+            None => !is_volatile || slf.carry_precision,
+            Some(true) if is_volatile && !slf.carry_precision => {
+                return Err(PyValueError::new_err(
+                    "A volatile layer with volatility_parent=True requires \
+                     carry_precision=True: without carried precision the layer starts \
+                     every sample afresh, so there is no random walk across samples for \
+                     a volatility parent to modulate.",
+                ));
+            }
+            Some(value) => value,
+        };
         let cf = parse_coupling_fn(coupling_fn.as_deref().unwrap_or(&slf.default_coupling))
             .map_err(PyValueError::new_err)?;
 

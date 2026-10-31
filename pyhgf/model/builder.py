@@ -51,8 +51,9 @@ class LayerConfig:
         Name of coupling function ("identity", "gelu", "relu", etc.) or None to use the
         network-level default. Must be a name that can be resolved via
         :func:`resolve_coupling_fn`.
-    volatility_parent : bool, default True
-        Whether the layer has an internal volatility parent.
+    volatility_parent : Optional[bool], default None
+        Whether the layer has an internal volatility parent. ``None`` follows the
+        network's ``carry_precision`` (see :meth:`DeepNetwork.add_layer`).
     tonic_volatility : Optional[float], default None
         Per-layer override for the value level's tonic volatility. Only valid
         when the network is built with ``tonic_volatility=True``, which is what
@@ -71,7 +72,7 @@ class LayerConfig:
     add_constant_input: bool = True
     fully_connected: bool = True
     coupling_fn: Optional[str] = None
-    volatility_parent: bool = True
+    volatility_parent: Optional[bool] = None
     tonic_volatility: Optional[float] = None
     tonic_volatility_vol: Optional[float] = None
 

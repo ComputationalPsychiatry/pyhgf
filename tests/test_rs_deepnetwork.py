@@ -73,11 +73,13 @@ def _build_rs(
     volatility_updates="eHGF",
     coupling_fn="linear",
     feedforward_uncertainty=False,
+    carry_precision=True,
 ):
     net = RsDeepNetwork(
         volatility_updates=volatility_updates,
         coupling_fn=coupling_fn,
         feedforward_uncertainty=feedforward_uncertainty,
+        carry_precision=carry_precision,
     )
     for s in sizes:
         net = net.add_layer(s)
@@ -85,11 +87,16 @@ def _build_rs(
 
 
 def _build_jax(
-    sizes, volatility_updates="eHGF", coupling_fn=None, feedforward_uncertainty=False
+    sizes,
+    volatility_updates="eHGF",
+    coupling_fn=None,
+    feedforward_uncertainty=False,
+    carry_precision=True,
 ):
     kwargs = {
         "volatility_updates": volatility_updates,
         "feedforward_uncertainty": feedforward_uncertainty,
+        "carry_precision": carry_precision,
     }
     if coupling_fn is not None:
         kwargs["coupling_fn"] = coupling_fn
@@ -115,7 +122,12 @@ def _inject_jax_weights(net, weights):
 
 
 def _matched_pair(
-    sizes, rng, volatility_updates="eHGF", coupling=None, feedforward_uncertainty=False
+    sizes,
+    rng,
+    volatility_updates="eHGF",
+    coupling=None,
+    feedforward_uncertainty=False,
+    carry_precision=True,
 ):
     """Build a Rust and a JAX network with identical topology and weights.
 
@@ -127,12 +139,14 @@ def _matched_pair(
         volatility_updates,
         "linear" if coupling is None else coupling,
         feedforward_uncertainty,
+        carry_precision,
     )
     jx = _build_jax(
         sizes,
         volatility_updates,
         None if coupling is None else getattr(jnp, coupling),
         feedforward_uncertainty,
+        carry_precision,
     )
     weights = _random_weights(rs, rng)
     rs.set_weights(weights)
@@ -507,6 +521,32 @@ def test_fit_parity_categorical_output():
     np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
 
 
+def test_volatility_parent_requires_carried_precision():
+    """A volatile layer gets a volatility parent only when precision is carried."""
+    with pytest.raises(ValueError, match="carry_precision=True"):
+        RsDeepNetwork(carry_precision=False).add_layer(2).add_layer(
+            3, volatility_parent=True
+        )
+    RsDeepNetwork().add_layer(2).add_layer(3, volatility_parent=True)
+    RsDeepNetwork(carry_precision=False).add_layer(2, kind="binary").add_layer(3)
+
+
+@pytest.mark.parametrize("carry_precision", [False, True])
+def test_fit_parity_carry_precision(carry_precision):
+    """Precisions carried, or reset to the prior, the same way in both backends."""
+    rng = np.random.default_rng(23)
+    rs, jx = _matched_pair([2, 4, 3], rng, carry_precision=carry_precision)
+    x = rng.normal(size=(8, 3))
+    y = rng.normal(size=(8, 2))
+    preds_rs = rs.fit(x, y, optimiser="sgd", learning_rate=0.05)
+    jx.fit(x, y, optax.sgd(0.05))
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
+    if not carry_precision:
+        np.testing.assert_array_equal(
+            np.asarray(jx.state.layers[1].state.precision), 1.0
+        )
+
+
 def test_batch_update_validation():
     """Reject non-batched input, unknown options, and single-layer networks."""
     net = _build_rs([2, 3])
@@ -546,12 +586,14 @@ def test_batch_update_trajectory_parity(optimiser):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
+@pytest.mark.parametrize("carry_precision", [False, True])
 @pytest.mark.parametrize("volatility_updates", ["eHGF", "unbounded"])
-def test_fit_parity_feedforward_uncertainty(volatility_updates):
+def test_fit_parity_feedforward_uncertainty(volatility_updates, carry_precision):
     """Match the JAX training run when value parents propagate their uncertainty.
 
     The volatility levels then count the variance the value parents add as known
-    variance.
+    variance. With carried precision, the layers carry their conditional posterior
+    precision.
     """
     rng = np.random.default_rng(22)
     rs, jx = _matched_pair(
@@ -559,6 +601,7 @@ def test_fit_parity_feedforward_uncertainty(volatility_updates):
         rng,
         volatility_updates=volatility_updates,
         feedforward_uncertainty=True,
+        carry_precision=carry_precision,
     )
     x = rng.normal(size=(8, 3))
     y = rng.normal(size=(8, 2))
@@ -570,9 +613,12 @@ def test_fit_parity_feedforward_uncertainty(volatility_updates):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
+@pytest.mark.parametrize("carry_precision", [False, True])
 @pytest.mark.parametrize("volatility_updates", ["eHGF", "unbounded"])
 @pytest.mark.parametrize("coupling", [None, "tanh"])
-def test_batch_update_parity_feedforward_uncertainty(coupling, volatility_updates):
+def test_batch_update_parity_feedforward_uncertainty(
+    coupling, volatility_updates, carry_precision
+):
     """Batched input errors and weights match JAX with feedforward uncertainty."""
     rng = np.random.default_rng(32)
     rs, jx = _matched_pair(
@@ -581,6 +627,7 @@ def test_batch_update_parity_feedforward_uncertainty(coupling, volatility_update
         volatility_updates=volatility_updates,
         coupling=coupling,
         feedforward_uncertainty=True,
+        carry_precision=carry_precision,
     )
     optax_opt = optax.sgd(0.05)
     for _ in range(3):
