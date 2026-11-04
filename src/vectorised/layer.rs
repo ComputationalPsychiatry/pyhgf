@@ -229,6 +229,11 @@ pub struct LayerParams {
     /// volatility and diffuses only through its volatility parent. Mirrors the
     /// optional `tonic_volatility` field of the JAX `LayerParams`.
     pub tonic_volatility: Option<Vector>,
+    /// Prior precision π₀ of the value level: the precision a volatile layer
+    /// starts every sample from when the network does not carry precisions
+    /// between samples (`carry_precision = false`). Set from the layer's initial
+    /// precision when the network is built.
+    pub prior_precision: Vector,
 }
 
 impl LayerParams {
@@ -247,6 +252,7 @@ impl LayerParams {
         Self {
             tonic_volatility_vol: Array1::from_elem(n_nodes, tonic_volatility_vol),
             tonic_volatility: tonic_volatility.map(|tv| Array1::from_elem(n_nodes, tv)),
+            prior_precision: Array1::from_elem(n_nodes, 1.0),
         }
     }
 }
@@ -358,6 +364,12 @@ pub struct DeepNet {
     /// predicted precision coincide and the only uncertainty entering a layer is its
     /// own volatility parent's. With `true` that term is carried.
     pub feedforward_uncertainty: bool,
+    /// Whether volatile layers carry their posterior precision from one sample
+    /// to the next. With `true` (the default) a volatile layer carries its
+    /// posterior precision conditional on its value parents (see
+    /// [`DeepNet::carry_precisions`]); with `false` it starts every sample from
+    /// its prior precision.
+    pub carry_precision: bool,
 }
 
 impl DeepNet {
@@ -406,8 +418,10 @@ impl DeepNet {
             for (name, value) in &cfg.state_overrides {
                 state.set_field(name, *value)?;
             }
-            let params =
+            let mut params =
                 LayerParams::create_with(cfg.size, cfg.tonic_volatility_vol, cfg.tonic_volatility);
+            // The prior precision is the layer's initial precision.
+            params.prior_precision = state.precision.clone();
 
             // `weights_in` lives on the parent (this layer); the bottom layer
             // has no child below it, hence `None`.
@@ -445,6 +459,7 @@ impl DeepNet {
             precision_clipping_value: 1e-6,
             predict_precision: true,
             feedforward_uncertainty: false,
+            carry_precision: true,
         })
     }
 
@@ -456,13 +471,63 @@ impl DeepNet {
         precision_clipping_value: Float,
         predict_precision: bool,
         feedforward_uncertainty: bool,
+        carry_precision: bool,
     ) -> Self {
         self.volatility_updates = volatility_updates;
         self.max_posterior_precision = max_posterior_precision;
         self.precision_clipping_value = precision_clipping_value;
         self.predict_precision = predict_precision;
         self.feedforward_uncertainty = feedforward_uncertainty;
+        self.carry_precision = carry_precision;
         self
+    }
+
+    /// The precision a volatile layer carries into the next sample, given its
+    /// posterior precision `precision` and the predicted precisions of the
+    /// sample, `conditional` (π̄) and `marginal` (π̂), or `None` when the layer
+    /// goes back to its prior precision. With `carry_precision`, the layer carries
+    /// its posterior precision conditional on its value parents,
+    /// π + π̄ − π̂ = π̄ + π_y: the variance the value parents added to this
+    /// sample's prediction is left out, since the next prediction adds it
+    /// afresh (mirrors `carry_precisions` in the JAX backend).
+    #[inline]
+    pub(crate) fn carried_precision(
+        &self,
+        precision: Float,
+        conditional: Float,
+        marginal: Float,
+    ) -> Option<Float> {
+        if !self.carry_precision {
+            None
+        } else if self.feedforward_uncertainty {
+            Some(precision + (conditional - marginal).max(0.0))
+        } else {
+            Some(precision)
+        }
+    }
+
+    /// Replace each volatile layer's posterior precision with the precision it
+    /// carries into the next sample (see [`Self::carried_precision`]). Applied
+    /// between samples, after the sweeps and the weight update have read the
+    /// posterior.
+    pub fn carry_precisions(&mut self) {
+        if self.carry_precision && !self.feedforward_uncertainty {
+            return;
+        }
+        let carry = self.carry_precision;
+        for layer in self.layers.iter_mut() {
+            if layer.kind != LayerKind::Volatile {
+                continue;
+            }
+            if carry {
+                ndarray::Zip::from(&mut layer.state.precision)
+                    .and(&layer.state.conditional_expected_precision)
+                    .and(&layer.state.expected_precision)
+                    .for_each(|p, &c, &e| *p += (c - e).max(0.0));
+            } else {
+                layer.state.precision.assign(&layer.params.prior_precision);
+            }
+        }
     }
 
     /// Initialise every inter-layer weight matrix with a named strategy

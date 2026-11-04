@@ -40,6 +40,7 @@ from pyhgf.utils.vectorised_belief_propagation import (
     batch_step,
     batched_prediction_pass,
     batched_prediction_states,
+    carry_precisions,
     input_prediction_error,
     learn_sweep,
     prediction_pass,
@@ -63,7 +64,10 @@ _LAYER_PARAM_DEFAULTS: dict[str, float] = {
 
 # Names of fields that can be overridden per layer (eqx.Modules expose dataclass fields).
 _LAYER_STATE_FIELDS: frozenset[str] = frozenset(LayerState.__dataclass_fields__.keys())
-_LAYER_PARAM_FIELDS: frozenset[str] = frozenset(LayerParams.__dataclass_fields__.keys())
+# ``prior_precision`` is not overridable: it is set from the layer's ``precision``.
+_LAYER_PARAM_FIELDS: frozenset[str] = frozenset(
+    LayerParams.__dataclass_fields__.keys()
+) - {"prior_precision"}
 # Volatility-level state fields, absent (``None``) on a layer without a
 # volatility parent — a state override for one of these on such a layer is
 # dropped rather than re-allocating the array.
@@ -170,6 +174,7 @@ class DeepNetwork:
         feedforward_uncertainty: bool = False,
         tonic_volatility: bool = False,
         mean_field_updates: bool = False,
+        carry_precision: bool = True,
     ):
         r"""Initialise a VectorisedDeepNetwork.
 
@@ -233,6 +238,28 @@ class DeepNetwork:
             ``ValueError``; ``learning_kind='synaptic_uncertainty'`` is likewise
             unavailable, since its curvature and evidence terms are derived from
             the relaxed precisions.
+        carry_precision :
+            Whether volatile layers carry their posterior precision from one sample
+            to the next. With ``True`` (the default) a volatile layer carries its
+            posterior precision conditional on its value parents,
+
+            .. math::
+
+                \pi_a + \bar{\pi}_a - \hat{\pi}_a = \bar{\pi}_a + \pi_{y,a},
+
+            the evidence :math:`\pi_{y,a} = \pi_a - \hat{\pi}_a` it received on
+            top of its conditional predicted precision. The variance its value
+            parents added to this sample's prediction is left out, since the next
+            prediction adds it afresh. Without ``feedforward_uncertainty`` the two
+            predicted precisions coincide and the layer carries its posterior
+            precision. ``add_layer``'s ``volatility_parent`` then defaults to
+            ``True``. With ``False`` a volatile layer starts every sample from its
+            prior precision :math:`\pi_0` (its initial ``precision``): its mean is
+            predicted from its value parents alone, so nothing about the layer
+            itself carries over between samples. Such a layer has no random walk
+            across samples for a volatility parent to modulate, so
+            ``volatility_parent`` defaults to ``False`` and passing ``True`` raises
+            a ``ValueError``.
         """
         if mean_field_updates and feedforward_uncertainty:
             raise ValueError(
@@ -250,6 +277,10 @@ class DeepNetwork:
         self.feedforward_uncertainty = bool(feedforward_uncertainty)
         self.tonic_volatility = bool(tonic_volatility)
         self.mean_field_updates = bool(mean_field_updates)
+        self.carry_precision = bool(carry_precision)
+        # Set by :meth:`update`: the state holds this sample's posterior, which
+        # becomes the carried precision at the next sweep (see :meth:`_carry`).
+        self._carry_pending = False
         self.layer_sizes: list[int] = []
         self.layer_kinds: list[str] = []
         # Per-layer overrides for fields of ``LayerState`` and ``LayerParams``.
@@ -487,7 +518,7 @@ class DeepNetwork:
         add_constant_input: Optional[bool] = None,
         fully_connected: bool = True,
         coupling_fn: Optional[Callable] = None,
-        volatility_parent: bool = True,
+        volatility_parent: Optional[bool] = None,
         value_children: Optional[int] = None,
         volatility_children: Optional[int] = None,
         value_coupling: Optional[float] = None,
@@ -533,14 +564,17 @@ class DeepNetwork:
             Coupling function for this layer. If None, uses the network-level coupling
             function.
         volatility_parent :
-            If True (default), this layer has an implied internal volatility parent:
+            If True, this layer has an implied internal volatility parent:
             mean_vol and precision_vol are predicted and updated each step. If False,
             the value level's only volatility source is its tonic volatility, when
             the network allocates one (``tonic_volatility=True``); without one it
             does not undergo a Gaussian random walk at all (its conditional
-            predicted precision equals the prior precision). Volatile layers only —
-            continuous layers have no internal volatility level and ignore this
-            argument.
+            predicted precision equals the prior precision). ``None`` (default)
+            follows the network's ``carry_precision``: a volatile layer that does
+            not carry its precision between samples has no volatility parent, and
+            passing ``True`` on such a network raises a ``ValueError``. Binary and
+            categorical layers default to ``True``; continuous layers have no
+            internal volatility level and ignore this argument.
         value_children :
             Continuous layers only. Index of the existing layer this layer is the
             *value parent* of. When neither *value_children* nor
@@ -678,6 +712,16 @@ class DeepNetwork:
                 "only supported as the output (bottom) layer — add it first."
             )
 
+        if volatility_parent is None:
+            volatility_parent = self.carry_precision if kind == "volatile" else True
+        elif volatility_parent and kind == "volatile" and not self.carry_precision:
+            raise ValueError(
+                "A volatile layer with volatility_parent=True requires "
+                "carry_precision=True: without carried precision the layer starts "
+                "every sample afresh, so there is no random walk across samples for "
+                "a volatility parent to modulate."
+            )
+
         invalid_keys = [k for k in kwargs if k not in _LAYER_OVERRIDE_FIELDS]
         if invalid_keys:
             raise ValueError(
@@ -745,6 +789,7 @@ class DeepNetwork:
         # after construction. Cheap for typical depths; only triggers fresh
         # array allocations, no JIT trace.
         self.state = self._init_state()
+        self._carry_pending = False
         # Optimiser state's shape depends on the weights tuple, so invalidate
         # any previously initialised ``opt_state``.
         self.opt_state = None
@@ -937,6 +982,8 @@ class DeepNetwork:
                 if k in _LAYER_PARAM_FIELDS:
                     param_kwargs[k] = v
             params = LayerParams.create(n_nodes=size, **param_kwargs)
+            # The prior precision is the layer's initial precision.
+            params = dataclasses.replace(params, prior_precision=state.precision)
 
             # `weights_mean` lives on the parent (this Layer); layer 0 has none.
             if i > 0:
@@ -993,6 +1040,7 @@ class DeepNetwork:
             update_input_layer=self.update_input_layer,
             predict_precision=self.predict_precision,
             feedforward_uncertainty=self.feedforward_uncertainty,
+            carry_precision=self.carry_precision,
             mean_field_updates=self.mean_field_updates,
         )
 
@@ -1500,9 +1548,11 @@ class DeepNetwork:
             last sample after training and raise :class:`DeadGradientWarning`
             when part of the network receives no learning signal.
         update_precisions :
-            If True (default), the carried confidence fields (value-level posterior
-            precision and the volatility level) evolve from sample to sample. If False, they
-            are reset to their pre-fit values after every sample.
+            If True (default), the carried confidence fields evolve from sample to
+            sample: the value-level precision each volatile layer carries (its
+            conditional posterior precision with ``carry_precision``, its prior
+            precision without) and the volatility level. If False, they are reset to
+            their pre-fit values after every sample.
         time_step :
             Uniform inference time step :math:`\\Delta t` applied at every
             ``propagation_step``. Replaces the legacy ``net.state.time_step``
@@ -1543,6 +1593,7 @@ class DeepNetwork:
         x = jnp.asarray(x)
         y = jnp.asarray(y)
 
+        self._carry()
         (self.state, self.opt_state), step_output = run_scan(
             (self.state, self.opt_state),
             (x, y),
@@ -1722,6 +1773,7 @@ class DeepNetwork:
                 "prediction() operates on a single sample (1D x); "
                 "use predict() for a batched read-only forward pass."
             )
+        self._carry()
         self.state = prediction_sweep(self.state, x)
         return self
 
@@ -1781,6 +1833,9 @@ class DeepNetwork:
             self.state, self.opt_state = learn_sweep(
                 self.state, self.opt_state, optimiser, learning_kind
             )
+        # The state keeps this sample's posterior (read by :meth:`input_error`); it
+        # becomes the carried precision at the next sweep.
+        self._carry_pending = True
         return self
 
     def input_error(self) -> jnp.ndarray:
@@ -1837,6 +1892,7 @@ class DeepNetwork:
         self._require_deep_backend("predict_states")
         if self.state is None:
             raise ValueError("Add at least one layer before calling predict_states.")
+        self._carry()
         states = batched_prediction_states(self.state, jnp.asarray(x))
         return states[0].expected_mean, states
 
@@ -1880,9 +1936,10 @@ class DeepNetwork:
             Weight-gradient mode, as in :meth:`fit`.
         update_precisions :
             If True (default), carry the batch-averaged change of the
-            precision state (value-level precisions and the volatility
-            level) into ``self.state``. Set to False to keep the precisions
-            pinned, e.g. for exact comparisons against backpropagation.
+            precision state (the value-level precision each volatile layer
+            carries, see ``carry_precision``, and the volatility level) into
+            ``self.state``. Set to False to keep the precisions pinned, e.g. for
+            exact comparisons against backpropagation.
         time_step :
             Inference time step, applied once per batch.
         predicted :
@@ -1918,6 +1975,7 @@ class DeepNetwork:
 
         self._ensure_optimiser_state(optimiser)
 
+        self._carry()
         self.state, self.opt_state, self.input_errors = batch_step(
             self.state,
             self.opt_state,
@@ -1933,9 +1991,23 @@ class DeepNetwork:
         )
         return self
 
+    def _carry(self) -> None:
+        """Carry the precisions left by :meth:`update` into the next sweep.
+
+        :meth:`update` leaves each layer's posterior in the state, where
+        :meth:`input_error` and the weight update read it. Before the next sweep
+        starts from the state, the posterior is replaced with the precision the
+        layer carries forward (see ``carry_precision`` and
+        :func:`~pyhgf.utils.vectorised_belief_propagation.carry_precisions`).
+        """
+        if self._carry_pending and self.state is not None:
+            self.state = carry_precisions(self.state)
+            self._carry_pending = False
+
     def reset(self) -> "DeepNetwork":
         """Reset the network state."""
         self.state = self._init_state()
+        self._carry_pending = False
         self.opt_state = None
         self._optimiser = None
         return self
