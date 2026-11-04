@@ -24,6 +24,7 @@ pub fn layer_prediction_error(
     time_step: Float,
     has_volatility_parent: bool,
     max_posterior_precision: Float,
+    feedforward_uncertainty: bool,
 ) {
     // Value prediction error (always).
     layer.value_prediction_error = &layer.mean - &layer.expected_mean;
@@ -42,12 +43,20 @@ pub fn layer_prediction_error(
 
     match volatility_updates {
         VolatilityUpdate::Standard => volatility_posterior_standard(layer, max_posterior_precision),
-        VolatilityUpdate::EHgf => {
-            volatility_posterior_ehgf(layer, params, time_step, max_posterior_precision)
-        }
-        VolatilityUpdate::Unbounded => {
-            volatility_posterior_unbounded(layer, params, time_step, max_posterior_precision)
-        }
+        VolatilityUpdate::EHgf => volatility_posterior_ehgf(
+            layer,
+            params,
+            time_step,
+            max_posterior_precision,
+            feedforward_uncertainty,
+        ),
+        VolatilityUpdate::Unbounded => volatility_posterior_unbounded(
+            layer,
+            params,
+            time_step,
+            max_posterior_precision,
+            feedforward_uncertainty,
+        ),
     }
 }
 
@@ -101,7 +110,9 @@ fn volatility_posterior_standard(state: &mut LayerState, max_posterior_precision
 
 /// eHGF volatility-level posterior of one node: mean first (using the
 /// expected precision as the approximation), then the "safe" precision
-/// increment recomputed from the updated mean and floored at zero. Returns
+/// increment recomputed from the updated mean and floored at zero. With
+/// `feedforward_uncertainty`, the re-predicted precision counts the variance the
+/// value parents add, `1/marginal_ep − 1/cond`, as known variance. Returns
 /// `(precision_vol, mean_vol)`.
 ///
 /// Plain exponentials: the JAX eHGF posterior applies no underflow guard here
@@ -116,12 +127,14 @@ pub(crate) fn ehgf_vol_node(
     g: Float,
     dpe: Float,
     cond: Float,
+    marginal_ep: Float,
     prec: Float,
     mean: Float,
     emean: Float,
     tonic: Float,
     time_step: Float,
     max_posterior_precision: Float,
+    feedforward_uncertainty: bool,
 ) -> (Float, Float) {
     // Mean first, using expected_precision_vol as the approximation (coupling = 1).
     let posterior_mean_vol = em + (g * dpe) / (ep * 2.0);
@@ -131,7 +144,10 @@ pub(crate) fn ehgf_vol_node(
     // the value level's own ω, zero when the params allocate none.
     let mgf = 1.0 / (ep * 2.0);
     let predicted_vol = pvol(tonic + em + mgf);
-    let previous_variance = (1.0 / cond - predicted_vol).max(MIN_VOLATILITY);
+    let mut previous_variance = (1.0 / cond - predicted_vol).max(MIN_VOLATILITY);
+    if feedforward_uncertainty {
+        previous_variance += (1.0 / marginal_ep - 1.0 / cond).max(0.0);
+    }
     // Re-predict volatility / precision from the posterior mean.
     let repredicted_vol = pvol(tonic + posterior_mean_vol);
     let expected_precision = 1.0 / (previous_variance + repredicted_vol);
@@ -155,6 +171,7 @@ fn volatility_posterior_ehgf(
     params: &LayerParams,
     time_step: Float,
     max_posterior_precision: Float,
+    feedforward_uncertainty: bool,
 ) {
     let tonic = params.tonic_volatility.as_ref();
     let eff = &state.effective_precision;
@@ -176,12 +193,14 @@ fn volatility_posterior_ehgf(
             eff[i],
             vpe[i],
             cond[i],
+            state.expected_precision[i],
             prec[i],
             mean[i],
             emean[i],
             tonic.map_or(0.0, |tv| tv[i]),
             time_step,
             max_posterior_precision,
+            feedforward_uncertainty,
         );
         posterior_precision_vol[i] = pp;
         posterior_mean_vol[i] = m;
@@ -205,6 +224,7 @@ fn volatility_posterior_unbounded(
     params: &LayerParams,
     time_step: Float,
     max_posterior_precision: Float,
+    feedforward_uncertainty: bool,
 ) {
     let tonic = params.tonic_volatility.as_ref();
     let epv = state.expected_precision_vol.as_ref().unwrap();
@@ -226,6 +246,7 @@ fn volatility_posterior_unbounded(
             tonic.map_or(0.0, |tv| tv[i]),
             time_step,
             max_posterior_precision,
+            feedforward_uncertainty,
         );
         posterior_precision_vol[i] = pp;
         posterior_mean_vol[i] = m;
@@ -251,6 +272,7 @@ pub(crate) fn unbounded_vol_node(
     tonic: Float,
     time_step: Float,
     max_posterior_precision: Float,
+    feedforward_uncertainty: bool,
 ) -> (Float, Float) {
     // The dual-quadratic blend is numerically delicate (log-space energies,
     // Lambert W); compute it in f64 and cast the posterior pair back at the end.
@@ -269,12 +291,17 @@ pub(crate) fn unbounded_vol_node(
     let log_time_step = time_step.ln();
     let log_float_max = f64::MAX.ln();
 
-    // Reconstruct the pre-prediction variance exactly from the conditional
-    // predicted precision (the prediction's full exponent, MGF included). The
-    // volatility coupling is fixed at 1; `tonic` is the value level's own ω,
-    // zero when the params allocate none.
+    // The known variance of the value level's prediction, the part that does not
+    // depend on the volatility level: the pre-prediction variance, reconstructed
+    // exactly from the conditional predicted precision (the prediction's full
+    // exponent, MGF included), and, with feedforward uncertainty, the variance the
+    // value parents add, 1/marginal_ep − 1/cond. The volatility coupling is fixed at
+    // 1; `tonic` is the value level's own ω, zero when the params allocate none.
     let predicted_volatility = time_step * (tonic + em + 1.0 / (2.0 * ep)).exp();
-    let previous_variance = (1.0 / cond - predicted_volatility).max(MIN_VOLATILITY as f64);
+    let mut previous_variance = (1.0 / cond - predicted_volatility).max(MIN_VOLATILITY as f64);
+    if feedforward_uncertainty {
+        previous_variance += (1.0 / marginal_ep - 1.0 / cond).max(0.0);
+    }
     let d = mean - emean;
     let be_aux = 1.0 / prec + d * d;
 
@@ -360,6 +387,7 @@ mod tests {
             1.0,
             false,
             1e10,
+            false,
         );
         assert!((layer.value_prediction_error[0] - 0.5).abs() < 1e-12);
         assert!((layer.value_prediction_error[1] - 0.0).abs() < 1e-12);
@@ -388,6 +416,7 @@ mod tests {
             1.0,
             true,
             1e10,
+            false,
         );
         assert!(layer.volatility_prediction_error.is_some());
         assert!(layer.precision_vol.is_some());

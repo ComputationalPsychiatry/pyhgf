@@ -68,15 +68,29 @@ def _float64_jax():
     jax.config.update("jax_enable_x64", previous)
 
 
-def _build_rs(sizes, volatility_updates="eHGF", coupling_fn="linear"):
-    net = RsDeepNetwork(volatility_updates=volatility_updates, coupling_fn=coupling_fn)
+def _build_rs(
+    sizes,
+    volatility_updates="eHGF",
+    coupling_fn="linear",
+    feedforward_uncertainty=False,
+):
+    net = RsDeepNetwork(
+        volatility_updates=volatility_updates,
+        coupling_fn=coupling_fn,
+        feedforward_uncertainty=feedforward_uncertainty,
+    )
     for s in sizes:
         net = net.add_layer(s)
     return net
 
 
-def _build_jax(sizes, volatility_updates="eHGF", coupling_fn=None):
-    kwargs = {"volatility_updates": volatility_updates}
+def _build_jax(
+    sizes, volatility_updates="eHGF", coupling_fn=None, feedforward_uncertainty=False
+):
+    kwargs = {
+        "volatility_updates": volatility_updates,
+        "feedforward_uncertainty": feedforward_uncertainty,
+    }
     if coupling_fn is not None:
         kwargs["coupling_fn"] = coupling_fn
     net = JaxDeepNetwork(**kwargs)
@@ -100,17 +114,25 @@ def _inject_jax_weights(net, weights):
     net.state = dataclasses.replace(net.state, layers=tuple(new_layers))
 
 
-def _matched_pair(sizes, rng, volatility_updates="eHGF", coupling=None):
+def _matched_pair(
+    sizes, rng, volatility_updates="eHGF", coupling=None, feedforward_uncertainty=False
+):
     """Build a Rust and a JAX network with identical topology and weights.
 
     ``coupling`` is the name of a ``jnp`` function (for example ``"tanh"``); ``None``
     uses the identity coupling on both sides.
     """
     rs = _build_rs(
-        sizes, volatility_updates, "linear" if coupling is None else coupling
+        sizes,
+        volatility_updates,
+        "linear" if coupling is None else coupling,
+        feedforward_uncertainty,
     )
     jx = _build_jax(
-        sizes, volatility_updates, None if coupling is None else getattr(jnp, coupling)
+        sizes,
+        volatility_updates,
+        None if coupling is None else getattr(jnp, coupling),
+        feedforward_uncertainty,
     )
     weights = _random_weights(rs, rng)
     rs.set_weights(weights)
@@ -517,6 +539,54 @@ def test_batch_update_trajectory_parity(optimiser):
         errors_rs = rs.batch_update(
             x, y, optimiser=optimiser, learning_rate=lr[optimiser]
         )
+        jx.batch_update(x, y, optimiser=optax_opt)
+        np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
+
+
+@pytest.mark.parametrize("volatility_updates", ["eHGF", "unbounded"])
+def test_fit_parity_feedforward_uncertainty(volatility_updates):
+    """Match the JAX training run when value parents propagate their uncertainty.
+
+    The volatility levels then count the variance the value parents add as known
+    variance.
+    """
+    rng = np.random.default_rng(22)
+    rs, jx = _matched_pair(
+        [2, 4, 3],
+        rng,
+        volatility_updates=volatility_updates,
+        feedforward_uncertainty=True,
+    )
+    x = rng.normal(size=(8, 3))
+    y = rng.normal(size=(8, 2))
+    preds_rs = rs.fit(x, y, optimiser="sgd", learning_rate=0.05)
+    jx.fit(x, y, optax.sgd(0.05))
+    np.testing.assert_allclose(preds_rs, np.asarray(jx.predictions), **TRAJECTORY)
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
+
+
+@pytest.mark.parametrize("volatility_updates", ["eHGF", "unbounded"])
+@pytest.mark.parametrize("coupling", [None, "tanh"])
+def test_batch_update_parity_feedforward_uncertainty(coupling, volatility_updates):
+    """Batched input errors and weights match JAX with feedforward uncertainty."""
+    rng = np.random.default_rng(32)
+    rs, jx = _matched_pair(
+        [2, 4, 3],
+        rng,
+        volatility_updates=volatility_updates,
+        coupling=coupling,
+        feedforward_uncertainty=True,
+    )
+    optax_opt = optax.sgd(0.05)
+    for _ in range(3):
+        x = rng.normal(size=(8, 3))
+        y = rng.normal(size=(8, 2))
+        errors_rs = rs.batch_update(x, y, optimiser="sgd", learning_rate=0.05)
         jx.batch_update(x, y, optimiser=optax_opt)
         np.testing.assert_allclose(errors_rs, np.asarray(jx.input_errors), **TRAJECTORY)
     jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]

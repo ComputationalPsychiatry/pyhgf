@@ -218,6 +218,25 @@ def _volatility_mean_pwpe(
     ) / (2.0 * node_precision)
 
 
+def _value_coupling_variance(state: LayerState) -> jnp.ndarray:
+    r"""Variance that the value parents of each node add to its prediction.
+
+    .. math::
+
+        T_a = \frac{1}{\hat{\pi}_a} - \frac{1}{\bar{\pi}_a},
+
+    the gap between the marginal and the conditional predicted variance, which is the
+    first-order Taylor term of the prediction step. Zero for a layer without a value
+    parent and under the mean-field prediction, and floored at zero against rounding.
+    Mirrors
+    :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._value_coupling_variance`.
+    """
+    return jnp.maximum(
+        1.0 / state.expected_precision - 1.0 / state.conditional_expected_precision,
+        0.0,
+    )
+
+
 def _child_previous_variance(
     layer: LayerState,
     child: VolatilityChild,
@@ -273,12 +292,14 @@ def _volatility_precision_pwpe_ehgf(
 
     and each edge's increment :math:`\tfrac12 \kappa^2 \gamma (\gamma + w \Delta)`
     is floored at zero before summation, so the posterior precision can never fall
-    below the predicted precision.
+    below the predicted precision. The re-predicted volatility adds to the known
+    variance of the child's prediction: the carried variance and the variance its
+    value parents add (:func:`_value_coupling_variance`).
     """
     assert child.params.tonic_volatility is not None
     previous_variance = _child_previous_variance(
         layer, child, time_step, mean_field_updates
-    )
+    ) + _value_coupling_variance(child.state)
 
     # Per-edge re-prediction, shape (n_child, n_parent): the parents at their
     # predicted means, with the edge's own parent moved to its posterior mean.
@@ -497,9 +518,11 @@ def vectorised_continuous_posterior_update_unbounded(
     kappa = jnp.diagonal(child.kappa)
     tonic_volatility = child.params.tonic_volatility
 
+    # Known variance of the child's prediction: the carried variance and the variance
+    # its value parents add, neither of which depends on the parent's value.
     previous_variance = _child_previous_variance(
         layer, child, time_step, mean_field_updates
-    )
+    ) + _value_coupling_variance(child.state)
     be_aux = (
         1.0 / child.state.precision
         + (child.state.mean - child.state.expected_mean) ** 2

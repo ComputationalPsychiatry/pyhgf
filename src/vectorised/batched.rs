@@ -384,6 +384,7 @@ fn batched_prediction_error(
     volatility_updates: VolatilityUpdate,
     time_step: Float,
     max_posterior_precision: Float,
+    feedforward_uncertainty: bool,
 ) {
     match layer.kind {
         LayerKind::Binary => {
@@ -473,12 +474,14 @@ fn batched_prediction_error(
                         effective[[i, j]],
                         dpe,
                         conditional[[i, j]],
+                        expected_precision[[i, j]],
                         precision[[i, j]],
                         mean[[i, j]],
                         expected_mean[[i, j]],
                         tonic.map_or(0.0, |tv| tv[i]),
                         time_step,
                         max_posterior_precision,
+                        feedforward_uncertainty,
                     ),
                     VolatilityUpdate::Unbounded => unbounded_vol_node(
                         emv[[i, j]],
@@ -491,6 +494,7 @@ fn batched_prediction_error(
                         tonic.map_or(0.0, |tv| tv[i]),
                         time_step,
                         max_posterior_precision,
+                        feedforward_uncertainty,
                     ),
                 };
                 pv_row[j] = pp;
@@ -671,10 +675,11 @@ pub fn batched_update_sweep(
     let n = net.layers.len();
     let vol = net.volatility_updates;
     let max_pp = net.max_posterior_precision;
+    let ffu = net.feedforward_uncertainty;
 
     // Clamp observations and compute the leaf prediction error.
     states[0].mean.assign(&y.t());
-    batched_prediction_error(&mut states[0], &net.layers[0], vol, time_step, max_pp);
+    batched_prediction_error(&mut states[0], &net.layers[0], vol, time_step, max_pp, ffu);
 
     // Interior posterior + PE, bottom-up (exclude the clamped top layer).
     for i in 1..n.saturating_sub(1) {
@@ -694,7 +699,7 @@ pub fn batched_update_sweep(
             max_pp,
             net.layers[i - 1].is_input_layer,
         );
-        batched_prediction_error(parent, parent_layer, vol, time_step, max_pp);
+        batched_prediction_error(parent, parent_layer, vol, time_step, max_pp, ffu);
     }
 }
 

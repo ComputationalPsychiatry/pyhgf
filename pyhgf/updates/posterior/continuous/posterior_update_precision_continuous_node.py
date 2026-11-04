@@ -195,6 +195,26 @@ def _effective_tonic_volatility(
     return tonic_volatility
 
 
+def _value_coupling_variance(attributes: dict, node_idx: int) -> Array:
+    r"""Variance that the value parents of a node add to its prediction.
+
+    .. math::
+
+        T_a = \frac{1}{\hat{\pi}_a} - \frac{1}{\bar{\pi}_a},
+
+    the gap between the marginal and the conditional predicted variance, which is the
+    first-order Taylor term of the prediction step
+    (:func:`pyhgf.updates.prediction.continuous.predict_precision`). It is zero for a
+    node without value parents and under the mean-field prediction, and floored at
+    zero against rounding.
+    """
+    return jnp.maximum(
+        1.0 / attributes[node_idx]["expected_precision"]
+        - 1.0 / attributes[node_idx]["temp"]["conditional_expected_precision"],
+        0.0,
+    )
+
+
 def _standard_volatility_increment(
     attributes: dict,
     edges: Edges,
@@ -636,12 +656,19 @@ def _ehgf_volatility_precision_increment(
     The re-predicted child volatility is
     :math:`\nu = t \exp(\kappa \mu_b^{(k)} + \tilde{\omega}_a)`, where the effective
     tonic volatility :math:`\tilde{\omega}_a` adds the other volatility parents of the
-    child at their predicted means (see :func:`_effective_tonic_volatility`). With
-    :math:`\hat{\pi}` the re-predicted child precision (``expected_precision``),
-    :math:`\gamma = \nu \hat{\pi}` the ``effective_precision``,
-    :math:`w = (\nu - \sigma^{(k-1)}) \hat{\pi}` the volatility-error weight and
-    :math:`\Delta` the child's ``volatility_prediction_error``, the increment is
-    :math:`\max(0, \tfrac12 \kappa^2 \gamma (\gamma + w \Delta))`.
+    child at their predicted means (see :func:`_effective_tonic_volatility`). It is
+    added to the known variance :math:`\alpha_a` of the child's prediction, the part
+    that does not depend on :math:`x_b`: the carried variance
+    :math:`\lambda_a^2/\pi_a^{(k-1)}` and the variance its value parents add
+    (:func:`_value_coupling_variance`). With
+    :math:`\hat{\pi} = 1/(\alpha_a + \nu)` the re-predicted child precision
+    (``expected_precision``), :math:`\gamma = \nu \hat{\pi}` the
+    ``effective_precision``, :math:`w = (\nu - \alpha_a) \hat{\pi}` the
+    volatility-error weight and :math:`\Delta` the child's
+    ``volatility_prediction_error``, the increment is
+    :math:`\max(0, \tfrac12 \kappa^2 \gamma (\gamma + w \Delta))`. At
+    :math:`\mu_b^{(k)} = \hat{\mu}_b^{(k)}` the re-predicted precision is the child's
+    marginal predicted precision.
     """
     time_step = attributes[-1]["time_step"]
     # Parent posterior mean (the eHGF performs the mean update first).
@@ -649,9 +676,13 @@ def _ehgf_volatility_precision_increment(
     tonic_volatility = _effective_tonic_volatility(
         attributes, edges, node_idx, volatility_child_idx
     )
-    # Carried variance σ = λ²/π the child used in its prediction; the re-prediction
-    # below must add volatility to the same quantity the prediction step used.
-    previous_variance = attributes[volatility_child_idx]["temp"]["current_variance"]
+    # Known variance of the child's prediction: the carried variance λ²/π and the
+    # variance its value parents add, neither of which depends on the parent's value.
+    # The re-prediction below adds volatility to the same quantity the prediction
+    # step used.
+    previous_variance = attributes[volatility_child_idx]["temp"][
+        "current_variance"
+    ] + _value_coupling_variance(attributes, volatility_child_idx)
 
     # Re-predict the child's volatility and precision from the parent posterior mean.
     predicted_volatility = time_step * jnp.exp(

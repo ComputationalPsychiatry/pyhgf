@@ -313,7 +313,8 @@ struct UnboundedVolatilityChild {
     coupling: f64,
     /// Effective tonic volatility ω̃, which absorbs the other volatility parents.
     tonic_volatility: f64,
-    /// Log of the carried variance λ²/π the child used in its prediction.
+    /// Log of the known variance of the child's prediction: the carried variance λ²/π
+    /// and the variance its value parents add (see [`value_coupling_variance`]).
     log_previous_variance: f64,
     /// Total posterior uncertainty of the child, 1/π + (μ − μ̂)².
     be_aux: f64,
@@ -326,6 +327,15 @@ impl UnboundedVolatilityChild {
     fn log_volatility(&self, log_time_step: f64, x: f64) -> f64 {
         log_time_step + self.coupling * x + self.tonic_volatility
     }
+}
+
+/// Variance that the value parents of a node add to its prediction,
+/// T = 1/π̂ − 1/π̄: the gap between the marginal and the conditional predicted variance,
+/// which is the first-order Taylor term of the prediction step. Zero for a node without
+/// value parents and under the mean-field prediction, and floored at zero against
+/// rounding (mirrors `_value_coupling_variance` in the JAX backend).
+fn value_coupling_variance(state: &crate::model::network::NodeState) -> f64 {
+    (1.0 / state.expected_precision - 1.0 / state.conditional_expected_precision).max(0.0)
 }
 
 /// Unbounded posterior update of a continuous state node with one or several volatility
@@ -343,6 +353,9 @@ impl UnboundedVolatilityChild {
 /// where (π̃, μ̃) is the prediction of the node or, when the node also has value
 /// children, the effective prior returned by [`unbounded_effective_prior`], and the
 /// effective tonic volatility ω̃_i absorbs the other volatility parents p of the child.
+/// The known variance α_i is the part of the child's predicted variance that does not
+/// depend on x: its carried variance λ²/π and the variance its value parents add
+/// ([`value_coupling_variance`]).
 /// Unobserved children are left out of the sum. The posterior is the moment-matched Gaussian of n + 1 quadratic
 /// expansions of I: one at the prediction μ̂ (concave part only, eqs. 52-53), and one
 /// at the Lambert W0 mode of each child, with the curvature and gradient of the full
@@ -378,7 +391,10 @@ pub fn posterior_update_continuous_state_node_unbounded(
             UnboundedVolatilityChild {
                 coupling: volatility_couplings.get(i).copied().unwrap_or(1.0),
                 tonic_volatility: effective_tonic_volatility(network, node_idx, child_idx),
-                log_previous_variance: child_state.current_variance.max(1e-128).ln(),
+                log_previous_variance: (child_state.current_variance
+                    + value_coupling_variance(child_state))
+                .max(1e-128)
+                .ln(),
                 be_aux,
                 volatility_prediction_error: child_state.expected_precision * be_aux - 1.0,
             }
@@ -546,7 +562,10 @@ fn precision_update_from_children_mean_field(network: &Network, node_idx: usize)
 /// enhanced HGF volatility update (TAPAS `hgf_volatility_update` `'ehgf'` branch). This
 /// guarantees the posterior precision never drops below the predicted precision. The
 /// re-predicted volatility is ν = t exp(κ μ + ω̃), with `tonic_volatility` the effective
-/// tonic volatility ω̃ from [`effective_tonic_volatility`].
+/// tonic volatility ω̃ from [`effective_tonic_volatility`]. It adds to the known variance
+/// of the child's prediction, the carried variance λ²/π and the variance its value
+/// parents add ([`value_coupling_variance`]), so that at the predicted mean the
+/// re-predicted precision is the child's marginal predicted precision.
 fn ehgf_volatility_increment(
     child_state: &crate::model::network::NodeState,
     volatility_coupling: f64,
@@ -554,9 +573,11 @@ fn ehgf_volatility_increment(
     tonic_volatility: f64,
     time_step: f64,
 ) -> f64 {
-    // Carried variance σ = λ²/π the child used; the re-prediction below must add
-    // volatility to the same quantity the prediction step used.
-    let previous_variance = child_state.current_variance;
+    // Known variance of the child's prediction: the carried variance λ²/π and the
+    // variance its value parents add, neither of which depends on the parent's value.
+    // The re-prediction below adds volatility to the same quantity the prediction
+    // step used.
+    let previous_variance = child_state.current_variance + value_coupling_variance(child_state);
     // Re-predict the child's volatility and precision from the parent posterior mean.
     let predicted_volatility = time_step * (volatility_coupling * mean + tonic_volatility).exp();
     let expected_precision = 1.0 / (previous_variance + predicted_volatility);
