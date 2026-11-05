@@ -173,7 +173,19 @@ class Network:
 
     @input_idxs.setter
     def input_idxs(self, value):
-        self._input_idxs = value
+        previous = getattr(self, "_input_idxs", None)
+        previous = get_input_idxs(self.edges) if previous is None else previous
+        self._input_idxs = None if value is None else tuple(value)
+        current = (
+            get_input_idxs(self.edges) if self._input_idxs is None else self._input_idxs
+        )
+        if tuple(previous) != tuple(current):
+            # Only the observation routing changed. Keep the initial parameters,
+            # final carry and update sequence for replay and append semantics.
+            self.input_dim = []
+            self.scan_fn = None
+            if getattr(self, "sample_scan_fn", None) is not None:
+                self.create_belief_propagation_fn(sampling_fn=True)
 
     def create_belief_propagation_fn(
         self,
