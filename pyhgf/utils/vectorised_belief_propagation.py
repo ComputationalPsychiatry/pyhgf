@@ -1716,11 +1716,10 @@ def _batch_step(
                 _reduce_importance(_importance_pair(f), sample_weight) for f in factors
             )
             if weight_reuse != 1.0:
-                # The increment is the outer product H[a, i] = p[a] * q[i], so
-                # scaling one factor scales it.
+                # Importance is the contracted batch-mean increment, including
+                # every slice of a LayerStack.
                 importance = tuple(
-                    None if imp is None else (imp[0] * weight_reuse, imp[1])
-                    for imp in importance
+                    None if imp is None else imp * weight_reuse for imp in importance
                 )
             new_network = _apply_synaptic_uncertainty_updates(
                 new_network, mean_grads, importance, synaptic_uncertainty_settings
@@ -1750,35 +1749,23 @@ def _batch_step(
 batch_step = eqx.filter_jit(_batch_step)
 
 
-def _reduce_importance(imp_factors, sample_weight=None) -> Optional[tuple]:
-    """Batch-mean importance factors from stacked per-sample factors.
+def _reduce_importance(imp_factors, sample_weight=None) -> Optional[jnp.ndarray]:
+    """Contract the exact batch mean of per-sample importance outer products.
 
-    ``imp_factors`` is ``None`` for the bottom element, or a ``(p, q)`` pair with a
-    leading batch axis (see :func:`_importance_pair`). Each side is averaged over the
-    batch separately. For a continuous child the child-side factor is identical across
-    the batch (every sample sweeps from the same state template, and the conditional
-    predicted precision is built from carried precisions and volatility states, not from
-    the sample's values), and a binary child contributes ones, so the outer product of
-    the two means equals the mean of the per-sample outer products.
+    ``imp_factors`` is ``None`` for the bottom element, or a ``(p, q)`` pair
+    with a leading batch axis (see :func:`_importance_pair`). Keep each
+    sample's evidence paired with its squared activation: discrete likelihood
+    curvature and pulled-back evidence can vary with the sample, so the outer
+    product of separately averaged factors would discard their covariance.
 
-    ``sample_weight`` follows the semantics of :func:`_contract_factors`: a weighted
-    mean whose denominator is the weight the batch actually carries, so padded rows do
-    not dilute the increment.
+    The returned matrix has the weights' shape, including the slice axis of
+    a ``LayerStack``. ``sample_weight`` follows :func:`_contract_factors`.
     """
-    if imp_factors is None:
-        return None
-    p, q = imp_factors
-    if sample_weight is None:
-        return p.mean(axis=0), q.mean(axis=0)
-    denominator = jnp.maximum(sample_weight.sum(), 1.0)
-    return (
-        jnp.tensordot(sample_weight, p, axes=(0, 0)) / denominator,
-        jnp.tensordot(sample_weight, q, axes=(0, 0)) / denominator,
-    )
+    return _contract_factors(imp_factors, sample_weight)
 
 
 def _contract_factors(factors, sample_weight=None) -> Optional[jnp.ndarray]:
-    """Batch-mean gradient from stacked per-sample factors.
+    """Batch-mean outer products from stacked per-sample factors.
 
     ``factors`` is ``None`` for the bottom element, or a ``(u, v)`` pair with
     a leading batch axis: ``(batch, n_children)`` and ``(batch, n_parents)``
