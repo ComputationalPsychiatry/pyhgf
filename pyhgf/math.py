@@ -5,7 +5,7 @@ from typing import Union
 import jax.numpy as jnp
 from jax import Array, custom_jvp
 from jax.nn import sigmoid
-from jax.scipy.special import digamma, gamma, gammaln
+from jax.scipy.special import digamma, gammaln
 from jax.typing import ArrayLike
 
 
@@ -339,8 +339,9 @@ def dirichlet_kullback_leibler(alpha_1: ArrayLike, alpha_2: ArrayLike) -> Array:
 
     """
     return (
-        jnp.log(gamma(alpha_1.sum()) / gamma(alpha_2.sum()))
-        + jnp.sum(jnp.log(gamma(alpha_2) / gamma(alpha_1)))
+        gammaln(alpha_1.sum())
+        - gammaln(alpha_2.sum())
+        + jnp.sum(gammaln(alpha_2) - gammaln(alpha_1))
         + jnp.sum((alpha_1 - alpha_2) * (digamma(alpha_1) - digamma(alpha_1.sum())))
     )
 
