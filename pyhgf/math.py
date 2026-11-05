@@ -456,8 +456,9 @@ def smoothed_rectangular(
 def lambert_w0(z: ArrayLike) -> Array:
     r"""Principal branch of the Lambert W function for z >= 0.
 
-    Solves ``w * exp(w) = z`` via 6 Halley iterations, which yields machine
-    precision for all z >= 0.
+    Solves ``w * exp(w) = z`` via 6 scaled Halley iterations. Dividing out
+    their common exponential factor keeps the intermediate products finite
+    for large finite positive arguments.
 
     A custom JVP is attached so that reverse-mode autodiff does not backprop
     through the Halley iterations. The implicit relation ``w * exp(w) = z``
@@ -483,12 +484,14 @@ def lambert_w0(z: ArrayLike) -> Array:
         The principal branch :math:`W_0(z)` solving ``w * exp(w) = z``.
 
     """
-    w = jnp.log(z + 1.0)
+    w = jnp.log1p(z)
+    log_z = jnp.log(z)
     for _ in range(6):
-        ew = jnp.exp(w)
-        f = w * ew - z
-        f1 = (w + 1.0) * ew
-        f2 = (w + 2.0) * ew
+        # Scale F, F' and F'' by exp(-w): their common factor cancels
+        # from Halley's ratio, avoiding squared exponentials at large z.
+        f = w - jnp.exp(log_z - w)
+        f1 = w + 1.0
+        f2 = w + 2.0
         w = w - (2.0 * f * f1) / (2.0 * f1**2 - f * f2)
     return w
 
