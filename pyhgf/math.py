@@ -203,7 +203,11 @@ def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Arr
     density :
         The Gaussian density evaluated at `x`.
     """
-    return precision / jnp.sqrt(2 * jnp.pi) * jnp.exp(-precision / 2 * (x - mean) ** 2)
+    return (
+        jnp.sqrt(precision)
+        / jnp.sqrt(2 * jnp.pi)
+        * jnp.exp(-precision / 2 * (x - mean) ** 2)
+    )
 
 
 def binary_surprise(
