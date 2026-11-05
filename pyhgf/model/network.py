@@ -492,9 +492,12 @@ class Network:
         scan_input = (inputs, branches_idx)
 
         # scan over the input data and apply the switching belief propagation functions
-        _, node_trajectories = scan(switching_propagation, self.attributes, scan_input)
+        last_attributes, node_trajectories = scan(
+            switching_propagation, self.attributes, scan_input
+        )
 
-        # the node structure at each value updates
+        # Retain the final beliefs for subsequent append calls and sampling.
+        self.last_attributes = last_attributes
         self.node_trajectories = node_trajectories
 
         return self
