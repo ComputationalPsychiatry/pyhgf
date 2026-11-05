@@ -823,6 +823,26 @@ impl Network {
             Some(ref obj) => Some(obj.extract()?),
             None => None,
         };
+        if let Some((row_idx, row)) = data
+            .iter()
+            .enumerate()
+            .find(|(_, row)| row.len() != slf.inputs.len())
+        {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "`input_data` row {row_idx} has {} observation(s), expected {} to match the network inputs.",
+                row.len(),
+                slf.inputs.len()
+            )));
+        }
+        if let Some(ref steps) = ts {
+            if steps.len() != data.len() {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "`time_steps` must have one entry per row of `input_data` (expected {}, got {}).",
+                    data.len(),
+                    steps.len()
+                )));
+            }
+        }
         let mask = match observed {
             Some(ref obj) => {
                 let mask = extract_time_series(obj)?;
