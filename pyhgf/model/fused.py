@@ -551,8 +551,14 @@ class FusedPipeline:
         return output, input_error
 
     def merge(self):
-        """Write the held state back onto the wrapped parts; return the tree."""
-        self._core_fns.write_back(self.state)
+        """Copy the held state onto the wrapped parts; return the tree.
+
+        The parts retain their own buffers, so they can be used independently
+        while later pipeline steps donate and advance the carried state.
+        """
+        arrays, static = eqx.partition(self.state, eqx.is_array)
+        arrays = jax.tree_util.tree_map(jnp.array, arrays)
+        self._core_fns.write_back(eqx.combine(arrays, static))
         return self._part
 
 
