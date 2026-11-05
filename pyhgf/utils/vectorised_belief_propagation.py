@@ -1607,6 +1607,9 @@ def _batch_step(
         symptom is a *systematic* gradient scale error rather than noise. Pass the mask
         as weights to make the reduction mean-over-contributing-rows instead.
 
+        An all-zero mask contributes zero data gradient and precision increments;
+        optimiser state transitions and weight-prior dynamics still run.
+
         ``None`` (default) keeps the plain mean, so existing behaviour is unchanged.
     predicted :
         Optional per-sample predicted states from
@@ -1733,7 +1736,8 @@ def _batch_step(
         if sample_weight is None:
             reduce = lambda i: i.mean(axis=0)  # noqa: E731
         else:
-            denominator = jnp.maximum(sample_weight.sum(), 1.0)
+            denominator = sample_weight.sum()
+            denominator = jnp.where(denominator > 0, denominator, 1.0)
 
             def reduce(i):
                 return jnp.tensordot(sample_weight, i, axes=(0, 0)) / denominator
@@ -1781,7 +1785,8 @@ def _contract_factors(factors, sample_weight=None) -> Optional[jnp.ndarray]:
         return jnp.einsum("bni,bnj->nij", u, v) / u.shape[0]
     # Weighted mean: the denominator is the weight the batch actually carries,
     # not the number of rows it happens to be padded to.
-    denominator = jnp.maximum(sample_weight.sum(), 1.0)
+    denominator = sample_weight.sum()
+    denominator = jnp.where(denominator > 0, denominator, 1.0)
     if u.ndim == 2:
         return jnp.einsum("b,bi,bj->ij", sample_weight, u, v) / denominator
     return jnp.einsum("b,bni,bnj->nij", sample_weight, u, v) / denominator
