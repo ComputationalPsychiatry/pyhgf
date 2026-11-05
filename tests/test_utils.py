@@ -491,8 +491,19 @@ def test_belief_propagation():
         input_idxs=(0, 1),
         observations="generative",
     )
-    assert jnp.isclose(new_attributes[0]["mean"], -0.20584226)
-    assert jnp.isclose(new_attributes[1]["mean"], 1.0)
+    continuous_key, binary_key = jax.random.split(rng_key, 2)
+    assert jnp.isclose(
+        new_attributes[0]["mean"],
+        jax.random.normal(continuous_key)
+        / jnp.sqrt(new_attributes[0]["expected_precision"])
+        + new_attributes[0]["expected_mean"],
+    )
+    assert jnp.isclose(
+        new_attributes[1]["mean"],
+        jax.random.bernoulli(binary_key, p=new_attributes[1]["expected_mean"]).astype(
+            jnp.float32
+        ),
+    )
 
     # 3 - Deprived ---------------------------------------------------------------------
     new_attributes, _ = beliefs_propagation(
