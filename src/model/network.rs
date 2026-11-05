@@ -596,6 +596,7 @@ impl Network {
                         }
                         None => self.edges[parent_idx].value_children = Some(vec![node_id]),
                     }
+                    self.inputs.retain(|&idx| idx != parent_idx);
                     // Add coupling strength on the parent side only if not already
                     // present (the value_children branch in each node-type arm
                     // already handles couplings for the child→parent direction).
@@ -627,6 +628,7 @@ impl Network {
                         }
                         None => self.edges[parent_idx].volatility_children = Some(vec![node_id]),
                     }
+                    self.inputs.retain(|&idx| idx != parent_idx);
                     let parent_n_children = self.edges[parent_idx]
                         .volatility_children
                         .as_ref()
@@ -643,6 +645,10 @@ impl Network {
                 }
             }
         } // end for n_nodes
+          // New edges can turn an input into a parent; rebuild the cached schedule
+          // before the next observation is processed.
+        self.update_sequence.predictions.clear();
+        self.update_sequence.updates.clear();
     }
 
     pub fn set_update_sequence(&mut self) {
@@ -817,6 +823,26 @@ impl Network {
             Some(ref obj) => Some(obj.extract()?),
             None => None,
         };
+        if let Some((row_idx, row)) = data
+            .iter()
+            .enumerate()
+            .find(|(_, row)| row.len() != slf.inputs.len())
+        {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "`input_data` row {row_idx} has {} observation(s), expected {} to match the network inputs.",
+                row.len(),
+                slf.inputs.len()
+            )));
+        }
+        if let Some(ref steps) = ts {
+            if steps.len() != data.len() {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "`time_steps` must have one entry per row of `input_data` (expected {}, got {}).",
+                    data.len(),
+                    steps.len()
+                )));
+            }
+        }
         let mask = match observed {
             Some(ref obj) => {
                 let mask = extract_time_series(obj)?;

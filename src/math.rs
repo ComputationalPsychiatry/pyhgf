@@ -5,17 +5,19 @@ pub fn sufficient_statistics(x: f64) -> Vec<f64> {
 
 /// Principal branch of the Lambert W function for `z >= 0`.
 ///
-/// Solves `w * exp(w) = z` via 6 Halley iterations — the same scheme (and the
-/// same initial guess `ln(z + 1)`) as `pyhgf.math.lambert_w0`, so the two
-/// backends agree to machine precision. Used by the `unbounded` volatility
-/// updates.
+/// Solves `w * exp(w) = z` via 6 scaled Halley iterations, with the same
+/// `ln_1p(z)` initial guess as `pyhgf.math.lambert_w0`. The common exponential
+/// factor is divided out before forming Halley's products, keeping large
+/// finite positive arguments stable. Used by the `unbounded` volatility updates.
 pub fn lambert_w0(z: f64) -> f64 {
-    let mut w = (z + 1.0).ln();
+    let mut w = z.ln_1p();
+    let log_z = z.ln();
     for _ in 0..6 {
-        let ew = w.exp();
-        let f = w * ew - z;
-        let f1 = (w + 1.0) * ew;
-        let f2 = (w + 2.0) * ew;
+        // Scale F, F' and F'' by exp(-w); the common factor cancels
+        // from Halley's ratio before any squared exponential is formed.
+        let f = w - (log_z - w).exp();
+        let f1 = w + 1.0;
+        let f2 = w + 2.0;
         w -= (2.0 * f * f1) / (2.0 * f1 * f1 - f * f2);
     }
     w
@@ -440,6 +442,30 @@ mod tests {
             assert!(
                 (back - z).abs() <= 1e-9 * z.max(1.0),
                 "W0 round trip at z={z}: w·e^w = {back}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_lambert_w0_large_finite_log_residual() {
+        for &z in &[1e18, 1e50, 1e150, 1e250, 1e300] {
+            let w = lambert_w0(z);
+            assert!(w.is_finite() && w > 0.0, "non-finite W0({z}) = {w}");
+            let residual = w.ln() + w - z.ln();
+            assert!(residual.abs() < 2e-11, "W0 log residual at {z}: {residual}");
+        }
+        // Independent principal-branch reference from scipy.special.lambertw.
+        assert_close(lambert_w0(1e250), 569.3018624411017, "W0(1e250)");
+    }
+
+    #[test]
+    fn test_lambert_w0_small_positive_round_trip() {
+        for &z in &[1e-12, 1e-8, 1e-4] {
+            let w = lambert_w0(z);
+            let relative_error = (w * w.exp() - z).abs() / z;
+            assert!(
+                relative_error < 1e-12,
+                "W0 relative error at {z}: {relative_error}"
             );
         }
     }
