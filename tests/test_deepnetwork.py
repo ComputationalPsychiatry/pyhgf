@@ -9,7 +9,7 @@ import optax
 import pytest
 
 from pyhgf.model import DeepNetwork, LayerConfig
-from pyhgf.typing.vectorised import LayerParams, LayerState
+from pyhgf.typing.vectorised import LayerParams, LayerStack, LayerState
 from pyhgf.updates.vectorised.volatile.posterior import (
     vectorised_posterior_update_precision_value_level,
 )
@@ -364,6 +364,121 @@ def test_fully_connected_false():
     # Weight matrix should be identity-like
     w = np.asarray(dn.state.weights[0])
     assert np.allclose(w, np.eye(3)), f"Expected identity weight matrix, got {w}"
+
+
+def _one_to_one_network():
+    """Build a 3 → 3 (one-to-one) → 3 network whose middle weights are diagonal."""
+    return (
+        DeepNetwork()
+        .add_layer(size=3)
+        .add_layer(size=3, add_constant_input=False, fully_connected=False)
+        .add_layer(size=3, add_constant_input=False)
+    )
+
+
+def _assert_diagonal(matrix, label):
+    """Assert that every off-diagonal entry is exactly zero."""
+    matrix = np.asarray(matrix)
+    off_diagonal = matrix[~np.eye(*matrix.shape, dtype=bool)]
+    assert np.all(off_diagonal == 0.0), f"{label}: off-diagonal entries {matrix}"
+
+
+@pytest.mark.parametrize(
+    "optimiser",
+    [
+        optax.sgd(0.05),
+        optax.adam(1e-2),
+        # Gradient-independent transforms: masking the gradient alone would
+        # still let these move the off-diagonal weights.
+        optax.chain(optax.add_noise(0.1, 0.55, 0), optax.sgd(0.05)),
+        optax.adamw(1e-2, weight_decay=0.1),
+    ],
+    ids=["sgd", "adam", "add_noise", "adamw"],
+)
+@pytest.mark.parametrize("method", ["fit", "batch_update"])
+def test_one_to_one_stays_diagonal_under_optimisers(optimiser, method):
+    """Weight learning moves only the diagonal of a one-to-one layer."""
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(20, 3))
+    y = rng.normal(size=(20, 3))
+
+    dn = _one_to_one_network()
+    if method == "fit":
+        dn.fit(x=x, y=y, optimiser=optimiser, check_gradient_health=False)
+    else:
+        for _ in range(3):
+            dn.batch_update(x=x, y=y, optimiser=optimiser)
+
+    w = np.asarray(dn.state.layers[1].weights_mean)
+    _assert_diagonal(w, f"{method} weights_mean")
+    assert not np.allclose(np.diag(w), 1.0), "the diagonal weights did not learn"
+
+
+@pytest.mark.parametrize("method", ["fit", "batch_update"])
+def test_one_to_one_stays_diagonal_under_synaptic_uncertainty(method):
+    """The weight-belief rule moves only the diagonal beliefs of a one-to-one layer.
+
+    A nonzero prior mean makes the reversion pull every weight away from zero, so the
+    off-diagonal weights move unless the update itself is masked.
+    """
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(20, 3))
+    y = rng.normal(size=(20, 3))
+    learning_kwargs = {"window": 50, "learning_rate": 0.01, "prior_mean": 0.5}
+
+    dn = _one_to_one_network()
+    if method == "fit":
+        dn.fit(
+            x=x,
+            y=y,
+            learning_kind="synaptic_uncertainty",
+            learning_kwargs=learning_kwargs,
+            check_gradient_health=False,
+        )
+    else:
+        for _ in range(3):
+            dn.batch_update(
+                x=x,
+                y=y,
+                learning_kind="synaptic_uncertainty",
+                learning_kwargs=learning_kwargs,
+            )
+
+    layer = dn.state.layers[1]
+    _assert_diagonal(layer.weights_mean, f"{method} weights_mean")
+    _assert_diagonal(layer.weights_precision_delta, f"{method} precision_delta")
+    assert np.any(np.diag(np.asarray(layer.weights_precision_delta)) != 0.0)
+
+
+def test_one_to_one_stack_stays_diagonal():
+    """Every slice of a one-to-one ``LayerStack`` keeps diagonal weights."""
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(10, 3))
+    y = rng.normal(size=(10, 3))
+    dn = (
+        DeepNetwork()
+        .add_layer(size=3)
+        .add_layer_stack(
+            layer_sizes=[3] * 5, add_constant_input=False, fully_connected=False
+        )
+        .add_layer(size=3, add_constant_input=False)
+    )
+    dn.fit(x=x, y=y, optimiser=optax.adam(1e-2), check_gradient_health=False)
+
+    stack = dn.state.layers[1]
+    assert isinstance(stack, LayerStack)
+    for k, w in enumerate(np.asarray(stack.weights_mean)):
+        _assert_diagonal(w, f"slice {k}")
+        assert not np.allclose(np.diag(w), 1.0), f"slice {k} did not learn"
+
+
+def test_weight_initialisation_keeps_one_to_one_identity():
+    """A strategy redraws the dense layers and leaves a one-to-one layer alone."""
+    dn = _one_to_one_network().weight_initialisation("xavier", key=jax.random.key(0))
+    np.testing.assert_array_equal(
+        np.asarray(dn.state.layers[1].weights_mean), np.eye(3)
+    )
+    assert not np.allclose(np.asarray(dn.state.layers[2].weights_mean), 1.0)
 
 
 def test_mean_field_differs_from_relaxed():

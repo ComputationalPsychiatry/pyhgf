@@ -437,6 +437,55 @@ def test_fit_trajectory_parity(optimiser, make_optax):
         np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
 
 
+@pytest.mark.parametrize("method", ["fit", "batch_update"])
+@pytest.mark.parametrize("optimiser", ["sgd", "adam"])
+def test_one_to_one_learning_parity(optimiser, method):
+    """A one-to-one layer learns its diagonal only, and both backends agree."""
+    rng = np.random.default_rng(15)
+    rs = RsDeepNetwork(volatility_updates="eHGF")
+    jx = JaxDeepNetwork(volatility_updates="eHGF")
+    for net in (rs, jx):
+        net.add_layer(2)
+        net.add_layer(3)
+        net.add_layer(3, add_constant_input=False, fully_connected=False)
+        net.add_layer(3)
+    weights = _random_weights(rs, rng)
+    weights[1] = np.diag(rng.normal(loc=1.0, scale=0.3, size=3))
+    rs.set_weights(weights)
+    _inject_jax_weights(jx, weights)
+
+    lr = {"sgd": 0.05, "adam": 1e-2}[optimiser]
+    optax_opt = {"sgd": optax.sgd, "adam": optax.adam}[optimiser](lr)
+    for _ in range(3):
+        x = rng.normal(size=(8, 3))
+        y = rng.normal(size=(8, 2))
+        if method == "fit":
+            rs.fit(x, y, optimiser=optimiser, learning_rate=lr)
+            jx.fit(x, y, optax_opt, check_gradient_health=False)
+        else:
+            rs.batch_update(x, y, optimiser=optimiser, learning_rate=lr)
+            jx.batch_update(x, y, optimiser=optax_opt)
+
+    jx_weights = [np.asarray(layer.weights_mean) for layer in jx.state.layers[1:]]
+    for w_rs, w_jx in zip(rs.get_weights(), jx_weights):
+        np.testing.assert_allclose(w_rs, w_jx, **TRAJECTORY)
+    one_to_one = rs.get_weights()[1]
+    assert np.all(one_to_one[~np.eye(3, dtype=bool)] == 0.0)
+    assert not np.allclose(np.diag(one_to_one), np.diag(weights[1]))
+
+
+def test_weight_initialisation_keeps_one_to_one_identity():
+    """A strategy redraws the dense layers and leaves a one-to-one layer alone."""
+    net = RsDeepNetwork()
+    net.add_layer(3)
+    net.add_layer(3, add_constant_input=False, fully_connected=False)
+    net.add_layer(2)
+    net.weight_initialisation("xavier", seed=0)
+    one_to_one, dense = net.get_weights()
+    np.testing.assert_array_equal(one_to_one, np.eye(3))
+    assert not np.allclose(dense, 1.0)
+
+
 def test_fit_parity_standard_learning_kind():
     """Match the JAX training run under the standard gradient mode."""
     rng = np.random.default_rng(14)

@@ -73,7 +73,8 @@ impl Optimiser {
     /// per-layer descent-gradient factors (`grads[i]` is `None` where the layer
     /// has no weights; otherwise `(u, v)` with `u[i]·v[j]` the gradient
     /// element). Updates `state` and the weight matrices in place — the
-    /// gradient is consumed factor-wise, never materialised as a matrix.
+    /// gradient is consumed factor-wise, never materialised as a matrix. A
+    /// one-to-one layer steps its diagonal only (see [`Self::step_diagonal`]).
     pub fn apply(
         &self,
         state: &mut OptState,
@@ -94,6 +95,11 @@ impl Optimiser {
                 .weights_in
                 .as_mut()
                 .expect("gradient present but layer has no weights");
+
+            if !layer.fully_connected {
+                self.step_diagonal(state.t, state.moments[i].as_mut(), weights, |k| u[k] * v[k]);
+                continue;
+            }
 
             match *self {
                 Optimiser::Sgd { lr } => {
@@ -137,6 +143,7 @@ impl Optimiser {
     /// has no weights). The dense twin of [`Self::apply`], for gradients that
     /// are not rank-one; [`crate::vectorised::network::DeepNet::batch_update`]
     /// uses it with the batch-mean gradient, which is a sum of outer products.
+    /// A one-to-one layer steps its diagonal only (see [`Self::step_diagonal`]).
     pub fn apply_dense(
         &self,
         state: &mut OptState,
@@ -157,6 +164,13 @@ impl Optimiser {
                 .as_mut()
                 .expect("gradient present but layer has no weights");
 
+            if !layer.fully_connected {
+                self.step_diagonal(state.t, state.moments[i].as_mut(), weights, |k| {
+                    grad[[k, k]]
+                });
+                continue;
+            }
+
             match *self {
                 Optimiser::Sgd { lr } => {
                     ndarray::Zip::from(&mut *weights)
@@ -176,6 +190,46 @@ impl Optimiser {
                         .for_each(|w, m_, v_, &g| {
                             *w -= adam_step_flt(m_, v_, g, b1, b2, bc1, bc2, lr, eps);
                         });
+                }
+            }
+        }
+    }
+
+    /// One step on a one-to-one layer (`fully_connected = false`), whose only
+    /// edges are the diagonal of `weights`. `grad(k)` is the descent gradient of
+    /// the weight at `(k, k)`. The other weights and their Adam moments are left
+    /// unchanged, which matches the masked gradient and update of the JAX
+    /// backend.
+    fn step_diagonal(
+        &self,
+        t: i32,
+        moments: Option<&mut (Matrix, Matrix)>,
+        weights: &mut Matrix,
+        grad: impl Fn(usize) -> Float,
+    ) {
+        let n = weights.nrows().min(weights.ncols());
+        match *self {
+            Optimiser::Sgd { lr } => {
+                for k in 0..n {
+                    weights[[k, k]] -= lr * grad(k);
+                }
+            }
+            Optimiser::Adam { lr, b1, b2, eps } => {
+                let (m, mv) = moments.expect("Adam moments missing for a weighted layer");
+                let bc1 = 1.0 - b1.powi(t);
+                let bc2 = 1.0 - b2.powi(t);
+                for k in 0..n {
+                    weights[[k, k]] -= adam_step_flt(
+                        &mut m[[k, k]],
+                        &mut mv[[k, k]],
+                        grad(k),
+                        b1,
+                        b2,
+                        bc1,
+                        bc2,
+                        lr,
+                        eps,
+                    );
                 }
             }
         }
@@ -224,6 +278,74 @@ mod tests {
         let wb = net_b.layers[1].weights_in.as_ref().unwrap();
         for (a, b) in wa.iter().zip(wb.iter()) {
             assert!((a - b).abs() < 1e-12);
+        }
+    }
+
+    /// On a one-to-one layer, both `apply` and `apply_dense` move the diagonal
+    /// weights by the same step as on a dense layer and leave every other
+    /// weight at zero.
+    #[test]
+    fn test_one_to_one_layer_steps_diagonal_only() {
+        let configs = |fully_connected| {
+            vec![
+                LayerConfig::new(3),
+                LayerConfig {
+                    add_constant_input: false,
+                    fully_connected,
+                    ..LayerConfig::new(3)
+                },
+            ]
+        };
+        let u = Vector::from_vec(vec![0.5, -1.5, 2.0]);
+        let v = Vector::from_vec(vec![2.0, 1.0, -0.5]);
+        let dense_grad = {
+            let mut g = Matrix::zeros((3, 3));
+            for i in 0..3 {
+                for j in 0..3 {
+                    g[[i, j]] = u[i] * v[j];
+                }
+            }
+            g
+        };
+        for opt in [Optimiser::sgd(0.1), Optimiser::adam(0.01)] {
+            let mut dense = DeepNet::from_configs(&configs(true)).unwrap();
+            dense.layers[1].weights_in = Some(crate::vectorised::mat::eye(3));
+            let mut factored = DeepNet::from_configs(&configs(false)).unwrap();
+            let mut materialised = DeepNet::from_configs(&configs(false)).unwrap();
+            let mut state_dense = OptState::init(&dense);
+            let mut state_factored = OptState::init(&factored);
+            let mut state_materialised = OptState::init(&materialised);
+            for _ in 0..3 {
+                opt.apply(
+                    &mut state_dense,
+                    &mut dense.layers,
+                    &[None, Some((u.clone(), v.clone()))],
+                );
+                opt.apply(
+                    &mut state_factored,
+                    &mut factored.layers,
+                    &[None, Some((u.clone(), v.clone()))],
+                );
+                opt.apply_dense(
+                    &mut state_materialised,
+                    &mut materialised.layers,
+                    &[None, Some(dense_grad.clone())],
+                );
+            }
+            let wd = dense.layers[1].weights_in.as_ref().unwrap();
+            for net in [&factored, &materialised] {
+                let w = net.layers[1].weights_in.as_ref().unwrap();
+                for i in 0..3 {
+                    for j in 0..3 {
+                        if i == j {
+                            assert!((w[[i, i]] - wd[[i, i]]).abs() < 1e-6);
+                            assert_ne!(w[[i, i]], 1.0);
+                        } else {
+                            assert_eq!(w[[i, j]], 0.0);
+                        }
+                    }
+                }
+            }
         }
     }
 

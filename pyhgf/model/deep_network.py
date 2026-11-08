@@ -559,7 +559,8 @@ class DeepNetwork:
             If `True` (default), each node in this layer connects to every node in the
             child layer (dense weight matrix).  If False, nodes connect one-to-one with
             the child layer (diagonal weight matrix). This requires both layers to have
-            the same size and ``add_constant_input=False``.
+            the same size and ``add_constant_input=False``. Weight learning and
+            :meth:`weight_initialisation` leave the off-diagonal weights at zero.
         coupling_fn :
             Coupling function for this layer. If None, uses the network-level coupling
             function.
@@ -1258,6 +1259,9 @@ class DeepNetwork:
     ) -> "DeepNetwork":
         """Initialise inter-layer weight matrices.
 
+        One-to-one layers (``fully_connected=False``) keep their identity weights:
+        every strategy draws a dense matrix whose scale depends on the dense fan-in.
+
         Parameters
         ----------
         strategy :
@@ -1328,7 +1332,8 @@ class DeepNetwork:
         for i, elem in enumerate(new_elements):
             first_layer = layer_index
             layer_index += elem.n_layers if isinstance(elem, LayerStack) else 1
-            if elem.weights_mean is None:
+            # A one-to-one element keeps its identity weights (see the docstring).
+            if elem.weights_mean is None or not elem.fully_connected:
                 continue
             if isinstance(elem, LayerStack):
                 # weights_mean has shape (n_slices, n_children, n_parents[+1]).

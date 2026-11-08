@@ -717,9 +717,10 @@ impl DeepNetwork {
     /// `"he"`, `"orthogonal"`, or `"sparse"`. Chainable. Each matrix draws
     /// from its own stream, derived from `seed` and the layer index, and the
     /// bias column is left out of the fan-in and set to zero, as in the JAX
-    /// `DeepNetwork.weight_initialisation`. Like the JAX builder, a later
-    /// `add_layer` rebuilds the network and resets weights to 1.0, so
-    /// initialise after the last layer is added.
+    /// `DeepNetwork.weight_initialisation`. One-to-one layers
+    /// (`fully_connected=False`) keep their identity weights. Like the JAX
+    /// builder, a later `add_layer` rebuilds the network and resets weights to
+    /// 1.0, so initialise after the last layer is added.
     #[pyo3(signature = (strategy, seed=None))]
     fn weight_initialisation<'py>(
         mut slf: PyRefMut<'py, Self>,
