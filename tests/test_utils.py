@@ -491,18 +491,18 @@ def test_belief_propagation():
         input_idxs=(0, 1),
         observations="generative",
     )
-    continuous_key, binary_key = jax.random.split(rng_key, 2)
+    # Each input samples with the step key folded with its node index.
     assert jnp.isclose(
         new_attributes[0]["mean"],
-        jax.random.normal(continuous_key)
+        jax.random.normal(jax.random.fold_in(rng_key, 0))
         / jnp.sqrt(new_attributes[0]["expected_precision"])
         + new_attributes[0]["expected_mean"],
     )
     assert jnp.isclose(
         new_attributes[1]["mean"],
-        jax.random.bernoulli(binary_key, p=new_attributes[1]["expected_mean"]).astype(
-            jnp.float32
-        ),
+        jax.random.bernoulli(
+            jax.random.fold_in(rng_key, 1), p=new_attributes[1]["expected_mean"]
+        ).astype(jnp.float32),
     )
 
     # 3 - Deprived ---------------------------------------------------------------------
@@ -607,14 +607,17 @@ def test_sample_draws_each_input_independently(kind, key_factory):
 
 
 @pytest.mark.parametrize("key_factory", [jax.random.key, PRNGKey])
-def test_sample_single_input_stream(key_factory):
-    """A single input draws one normal per time step from the split prediction key."""
-    net = Network().add_nodes()
+def test_sample_key_derivation(key_factory):
+    """An input draws from the time step key folded with its node index."""
+    net = Network().add_nodes(n_nodes=2)
     key = key_factory(7)
     net.sample(n_predictions=1, time_steps=np.ones(32), rng_key=key)
     time_keys = jax.random.split(jax.random.split(key, 1)[0], 32)
-    expected = jax.vmap(jax.random.normal)(time_keys)
-    np.testing.assert_allclose(net.samples[0]["mean"][0], expected)
+    for node_idx in (0, 1):
+        expected = jax.vmap(
+            lambda k, i=node_idx: jax.random.normal(jax.random.fold_in(k, i))
+        )(time_keys)
+        np.testing.assert_allclose(net.samples[node_idx]["mean"][0], expected)
 
 
 def test_sample_follows_a_new_input_selection():

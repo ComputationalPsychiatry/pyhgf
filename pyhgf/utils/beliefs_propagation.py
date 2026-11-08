@@ -107,20 +107,14 @@ def beliefs_propagation(
     # 2. Receive new observations ------------------------------------------------------
     # ----------------------------------------------------------------------------------
     if observations == "generative":
-        # Keep the single-input stream stable while giving multiple inputs
-        # independent observation noise at each time step.
-        node_keys = (
-            random.split(rng_key, len(input_idxs))
-            if len(input_idxs) > 1
-            else (rng_key,)
-        )
-        for node_idx, node_key in zip(input_idxs, node_keys):
-            # Sample the node distribution
+        for node_idx in input_idxs:
+            # Each input draws from a key folded with its node index, so inputs
+            # receive independent observation noise.
             sampled_value = sample_node_distribution(
                 attributes=attributes,
                 edges=edges,
                 node_idx=node_idx,
-                rng_key=node_key,
+                rng_key=random.fold_in(rng_key, node_idx),
             )
             # Set the observation (using a constant observation flag, here set as 1)
             attributes = set_observation(

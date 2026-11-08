@@ -16,23 +16,17 @@ def _assert_same_trajectories(actual, expected):
 
 
 @pytest.mark.parametrize("relation", ["value", "volatility"])
-@pytest.mark.parametrize("cached_sequence", [False, True])
-def test_parent_first_construction_observes_only_the_leaf(relation, cached_sequence):
-    """Adding a child removes its parent from the inputs and from a cached schedule."""
-    parent_parameters = dict(
-        precision=1.0, tonic_volatility=-4.0, autoconnection_strength=1.0
+def test_parent_first_construction_matches_leaf_first(relation):
+    """With default parameters, both construction orders give the same filter."""
+    parent_first = (
+        Network(volatility_updates="standard")
+        .add_nodes()
+        .add_nodes(**{f"{relation}_parents": 0})
     )
-    child_parameters = dict(
-        precision=1.0, tonic_volatility=0.0, autoconnection_strength=0.0
-    )
-    parent_first = Network(volatility_updates="standard").add_nodes(**parent_parameters)
-    if cached_sequence:
-        parent_first.set_update_sequence()
-    parent_first.add_nodes(**{f"{relation}_parents": 0}, **child_parameters)
     leaf_first = (
         Network(volatility_updates="standard")
-        .add_nodes(**child_parameters)
-        .add_nodes(**{f"{relation}_children": 0}, **parent_parameters)
+        .add_nodes()
+        .add_nodes(**{f"{relation}_children": 0})
     )
     assert parent_first.inputs == [1]
     assert leaf_first.inputs == [0]
@@ -40,14 +34,28 @@ def test_parent_first_construction_observes_only_the_leaf(relation, cached_seque
     observations = np.array([0.2, 0.4, -0.1])
     parent_first.input_data(observations)
     leaf_first.input_data(observations)
+    # The parent carries the parent defaults, as in the JAX backend.
     np.testing.assert_array_equal(
-        parent_first.node_trajectories[1]["mean"], observations
+        parent_first.node_trajectories[0]["tonic_volatility"], -4.0
+    )
+    np.testing.assert_array_equal(
+        parent_first.node_trajectories[0]["autoconnection_strength"], 1.0
     )
     for actual_idx, expected_idx in [(0, 1), (1, 0)]:
-        actual = parent_first.node_trajectories[actual_idx]
-        expected = leaf_first.node_trajectories[expected_idx]
-        for field in ("mean", "expected_mean", "precision", "expected_precision"):
-            np.testing.assert_allclose(actual[field], expected[field], rtol=1e-12)
+        _assert_same_trajectories(
+            [parent_first.node_trajectories[actual_idx]],
+            [leaf_first.node_trajectories[expected_idx]],
+        )
+
+
+def test_adding_a_child_rebuilds_a_cached_update_sequence():
+    """A sequence built before the child was added is rebuilt for the new leaf."""
+    net = Network().add_nodes().set_update_sequence().add_nodes(value_parents=0)
+    observations = np.array([0.2, 0.4, -0.1])
+    net.input_data(observations)
+    assert net.inputs == [1]
+    np.testing.assert_array_equal(net.node_trajectories[1]["mean"], observations)
+    assert np.all(net.node_trajectories[0]["mean"] != 0.0)
 
 
 def test_adding_a_child_preserves_other_input_nodes():

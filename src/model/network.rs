@@ -366,10 +366,7 @@ impl Network {
         for _ in 0..n_nodes {
             let node_id = self.edges.len();
 
-            let has_children = value_children.is_some() || volatility_children.is_some();
-
-            let is_input = !has_children;
-            if is_input {
+            if value_children.is_none() && volatility_children.is_none() {
                 self.inputs.push(node_id);
             }
 
@@ -383,17 +380,16 @@ impl Network {
 
             match kind {
                 "continuous-state" => {
-                    let (autoconnection, tonic_vol) =
-                        if is_input { (0.0, 0.0) } else { (1.0, -4.0) };
-
+                    // Input nodes receive their own defaults when the update sequence
+                    // is built (see `set_update_sequence`).
                     let mut state = NodeState {
                         mean: 0.0,
                         expected_mean: 0.0,
                         precision: 1.0,
                         expected_precision: 1.0,
-                        tonic_volatility: tonic_vol,
+                        tonic_volatility: -4.0,
                         tonic_drift: 0.0,
-                        autoconnection_strength: autoconnection,
+                        autoconnection_strength: 1.0,
                         current_variance: 1.0,
                         ..Default::default()
                     };
@@ -651,7 +647,20 @@ impl Network {
         self.update_sequence.updates.clear();
     }
 
+    /// Build the update sequence of the current graph.
+    ///
+    /// As in the JAX backend, continuous input nodes are set to an autoconnection
+    /// strength and a tonic volatility of `0.0` here. A node that gains a child before
+    /// the sequence is first built keeps the parent defaults; one that was already an
+    /// input of a built sequence keeps the input values.
     pub fn set_update_sequence(&mut self) {
+        for &idx in &self.inputs {
+            if self.edges[idx].node_type == "continuous-state" {
+                let state = &mut self.attributes.states[idx];
+                state.autoconnection_strength = 0.0;
+                state.tonic_volatility = 0.0;
+            }
+        }
         self.update_sequence = set_update_sequence(self);
     }
 
@@ -974,5 +983,101 @@ mod tests {
         let input_data: Vec<Vec<f64>> = vec![vec![1.0], vec![1.3], vec![1.5], vec![1.7]];
         network.set_update_sequence();
         network.input_data(input_data, None, None, true);
+    }
+
+    /// A two-node network with default parameters, built parent first (the child
+    /// names its parent) or leaf first (the parent names its child).
+    fn two_nodes(parent_first: bool, volatility: bool) -> Network {
+        let mut network = Network::new("standard");
+        network.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        let edge = || Some(IntOrList::from(0));
+        let (value, vol) = if volatility {
+            (None, edge())
+        } else {
+            (edge(), None)
+        };
+        if parent_first {
+            network.add_nodes("continuous-state", 1, value, None, vol, None, None, None);
+        } else {
+            network.add_nodes("continuous-state", 1, None, value, None, vol, None, None);
+        }
+        network
+    }
+
+    #[test]
+    fn test_parent_first_construction_matches_leaf_first() {
+        for volatility in [false, true] {
+            let mut parent_first = two_nodes(true, volatility);
+            let mut leaf_first = two_nodes(false, volatility);
+            assert_eq!(parent_first.inputs, vec![1]);
+            assert_eq!(leaf_first.inputs, vec![0]);
+
+            let data = vec![vec![0.2], vec![0.4], vec![-0.1]];
+            parent_first.input_data(data.clone(), None, None, true);
+            leaf_first.input_data(data, None, None, true);
+
+            // The parent keeps the parent defaults; the input gets the input ones.
+            for (parent, leaf, network) in [(0, 1, &parent_first), (1, 0, &leaf_first)] {
+                let states = &network.attributes.states;
+                assert_eq!(states[parent].autoconnection_strength, 1.0);
+                assert_eq!(states[parent].tonic_volatility, -4.0);
+                assert_eq!(states[leaf].autoconnection_strength, 0.0);
+                assert_eq!(states[leaf].tonic_volatility, 0.0);
+            }
+            for (a, b) in [(0, 1), (1, 0)] {
+                for field in ["mean", "expected_mean", "precision", "expected_precision"] {
+                    assert_eq!(
+                        trajectory_field_ref(&parent_first.node_trajectories.nodes[a], field),
+                        trajectory_field_ref(&leaf_first.node_trajectories.nodes[b], field),
+                        "{field} of node {a} (volatility={volatility})"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_adding_a_child_rebuilds_a_cached_update_sequence() {
+        let mut network = Network::new("standard");
+        network.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+        network.set_update_sequence();
+        network.add_nodes(
+            "continuous-state",
+            1,
+            Some(IntOrList::from(0)),
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let data = vec![vec![0.2], vec![0.4], vec![-0.1]];
+        network.input_data(data, None, None, true);
+        // The new leaf receives the observations and its parent is updated.
+        assert_eq!(
+            network.node_trajectories.nodes[1].mean,
+            vec![0.2, 0.4, -0.1]
+        );
+        assert!(network.node_trajectories.nodes[0]
+            .mean
+            .iter()
+            .all(|&m| m != 0.0));
+    }
+
+    #[test]
+    fn test_adding_a_child_removes_only_its_parent_from_the_inputs() {
+        let mut network = Network::new("eHGF");
+        network.add_nodes("continuous-state", 2, None, None, None, None, None, None);
+        network.add_nodes(
+            "continuous-state",
+            1,
+            Some(IntOrList::from(0)),
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(network.inputs, vec![1, 2]);
     }
 }
