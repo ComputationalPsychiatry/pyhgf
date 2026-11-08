@@ -4,7 +4,7 @@
 //! hosts the per-update-type volatility posteriors and the combined driver).
 
 use super::MIN_VOLATILITY;
-use crate::math::{lambert_w0, logaddexp, sigmoid};
+use crate::math::{lambert_w0_log, logaddexp, sigmoid};
 use crate::vectorised::layer::{LayerParams, LayerState, VolatilityUpdate};
 use crate::vectorised::mat::Float;
 use ndarray::Array1;
@@ -320,8 +320,7 @@ pub(crate) fn unbounded_vol_node(
     // Expansion 2: quadratic at the Lambert-W approximate mode.
     let pihat_y = ep;
     let log_w_arg = be_aux.ln() - (2.0 * pihat_y).ln() + 0.5 / pihat_y - gamma_c;
-    let w_arg = log_w_arg.min(log_float_max).exp();
-    let v_w = lambert_w0(w_arg);
+    let v_w = lambert_w0_log(log_w_arg.min(log_float_max));
     let y_star = gamma_c + v_w - 0.5 / pihat_y;
     let x_star = y_star - log_time_step - tonic;
 

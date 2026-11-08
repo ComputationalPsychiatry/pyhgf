@@ -452,13 +452,28 @@ def smoothed_rectangular(
     )
 
 
+def _lambert_w0_halley(log_z: ArrayLike) -> Array:
+    r"""Six Halley iterations for :math:`W_0(z)`, given :math:`\log z`.
+
+    The iterations solve :math:`F(w) = w e^{w} - z = 0` from :math:`w = \log(1 + z)`.
+    :math:`F`, :math:`F'` and :math:`F''` are scaled by :math:`e^{-w}`, a common factor
+    that cancels from Halley's ratio, so only :math:`z e^{-w} = e^{\log z - w}` is
+    formed and large arguments do not overflow.
+    """
+    w = jnp.logaddexp(0.0, log_z)
+    for _ in range(6):
+        f = w - jnp.exp(log_z - w)
+        w = w - 2.0 * f * (w + 1.0) / (2.0 * (w + 1.0) ** 2 - f * (w + 2.0))
+    return w
+
+
 @custom_jvp
 def lambert_w0(z: ArrayLike) -> Array:
     r"""Principal branch of the Lambert W function for z >= 0.
 
-    Solves ``w * exp(w) = z`` via 6 scaled Halley iterations. Dividing out
-    their common exponential factor keeps the intermediate products finite
-    for large finite positive arguments.
+    Solves ``w * exp(w) = z`` via 6 Halley iterations, scaled so that the
+    intermediate products stay finite for large finite arguments (see
+    :func:`lambert_w0_log`, which takes :math:`\log z` instead).
 
     A custom JVP is attached so that reverse-mode autodiff does not backprop
     through the Halley iterations. The implicit relation ``w * exp(w) = z``
@@ -484,16 +499,7 @@ def lambert_w0(z: ArrayLike) -> Array:
         The principal branch :math:`W_0(z)` solving ``w * exp(w) = z``.
 
     """
-    w = jnp.log1p(z)
-    log_z = jnp.log(z)
-    for _ in range(6):
-        # Scale F, F' and F'' by exp(-w): their common factor cancels
-        # from Halley's ratio, avoiding squared exponentials at large z.
-        f = w - jnp.exp(log_z - w)
-        f1 = w + 1.0
-        f2 = w + 2.0
-        w = w - (2.0 * f * f1) / (2.0 * f1**2 - f * f2)
-    return w
+    return _lambert_w0_halley(jnp.log(z))
 
 
 @lambert_w0.defjvp
@@ -504,3 +510,36 @@ def _lambert_w0_jvp(primals, tangents):
     # ∂W/∂z = 1 / (exp(w) * (1 + w)); safe at z = 0 (w = 0 → 1).
     tangent_out = z_dot / (jnp.exp(w) * (1.0 + w))
     return w, tangent_out
+
+
+@custom_jvp
+def lambert_w0_log(log_z: ArrayLike) -> Array:
+    r"""Principal branch of the Lambert W function of :math:`z = e^{\log z}`.
+
+    Evaluates :math:`W_0(z)` from :math:`\log z` without forming :math:`z`, with the
+    Halley iterations of :func:`lambert_w0`. The implicit relation
+    :math:`\log W + W = \log z` gives the custom JVP
+
+    .. math::
+
+        \frac{\partial W}{\partial \log z} = \frac{W}{1 + W}.
+
+    Parameters
+    ----------
+    log_z :
+        The logarithm of the argument(s); ``-inf`` gives :math:`W_0(0) = 0`.
+
+    Returns
+    -------
+    w :
+        The principal branch :math:`W_0(e^{\log z})`.
+
+    """
+    return _lambert_w0_halley(log_z)
+
+
+@lambert_w0_log.defjvp
+def _lambert_w0_log_jvp(primals, tangents):
+    (log_z,), (log_z_dot,) = primals, tangents
+    w = lambert_w0_log(log_z)
+    return w, log_z_dot * w / (1.0 + w)

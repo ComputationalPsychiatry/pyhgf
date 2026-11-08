@@ -585,6 +585,7 @@ Math functions and probability densities.
     parametrised_sigmoid
     smoothed_rectangular
     lambert_w0
+    lambert_w0_log
 
 Typing
 ******

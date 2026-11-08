@@ -140,8 +140,9 @@ class Network:
         }
         self.update_sequence: Optional[UpdateSequence] = None
         self.scan_fn: Optional[Callable] = None
-        self.scan_fn_sample: Optional[Callable] = None
+        self.sample_scan_fn: Optional[Callable] = None
         self.additional_parameters: dict = {}
+        self._input_idxs: Optional[tuple[int, ...]] = None
         self.input_dim: list = []
         self.action_steps: Optional[Sequence] = None
         self.last_attributes: Optional[Attributes] = None
@@ -156,7 +157,7 @@ class Network:
         input_idxs = get_input_idxs(self.edges)
 
         # check if the input indexes have been set manually
-        if hasattr(self, "_input_idxs") and self._input_idxs is not None:
+        if self._input_idxs is not None:
             return self._input_idxs
 
         # set the autoconnection strength and tonic volatility to 0
@@ -173,19 +174,15 @@ class Network:
 
     @input_idxs.setter
     def input_idxs(self, value):
-        previous = getattr(self, "_input_idxs", None)
-        previous = get_input_idxs(self.edges) if previous is None else previous
-        self._input_idxs = None if value is None else tuple(value)
-        current = (
-            get_input_idxs(self.edges) if self._input_idxs is None else self._input_idxs
-        )
-        if tuple(previous) != tuple(current):
-            # Only the observation routing changed. Keep the initial parameters,
-            # final carry and update sequence for replay and append semantics.
+        value = None if value is None else tuple(map(int, value))
+        if value != self._input_idxs:
+            # The input dimensions and both propagation functions are bound to the
+            # selected nodes, so they are rebuilt on next use. Parameters, the final
+            # beliefs and the update sequence are kept.
+            self._input_idxs = value
             self.input_dim = []
             self.scan_fn = None
-            if getattr(self, "sample_scan_fn", None) is not None:
-                self.create_belief_propagation_fn(sampling_fn=True)
+            self.sample_scan_fn = None
 
     def create_belief_propagation_fn(
         self,
@@ -202,10 +199,10 @@ class Network:
         overwrite :
             If `True` (default), create a new belief propagation function and ignore
             preexisting values. Otherwise, do not create a new function if the attribute
-            `scan_fn` is already defined.
+            `scan_fn` (or `sample_scan_fn`) is already defined.
         sampling_fn :
-            If `True`, also create a generative sampling function. This is used for
-            generative sampling of the network. Defaults to `False`.
+            If `True`, also create the generative sampling function `sample_scan_fn`
+            used by :py:meth:`sample`. Defaults to `False`.
         """
         # get the dimension of the input nodes
         if not self.input_dim:
@@ -229,8 +226,8 @@ class Network:
                 input_idxs=self.input_idxs,
             )
 
-        # Create the generative scan function if it doesn't exist, and if requested.
-        if (self.scan_fn_sample is None) and sampling_fn:
+        # Create the generative scan function if requested.
+        if sampling_fn and ((self.sample_scan_fn is None) or overwrite):
             self.sample_scan_fn = Partial(
                 beliefs_propagation,
                 update_sequence=self.update_sequence,
@@ -377,6 +374,8 @@ class Network:
         rng_key :
             Random number generator key, by default PRNGKey(0).
         """
+        if self.sample_scan_fn is None:
+            self.create_belief_propagation_fn(overwrite=False, sampling_fn=True)
         self.samples = sample(
             self, time_steps=time_steps, n_predictions=n_predictions, rng_key=rng_key
         )

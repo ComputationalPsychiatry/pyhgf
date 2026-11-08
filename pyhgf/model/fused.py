@@ -48,6 +48,13 @@ from pyhgf.utils.vectorised_belief_propagation import (
 __all__ = ["FusedPipeline", "step_report"]
 
 
+def _own_arrays(tree: Any) -> Any:
+    """Return *tree* with every array leaf copied into a buffer of its own."""
+    return jax.tree_util.tree_map(
+        lambda leaf: jnp.array(leaf) if eqx.is_array(leaf) else leaf, tree
+    )
+
+
 class _Core(NamedTuple):
     """A part tree's training step as pure functions with explicit state.
 
@@ -485,9 +492,7 @@ class FusedPipeline:
         # from under the parts (and anything else built on the same
         # arrays). One copy at construction makes every donated buffer
         # pipeline-owned.
-        _arrays, _static = eqx.partition(self._core_fns.init_state, eqx.is_array)
-        _arrays = jax.tree_util.tree_map(jnp.array, _arrays)
-        self.state = eqx.combine(_arrays, _static)
+        self.state = _own_arrays(self._core_fns.init_state)
         self._last_report: Optional[tuple] = None
 
         def step(state, x, target):
@@ -553,12 +558,10 @@ class FusedPipeline:
     def merge(self):
         """Copy the held state onto the wrapped parts; return the tree.
 
-        The parts retain their own buffers, so they can be used independently
-        while later pipeline steps donate and advance the carried state.
+        The parts retain their own buffers, so they can be used independently while
+        later pipeline steps donate and advance the carried state.
         """
-        arrays, static = eqx.partition(self.state, eqx.is_array)
-        arrays = jax.tree_util.tree_map(jnp.array, arrays)
-        self._core_fns.write_back(eqx.combine(arrays, static))
+        self._core_fns.write_back(_own_arrays(self.state))
         return self._part
 
 

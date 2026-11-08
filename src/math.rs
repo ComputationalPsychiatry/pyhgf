@@ -3,22 +3,23 @@ pub fn sufficient_statistics(x: f64) -> Vec<f64> {
     vec![x, x * x]
 }
 
-/// Principal branch of the Lambert W function for `z >= 0`.
-///
-/// Solves `w * exp(w) = z` via 6 scaled Halley iterations, with the same
-/// `ln_1p(z)` initial guess as `pyhgf.math.lambert_w0`. The common exponential
-/// factor is divided out before forming Halley's products, keeping large
-/// finite positive arguments stable. Used by the `unbounded` volatility updates.
+/// Principal branch of the Lambert W function for `z >= 0`; see [`lambert_w0_log`].
 pub fn lambert_w0(z: f64) -> f64 {
-    let mut w = z.ln_1p();
-    let log_z = z.ln();
+    lambert_w0_log(z.ln())
+}
+
+/// Principal branch of the Lambert W function of `z = exp(log_z)`, evaluated from
+/// `log_z` without forming `z`. Used by the `unbounded` volatility updates.
+///
+/// Solves `w * exp(w) = z` via 6 Halley iterations from `w = ln(1 + z)`, the same
+/// scheme as `pyhgf.math.lambert_w0_log`, so the two backends agree to machine
+/// precision. `F`, `F'` and `F''` are scaled by `exp(-w)`, a common factor that
+/// cancels from Halley's ratio, so only `z * exp(-w)` is formed.
+pub fn lambert_w0_log(log_z: f64) -> f64 {
+    let mut w = logaddexp(0.0, log_z);
     for _ in 0..6 {
-        // Scale F, F' and F'' by exp(-w); the common factor cancels
-        // from Halley's ratio before any squared exponential is formed.
         let f = w - (log_z - w).exp();
-        let f1 = w + 1.0;
-        let f2 = w + 2.0;
-        w -= (2.0 * f * f1) / (2.0 * f1 * f1 - f * f2);
+        w -= 2.0 * f * (w + 1.0) / (2.0 * (w + 1.0) * (w + 1.0) - f * (w + 2.0));
     }
     w
 }

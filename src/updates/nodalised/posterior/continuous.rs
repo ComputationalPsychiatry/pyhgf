@@ -1,4 +1,4 @@
-use crate::math::{lambert_w0, logaddexp};
+use crate::math::{lambert_w0_log, logaddexp};
 use crate::model::network::Network;
 
 // =============================================================================
@@ -441,8 +441,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
         let pihat_y = prior_precision / child.coupling.powi(2);
         let gamma_c = log_time_step + child.coupling * prior_mean + child.tonic_volatility;
         let log_w_arg = child.be_aux.ln() - (2.0 * pihat_y).ln() + 0.5 / pihat_y - gamma_c;
-        let w_arg = log_w_arg.min(f64::MAX.ln()).exp();
-        let y_star = gamma_c + lambert_w0(w_arg) - 0.5 / pihat_y;
+        let y_star = gamma_c + lambert_w0_log(log_w_arg.min(f64::MAX.ln())) - 0.5 / pihat_y;
         let x_star = (y_star - log_time_step - child.tonic_volatility) / child.coupling;
 
         // Curvature and gradient of the full variational energy at x_star, which

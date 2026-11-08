@@ -823,3 +823,28 @@ def test_tonic_volatility_changes_the_rust_filter():
     default = run(True)
     np.testing.assert_array_equal(base, zero)
     assert not np.array_equal(base, default)
+
+
+@pytest.mark.parametrize("learning_kind", ["precision_weighted", "standard"])
+@pytest.mark.parametrize(
+    ("coupling", "n_layers"), [("tanh", 5), ("linear", 5), ("tanh", 3)]
+)
+def test_single_sample_batch_update_matches_fit(learning_kind, coupling, n_layers):
+    """A one-sample batch is one fit step, including curved interior children."""
+
+    def build():
+        net = RsDeepNetwork(volatility_updates="eHGF", coupling_fn=coupling)
+        for _ in range(n_layers):
+            net.add_layer(1, volatility_parent=False)
+        net.set_weights([np.full_like(np.asarray(w), 0.3) for w in net.get_weights()])
+        return net
+
+    x, y = np.array([[-1.0]]), np.array([[10.0]])
+    learning = dict(optimiser="sgd", learning_rate=0.1, learning_kind=learning_kind)
+    scalar, batch = build(), build()
+    scalar.fit(x, y, **learning)
+    batch.batch_update(x, y, **learning)
+    for w_scalar, w_batch in zip(
+        scalar.get_weights(), batch.get_weights(), strict=True
+    ):
+        np.testing.assert_allclose(w_scalar, w_batch, **PARITY)

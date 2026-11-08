@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from jax import Array, jit
 from jax.nn import sigmoid, softmax
 
-from pyhgf.math import lambert_w0
+from pyhgf.math import lambert_w0_log
 from pyhgf.typing import Edges
 
 from .posterior_update_mean_continuous_node import (
@@ -284,8 +284,11 @@ def posterior_update_unbounded(
             jnp.log(be_auxs[i]) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
         )
         log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
-        W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
-        y_star = gamma_c + lambert_w0(W_arg) - 0.5 / pihat_y
+        y_star = (
+            gamma_c
+            + lambert_w0_log(jnp.minimum(log_W_arg, log_float_max))
+            - 0.5 / pihat_y
+        )
         x_star = (y_star - log_time_step - tonic_volatilities[i]) / coupling
 
         # curvature and gradient of the full variational energy at x_star

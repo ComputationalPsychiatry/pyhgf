@@ -580,3 +580,49 @@ def test_sample():
 
     # Iterate over each key-value pair in the predictions dictionary.
     assert samples[0]["expected_mean"].shape[0] == n_predictions
+
+
+@pytest.mark.parametrize("kind", ["continuous-state", "binary-state"])
+@pytest.mark.parametrize("key_factory", [jax.random.key, PRNGKey])
+def test_sample_draws_each_input_independently(kind, key_factory):
+    """Inputs sharing a predictive distribution receive separate, replayable draws."""
+    net = Network().add_nodes(kind=kind, n_nodes=2)
+    if kind == "binary-state":
+        # A fixed logit of zero makes both inputs Bernoulli(0.5).
+        net.add_nodes(
+            kind="constant-state",
+            value_children=[0, 1],
+            node_parameters={"mean": 0.0, "expected_mean": 0.0},
+        )
+
+    def draws(seed):
+        net.sample(n_predictions=2, time_steps=np.ones(256), rng_key=key_factory(seed))
+        return [np.asarray(net.samples[i]["mean"]) for i in (0, 1)]
+
+    first = draws(7)
+    assert np.std(first[0]) > 0.0 and np.std(first[1]) > 0.0
+    assert not np.array_equal(first[0], first[1])
+    np.testing.assert_array_equal(draws(7), first)
+    assert not np.array_equal(draws(8)[0], first[0])
+
+
+@pytest.mark.parametrize("key_factory", [jax.random.key, PRNGKey])
+def test_sample_single_input_stream(key_factory):
+    """A single input draws one normal per time step from the split prediction key."""
+    net = Network().add_nodes()
+    key = key_factory(7)
+    net.sample(n_predictions=1, time_steps=np.ones(32), rng_key=key)
+    time_keys = jax.random.split(jax.random.split(key, 1)[0], 32)
+    expected = jax.vmap(jax.random.normal)(time_keys)
+    np.testing.assert_allclose(net.samples[0]["mean"][0], expected)
+
+
+def test_sample_follows_a_new_input_selection():
+    """The generative function is rebuilt for a new selection of input nodes."""
+    net = Network().add_nodes(n_nodes=2)
+    net.input_data(np.array([1.0, 2.0]), input_idxs=(0,))
+    net.create_belief_propagation_fn(sampling_fn=True)
+    net.input_idxs = (1,)
+    net.sample(n_predictions=1, time_steps=np.ones(32), rng_key=jax.random.key(7))
+    np.testing.assert_array_equal(net.samples[0]["mean"][0], np.full(32, 2.0))
+    assert np.std(np.asarray(net.samples[1]["mean"][0])) > 0.0
