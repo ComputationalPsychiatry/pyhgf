@@ -550,6 +550,11 @@ impl DeepNet {
             // the `l`-th seed. A single seed shared by all layers would make
             // equal-shape matrices identical.
             let layer_seed = layer_seeds.as_mut().map(|rng| rng.random::<u64>());
+            // A one-to-one layer keeps its identity weights: every strategy
+            // draws a dense matrix whose scale depends on the dense fan-in.
+            if !layer.fully_connected {
+                continue;
+            }
             let add_constant_input = layer.add_constant_input;
             let Some(w) = layer.weights_in.as_mut() else {
                 continue;
@@ -660,6 +665,30 @@ mod tests {
         assert_eq!(w[[0, 0]], 1.0);
         assert_eq!(w[[1, 1]], 1.0);
         assert_eq!(w[[0, 1]], 0.0);
+    }
+
+    /// A weight-initialisation strategy redraws the dense layers and leaves a
+    /// one-to-one layer at the identity.
+    #[test]
+    fn test_weight_initialisation_keeps_one_to_one_identity() {
+        let configs = vec![
+            LayerConfig::new(3),
+            LayerConfig {
+                add_constant_input: false,
+                fully_connected: false,
+                ..LayerConfig::new(3)
+            },
+            LayerConfig::new(2),
+        ];
+        let mut net = DeepNet::from_configs(&configs).unwrap();
+        net.weight_initialisation("xavier", Some(0)).unwrap();
+        assert_eq!(net.layers[1].weights_in.as_ref().unwrap(), &eye(3));
+        assert!(net.layers[2]
+            .weights_in
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|&x| x != 1.0));
     }
 
     #[test]

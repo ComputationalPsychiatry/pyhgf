@@ -1246,20 +1246,46 @@ def _importance_pair(factors) -> Optional[tuple]:
     return factors[2], jnp.where(jnp.isfinite(squared), squared, 0.0)
 
 
+def _edge_mask(elem) -> Optional[jnp.ndarray]:
+    """Boolean mask of the weights that are edges, or ``None`` when all of them are.
+
+    A one-to-one element (``fully_connected=False``) connects node :math:`i` of the
+    child layer to node :math:`i` of this layer only, so only the diagonal of its
+    ``weights_mean`` is an edge. A ``LayerStack`` mask broadcasts over the slice axis.
+    """
+    if elem.fully_connected or elem.weights_mean is None:
+        return None
+    n_children, n_parents = elem.weights_mean.shape[-2:]
+    return jnp.eye(n_children, n_parents, dtype=bool)
+
+
 def _apply_weight_updates(
     network: VectorisedNetwork,
     grads: tuple,
     opt_state: optax.OptState,
     optimiser: optax.GradientTransformation,
 ) -> tuple[VectorisedNetwork, optax.OptState]:
-    """One optimiser step on every ``weights_mean``, from precomputed gradients."""
+    """One optimiser step on every ``weights_mean``, from precomputed gradients.
+
+    In a one-to-one element, only the diagonal weights move. The gradient is masked
+    before the optimiser, so its state and any transform that reads the whole gradient
+    (such as ``optax.clip_by_global_norm``) see only the edges. The update is masked
+    too, since a transform that does not scale with the gradient (such as
+    ``optax.add_noise``) would still move the other weights.
+    """
     elements = list(network.layers)
     weights = tuple(elem.weights_mean for elem in elements)
+    masks = tuple(_edge_mask(elem) for elem in elements)
+    grads = tuple(
+        g if m is None else jnp.where(m, g, 0.0) for g, m in zip(grads, masks)
+    )
 
     updates, new_opt_state = optimiser.update(grads, opt_state, weights)
     new_weights = optax.apply_updates(weights, updates)
     for i, new_w in enumerate(new_weights):
         if new_w is not None:
+            if masks[i] is not None:
+                new_w = jnp.where(masks[i], new_w, weights[i])
             elements[i] = dataclasses.replace(elements[i], weights_mean=new_w)
 
     return dataclasses.replace(network, layers=tuple(elements)), new_opt_state
@@ -1278,7 +1304,8 @@ def _apply_synaptic_uncertainty_updates(
     :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`),
     so the update is applied here and both the mean (``weights_mean``) and the
     accumulated precision (``weights_precision_delta``) are written back to
-    the element that carries them.
+    the element that carries them. In a one-to-one element, only the diagonal
+    beliefs move.
 
     Parameters
     ----------
@@ -1319,6 +1346,12 @@ def _apply_synaptic_uncertainty_updates(
             importance[i],
             settings,
         )
+        mask = _edge_mask(elem)
+        if mask is not None:
+            # The reversion towards the prior mean moves every weight whatever its
+            # gradient, so the masked weights and precisions keep their values.
+            new_weights = jnp.where(mask, new_weights, elem.weights_mean)
+            new_delta = jnp.where(mask, new_delta, elem.weights_precision_delta)
         elements[i] = dataclasses.replace(
             elem, weights_mean=new_weights, weights_precision_delta=new_delta
         )
