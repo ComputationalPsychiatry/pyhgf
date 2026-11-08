@@ -9,7 +9,9 @@ import optax
 import pytest
 
 from pyhgf.model import DeepNetwork
-from pyhgf.typing.vectorised import LayerState
+from pyhgf.model.fused import FusedPipeline
+from pyhgf.model.hybrid import DeepNetworkAdapter
+from pyhgf.typing.vectorised import LayerStack, LayerState
 from pyhgf.updates.vectorised.learning import (
     learning_weights_vectorised,
     resolve_synaptic_uncertainty_settings,
@@ -731,3 +733,130 @@ def test_evidence_pullback_charges_the_process_noise_it_crosses():
     raw = np.asarray(weights).T ** 2 @ np.asarray(evidence)
     np.testing.assert_allclose(pulled(0.0), raw, rtol=1e-6)
     assert np.all(pulled(omega) < pulled(0.0))
+
+
+@pytest.mark.parametrize("kind", ["binary", "categorical"])
+@pytest.mark.parametrize("mask", [None, [1.0, 0.0, 1.0]])
+def test_batch_importance_is_the_mean_likelihood_hessian(kind, mask):
+    """On a clamped layer, the batch increment is the weighted mean Hessian diagonal."""
+    x = jnp.array([[0.0, 0.5], [2.0, 1.0], [-1.0, 0.5]])
+    if kind == "binary":
+        weights = jnp.array([[0.8, -0.3]])
+        targets = jnp.array([[0.0], [1.0], [0.0]])
+    else:
+        weights = jnp.array([[0.2, -0.7], [1.1, 0.3], [-0.4, 0.8]])
+        targets = jax.nn.one_hot(jnp.array([0, 2, 1]), 3)
+    row_weights = jnp.ones(3) if mask is None else jnp.asarray(mask)
+
+    def mean_negative_log_likelihood(flat_weights):
+        logits = x @ flat_weights.reshape(weights.shape).T
+        if kind == "binary":
+            per_row = (jax.nn.softplus(logits) - targets * logits).sum(axis=-1)
+        else:
+            per_row = jax.scipy.special.logsumexp(logits, axis=-1) - (
+                targets * logits
+            ).sum(axis=-1)
+        return (row_weights * per_row).sum() / row_weights.sum()
+
+    hessian = jax.hessian(mean_negative_log_likelihood)(weights.reshape(-1))
+    net = (
+        DeepNetwork()
+        .add_layer(
+            weights.shape[0],
+            kind=kind,
+            add_constant_input=False,
+            volatility_parent=False,
+        )
+        .add_layer(2, add_constant_input=False, volatility_parent=False)
+    )
+    parent = dataclasses.replace(net.state.layers[1], weights_mean=weights)
+    net.state = dataclasses.replace(net.state, layers=(net.state.layers[0], parent))
+    net.batch_update(
+        x,
+        targets,
+        learning_kind="synaptic_uncertainty",
+        learning_kwargs={"window": 100.0},
+        update_precisions=False,
+        sample_weight=None if mask is None else row_weights,
+    )
+    np.testing.assert_allclose(
+        net.state.layers[1].weights_precision_delta,
+        jnp.diag(hessian).reshape(weights.shape),
+        rtol=2e-5,
+        atol=1e-7,
+    )
+
+
+def test_zero_total_weight_keeps_the_prior_dynamics():
+    """Without data, the weight belief still decays and reverts towards its prior."""
+    net = (
+        DeepNetwork()
+        .add_layer(1, kind="binary", add_constant_input=False, volatility_parent=False)
+        .add_layer(1, add_constant_input=False, volatility_parent=False)
+        .install_weight_belief()
+    )
+    parent = dataclasses.replace(
+        net.state.layers[1], weights_precision_delta=jnp.array([[2.0]])
+    )
+    net.state = dataclasses.replace(net.state, layers=(net.state.layers[0], parent))
+    net.batch_update(
+        jnp.array([[0.0], [2.0]]),
+        jnp.array([[0.0], [1.0]]),
+        sample_weight=jnp.zeros(2),
+        learning_kind="synaptic_uncertainty",
+        learning_kwargs={"window": 10.0},
+        update_precisions=False,
+    )
+    np.testing.assert_allclose(net.state.layers[1].weights_precision_delta, [[1.8]])
+    np.testing.assert_allclose(net.state.layers[1].weights_mean, [[1.0 - 1.0 / 30.0]])
+
+
+def _pipeline_weight_beliefs(stacked, weight_reuse):
+    """Weight means and precisions of every slice after one fused pipeline step."""
+    net = DeepNetwork(coupling_fn=jnp.tanh).add_layer(
+        2, kind="categorical", add_constant_input=False, volatility_parent=False
+    )
+    kwargs = dict(add_constant_input=False, volatility_parent=False, precision=2.0)
+    if stacked:
+        net.add_layer_stack([2] * 5, **kwargs)
+    else:
+        for _ in range(5):
+            net.add_layer(2, **kwargs)
+    net = net.add_layer(2, **kwargs).weight_initialisation(
+        "xavier", key=jax.random.key(7)
+    )
+    assert stacked == any(isinstance(layer, LayerStack) for layer in net.state.layers)
+    pipeline = FusedPipeline(
+        DeepNetworkAdapter(
+            net,
+            learning_kind="synaptic_uncertainty",
+            learning_kwargs={"window": 100.0},
+            update_precisions=False,
+            weight_reuse=weight_reuse,
+        ),
+        error_normalisation="rows",
+    )
+    pipeline.step(
+        jnp.array([[0.5, -0.1], [1.3, 0.4], [-0.8, 0.7]]),
+        jax.nn.one_hot(jnp.array([0, 1, 0]), 2),
+    )
+    pipeline.merge()
+    beliefs = []
+    for layer in net.state.layers:
+        if layer.weights_mean is None:
+            continue
+        pairs = (layer.weights_mean, layer.weights_precision_delta)
+        beliefs.extend(zip(*pairs) if isinstance(layer, LayerStack) else [pairs])
+    return beliefs
+
+
+def test_batch_importance_reaches_stacks_and_weight_reuse():
+    """A LayerStack learns as its unrolled layers, and reuse scales every slice."""
+    stacked = _pipeline_weight_beliefs(True, 3.0)
+    unrolled = _pipeline_weight_beliefs(False, 3.0)
+    single_use = _pipeline_weight_beliefs(True, 1.0)
+    assert len(stacked) == len(unrolled) == len(single_use) == 6
+    for (w, p), (w_ref, p_ref), (_, p_one) in zip(stacked, unrolled, single_use):
+        np.testing.assert_allclose(w, w_ref, rtol=2e-4, atol=1e-7)
+        np.testing.assert_allclose(p, p_ref, rtol=2e-4, atol=1e-9)
+        np.testing.assert_allclose(p, 3.0 * p_one, rtol=2e-4, atol=1e-9)

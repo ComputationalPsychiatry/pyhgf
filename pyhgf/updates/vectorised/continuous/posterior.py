@@ -22,7 +22,7 @@ import jax.numpy as jnp
 from jax import grad, vmap
 from jax.nn import sigmoid
 
-from pyhgf.math import lambert_w0
+from pyhgf.math import lambert_w0_log
 from pyhgf.typing.vectorised import LayerParams, LayerState
 
 
@@ -563,8 +563,7 @@ def vectorised_continuous_posterior_update_unbounded(
 
     log_W_arg = jnp.log(be_aux) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
     log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
-    W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
-    v_W = lambert_w0(W_arg)
+    v_W = lambert_w0_log(jnp.minimum(log_W_arg, log_float_max))
     y_star = gamma_c + v_W - 0.5 / pihat_y
     x_star = (y_star - log_time_step - tonic_volatility) / safe_kappa
 

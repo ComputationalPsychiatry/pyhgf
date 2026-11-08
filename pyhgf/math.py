@@ -5,7 +5,7 @@ from typing import Union
 import jax.numpy as jnp
 from jax import Array, custom_jvp
 from jax.nn import sigmoid
-from jax.scipy.special import digamma, gamma, gammaln
+from jax.scipy.special import digamma, gammaln
 from jax.typing import ArrayLike
 
 
@@ -187,7 +187,17 @@ def gaussian_predictive_distribution(
 
 
 def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Array:
-    """Gaussian density as defined by mean and precision.
+    r"""Gaussian density as defined by mean and precision.
+
+    The density at :math:`x` of a Gaussian distribution with mean :math:`\mu` and
+    precision :math:`\pi` is given by:
+
+    .. math::
+
+       \mathcal{N}(x \mid \mu, \pi^{-1}) =
+       \frac{\sqrt{\pi}}{\sqrt{2 \pi}} \exp\left(-\frac{\pi}{2} (x - \mu)^2\right)
+
+    where :math:`\pi` in :math:`\sqrt{2 \pi}` is the mathematical constant.
 
     Parameters
     ----------
@@ -203,7 +213,11 @@ def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Arr
     density :
         The Gaussian density evaluated at `x`.
     """
-    return precision / jnp.sqrt(2 * jnp.pi) * jnp.exp(-precision / 2 * (x - mean) ** 2)
+    return (
+        jnp.sqrt(precision)
+        / jnp.sqrt(2 * jnp.pi)
+        * jnp.exp(-precision / 2 * (x - mean) ** 2)
+    )
 
 
 def binary_surprise(
@@ -311,6 +325,10 @@ def dirichlet_kullback_leibler(alpha_1: ArrayLike, alpha_2: ArrayLike) -> Array:
          \sum_{i=1}^k(\alpha_{1i} -
          \alpha_{2i})\left[\psi(\alpha_{1i})-\psi(\sum_{i=1}^k\alpha_{1i})\right]
 
+    The ratios of gamma functions are evaluated as differences of log-gamma functions,
+    :math:`\ln\Gamma(a) - \ln\Gamma(b)`, which stay finite where :math:`\Gamma` itself
+    overflows (arguments above about 35 in float32 and 171 in float64).
+
     See [1]_ and [2]_ for more details.
 
     Parameters
@@ -335,8 +353,9 @@ def dirichlet_kullback_leibler(alpha_1: ArrayLike, alpha_2: ArrayLike) -> Array:
 
     """
     return (
-        jnp.log(gamma(alpha_1.sum()) / gamma(alpha_2.sum()))
-        + jnp.sum(jnp.log(gamma(alpha_2) / gamma(alpha_1)))
+        gammaln(alpha_1.sum())
+        - gammaln(alpha_2.sum())
+        + jnp.sum(gammaln(alpha_2) - gammaln(alpha_1))
         + jnp.sum((alpha_1 - alpha_2) * (digamma(alpha_1) - digamma(alpha_1.sum())))
     )
 
@@ -350,23 +369,43 @@ def binary_surprise_finite_precision(
 ) -> Array:
     r"""Compute the binary surprise with finite precision.
 
+    A binary state :math:`x \in \{0, 1\}` is observed through an input :math:`u` that
+    is Gaussian around :math:`\eta_1` if :math:`x = 1` and around :math:`\eta_0` if
+    :math:`x = 0`, with precision :math:`\hat{\pi}` (Eq. 38 in [1]_). Under the expected
+    probability :math:`\hat{\mu}` that :math:`x = 1`, the surprise at :math:`u` is minus
+    the log density of this two-component mixture:
+
+    .. math::
+
+       -\log\left(\hat{\mu} \, \mathcal{N}(u \mid \eta_1, \hat{\pi}^{-1})
+       + (1 - \hat{\mu}) \, \mathcal{N}(u \mid \eta_0, \hat{\pi}^{-1})\right)
+
+    where :math:`\mathcal{N}` is the Gaussian density of :func:`gaussian_density`.
+
     Parameters
     ----------
     value :
-        The observed value.
+        The observed value :math:`u`.
     expected_mean :
-        The expected probability of observing category 1.
+        The expected probability :math:`\hat{\mu}` of observing category 1.
     expected_precision :
-        The precision of the underlying normal distributions.
+        The precision :math:`\hat{\pi}` of the two normal distributions.
     eta0 :
-        The first possible value.
+        The mean :math:`\eta_0` of the input when :math:`x = 0`.
     eta1 :
-        The second possible value.
+        The mean :math:`\eta_1` of the input when :math:`x = 1`.
 
     Returns
     -------
     surprise :
         The binary surprise under finite precision.
+
+    References
+    ----------
+    .. [1] Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K.
+       H., Friston, K. J., & Stephan, K. E. (2014). Uncertainty in perception and the
+       hierarchical Gaussian filter. Frontiers in Human Neuroscience, 8, 825.
+       doi:10.3389/fnhum.2014.00825
     """
     return -jnp.log(
         expected_mean * gaussian_density(value, eta1, expected_precision)
@@ -447,25 +486,43 @@ def smoothed_rectangular(
     )
 
 
+def _lambert_w0_halley(log_z: ArrayLike) -> Array:
+    r"""Run the Halley iterations of :func:`lambert_w0` from :math:`\log z`."""
+    w = jnp.logaddexp(0.0, log_z)
+    for _ in range(6):
+        f = w - jnp.exp(log_z - w)
+        w = w - 2.0 * f * (w + 1.0) / (2.0 * (w + 1.0) ** 2 - f * (w + 2.0))
+    return w
+
+
 @custom_jvp
 def lambert_w0(z: ArrayLike) -> Array:
     r"""Principal branch of the Lambert W function for z >= 0.
 
-    Solves ``w * exp(w) = z`` via 6 Halley iterations, which yields machine
-    precision for all z >= 0.
+    :math:`W_0(z)` is the solution :math:`w` of :math:`w e^{w} = z`, unique for
+    :math:`z \geq 0`. It is found with 6 Halley iterations from :math:`w = \log(1 + z)`:
+
+    .. math::
+
+        w \leftarrow w - \frac{2 f f'}{2 f'^2 - f f''},
+        \qquad f = w - e^{\log z - w}, \quad f' = w + 1, \quad f'' = w + 2,
+
+    where :math:`f`, :math:`f'` and :math:`f''` are :math:`F(w) = w e^{w} - z` and its
+    first two derivatives divided by :math:`e^{w}`. The common factor cancels from the
+    ratio, so this is Halley's method on :math:`F`, and no intermediate value grows with
+    :math:`z`. :func:`lambert_w0_log` runs the same iterations from :math:`\log z`.
 
     A custom JVP is attached so that reverse-mode autodiff does not backprop
-    through the Halley iterations. The implicit relation ``w * exp(w) = z``
+    through the Halley iterations, which start from :math:`\log z` and would give an
+    infinite derivative at :math:`z = 0`. The implicit relation :math:`w e^{w} = z`
     yields the closed-form derivative
 
     .. math::
 
         \frac{\partial W}{\partial z} = \frac{1}{e^{w}\,(1 + w)},
 
-    which is well-defined for all ``z >= 0`` (in particular at ``z = 0``,
-    where ``w = 0`` gives ``∂W/∂z = 1``). This avoids the NaN gradients that
-    would otherwise arise when the Halley iterations' intermediate ``exp(w)``
-    values overflow.
+    which is well-defined for all :math:`z \geq 0` (in particular at :math:`z = 0`,
+    where :math:`w = 0` gives :math:`\partial W / \partial z = 1`).
 
     Parameters
     ----------
@@ -478,14 +535,7 @@ def lambert_w0(z: ArrayLike) -> Array:
         The principal branch :math:`W_0(z)` solving ``w * exp(w) = z``.
 
     """
-    w = jnp.log(z + 1.0)
-    for _ in range(6):
-        ew = jnp.exp(w)
-        f = w * ew - z
-        f1 = (w + 1.0) * ew
-        f2 = (w + 2.0) * ew
-        w = w - (2.0 * f * f1) / (2.0 * f1**2 - f * f2)
-    return w
+    return _lambert_w0_halley(jnp.log(z))
 
 
 @lambert_w0.defjvp
@@ -496,3 +546,36 @@ def _lambert_w0_jvp(primals, tangents):
     # ∂W/∂z = 1 / (exp(w) * (1 + w)); safe at z = 0 (w = 0 → 1).
     tangent_out = z_dot / (jnp.exp(w) * (1.0 + w))
     return w, tangent_out
+
+
+@custom_jvp
+def lambert_w0_log(log_z: ArrayLike) -> Array:
+    r"""Principal branch of the Lambert W function of :math:`z = e^{\log z}`.
+
+    Evaluates :math:`W_0(z)` from :math:`\log z` without forming :math:`z`, with the
+    Halley iterations of :func:`lambert_w0`. The implicit relation
+    :math:`\log W + W = \log z` gives the custom JVP
+
+    .. math::
+
+        \frac{\partial W}{\partial \log z} = \frac{W}{1 + W}.
+
+    Parameters
+    ----------
+    log_z :
+        The logarithm of the argument(s); ``-inf`` gives :math:`W_0(0) = 0`.
+
+    Returns
+    -------
+    w :
+        The principal branch :math:`W_0(e^{\log z})`.
+
+    """
+    return _lambert_w0_halley(log_z)
+
+
+@lambert_w0_log.defjvp
+def _lambert_w0_log_jvp(primals, tangents):
+    (log_z,), (log_z_dot,) = primals, tangents
+    w = lambert_w0_log(log_z)
+    return w, log_z_dot * w / (1.0 + w)

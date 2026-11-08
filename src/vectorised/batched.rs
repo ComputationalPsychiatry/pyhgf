@@ -586,18 +586,15 @@ fn batched_posterior_update(
             });
     });
 
-    let ed = &eff * &child.value_prediction_error;
-    let sum_pi_vpe = w.t().dot(&ed);
-
-    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(eff∘δ))).
+    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(gain∘δ))).
     Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)
-        .and(&sum_pi_vpe)
+        .and(&msg)
         .and(&coupling_prime)
         .and(&coupling_second)
-        .for_each(|p, &ep, &b, &spv, &gp, &gs| {
-            let raw = ep + b * (gp * gp) - gs * spv;
+        .for_each(|p, &ep, &b, &mg, &gp, &gs| {
+            let raw = ep + b * (gp * gp) - gs * mg;
             *p = raw.max(ep).min(max_posterior_precision);
         });
 

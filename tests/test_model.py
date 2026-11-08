@@ -375,6 +375,106 @@ def test_network_input_data_batches():
     )
 
 
+def test_input_idxs_route_observations_to_the_selected_nodes():
+    """Changing, reordering or resetting the selection reroutes the data columns."""
+    net = Network().add_nodes(n_nodes=2, mean=3.0)
+    net.input_data(np.array([1.0, 2.0]), input_idxs=(0,))
+    carry = net.last_attributes
+    net.attributes[1]["precision"] = 9.0
+
+    # A new selection keeps the parameters and the final beliefs.
+    net.input_idxs = (1,)
+    assert net.last_attributes is carry
+    assert net.attributes[1]["precision"] == 9.0
+    net.input_data(np.array([11.0, 12.0]), input_idxs=(1,))
+    np.testing.assert_array_equal(net.node_trajectories[1]["mean"], [11.0, 12.0])
+    np.testing.assert_array_equal(net.node_trajectories[0]["mean"], [3.0, 3.0])
+
+    observations = np.array([[11.0, 12.0], [13.0, 14.0]])
+    net.input_data(observations, input_idxs=(1, 0))
+    np.testing.assert_array_equal(net.node_trajectories[1]["mean"], [11.0, 13.0])
+    np.testing.assert_array_equal(net.node_trajectories[0]["mean"], [12.0, 14.0])
+
+    net.input_idxs = None
+    net.input_data(observations)
+    assert net.input_idxs == (0, 1)
+    np.testing.assert_array_equal(net.node_trajectories[0]["mean"], [11.0, 13.0])
+
+
+def test_input_idxs_selection_keeps_parameters_and_rebuilds_dimensions():
+    """An explicit selection leaves parameters as set and rebuilds input dimensions."""
+    net = Network().add_nodes(
+        n_nodes=2, autoconnection_strength=0.8, tonic_volatility=-7.0
+    )
+    net.input_data(np.array([5.0, 6.0]), input_idxs=np.array([1]))
+    assert net.input_idxs == (1,)
+    for i in range(2):
+        assert net.attributes[i]["autoconnection_strength"] == 0.8
+        assert net.attributes[i]["tonic_volatility"] == -7.0
+
+    net = (
+        Network()
+        .add_nodes(kind="ef-state")
+        .add_nodes(kind="ef-state", distribution="multivariate-normal", dimension=2)
+    )
+    net.input_idxs = (0,)
+    net.create_belief_propagation_fn()
+    assert net.input_dim == [1]
+    observations = np.array([[1.0, 2.0], [3.0, 4.0]])
+    net.input_data(observations, input_idxs=(1,))
+    assert net.input_dim == [2]
+    np.testing.assert_array_equal(net.node_trajectories[1]["mean"], observations)
+
+
+def test_same_input_idxs_keep_history_and_parameter_edits():
+    """Reselecting the same nodes keeps appended history and later parameter edits."""
+    observations = np.linspace(0.0, 1.0, 6)
+
+    def build(**parameters):
+        return Network().add_nodes().add_nodes(value_children=0, **parameters)
+
+    net = build().input_data(observations[:3], input_idxs=(0,), append=True)
+    net.input_idxs = (0,)
+    net.input_data(observations[3:], input_idxs=(0,), append=True)
+    reference = build().input_data(observations, input_idxs=(0,))
+    assert_frame_equal(net.to_pandas(), reference.to_pandas(), rtol=1e-6, atol=1e-7)
+
+    net.attributes[1]["tonic_drift"] = 0.5
+    net.input_data(observations, input_idxs=(0,))
+    reference = build(tonic_drift=0.5).input_data(observations, input_idxs=(0,))
+    assert_frame_equal(net.to_pandas(), reference.to_pandas(), rtol=1e-6, atol=1e-7)
+
+
+def test_custom_sequence_append():
+    """``append=True`` continues either method; other calls restart from priors."""
+
+    def build():
+        return Network().add_nodes().add_nodes(value_children=0)
+
+    def run(net, method, observations, **kwargs):
+        if method == "data":
+            return net.input_data(observations, **kwargs)
+        return net.input_custom_sequence(
+            update_branches=(net.get_network()[2],),
+            branches_idx=np.zeros(len(observations), dtype=int),
+            input_data=observations,
+            **kwargs,
+        )
+
+    observations = np.array([0.0, 1.0, 2.0, 3.0])
+    reference = build().input_data(observations).to_pandas()
+
+    for first, second in [("custom", "data"), ("data", "custom"), ("custom", "custom")]:
+        net = run(build(), first, observations[:2])
+        run(net, second, observations[2:], append=True)
+        assert_frame_equal(net.to_pandas(), reference, rtol=1e-6, atol=1e-7)
+
+    for method in ("custom", "data"):
+        assert_frame_equal(
+            run(net, method, observations).to_pandas(), reference, rtol=1e-6, atol=1e-7
+        )
+
+
 def test_hgf_class_is_deprecated():
     """Loading the deprecated HGF module should display the warning."""
     with warns(DeprecationWarning, match="deprecated"):

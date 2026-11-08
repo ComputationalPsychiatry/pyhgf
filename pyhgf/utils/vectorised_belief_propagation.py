@@ -1607,6 +1607,9 @@ def _batch_step(
         symptom is a *systematic* gradient scale error rather than noise. Pass the mask
         as weights to make the reduction mean-over-contributing-rows instead.
 
+        An all-zero mask contributes zero data gradient and precision increments;
+        optimiser state transitions and weight-prior dynamics still run.
+
         ``None`` (default) keeps the plain mean, so existing behaviour is unchanged.
     predicted :
         Optional per-sample predicted states from
@@ -1701,27 +1704,25 @@ def _batch_step(
 
         input_errors, increments, factors = jax.vmap(per_sample_predicted)(predicted, y)
 
+    # Every batch mean below is weighted by these normalised sample weights. A batch
+    # whose weights sum to zero contributes no data.
+    if sample_weight is None:
+        weights = jnp.full(y.shape[0], 1.0 / y.shape[0])
+    else:
+        total = sample_weight.sum()
+        weights = sample_weight / jnp.where(total > 0, total, 1.0)
+
     new_network = network
     if optimiser is not None or synaptic_uncertainty_settings is not None:
-        mean_grads = tuple(
-            None if f is None else _contract_factors((f[0], f[1]), sample_weight)
-            for f in factors
-        )
-        if weight_reuse != 1.0:
-            mean_grads = tuple(
-                None if g is None else g * weight_reuse for g in mean_grads
-            )
+        # A weight applied k times per sample sums the gradients and curvatures of
+        # its k uses, so both contractions are scaled by weight_reuse.
+        learning_weights = weights * weight_reuse
+        mean_grads = tuple(_contract_factors(f, learning_weights) for f in factors)
         if synaptic_uncertainty_settings is not None:
             importance = tuple(
-                _reduce_importance(_importance_pair(f), sample_weight) for f in factors
+                _contract_factors(_importance_pair(f), learning_weights)
+                for f in factors
             )
-            if weight_reuse != 1.0:
-                # The increment is the outer product H[a, i] = p[a] * q[i], so
-                # scaling one factor scales it.
-                importance = tuple(
-                    None if imp is None else (imp[0] * weight_reuse, imp[1])
-                    for imp in importance
-                )
             new_network = _apply_synaptic_uncertainty_updates(
                 new_network, mean_grads, importance, synaptic_uncertainty_settings
             )
@@ -1731,15 +1732,9 @@ def _batch_step(
             )
 
     if update_precisions:
-        if sample_weight is None:
-            reduce = lambda i: i.mean(axis=0)  # noqa: E731
-        else:
-            denominator = jnp.maximum(sample_weight.sum(), 1.0)
-
-            def reduce(i):
-                return jnp.tensordot(sample_weight, i, axes=(0, 0)) / denominator
-
-        mean_increments = jax.tree_util.tree_map(reduce, increments)
+        mean_increments = jax.tree_util.tree_map(
+            lambda i: jnp.tensordot(weights, i, axes=(0, 0)), increments
+        )
         new_network = apply_precision_increments(new_network, mean_increments)
 
     return new_network, opt_state, input_errors
@@ -1750,54 +1745,24 @@ def _batch_step(
 batch_step = eqx.filter_jit(_batch_step)
 
 
-def _reduce_importance(imp_factors, sample_weight=None) -> Optional[tuple]:
-    """Batch-mean importance factors from stacked per-sample factors.
+def _contract_factors(factors, weights: jnp.ndarray) -> Optional[jnp.ndarray]:
+    r"""Weighted sum over the batch of per-sample outer products :math:`u \otimes v`.
 
-    ``imp_factors`` is ``None`` for the bottom element, or a ``(p, q)`` pair with a
-    leading batch axis (see :func:`_importance_pair`). Each side is averaged over the
-    batch separately. For a continuous child the child-side factor is identical across
-    the batch (every sample sweeps from the same state template, and the conditional
-    predicted precision is built from carried precisions and volatility states, not from
-    the sample's values), and a binary child contributes ones, so the outer product of
-    the two means equals the mean of the per-sample outer products.
+    ``factors`` is ``None`` for the bottom element, or a tuple whose first two entries
+    ``(u, v)`` carry a leading batch axis: ``(batch, n_children)`` and ``(batch,
+    n_parents)`` for a ``Layer``, ``(batch, n_slices, ...)`` for a ``LayerStack``.
+    ``weights`` has shape ``(batch,)``; with the normalised weights of
+    :func:`_batch_step` the result is the weighted batch mean, with the weights' shape.
 
-    ``sample_weight`` follows the semantics of :func:`_contract_factors`: a weighted
-    mean whose denominator is the weight the batch actually carries, so padded rows do
-    not dilute the increment.
-    """
-    if imp_factors is None:
-        return None
-    p, q = imp_factors
-    if sample_weight is None:
-        return p.mean(axis=0), q.mean(axis=0)
-    denominator = jnp.maximum(sample_weight.sum(), 1.0)
-    return (
-        jnp.tensordot(sample_weight, p, axes=(0, 0)) / denominator,
-        jnp.tensordot(sample_weight, q, axes=(0, 0)) / denominator,
-    )
-
-
-def _contract_factors(factors, sample_weight=None) -> Optional[jnp.ndarray]:
-    """Batch-mean gradient from stacked per-sample factors.
-
-    ``factors`` is ``None`` for the bottom element, or a ``(u, v)`` pair with
-    a leading batch axis: ``(batch, n_children)`` and ``(batch, n_parents)``
-    for a ``Layer``; ``(batch, n_slices, ...)`` for a ``LayerStack``. The
-    mean over samples of ``u ⊗ v`` is computed as a single contraction.
+    Each sample's two factors are multiplied before the sum, so their covariance over
+    the batch is kept. For the importance pair of :func:`_importance_pair` this gives
+    the batch mean of the per-sample curvatures, since discrete likelihood curvature and
+    pulled-back evidence vary with the sample.
     """
     if factors is None:
         return None
-    u, v = factors
-    if sample_weight is None:
-        if u.ndim == 2:
-            return jnp.einsum("bi,bj->ij", u, v) / u.shape[0]
-        return jnp.einsum("bni,bnj->nij", u, v) / u.shape[0]
-    # Weighted mean: the denominator is the weight the batch actually carries,
-    # not the number of rows it happens to be padded to.
-    denominator = jnp.maximum(sample_weight.sum(), 1.0)
-    if u.ndim == 2:
-        return jnp.einsum("b,bi,bj->ij", sample_weight, u, v) / denominator
-    return jnp.einsum("b,bni,bnj->nij", sample_weight, u, v) / denominator
+    u, v = factors[:2]
+    return jnp.einsum("b,b...i,b...j->...ij", weights, u, v)
 
 
 @eqx.filter_jit

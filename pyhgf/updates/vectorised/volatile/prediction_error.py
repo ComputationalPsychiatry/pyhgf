@@ -14,7 +14,7 @@ import dataclasses
 import jax.numpy as jnp
 from jax.nn import sigmoid
 
-from pyhgf.math import lambert_w0
+from pyhgf.math import lambert_w0_log
 from pyhgf.typing.vectorised import LayerParams, LayerState
 from pyhgf.updates.vectorised.continuous.posterior import _value_coupling_variance
 
@@ -259,12 +259,13 @@ def vectorised_layer_volatility_posterior_unbounded(
 ) -> LayerState:
     """Unbounded volatility-level posterior update (Lambert W₀ dual-quadratic).
 
-    Implements the uhgf update: two quadratic expansions blended via a
-    variational energy-based softmax, with Gaussian mixture moment matching
-    for the final posterior precision.
-
-    This is the vectorised equivalent of
-    :func:`pyhgf.updates.posterior.volatile.volatile_node_posterior_update_unbounded.volatile_node_posterior_update_unbounded`.
+    The volatility level of each node has a single volatility child, the node's own
+    value level, and no value child, so this is the two-expansion update of section 3.4
+    in [1]_: a quadratic expansion at the prediction and one at the Lambert :math:`W_0`
+    approximation of the mode, blended by a softmax of the variational energy and
+    moment matched into the posterior. The equations are those of
+    :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_unbounded.posterior_update_unbounded`
+    with one volatility child (:math:`n = 1`).
 
     Parameters
     ----------
@@ -279,8 +280,9 @@ def vectorised_layer_volatility_posterior_unbounded(
         Upper bound applied to the volatility-level posterior precision.
         Default ``1e10``.
     mean_field_updates :
-        Whether the prediction step ran the mean-field scheme — the MGF term is
-        then absent from the reconstruction below, as it was from the prediction.
+        Whether the prediction step ran the mean-field scheme. The MGF term is then
+        absent from the reconstruction of the known variance, as it was from the
+        prediction.
     feedforward_uncertainty :
         Whether the layer's predicted precision includes the variance its value
         parents add. That variance does not depend on the volatility level, so it
@@ -290,6 +292,12 @@ def vectorised_layer_volatility_posterior_unbounded(
     -------
     LayerState
         Updated layer state with ``precision_vol`` and ``mean_vol`` set.
+
+    References
+    ----------
+    .. [1] Mathys, C., Legrand, N., Waade, P. T., Mikuš, N., & Weber, L. A. (2026).
+       Robust volatility updates for Hierarchical Gaussian Filtering.
+       arXiv:2605.00966. https://doi.org/10.48550/arXiv.2605.00966
     """
     assert layer.expected_precision_vol is not None
     assert layer.expected_mean_vol is not None
@@ -359,8 +367,7 @@ def vectorised_layer_volatility_posterior_unbounded(
     # "W_arg = exp(min(log_W_arg, log(realmax)))".
     log_W_arg = jnp.log(be_aux) - jnp.log(2.0 * pihat_y) + 0.5 / pihat_y - gamma_c
     log_float_max = jnp.log(jnp.finfo(jnp.result_type(log_W_arg)).max)
-    W_arg = jnp.exp(jnp.minimum(log_W_arg, log_float_max))
-    v_W = lambert_w0(W_arg)
+    v_W = lambert_w0_log(jnp.minimum(log_W_arg, log_float_max))
     y_star = gamma_c + v_W - 0.5 / pihat_y
     x_star = y_star - log_time_step - tonic_volatility
 

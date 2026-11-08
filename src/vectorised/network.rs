@@ -807,21 +807,29 @@ mod tests {
     /// The batched (gemm) step reproduces the per-sample reference: sweeping
     /// each sample from the template with the per-sample kernels, averaging
     /// the rank-one gradients and the carried-field increments, and applying
-    /// both once. Covers a three-layer network with a nonlinear (tanh)
-    /// coupling, Adam, and precision carrying.
+    /// both once. Covers networks with one and two nonlinear (tanh) hidden
+    /// layers, Adam, and precision carrying. With two, a curved layer has a
+    /// hidden child, so the g'' term of the posterior precision (Eq. 26 of
+    /// Legrand et al., 2026) is weighted by the relaxed gain of that child.
     #[test]
     fn test_batch_update_matches_per_sample_reference() {
+        for n_hidden in [1, 2] {
+            batch_update_matches_per_sample_reference(n_hidden);
+        }
+    }
+
+    fn batch_update_matches_per_sample_reference(n_hidden: usize) {
         use crate::math::resolve_coupling_fn;
 
         let make_net = || {
-            let configs = vec![
-                LayerConfig::new(2),
-                LayerConfig {
+            let mut configs = vec![LayerConfig::new(2)];
+            for _ in 0..n_hidden {
+                configs.push(LayerConfig {
                     coupling_fn: resolve_coupling_fn("tanh"),
                     ..LayerConfig::new(4)
-                },
-                LayerConfig::new(3),
-            ];
+                });
+            }
+            configs.push(LayerConfig::new(3));
             let mut net = DeepNet::from_configs(&configs).unwrap();
             // Deterministic, non-uniform weights.
             for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
@@ -928,16 +936,25 @@ mod tests {
 
         let close = |a: Float, b: Float| (a - b).abs() < REF_TOL * (1.0 + a.abs().max(b.abs()));
         for (a, b) in errors.iter().zip(ref_errors.iter()) {
-            assert!(close(*a, *b), "input errors differ: {a} vs {b}");
+            assert!(
+                close(*a, *b),
+                "input errors differ ({n_hidden} hidden): {a} vs {b}"
+            );
         }
         for (bl, rl) in batched.layers.iter().zip(reference.layers.iter()) {
             if let (Some(bw), Some(rw)) = (bl.weights_in.as_ref(), rl.weights_in.as_ref()) {
                 for (a, b) in bw.iter().zip(rw.iter()) {
-                    assert!(close(*a, *b), "weights differ: {a} vs {b}");
+                    assert!(
+                        close(*a, *b),
+                        "weights differ ({n_hidden} hidden): {a} vs {b}"
+                    );
                 }
             }
             for (a, b) in bl.state.precision.iter().zip(rl.state.precision.iter()) {
-                assert!(close(*a, *b), "carried precision differs: {a} vs {b}");
+                assert!(
+                    close(*a, *b),
+                    "carried precision differs ({n_hidden} hidden): {a} vs {b}"
+                );
             }
             for (a, b) in bl
                 .state

@@ -4,7 +4,7 @@
 
 from functools import partial
 
-from jax import jit
+from jax import jit, random
 from jax.typing import ArrayLike
 
 from pyhgf.typing import Attributes, Edges, UpdateSequence
@@ -107,14 +107,14 @@ def beliefs_propagation(
     # 2. Receive new observations ------------------------------------------------------
     # ----------------------------------------------------------------------------------
     if observations == "generative":
-        # Inline handling of observation for each input node
         for node_idx in input_idxs:
-            # Sample the node distribution
+            # Each input draws from a key folded with its node index, so inputs
+            # receive independent observation noise.
             sampled_value = sample_node_distribution(
                 attributes=attributes,
                 edges=edges,
                 node_idx=node_idx,
-                rng_key=rng_key,
+                rng_key=random.fold_in(rng_key, node_idx),
             )
             # Set the observation (using a constant observation flag, here set as 1)
             attributes = set_observation(

@@ -1950,7 +1950,9 @@ class DeepNetwork:
             Optional per-sample weights, shape ``(batch,)``. The batch average
             becomes a weighted average with denominator ``sample_weight.sum()``,
             so padded or masked rows do not dilute the update. Pass a 0/1 mask
-            for a variable-length batch. ``None`` keeps the plain mean.
+            for a variable-length batch. An all-zero mask contributes zero data
+            gradient and precision increments; optimiser state transitions and
+            weight-prior dynamics still run. ``None`` keeps the plain mean.
 
         Returns
         -------

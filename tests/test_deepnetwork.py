@@ -2030,3 +2030,47 @@ def test_batch_update_averages_the_carried_precision(carry_precision):
     net.batch_update(xb, yb)
     expected = np.mean(carried, axis=0) if carry_precision else np.full(3, 3.0)
     np.testing.assert_allclose(net.state.layers[1].state.precision, expected, rtol=1e-5)
+
+
+def _small_network():
+    return (
+        DeepNetwork(feedforward_uncertainty=True)
+        .add_layer(1, add_constant_input=False, volatility_parent=False)
+        .add_layer(2, add_constant_input=False, volatility_parent=False)
+        .add_layer(2, add_constant_input=False, volatility_parent=False)
+    )
+
+
+def _weighted_batch_update(x, y, sample_weight, kind="precision_weighted"):
+    """Leaves of the small network's state after one weighted batch update."""
+    net = _small_network()
+    learning = (
+        {"optimiser": optax.sgd(0.1)}
+        if kind == "precision_weighted"
+        else {"learning_kwargs": {"window": 100.0}}
+    )
+    net.batch_update(x, y, learning_kind=kind, sample_weight=sample_weight, **learning)
+    return jax.tree_util.tree_leaves(net.state)
+
+
+@pytest.mark.parametrize("kind", ["precision_weighted", "synaptic_uncertainty"])
+@pytest.mark.parametrize("scale", [1.0, 100.0])
+def test_batch_update_sample_weight_is_normalised(kind, scale):
+    """Weights act through their proportions, and zero-weight rows count as absent."""
+    x = jnp.array([[0.2, -0.5], [9.0, 8.0], [-0.7, 0.4], [-7.0, 6.0]])
+    y = jnp.array([[0.6], [3.0], [0.1], [-2.0]])
+    weighted = _weighted_batch_update(
+        x, y, scale * jnp.array([0.02, 0.0, 0.05, 0.0]), kind
+    )
+    reference = _weighted_batch_update(x[::2], y[::2], jnp.array([2.0, 5.0]), kind)
+    for actual, expected in zip(weighted, reference, strict=True):
+        np.testing.assert_allclose(actual, expected, rtol=2e-5, atol=2e-7)
+
+
+def test_batch_update_zero_total_weight_contributes_no_data():
+    """With SGD, a batch whose weights sum to zero leaves every belief unchanged."""
+    x, y = jnp.array([[0.2, -0.5], [1.3, 0.8]]), jnp.array([[0.6], [-0.3]])
+    initial = jax.tree_util.tree_leaves(_small_network().state)
+    updated = _weighted_batch_update(x, y, jnp.zeros(2))
+    for actual, expected in zip(updated, initial, strict=True):
+        np.testing.assert_array_equal(actual, expected)

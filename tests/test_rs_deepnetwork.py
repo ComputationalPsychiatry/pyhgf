@@ -565,11 +565,18 @@ def test_batch_update_validation():
         single.batch_update(np.zeros((4, 2)), np.zeros((4, 2)))
 
 
+@pytest.mark.parametrize(
+    ("sizes", "coupling"), [([2, 4, 3], None), ([2, 4, 4, 3], "tanh")]
+)
 @pytest.mark.parametrize("optimiser", ["sgd", "adam"])
-def test_batch_update_trajectory_parity(optimiser):
-    """Input errors and weights agree with JAX over several batch steps."""
+def test_batch_update_trajectory_parity(optimiser, sizes, coupling):
+    """Input errors and weights agree with JAX over several batch steps.
+
+    With two tanh hidden layers, a curved layer has a hidden child, so the g'' term of
+    the posterior precision (Eq. 26 of Legrand et al., 2026) is compared as well.
+    """
     rng = np.random.default_rng(30)
-    rs, jx = _matched_pair([2, 4, 3], rng)
+    rs, jx = _matched_pair(sizes, rng, coupling=coupling)
     make_optax = {"sgd": lambda: optax.sgd(0.05), "adam": lambda: optax.adam(1e-2)}
     lr = {"sgd": 0.05, "adam": 1e-2}
     optax_opt = make_optax[optimiser]()
@@ -823,3 +830,28 @@ def test_tonic_volatility_changes_the_rust_filter():
     default = run(True)
     np.testing.assert_array_equal(base, zero)
     assert not np.array_equal(base, default)
+
+
+@pytest.mark.parametrize("learning_kind", ["precision_weighted", "standard"])
+@pytest.mark.parametrize(
+    ("coupling", "n_layers"), [("tanh", 5), ("linear", 5), ("tanh", 3)]
+)
+def test_single_sample_batch_update_matches_fit(learning_kind, coupling, n_layers):
+    """A one-sample batch is one fit step, including curved interior children."""
+
+    def build():
+        net = RsDeepNetwork(volatility_updates="eHGF", coupling_fn=coupling)
+        for _ in range(n_layers):
+            net.add_layer(1, volatility_parent=False)
+        net.set_weights([np.full_like(np.asarray(w), 0.3) for w in net.get_weights()])
+        return net
+
+    x, y = np.array([[-1.0]]), np.array([[10.0]])
+    learning = dict(optimiser="sgd", learning_rate=0.1, learning_kind=learning_kind)
+    scalar, batch = build(), build()
+    scalar.fit(x, y, **learning)
+    batch.batch_update(x, y, **learning)
+    for w_scalar, w_batch in zip(
+        scalar.get_weights(), batch.get_weights(), strict=True
+    ):
+        np.testing.assert_allclose(w_scalar, w_batch, **PARITY)

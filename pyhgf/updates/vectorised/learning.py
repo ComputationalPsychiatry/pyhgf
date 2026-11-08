@@ -532,10 +532,10 @@ def vectorised_synaptic_uncertainty_update(
     gradient :
         The descent gradient, same shape.
     importance :
-        Either the factor pair ``(p, q)`` of
-        :func:`learning_weights_vectorised`, batch-averaged, whose outer product
-        is the increment; or a full increment matrix of the weights' shape,
-        which is the exact batch contraction the evidence pass delivers.
+        Either the factor pair ``(p, q)`` of one sample, from
+        :func:`learning_weights_vectorised`, whose outer product is the increment;
+        or a full increment matrix of the weights' shape, the weighted batch mean of
+        the per-sample outer products.
     settings :
         The resolved settings.
 
