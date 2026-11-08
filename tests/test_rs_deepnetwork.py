@@ -565,11 +565,18 @@ def test_batch_update_validation():
         single.batch_update(np.zeros((4, 2)), np.zeros((4, 2)))
 
 
+@pytest.mark.parametrize(
+    ("sizes", "coupling"), [([2, 4, 3], None), ([2, 4, 4, 3], "tanh")]
+)
 @pytest.mark.parametrize("optimiser", ["sgd", "adam"])
-def test_batch_update_trajectory_parity(optimiser):
-    """Input errors and weights agree with JAX over several batch steps."""
+def test_batch_update_trajectory_parity(optimiser, sizes, coupling):
+    """Input errors and weights agree with JAX over several batch steps.
+
+    With two tanh hidden layers, a curved layer has a hidden child, so the g'' term of
+    the posterior precision (Eq. 26 of Legrand et al., 2026) is compared as well.
+    """
     rng = np.random.default_rng(30)
-    rs, jx = _matched_pair([2, 4, 3], rng)
+    rs, jx = _matched_pair(sizes, rng, coupling=coupling)
     make_optax = {"sgd": lambda: optax.sgd(0.05), "adam": lambda: optax.adam(1e-2)}
     lr = {"sgd": 0.05, "adam": 1e-2}
     optax_opt = make_optax[optimiser]()
