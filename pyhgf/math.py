@@ -487,13 +487,7 @@ def smoothed_rectangular(
 
 
 def _lambert_w0_halley(log_z: ArrayLike) -> Array:
-    r"""Six Halley iterations for :math:`W_0(z)`, given :math:`\log z`.
-
-    The iterations solve :math:`F(w) = w e^{w} - z = 0` from :math:`w = \log(1 + z)`.
-    :math:`F`, :math:`F'` and :math:`F''` are scaled by :math:`e^{-w}`, a common factor
-    that cancels from Halley's ratio, so only :math:`z e^{-w} = e^{\log z - w}` is
-    formed and large arguments do not overflow.
-    """
+    r"""Run the Halley iterations of :func:`lambert_w0` from :math:`\log z`."""
     w = jnp.logaddexp(0.0, log_z)
     for _ in range(6):
         f = w - jnp.exp(log_z - w)
@@ -505,22 +499,30 @@ def _lambert_w0_halley(log_z: ArrayLike) -> Array:
 def lambert_w0(z: ArrayLike) -> Array:
     r"""Principal branch of the Lambert W function for z >= 0.
 
-    Solves ``w * exp(w) = z`` via 6 Halley iterations, scaled so that the
-    intermediate products stay finite for large finite arguments (see
-    :func:`lambert_w0_log`, which takes :math:`\log z` instead).
+    :math:`W_0(z)` is the solution :math:`w` of :math:`w e^{w} = z`, unique for
+    :math:`z \geq 0`. It is found with 6 Halley iterations from :math:`w = \log(1 + z)`:
+
+    .. math::
+
+        w \leftarrow w - \frac{2 f f'}{2 f'^2 - f f''},
+        \qquad f = w - e^{\log z - w}, \quad f' = w + 1, \quad f'' = w + 2,
+
+    where :math:`f`, :math:`f'` and :math:`f''` are :math:`F(w) = w e^{w} - z` and its
+    first two derivatives divided by :math:`e^{w}`. The common factor cancels from the
+    ratio, so this is Halley's method on :math:`F`, and no intermediate value grows with
+    :math:`z`. :func:`lambert_w0_log` runs the same iterations from :math:`\log z`.
 
     A custom JVP is attached so that reverse-mode autodiff does not backprop
-    through the Halley iterations. The implicit relation ``w * exp(w) = z``
+    through the Halley iterations, which start from :math:`\log z` and would give an
+    infinite derivative at :math:`z = 0`. The implicit relation :math:`w e^{w} = z`
     yields the closed-form derivative
 
     .. math::
 
         \frac{\partial W}{\partial z} = \frac{1}{e^{w}\,(1 + w)},
 
-    which is well-defined for all ``z >= 0`` (in particular at ``z = 0``,
-    where ``w = 0`` gives ``∂W/∂z = 1``). This avoids the NaN gradients that
-    would otherwise arise when the Halley iterations' intermediate ``exp(w)``
-    values overflow.
+    which is well-defined for all :math:`z \geq 0` (in particular at :math:`z = 0`,
+    where :math:`w = 0` gives :math:`\partial W / \partial z = 1`).
 
     Parameters
     ----------

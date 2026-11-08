@@ -152,11 +152,24 @@ def posterior_update_unbounded(
        :math:`\Delta_i` the volatility prediction error of the child :math:`a_i`.
 
     2. For each volatility child, a second expansion is taken at the Lambert
-       :math:`W_0` approximation of the mode created by this child (eq. 54 in [1]_),
-       with the curvature and gradient of the full variational energy, which includes
-       all the children (eqs. 55-56 in [1]_). A non-positive curvature falls back to
-       the concave curvature. An expansion that is not finite, or whose child has a
-       zero coupling or is unobserved, gets a zero weight.
+       :math:`W_0` approximation of the mode created by this child (eq. 54 in [1]_):
+
+       .. math::
+
+           y_i^* = \gamma_{c,i} - \frac{1}{2\hat{\pi}_{y,i}}
+               + W_0\left(\frac{\beta_i}{2\hat{\pi}_{y,i}}
+               \exp\left(\frac{1}{2\hat{\pi}_{y,i}} - \gamma_{c,i}\right)\right),
+           \qquad
+           x_i^* = \frac{y_i^* - \log t - \tilde{\omega}_{a_i}}{\kappa_i},
+
+       with :math:`\gamma_{c,i} = \log t + \kappa_i \tilde{\mu} + \tilde{\omega}_{a_i}`
+       and :math:`\hat{\pi}_{y,i} = \tilde{\pi} / \kappa_i^2`. The argument of
+       :math:`W_0` is formed in log space, capped at the log of the largest finite float
+       and passed to :func:`pyhgf.math.lambert_w0_log`. The expansion at
+       :math:`x_i^*` uses the curvature and gradient of the full variational energy,
+       which includes all the children (eqs. 55-56 in [1]_). A non-positive curvature
+       falls back to the concave curvature. An expansion that is not finite, or whose
+       child has a zero coupling or is unobserved, gets a zero weight.
 
     3. The :math:`n + 1` expansions are weighted by a softmax of the variational energy
        at their means (eq. 57 in [1]_). The posterior is the moment-matched Gaussian of
