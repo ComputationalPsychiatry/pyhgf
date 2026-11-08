@@ -187,7 +187,17 @@ def gaussian_predictive_distribution(
 
 
 def gaussian_density(x: ArrayLike, mean: ArrayLike, precision: ArrayLike) -> Array:
-    """Gaussian density as defined by mean and precision.
+    r"""Gaussian density as defined by mean and precision.
+
+    The density at :math:`x` of a Gaussian distribution with mean :math:`\mu` and
+    precision :math:`\pi` is given by:
+
+    .. math::
+
+       \mathcal{N}(x \mid \mu, \pi^{-1}) =
+       \frac{\sqrt{\pi}}{\sqrt{2 \pi}} \exp\left(-\frac{\pi}{2} (x - \mu)^2\right)
+
+    where :math:`\pi` in :math:`\sqrt{2 \pi}` is the mathematical constant.
 
     Parameters
     ----------
@@ -355,23 +365,43 @@ def binary_surprise_finite_precision(
 ) -> Array:
     r"""Compute the binary surprise with finite precision.
 
+    A binary state :math:`x \in \{0, 1\}` is observed through an input :math:`u` that
+    is Gaussian around :math:`\eta_1` if :math:`x = 1` and around :math:`\eta_0` if
+    :math:`x = 0`, with precision :math:`\hat{\pi}` (Eq. 38 in [1]_). Under the expected
+    probability :math:`\hat{\mu}` that :math:`x = 1`, the surprise at :math:`u` is minus
+    the log density of this two-component mixture:
+
+    .. math::
+
+       -\log\left(\hat{\mu} \, \mathcal{N}(u \mid \eta_1, \hat{\pi}^{-1})
+       + (1 - \hat{\mu}) \, \mathcal{N}(u \mid \eta_0, \hat{\pi}^{-1})\right)
+
+    where :math:`\mathcal{N}` is the Gaussian density of :func:`gaussian_density`.
+
     Parameters
     ----------
     value :
-        The observed value.
+        The observed value :math:`u`.
     expected_mean :
-        The expected probability of observing category 1.
+        The expected probability :math:`\hat{\mu}` of observing category 1.
     expected_precision :
-        The precision of the underlying normal distributions.
+        The precision :math:`\hat{\pi}` of the two normal distributions.
     eta0 :
-        The first possible value.
+        The mean :math:`\eta_0` of the input when :math:`x = 0`.
     eta1 :
-        The second possible value.
+        The mean :math:`\eta_1` of the input when :math:`x = 1`.
 
     Returns
     -------
     surprise :
         The binary surprise under finite precision.
+
+    References
+    ----------
+    .. [1] Mathys, C. D., Lomakina, E. I., Daunizeau, J., Iglesias, S., Brodersen, K.
+       H., Friston, K. J., & Stephan, K. E. (2014). Uncertainty in perception and the
+       hierarchical Gaussian filter. Frontiers in Human Neuroscience, 8, 825.
+       doi:10.3389/fnhum.2014.00825
     """
     return -jnp.log(
         expected_mean * gaussian_density(value, eta1, expected_precision)
