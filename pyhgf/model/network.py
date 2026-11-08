@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -300,6 +300,7 @@ class Network:
         # generate the belief propagation function
         if self.scan_fn is None:
             self = self.create_belief_propagation_fn()
+        assert self.scan_fn is not None
 
         # time steps vector
         if time_steps is None:
@@ -324,38 +325,10 @@ class Network:
         # wrap the inputs
         inputs = values, observed, time_steps, rng_keys
 
-        initial_attributes = (
-            self.last_attributes
-            if append and self.last_attributes is not None
-            else self.attributes
-        )
-
         # this is where the model loops over the whole input time series
         # at each time point, the node structure is traversed and beliefs are updated
         # using precision-weighted prediction errors
-        if record_trajectories:
-            last_attributes, node_trajectories = scan(
-                self.scan_fn, initial_attributes, inputs
-            )
-            if append and self.node_trajectories:
-                node_trajectories = tree_map(
-                    lambda previous, new: jnp.concatenate((previous, new), axis=0),
-                    self.node_trajectories,
-                    node_trajectories,
-                )
-            self.node_trajectories = node_trajectories
-        else:
-
-            def _no_traj_step(attributes, inputs):
-                new_attributes, _ = self.scan_fn(attributes, inputs)
-                return new_attributes, None
-
-            last_attributes, _ = scan(_no_traj_step, initial_attributes, inputs)
-            self.node_trajectories = None  # type: ignore[assignment]
-
-        self.last_attributes = last_attributes
-
-        return self
+        return self._scan(self.scan_fn, inputs, append, record_trajectories)
 
     def sample(
         self,
@@ -391,6 +364,7 @@ class Network:
         observed: Optional[tuple[np.ndarray, ...]] = None,
         input_idxs: Optional[tuple[int, ...]] = None,
         rng_keys: Optional[random.PRNGKey] = None,
+        append: bool = False,
     ):
         """Add new observations with custom update sequences.
 
@@ -400,8 +374,8 @@ class Network:
 
         .. note::
            When the dynamic adaptation of the update sequence is not required, it is
-           recommended to use :py:meth:`pyhgf.model.HGF.input_data` instead as this
-           might result in performance improvement.
+           recommended to use :py:meth:`input_data` instead as this might result in
+           performance improvement.
 
         Parameters
         ----------
@@ -433,6 +407,10 @@ class Network:
         rng_keys :
             Optional. A random key for the random number generator. This is only used
             when an action function is provided.
+        append :
+            If True, resume from ``self.last_attributes`` when available and append
+            new trajectories along the time axis, as in :py:meth:`input_data`. On the
+            first call, start from ``self.attributes``. Defaults to False.
         """
         if rng_keys is not None:
             # get one key for each time step
@@ -487,18 +465,50 @@ class Network:
             data, idx = scan_input
             return switch(idx, branches_fn, attributes, data)
 
-        # wrap the inputs
-        scan_input = (inputs, branches_idx)
-
         # scan over the input data and apply the switching belief propagation functions
-        last_attributes, node_trajectories = scan(
-            switching_propagation, self.attributes, scan_input
+        return self._scan(switching_propagation, (inputs, branches_idx), append)
+
+    def _scan(
+        self,
+        step_fn: Callable,
+        inputs: Any,
+        append: bool,
+        record_trajectories: bool = True,
+    ) -> "Network":
+        """Scan ``step_fn`` over ``inputs``; store the final beliefs and trajectories.
+
+        The scan starts from ``self.last_attributes`` when ``append`` is True and a
+        previous call stored final beliefs, and from ``self.attributes`` otherwise. With
+        ``append``, the new trajectories are concatenated to the recorded ones along the
+        time axis. Without ``record_trajectories``, only the final beliefs are kept.
+        """
+        initial_attributes = (
+            self.last_attributes
+            if append and self.last_attributes is not None
+            else self.attributes
         )
 
-        # Retain the final beliefs for subsequent append calls and sampling.
-        self.last_attributes = last_attributes
-        self.node_trajectories = node_trajectories
+        if not record_trajectories:
 
+            def step_without_trajectories(attributes, step_inputs):
+                return step_fn(attributes, step_inputs)[0], None
+
+            self.last_attributes, _ = scan(
+                step_without_trajectories, initial_attributes, inputs
+            )
+            self.node_trajectories = None  # type: ignore[assignment]
+            return self
+
+        self.last_attributes, node_trajectories = scan(
+            step_fn, initial_attributes, inputs
+        )
+        if append and self.node_trajectories:
+            node_trajectories = tree_map(
+                lambda previous, new: jnp.concatenate((previous, new), axis=0),
+                self.node_trajectories,
+                node_trajectories,
+            )
+        self.node_trajectories = node_trajectories
         return self
 
     def get_network(self) -> NetworkParameters:

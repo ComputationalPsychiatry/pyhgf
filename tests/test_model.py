@@ -445,32 +445,34 @@ def test_same_input_idxs_keep_history_and_parameter_edits():
     assert_frame_equal(net.to_pandas(), reference.to_pandas(), rtol=1e-6, atol=1e-7)
 
 
-def test_custom_sequence_keeps_final_beliefs():
-    """``append=True`` continues a custom sequence; other calls restart from priors."""
+def test_custom_sequence_append():
+    """``append=True`` continues either method; other calls restart from priors."""
 
     def build():
         return Network().add_nodes().add_nodes(value_children=0)
 
-    def input_custom(net, observations):
+    def run(net, method, observations, **kwargs):
+        if method == "data":
+            return net.input_data(observations, **kwargs)
         return net.input_custom_sequence(
             update_branches=(net.get_network()[2],),
             branches_idx=np.zeros(len(observations), dtype=int),
             input_data=observations,
+            **kwargs,
         )
 
     observations = np.array([0.0, 1.0, 2.0, 3.0])
     reference = build().input_data(observations).to_pandas()
 
-    net = input_custom(build(), observations[:2])
-    net.input_data(observations[2:], append=True)
-    assert_frame_equal(net.to_pandas(), reference, rtol=1e-6, atol=1e-7)
+    for first, second in [("custom", "data"), ("data", "custom"), ("custom", "custom")]:
+        net = run(build(), first, observations[:2])
+        run(net, second, observations[2:], append=True)
+        assert_frame_equal(net.to_pandas(), reference, rtol=1e-6, atol=1e-7)
 
-    assert_frame_equal(
-        input_custom(net, observations).to_pandas(), reference, rtol=1e-6, atol=1e-7
-    )
-    assert_frame_equal(
-        net.input_data(observations).to_pandas(), reference, rtol=1e-6, atol=1e-7
-    )
+    for method in ("custom", "data"):
+        assert_frame_equal(
+            run(net, method, observations).to_pandas(), reference, rtol=1e-6, atol=1e-7
+        )
 
 
 def test_hgf_class_is_deprecated():
