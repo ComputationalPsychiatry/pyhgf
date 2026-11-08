@@ -325,6 +325,10 @@ def dirichlet_kullback_leibler(alpha_1: ArrayLike, alpha_2: ArrayLike) -> Array:
          \sum_{i=1}^k(\alpha_{1i} -
          \alpha_{2i})\left[\psi(\alpha_{1i})-\psi(\sum_{i=1}^k\alpha_{1i})\right]
 
+    The ratios of gamma functions are evaluated as differences of log-gamma functions,
+    :math:`\ln\Gamma(a) - \ln\Gamma(b)`, which stay finite where :math:`\Gamma` itself
+    overflows (arguments above about 35 in float32 and 171 in float64).
+
     See [1]_ and [2]_ for more details.
 
     Parameters
