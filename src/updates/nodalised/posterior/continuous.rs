@@ -1,5 +1,6 @@
 use crate::math::{lambert_w0_log, logaddexp};
 use crate::model::network::Network;
+use crate::updates::nodalised::prediction::continuous::is_noise_child;
 
 // =============================================================================
 // Shared building blocks for precision and mean updates
@@ -338,6 +339,34 @@ fn value_coupling_variance(state: &crate::model::network::NodeState) -> f64 {
     (1.0 / state.expected_precision - 1.0 / state.conditional_expected_precision).max(0.0)
 }
 
+/// Standard volatility-coupling precision increment of one child,
+/// ½ (κ γ)² + (κ γ)² Δ − ½ κ² γ Δ, cancelled if the child was not observed. For a noise
+/// child, γ = 1 and Δ is the noise prediction error ε, so the increment is
+/// ½ κ² (1 + ε) (Eq. 78 of Weber et al., 2026).
+fn standard_volatility_increment(
+    child_state: &crate::model::network::NodeState,
+    kappa: f64,
+) -> f64 {
+    let effective_precision = child_state.effective_precision;
+    let volatility_pe = child_state.volatility_prediction_error;
+    (0.5 * (kappa * effective_precision).powi(2)
+        + (kappa * effective_precision).powi(2) * volatility_pe
+        - 0.5 * kappa.powi(2) * effective_precision * volatility_pe)
+        * child_state.observed
+}
+
+/// Mean increment of a node from one volatility child, κ γ Δ / (2 π), cancelled if the
+/// child was not observed.
+fn volatility_mean_increment(
+    child_state: &crate::model::network::NodeState,
+    kappa: f64,
+    node_precision: f64,
+) -> f64 {
+    (kappa * child_state.effective_precision * child_state.volatility_prediction_error)
+        / (2.0 * node_precision)
+        * child_state.observed
+}
+
 /// Unbounded posterior update of a continuous state node with one or several volatility
 /// children and, optionally, value children (section 3.6 in Mathys et al., 2026,
 /// arXiv:2605.00966). Port of `posterior_update_unbounded` in the JAX backend.
@@ -350,9 +379,11 @@ fn value_coupling_variance(state: &crate::model::network::NodeState) -> f64 {
 /// Ω_i(x) = t exp(κ_i x + ω̃_i),    ω̃_i = ω_i + Σ_p κ_p μ̂_p,
 /// ```
 ///
-/// where (π̃, μ̃) is the prediction of the node or, when the node also has value
-/// children, the effective prior returned by [`unbounded_effective_prior`], and the
-/// effective tonic volatility ω̃_i absorbs the other volatility parents p of the child.
+/// where (π̃, μ̃) is the prediction of the node or, when the node also has value children
+/// or noise children (input nodes), the effective prior returned by
+/// [`unbounded_effective_prior`], and the sum runs over the other volatility children.
+/// The effective tonic volatility ω̃_i absorbs the other volatility parents p of the
+/// child.
 /// The known variance α_i is the part of the child's predicted variance that does not
 /// depend on x: its carried variance λ²/π and the variance its value parents add
 /// ([`value_coupling_variance`]).
@@ -376,14 +407,19 @@ pub fn posterior_update_continuous_state_node_unbounded(
     let log_time_step = time_step.ln();
     let expected_mean = network.attributes.states[node_idx].expected_mean;
 
-    // Effective prior (π̃, μ̃): the prediction, combined with the value-coupling terms
-    // when the node also has value children.
+    // Effective prior (π̃, μ̃): the prediction, combined with the value-coupling and
+    // noise-coupling terms when the node also has value or noise children.
     let (prior_precision, prior_mean) = unbounded_effective_prior(network, node_idx);
 
+    // The noise children enter the effective prior; the expansions run over the other
+    // observed volatility children.
     let children: Vec<UnboundedVolatilityChild> = volatility_children_idxs
         .iter()
         .enumerate()
-        .filter(|&(_, &child_idx)| network.attributes.states[child_idx].observed != 0.0)
+        .filter(|&(_, &child_idx)| {
+            network.attributes.states[child_idx].observed != 0.0
+                && !is_noise_child(network, child_idx)
+        })
         .map(|(i, &child_idx)| {
             let child_state = &network.attributes.states[child_idx];
             let be_aux = (1.0 / child_state.precision)
@@ -501,25 +537,51 @@ pub fn posterior_update_continuous_state_node_unbounded(
 /// Effective prior (π̃, μ̃) of the unbounded update, in which section 3.6 of Mathys et
 /// al. (2026) absorbs the value-coupling terms of the variational energy.
 ///
-/// It is the posterior that the regular value-coupling update returns when the
-/// volatility children are left out: relaxed (posterior-step relaxation for Gaussian
-/// interior children) or mean-field, following `Network::mean_field_updates`, so that value
-/// children are weighted as in the standard and eHGF updates. Without value children,
-/// this is the prediction of the node. Port of `_value_children_effective_prior` in the
-/// JAX backend.
+/// It is the posterior that the standard update returns when the node keeps only its
+/// value children and its noise children: value children weighted as in the standard
+/// and eHGF updates, relaxed (posterior-step relaxation for Gaussian interior children)
+/// or mean-field following `Network::mean_field_updates`, and one quadratic term of
+/// Eqs. 74 and 78 of Weber et al. (2026) per noise child. Without value or noise
+/// children, this is the prediction of the node. Port of
+/// `_value_children_effective_prior` in the JAX backend.
 fn unbounded_effective_prior(network: &Network, node_idx: usize) -> (f64, f64) {
     let state = &network.attributes.states[node_idx];
-    if network.edges[node_idx].value_children.is_none() {
+    let noise_children: Vec<(usize, f64)> = match network.edges[node_idx].volatility_children {
+        Some(ref idxs) => {
+            let couplings = &network.attributes.vectors[node_idx].volatility_coupling_children;
+            idxs.iter()
+                .enumerate()
+                .filter(|&(_, &child_idx)| is_noise_child(network, child_idx))
+                .map(|(i, &child_idx)| (child_idx, couplings.get(i).copied().unwrap_or(1.0)))
+                .collect()
+        }
+        None => Vec::new(),
+    };
+    if network.edges[node_idx].value_children.is_none() && noise_children.is_empty() {
         return (state.expected_precision, state.expected_mean);
     }
     let mean_field = network.mean_field_updates;
     // Lower bound as in `posterior_update_continuous_state_node`; the upper bound
     // applies to the final posterior only.
+    let noise_precision_wpe: f64 = noise_children
+        .iter()
+        .map(|&(child_idx, kappa)| {
+            standard_volatility_increment(&network.attributes.states[child_idx], kappa)
+        })
+        .sum();
     let precision = (state.expected_precision
-        + value_coupling_precision_wpe(network, node_idx, mean_field))
-    .max(1e-128);
-    let mean =
-        state.expected_mean + value_coupling_mean_wpe(network, node_idx, precision, mean_field);
+        + value_coupling_precision_wpe(network, node_idx, mean_field)
+        + noise_precision_wpe)
+        .max(1e-128);
+    let noise_mean_wpe: f64 = noise_children
+        .iter()
+        .map(|&(child_idx, kappa)| {
+            volatility_mean_increment(&network.attributes.states[child_idx], kappa, precision)
+        })
+        .sum();
+    let mean = state.expected_mean
+        + value_coupling_mean_wpe(network, node_idx, precision, mean_field)
+        + noise_mean_wpe;
     (precision, mean)
 }
 
@@ -593,11 +655,12 @@ fn ehgf_volatility_increment(
         * child_state.observed
 }
 
-/// Enhanced-HGF precision update from children (relaxed value coupling).
-fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_step: f64) -> f64 {
-    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, false);
-
-    // --- Volatility coupling (eHGF safe update) ---
+/// Precision increment of the eHGF update from the volatility children: the safe
+/// increment of [`ehgf_volatility_increment`] for state nodes, and the increment
+/// ½ κ² (1 + ε) of Eq. 78 of Weber et al. (2026) for noise children, which is never
+/// negative since ε ≥ −1.
+fn ehgf_volatility_precision_wpe(network: &Network, node_idx: usize, time_step: f64) -> f64 {
+    let mut precision_wpe = 0.0;
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
             &network.attributes.vectors[node_idx].volatility_coupling_children;
@@ -606,18 +669,27 @@ fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_
         for (i, &child_idx) in volc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
-            let tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
-            precision_wpe += ehgf_volatility_increment(
-                child_state,
-                kappa,
-                parent_mean,
-                tonic_volatility,
-                time_step,
-            );
+            precision_wpe += if is_noise_child(network, child_idx) {
+                standard_volatility_increment(child_state, kappa)
+            } else {
+                let tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
+                ehgf_volatility_increment(
+                    child_state,
+                    kappa,
+                    parent_mean,
+                    tonic_volatility,
+                    time_step,
+                )
+            };
         }
     }
-
     precision_wpe
+}
+
+/// Enhanced-HGF precision update from children (relaxed value coupling).
+fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_step: f64) -> f64 {
+    value_coupling_precision_wpe(network, node_idx, false)
+        + ehgf_volatility_precision_wpe(network, node_idx, time_step)
 }
 
 /// Enhanced-HGF precision update from children (mean-field value coupling).
@@ -626,29 +698,8 @@ fn precision_update_from_children_ehgf_mean_field(
     node_idx: usize,
     time_step: f64,
 ) -> f64 {
-    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, true);
-
-    // --- Volatility coupling (eHGF safe update) ---
-    if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
-        let vol_coupling_strengths =
-            &network.attributes.vectors[node_idx].volatility_coupling_children;
-        let parent_mean = network.attributes.states[node_idx].mean;
-
-        for (i, &child_idx) in volc_idxs.iter().enumerate() {
-            let child_state = &network.attributes.states[child_idx];
-            let kappa = vol_coupling_strengths.get(i).copied().unwrap_or(1.0);
-            let tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
-            precision_wpe += ehgf_volatility_increment(
-                child_state,
-                kappa,
-                parent_mean,
-                tonic_volatility,
-                time_step,
-            );
-        }
-    }
-
-    precision_wpe
+    value_coupling_precision_wpe(network, node_idx, true)
+        + ehgf_volatility_precision_wpe(network, node_idx, time_step)
 }
 
 /// Mean-field mean update from children.

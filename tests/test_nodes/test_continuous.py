@@ -7,6 +7,11 @@ from pyhgf.rshgf import Network as RsNetwork
 from pyhgf import load_data
 from pyhgf.model import Network as PyNetwork
 
+try:
+    from jax import enable_x64
+except ImportError:  # jax releases exporting it from jax.experimental only
+    from jax.experimental import enable_x64
+
 VOLATILITY_UPDATES = ["standard", "eHGF", "unbounded"]
 MEAN_FIELD_UPDATES = [False, True]
 
@@ -105,7 +110,8 @@ def test_continuous_input_precision(n_levels, volatility_updates, mean_field_upd
     An input node without a volatility parent predicts its own precision,
     :math:`\hat{\pi}_0 = \pi_0`, which both the relaxed and the mean-field updates of
     its value parent use as the observation precision. With three levels, the input
-    node has a volatility parent and predicts :math:`1 / (1/\pi_0 + \Omega_0)`.
+    node has a noise parent, which estimates this precision:
+    :math:`\hat{\pi}_0 = \exp(-\hat{\mu}_2)`, and :math:`\pi_0` is not used.
     """
     timeseries = load_data("continuous")
     label = f"n_levels={n_levels} vol={volatility_updates} mf={mean_field_updates}"
@@ -464,10 +470,17 @@ def test_relaxed_update_observed_leaf(coupling):
             \qquad
         \mu_1 = \hat{\mu}_1 + \frac{g' \, \bar{\pi}_0}{\pi_1} \, \delta_0,
 
-    with :math:`g` differentiated at the previous posterior mean of node 1. The
-    leaf's marginal predicted precision :math:`\hat{\pi}_0` also contains node 1's
-    own variance :math:`g'^2 / \hat{\pi}_1`, which does not enter this update. Both
-    backends must match this closed form, computed from the JAX trajectories.
+    with :math:`g` differentiated at the previous posterior mean of node 1. Node 2 is
+    the noise parent of the leaf, so :math:`\bar{\pi}_0 = \hat{\pi}_0` is the
+    precision of the observation noise, :math:`\exp(-\hat{\mu}_2)`, as in
+    Eqs. 66 and 69 of [1]_. Both backends must match this closed form, computed from
+    the JAX trajectories.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     import jax
     import jax.numpy as jnp
@@ -496,9 +509,10 @@ def test_relaxed_update_observed_leaf(coupling):
     pi_bar_0 = np.asarray(leaf["temp"]["conditional_expected_precision"])
     delta_0 = np.asarray(leaf["temp"]["value_prediction_error"])
 
-    # The parent's variance makes the marginal differ from the conditional, so the
-    # closed form below separates the two.
-    assert np.max(pi_bar_0 / np.asarray(leaf["expected_precision"])) > 1.05
+    # Both predicted precisions of the leaf are the precision of its observation noise.
+    noise_precision = np.exp(-np.asarray(py_net.node_trajectories[2]["expected_mean"]))
+    assert np.allclose(pi_bar_0, noise_precision, rtol=1e-5)
+    assert np.allclose(np.asarray(leaf["expected_precision"]), pi_bar_0)
 
     # Previous posterior mean of node 1, starting from its prior mean of 0.
     linearisation_point = jnp.concatenate([jnp.zeros(1), parent["mean"][:-1]])
@@ -521,3 +535,107 @@ def test_relaxed_update_observed_leaf(coupling):
         assert np.allclose(
             net.node_trajectories[1]["mean"], expected_mean, rtol=1e-5, atol=1e-6
         )
+
+
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+def test_missing_observation_leaves_the_noise_parent_at_its_prediction(
+    cls, volatility_updates
+):
+    """Without an observation, the noise parent receives no noise prediction error."""
+    observations = np.array([0.4, -1.2, 2.0, 0.3])
+    observed = np.array([1, 0, 1, 0])
+    net = (
+        cls(volatility_updates=volatility_updates)
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=0)
+    )
+    net.input_data(input_data=observations, observed=observed)
+    noise_parent = net.node_trajectories[2]
+    for key in ("mean", "precision"):
+        posterior = np.asarray(noise_parent[key])
+        prediction = np.asarray(noise_parent[f"expected_{key}"])
+        assert np.allclose(posterior[observed == 0], prediction[observed == 0])
+        assert not np.allclose(posterior[observed == 1], prediction[observed == 1])
+
+
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+def test_noise_parent_added_before_the_value_parent(cls):
+    """Adding the noise parent before the value parent gives the same trajectories.
+
+    The noise prediction error of the input reads the posterior of its value parent, so
+    the value parent is updated first whatever the order of the nodes.
+    """
+    timeseries = load_data("continuous")[:200]
+    first = (
+        cls().add_nodes().add_nodes(value_children=0).add_nodes(volatility_children=0)
+    )
+    second = cls().add_nodes().add_nodes(volatility_children=0).add_nodes(value_children=0)  # fmt: skip
+    first.input_data(input_data=timeseries)
+    second.input_data(input_data=timeseries)
+    for first_idx, second_idx in ((0, 0), (1, 2), (2, 1)):
+        for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+            assert np.allclose(
+                first.node_trajectories[first_idx][key],
+                second.node_trajectories[second_idx][key],
+                rtol=1e-6,
+            ), f"node {first_idx}, key '{key}' mismatch"
+
+
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+@pytest.mark.parametrize("mean_field_updates", MEAN_FIELD_UPDATES)
+def test_noise_parent_that_is_also_a_volatility_parent(
+    volatility_updates, mean_field_updates
+):
+    r"""A node can be the noise parent of an input and the volatility parent of a state.
+
+    Node 2 is the noise parent of the input (node 0) and the volatility parent of its
+    value parent (node 1). The noise child contributes the terms of Eqs. 74 and 78 of
+    [1]_ in every scheme: added to the standard and eHGF increments of node 1, and
+    absorbed in the effective prior of the unbounded update. Both backends must agree
+    in float64. Under the standard update, the precision of node 2 is the sum of the
+    two increments.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    timeseries = np.asarray(load_data("continuous")[:200], dtype=np.float64)
+
+    def build(cls):
+        return (
+            cls(volatility_updates=volatility_updates, mean_field_updates=mean_field_updates)
+            .add_nodes()
+            .add_nodes(value_children=0)
+            .add_nodes(volatility_children=[0, 1], tonic_volatility=-3.0)
+            .input_data(input_data=timeseries)
+        )  # fmt: skip
+
+    rs_net = build(RsNetwork)
+    with enable_x64(True):
+        py_net = build(PyNetwork)
+        for node_idx in range(3):
+            for key in ["mean", "expected_mean", "precision", "expected_precision"]:
+                assert np.allclose(
+                    py_net.node_trajectories[node_idx][key],
+                    rs_net.node_trajectories[node_idx][key],
+                    rtol=1e-9,
+                    atol=1e-12,
+                ), f"node {node_idx}, key '{key}' mismatch"
+
+        if volatility_updates == "standard":
+            traj = py_net.node_trajectories
+            epsilon = np.asarray(traj[0]["temp"]["volatility_prediction_error"])
+            gamma = np.asarray(traj[1]["temp"]["effective_precision"])
+            delta = np.asarray(traj[1]["temp"]["volatility_prediction_error"])
+            precision = (
+                np.asarray(traj[2]["expected_precision"])
+                + 0.5 * (1 + epsilon)
+                + 0.5 * gamma**2
+                + gamma**2 * delta
+                - 0.5 * gamma * delta
+            )
+            assert np.allclose(traj[2]["precision"], precision, rtol=1e-12)

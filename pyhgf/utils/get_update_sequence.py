@@ -20,13 +20,17 @@ from pyhgf.updates.prediction.binary import binary_state_node_prediction
 from pyhgf.updates.prediction.continuous import (
     continuous_node_prediction,
     continuous_node_prediction_mean_field,
+    is_noise_child,
 )
 from pyhgf.updates.prediction.dirichlet import dirichlet_node_prediction
 from pyhgf.updates.prediction_error.binary import binary_state_node_prediction_error
 from pyhgf.updates.prediction_error.categorical import (
     categorical_state_prediction_error,
 )
-from pyhgf.updates.prediction_error.continuous import continuous_node_prediction_error
+from pyhgf.updates.prediction_error.continuous import (
+    continuous_node_noise_prediction_error,
+    continuous_node_prediction_error,
+)
 from pyhgf.updates.prediction_error.dirichlet import dirichlet_node_prediction_error
 from pyhgf.updates.prediction_error.exponential import (
     prediction_error_update_exponential_family_dynamic,
@@ -48,6 +52,13 @@ def get_update_sequence(
     network. The function ensures that the following principles apply:
     1. all children have computed prediction errors before the parent is updated.
     2. all children have been updated before the parent compute the prediction errors.
+    3. an input node with noise parents computes its noise prediction error after the
+    update of all its value parents, and before the update of its noise parents (see
+    the appendix of [1]_ on the noise parents of continuous input nodes).
+
+    A noise parent (a volatility parent of an input node) whose other volatility
+    children are all noise children takes the update of Eqs. 74 and 78 of [1]_ under
+    every ``volatility_updates`` setting.
 
     Parameters
     ----------
@@ -66,6 +77,12 @@ def get_update_sequence(
         The sequence of prediction update.
     update_sequence :
         The sequence of prediction error and posterior updates.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     # initialise the update and prediction sequences
     update_sequence: list = []
@@ -92,6 +109,11 @@ def get_update_sequence(
         for child_idx in network.edges[i].value_children or []:
             if network.edges[child_idx].node_type == 3:
                 nodes_without_posterior_update.remove(i)
+
+    # input nodes with noise parents, which compute a noise prediction error
+    nodes_without_noise_prediction_error = [
+        i for i in range(n_nodes) if is_noise_child(network.edges, i)
+    ]
 
     # prediction updates ---------------------------------------------------------------
     while True:
@@ -154,12 +176,22 @@ def get_update_sequence(
                 for i in idx
             ]
 
-            # all the children have computed prediction errors
-            if all([i not in nodes_without_prediction_error for i in all_children]):
+            # all the children have computed prediction errors, and the noise children
+            # among the volatility children their noise prediction errors
+            if all([
+                i not in nodes_without_prediction_error for i in all_children
+            ]) and all([
+                i not in nodes_without_noise_prediction_error
+                for i in network.edges[idx].volatility_children or ()
+            ]):
                 no_update = False
                 if network.edges[idx].node_type == 2:
-                    has_vol_children = (
-                        network.edges[idx].volatility_children is not None
+                    # noise children take the update of Weber et al. (2026, Eqs. 74
+                    # and 78) in every scheme, so only the other volatility children
+                    # call for the eHGF or unbounded update
+                    has_vol_children = any(
+                        not is_noise_child(network.edges, child_idx)
+                        for child_idx in network.edges[idx].volatility_children or ()
                     )
                     if volatility_updates == "unbounded":
                         update_fn = (
@@ -206,6 +238,18 @@ def get_update_sequence(
 
                 update_sequence.append((idx, update_fn))
                 nodes_without_posterior_update.remove(idx)
+
+        # for all input nodes that send a noise prediction error -----------------------
+        # verify that the prediction errors are computed and that all value parents have
+        # been updated, since the noise prediction error reads their posteriors
+        for idx in list(nodes_without_noise_prediction_error):
+            value_parents = network.edges[idx].value_parents or ()
+            if idx not in nodes_without_prediction_error and all([
+                i not in nodes_without_posterior_update for i in value_parents
+            ]):
+                no_update = False
+                update_sequence.append((idx, continuous_node_noise_prediction_error))
+                nodes_without_noise_prediction_error.remove(idx)
 
         # for all nodes that should apply prediction error------------------------------
         # verify that all children have been updated
@@ -288,8 +332,10 @@ def get_update_sequence(
                     update_sequence.append((idx, update_fn))
                     nodes_without_prediction_error.remove(idx)
 
-        if (not nodes_without_prediction_error) and (
-            not nodes_without_posterior_update
+        if (
+            (not nodes_without_prediction_error)
+            and (not nodes_without_posterior_update)
+            and (not nodes_without_noise_prediction_error)
         ):
             break
 

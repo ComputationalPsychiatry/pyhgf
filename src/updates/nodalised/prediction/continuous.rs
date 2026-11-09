@@ -17,6 +17,65 @@ pub(crate) fn floor_predicted_variance(variance: f64) -> f64 {
     }
 }
 
+/// Whether the node is an input node with a noise parent: a continuous leaf (no value
+/// or volatility children) with at least one volatility parent. Following Weber et al.
+/// (2026), a volatility parent of an input node is a noise parent: it sets the variance
+/// of the observation noise. Mirrors `is_noise_child` in the JAX backend.
+pub fn is_noise_child(network: &Network, node_idx: usize) -> bool {
+    let edges = &network.edges[node_idx];
+    edges.node_type.as_str() == "continuous-state"
+        && edges.value_children.is_none()
+        && edges.volatility_children.is_none()
+        && edges.volatility_parents.is_some()
+}
+
+/// Predicted precision of the observation noise of an input node with noise parents
+/// (Eq. 66 of Weber et al., 2026):
+///
+/// ```text
+/// π̂_u = 1 / exp(ε_u + Σ_q κ_q μ̂_q),
+/// ```
+///
+/// with the tonic observation noise ε_u given by the `tonic_volatility` of the input
+/// node, which is 0 for an input node (a tonic noise is a shift of ε_u / κ of the mean
+/// of a noise parent). The `precision` of the input node is the precision of the
+/// observation noise without noise parent, and is not used here. The noise parents
+/// enter at their predicted means, as point estimates, and the noise variance does not
+/// scale with the time step, under both the relaxed and the mean-field predictions.
+/// Mirrors `predict_noise_precision` in the JAX backend.
+pub fn predict_noise_precision(network: &Network, node_idx: usize) -> f64 {
+    let mut log_noise_variance = network.attributes.states[node_idx].tonic_volatility;
+    if let Some(ref noise_parent_idxs) = network.edges[node_idx].volatility_parents {
+        let couplings = &network.attributes.vectors[node_idx].volatility_coupling_parents;
+        for (i, &parent_idx) in noise_parent_idxs.iter().enumerate() {
+            let kappa = couplings.get(i).copied().unwrap_or(1.0);
+            log_noise_variance += kappa * network.attributes.states[parent_idx].expected_mean;
+        }
+    }
+    (-log_noise_variance).exp()
+}
+
+/// Overwrite the predicted precisions of an input node, which is observed exactly and
+/// does not drift between observations: its `precision` without noise parent, the
+/// noise precision of [`predict_noise_precision`] with noise parents, in which case the
+/// effective precision is 1 (Eq. 73 of Weber et al., 2026). Other nodes are left as
+/// they are.
+fn store_input_prediction(network: &mut Network, node_idx: usize) {
+    let edges = &network.edges[node_idx];
+    if edges.value_children.is_some() || edges.volatility_children.is_some() {
+        return;
+    }
+    let (precision, effective_precision) = if edges.volatility_parents.is_some() {
+        (predict_noise_precision(network, node_idx), 1.0)
+    } else {
+        (network.attributes.states[node_idx].precision, 0.0)
+    };
+    let state = &mut network.attributes.states[node_idx];
+    state.expected_precision = precision;
+    state.conditional_expected_precision = precision;
+    state.effective_precision = effective_precision;
+}
+
 /// Prediction step for a continuous state node.
 ///
 /// Computes the predicted mean μ̂, the conditional predicted precision π̄
@@ -37,6 +96,8 @@ pub(crate) fn floor_predicted_variance(variance: f64) -> f64 {
 /// The carried variance takes λ²: scaling the belief by λ scales its variance by
 /// λ². Only the node's own variance takes the factor; the drift is added after the
 /// autoregression, so the value-coupling term is unscaled. At λ = 1 this is canonical.
+/// An input node takes the precision of its observation noise instead, from its noise
+/// parents if it has any (see `store_input_prediction`).
 pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, time_step: f64) {
     // Copy own scalar state (f64 is Copy — no borrow held)
     let mean = network.attributes.states[node_idx].mean;
@@ -104,15 +165,8 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
-    // Carried variance: input nodes carry 1/π (λ = 1 for precision, λ = 0 for
-    // the mean — no tonic volatility); other nodes scale by λ².
-    let is_input = network.edges[node_idx].value_children.is_none()
-        && network.edges[node_idx].volatility_children.is_none();
-    let carried_variance = if is_input {
-        1.0 / precision
-    } else {
-        (autoconnection_strength * autoconnection_strength) / precision
-    };
+    // Carried variance: scaling the belief by λ scales its variance by λ².
+    let carried_variance = (autoconnection_strength * autoconnection_strength) / precision;
     // Conditional predicted precision π̄_a: carried variance + volatility only,
     // WITHOUT the parent-uncertainty value-coupling term. The parent's posterior-step
     // Schur complement acts on this; the marginal would double-count parent uncertainty.
@@ -129,23 +183,17 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     // -------------------------------------------------------
     // 3. Store results
     // -------------------------------------------------------
-    let has_volatility_parents = network.edges[node_idx].volatility_parents.is_some();
-
     let state = &mut network.attributes.states[node_idx];
     // Store carried variance for the volatility-coupling posteriors (unbounded,
     // eHGF), which re-predict from it — same quantity the prediction step uses.
     state.current_variance = carried_variance;
     state.expected_mean = expected_mean;
     state.effective_precision = effective_precision;
+    state.expected_precision = expected_precision;
+    state.conditional_expected_precision = conditional_expected_precision;
 
-    if !(is_input && !has_volatility_parents) {
-        state.expected_precision = expected_precision;
-        state.conditional_expected_precision = conditional_expected_precision;
-    } else {
-        // Leaf without random walk: conditional == marginal == prior precision.
-        state.expected_precision = precision;
-        state.conditional_expected_precision = precision;
-    }
+    // An input node takes the precision of its observation noise instead.
+    store_input_prediction(network, node_idx);
 }
 
 /// Mean-field prediction step for a continuous state node.
@@ -189,34 +237,21 @@ pub fn prediction_continuous_state_node_mean_field(
 
     let pv_raw = time_step * total_volatility.exp();
     let predicted_volatility = if pv_raw > 1e-128 { pv_raw } else { f64::NAN };
-    // Input nodes carry 1/π (λ = 1 for precision); other nodes λ²/π.
-    let is_input = network.edges[node_idx].value_children.is_none()
-        && network.edges[node_idx].volatility_children.is_none();
-    let carried_variance = if is_input {
-        1.0 / precision
-    } else {
-        (autoconnection_strength * autoconnection_strength) / precision
-    };
+    // Carried variance: scaling the belief by λ scales its variance by λ².
+    let carried_variance = (autoconnection_strength * autoconnection_strength) / precision;
     let expected_precision =
         1.0 / floor_predicted_variance(carried_variance + predicted_volatility);
     let effective_precision = predicted_volatility * expected_precision;
-
-    let has_volatility_parents = network.edges[node_idx].volatility_parents.is_some();
 
     let state = &mut network.attributes.states[node_idx];
     state.current_variance = carried_variance;
     state.expected_mean = expected_mean;
     state.effective_precision = effective_precision;
+    state.expected_precision = expected_precision;
+    state.conditional_expected_precision = expected_precision;
 
-    if !(is_input && !has_volatility_parents) {
-        state.expected_precision = expected_precision;
-        state.conditional_expected_precision = expected_precision;
-    } else {
-        // Leaf without random walk: the mean-field update of its value parents weights
-        // the observation by this predicted precision.
-        state.expected_precision = precision;
-        state.conditional_expected_precision = precision;
-    }
+    // An input node takes the precision of its observation noise instead.
+    store_input_prediction(network, node_idx);
 }
 
 #[cfg(test)]

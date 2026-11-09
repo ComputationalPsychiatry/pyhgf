@@ -13,7 +13,10 @@ use crate::{
         },
         prediction_error::{
             binary::prediction_error_binary_state_node,
-            continuous::prediction_error_continuous_state_node,
+            continuous::{
+                noise_prediction_error_continuous_input_node,
+                prediction_error_continuous_state_node,
+            },
             exponential::prediction_error_exponential_state_node,
         },
     },
@@ -33,6 +36,7 @@ pub enum UpdateStep {
     PosteriorContinuousEhgfMeanField,
     PosteriorContinuousUnbounded,
     PredictionErrorContinuous,
+    NoisePredictionErrorContinuous,
     PredictionErrorExponential,
     PredictionErrorBinary,
 }
@@ -66,6 +70,9 @@ impl UpdateStep {
             Self::PredictionErrorContinuous => {
                 prediction_error_continuous_state_node(network, node_idx, time_step)
             }
+            Self::NoisePredictionErrorContinuous => {
+                noise_prediction_error_continuous_input_node(network, node_idx, time_step)
+            }
             Self::PredictionErrorExponential => {
                 prediction_error_exponential_state_node(network, node_idx, time_step)
             }
@@ -92,6 +99,7 @@ impl UpdateStep {
                 "posterior_update_continuous_state_node_unbounded"
             }
             Self::PredictionErrorContinuous => "prediction_error_continuous_state_node",
+            Self::NoisePredictionErrorContinuous => "noise_prediction_error_continuous_input_node",
             Self::PredictionErrorExponential => "prediction_error_exponential_state_node",
             Self::PredictionErrorBinary => "prediction_error_binary_state_node",
         }

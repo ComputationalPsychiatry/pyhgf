@@ -9,6 +9,7 @@ from jax.lax import cond
 from jax.tree_util import Partial
 
 from pyhgf.typing import Edges
+from pyhgf.updates.prediction.continuous import is_noise_child
 
 # ----------------------------------------------------------------------------------
 # Shared building blocks
@@ -227,7 +228,15 @@ def _standard_volatility_increment(
     With :math:`\gamma` the effective precision computed at the prediction step and
     :math:`\Delta` the child's volatility prediction error, the increment is
     :math:`\tfrac12 (\kappa \gamma)^2 + (\kappa \gamma)^2 \Delta - \tfrac12 \kappa^2
-    \gamma \Delta`.
+    \gamma \Delta`. For a noise child, :math:`\gamma = 1` and :math:`\Delta` is the
+    noise prediction error :math:`\epsilon`, so the increment is
+    :math:`\tfrac12 \kappa^2 (1 + \epsilon)` (Eq. 78 of [1]_).
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     # volatility weigthed precision for the volatility child (γ)
     effective_precision = attributes[volatility_child_idx]["temp"][
@@ -641,9 +650,9 @@ def _ehgf_volatility_precision_increment(
 ) -> Array:
     r"""Enhanced-HGF "safe" volatility-coupling precision increment.
 
-    Implements the volatility-coupling precision update of the enhanced HGF (Mathys
-    et al.; TAPAS ``hgf_volatility_update`` ``'ehgf'`` branch). Two features
-    distinguish it from the standard increment:
+    Implements the volatility-coupling precision update of the enhanced HGF, as
+    implemented in TAPAS [1]_. Two features distinguish it from the standard
+    increment:
 
     1. The effective precision is **recomputed from the parent's just-updated
        posterior mean** :math:`\mu_b^{(k)}` (the eHGF updates the mean first), rather
@@ -669,7 +678,30 @@ def _ehgf_volatility_precision_increment(
     :math:`\max(0, \tfrac12 \kappa^2 \gamma (\gamma + w \Delta))`. At
     :math:`\mu_b^{(k)} = \hat{\mu}_b^{(k)}` the re-predicted precision is the child's
     marginal predicted precision.
+
+    A noise child (an input node, see
+    :func:`pyhgf.updates.prediction.continuous.is_noise_child`) contributes the
+    increment :math:`\tfrac12 \kappa^2 (1 + \epsilon)` of Eq. 78 of [2]_, which is
+    never negative since :math:`\epsilon \geq -1`.
+
+    References
+    ----------
+    .. [1] Frässle, S., Aponte, E. A., Bollmann, S., Brodersen, K. H., Do, C. T.,
+       Harrison, O. K., Harrison, S. J., Heinzle, J., Iglesias, S., Kasper, L.,
+       Lomakina, E. I., Mathys, C., Müller-Schrader, M., Pereira, I., Petzschner, F.
+       H., Raman, S., Schöbi, D., Toussaint, B., Weber, L. A., Yao, Y., & Stephan, K.
+       E. (2021). TAPAS: An Open-Source Software Package for Translational
+       Neuromodeling and Computational Psychiatry. Frontiers in Psychiatry, 12.
+       doi:10.3389/fpsyt.2021.680811
+    .. [2] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
+    if is_noise_child(edges, volatility_child_idx):
+        return _standard_volatility_increment(
+            attributes, edges, node_idx, volatility_child_idx, volatility_coupling
+        )
+
     time_step = attributes[-1]["time_step"]
     # Parent posterior mean (the eHGF performs the mean update first).
     mean = attributes[node_idx]["mean"]

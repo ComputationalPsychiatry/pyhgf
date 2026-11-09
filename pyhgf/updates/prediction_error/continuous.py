@@ -3,12 +3,13 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import jit
+from jax import grad, jit
 
 from pyhgf.typing import Edges
 from pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node import (
     _has_observations,
 )
+from pyhgf.updates.prediction.continuous import is_noise_child
 
 
 @partial(jit, static_argnames=("node_idx", "edges"))
@@ -79,7 +80,9 @@ def continuous_node_volatility_prediction_error(
         \hat{\pi}_j^{(k)} \left( \delta_j^{(k)} \right)^2 - 1
 
     Every volatility parent of the node receives the full :math:`\Delta_j^{(k)}`, as
-    in the unbounded update. See [1]_ for more details.
+    in the unbounded update. See [1]_ for more details. An input node with noise
+    parents sends the noise prediction error of
+    :func:`continuous_node_noise_prediction_error` instead.
 
     Parameters
     ----------
@@ -185,8 +188,109 @@ def continuous_node_prediction_error(
 
     # Store volatility prediction errors
     # ----------------------------------
-    attributes = continuous_node_volatility_prediction_error(
-        attributes=attributes, node_idx=node_idx
+    # An input node with noise parents sends them a noise prediction error, which is
+    # computed after its value parents' update
+    # (:func:`continuous_node_noise_prediction_error`).
+    if not is_noise_child(edges, node_idx):
+        attributes = continuous_node_volatility_prediction_error(
+            attributes=attributes, node_idx=node_idx
+        )
+
+    return attributes
+
+
+@partial(jit, static_argnames=("edges", "node_idx"))
+def continuous_node_noise_prediction_error(
+    attributes: dict, node_idx: int, edges: Edges, **args
+) -> dict:
+    r"""Compute the noise prediction error of an input node.
+
+    The noise prediction error of an input node :math:`u` with value parent
+    :math:`p` is Eq. 72 of [1]_:
+
+    .. math::
+
+        \epsilon_u^{(k)} = \frac{\hat{\pi}_u^{(k)}}{\pi_p^{(k)}}
+            + \hat{\pi}_u^{(k)} \left( u^{(k)} - \mu_p^{(k)} \right)^2 - 1,
+
+    with :math:`\hat{\pi}_u^{(k)}` the precision of the observation noise
+    (:func:`pyhgf.updates.prediction.continuous.predict_noise_precision`). Unlike
+    the volatility prediction error, it does not compare :math:`u` with its
+    prediction but with the posterior :math:`(\mu_p^{(k)}, \pi_p^{(k)})` of the
+    value parent: :math:`1/\pi_p + (u - \mu_p)^2` is the expected squared
+    observation noise :math:`(u - x_p)^2` under that posterior. This step must
+    therefore run after the posterior update of every value parent of :math:`u`,
+    and before the update of its noise parents, which read it with the effective
+    precision :math:`\gamma_u = 1` (Eqs. 73 to 78 of [1]_).
+
+    With several value parents :math:`b`, coupling strengths :math:`\alpha_b`,
+    coupling functions :math:`g_b` and time step :math:`t`, the expected squared
+    noise is evaluated to first order under the posteriors of all value parents,
+
+    .. math::
+
+        \epsilon_u^{(k)} = \hat{\pi}_u^{(k)} \left( \sum_b
+            \frac{(t \alpha_b g_b'(\mu_b^{(k)}))^2}{\pi_b^{(k)}}
+            + \left( u^{(k)} - m_u^{(k)} \right)^2 \right) - 1,
+
+    where :math:`m_u^{(k)}` is the predicted mean of :math:`u` with every value
+    parent moved from :math:`\hat{\mu}_b^{(k)}` to :math:`\mu_b^{(k)}`. With one
+    linear value parent, :math:`\alpha = 1`, :math:`t = 1`, no drift and an
+    autoconnection strength of 0 (the defaults of an input node), this is Eq. 72.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic nodes.
+    node_idx :
+        Pointer to the input node.
+    edges :
+        The edges of the probabilistic nodes as a tuple of
+        :py:class:`pyhgf.typing.AdjacencyLists`.
+
+    Returns
+    -------
+    attributes :
+        The attributes, with the noise prediction error stored in the input node's
+        ``temp["volatility_prediction_error"]``.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    time_step = attributes[-1]["time_step"]
+
+    # Predicted mean of the input with the value parents at their posterior means,
+    # and the variance their posteriors add (first order in the coupling function).
+    posterior_mean = attributes[node_idx]["expected_mean"]
+    posterior_variance = 0.0
+    value_parents = edges[node_idx].value_parents
+    if value_parents is not None:
+        for value_parent_idx, value_coupling in zip(
+            value_parents,
+            attributes[node_idx]["value_coupling_parents"],
+        ):
+            child_position = edges[value_parent_idx].value_children.index(node_idx)
+            coupling_fn = edges[value_parent_idx].coupling_fn[child_position]
+            parent_mean = attributes[value_parent_idx]["mean"]
+            parent_expected_mean = attributes[value_parent_idx]["expected_mean"]
+            if coupling_fn is None:
+                shift = parent_mean - parent_expected_mean
+                coupling_fn_prime = 1.0
+            else:
+                shift = coupling_fn(parent_mean) - coupling_fn(parent_expected_mean)
+                coupling_fn_prime = grad(coupling_fn)(parent_mean)
+            posterior_mean += time_step * value_coupling * shift
+            posterior_variance += (
+                time_step * value_coupling * coupling_fn_prime
+            ) ** 2 / attributes[value_parent_idx]["precision"]
+
+    attributes[node_idx]["temp"]["volatility_prediction_error"] = (
+        attributes[node_idx]["expected_precision"]
+        * (posterior_variance + (attributes[node_idx]["mean"] - posterior_mean) ** 2)
+        - 1.0
     )
 
     return attributes

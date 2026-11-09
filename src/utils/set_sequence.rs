@@ -1,4 +1,5 @@
 use crate::model::network::{AdjacencyLists, Network, UpdateSequence};
+use crate::updates::nodalised::prediction::continuous::is_noise_child;
 use crate::utils::function_pointer::UpdateStep;
 
 pub fn set_update_sequence(network: &Network) -> UpdateSequence {
@@ -73,6 +74,12 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
 
     let mut pe_nodes_idxs: Vec<usize> = (0..network.edges.len()).collect();
     let mut po_nodes_idxs: Vec<usize> = (0..network.edges.len()).collect();
+    // Input nodes with noise parents, which send a noise prediction error computed after
+    // the update of their value parents and before the update of their noise parents
+    // (Weber et al., 2026, appendix on the noise parents of continuous input nodes).
+    let mut nope_nodes_idxs: Vec<usize> = (0..network.edges.len())
+        .filter(|&idx| is_noise_child(network, idx))
+        .collect();
 
     po_nodes_idxs.retain(|x| !network.inputs.contains(x));
     po_nodes_idxs.retain(|&x| network.edges[x].node_type != "constant-state");
@@ -81,12 +88,19 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
         let mut has_update = false;
 
         // --- Batch: posterior updates ---
+        // All children have computed their prediction errors, and the noise children
+        // among the volatility children their noise prediction errors.
         let eligible_po: Vec<usize> = po_nodes_idxs
             .iter()
             .copied()
             .filter(|&idx| {
                 let children = get_all_children(&network.edges[idx]);
+                let volatility_children = network.edges[idx].volatility_children.as_deref();
                 children.iter().all(|c| !pe_nodes_idxs.contains(c))
+                    && volatility_children
+                        .unwrap_or(&[])
+                        .iter()
+                        .all(|c| !nope_nodes_idxs.contains(c))
             })
             .collect();
 
@@ -95,7 +109,16 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
             let edge = &network.edges[idx];
             match edge.node_type.as_str() {
                 "continuous-state" => {
-                    if edge.volatility_children.is_some() {
+                    // Noise children take the update of Eqs. 74 and 78 of Weber et al.
+                    // (2026) in every scheme, so only the other volatility children call
+                    // for the eHGF or unbounded update.
+                    let has_state_volatility_children = edge
+                        .volatility_children
+                        .as_deref()
+                        .unwrap_or(&[])
+                        .iter()
+                        .any(|&c| !is_noise_child(network, c));
+                    if has_state_volatility_children {
                         match network.volatility_updates.as_str() {
                             "eHGF" => updates.push((
                                 idx,
@@ -134,6 +157,28 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
         }
         po_nodes_idxs.retain(|x| !eligible_po.contains(x));
 
+        // --- Batch: noise prediction errors ---
+        // The prediction errors are computed and all value parents have been updated,
+        // since the noise prediction error reads their posteriors.
+        let eligible_nope: Vec<usize> = nope_nodes_idxs
+            .iter()
+            .copied()
+            .filter(|&idx| {
+                !pe_nodes_idxs.contains(&idx)
+                    && network.edges[idx]
+                        .value_parents
+                        .as_deref()
+                        .unwrap_or(&[])
+                        .iter()
+                        .all(|p| !po_nodes_idxs.contains(p))
+            })
+            .collect();
+        for &idx in &eligible_nope {
+            updates.push((idx, UpdateStep::NoisePredictionErrorContinuous));
+            has_update = true;
+        }
+        nope_nodes_idxs.retain(|x| !eligible_nope.contains(x));
+
         // --- Batch: prediction errors ---
         let eligible_pe: Vec<usize> = pe_nodes_idxs
             .iter()
@@ -163,7 +208,7 @@ pub fn get_updates_sequence(network: &Network) -> Vec<(usize, UpdateStep)> {
         }
         pe_nodes_idxs.retain(|x| !eligible_pe.contains(x));
 
-        if pe_nodes_idxs.is_empty() && po_nodes_idxs.is_empty() {
+        if pe_nodes_idxs.is_empty() && po_nodes_idxs.is_empty() && nope_nodes_idxs.is_empty() {
             break;
         }
         if !has_update {

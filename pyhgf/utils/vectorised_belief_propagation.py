@@ -32,6 +32,7 @@ from pyhgf.updates.vectorised.categorical import (
 from pyhgf.updates.vectorised.continuous import (
     ValueChild,
     VolatilityChild,
+    vectorised_continuous_noise_prediction_error,
     vectorised_continuous_posterior_update,
     vectorised_continuous_prediction,
     vectorised_continuous_prediction_error,
@@ -1969,6 +1970,42 @@ def _continuous_prediction_sweep(
     return dataclasses.replace(network, layers=tuple(elements))
 
 
+def _continuous_update_order(network: VectorisedNetwork, value_parent_of: list) -> list:
+    """Order in which the update sweep visits the layers above the observation layer.
+
+    A layer is updated after its value and volatility children. The noise parent of
+    the observation layer (its volatility parent) is also updated after the value
+    parent of the observation layer, since the noise prediction error reads the
+    posterior of that value parent (Eq. 72 of [1]_). Among the layers that are ready,
+    the lowest index comes first, which is the ascending order when the noise parent
+    has a higher index than the value parent.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    n = len(network.layers)
+    dependencies: dict[int, set[int]] = {i: set() for i in range(1, n)}
+    for i in range(1, n):
+        elem = network.layers[i]
+        for child_idx in (elem.value_child_idx, elem.volatility_child_idx):
+            if child_idx is not None and child_idx != 0:
+                dependencies[i].add(child_idx)
+        if elem.volatility_child_idx == 0 and value_parent_of[0] is not None:
+            dependencies[i].add(value_parent_of[0])
+
+    order: list = []
+    while dependencies:
+        ready = [i for i, deps in sorted(dependencies.items()) if not deps - set(order)]
+        if not ready:
+            raise ValueError("The layers of the continuous network form a cycle.")
+        order.append(ready[0])
+        del dependencies[ready[0]]
+    return order
+
+
 def _continuous_update_sweep(
     network: VectorisedNetwork,
     y: jnp.ndarray,
@@ -1978,24 +2015,34 @@ def _continuous_update_sweep(
 ) -> VectorisedNetwork:
     """Bottom-up prediction-error and posterior-update sweep.
 
-    Clamps the observations on layer 0, computes its prediction errors, then
-    walks the layers in ascending order: each layer's posterior integrates the
-    prediction errors of its value and volatility children (already computed,
-    since children carry lower indices), and its own prediction errors are then
-    written for the parents above. ``value_parent_of`` comes from
-    :func:`_continuous_parent_maps`; the volatility side is read off each
-    layer's ``has_volatility_parent``.
+    Clamps the observations on layer 0 and computes its value prediction error, then
+    walks the layers in the order of :func:`_continuous_update_order`: each layer's
+    posterior integrates the prediction errors of its value and volatility children,
+    and its own prediction errors are then written for the parents above. When layer
+    0 has a volatility parent, that parent is a noise parent: before its update,
+    layer 0 computes its noise prediction error from the posterior of its value
+    parent (Eq. 72 of [1]_). ``value_parent_of`` comes from
+    :func:`_continuous_parent_maps`; the volatility side is read off each layer's
+    ``has_volatility_parent``.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     elements = list(network.layers)
 
-    # Clamp the observations and compute the leaf prediction errors.
+    # Clamp the observations and compute the leaf value prediction error. A
+    # volatility parent of the leaf reads its noise prediction error instead of a
+    # volatility prediction error, computed below.
     leaf_state = dataclasses.replace(elements[0].state, mean=y)
     leaf_state = vectorised_continuous_prediction_error(
-        leaf_state, has_volatility_parent=elements[0].has_volatility_parent
+        leaf_state, has_volatility_parent=False
     )
     elements[0] = dataclasses.replace(elements[0], state=leaf_state)
 
-    for i in range(1, len(elements)):
+    for i in _continuous_update_order(network, value_parent_of):
         elem = elements[i]
 
         value_child = None
@@ -2013,10 +2060,24 @@ def _continuous_update_sweep(
         volatility_child = None
         if elem.volatility_child_idx is not None:
             child_elem = elements[elem.volatility_child_idx]
+            if child_elem.is_input_layer:
+                # Noise parent: the noise prediction error of the observation layer
+                # reads the posterior of its value parent, updated before this layer.
+                vp = value_parent_of[elem.volatility_child_idx]
+                noise_state = vectorised_continuous_noise_prediction_error(
+                    child_elem.state,
+                    value_parent_state=None if vp is None else elements[vp].state,
+                    weights=None if vp is None else elements[vp].weights_mean,
+                    coupling_fn=None if vp is None else elements[vp].coupling_fn,
+                    time_step=time_step,
+                )
+                child_elem = dataclasses.replace(child_elem, state=noise_state)
+                elements[elem.volatility_child_idx] = child_elem
             volatility_child = VolatilityChild(
                 state=child_elem.state,
                 kappa=elem.volatility_weights,
                 params=child_elem.params,
+                is_noise_child=child_elem.is_input_layer,
             )
 
         if value_child is None and volatility_child is None:

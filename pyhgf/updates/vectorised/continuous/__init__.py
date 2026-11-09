@@ -19,6 +19,7 @@ from .posterior import (
 )
 from .prediction import vectorised_continuous_prediction
 from .prediction_error import (
+    vectorised_continuous_noise_prediction_error,
     vectorised_continuous_prediction_error,
     vectorised_continuous_value_prediction_error,
     vectorised_continuous_volatility_prediction_error,
@@ -31,6 +32,7 @@ __all__ = [
     "vectorised_continuous_posterior_update_ehgf",
     "vectorised_continuous_posterior_update_standard",
     "vectorised_continuous_posterior_update_unbounded",
+    "vectorised_continuous_noise_prediction_error",
     "vectorised_continuous_prediction",
     "vectorised_continuous_prediction_error",
     "vectorised_continuous_value_prediction_error",
